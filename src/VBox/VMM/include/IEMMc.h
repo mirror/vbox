@@ -1518,11 +1518,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, 0)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, 0))
 #else
 # define IEM_MC_MEM_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu8Mem) = iemMemMapDataU8RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1539,11 +1537,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, 0)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, 0))
 #else
 # define IEM_MC_MEM_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu8Mem) = iemMemMapDataU8WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1560,11 +1556,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, 0)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, 0))
 #else
 # define IEM_MC_MEM_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu8Mem) = iemMemMapDataU8RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1581,11 +1575,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, 0)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, 0))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu8Mem) = iemMemFlatMapDataU8RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1602,11 +1594,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, 0)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, 0))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu8Mem) = iemMemFlatMapDataU8WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1623,11 +1613,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), sizeof(uint8_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, 0)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu8Mem), &(a_bUnmapInfo), sizeof(uint8_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, 0))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu8Mem) = iemMemFlatMapDataU8RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1647,11 +1635,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu16Mem) = iemMemMapDataU16RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1668,11 +1654,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu16Mem) = iemMemMapDataU16WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1689,11 +1673,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu16Mem) = iemMemMapDataU16RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1710,11 +1692,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu16Mem) = iemMemFlatMapDataU16RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1731,11 +1711,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu16Mem) = iemMemFlatMapDataU16WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1752,11 +1730,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), sizeof(uint16_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint16_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+   IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu16Mem), &(a_bUnmapInfo), sizeof(uint16_t), UINT8_MAX, \
+                                      (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint16_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu16Mem) = iemMemFlatMapDataU16RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1794,11 +1770,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu32Mem) = iemMemMapDataU32RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1815,11 +1789,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu32Mem) = iemMemMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1836,11 +1808,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu32Mem) = iemMemMapDataU32RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1857,11 +1827,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu32Mem) = iemMemFlatMapDataU32RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1878,11 +1846,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu32Mem) = iemMemFlatMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1899,11 +1865,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), sizeof(uint32_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint32_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu32Mem), &(a_bUnmapInfo), sizeof(uint32_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint32_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu32Mem) = iemMemFlatMapDataU32RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -1959,11 +1923,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu64Mem) = iemMemMapDataU64RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -1980,11 +1942,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu64Mem) = iemMemMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2001,11 +1961,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu64Mem) = iemMemMapDataU64RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2022,11 +1980,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu64Mem) = iemMemFlatMapDataU64RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2043,11 +1999,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu64Mem) = iemMemFlatMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2064,11 +2018,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), sizeof(uint64_t), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu64Mem), &(a_bUnmapInfo), sizeof(uint64_t), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu64Mem) = iemMemFlatMapDataU64RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2124,11 +2076,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128U), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128U) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128U), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128U) - 1))
 #else
 # define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu128Mem) = iemMemMapDataU128RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2145,11 +2095,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1))
 #else
 # define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu128Mem) = iemMemMapDataU128WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2166,11 +2114,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1))
 #else
 # define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pu128Mem) = iemMemMapDataU128RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2187,11 +2133,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128) - 1)); \
-        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu128Mem) = iemMemFlatMapDataU128RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2208,11 +2152,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu128Mem) = iemMemFlatMapDataU128WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2229,11 +2171,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), &(a_bUnmapInfo), sizeof(RTUINT128), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pu128Mem) = iemMemFlatMapDataU128RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2253,11 +2193,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), sizeof(RTFLOAT80U), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), &(a_bUnmapInfo), sizeof(RTFLOAT80U), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pr80Mem) = iemMemMapDataR80WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2273,11 +2211,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), sizeof(RTFLOAT80U), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), &(a_bUnmapInfo), sizeof(RTFLOAT80U), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pr80Mem) = iemMemFlatMapDataR80WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2295,11 +2231,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), sizeof(RTFLOAT80U), (a_iSeg), \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), &(a_bUnmapInfo), sizeof(RTFLOAT80U), (a_iSeg), \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
     (a_pd80Mem) = iemMemMapDataD80WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
@@ -2315,11 +2249,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) do { \
-        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), sizeof(RTFLOAT80U), UINT8_MAX, \
-                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
-        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
-    } while (0)
+# define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), &(a_bUnmapInfo), sizeof(RTFLOAT80U), UINT8_MAX, \
+                                       (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1))
 #else
 # define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pd80Mem) = iemMemFlatMapDataD80WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
@@ -2333,60 +2265,28 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo) do { \
-        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4)) ); \
-        IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_RW)); \
-    } while (0)
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo) \
-    iemMemCommitAndUnmapRwJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapRwJmp(pVCpu, (a_bMapInfo))
 #endif
 
 /** Commits the memory and unmaps guest memory previously mapped W.
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo) do { \
-        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
-        IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W)); \
-    } while (0)
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
-    iemMemCommitAndUnmapWoJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapWoJmp(pVCpu, (a_bMapInfo))
 #endif
 
 /** Commits the memory and unmaps guest memory previously mapped R.
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo) do { \
-        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_READ << 4)) ); \
-        IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (void *)(a_pvMem), IEM_ACCESS_DATA_R)); \
-    } while (0)
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo) \
-    iemMemCommitAndUnmapRoJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapRoJmp(pVCpu, (a_bMapInfo))
 #endif
-
-
-/** Commits the memory and unmaps the guest memory unless the FPU status word
- * indicates (@a a_u16FSW) and FPU control word indicates a pending exception
- * that would cause FLD not to store.
- *
- * The current understanding is that \#O, \#U, \#IA and \#IS will prevent a
- * store, while \#P will not.
- *
- * @remarks     May in theory return - for now.
- *
- * @deprecated
- */
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW) \
-    do { \
-        if (   !(a_u16FSW & X86_FSW_ES) \
-            || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
-                 & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
-            IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), (a_fAccess))); \
-    } while (0)
 
 
 /** Commits the memory and unmaps the guest memory unless the FPU status word
@@ -2400,11 +2300,10 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { \
-        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
         if (   !(a_u16FSW & X86_FSW_ES) \
             || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
                  & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
-            IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W)); \
+            IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo)); \
         else \
             iemMemRollbackAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W); \
     } while (0)
@@ -2413,21 +2312,19 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         if (   !(a_u16FSW & X86_FSW_ES) \
             || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
                  & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
-            iemMemCommitAndUnmapWoJmp(pVCpu, (a_pvMem), a_bMapInfo); \
+            iemMemCommitAndUnmapWoJmp(pVCpu, a_bMapInfo); \
         else \
-            iemMemRollbackAndUnmapWo(pVCpu, (a_pvMem), a_bMapInfo); \
+            iemMemRollbackAndUnmapWo(pVCpu, a_bMapInfo); \
     } while (0)
 #endif
 
 /** Rolls back (conceptually only, assumes no writes) and unmaps the guest  memory. */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) do { \
-        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
-        iemMemRollbackAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W); \
-    } while (0)
+# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
+        iemMemRollbackAndUnmap(pVCpu, a_bMapInfo)
 #else
 # define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
-        iemMemRollbackAndUnmapWo(pVCpu, (a_pvMem), a_bMapInfo)
+        iemMemRollbackAndUnmapWo(pVCpu, a_bMapInfo)
 #endif
 
 

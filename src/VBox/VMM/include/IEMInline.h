@@ -3714,42 +3714,42 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
 
 #ifdef IEM_WITH_SETJMP
 
-DECL_INLINE_THROW(void) iemMemCommitAndUnmapRwJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapRwJmp(PVMCPUCC pVCpu, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     if (RT_LIKELY(bMapInfo == 0))
         return;
 # endif
-    iemMemCommitAndUnmapRwSafeJmp(pVCpu, pvMem, bMapInfo);
+    iemMemCommitAndUnmapRwSafeJmp(pVCpu, bMapInfo);
 }
 
 
-DECL_INLINE_THROW(void) iemMemCommitAndUnmapWoJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapWoJmp(PVMCPUCC pVCpu, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     if (RT_LIKELY(bMapInfo == 0))
         return;
 # endif
-    iemMemCommitAndUnmapWoSafeJmp(pVCpu, pvMem, bMapInfo);
+    iemMemCommitAndUnmapWoSafeJmp(pVCpu, bMapInfo);
 }
 
 
-DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     if (RT_LIKELY(bMapInfo == 0))
         return;
 # endif
-    iemMemCommitAndUnmapRoSafeJmp(pVCpu, pvMem, bMapInfo);
+    iemMemCommitAndUnmapRoSafeJmp(pVCpu, bMapInfo);
 }
 
-DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) RT_NOEXCEPT
+DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, uint8_t bMapInfo) RT_NOEXCEPT
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     if (RT_LIKELY(bMapInfo == 0))
         return;
 # endif
-    iemMemRollbackAndUnmapWoSafe(pVCpu, pvMem, bMapInfo);
+    iemMemRollbackAndUnmapWoSafe(pVCpu, bMapInfo);
 }
 
 #endif /* IEM_WITH_SETJMP */

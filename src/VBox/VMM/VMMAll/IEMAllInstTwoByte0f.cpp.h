@@ -12480,14 +12480,14 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
          * here to make the code parsable by IEMAllInstPython.py and fit into
          * the patterns IEMAllThrdPython.py requires for the code morphing.
          */
-#define BODY_CMPXCHG16B_HEAD \
-            IEM_MC_BEGIN(4, 4, IEM_MC_F_64BIT, 0); \
+#define BODY_CMPXCHG16B_HEAD(bUnmapInfoStmt) \
+            IEM_MC_BEGIN(5, 4, IEM_MC_F_64BIT, 0); \
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
             IEMOP_HLP_DONE_DECODING(); \
             \
             IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(GCPtrEffDst, 16); \
-            IEM_MC_LOCAL(uint8_t,               bUnmapInfo); \
+            bUnmapInfoStmt; \
             IEM_MC_ARG(PRTUINT128U,             pu128MemDst,                0); \
             IEM_MC_MEM_MAP_U128_RW(pu128MemDst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
             \
@@ -12517,13 +12517,13 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             if (   !(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK)
                 && (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
             {
-                BODY_CMPXCHG16B_HEAD;
+                BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL;
             }
             else
             {
-                BODY_CMPXCHG16B_HEAD;
+                BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL;
             }
@@ -12532,17 +12532,18 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
         {   /* (see comments in #else case below) */
             if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
             {
-                BODY_CMPXCHG16B_HEAD;
+                BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL;
             }
             else
             {
-                BODY_CMPXCHG16B_HEAD;
-                IEM_MC_CALL_CIMPL_4(IEM_CIMPL_F_STATUS_FLAGS,
+                BODY_CMPXCHG16B_HEAD(IEM_MC_ARG(uint8_t, bUnmapInfo, 4));
+                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_STATUS_FLAGS,
                                       RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),
-                                    iemCImpl_cmpxchg16b_fallback_rendezvous, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+                                    iemCImpl_cmpxchg16b_fallback_rendezvous, pu128MemDst, pu128RaxRdx, pu128RbxRcx,
+                                                                             pEFlags, bUnmapInfo);
                 IEM_MC_END();
             }
         }
@@ -12551,13 +12552,13 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
         /** @todo may require fallback for unaligned accesses... */
         if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
         {
-            BODY_CMPXCHG16B_HEAD;
+            BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
             IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             BODY_CMPXCHG16B_TAIL;
         }
         else
         {
-            BODY_CMPXCHG16B_HEAD;
+            BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
             IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             BODY_CMPXCHG16B_TAIL;
         }
@@ -12569,13 +12570,13 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
                  but to use a rendezvous callback here.  Sigh. */
         if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
         {
-            BODY_CMPXCHG16B_HEAD;
+            BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo));
             IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             BODY_CMPXCHG16B_TAIL;
         }
         else
         {
-            BODY_CMPXCHG16B_HEAD;
+            BODY_CMPXCHG16B_HEAD(IEM_MC_ARG(uint8_t, bUnmapInfo, 4));
             IEM_MC_CALL_CIMPL_4(IEM_CIMPL_F_STATUS_FLAGS,
                                   RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
                                 | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),

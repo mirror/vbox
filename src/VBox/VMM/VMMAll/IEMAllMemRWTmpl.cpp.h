@@ -54,13 +54,14 @@ VBOXSTRICTRC RT_CONCAT(iemMemFetchData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, TMPL_ME
                                                          uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
     /* The lazy approach for now... */
+    uint8_t              bUnmapInfo;
     TMPL_MEM_TYPE const *puSrc;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, sizeof(*puSrc), iSegReg, GCPtrMem,
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, &bUnmapInfo, sizeof(*puSrc), iSegReg, GCPtrMem,
                                 IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puDst = *puSrc;
-        rc = iemMemCommitAndUnmap(pVCpu, (void *)puSrc, IEM_ACCESS_DATA_R);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
         Log2(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, *puDst));
     }
     return rc;
@@ -78,10 +79,11 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
 #  endif
-    TMPL_MEM_TYPE const *pSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, sizeof(*pSrc), iSegReg, GCPtrMem,
+    uint8_t              bUnmapInfo;
+    TMPL_MEM_TYPE const *pSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pSrc), iSegReg, GCPtrMem,
                                                                     IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
     *pDst = *pSrc;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)pSrc, IEM_ACCESS_DATA_R);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
     Log2(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, pDst));
 }
 # else /* !TMPL_MEM_BY_REF */
@@ -91,10 +93,11 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_t iSe
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
 #  endif
-    TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, sizeof(*puSrc), iSegReg, GCPtrMem,
+    uint8_t              bUnmapInfo;
+    TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*puSrc), iSegReg, GCPtrMem,
                                                                      IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
     TMPL_MEM_TYPE const  uRet = *puSrc;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)puSrc, IEM_ACCESS_DATA_R);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
     Log2(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
     return uRet;
 }
@@ -117,8 +120,10 @@ VBOXSTRICTRC RT_CONCAT(iemMemStoreData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t
 #endif
 {
     /* The lazy approach for now... */
+    uint8_t        bUnmapInfo;
     TMPL_MEM_TYPE *puDst;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(*puDst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, &bUnmapInfo, sizeof(*puDst),
+                                iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
 #ifdef TMPL_MEM_BY_REF
@@ -126,7 +131,7 @@ VBOXSTRICTRC RT_CONCAT(iemMemStoreData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t
 #else
         *puDst = uValue;
 #endif
-        rc = iemMemCommitAndUnmap(pVCpu, puDst, IEM_ACCESS_DATA_W);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
 #ifdef TMPL_MEM_BY_REF
         Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, pValue));
 #else
@@ -162,14 +167,15 @@ void RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_
 #else
     Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
 #endif
-    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(*puDst), iSegReg, GCPtrMem,
+    uint8_t        bUnmapInfo;
+    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*puDst), iSegReg, GCPtrMem,
                                                          IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
 #ifdef TMPL_MEM_BY_REF
     *puDst = *pValue;
 #else
     *puDst = uValue;
 #endif
-    iemMemCommitAndUnmapJmp(pVCpu, puDst, IEM_ACCESS_DATA_W);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
 }
 #endif /* IEM_WITH_SETJMP */
 
@@ -195,7 +201,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(PVMCPUCC pVCpu, uint8_t *pb
 # endif
     Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
     *pbUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE) << 4); /* zero is for the TLB hit */
-    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_RW, TMPL_MEM_TYPE_ALIGN);
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, pbUnmapInfo, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem,
+                                         IEM_ACCESS_DATA_RW, TMPL_MEM_TYPE_ALIGN);
 }
 
 
@@ -218,7 +225,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pb
 # endif
     Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
     *pbUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); /* zero is for the TLB hit */
-    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, pbUnmapInfo, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem,
+                                         IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
 }
 
 
@@ -241,7 +249,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pb
 # endif
     Log4(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
     *pbUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); /* zero is for the TLB hit */
-    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, pbUnmapInfo, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem,
+                                         IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
 }
 
 #endif /* IEM_WITH_SETJMP */
@@ -264,13 +273,14 @@ VBOXSTRICTRC RT_CONCAT(iemMemStackPush,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, TMPL_ME
     RTGCPTR     GCPtrTop = iemRegGetRspForPush(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
 
     /* Write the dword the lazy way. */
+    uint8_t        bUnmapInfo;
     TMPL_MEM_TYPE *puDst;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
-                                IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
+    VBOXSTRICTRC   rc = iemMemMap(pVCpu, (void **)&puDst, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+                                  IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puDst = uValue;
-        rc = iemMemCommitAndUnmap(pVCpu, puDst, IEM_ACCESS_STACK_W);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
 
         /* Commit the new RSP value unless we an access handler made trouble. */
         if (rc == VINF_SUCCESS)
@@ -301,13 +311,14 @@ VBOXSTRICTRC RT_CONCAT(iemMemStackPop,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, TMPL_MEM
     RTGCPTR     GCPtrTop = iemRegGetRspForPop(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
 
     /* Write the word the lazy way. */
+    uint8_t              bUnmapInfo;
     TMPL_MEM_TYPE const *puSrc;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
                                 IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puValue = *puSrc;
-        rc = iemMemCommitAndUnmap(pVCpu, (void *)puSrc, IEM_ACCESS_STACK_R);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
 
         /* Commit the new RSP value. */
         if (rc == VINF_SUCCESS)
@@ -338,13 +349,14 @@ VBOXSTRICTRC RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Ex)(PVMCPUCC pVCpu, TMP
     RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(pVCpu, &NewRsp, sizeof(TMPL_MEM_TYPE));
 
     /* Write the word the lazy way. */
+    uint8_t        bUnmapInfo;
     TMPL_MEM_TYPE *puDst;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
-                                IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
+    VBOXSTRICTRC   rc = iemMemMap(pVCpu, (void **)&puDst, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+                                  IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puDst = uValue;
-        rc = iemMemCommitAndUnmap(pVCpu, puDst, IEM_ACCESS_STACK_W);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
 
         /* Commit the new RSP value unless we an access handler made trouble. */
         if (rc == VINF_SUCCESS)
@@ -376,13 +388,14 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Ex)(PVMCPUCC pVCpu, TMPL_MEM_TYPE *pu
     RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pVCpu, &NewRsp, sizeof(TMPL_MEM_TYPE));
 
     /* Write the word the lazy way. */
+    uint8_t              bUnmapInfo;
     TMPL_MEM_TYPE const *puSrc;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
                                 IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puValue = *puSrc;
-        rc = iemMemCommitAndUnmap(pVCpu, (void *)puSrc, IEM_ACCESS_STACK_R);
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
 
         /* Commit the new RSP value. */
         if (rc == VINF_SUCCESS)
@@ -413,10 +426,11 @@ void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_M
     RTGCPTR const GCPtrTop = iemRegGetRspForPush(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
 
     /* Write the data. */
-    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+    uint8_t        bUnmapInfo;
+    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
                                                          IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
     *puDst = uValue;
-    iemMemCommitAndUnmapJmp(pVCpu, puDst, IEM_ACCESS_STACK_W);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
 
     /* Commit the RSP change. */
     Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
@@ -439,10 +453,11 @@ TMPL_MEM_TYPE RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu
     RTGCPTR const GCPtrTop = iemRegGetRspForPop(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
 
     /* Read the data. */
-    TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
-                                                                     IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
+    uint8_t              bUnmapInfo;
+    TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS,
+                                                                     GCPtrTop, IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
     TMPL_MEM_TYPE const  uRet = *puSrc;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)puSrc, IEM_ACCESS_STACK_R);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
 
     /* Commit the RSP change and return the popped value. */
     Log10(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
@@ -477,10 +492,11 @@ void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(PVMCPUCC pVCpu, TM
      *
      * Docs indicate the behavior changed maybe in Pentium or Pentium Pro. Check
      * ancient hardware when it actually did change. */
-    uint16_t *puDst = (uint16_t *)iemMemMapJmp(pVCpu, sizeof(uint16_t), X86_SREG_SS, GCPtrTop,
+    uint8_t   bUnmapInfo;
+    uint16_t *puDst = (uint16_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint16_t), X86_SREG_SS, GCPtrTop,
                                                IEM_ACCESS_STACK_W, sizeof(uint16_t) - 1); /** @todo 2 or 4 alignment check for PUSH SS? */
     *puDst = (uint16_t)uValue;
-    iemMemCommitAndUnmapJmp(pVCpu, puDst, IEM_ACCESS_STACK_W);
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
 
     /* Commit the RSP change. */
     Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
