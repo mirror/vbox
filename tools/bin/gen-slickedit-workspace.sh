@@ -541,6 +541,7 @@ EOF
 #define DECL_FORCE_INLINE(type)         inline type
 #define DECL_FORCE_INLINE_THROW(type)   inline type
 #define DECL_INVALID(type)              type
+#define DECL_NO_RETURN(a_RetType)       a_RetType
 #define DECLCALLBACK(a_RetType)         a_RetType
 #define DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)                   a_RetType (*a_Name) a_Args
 #define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args)    a_RetType (*a_Name) a_Args
@@ -624,6 +625,10 @@ EOF
 #define IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList)   a_RetType a_Name a_ArgList
 #define IEM_DECL_IEMTHREADEDFUNC_DEF(a_Name)   VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 #define IEM_DECL_IEMTHREADEDFUNC_PROTO(a_Name) VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
+#define IEM_DECL_NATIVE_HLP_DEF(a_RetType, a_Name, a_ArgList)   a_RetType a_Name a_ArgList
+#define IEM_DECL_NATIVE_HLP_PROTO(a_RetType, a_Name, a_ArgList) a_RetType a_Name a_ArgList
+#define IEM_DECL_IEMNATIVERECOMPFUNC_DEF(a_Name) uint32_t a_Name(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
+#define IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(a_Name) FNIEMNATIVERECOMPFUNC a_Name
 #define IEM_MC_LOCAL(a_Type, a_Name)                       a_Type a_Name
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg)                 a_Type a_Name
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)  a_Type const a_Name = a_Value
