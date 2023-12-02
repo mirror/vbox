@@ -143,8 +143,6 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_MEM_FLAT_XMM_U64_AND_XREG_XMM':                (None, True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_RAX_RDX_U64':  (None, True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64': (None, True,  False, ),
-    'IEM_MC_MEM_FLAT_MAP_EX':                                    (None, True,  False, ),
-    'IEM_MC_MEM_FLAT_MAP':                                       (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP_D80_WO':                                (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP_I16_WO':                                (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP_I32_WO':                                (None, True,  False, ),

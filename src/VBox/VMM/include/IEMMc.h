@@ -1505,46 +1505,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #endif
 
 
-/** Maps guest memory for direct or bounce buffered access.
- * The purpose is to pass it to an operand implementation, thus the a_iArg.
- * @remarks     May return.
- * @deprecated
- */
-#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), (a_iSeg), \
-                                       (a_GCPtrMem), (a_fAccess), sizeof(*(a_pMem)) - 1))
-
-/** Flat variant of IEM_MC_MEM_MAP.
- * @deprecated
- */
-#define IEM_MC_MEM_FLAT_MAP(a_pMem, a_fAccess, a_GCPtrMem, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), UINT8_MAX, \
-                                       (a_GCPtrMem), (a_fAccess), sizeof(*(a_pMem)) - 1))
-
-/** Maps guest memory for direct or bounce buffered access.
- * The purpose is to pass it to an operand implementation, thus the a_iArg.
- * @remarks     May return.
- * @deprecated
- */
-#define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), (a_iSeg), \
-                                       (a_GCPtrMem), (a_fAccess), (a_cbAlign)))
-
-/** Flat variant of IEM_MC_MEM_MAP_EX.
- * @deprecated
- */
-#define IEM_MC_MEM_FLAT_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_GCPtrMem, a_cbAlign, a_iArg) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), UINT8_MAX, \
-                                       (a_GCPtrMem), (a_fAccess), (a_cbAlign)))
-
-/** Commits the memory and unmaps the guest memory.
- * @remarks     May return.
- * @deprecated
- */
-#define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), (a_fAccess)))
-
-
 /* 8-bit */
 
 /**
