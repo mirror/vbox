@@ -6275,7 +6275,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, 
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
  * @param   ppvMem      Where to return the pointer to the mapped memory.
- * @param   bUnmapInfo  Where to return unmap info to be passed to
+ * @param   pbUnmapInfo Where to return unmap info to be passed to
  *                      iemMemCommitAndUnmap or iemMemRollbackAndUnmap when
  *                      done.
  * @param   cbMem       The number of bytes to map.  This is usually 1, 2, 4, 6,
@@ -7710,8 +7710,6 @@ VBOXSTRICTRC iemMemStackPushBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pvMem               The pointer returned by
- *                              iemMemStackPushBeginSpecial().
  * @param   uNewRsp             The new RSP value returned by
  *                              iemMemStackPushBeginSpecial().
  */
