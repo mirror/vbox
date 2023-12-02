@@ -7763,7 +7763,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
         }
     }
 #endif
-
+    RT_NOREF(cbMem);
 
 #ifdef VBOX_STRICT
     /*
