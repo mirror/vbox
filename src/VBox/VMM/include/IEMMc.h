@@ -2265,27 +2265,27 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapRwJmp(pVCpu, (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_bMapInfo)         iemMemCommitAndUnmapRwJmp(pVCpu, (a_bMapInfo))
 #endif
 
 /** Commits the memory and unmaps guest memory previously mapped W.
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapWoJmp(pVCpu, (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_bMapInfo)         iemMemCommitAndUnmapWoJmp(pVCpu, (a_bMapInfo))
 #endif
 
 /** Commits the memory and unmaps guest memory previously mapped R.
  * @remarks     May return.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)    IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)    iemMemCommitAndUnmapRoJmp(pVCpu, (a_bMapInfo))
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_bMapInfo)         iemMemCommitAndUnmapRoJmp(pVCpu, (a_bMapInfo))
 #endif
 
 
@@ -2299,7 +2299,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @remarks     May in theory return - for now.
  */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { \
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_bMapInfo, a_u16FSW) do { \
         if (   !(a_u16FSW & X86_FSW_ES) \
             || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
                  & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
@@ -2308,7 +2308,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
             iemMemRollbackAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W); \
     } while (0)
 #else
-# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { \
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_bMapInfo, a_u16FSW) do { \
         if (   !(a_u16FSW & X86_FSW_ES) \
             || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
                  & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
@@ -2320,11 +2320,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** Rolls back (conceptually only, assumes no writes) and unmaps the guest  memory. */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
-        iemMemRollbackAndUnmap(pVCpu, a_bMapInfo)
+# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_bMapInfo)       iemMemRollbackAndUnmap(pVCpu, a_bMapInfo)
 #else
-# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
-        iemMemRollbackAndUnmapWo(pVCpu, a_bMapInfo)
+# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_bMapInfo)       iemMemRollbackAndUnmapWo(pVCpu, a_bMapInfo)
 #endif
 
 

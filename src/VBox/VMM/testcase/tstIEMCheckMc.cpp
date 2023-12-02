@@ -952,11 +952,11 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu128Mem); (a_pu128Mem) = NULL; CHK_PTYPE(RTUINT128U const *, a_pu128Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 #define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu128Mem); (a_pu128Mem) = NULL; CHK_PTYPE(RTUINT128U *,       a_pu128Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo)              do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_VAR(a_u16FSW); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_bMapInfo)                          do { CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_bMapInfo)                          do { CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_bMapInfo)                          do { CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_bMapInfo)                        do { CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_bMapInfo, a_u16FSW)  do { CHK_VAR(a_bMapInfo); CHK_VAR(a_u16FSW); (void)fMcBegin; } while (0)
 
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                 do { (void)fMcBegin; } while (0)
