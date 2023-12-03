@@ -7423,6 +7423,101 @@ iemNativeEmitStoreGregU8Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
+#define IEM_MC_STORE_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
+    off = iemNativeEmitStoreGregU8(pReNative, off, a_iGRegEx, a_u8Value)
+
+/** Emits code for IEM_MC_STORE_GREG_U8_THREADED. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGRegEx, uint8_t idxValueVar)
+{
+    Assert(iGRegEx < 20);
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxValueVar);
+
+    /*
+     * If it's a constant value (unlikely) we treat this as a
+     * IEM_MC_STORE_GREG_U8_CONST statement.
+     */
+    if (pReNative->Core.aVars[idxValueVar].enmKind == kIemNativeVarKind_Stack)
+    { /* likely */ }
+    else
+    {
+        AssertStmt(pReNative->Core.aVars[idxValueVar].enmKind != kIemNativeVarKind_Immediate,
+                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+        return iemNativeEmitStoreGregU8Const(pReNative, off, iGRegEx, (uint8_t)pReNative->Core.aVars[idxValueVar].u.uValue);
+    }
+
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegEx & 15),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+    uint8_t const    idxVarReg = iemNativeVarAllocRegister(pReNative, idxValueVar, &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_AMD64
+    /* To the lowest byte of the register: mov reg8, reg8(r/m) */
+    if (iGRegEx < 16)
+    {
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+        if (idxGstTmpReg >= 8 || idxVarReg >= 8)
+            pbCodeBuf[off++] = (idxGstTmpReg >= 8 ? X86_OP_REX_R : 0) | (idxVarReg >= 8 ? X86_OP_REX_B : 0);
+        else if (idxGstTmpReg >= 4)
+            pbCodeBuf[off++] = X86_OP_REX;
+        pbCodeBuf[off++] = 0x8a;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg & 7, idxVarReg & 7);
+    }
+    /* Otherwise it's to ah, ch, dh or bh from al, cl, dl or bl: use mov r8, r8 if we can, otherwise, we rotate. */
+    else if (idxGstTmpReg < 4 && idxVarReg < 4)
+    {
+        /** @todo test this.   */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2+1);
+        pbCodeBuf[off++] = 0x8a;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg + 4, idxVarReg);
+    }
+    else
+    {
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 15);
+
+        /* ror reg64, 8 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0xc1;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = 8;
+
+        /* mov reg8, reg8(r/m)  */
+        if (idxGstTmpReg >= 8 || idxVarReg >= 8)
+            pbCodeBuf[off++] = (idxGstTmpReg >= 8 ? X86_OP_REX_R : 0) | (idxVarReg >= 8 ? X86_OP_REX_B : 0);
+        else if (idxGstTmpReg >= 4)
+            pbCodeBuf[off++] = X86_OP_REX;
+        pbCodeBuf[off++] = 0x8a;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg & 7, idxVarReg & 7);
+
+        /* rol reg64, 8 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0xc1;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = 8;
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    /* bfi w1, w2, 0, 8 - moves bits 7:0 from idxVarReg to idxGstTmpReg bits 7:0.
+            or
+       bfi w1, w2, 8, 8 - moves bits 7:0 from idxVarReg to idxGstTmpReg bits 15:8. */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    if (iGRegEx < 16)
+        pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxVarReg, 0, 8);
+    else
+        pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxVarReg, 8, 8);
+
+#else
+# error "Port me!"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGRegEx & 15]));
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+
 #define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16Const) \
     off = iemNativeEmitStoreGregU16Const(pReNative, off, a_iGReg, a_u16Const)
 

@@ -89,9 +89,9 @@ g_dMcStmtThreaded = {
     'IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS':    (None, True,  True,  ),
     'IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS':    (None, True,  True,  ),
 
-    'IEM_MC_STORE_GREG_U8_THREADED':                             (None, True,  False, ),
+    'IEM_MC_STORE_GREG_U8_THREADED':                             (None, True,  True,  ),
     'IEM_MC_STORE_GREG_U8_CONST_THREADED':                       (None, True,  True,  ),
-    'IEM_MC_FETCH_GREG_U8_THREADED':                             (None, False, True, ),
+    'IEM_MC_FETCH_GREG_U8_THREADED':                             (None, False, True,  ),
     'IEM_MC_FETCH_GREG_U8_SX_U16_THREADED':                      (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_SX_U32_THREADED':                      (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_SX_U64_THREADED':                      (None, False, False, ),

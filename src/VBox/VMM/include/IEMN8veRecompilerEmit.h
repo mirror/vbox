@@ -957,6 +957,7 @@ iemNativeEmitLoadGprByBpU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xb7;
     return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 
@@ -981,6 +982,7 @@ iemNativeEmitLoadGprByBpU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xb6;
     return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 
