@@ -1354,6 +1354,14 @@ void UIFileManagerTable::setModelFileSystem(bool fIsWindowsFileSystem)
 {
     if (m_pModel)
         m_pModel->setIsWindowsFileSystem(fIsWindowsFileSystem);
+    /* On Windows it is generally desired to sort file objects case insensitively: */
+    if (m_pProxyModel)
+    {
+        if (fIsWindowsFileSystem)
+            m_pProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+        else
+            m_pProxyModel->setSortCaseSensitivity(Qt::CaseSensitive);
+    }
 }
 
 #include "UIFileManagerTable.moc"

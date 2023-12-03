@@ -160,7 +160,7 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
                                                         QMap<QString, UICustomFileSystemItem*> &fileObjects)
 {
 
-    QDir directory(strPath);
+    QDir directory(UIPathOperations::addTrailingDelimiters(strPath));
     /* For some reason when this filter is applied, folder content  QDir::entryInfoList()
        returns an empty list: */
     /*directory.setFilter(QDir::NoDotAndDotDot);*/
@@ -173,7 +173,6 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
-
         UICustomFileSystemItem *item = new UICustomFileSystemItem(fileInfo.fileName(), parent, fileType(fileInfo));
         if (!item)
             continue;
