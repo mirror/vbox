@@ -1066,16 +1066,16 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     (a_XmmDst).au64[(a_iQWord)] = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem) \
-    iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U128_NO_AC(a_u128Dst, a_GCPtrMem) \
-    iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE(a_u128Dst, a_GCPtrMem) \
     iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_XMM(a_XmmDst, a_GCPtrMem) \
-    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_NO_AC(a_XmmDst, a_GCPtrMem) \
-    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE(a_XmmDst, a_GCPtrMem) \
     iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_U32(a_XmmDst, a_iDWord, a_GCPtrMem) \
@@ -1089,7 +1089,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         (a_Dst).uSrc1.au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[1]; \
     } while (0)
 # define IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128(a_Dst, a_iXReg1, a_GCPtrMem2) do { \
-        iemMemFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, UINT8_MAX, (a_GCPtrMem2)); \
+        iemMemFlatFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, (a_GCPtrMem2)); \
         (a_Dst).uSrc1.au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[0]; \
         (a_Dst).uSrc1.au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[1]; \
     } while (0)
@@ -1150,14 +1150,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 
 # define IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_RAX_RDX_U64(a_Dst, a_iXReg1, a_GCPtrMem2) do { \
-        iemMemFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, UINT8_MAX, (a_GCPtrMem2)); \
+        iemMemFlatFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, (a_GCPtrMem2)); \
         (a_Dst).uSrc1.au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[0]; \
         (a_Dst).uSrc1.au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[1]; \
         (a_Dst).u64Rax        = pVCpu->cpum.GstCtx.rax; \
         (a_Dst).u64Rdx        = pVCpu->cpum.GstCtx.rdx; \
     } while (0)
 # define IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64(a_Dst, a_iXReg1, a_GCPtrMem2) do { \
-        iemMemFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, UINT8_MAX, (a_GCPtrMem2)); \
+        iemMemFlatFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, (a_GCPtrMem2)); \
         (a_Dst).uSrc1.au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[0]; \
         (a_Dst).uSrc1.au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg1)].au64[1]; \
         (a_Dst).u64Rax        = (int64_t)(int32_t)pVCpu->cpum.GstCtx.eax; \
@@ -1429,7 +1429,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU128AlignedSseJmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
 
 # define IEM_MC_STORE_MEM_FLAT_U128(a_GCPtrMem, a_u128Value) \
-    iemMemStoreDataU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), &(a_u128Value))
+    iemMemFlatStoreDataU128Jmp(pVCpu, (a_GCPtrMem), &(a_u128Value))
 # define IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE(a_GCPtrMem, a_u128Value) \
     iemMemStoreDataU128AlignedSseJmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u128Value))
 #endif
