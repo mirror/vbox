@@ -8203,16 +8203,11 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     Assert(cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8);
     AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
 #ifdef VBOX_STRICT
-    if (   (   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
-        && (   iSegReg == UINT8_MAX
-            || iSegReg == X86_SREG_DS
-            || iSegReg == X86_SREG_ES
-            || iSegReg == X86_SREG_SS
-            || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
+    if (iSegReg == UINT8_MAX)
     {
-        Assert(iSegReg == UINT8_MAX);
+        Assert(   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
         switch (cbMem)
         {
             case 1: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU8  : (uintptr_t)iemNativeHlpMemFlatStoreDataU8 )); break;
@@ -8761,16 +8756,11 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
          : ((a_fAccess) & IEM_ACCESS_TYPE_MASK) == IEM_ACCESS_TYPE_READ \
          ? (uintptr_t)RT_CONCAT(a_fnBase,Ro) : (uintptr_t)RT_CONCAT(a_fnBase,Wo) )
 
-    if (   (   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
-        && (   iSegReg == UINT8_MAX
-            || iSegReg == X86_SREG_DS
-            || iSegReg == X86_SREG_ES
-            || iSegReg == X86_SREG_SS
-            || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
+    if (iSegReg == UINT8_MAX)
     {
-        Assert(iSegReg == UINT8_MAX);
+        Assert(   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
         switch (cbMem)
         {
             case 1:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU8)); break;
