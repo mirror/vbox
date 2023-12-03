@@ -1692,6 +1692,147 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemMapDataU8Ro,(PVMCPUCC pV
 
 
 /**
+ * Used by TB code to map unsigned 16-bit data read-write w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU16RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 16-bit data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU16WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 16-bit data readonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                       RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU16RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data read-write w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU32RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU32WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data readonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                       RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU32RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data read-write w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU64RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                 RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU64WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data readonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                       RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU64RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map 80-bit float data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                   RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataR80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataR80WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map 80-bit BCD data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataD80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataD80WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data read-write w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                    RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU128RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data writeonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                    RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU128WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data readonly w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U const *, iemNativeHlpMemMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                                          RTGCPTR GCPtrMem, uint8_t iSegReg))
+{
+    return iemMemMapDataU128RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128RoSafeJmp */
+}
+
+
+
+/**
  * Used by TB code to commit and unmap a read-write memory mapping.
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCommitAndUnmapRw,(PVMCPUCC pVCpu, uint8_t bUnmapInfo))
@@ -1721,7 +1862,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCommitAndUnmapRo,(PVMCPUCC pVCpu, u
 /* Flat memory helpers: */
 
 /**
- * Used by TB code to load unsigned 8-bit data w/ segmentation.
+ * Used by TB code to load unsigned 8-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
@@ -1730,7 +1871,7 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu,
 
 
 /**
- * Used by TB code to load unsigned 16-bit data w/ segmentation.
+ * Used by TB code to load unsigned 16-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
@@ -1739,7 +1880,7 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCp
 
 
 /**
- * Used by TB code to load unsigned 32-bit data w/ segmentation.
+ * Used by TB code to load unsigned 32-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
@@ -1748,7 +1889,7 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCp
 
 
 /**
- * Used by TB code to load unsigned 64-bit data w/ segmentation.
+ * Used by TB code to load unsigned 64-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFlatFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
@@ -1757,7 +1898,7 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFlatFetchDataU64,(PVMCPUCC pVCp
 
 
 /**
- * Used by TB code to store unsigned 8-bit data w/ segmentation.
+ * Used by TB code to store unsigned 8-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t u8Value))
 {
@@ -1766,7 +1907,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU8,(PVMCPUCC pVCpu, RT
 
 
 /**
- * Used by TB code to store unsigned 16-bit data w/ segmentation.
+ * Used by TB code to store unsigned 16-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value))
 {
@@ -1775,7 +1916,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU16,(PVMCPUCC pVCpu, R
 
 
 /**
- * Used by TB code to store unsigned 32-bit data w/ segmentation.
+ * Used by TB code to store unsigned 32-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value))
 {
@@ -1784,7 +1925,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU32,(PVMCPUCC pVCpu, R
 
 
 /**
- * Used by TB code to store unsigned 64-bit data w/ segmentation.
+ * Used by TB code to store unsigned 64-bit data w/ flat address.
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint64_t u64Value))
 {
@@ -1792,6 +1933,157 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, R
 }
 
 
+/**
+ * Used by TB code to map unsigned 8-bit data read-write w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU8RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 8-bit data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU8WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 8-bit data readonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemFlatMapDataU8Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU8RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 16-bit data read-write w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU16RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 16-bit data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU16WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 16-bit data readonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemFlatMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU16RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data read-write w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU32RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU32WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 32-bit data readonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemFlatMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU32RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data read-write w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU64RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU64WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 64-bit data readonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemFlatMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU64RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64RoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map 80-bit float data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemFlatMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataR80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataR80WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map 80-bit BCD data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemFlatMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataD80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataD80WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data read-write w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU128RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128RwSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data writeonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU128WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128WoSafeJmp */
+}
+
+
+/**
+ * Used by TB code to map unsigned 128-bit data readonly w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTUINT128U const *, iemNativeHlpMemFlatMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
+{
+    return iemMemFlatMapDataU128RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128RoSafeJmp */
+}
 
 
 /**
@@ -8238,6 +8530,203 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                                     (uintptr_t)iemNativeHlpMemMapDataU8Ro, pCallEntry->idxInstr)
 
 
+#define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE,  sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU16Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU16Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU16Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(int16_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU16Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU32Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU32Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU32Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(int32_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU32Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU64Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU64Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU64Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(int64_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU64Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(RTFLOAT80U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataR80Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(RTFLOAT80U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, /** @todo check BCD align */ \
+                                    (uintptr_t)iemNativeHlpMemMapDataD80Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU128Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU128Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemMapDataU128Ro, pCallEntry->idxInstr)
+
+
+
+#define IEM_MC_MEM_FLAT_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu8Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE,  0 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU8Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu8Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t), \
+                                    IEM_ACCESS_TYPE_WRITE,  0 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU8Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu8Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t), \
+                                    IEM_ACCESS_TYPE_READ,  0 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU8Ro, pCallEntry->idxInstr)
+
+
+#define IEM_MC_MEM_FLAT_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE,  sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU16Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU16Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu16Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU16Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi16Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(int16_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint16_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU16Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_FLAT_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU32Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU32Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu32Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU32Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi32Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(int32_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint32_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU32Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_FLAT_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU64Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU64Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu64Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU64Ro, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pi64Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(int64_t), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU64Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pr80Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(RTFLOAT80U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataR80Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pd80Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(RTFLOAT80U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(uint64_t) - 1 /*fAlignMask*/, /** @todo check BCD align */ \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataD80Wo, pCallEntry->idxInstr) \
+
+
+#define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE, sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU128Rw, pCallEntry->idxInstr)
+
+#define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_WRITE, sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU128Wo, pCallEntry->idxInstr) \
+
+#define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    off = iemNativeEmitMemMapCommon(pReNative, off, a_pu128Mem, a_bUnmapInfo, UINT8_MAX, a_GCPtrMem, sizeof(RTUINT128U), \
+                                    IEM_ACCESS_TYPE_READ,  sizeof(RTUINT128U) - 1 /*fAlignMask*/, \
+                                    (uintptr_t)iemNativeHlpMemFlatMapDataU128Ro, pCallEntry->idxInstr)
+
+
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarMem, uint8_t idxVarUnmapInfo,
                           uint8_t iSegReg, uint8_t idxVarGCPtrMem, uint8_t cbMem, uint32_t fAccess, uint8_t fAlignMask,
@@ -8263,7 +8752,6 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
     Assert(iSegReg < 6 || iSegReg == UINT8_MAX);
 
-    Assert(cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8 || cbMem == 10 || cbMem == 16 || cbMem == 32 || cbMem == 64);
     AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
 
 #ifdef VBOX_STRICT
@@ -8283,15 +8771,24 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
             || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
     {
         Assert(iSegReg == UINT8_MAX);
-#if 0
         switch (cbMem)
         {
-            case 1: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU8  : (uintptr_t)iemNativeHlpMemFlatStoreDataU8 )); break;
-            case 2: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU16 : (uintptr_t)iemNativeHlpMemFlatStoreDataU16)); break;
-            case 4: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU32 : (uintptr_t)iemNativeHlpMemFlatStoreDataU32)); break;
-            case 8: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU64 : (uintptr_t)iemNativeHlpMemFlatStoreDataU64)); break;
+            case 1:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU8)); break;
+            case 2:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU16)); break;
+            case 4:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU32)); break;
+            case 8:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU64)); break;
+            case 10:
+                Assert(   pfnFunction == (uintptr_t)iemNativeHlpMemFlatMapDataR80Wo
+                       || pfnFunction == (uintptr_t)iemNativeHlpMemFlatMapDataD80Wo);
+                Assert((fAccess & IEM_ACCESS_TYPE_MASK) == IEM_ACCESS_TYPE_WRITE);
+                break;
+            case 16: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU128)); break;
+# if 0
+            case 32: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU256)); break;
+            case 64: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemFlatMapDataU512)); break;
+# endif
+            default: AssertFailed(); break;
         }
-#endif
     }
     else
     {
@@ -8299,18 +8796,23 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
         switch (cbMem)
         {
             case 1:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU8)); break;
-#if 0
             case 2:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU16)); break;
             case 4:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU32)); break;
             case 8:  Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU64)); break;
-            case 10: Assert(   pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataR80)
-                            || pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataD80) ); break;
+            case 10:
+                Assert(   pfnFunction == (uintptr_t)iemNativeHlpMemMapDataR80Wo
+                       || pfnFunction == (uintptr_t)iemNativeHlpMemMapDataD80Wo);
+                Assert((fAccess & IEM_ACCESS_TYPE_MASK) == IEM_ACCESS_TYPE_WRITE);
+                break;
             case 16: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU128)); break;
+# if 0
             case 32: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU256)); break;
             case 64: Assert(pfnFunction == IEM_MAP_HLP_FN(fAccess, iemNativeHlpMemMapDataU512)); break;
-#endif
+# endif
+            default: AssertFailed(); break;
         }
     }
+# undef IEM_MAP_HLP_FN
 #endif
 
 #ifdef VBOX_STRICT
