@@ -855,15 +855,15 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
     QStringList removedEntries;
     foreach (const QString &strPart, list)
     {
+        QStringList fileEntry;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        fileEntry = strPart.split("=", Qt::SkipEmptyParts);
+#else
+        fileEntry = strPart.split("=", QString::SkipEmptyParts);
+#endif
         /* We currently do not support different on-ISO names for different namespaces. */
         if (strPart.startsWith("/") && strPart.count('=') <= 1)
         {
-            QStringList fileEntry;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-            fileEntry = strPart.split("=", Qt::SkipEmptyParts);
-#else
-            fileEntry = strPart.split("=", QString::SkipEmptyParts);
-#endif
             if (fileEntry.size() == 1)
             {
                 QFileInfo fileInfo(fileEntry[0]);
@@ -879,6 +879,15 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
                     fileEntries[fileEntry[0]] = fileEntry[1];
                 else if (fileEntry[1] == cRemoveText)
                     removedEntries.append(fileEntry[0]);
+
+            }
+        }
+        else
+        {
+            if(fileEntry.size() == 2 && fileEntry[0].contains("import-iso", Qt::CaseInsensitive))
+            {
+                if (QFileInfo(fileEntry[1]).exists())
+                    importISOContentToViso(fileEntry[1]);
             }
         }
     }
