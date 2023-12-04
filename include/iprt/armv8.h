@@ -3027,7 +3027,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbfm(uint32_t iRegResult, uint32_t iR
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtb(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = true)
 {
-    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 7, f64Bit);
+    return Armv8A64MkInstrSbfm(iRegResult, iRegSrc, 0, 7, f64Bit);
 }
 
 
@@ -3035,7 +3035,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtb(uint32_t iRegResult, uint32_t iR
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxth(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = true)
 {
-    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 15, f64Bit);
+    return Armv8A64MkInstrSbfm(iRegResult, iRegSrc, 0, 15, f64Bit);
 }
 
 
@@ -3043,7 +3043,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxth(uint32_t iRegResult, uint32_t iR
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtw(uint32_t iRegResult, uint32_t iRegSrc)
 {
-    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 31, true /*f64Bit*/);
+    return Armv8A64MkInstrSbfm(iRegResult, iRegSrc, 0, 31, true /*f64Bit*/);
 }
 
 
