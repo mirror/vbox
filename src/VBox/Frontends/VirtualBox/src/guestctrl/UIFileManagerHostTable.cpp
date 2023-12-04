@@ -164,12 +164,12 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
     /* For some reason when this filter is applied, folder content  QDir::entryInfoList()
        returns an empty list: */
     /*directory.setFilter(QDir::NoDotAndDotDot);*/
-    parent->setIsOpened(true);
     if (!directory.exists() || !directory.isReadable())
         return false;
     QFileInfoList entries = directory.entryInfoList(QDir::Hidden|QDir::AllEntries|QDir::NoDotAndDotDot);
     if (entries.isEmpty())
         return false;
+    parent->setIsOpened(true);
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
