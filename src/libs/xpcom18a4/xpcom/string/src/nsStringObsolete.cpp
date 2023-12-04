@@ -288,7 +288,7 @@ PRInt32
 Compare1To1(const char* aStr1,const char* aStr2,PRUint32 aCount,PRBool aIgnoreCase){
   PRInt32 result=0;
   if(aIgnoreCase)
-    result=PRInt32(PL_strncasecmp(aStr1, aStr2, aCount));
+    result=PRInt32(RTStrNICmp(aStr1, aStr2, aCount));
   else
     result=nsCharTraits<char>::compare(aStr1,aStr2,aCount);
 

@@ -38,7 +38,6 @@
 
 #include "nsCRT.h"
 #include "nsString.h"
-#include "plstr.h"
 #include <stdlib.h>
 
 // The return from strcmp etc is only defined to be postive, zero or
@@ -62,8 +61,6 @@ static void Check(const char* s1, const char* s2, PRIntn n)
 {
   PRIntn clib = RTStrCmp(s1, s2);
   PRIntn clib_n = RTStrNCmp(s1, s2, n);
-  PRIntn clib_case = PL_strcasecmp(s1, s2);
-  PRIntn clib_case_n = PL_strncasecmp(s1, s2, n);
 
   nsAutoString t1,t2; 
   t1.AssignWithConversion(s1);

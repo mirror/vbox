@@ -59,6 +59,7 @@
 #include "nsIObserverService.h"
 
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 static PRBool PR_CALLBACK
@@ -204,7 +205,7 @@ nsNativeComponentLoader::RegisterComponentsInDir(PRInt32 when,
                     rv = dirEntry->GetNativeLeafName(leafName);
                     if (   NS_FAILED(rv)
                         || leafName.Length() < sizeof(".dSYM")
-                        || PL_strcasecmp(leafName.get() + (leafName.Length() - sizeof(".dSYM") + 1), ".dSYM"))
+                        || RTStrICmp(leafName.get() + (leafName.Length() - sizeof(".dSYM") + 1), ".dSYM"))
 #endif
                         rv = RegisterComponentsInDir(when, dirEntry);
                 }
@@ -572,14 +573,14 @@ nsNativeComponentLoader::AutoRegisterComponent(PRInt32 when,
         return rv;
     size_t cchLeafName = strLeafName.Length();
     if (   cchLeafName <= sizeof(s_szSuff)
-        || PL_strcasecmp(strLeafName.get() + cchLeafName - sizeof(s_szSuff) + 1, s_szSuff))
+        || RTStrICmp(strLeafName.get() + cchLeafName - sizeof(s_szSuff) + 1, s_szSuff))
     {
         Log(("Skipping '%s'...", strLeafName.get()));
         return NS_OK; /* skip */
     }
 #ifndef VBOX_IN_32_ON_64_MAIN_API
     if (   cchLeafName >= sizeof(s_szSuffInvalid)
-        && !PL_strcasecmp(strLeafName.get() + cchLeafName - sizeof(s_szSuffInvalid) + 1, s_szSuffInvalid))
+        && !RTStrICmp(strLeafName.get() + cchLeafName - sizeof(s_szSuffInvalid) + 1, s_szSuffInvalid))
     {
         Log(("Skipping '%s' (#2)...", strLeafName.get()));
         return NS_OK; /* skip */

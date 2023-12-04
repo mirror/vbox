@@ -44,7 +44,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "nsMemory.h"
-#include "plstr.h"
 #include "nscore.h"
 #include "prtypes.h"
 
@@ -144,21 +143,6 @@ public:
   static PRUint32 strlen(const char* s) {                                       
     return PRUint32(::strlen(s));                                               
   }                                                                             
-
-  /// Case-insensitive string comparison.
-  static PRInt32 strcasecmp(const char* s1, const char* s2) {
-    return PRInt32(PL_strcasecmp(s1, s2));
-  }
-
-  /// Case-insensitive string comparison with length
-  static PRInt32 strncasecmp(const char* s1, const char* s2, PRUint32 aMaxLen) {
-    PRInt32 result=PRInt32(PL_strncasecmp(s1, s2, aMaxLen));
-    //Egads. PL_strncasecmp is returning *very* negative numbers.
-    //Some folks expect -1,0,1, so let's temper its enthusiasm.
-    if (result<0) 
-      result=-1;
-    return result;
-  }
   
   static char* strdup(const char* str) {
     return RTStrDup(str);

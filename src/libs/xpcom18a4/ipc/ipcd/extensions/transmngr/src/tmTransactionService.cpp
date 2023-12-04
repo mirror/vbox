@@ -40,7 +40,6 @@
 #include "nsCOMPtr.h"
 #include "nsIServiceManager.h"
 #include "nsReadableUtils.h"
-#include "plstr.h"
 #include "ipcITransactionObserver.h"
 #include "tmTransaction.h"
 #include "tmTransactionService.h"

@@ -67,7 +67,7 @@ xptiFileType::Type xptiFileType::GetType(const char* name)
     int len = strlen(name);
     for(const xptiFileTypeEntry* p = g_Entries; p->name; p++)
     {
-        if(len > p->len && 0 == PL_strcasecmp(p->name, &(name[len - p->len])))
+        if(len > p->len && 0 == RTStrICmp(p->name, &(name[len - p->len])))
             return p->type;
     }
     return UNKNOWN;        

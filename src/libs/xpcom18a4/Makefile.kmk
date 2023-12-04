@@ -154,7 +154,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/lib/ds/plarena.h \
 	nsprpub/lib/ds/plarenas.h \
 	nsprpub/lib/ds/plhash.h \
-	nsprpub/lib/libc/include/plstr.h \
 	nsprpub/pr/include/prbit.h \
 	nsprpub/pr/include/prclist.h \
 	nsprpub/pr/include/prinrval.h \
@@ -388,7 +387,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prinrval.c \
 	nsprpub/lib/ds/plarena.c \
 	nsprpub/lib/ds/plhash.c \
-	nsprpub/lib/libc/src/strccmp.c \
 	nsprpub/pr/src/pthreads/ptsynch.c
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)

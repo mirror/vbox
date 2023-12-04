@@ -40,7 +40,6 @@
 #include "nsXPCOMPrivate.h"
 #include "nsDebugImpl.h"
 #include "nsDebug.h"
-#include "plstr.h"
 #include "nsError.h"
 
 #if defined(XP_UNIX) && !defined(UNIX_CRASH_ON_ASSERT)

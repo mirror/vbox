@@ -35,11 +35,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/string.h>
 
 #include <ctype.h>
 #include "nsAString.h"
-#include "plstr.h"
-
 
   // define nsStringComparator
 #include "string-template-def-unichar.h"
@@ -55,7 +54,7 @@
 int
 nsCaseInsensitiveCStringComparator::operator()( const char_type* lhs, const char_type* rhs, PRUint32 aLength ) const
   {
-    PRInt32 result=PRInt32(PL_strncasecmp(lhs, rhs, aLength));
+    PRInt32 result=PRInt32(RTStrNICmp(lhs, rhs, aLength));
     //Egads. PL_strncasecmp is returning *very* negative numbers.
     //Some folks expect -1,0,1, so let's temper its enthusiasm.
     if (result<0) 

@@ -2904,7 +2904,7 @@ DeleteFoundCIDs(PLDHashTable *aTable,
 
     nsFactoryEntry* factoryEntry = entry->mFactoryEntry;
     if (data->cid->Equals(factoryEntry->mCid) &&
-        ((data->regName && !PL_strcasecmp(factoryEntry->mLocation, data->regName)) ||
+        ((data->regName && !RTStrICmp(factoryEntry->mLocation, data->regName)) ||
          (data->factory && data->factory == factoryEntry->mFactory.get())))
         return PL_DHASH_REMOVE;
 
@@ -2982,7 +2982,7 @@ nsComponentManagerImpl::UnregisterComponent(const nsCID &aClass,
 
     // next check to see if there is a CID registered
     old = GetFactoryEntry(aClass);
-    if (old && old->mLocation && !PL_strcasecmp(old->mLocation, registryName))
+    if (old && old->mLocation && !RTStrICmp(old->mLocation, registryName))
     {
         nsAutoMonitor mon(mMon);
         PL_DHashTableOperate(&mFactories, &aClass, PL_DHASH_REMOVE);

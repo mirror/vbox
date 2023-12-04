@@ -42,7 +42,6 @@
 #include "nscore.h"
 #include "nsISupports.h"
 #include "nsVoidArray.h"
-#include "plstr.h"
 #include <stdlib.h>
 #include "nsCOMPtr.h"
 #include "nsCRT.h"

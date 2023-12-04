@@ -78,7 +78,6 @@
 #include "nsAutoLock.h"
 
 #include "pldhash.h"
-#include "plstr.h"
 #include "prtime.h"
 
 #include <stdio.h>

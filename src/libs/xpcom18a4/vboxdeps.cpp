@@ -1,7 +1,6 @@
 /* The usual story: drag stuff from the libraries into the link. */
 
 
-#include <plstr.h>
 #include <nsDeque.h>
 #include <nsHashSets.h>
 #include <xptcall.h>
@@ -13,7 +12,6 @@
 
 uintptr_t deps[] =
 {
-    (uintptr_t)PL_strcasecmp,
     (uintptr_t)PL_HashString,
     (uintptr_t)NS_ProxyRelease,
     (uintptr_t)nsTraceRefcnt::LogRelease,
