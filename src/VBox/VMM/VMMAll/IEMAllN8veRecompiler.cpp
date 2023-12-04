@@ -9703,6 +9703,31 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
 
 /*********************************************************************************************************************************
+*   State and Exceptions                                                                                                         *
+*********************************************************************************************************************************/
+
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE()     off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/)
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()       off = iemNativeEmitPrepareFpuForUse(pReNative, off, false /*fForChange*/)
+
+#define IEM_MC_PREPARE_SSE_USAGE()                  off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/)
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE()     off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/)
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()       off = iemNativeEmitPrepareFpuForUse(pReNative, off, false /*fForChange*/)
+
+#define IEM_MC_PREPARE_AVX_USAGE()                  off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/)
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE()     off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/)
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ()       off = iemNativeEmitPrepareFpuForUse(pReNative, off, false /*fForChange*/)
+
+
+DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool fForChange)
+{
+    /** @todo this needs a lot more work later. */
+    RT_NOREF(pReNative, fForChange);
+    return off;
+}
+
+
+
+/*********************************************************************************************************************************
 *   Builtin functions                                                                                                            *
 *********************************************************************************************************************************/
 

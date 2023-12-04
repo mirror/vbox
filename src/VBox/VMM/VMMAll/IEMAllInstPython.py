@@ -2783,12 +2783,12 @@ class McBlock(object):
 #       sed -n -e "s/^# *define *\(IEM_MC_[A-Z_0-9]*\)[ (].*$/        '\1': McBlock.parseMcGeneric,/p" include/IEMMc.h \
 #       | sort | uniq | gawk "{printf """    %%-60s (%%s,        True)\n""", $1, $2}"
 g_dMcStmtParsers = {
-    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, True,  ),
+    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, True,  ),
+    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, True,  ),
+    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, True,  ),
+    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, True,  ),
+    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, True,  ),
     'IEM_MC_ADD_GREG_U16':                                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_ADD_GREG_U16_TO_LOCAL':                              (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ADD_GREG_U32':                                       (McBlock.parseMcGeneric,           True,  False, ),
