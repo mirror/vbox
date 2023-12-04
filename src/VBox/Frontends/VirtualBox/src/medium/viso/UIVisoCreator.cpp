@@ -491,6 +491,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pHostFileBrowser);
     pContainerLayout->addWidget(m_pHostFileBrowser, 0, 0, 1, 4);
     m_pHostFileBrowser->setModifierActionsVisible(false);
+    m_pHostFileBrowser->setDragDropMode(QAbstractItemView::DragOnly);
 
     prepareVerticalToolBar();
     AssertPtrReturnVoid(m_pVerticalToolBar);

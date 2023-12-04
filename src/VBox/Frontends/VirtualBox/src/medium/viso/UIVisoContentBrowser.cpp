@@ -515,6 +515,8 @@ void UIVisoContentBrowser::sltRestoreItems()
 
 void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> itemList)
 {
+    AssertReturnVoid(m_pModel);
+    AssertReturnVoid(m_pTableProxyModel);
     foreach(UICustomFileSystemItem *pItem, itemList)
     {
         if (!pItem || pItem->isUpDirectory())
@@ -530,9 +532,10 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
             createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), true /* bool bRemove */);
 
         markRemovedUnremovedItemParents(pItem, true);
+        m_pModel->deleteItem(pItem);
     }
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+
+    m_pTableProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)

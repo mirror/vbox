@@ -164,6 +164,7 @@ public:
     /** Peroforms whatever is necessary after a UIFileManagerOptions change. */
     void optionsUpdated();
     bool hasSelection() const;
+    void setDragDropMode(QAbstractItemView::DragDropMode behavior);
 
 public slots:
 

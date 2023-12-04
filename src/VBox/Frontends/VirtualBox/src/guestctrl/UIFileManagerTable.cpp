@@ -1226,6 +1226,12 @@ bool UIFileManagerTable::hasSelection() const
     return false;
 }
 
+void UIFileManagerTable::setDragDropMode(QAbstractItemView::DragDropMode behavior)
+{
+    if (m_pView)
+        m_pView->setDragDropMode(behavior);
+}
+
 void UIFileManagerTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
 {
     if (!m_pPropertiesDialog)

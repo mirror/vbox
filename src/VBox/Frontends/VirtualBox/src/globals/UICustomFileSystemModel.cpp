@@ -29,6 +29,8 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QHeaderView>
+#include <QIODevice>
+#include <QMimeData>
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -421,6 +423,37 @@ UICustomFileSystemModel::UICustomFileSystemModel(QObject *parent)
 {
     m_pRootItem = new UICustomFileSystemItem(QString(), 0, KFsObjType_Directory);
     m_pRootItem->setParentModel(this);
+}
+
+QStringList UICustomFileSystemModel::mimeTypes() const
+{
+    QStringList types;
+    types << "application/vnd.text.list";
+    return types;
+}
+
+QMimeData *UICustomFileSystemModel::mimeData(const QModelIndexList &indexes) const
+{
+    QMimeData *mimeData = new QMimeData();
+    QByteArray encodedData;
+
+    QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+    foreach (const QModelIndex &index, indexes) {
+        if (index.isValid() && index.column() == 0)
+        {
+            UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+            if (!pItem)
+                continue;
+
+            QString strPath = pItem->path();
+            if (!strPath.contains(".."))
+                stream << strPath;
+        }
+    }
+
+    mimeData->setData("application/vnd.text.list", encodedData);
+    return mimeData;
 }
 
 UICustomFileSystemItem* UICustomFileSystemModel::rootItem()
