@@ -7478,7 +7478,7 @@ iemNativeEmitFetchGregU32SxU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     Assert(iGReg < 16);
 
     /*
-     * We can either just load the low 16-bit of the GPR into a host register
+     * We can either just load the low 32-bit of the GPR into a host register
      * for the variable, or we can do so via a shadow copy host register. The
      * latter will avoid having to reload it if it's being stored later, but
      * will waste a host register if it isn't touched again.  Since we don't
@@ -7490,6 +7490,34 @@ iemNativeEmitFetchGregU32SxU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     iemNativeVarSetKindToStack(pReNative, idxDstVar);
     uint8_t const idxVarReg = iemNativeVarAllocRegister(pReNative, idxDstVar, &off);
     off = iemNativeEmitLoadGprSignExtendedFromGpr32(pReNative, off, idxVarReg, idxGstFullReg);
+
+    iemNativeRegFreeTmp(pReNative, idxGstFullReg);
+    return off;
+}
+
+
+#define IEM_MC_FETCH_GREG_U64(a_u64Dst, a_iGReg) \
+    off = iemNativeEmitFetchGregU64(pReNative, off, a_u64Dst, a_iGReg)
+
+#define IEM_MC_FETCH_GREG_U64_ZX_U64(a_u64Dst, a_iGReg) \
+    off = iemNativeEmitFetchGregU64(pReNative, off, a_u64Dst, a_iGReg)
+
+/** Emits code for IEM_MC_FETCH_GREG_U64 (and the
+ *  IEM_MC_FETCH_GREG_U64_ZX_U64 alias). */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg)
+{
+    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint64_t));
+    Assert(iGReg < 16);
+
+    uint8_t const idxGstFullReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarAllocRegister(pReNative, idxDstVar, &off);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxVarReg, idxGstFullReg);
+    /** @todo name the register a shadow one already? */
 
     iemNativeRegFreeTmp(pReNative, idxGstFullReg);
     return off;
@@ -7827,6 +7855,55 @@ iemNativeEmitStoreGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     return off;
 }
 
+
+#define IEM_MC_STORE_GREG_U64_CONST(a_iGReg, a_u64Const) \
+    off = iemNativeEmitStoreGregU64Const(pReNative, off, a_iGReg, a_u64Const)
+
+/** Emits code for IEM_MC_STORE_GREG_U64_CONST. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGregU64Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint64_t uValue)
+{
+    Assert(iGReg < 16);
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForFullWrite);
+    off = iemNativeEmitLoadGprImm64(pReNative, off, idxGstTmpReg, uValue);
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+#define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value) \
+    off = iemNativeEmitStoreGregU64(pReNative, off, a_iGReg, a_u64Value)
+
+/** Emits code for IEM_MC_STORE_GREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t idxValueVar)
+{
+    Assert(iGReg < 16);
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxValueVar);
+
+    /*
+     * If it's a constant value (unlikely) we treat this as a
+     * IEM_MC_STORE_GREG_U64_CONST statement.
+     */
+    if (pReNative->Core.aVars[idxValueVar].enmKind == kIemNativeVarKind_Stack)
+    { /* likely */ }
+    else
+    {
+        AssertStmt(pReNative->Core.aVars[idxValueVar].enmKind != kIemNativeVarKind_Immediate,
+                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+        return iemNativeEmitStoreGregU64Const(pReNative, off, iGReg, pReNative->Core.aVars[idxValueVar].u.uValue);
+    }
+
+    /*
+     * For the rest we allocate a guest register for the variable and writes
+     * it to the CPUMCTX structure.
+     */
+    uint8_t const idxVarReg = iemNativeVarAllocRegisterForGuestReg(pReNative, idxValueVar, IEMNATIVEGSTREG_GPR(iGReg), &off);
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxVarReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+    return off;
+}
 
 
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg) \
