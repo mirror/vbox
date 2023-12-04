@@ -3023,6 +3023,30 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbfm(uint32_t iRegResult, uint32_t iR
 }
 
 
+/** A64: Encodes a SXTB instruction (sign-extend 8-bit value to 32/64-bit).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtb(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = true)
+{
+    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 7, f64Bit);
+}
+
+
+/** A64: Encodes a SXTH instruction (sign-extend 16-bit value to 32/64-bit).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxth(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = true)
+{
+    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 15, f64Bit);
+}
+
+
+/** A64: Encodes a SXTH instruction (sign-extend 32-bit value to 64-bit).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtw(uint32_t iRegResult, uint32_t iRegSrc)
+{
+    return Armv8A64MkInstrSbfm(0, iRegResult, iRegSrc, 0, 31, true /*f64Bit*/);
+}
+
+
 /** A64: Encodes a BFM instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,

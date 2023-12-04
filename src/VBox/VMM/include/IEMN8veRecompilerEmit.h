@@ -779,6 +779,182 @@ iemNativeEmitLoadGprFromGpr8Hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
 
 /**
+ * Sign-extends 32-bit value in @a iGprSrc into a 64-bit value in @a iGprDst.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprSignExtendedFromGpr32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsxd r64, r/m32 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x63;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxtw dst, src */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxtw(iGprDst, iGprSrc);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Sign-extends 16-bit value in @a iGprSrc into a 64-bit value in @a iGprDst.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprSignExtendedFromGpr16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx r64, r/m16 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xbf;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxth dst, src */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxth(iGprDst, iGprSrc);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Sign-extends 16-bit value in @a iGprSrc into a 32-bit value in @a iGprDst.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGpr32SignExtendedFromGpr16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx r64, r/m16 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    if (iGprDst >= 8 || iGprSrc >= 8)
+        pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xbf;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxth dst32, src */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxth(iGprDst, iGprSrc, false /*f64Bit*/);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Sign-extends 8-bit value in @a iGprSrc into a 64-bit value in @a iGprDst.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprSignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx r64, r/m8 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xbe;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxtb dst, src */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxtb(iGprDst, iGprSrc);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Sign-extends 8-bit value in @a iGprSrc into a 32-bit value in @a iGprDst.
+ * @note Bits 64 thru 32 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGpr32SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx r32, r/m8 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    if (iGprDst >= 8 || iGprSrc >= 8)
+        pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xbe;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxtb dst32, src32 */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxtb(iGprDst, iGprSrc, false /*f64Bit*/);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Sign-extends 8-bit value in @a iGprSrc into a 16-bit value in @a iGprDst.
+ * @note Bits 64 thru 16 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGpr16SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx r16, r/m8 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprDst >= 8 || iGprSrc >= 8)
+        pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xbe;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+    /* movzx r32, r/m16 */
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprDst & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sxtb dst32, src32;  and dst32, dst32, #0xffff */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSxtb(iGprDst, iGprSrc, false /*f64Bit*/);
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprDst, 15, 0, false /*f64Bit*/);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a gprdst = gprsrc + addend load.
  */
 DECL_INLINE_THROW(uint32_t)
