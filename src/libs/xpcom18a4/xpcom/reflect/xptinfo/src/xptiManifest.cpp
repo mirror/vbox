@@ -389,7 +389,7 @@ PRBool ReadSectionHeader(nsManifestLineReader& reader,
                 break;
 
             // ignore the leading '['
-            if(0 != PL_strcmp(values[0]+1, token))
+            if(0 != RTStrCmp(values[0]+1, token))
                 break;
 
             if((*count = atoi(values[1])) < minCount)
@@ -461,7 +461,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         goto out;
 
     // VersionLiteral
-    if(0 != PL_strcmp(values[1], g_TOKEN_Version))
+    if(0 != RTStrCmp(values[1], g_TOKEN_Version))
         goto out;
 
     // major
@@ -486,7 +486,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         goto out;
 
     // AppDirLiteral
-    if(0 != PL_strcmp(values[1], g_TOKEN_AppDir))
+    if(0 != RTStrCmp(values[1], g_TOKEN_AppDir))
         goto out;
 
     if(!CurrentAppDirMatchesPersistentDescriptor(aMgr, values[2]))

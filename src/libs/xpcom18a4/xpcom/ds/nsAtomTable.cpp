@@ -35,6 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/string.h>
 
 #include "nsAtomTable.h"
 #include "nsStaticAtom.h"
@@ -180,7 +181,7 @@ AtomTableMatchKey(PLDHashTable *table,
 {
   const AtomTableEntry *he = NS_STATIC_CAST(const AtomTableEntry*, entry);
   const char* keyStr = NS_STATIC_CAST(const char*, key);
-  return nsCRT::strcmp(keyStr, he->get()) == 0;
+  return RTStrCmp(keyStr, he->get()) == 0;
 }
 
 PR_STATIC_CALLBACK(void)

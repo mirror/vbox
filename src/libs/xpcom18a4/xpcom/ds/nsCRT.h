@@ -145,16 +145,6 @@ public:
     return PRUint32(::strlen(s));                                               
   }                                                                             
 
-  /// Compare s1 and s2.
-  static PRInt32 strcmp(const char* s1, const char* s2) {
-    return PRInt32(PL_strcmp(s1, s2));
-  }
-
-  static PRInt32 strncmp(const char* s1, const char* s2,
-                         PRUint32 aMaxLen) {
-    return PRInt32(PL_strncmp(s1, s2, aMaxLen));
-  }
-
   /// Case-insensitive string comparison.
   static PRInt32 strcasecmp(const char* s1, const char* s2) {
     return PRInt32(PL_strcasecmp(s1, s2));
@@ -168,13 +158,6 @@ public:
     if (result<0) 
       result=-1;
     return result;
-  }
-
-  static PRInt32 strncmp(const char* s1, const char* s2, PRInt32 aMaxLen) {
-    // inline the first test (assumes strings are not null):
-    PRInt32 diff = ((const unsigned char*)s1)[0] - ((const unsigned char*)s2)[0];
-    if (diff != 0) return diff;
-    return PRInt32(PL_strncmp(s1,s2,unsigned(aMaxLen)));
   }
   
   static char* strdup(const char* str) {

@@ -62,46 +62,11 @@
 #include "prtypes.h"
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PL_strcmp VBoxNsplPL_strcmp
-#define PL_strncmp VBoxNsplPL_strncmp
 #define PL_strcasecmp VBoxNsplPL_strcasecmp
 #define PL_strncasecmp VBoxNsplPL_strncasecmp
-#define PL_strdup VBoxNsplPL_strdup
-#define PL_strfree VBoxNsplPL_strfree
-#define PL_strncpy VBoxNsplPL_strncpy
-#define PL_strncpyz VBoxNsplPL_strncpyz
-#define PL_strcaserstr VBoxNsplPL_strcaserstr
-#define PL_strcasestr VBoxNsplPL_strcasestr
-#define PL_strndup VBoxNsplPL_strndup
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
-/*
- * PL_strcmp
- *
- * Returns an integer, the sign of which -- positive, zero, or negative --
- * reflects the lexical sorting order of the two strings indicated.  The
- * result is positive if the first string comes after the second.  The
- * NSPR implementation is not i18n.
- */
-
-PR_EXTERN(PRIntn)
-PL_strcmp(const char *a, const char *b);
-
-/*
- * PL_strncmp
- * 
- * Returns an integer, the sign of which -- positive, zero, or negative --
- * reflects the lexical sorting order of the two strings indicated, up to
- * the maximum specified.  The result is positive if the first string comes 
- * after the second.  The NSPR implementation is not i18n.  If the maximum
- * is zero, only the existance or non-existance (pointer is null) of the
- * strings is compared.
- */
-
-PR_EXTERN(PRIntn)
-PL_strncmp(const char *a, const char *b, PRUint32 max);
-
 /*
  * PL_strcasecmp
  *

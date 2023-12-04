@@ -993,7 +993,7 @@ PRBool ReadSectionHeader(nsManifestLineReader& reader, const char *token)
                 break;
 
             // ignore the leading '['
-            if (0 != PL_strcmp(values[0]+1, token))
+            if (0 != RTStrCmp(values[0]+1, token))
                 break;
 
             return PR_TRUE;

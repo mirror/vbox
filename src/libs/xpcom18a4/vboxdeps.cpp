@@ -13,7 +13,6 @@
 
 uintptr_t deps[] =
 {
-    (uintptr_t)PL_strcmp,
     (uintptr_t)PL_strcasecmp,
     (uintptr_t)PL_HashString,
     (uintptr_t)NS_ProxyRelease,

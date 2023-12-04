@@ -350,7 +350,7 @@ xptiInterfaceEntry::GetMethodInfoForName(const char* methodName, uint16 *index,
         info = NS_REINTERPRET_CAST(nsXPTMethodInfo*,
                                    &mInterface->mDescriptor->
                                         method_descriptors[i]);
-        if (PL_strcmp(methodName, info->GetName()) == 0) {
+        if (RTStrCmp(methodName, info->GetName()) == 0) {
             *index = i + mInterface->mMethodBaseIndex;
             *result = info;
             return NS_OK;

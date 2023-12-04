@@ -587,7 +587,7 @@ IndexOfFileWithName(const char* aName, const xptiWorkingSet* aWorkingSet)
 
     for(PRUint32 i = 0; i < aWorkingSet->GetFileCount(); ++i)
     {
-        if(0 == PL_strcmp(aName, aWorkingSet->GetFileAt(i).GetName()))
+        if(0 == RTStrCmp(aName, aWorkingSet->GetFileAt(i).GetName()))
             return i;     
     }
     return -1;        
@@ -1357,14 +1357,14 @@ xpti_Merger(PLDHashTable *table, PLDHashEntryHdr *hdr,
         const char* srcFilename = 
             aSrcWorkingSet->GetTypelibFileName(srcEntry->GetTypelibRecord());
     
-        if(0 == PL_strcmp(destFilename, srcFilename) && 
+        if(0 == RTStrCmp(destFilename, srcFilename) && 
            (destEntry->GetTypelibRecord().GetZipItemIndex() ==
             srcEntry->GetTypelibRecord().GetZipItemIndex()))
         {
             // This is the same item.
             // But... Let's make sure they didn't change the interface name.
             // There are wacky developers that do stuff like that!
-            if(0 == PL_strcmp(destEntry->GetTheName(), srcEntry->GetTheName()))
+            if(0 == RTStrCmp(destEntry->GetTheName(), srcEntry->GetTheName()))
                 return PL_DHASH_NEXT;
         }
     }

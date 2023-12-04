@@ -319,7 +319,7 @@ public:
 
   static PRIntn PR_CALLBACK TotalEntries(PLHashEntry *he, PRIntn i, void *arg) {
     BloatEntry* entry = (BloatEntry*)he->value;
-    if (entry && nsCRT::strcmp(entry->mClassName, "TOTAL") != 0) {
+    if (entry && RTStrCmp(entry->mClassName, "TOTAL") != 0) {
       entry->Total((BloatEntry*)arg);
     }
     return HT_ENUMERATE_NEXT;
@@ -389,7 +389,7 @@ public:
       fprintf(out, "%4d %-40.40s %8d %8d %8d %8d (%8.2f +/- %8.2f) %8d %8d (%8.2f +/- %8.2f)\n",
               i+1, mClassName,
               (PRInt32)mClassSize,
-              (nsCRT::strcmp(mClassName, "TOTAL"))
+              (RTStrCmp(mClassName, "TOTAL"))
                   ?(PRInt32)((stats->mCreates - stats->mDestroys) * mClassSize)
                   :mTotalLeaked,
               stats->mCreates,
@@ -537,7 +537,7 @@ nsTraceRefcntImpl::DumpStatistics(StatisticsType type, FILE* out)
         BloatEntry* left  = NS_STATIC_CAST(BloatEntry*, entries[i]);
         BloatEntry* right = NS_STATIC_CAST(BloatEntry*, entries[j]);
 
-        if (PL_strcmp(left->GetClassName(), right->GetClassName()) < 0) {
+        if (RTStrCmp(left->GetClassName(), right->GetClassName()) < 0) {
           entries.ReplaceElementAt(right, i);
           entries.ReplaceElementAt(left, j);
         }
@@ -636,13 +636,13 @@ static PRBool InitLog(const char* envVar, const char* msg, FILE* *result)
 {
   const char* value = getenv(envVar);
   if (value) {
-    if (nsCRT::strcmp(value, "1") == 0) {
+    if (RTStrCmp(value, "1") == 0) {
       *result = stdout;
       fprintf(stdout, "### %s defined -- logging %s to stdout\n", 
               envVar, msg);
       return PR_TRUE;
     }
-    else if (nsCRT::strcmp(value, "2") == 0) {
+    else if (RTStrCmp(value, "2") == 0) {
       *result = stderr;
       fprintf(stdout, "### %s defined -- logging %s to stderr\n", 
               envVar, msg);

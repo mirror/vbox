@@ -98,7 +98,7 @@ NameMatch(PLDHashTable *table,
 {
     const char* str1 = ((xptiHashEntry*)entry)->value->GetTheName();
     const char* str2 = (const char*) key;
-    return str1 == str2 || 0 == PL_strcmp(str1, str2);
+    return str1 == str2 || 0 == RTStrCmp(str1, str2);
 }       
 
 static const struct PLDHashTableOps NameTableOps =
@@ -255,7 +255,7 @@ xptiWorkingSet::FindFile(PRUint32 dir, const char* name)
         {
             xptiFile& file = mFileArray[i];
             if(file.GetDirectory() == dir && 
-               0 == PL_strcmp(name, file.GetName()))
+               0 == RTStrCmp(name, file.GetName()))
             {
                 return i;
             }    
@@ -309,7 +309,7 @@ xptiWorkingSet::FindZipItemWithName(const char* name)
     if(mZipItemArray)
     {
         for(PRUint32 i = 0; i < mZipItemCount;++i)
-            if(0 == PL_strcmp(name, mZipItemArray[i].GetName()))
+            if(0 == RTStrCmp(name, mZipItemArray[i].GetName()))
                 return i;
     }
     return NOT_FOUND;

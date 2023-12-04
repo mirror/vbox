@@ -36,6 +36,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/string.h>
 
 #include "nsAppFileLocationProvider.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -132,23 +133,23 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
     *_retval = nsnull;
     *persistant = PR_TRUE;
 
-    if (nsCRT::strcmp(prop, NS_APP_APPLICATION_REGISTRY_DIR) == 0)
+    if (RTStrCmp(prop, NS_APP_APPLICATION_REGISTRY_DIR) == 0)
     {
         rv = GetProductDirectory(getter_AddRefs(localFile));
     }
-    else if (nsCRT::strcmp(prop, NS_APP_APPLICATION_REGISTRY_FILE) == 0)
+    else if (RTStrCmp(prop, NS_APP_APPLICATION_REGISTRY_FILE) == 0)
     {
         rv = GetProductDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendNative(APP_REGISTRY_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_DEFAULTS_50_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_DEFAULTS_50_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(DEFAULTS_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_PREF_DEFAULTS_50_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_PREF_DEFAULTS_50_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv)) {
@@ -157,8 +158,8 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
                 rv = localFile->AppendRelativeNativePath(DEFAULTS_PREF_DIR_NAME);
         }
     }
-    else if (nsCRT::strcmp(prop, NS_APP_PROFILE_DEFAULTS_50_DIR) == 0 ||
-             nsCRT::strcmp(prop, NS_APP_PROFILE_DEFAULTS_NLOC_50_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_PROFILE_DEFAULTS_50_DIR) == 0 ||
+             RTStrCmp(prop, NS_APP_PROFILE_DEFAULTS_NLOC_50_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv)) {
@@ -167,29 +168,29 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
                 rv = localFile->AppendRelativeNativePath(DEFAULTS_PROFILE_DIR_NAME);
         }
     }
-    else if (nsCRT::strcmp(prop, NS_APP_USER_PROFILES_ROOT_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_USER_PROFILES_ROOT_DIR) == 0)
     {
         rv = GetDefaultUserProfileRoot(getter_AddRefs(localFile));
     }
-    else if (nsCRT::strcmp(prop, NS_APP_RES_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_RES_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(RES_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_CHROME_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_CHROME_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(CHROME_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_PLUGINS_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_PLUGINS_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(PLUGINS_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_ENV_PLUGINS_DIR) == 0)
+    else if (RTStrCmp(prop, NS_ENV_PLUGINS_DIR) == 0)
     {
         NS_ERROR("Don't use nsAppFileLocationProvider::GetFile(NS_ENV_PLUGINS_DIR, ...). "
                  "Use nsAppFileLocationProvider::GetFiles(...).");
@@ -197,19 +198,19 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
         if (pathVar)
             rv = NS_NewNativeLocalFile(nsDependentCString(pathVar), PR_TRUE, getter_AddRefs(localFile));
     }
-    else if (nsCRT::strcmp(prop, NS_USER_PLUGINS_DIR) == 0)
+    else if (RTStrCmp(prop, NS_USER_PLUGINS_DIR) == 0)
     {
         rv = GetProductDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(PLUGINS_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_SEARCH_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_SEARCH_DIR) == 0)
     {
         rv = CloneMozBinDirectory(getter_AddRefs(localFile));
         if (NS_SUCCEEDED(rv))
             rv = localFile->AppendRelativeNativePath(SEARCH_DIR_NAME);
     }
-    else if (nsCRT::strcmp(prop, NS_APP_INSTALL_CLEANUP_DIR) == 0)
+    else if (RTStrCmp(prop, NS_APP_INSTALL_CLEANUP_DIR) == 0)
     {
         // This is cloned so that embeddors will have a hook to override
         // with their own cleanup dir.  See bugzilla bug #105087
@@ -465,7 +466,7 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
     *_retval = nsnull;
     nsresult rv = NS_ERROR_FAILURE;
 
-    if (!nsCRT::strcmp(prop, NS_APP_PLUGINS_DIR_LIST))
+    if (!RTStrCmp(prop, NS_APP_PLUGINS_DIR_LIST))
     {
         static const char* keys[] = { nsnull, NS_APP_PLUGINS_DIR, nsnull };
         if (!keys[0] && !(keys[0] = RTEnvGet("VBOX_XPCOM_PLUGIN_PATH"))) {

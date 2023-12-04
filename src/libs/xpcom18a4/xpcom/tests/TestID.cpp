@@ -34,8 +34,9 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/string.h>
+
 #include <stdio.h>
-#include "plstr.h"
 #include "nsID.h"
 #include "prmem.h"
 
@@ -66,7 +67,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "TestID: ToString failed on test #%d\n", i);
       return -1;
     }
-    if (0 != PL_strcmp(cp, ids[4*(i/4) + 3])) {
+    if (0 != RTStrCmp(cp, ids[4*(i/4) + 3])) {
       fprintf(stderr, "TestID: compare of ToString failed on test #%d\n", i);
       return -1;
     }

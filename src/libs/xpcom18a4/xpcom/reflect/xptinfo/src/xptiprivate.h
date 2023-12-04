@@ -43,6 +43,7 @@
 #define xptiprivate_h___
 
 #include <iprt/stream.h>
+#include <iprt/string.h>
 
 #include "nscore.h"
 #include "nsISupports.h"
@@ -206,7 +207,7 @@ public:
         return  mDirectory == r.mDirectory &&
                 mSize == r.mSize &&
                 mDate == r.mDate &&
-                0 == PL_strcmp(mName, r.mName);
+                0 == RTStrCmp(mName, r.mName);
     }
 
     xptiFile(const xptiFile& r) {CopyFields(r);}
@@ -267,7 +268,7 @@ public:
 
     PRBool Equals(const xptiZipItem& r) const
     {
-        return 0 == PL_strcmp(mName, r.mName);
+        return 0 == RTStrCmp(mName, r.mName);
     }
 
     xptiZipItem(const xptiZipItem& r) {CopyFields(r);}

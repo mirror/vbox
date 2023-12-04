@@ -341,7 +341,7 @@ tmTransactionService::OnAttachReply(tmTransaction *aTrans) {
     for (PRUint32 index = 0; index < size; index++) {
       qmap = (tm_queue_mapping*) mQueueMaps[index];
       if (qmap && 
-          PL_strcmp(qmap->joinedQueueName, (char*) aTrans->GetMessage()) == 0) {
+          RTStrCmp(qmap->joinedQueueName, (char*) aTrans->GetMessage()) == 0) {
 
         // set the ID in the mapping
         qmap->queueID = aTrans->GetQueueID();
