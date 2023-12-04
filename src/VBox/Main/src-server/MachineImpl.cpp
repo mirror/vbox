@@ -235,7 +235,7 @@ Machine::Data::~Data()
 
 Machine::HWData::HWData()
 {
-    /* default values for a newly created machine */
+    /* default values for a newly created machine for x86. */
     mHWVersion.printf("%d", SchemaDefs::DefaultHardwareVersion);
     mMemorySize = 128;
     mCPUCount = 1;
@@ -258,8 +258,8 @@ Machine::HWData::HWData()
 
     mDnDMode = DnDMode_Disabled;
 
-    mKeyboardHIDType = KeyboardHIDType_PS2Keyboard; /** @todo BUGBUG Assumes x86! */
-    mPointingHIDType = PointingHIDType_PS2Mouse; /** @todo BUGBUG Assumes x86! */
+    mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
+    mPointingHIDType = PointingHIDType_PS2Mouse;
     mParavirtProvider = ParavirtProvider_Default;
     mEmulatedUSBCardReaderEnabled = FALSE;
 
@@ -6310,7 +6310,7 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
         HRESULT hrc = i_checkStateDependency(MutableStateDep);
         if (FAILED(hrc)) return hrc;
 
-        ChipsetType_T aChipset = ChipsetType_PIIX3; /** @todo BUGBUG ASSUMES x86! */
+        ChipsetType_T aChipset = ChipsetType_PIIX3;
         hrc = mPlatform->COMGETTER(ChipsetType)(&aChipset);
         if (FAILED(hrc)) return hrc;
 

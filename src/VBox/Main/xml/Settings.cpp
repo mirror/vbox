@@ -3967,15 +3967,13 @@ bool HostPCIDeviceAttachment::operator==(const HostPCIDeviceAttachment &a) const
 
 #ifdef VBOX_WITH_VIRT_ARMV8
 PlatformARM::PlatformARM()
-    /** @todo BUGBUG Anything for ARM here? */
 {
-
 }
 
 bool PlatformARM::operator==(const PlatformARM& h) const
 {
     RT_NOREF(h);
-    return true; /** @todo BUGBUG Anything for ARM here? */
+    return true;
 }
 #endif /* VBOX_WITH_VIRT_ARMV8 */
 
@@ -4120,7 +4118,7 @@ Hardware::Hardware() :
     ulMemoryBalloonSize(0),
     fPageFusionEnabled(false)
 {
-    mapBootOrder[0] = DeviceType_Floppy; /** @todo BUGBUG Handle ARM. */
+    mapBootOrder[0] = DeviceType_Floppy;
     mapBootOrder[1] = DeviceType_DVD;
     mapBootOrder[2] = DeviceType_HardDisk;
 }
@@ -5440,7 +5438,7 @@ void MachineConfigFile::readPlatform(const xml::ElementNode &elmPlatformOrHardwa
 #ifdef VBOX_WITH_VIRT_ARMV8
         case PlatformArchitecture_ARM:
         {
-            /** @todo BUGBUG Implement loading ARM platform stuff here. */
+            /* Nothing here yet -- add ARM-specific stuff as soon as we have it. */
             break;
         }
 #endif
@@ -7427,7 +7425,7 @@ void MachineConfigFile::buildPlatformXML(xml::ElementNode &elmParent,
     /* We only store specific stuff for the selected platform. */
     if (plat.architectureType == PlatformArchitecture_x86)
         buildPlatformX86XML(*pelmPlatformOrHardware, *pelmCPU, plat.x86);
-    /** @todo BUGBUG Put ARM stuff here. */
+    /** @todo Put ARM stuff here as soon as we have it. */
 }
 
 /**

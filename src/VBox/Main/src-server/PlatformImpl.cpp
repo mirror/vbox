@@ -242,9 +242,10 @@ HRESULT Platform::setArchitecture(PlatformArchitecture_T aArchitecture)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo BUGBUG Implement this! */
     RT_NOREF(aArchitecture);
 
+    /* Currently we don't allow changing the platform architecture after the object was created.
+     * Mostly makes no sense, as this would render the VMs non-bootable and confuses users. */
     return E_NOTIMPL;
 }
 
@@ -509,21 +510,22 @@ HRESULT Platform::i_loadSettings(const settings::Platform &data)
 
     /* Allocates architecture-dependent stuff. */
     HRESULT hrc = i_initArchitecture(m->bd->architectureType);
-    AssertComRCReturnRC(hrc);
-
-    switch (m->bd->architectureType)
+    if (SUCCEEDED(hrc))
     {
-        case PlatformArchitecture_x86:
-            return mX86->i_loadSettings(data.x86);
+        switch (m->bd->architectureType)
+        {
+            case PlatformArchitecture_x86:
+                return mX86->i_loadSettings(data.x86);
 
 #ifdef VBOX_WITH_VIRT_ARMV8
-        case PlatformArchitecture_ARM:
-            return mARM->i_loadSettings(data.arm);
+            case PlatformArchitecture_ARM:
+                return mARM->i_loadSettings(data.arm);
 #endif
-        case PlatformArchitecture_None:
-            RT_FALL_THROUGH();
-        default:
-            break;
+            case PlatformArchitecture_None:
+                RT_FALL_THROUGH();
+            default:
+                break;
+        }
     }
 
     return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VERR_PLATFORM_ARCH_NOT_SUPPORTED,

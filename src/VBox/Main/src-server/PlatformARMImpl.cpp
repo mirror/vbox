@@ -240,7 +240,7 @@ HRESULT PlatformARM::i_loadSettings(const settings::PlatformARM &data)
 {
     RT_NOREF(data);
 
-    /** @todo BUGBUG Implement this form ARM! */
+    /* Nothing here yet. */
     return S_OK;
 }
 
@@ -256,7 +256,7 @@ HRESULT PlatformARM::i_saveSettings(settings::PlatformARM &data)
 {
     RT_NOREF(data);
 
-    /** @todo BUGBUG Implement this for ARM! */
+    /* Nothing here yet. */
     return S_OK;
 }
 
@@ -264,6 +264,6 @@ HRESULT PlatformARM::i_applyDefaults(GuestOSType *aOsType)
 {
     RT_NOREF(aOsType);
 
-    /** @todo BUGBUG Implement this for ARM! */
+    /* Nothing here yet. */
     return S_OK;
 }

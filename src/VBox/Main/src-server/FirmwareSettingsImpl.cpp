@@ -684,7 +684,7 @@ void FirmwareSettings::i_applyDefaults(GuestOSType *aOsType)
     }
     else
     {
-        m->bd->firmwareType   = FirmwareType_BIOS; /** @todo BUGBUG Handle ARM? */
+        m->bd->firmwareType   = FirmwareType_BIOS;
         m->bd->fIOAPICEnabled = true;
     }
 
