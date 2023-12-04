@@ -110,6 +110,7 @@
 #include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/localipc.h>
+#include <iprt/timer.h>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -150,6 +151,8 @@
 #define DRM_IPC_CLIENT_THREAD_NAME_PTR  "IpcCLT-%u"
 /** Maximum number of simultaneous IPC client connections. */
 #define DRM_IPC_SERVER_CONNECTIONS_MAX  (16)
+/** Interval between attempts to send resize events to DRM stack. */
+#define DRM_RESIZE_INTERVAL_MS          (250)
 
 /** IPC client connections counter. */
 static volatile uint32_t g_cDrmIpcConnections = 0;
@@ -208,6 +211,33 @@ static RTCRITSECT g_ipcClientConnectionsListCritSect;
 
 /** Critical section used for reporting monitors position back to host. */
 static RTCRITSECT g_monitorPositionsCritSect;
+
+/** Resize events suppression.
+ *
+ *  We tend to suppress incoming resizing events from host. Instead of
+ *  applying them immediately to Linux DRM stack, we keep them and apply
+ *  in recurring timer callback. This structure collects all the necessary
+ * components to implement events suppression. */
+static struct VBOX_DRM_SUPPRESSION
+{
+    /** Protection for concurrent access from host events loop and
+     *  suppression timer contexts. */
+    RTCRITSECT critSect;
+
+    /** Recurring timer which is used in order to push resize events
+     *  into DRM stack. */
+    PRTTIMER pResizeSuppressionTimer;
+
+    /** Resize parameters from the last host event: coordinates. */
+    VMMDevDisplayDef aDisplaysIn[VBOX_DRMIPC_MONITORS_MAX];
+
+    /** Resize parameters from the last host event: number of displays. */
+    uint32_t cDisplaysIn;
+
+    /** Flag to indicate that new events were suppressed since last
+     *  time when we sent data to DRM stack. */
+    bool fHaveSuppressedEvents;
+} g_vboxDrmSuppression;
 
 /** Counter of how often our daemon has been re-spawned. */
 unsigned g_cRespawn = 0;
@@ -620,6 +650,127 @@ static int vbDrmPushScreenLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDispla
     return rc;
 }
 
+/**
+ * Suppress incoming resize events from host.
+ *
+ * This function will put last resize event data into suppression
+ * cache. This data will later be picked up by timer callback and
+ * pushed into DRM stack.
+ *
+ * @returns IPRT status code.
+ * @param   paDisplaysIn    Display resize data.
+ * @param   cDisplaysIn     Number of displays.
+ */
+static int vbDrmResizeSuppress(VMMDevDisplayDef *paDisplaysIn, uint32_t cDisplaysIn)
+{
+    int rc;
+
+    Assert((sizeof(VMMDevDisplayDef) * cDisplaysIn) <= sizeof(g_vboxDrmSuppression.aDisplaysIn));
+
+    rc = RTCritSectEnter(&g_vboxDrmSuppression.critSect);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to lock suppression data cache, rc=%Rrc\n", rc);
+        return rc;
+    }
+
+    memcpy(g_vboxDrmSuppression.aDisplaysIn, paDisplaysIn, sizeof(VMMDevDisplayDef) * cDisplaysIn);
+    g_vboxDrmSuppression.cDisplaysIn = cDisplaysIn;
+    g_vboxDrmSuppression.fHaveSuppressedEvents = true;
+
+    int rc2 = RTCritSectLeave(&g_vboxDrmSuppression.critSect);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to unlock suppression data cache, rc=%Rrc\n", rc);
+
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
+}
+
+/** Recurring timer callback to push display resize events into DRM stack.
+ *
+ * @param   pTimer  IPRT timer structure (unused).
+ * @param   pvUser  User data (unused).
+ * @param   iTick   Timer tick data (unused).
+ */
+static DECLCALLBACK(void) vbDrmResizeSuppressionTimerCb(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    int rc;
+
+    RT_NOREF(pTimer, pvUser, iTick);
+
+    rc = RTCritSectEnter(&g_vboxDrmSuppression.critSect);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to lock suppression data cache, rc=%Rrc\n", rc);
+        return;
+    }
+
+    if (g_vboxDrmSuppression.fHaveSuppressedEvents)
+    {
+        rc = vbDrmPushScreenLayout(g_vboxDrmSuppression.aDisplaysIn, g_vboxDrmSuppression.cDisplaysIn, false, true);
+        if (RT_FAILURE(rc))
+            VBClLogError("Failed to push display change as requested by host, rc=%Rrc\n", rc);
+
+        g_vboxDrmSuppression.fHaveSuppressedEvents = false;
+    }
+
+    int rc2 = RTCritSectLeave(&g_vboxDrmSuppression.critSect);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to unlock suppression data cache, rc=%Rrc\n", rc);
+}
+
+/**
+ * Initialize DRM events suppression data.
+ *
+ * @returns IPRT status code.
+ * @param   pSuppression    Pointer to suppression data.
+ */
+static int vbDrmSuppressionInit(struct VBOX_DRM_SUPPRESSION *pSuppression)
+{
+    int rc;
+
+    RT_BZERO(pSuppression, sizeof(*pSuppression));
+
+    rc = RTCritSectInit(&pSuppression->critSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTTimerCreate(&pSuppression->pResizeSuppressionTimer, DRM_RESIZE_INTERVAL_MS, vbDrmResizeSuppressionTimerCb, NULL);
+        if (RT_SUCCESS(rc))
+            VBClLogInfo("starting deferred resize events delivery\n");
+        else
+            VBClLogError("unable to enable deferred resize events delivery: no timer, rc=%Rrc\n", rc);
+    }
+    else
+        VBClLogError("unable to enable deferred resize events delivery: no critsect, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Destroy DRM events suppression data.
+ *
+ * @returns IPRT status code.
+ * @param   pSuppression    Pointer to suppression data.
+ */
+static int vbDrmSuppressionDestroy(struct VBOX_DRM_SUPPRESSION *pSuppression)
+{
+    int rc;
+
+    rc = RTTimerDestroy(pSuppression->pResizeSuppressionTimer);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCritSectDelete(&pSuppression->critSect);
+        if (RT_FAILURE(rc))
+            VBClLogError("unable to destroy suppression critsect, rc=%Rrc\n", rc);
+    }
+    else
+        VBClLogError("unable to destroy suppression timer, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
 /** Worker thread for resize task. */
 static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
@@ -647,7 +798,7 @@ static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
         fAck = true;
         if (RT_SUCCESS(rc))
         {
-            rc = vbDrmPushScreenLayout(aDisplaysIn, cDisplaysIn, false, true);
+            rc = vbDrmResizeSuppress(aDisplaysIn, cDisplaysIn);
             if (RT_FAILURE(rc))
                 VBClLogError("Failed to push display change as requested by host, rc=%Rrc\n", rc);
         }
@@ -1118,7 +1269,7 @@ static void vbDrmSetIpcServerAccessPermissions(RTLOCALIPCSERVER hIpcServer, bool
             VBClLogError("unable to grant IPC server socket access to all users, rc=%Rrc\n", rc);
     }
 
-    /* Set flag for the thread which serves incomming IPC connections. */
+    /* Set flag for the thread which serves incoming IPC connections. */
     ASMAtomicWriteBool(&g_fDrmIpcRestricted, fRestrict);
 }
 
@@ -1298,6 +1449,10 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
+    rc = vbDrmSuppressionInit(&g_vboxDrmSuppression);
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_FAILURE;
+
     /* Instantiate IPC server for VBoxClient service communication. */
     rc = RTLocalIpcServerCreate(&hIpcServer, VBOX_DRMIPC_SERVER_NAME, 0);
     if (RT_FAILURE(rc))
@@ -1349,6 +1504,10 @@ int main(int argc, char *argv[])
     rc = RTLocalIpcServerDestroy(hIpcServer);
     if (RT_FAILURE(rc))
         VBClLogError("unable to stop IPC server,  rc=%Rrc\n", rc);
+
+    rc2 = vbDrmSuppressionDestroy(&g_vboxDrmSuppression);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to destroy suppression data, rc=%Rrc\n", rc2);
 
     rc2 = RTCritSectDelete(&g_monitorPositionsCritSect);
     if (RT_FAILURE(rc2))
