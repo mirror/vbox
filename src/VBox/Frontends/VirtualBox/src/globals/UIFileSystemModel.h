@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UICustomFileSystemModel class declaration.
+ * VBox Qt GUI - UIFileSystemModel class declaration.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h
-#define FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h
+#ifndef FEQT_INCLUDED_SRC_globals_UIFileSystemModel_h
+#define FEQT_INCLUDED_SRC_globals_UIFileSystemModel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -41,49 +41,49 @@
 #include "COMEnums.h"
 
 class QMimeData;
-class UICustomFileSystemModel;
+class UIFileSystemModel;
 
-enum UICustomFileSystemModelData
+enum UIFileSystemModelData
 {
-    UICustomFileSystemModelData_Name = 0,
-    UICustomFileSystemModelData_Size,
-    UICustomFileSystemModelData_ChangeTime,
-    UICustomFileSystemModelData_Owner,
-    UICustomFileSystemModelData_Permissions,
-    UICustomFileSystemModelData_LocalPath,
-    UICustomFileSystemModelData_ISOFilePath, /* in case of import-iso this contains full path of the container iso file. */
-    UICustomFileSystemModelData_RemovedFromVISO,
-    UICustomFileSystemModelData_DescendantRemovedFromVISO,
-    UICustomFileSystemModelData_Max
+    UIFileSystemModelData_Name = 0,
+    UIFileSystemModelData_Size,
+    UIFileSystemModelData_ChangeTime,
+    UIFileSystemModelData_Owner,
+    UIFileSystemModelData_Permissions,
+    UIFileSystemModelData_LocalPath,
+    UIFileSystemModelData_ISOFilePath, /* in case of import-iso this contains full path of the container iso file. */
+    UIFileSystemModelData_RemovedFromVISO,
+    UIFileSystemModelData_DescendantRemovedFromVISO,
+    UIFileSystemModelData_Max
 };
 
-/** A UICustomFileSystemItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
-    by these instances is the data source for the UICustomFileSystemModel. */
-class SHARED_LIBRARY_STUFF UICustomFileSystemItem
+/** A UIFileSystemItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
+    by these instances is the data source for the UIFileSystemModel. */
+class SHARED_LIBRARY_STUFF UIFileSystemItem
 {
 
 public:
 
     /** @p strName contains file object name which is assumed to be unique among a parent object's children. */
-    UICustomFileSystemItem(const QString &strFileObjectName, UICustomFileSystemItem *parentItem, KFsObjType type);
-    virtual ~UICustomFileSystemItem();
+    UIFileSystemItem(const QString &strFileObjectName, UIFileSystemItem *parentItem, KFsObjType type);
+    virtual ~UIFileSystemItem();
 
     void reset();
-    virtual UICustomFileSystemItem *child(int row) const;
+    virtual UIFileSystemItem *child(int row) const;
     /** Searches for the child by file object name and returns it if found. */
-    UICustomFileSystemItem *child(const QString &strFileObjectName) const;
+    UIFileSystemItem *child(const QString &strFileObjectName) const;
     int childCount() const;
-    QList<UICustomFileSystemItem*> children() const;
+    QList<UIFileSystemItem*> children() const;
     /** Removes the item from the list of children and !!DELETES!! the item. */
-    void removeChild(UICustomFileSystemItem *pItem);
+    void removeChild(UIFileSystemItem *pItem);
     void removeChildren();
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);
-    void setData(const QVariant &data, UICustomFileSystemModelData enmColumn);
+    void setData(const QVariant &data, UIFileSystemModelData enmColumn);
     int row() const;
-    UICustomFileSystemItem *parentItem();
-    UICustomFileSystemItem *parentItem() const;
+    UIFileSystemItem *parentItem();
+    UIFileSystemItem *parentItem() const;
 
     bool isDirectory() const;
     bool isSymLink() const;
@@ -127,13 +127,13 @@ public:
 
 private:
 
-    void appendChild(UICustomFileSystemItem *child);
-    void setParentModel(UICustomFileSystemModel *pModel);
-    UICustomFileSystemModel *parentModel();
+    void appendChild(UIFileSystemItem *child);
+    void setParentModel(UIFileSystemModel *pModel);
+    UIFileSystemModel *parentModel();
 
-    QList<UICustomFileSystemItem*>               m_childItems;
-    QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
-    UICustomFileSystemItem *m_parentItem;
+    QList<UIFileSystemItem*>               m_childItems;
+    QMap<UIFileSystemModelData, QVariant>  m_itemData;
+    UIFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
     /** If this is a symlink m_targetPath keeps the absolute path of the target */
     QString          m_strTargetPath;
@@ -146,20 +146,20 @@ private:
     bool             m_fIsHidden;
     QString          m_strToolTip;
     /** Pointer to the parent model. */
-    UICustomFileSystemModel *m_pParentModel;
-    friend UICustomFileSystemModel;
+    UIFileSystemModel *m_pParentModel;
+    friend UIFileSystemModel;
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
  *  of the base class behavior like lessThan(..) */
-class SHARED_LIBRARY_STUFF UICustomFileSystemProxyModel : public QSortFilterProxyModel
+class SHARED_LIBRARY_STUFF UIFileSystemProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
 
 public:
 
-    UICustomFileSystemProxyModel(QObject *parent = 0);
+    UIFileSystemProxyModel(QObject *parent = 0);
 
     void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
     bool listDirectoriesOnTop() const;
@@ -179,23 +179,23 @@ private:
     bool m_fShowHiddenObjects;
 };
 
-/** UICustomFileSystemModel serves as the model for a file structure.
+/** UIFileSystemModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
  *  QTableView and/or QTreeView.*/
-class SHARED_LIBRARY_STUFF UICustomFileSystemModel : public QAbstractItemModel
+class SHARED_LIBRARY_STUFF UIFileSystemModel : public QAbstractItemModel
 {
 
     Q_OBJECT;
 
 signals:
 
-    void sigItemRenamed(UICustomFileSystemItem *pItem, const QString &strOldPath,
+    void sigItemRenamed(UIFileSystemItem *pItem, const QString &strOldPath,
                         const QString &strOldName, const QString &strNewName);
 
 public:
 
-    explicit UICustomFileSystemModel(QObject *parent = 0);
-    ~UICustomFileSystemModel();
+    explicit UIFileSystemModel(QObject *parent = 0);
+    ~UIFileSystemModel();
 
     QVariant       data(const QModelIndex &index, int role) const RT_OVERRIDE;
     bool           setData(const QModelIndex &index, const QVariant &value, int role);
@@ -205,7 +205,7 @@ public:
                               int role = Qt::DisplayRole) const RT_OVERRIDE;
     QModelIndex    index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
-    QModelIndex    index(const UICustomFileSystemItem* item);
+    QModelIndex    index(const UIFileSystemItem* item);
     QModelIndex    parent(const QModelIndex &index) const RT_OVERRIDE;
     int            rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
     int            columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
@@ -217,9 +217,9 @@ public:
 
     void           setShowHumanReadableSizes(bool fShowHumanReadableSizes);
     bool           showHumanReadableSizes() const;
-    void           deleteItem(UICustomFileSystemItem* pItem);
-    UICustomFileSystemItem* rootItem();
-    const UICustomFileSystemItem* rootItem() const;
+    void           deleteItem(UIFileSystemItem* pItem);
+    UIFileSystemItem* rootItem();
+    const UIFileSystemItem* rootItem() const;
 
     void setIsWindowsFileSystem(bool fIsWindowsFileSystem);
     bool isWindowsFileSystem() const;
@@ -232,11 +232,11 @@ public:
 
 private:
 
-    UICustomFileSystemItem    *m_pRootItem;
-    void setupModelData(const QStringList &lines, UICustomFileSystemItem *parent);
+    UIFileSystemItem    *m_pRootItem;
+    void setupModelData(const QStringList &lines, UIFileSystemItem *parent);
     bool m_fShowHumanReadableSizes;
     bool m_fIsWindowFileSystemModel;
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIFileSystemModel_h */

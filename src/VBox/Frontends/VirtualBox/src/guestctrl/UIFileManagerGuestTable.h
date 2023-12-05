@@ -52,7 +52,7 @@
 /* Forward declarations: */
 class CGuestSessionStateChangedEvent;
 class UIActionPool;
-class UICustomFileSystemItem;
+class UIFileSystemItem;
 class UIGuestSessionWidget;
 
 /** This class scans the guest file system by using the VBox Guest Control API
@@ -80,10 +80,10 @@ public:
 protected:
 
     void            retranslateUi() override final;
-    virtual bool    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
-    virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
+    virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual void    deleteByItem(UIFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
-    virtual bool    renameItem(UICustomFileSystemItem *item, const QString &strOldPath) override final;
+    virtual bool    renameItem(UIFileSystemItem *item, const QString &strOldPath) override final;
     virtual bool    createDirectory(const QString &path, const QString &directoryName) override final;
     virtual QString fsObjectPropertyString() override final;
     virtual void    showProperties() override final;

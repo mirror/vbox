@@ -42,9 +42,9 @@
 
 /* Forward declarations: */
 class QFileInfo;
-class UICustomFileSystemItem;
-class UICustomFileSystemModel;
-class UICustomFileSystemProxyModel;
+class UIFileSystemItem;
+class UIFileSystemModel;
+class UIFileSystemProxyModel;
 class UIVisoContentTableView;
 
 /** A UIVisoBrowserBase extension to view content of a VISO as a file tree. */
@@ -63,7 +63,7 @@ public:
     ~UIVisoContentBrowser();
     /* Imports pathList (relative to ISO file's root) to VISO content. */
     void importISOContentToViso(const QString &strISOFilePath,
-                                UICustomFileSystemItem *pParentItem = 0,
+                                UIFileSystemItem *pParentItem = 0,
                                 const QString &strDirPath = QString());
     void removeISOContentFromViso();
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
@@ -86,7 +86,7 @@ public slots:
     void sltCreateNewDirectory();
     /** Handles the signal we get from the model during setData call. Restores the old name of the file object
      *  to @p strOldName if need be (if rename fails for some reason). */
-    void sltItemRenameAttempt(UICustomFileSystemItem *pItem, const QString &strOldPath,
+    void sltItemRenameAttempt(UIFileSystemItem *pItem, const QString &strOldPath,
                               const QString &strOldName, const QString &strNewName);
     void sltRemoveItems();
     void sltRestoreItems();
@@ -114,29 +114,29 @@ private:
     void                    prepareConnections();
     void                    prepareToolBar();
     void                    initializeModel();
-    UICustomFileSystemItem *rootItem();
+    UIFileSystemItem *rootItem();
     /* Child of root. */
-    UICustomFileSystemItem *startItem();
+    UIFileSystemItem *startItem();
 
     QModelIndex             convertIndexToTableIndex(const QModelIndex &index);
     /** Lists the content of the host file system directory by using Qt file system API. */
-    void                    scanHostDirectory(UICustomFileSystemItem *directory, bool fRecursive);
+    void                    scanHostDirectory(UIFileSystemItem *directory, bool fRecursive);
     KFsObjType              fileType(const QFileInfo &fsInfo);
     /** Renames the starts item's name as VISO name changes. */
     void                    updateStartItemName();
-    void                    renameFileObject(UICustomFileSystemItem *pItem);
-    void                    removeItems(const QList<UICustomFileSystemItem*> itemList);
-    void                    restoreItems(const QList<UICustomFileSystemItem*> itemList);
+    void                    renameFileObject(UIFileSystemItem *pItem);
+    void                    removeItems(const QList<UIFileSystemItem*> itemList);
+    void                    restoreItems(const QList<UIFileSystemItem*> itemList);
     /** Creates and entry for pItem consisting of a map item (key is viso path and value is host file system path)
      *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
      *  from the iso image. */
     void                    createVisoEntry(const QString &strPath, const QString &strLocalPath, bool bRemove = false);
     QString                 currentPath() const;
-    UICustomFileSystemItem* searchItemByPath(const QString &strPath);
+    UIFileSystemItem* searchItemByPath(const QString &strPath);
     void                    goToStart();
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
-    QList<UICustomFileSystemItem*> tableSelectedItems();
+    QList<UIFileSystemItem*> tableSelectedItems();
     /* Names of the file objects of the current directory. */
     QStringList                    currentDirectoryListing() const;
     bool                           onStartItem();
@@ -144,12 +144,12 @@ private:
     void                           createLoadedFileEntries(const QMap<QString, QString> &fileEntries);
     /* Processes a list of VISO paths that are loaded from a file and indicate file object to be removed from VISO content. */
     void                           processRemovedEntries(const QStringList &removedEntries);
-    const UICustomFileSystemItem*  currentDirectoryItem() const;
-    void                           markRemovedUnremovedItemParents(UICustomFileSystemItem *pItem, bool fRemoved);
+    const UIFileSystemItem*  currentDirectoryItem() const;
+    void                           markRemovedUnremovedItemParents(UIFileSystemItem *pItem, bool fRemoved);
     void                           enableDisableSelectionDependentActions();
     UIVisoContentTableView        *m_pTableView;
-    UICustomFileSystemModel       *m_pModel;
-    UICustomFileSystemProxyModel  *m_pTableProxyModel;
+    UIFileSystemModel             *m_pModel;
+    UIFileSystemProxyModel        *m_pTableProxyModel;
 
     QString                       m_strImportedISOPath;
     /** keys of m_entryMap are iso locations and values are

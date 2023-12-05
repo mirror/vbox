@@ -36,7 +36,7 @@
 #include "UICommon.h"
 #include "UIFileManager.h"
 #include "UIFileTableNavigationWidget.h"
-#include "UICustomFileSystemModel.h"
+#include "UIFileSystemModel.h"
 #include "UIFileManagerHostTable.h"
 #include "UIPathOperations.h"
 #include "QIToolBar.h"
@@ -111,7 +111,7 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
     {
         const QFileInfo &entryInfo = entryList.at(i);
         if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." ||
-            entryInfo.baseName() == UICustomFileSystemModel::strUpDirectoryString)
+            entryInfo.baseName() == UIFileSystemModel::strUpDirectoryString)
             continue;
         statistics.m_totalSize += entryInfo.size();
         if (entryInfo.isSymLink())
@@ -156,8 +156,8 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
         m_pModifierActionSeparator->setVisible(fShown);
 }
 
-/* static */ bool UIFileManagerHostTable::scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
-                                                        QMap<QString, UICustomFileSystemItem*> &fileObjects)
+/* static */ bool UIFileManagerHostTable::scanDirectory(const QString& strPath, UIFileSystemItem *parent,
+                                                        QMap<QString, UIFileSystemItem*> &fileObjects)
 {
 
     QDir directory(UIPathOperations::addTrailingDelimiters(strPath));
@@ -172,14 +172,14 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
-        UICustomFileSystemItem *item = new UICustomFileSystemItem(fileInfo.fileName(), parent, fileType(fileInfo));
+        UIFileSystemItem *item = new UIFileSystemItem(fileInfo.fileName(), parent, fileType(fileInfo));
         if (!item)
             continue;
 
-        item->setData(fileInfo.size(),         UICustomFileSystemModelData_Size);
-        item->setData(fileInfo.lastModified(), UICustomFileSystemModelData_ChangeTime);
-        item->setData(fileInfo.owner(),        UICustomFileSystemModelData_Owner);
-        item->setData(permissionString(fileInfo.permissions()),  UICustomFileSystemModelData_Permissions);
+        item->setData(fileInfo.size(),         UIFileSystemModelData_Size);
+        item->setData(fileInfo.lastModified(), UIFileSystemModelData_ChangeTime);
+        item->setData(fileInfo.owner(),        UIFileSystemModelData_Owner);
+        item->setData(permissionString(fileInfo.permissions()),  UIFileSystemModelData_Permissions);
 
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */
@@ -281,19 +281,19 @@ bool UIFileManagerHostTable::isWindowsFileSystem() const
     return uiCommon().hostOperatingSystem().contains("windows", Qt::CaseInsensitive);
 }
 
-bool UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
+bool UIFileManagerHostTable::readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
         return false;
 
-    QMap<QString, UICustomFileSystemItem*> fileObjects;
+    QMap<QString, UIFileSystemItem*> fileObjects;
     if (!scanDirectory(strPath, parent, fileObjects))
         return false;
     checkDotDot(fileObjects, parent, isStartDir);
     return true;
 }
 
-void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
+void UIFileManagerHostTable::deleteByItem(UIFileSystemItem *item)
 {
     if (item->isUpDirectory())
         return;
@@ -319,7 +319,7 @@ void UIFileManagerHostTable::goToHomeDirectory()
 {
     if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UICustomFileSystemItem *startDirItem = rootItem()->child(0);
+    UIFileSystemItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 
@@ -327,7 +327,7 @@ void UIFileManagerHostTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIFileManagerHostTable::renameItem(UICustomFileSystemItem *item, const QString &strOldPath)
+bool UIFileManagerHostTable::renameItem(UIFileSystemItem *item, const QString &strOldPath)
 {
     if (!item || item->isUpDirectory())
         return false;

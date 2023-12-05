@@ -39,7 +39,7 @@
 /* GUI includes: */
 #include "QIToolBar.h"
 #include "UIActionPool.h"
-#include "UICustomFileSystemModel.h"
+#include "UIFileSystemModel.h"
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
 
@@ -262,7 +262,7 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
 
     if (rootItem() && rootItem()->childCount() > 0)
     {
-        UICustomFileSystemItem *pStartItem = startItem();
+        UIFileSystemItem *pStartItem = startItem();
         if (pStartItem)
         {
             QModelIndex iindex = m_pModel->index(pStartItem);
@@ -278,7 +278,7 @@ UIVisoContentBrowser::~UIVisoContentBrowser()
 }
 
 void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
-                                                  UICustomFileSystemItem *pParentItem /* = 0 */,
+                                                  UIFileSystemItem *pParentItem /* = 0 */,
                                                   const QString &strDirPath /* = QString() */)
 {
     if (!pParentItem)
@@ -293,10 +293,10 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
     /* If this is not the root directory add an "up" file object explicity since RTVfsDirReadEx does not return one:*/
     if (!strDirPath.isEmpty())
     {
-        UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(UICustomFileSystemModel::strUpDirectoryString,
+        UIFileSystemItem* pAddedItem = new UIFileSystemItem(UIFileSystemModel::strUpDirectoryString,
                                                                         pParentItem,
                                                                         KFsObjType_Directory);
-        pAddedItem->setData(strISOFilePath, UICustomFileSystemModelData_ISOFilePath);
+        pAddedItem->setData(strISOFilePath, UIFileSystemModelData_ISOFilePath);
     }
     QList<ISOFileObject> objectList = openAndReadISODir(strISOFilePath, strDirPath);
 
@@ -313,12 +313,12 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
         if (pParentItem->child(fileInfo.fileName()))
             continue;
 
-        UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
+        UIFileSystemItem* pAddedItem = new UIFileSystemItem(fileInfo.fileName(), pParentItem,
                                                                         objectList[i].enmObjectType);
 
         QString path = UIPathOperations::mergePaths(pParentItem->path(), fileInfo.fileName());
-        pAddedItem->setData(path, UICustomFileSystemModelData_LocalPath);
-        pAddedItem->setData(strISOFilePath, UICustomFileSystemModelData_ISOFilePath);
+        pAddedItem->setData(path, UIFileSystemModelData_LocalPath);
+        pAddedItem->setData(strISOFilePath, UIFileSystemModelData_ISOFilePath);
         pAddedItem->setIsOpened(false);
 
     }
@@ -330,21 +330,21 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
 
 void UIVisoContentBrowser::removeISOContentFromViso()
 {
-    UICustomFileSystemItem* pParentItem = startItem();
+    UIFileSystemItem* pParentItem = startItem();
     AssertReturnVoid(pParentItem);
     AssertReturnVoid(m_pModel);
 
-    QList<UICustomFileSystemItem*> itemsToDelete;
+    QList<UIFileSystemItem*> itemsToDelete;
     /* Delete all children of startItem that were imported from an ISO: */
     for (int i = 0; i < pParentItem->childCount(); ++i)
     {
-        UICustomFileSystemItem* pItem = pParentItem->child(i);
-        if (!pItem || pItem->data(UICustomFileSystemModelData_ISOFilePath).toString().isEmpty())
+        UIFileSystemItem* pItem = pParentItem->child(i);
+        if (!pItem || pItem->data(UIFileSystemModelData_ISOFilePath).toString().isEmpty())
             continue;
         itemsToDelete << pItem;
     }
 
-    foreach (UICustomFileSystemItem *pItem, itemsToDelete)
+    foreach (UIFileSystemItem *pItem, itemsToDelete)
             m_pModel->deleteItem(pItem);
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
@@ -363,7 +363,7 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
     if (!parentIndex.isValid())
          return;
 
-    UICustomFileSystemItem *pParentItem = static_cast<UICustomFileSystemItem*>(parentIndex.internalPointer());
+    UIFileSystemItem *pParentItem = static_cast<UIFileSystemItem*>(parentIndex.internalPointer());
     if (!pParentItem)
         return;
 
@@ -375,9 +375,9 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
         if (pParentItem->child(fileInfo.fileName()))
             continue;
 
-        UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
+        UIFileSystemItem* pAddedItem = new UIFileSystemItem(fileInfo.fileName(), pParentItem,
                                                                         fileType(fileInfo));
-        pAddedItem->setData(strPath, UICustomFileSystemModelData_LocalPath);
+        pAddedItem->setData(strPath, UIFileSystemModelData_LocalPath);
 
         pAddedItem->setIsOpened(false);
         if (fileInfo.isSymLink())
@@ -385,7 +385,7 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
             pAddedItem->setTargetPath(fileInfo.symLinkTarget());
             pAddedItem->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
         }
-        createVisoEntry(pAddedItem->path(), pAddedItem->data(UICustomFileSystemModelData_LocalPath).toString(), false);
+        createVisoEntry(pAddedItem->path(), pAddedItem->data(UIFileSystemModelData_LocalPath).toString(), false);
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
@@ -421,16 +421,16 @@ QStringList UIVisoContentBrowser::entryList()
 
 void UIVisoContentBrowser::retranslateUi()
 {
-    UICustomFileSystemItem *pRootItem = rootItem();
+    UIFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Name"), UICustomFileSystemModelData_Name);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Size"), UICustomFileSystemModelData_Size);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Change Time"), UICustomFileSystemModelData_ChangeTime);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Owner"), UICustomFileSystemModelData_Owner);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Permissions"), UICustomFileSystemModelData_Permissions);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Local Path"), UICustomFileSystemModelData_LocalPath);
-        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Has Removed Child"), UICustomFileSystemModelData_DescendantRemovedFromVISO);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Name"), UIFileSystemModelData_Name);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Size"), UIFileSystemModelData_Size);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Change Time"), UIFileSystemModelData_ChangeTime);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Owner"), UIFileSystemModelData_Owner);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Permissions"), UIFileSystemModelData_Permissions);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Local Path"), UIFileSystemModelData_LocalPath);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Has Removed Child"), UIFileSystemModelData_DescendantRemovedFromVISO);
     }
     if (m_pSubMenu)
         m_pSubMenu->setTitle(QApplication::translate("UIVisoCreatorWidget", "VISO Browser"));
@@ -442,8 +442,8 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
 {
     if (!index.isValid() || !m_pTableProxyModel)
         return;
-    UICustomFileSystemItem *pClickedItem =
-        static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
+    UIFileSystemItem *pClickedItem =
+        static_cast<UIFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
     if (!pClickedItem)
         return;
     if (!pClickedItem->isDirectory() && !pClickedItem->isSymLinkToADirectory())
@@ -451,12 +451,12 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     /* Don't navigate into removed directories: */
     if (pClickedItem->isRemovedFromViso())
         return;
-    QString strISOPath = pClickedItem->data(UICustomFileSystemModelData_ISOFilePath).toString();
+    QString strISOPath = pClickedItem->data(UIFileSystemModelData_ISOFilePath).toString();
     if (pClickedItem->isUpDirectory())
         goUp();
     else if (!strISOPath.isEmpty())
     {
-        importISOContentToViso(strISOPath, pClickedItem, pClickedItem->data(UICustomFileSystemModelData_LocalPath).toString());
+        importISOContentToViso(strISOPath, pClickedItem, pClickedItem->data(UIFileSystemModelData_LocalPath).toString());
         setTableRootIndex(index);
     }
     else
@@ -481,19 +481,19 @@ void UIVisoContentBrowser::sltCreateNewDirectory()
     if (!parentIndex.isValid())
          return;
 
-    UICustomFileSystemItem *pParentItem = static_cast<UICustomFileSystemItem*>(parentIndex.internalPointer());
+    UIFileSystemItem *pParentItem = static_cast<UIFileSystemItem*>(parentIndex.internalPointer());
     if (!pParentItem)
         return;
 
     /*  Check to see if we already have a directory named strNewDirectoryName: */
-    const QList<UICustomFileSystemItem*> children = pParentItem->children();
-    foreach (const UICustomFileSystemItem *item, children)
+    const QList<UIFileSystemItem*> children = pParentItem->children();
+    foreach (const UIFileSystemItem *item, children)
     {
         if (item->fileObjectName() == strNewDirectoryName)
             return;
     }
 
-    UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(strNewDirectoryName, pParentItem,
+    UIFileSystemItem* pAddedItem = new UIFileSystemItem(strNewDirectoryName, pParentItem,
                                                                     KFsObjType_Directory);
 
     pAddedItem->setIsOpened(false);
@@ -513,11 +513,11 @@ void UIVisoContentBrowser::sltRestoreItems()
     restoreItems(tableSelectedItems());
 }
 
-void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> itemList)
+void UIVisoContentBrowser::removeItems(const QList<UIFileSystemItem*> itemList)
 {
     AssertReturnVoid(m_pModel);
     AssertReturnVoid(m_pTableProxyModel);
-    foreach(UICustomFileSystemItem *pItem, itemList)
+    foreach(UIFileSystemItem *pItem, itemList)
     {
         if (!pItem || pItem->isUpDirectory())
             continue;
@@ -529,7 +529,7 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
 
         bool bFoundInMap = m_entryMap.remove(strVisoPath) > 0;
         if (!bFoundInMap)
-            createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), true /* bool bRemove */);
+            createVisoEntry(pItem->path(), pItem->data(UIFileSystemModelData_LocalPath).toString(), true /* bool bRemove */);
 
         markRemovedUnremovedItemParents(pItem, true);
         m_pModel->deleteItem(pItem);
@@ -538,9 +538,9 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
     m_pTableProxyModel->invalidate();
 }
 
-void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)
+void UIVisoContentBrowser::restoreItems(const QList<UIFileSystemItem*> itemList)
 {
-    foreach(UICustomFileSystemItem *pItem, itemList)
+    foreach(UIFileSystemItem *pItem, itemList)
     {
         if (!pItem || pItem->isUpDirectory())
             continue;
@@ -552,7 +552,7 @@ void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> ite
 
         bool bFoundInMap = m_entryMap.remove(strVisoPath) > 0;
         if (!bFoundInMap)
-            createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), false /* bool bRemove */);
+            createVisoEntry(pItem->path(), pItem->data(UIFileSystemModelData_LocalPath).toString(), false /* bool bRemove */);
 
         markRemovedUnremovedItemParents(pItem, false);
     }
@@ -560,16 +560,16 @@ void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> ite
         m_pTableProxyModel->invalidate();
 }
 
-void UIVisoContentBrowser::markRemovedUnremovedItemParents(UICustomFileSystemItem *pItem, bool fRemoved)
+void UIVisoContentBrowser::markRemovedUnremovedItemParents(UIFileSystemItem *pItem, bool fRemoved)
 {
     pItem->setRemovedFromViso(fRemoved);
-    UICustomFileSystemItem *pRoot = rootItem();
-    UICustomFileSystemItem *pParent = pItem->parentItem();
+    UIFileSystemItem *pRoot = rootItem();
+    UIFileSystemItem *pParent = pItem->parentItem();
 
     while (pParent && pParent != pRoot)
     {
         pParent->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Child/children removed"));
-        pParent->setData(true, UICustomFileSystemModelData_DescendantRemovedFromVISO);
+        pParent->setData(true, UIFileSystemModelData_DescendantRemovedFromVISO);
         pParent = pParent->parentItem();
     }
 }
@@ -578,8 +578,8 @@ void UIVisoContentBrowser::prepareObjects()
 {
     UIVisoBrowserBase::prepareObjects();
 
-    m_pModel = new UICustomFileSystemModel(this);
-    m_pTableProxyModel = new UICustomFileSystemProxyModel(this);
+    m_pModel = new UIFileSystemModel(this);
+    m_pTableProxyModel = new UIFileSystemProxyModel(this);
     if (m_pTableProxyModel)
     {
         m_pTableProxyModel->setSourceModel(m_pModel);
@@ -615,12 +615,12 @@ void UIVisoContentBrowser::prepareObjects()
 
     m_pTableView->setModel(m_pTableProxyModel);
     setTableRootIndex();
-    m_pTableView->hideColumn(UICustomFileSystemModelData_Owner);
-    m_pTableView->hideColumn(UICustomFileSystemModelData_Permissions);
-    m_pTableView->hideColumn(UICustomFileSystemModelData_Size);
-    m_pTableView->hideColumn(UICustomFileSystemModelData_ChangeTime);
-    m_pTableView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
-    m_pTableView->hideColumn(UICustomFileSystemModelData_RemovedFromVISO);
+    m_pTableView->hideColumn(UIFileSystemModelData_Owner);
+    m_pTableView->hideColumn(UIFileSystemModelData_Permissions);
+    m_pTableView->hideColumn(UIFileSystemModelData_Size);
+    m_pTableView->hideColumn(UIFileSystemModelData_ChangeTime);
+    m_pTableView->hideColumn(UIFileSystemModelData_ISOFilePath);
+    m_pTableView->hideColumn(UIFileSystemModelData_RemovedFromVISO);
 
     m_pTableView->setSortingEnabled(true);
     m_pTableView->sortByColumn(0, Qt::AscendingOrder);
@@ -728,7 +728,7 @@ void UIVisoContentBrowser::prepareConnections()
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoContentBrowser::sltTableSelectionChanged);
     if (m_pModel)
-        connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
+        connect(m_pModel, &UIFileSystemModel::sigItemRenamed,
                 this, &UIVisoContentBrowser::sltItemRenameAttempt);
 
     if (m_pCreateNewDirectoryAction)
@@ -755,16 +755,16 @@ void UIVisoContentBrowser::prepareConnections()
         connect(m_pGoBackward, &QAction::triggered, this, &UIVisoContentBrowser::sltGoBackward);
 }
 
-UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
+UIFileSystemItem* UIVisoContentBrowser::rootItem()
 {
     if (!m_pModel)
         return 0;
     return m_pModel->rootItem();
 }
 
-UICustomFileSystemItem* UIVisoContentBrowser::startItem()
+UIFileSystemItem* UIVisoContentBrowser::startItem()
 {
-    UICustomFileSystemItem* pRoot = rootItem();
+    UIFileSystemItem* pRoot = rootItem();
 
     if (!pRoot || pRoot->childCount() <= 0)
         return 0;
@@ -780,7 +780,7 @@ void UIVisoContentBrowser::initializeModel()
 
     const QString startPath = QString("/");
 
-    UICustomFileSystemItem *pStartItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
+    UIFileSystemItem *pStartItem = new UIFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
 
     pStartItem->setIsOpened(false);
 }
@@ -805,7 +805,7 @@ void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
 {
     if (strPath == currentPath())
         return;
-    UICustomFileSystemItem *pItem = searchItemByPath(strPath);
+    UIFileSystemItem *pItem = searchItemByPath(strPath);
 
     if (pItem && pItem->isDirectory() && !pItem->isRemovedFromViso())
     {
@@ -815,9 +815,9 @@ void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
     }
 }
 
-UICustomFileSystemItem* UIVisoContentBrowser::searchItemByPath(const QString &strPath)
+UIFileSystemItem* UIVisoContentBrowser::searchItemByPath(const QString &strPath)
 {
-    UICustomFileSystemItem *pItem = startItem();
+    UIFileSystemItem *pItem = startItem();
     QStringList path = UIPathOperations::pathTrail(strPath);
 
     foreach (const QString strName, path)
@@ -908,14 +908,14 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
         if (!localFileObjectInfo.exists())
             continue;
 
-        UICustomFileSystemItem *pParent = startItem();
+        UIFileSystemItem *pParent = startItem();
         /* Make sure all the parents from start item until the immediate parent are created: */
         for (int i = 0; i < pathList.size(); ++i)
         {
             strPath.append("/");
             strPath.append(pathList[i]);
 
-            UICustomFileSystemItem *pItem = searchItemByPath(strPath);
+            UIFileSystemItem *pItem = searchItemByPath(strPath);
             KFsObjType enmObjectType;
             /* All objects, except possibly the last one, are directories:*/
             if (i == pathList.size() - 1)
@@ -924,18 +924,18 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
                 enmObjectType = KFsObjType_Directory;
             if (!pItem)
             {
-                pItem = new UICustomFileSystemItem(pathList[i], pParent, enmObjectType);
+                pItem = new UIFileSystemItem(pathList[i], pParent, enmObjectType);
                 if (!pItem)
                     continue;
 
                 if (i == pathList.size() - 1)
-                    pItem->setData(strLocalPath, UICustomFileSystemModelData_LocalPath);
+                    pItem->setData(strLocalPath, UIFileSystemModelData_LocalPath);
                 /* Pre-scan and populate the directory since we may need its content while processing removed items: */
                 if (enmObjectType == KFsObjType_Directory)
                     scanHostDirectory(pItem, true  /* recursive */);
             }
             if (i == pathList.size() - 1)
-                createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), false);
+                createVisoEntry(pItem->path(), pItem->data(UIFileSystemModelData_LocalPath).toString(), false);
             pParent = pItem;
         }
     }
@@ -947,11 +947,11 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
 
 void UIVisoContentBrowser::processRemovedEntries(const QStringList &removedEntries)
 {
-    QList<UICustomFileSystemItem*> itemList;
+    QList<UIFileSystemItem*> itemList;
     foreach (const QString &strPath, removedEntries)
     {
         QFileInfo fileInfo(strPath);
-        UICustomFileSystemItem *pItem = searchItemByPath(strPath);
+        UIFileSystemItem *pItem = searchItemByPath(strPath);
         if (pItem)
             itemList << pItem;
     }
@@ -970,16 +970,16 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
     return QModelIndex();
 }
 
-void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem, bool fRecursive)
+void UIVisoContentBrowser::scanHostDirectory(UIFileSystemItem *directoryItem, bool fRecursive)
 {
     if (!directoryItem)
         return;
     /* the clicked item can be a directory created with the VISO content. in that case local path data
        should be empty: */
     if ((directoryItem->type() != KFsObjType_Directory && !directoryItem->isSymLinkToADirectory()) ||
-        directoryItem->data(UICustomFileSystemModelData_LocalPath).toString().isEmpty())
+        directoryItem->data(UIFileSystemModelData_LocalPath).toString().isEmpty())
         return;
-    QDir directory(directoryItem->data(UICustomFileSystemModelData_LocalPath).toString());
+    QDir directory(directoryItem->data(UIFileSystemModelData_LocalPath).toString());
     if (directory.exists() && !directoryItem->isOpened())
     {
         QFileInfoList directoryContent = directory.entryInfoList();
@@ -990,10 +990,10 @@ void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryIt
             if (fileInfo.fileName() == ".")
                 continue;
             KFsObjType enmType = fileType(fileInfo);
-            UICustomFileSystemItem *newItem = new UICustomFileSystemItem(fileInfo.fileName(),
+            UIFileSystemItem *newItem = new UIFileSystemItem(fileInfo.fileName(),
                                                                          directoryItem,
                                                                          enmType);
-            newItem->setData(fileInfo.filePath(), UICustomFileSystemModelData_LocalPath);
+            newItem->setData(fileInfo.filePath(), UIFileSystemModelData_LocalPath);
             if (fileInfo.isSymLink())
             {
                 newItem->setTargetPath(fileInfo.symLinkTarget());
@@ -1029,34 +1029,34 @@ void UIVisoContentBrowser::updateStartItemName()
         return;
     const QString strName(QDir::toNativeSeparators("/"));
 
-    rootItem()->child(0)->setData(strName, UICustomFileSystemModelData_Name);
+    rootItem()->child(0)->setData(strName, UIFileSystemModelData_Name);
     /* If the table root index is the start item then we have to update the location selector text here: */
     // if (m_pTableProxyModel->mapToSource(m_pTableView->rootIndex()).internalPointer() == rootItem()->child(0))
     //     updateLocationSelectorText(strName);
     m_pTableProxyModel->invalidate();
 }
 
-void UIVisoContentBrowser::renameFileObject(UICustomFileSystemItem *pItem)
+void UIVisoContentBrowser::renameFileObject(UIFileSystemItem *pItem)
 {
     m_pTableView->edit(m_pTableProxyModel->mapFromSource(m_pModel->index(pItem)));
 }
 
 void UIVisoContentBrowser::sltItemRenameAction()
 {
-    QList<UICustomFileSystemItem*> selectedItems = tableSelectedItems();
+    QList<UIFileSystemItem*> selectedItems = tableSelectedItems();
     if (selectedItems.empty())
         return;
     renameFileObject(selectedItems.at(0));
 }
 
-void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, const QString &strOldPath,
+void UIVisoContentBrowser::sltItemRenameAttempt(UIFileSystemItem *pItem, const QString &strOldPath,
                                                 const QString &strOldName, const QString &strNewName)
 {
     if (!pItem || !pItem->parentItem())
         return;
-    QList<UICustomFileSystemItem*> children = pItem->parentItem()->children();
+    QList<UIFileSystemItem*> children = pItem->parentItem()->children();
     bool bDuplicate = false;
-    foreach (const UICustomFileSystemItem *item, children)
+    foreach (const UIFileSystemItem *item, children)
     {
         if (item->fileObjectName() == strNewName && item != pItem)
             bDuplicate = true;
@@ -1067,7 +1067,7 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, c
     if (bDuplicate)
     {
         /* Restore the previous name in case the @strNewName is a duplicate: */
-        pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelData_Name));
+        pItem->setData(strOldName, static_cast<int>(UIFileSystemModelData_Name));
     }
     else
     {
@@ -1075,9 +1075,9 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, c
            adding the renamed item, removing the old one (if it exists) and also add a :remove: to
            VISO file for the old path since in some cases, when remaned item is not top level, it still
            appears in ISO. So we remove it explicitly: */
-        m_entryMap.insert(strNewPath, pItem->data(UICustomFileSystemModelData_LocalPath).toString());
+        m_entryMap.insert(strNewPath, pItem->data(UIFileSystemModelData_LocalPath).toString());
         m_entryMap.remove(strOldPath);
-        if (!pItem->data(UICustomFileSystemModelData_LocalPath).toString().isEmpty())
+        if (!pItem->data(UIFileSystemModelData_LocalPath).toString().isEmpty())
             m_entryMap.insert(strOldPath, cRemoveText);
     }
 
@@ -1129,9 +1129,9 @@ void UIVisoContentBrowser::sltGoUp()
     goUp();
 }
 
-QList<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
+QList<UIFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
 {
-    QList<UICustomFileSystemItem*> selectedItems;
+    QList<UIFileSystemItem*> selectedItems;
     if (!m_pTableProxyModel)
         return selectedItems;
     QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
@@ -1140,8 +1140,8 @@ QList<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
     QModelIndexList list = selectionModel->selectedRows();
     foreach (QModelIndex index, list)
     {
-        UICustomFileSystemItem *pItem =
-            static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
+        UIFileSystemItem *pItem =
+            static_cast<UIFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
         if (pItem)
             selectedItems << pItem;
     }
@@ -1153,7 +1153,7 @@ QString UIVisoContentBrowser::currentPath() const
     if (!m_pTableView || !m_pTableView->rootIndex().isValid())
         return QString();
     QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
-    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>((index).internalPointer());
+    UIFileSystemItem *pItem = static_cast<UIFileSystemItem*>((index).internalPointer());
     if (!pItem)
         return QString();
     return pItem->path();
@@ -1164,7 +1164,7 @@ bool UIVisoContentBrowser::onStartItem()
     if (!m_pTableView || !m_pModel)
         return false;
     QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
-    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>((index).internalPointer());
+    UIFileSystemItem *pItem = static_cast<UIFileSystemItem*>((index).internalPointer());
     if (!index.isValid() || !pItem)
         return false;
     if (pItem != startItem())
@@ -1190,22 +1190,22 @@ void UIVisoContentBrowser::goToStart()
         goUp();
 }
 
-const UICustomFileSystemItem* UIVisoContentBrowser::currentDirectoryItem() const
+const UIFileSystemItem* UIVisoContentBrowser::currentDirectoryItem() const
 {
     if (!m_pTableView || !m_pTableView->rootIndex().isValid())
         return 0;
     QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
 
-    return static_cast<UICustomFileSystemItem*>(currentRoot.internalPointer());
+    return static_cast<UIFileSystemItem*>(currentRoot.internalPointer());
 }
 
 QStringList UIVisoContentBrowser::currentDirectoryListing() const
 {
-    const UICustomFileSystemItem *pCurrentDirectoryItem = currentDirectoryItem();
+    const UIFileSystemItem *pCurrentDirectoryItem = currentDirectoryItem();
     if (!pCurrentDirectoryItem)
         return QStringList();
     QStringList nameList;
-    foreach (const UICustomFileSystemItem *pChild, pCurrentDirectoryItem->children())
+    foreach (const UIFileSystemItem *pChild, pCurrentDirectoryItem->children())
     {
         if (pChild)
             nameList << pChild->fileObjectName();

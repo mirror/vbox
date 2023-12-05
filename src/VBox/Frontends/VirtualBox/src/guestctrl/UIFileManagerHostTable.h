@@ -39,10 +39,10 @@
 
 /* Forward declarations: */
 class UIActionPool;
-class UICustomFileSystemItem;
+class UIFileSystemItem;
 
 /** This class scans the host file system by using the Qt API
-    and connects to the UICustomFileSystemModel*/
+    and connects to the UIFileSystemModel*/
 class UIFileManagerHostTable : public UIFileManagerTable
 {
     Q_OBJECT;
@@ -60,13 +60,13 @@ protected:
 
     /** Scans the directory with the path @strPath and inserts items to the
      *  tree under the @p parent. */
-    static bool scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
-                              QMap<QString, UICustomFileSystemItem*> &fileObjects);
+    static bool scanDirectory(const QString& strPath, UIFileSystemItem *parent,
+                              QMap<QString, UIFileSystemItem*> &fileObjects);
     void            retranslateUi() override final;
-    virtual bool    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
-    virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
+    virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual void    deleteByItem(UIFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
-    virtual bool    renameItem(UICustomFileSystemItem *item, const QString &strOldPath) override final;
+    virtual bool    renameItem(UIFileSystemItem *item, const QString &strOldPath) override final;
     virtual bool    createDirectory(const QString &path, const QString &directoryName) override final;
     virtual QString fsObjectPropertyString() override final;
     virtual void    showProperties() override final;

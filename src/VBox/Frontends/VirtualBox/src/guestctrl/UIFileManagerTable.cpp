@@ -42,7 +42,7 @@
 #include "QIToolBar.h"
 #include "UIActionPool.h"
 #include "UICommon.h"
-#include "UICustomFileSystemModel.h"
+#include "UIFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIFileManager.h"
 #include "UIFileManagerTable.h"
@@ -457,14 +457,14 @@ void UIFileManagerTable::prepareObjects()
         m_sessionWidgets << m_pNavigationWidget;
     }
 
-    m_pModel = new UICustomFileSystemModel(this);
+    m_pModel = new UIFileSystemModel(this);
     if (!m_pModel)
         return;
 
-    connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
+    connect(m_pModel, &UIFileSystemModel::sigItemRenamed,
             this, &UIFileManagerTable::sltHandleItemRenameAttempt);
 
-    m_pProxyModel = new UICustomFileSystemProxyModel(this);
+    m_pProxyModel = new UIFileSystemProxyModel(this);
     if (!m_pProxyModel)
         return;
     m_pProxyModel->setSourceModel(m_pModel);
@@ -496,10 +496,10 @@ void UIFileManagerTable::prepareObjects()
                 this, &UIFileManagerTable::sltSelectionChanged);
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
-        m_pView->hideColumn(UICustomFileSystemModelData_LocalPath);
-        m_pView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
-        m_pView->hideColumn(UICustomFileSystemModelData_RemovedFromVISO);
-        m_pView->hideColumn(UICustomFileSystemModelData_DescendantRemovedFromVISO);
+        m_pView->hideColumn(UIFileSystemModelData_LocalPath);
+        m_pView->hideColumn(UIFileSystemModelData_ISOFilePath);
+        m_pView->hideColumn(UIFileSystemModelData_RemovedFromVISO);
+        m_pView->hideColumn(UIFileSystemModelData_DescendantRemovedFromVISO);
 
         m_sessionWidgets << m_pView;
     }
@@ -535,7 +535,7 @@ void UIFileManagerTable::changeLocation(const QModelIndex &index)
     if (m_pView->selectionModel())
         m_pView->selectionModel()->reset();
 
-    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+    UIFileSystemItem *item = static_cast<UIFileSystemItem*>(index.internalPointer());
     if (item)
     {
         updateCurrentLocationEdit(item->path());
@@ -555,7 +555,7 @@ void UIFileManagerTable::initializeFileTree()
     QString startPath("/");
     /* On Unix-like systems startItem represents the root directory. On Windows it is like "my computer" under which
      * drives are listed: */
-    UICustomFileSystemItem* startItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
+    UIFileSystemItem* startItem = new UIFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
 
     startItem->setIsOpened(false);
     populateStartDirectory(startItem);
@@ -565,7 +565,7 @@ void UIFileManagerTable::initializeFileTree()
     updateCurrentLocationEdit(currentDirectoryPath());
 }
 
-void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startItem)
+void UIFileManagerTable::populateStartDirectory(UIFileSystemItem *startItem)
 {
     determineDriveLetters();
     if (m_driveLetterList.isEmpty())
@@ -577,7 +577,7 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
     {
         for (int i = 0; i < m_driveLetterList.size(); ++i)
         {
-            UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(UIPathOperations::removeTrailingDelimiters(m_driveLetterList[i]),
+            UIFileSystemItem* driveItem = new UIFileSystemItem(UIPathOperations::removeTrailingDelimiters(m_driveLetterList[i]),
                                                                            startItem, KFsObjType_Directory);
             driveItem->setIsOpened(false);
             driveItem->setIsDriveItem(true);
@@ -586,22 +586,22 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
     }
 }
 
-void UIFileManagerTable::checkDotDot(QMap<QString,UICustomFileSystemItem*> &map,
-                                     UICustomFileSystemItem *parent, bool isStartDir)
+void UIFileManagerTable::checkDotDot(QMap<QString,UIFileSystemItem*> &map,
+                                     UIFileSystemItem *parent, bool isStartDir)
 {
     if (!parent)
         return;
     /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
-    if (!map.contains(UICustomFileSystemModel::strUpDirectoryString)  && !isStartDir)
+    if (!map.contains(UIFileSystemModel::strUpDirectoryString)  && !isStartDir)
     {
-        UICustomFileSystemItem *item = new UICustomFileSystemItem(UICustomFileSystemModel::strUpDirectoryString,
+        UIFileSystemItem *item = new UIFileSystemItem(UIFileSystemModel::strUpDirectoryString,
                                                                   parent, KFsObjType_Directory);
         item->setIsOpened(false);
-        map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
+        map.insert(UIFileSystemModel::strUpDirectoryString, item);
     }
-    else if (map.contains(UICustomFileSystemModel::strUpDirectoryString)  && isStartDir)
+    else if (map.contains(UIFileSystemModel::strUpDirectoryString)  && isStartDir)
     {
-        map.remove(UICustomFileSystemModel::strUpDirectoryString);
+        map.remove(UIFileSystemModel::strUpDirectoryString);
     }
 }
 
@@ -670,7 +670,7 @@ void UIFileManagerTable::goIntoDirectory(const QModelIndex &itemIndex)
     if (!index.isValid())
         return;
 
-    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+    UIFileSystemItem *item = static_cast<UIFileSystemItem*>(index.internalPointer());
     if (!item)
         return;
 
@@ -697,7 +697,7 @@ void UIFileManagerTable::goIntoDirectory(const QModelIndex &itemIndex)
 
 void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
 {
-    UICustomFileSystemItem *parent = getStartDirectoryItem();
+    UIFileSystemItem *parent = getStartDirectoryItem();
 
     for(int i = 0; i < pathTrail.size(); ++i)
     {
@@ -708,7 +708,7 @@ void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
             if (!readDirectory(parent->path(), parent, parent == getStartDirectoryItem()))
                 return;
         /* search the current path item among the parent's children: */
-        UICustomFileSystemItem *item = parent->child(pathTrail.at(i));
+        UIFileSystemItem *item = parent->child(pathTrail.at(i));
 
         if (!item)
             return;
@@ -724,18 +724,18 @@ void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
     goIntoDirectory(parent);
 }
 
-void UIFileManagerTable::goIntoDirectory(UICustomFileSystemItem *item)
+void UIFileManagerTable::goIntoDirectory(UIFileSystemItem *item)
 {
     if (!item || !m_pModel)
         return;
     goIntoDirectory(m_pModel->index(item));
 }
 
-UICustomFileSystemItem* UIFileManagerTable::indexData(const QModelIndex &index) const
+UIFileSystemItem* UIFileManagerTable::indexData(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
-    return static_cast<UICustomFileSystemItem*>(index.internalPointer());
+    return static_cast<UIFileSystemItem*>(index.internalPointer());
 }
 
 void UIFileManagerTable::refresh()
@@ -744,7 +744,7 @@ void UIFileManagerTable::refresh()
         return;
     QModelIndex currentIndex = currentRootIndex();
 
-    UICustomFileSystemItem *treeItem = indexData(currentIndex);
+    UIFileSystemItem *treeItem = indexData(currentIndex);
     if (!treeItem)
         return;
     bool isRootDir = (m_pModel->rootIndex() == currentIndex);
@@ -805,7 +805,7 @@ void UIFileManagerTable::sltRename()
         return;
     QModelIndex modelIndex =
         m_pProxyModel ? m_pProxyModel->mapToSource(selectedItemIndices.at(0)) : selectedItemIndices.at(0);
-    UICustomFileSystemItem *item = indexData(modelIndex);
+    UIFileSystemItem *item = indexData(modelIndex);
     if (!item || item->isUpDirectory())
         return;
     m_pView->edit(selectedItemIndices.at(0));
@@ -818,10 +818,10 @@ void UIFileManagerTable::sltCreateNewDirectory()
     QModelIndex currentIndex = currentRootIndex();
     if (!currentIndex.isValid())
         return;
-    UICustomFileSystemItem *parentFolderItem = static_cast<UICustomFileSystemItem*>(currentIndex.internalPointer());
+    UIFileSystemItem *parentFolderItem = static_cast<UIFileSystemItem*>(currentIndex.internalPointer());
     if (!parentFolderItem)
         return;
-    QString strBase(UICustomFileSystemModel::tr("NewDirectory"));
+    QString strBase(UIFileSystemModel::tr("NewDirectory"));
     QString newDirectoryName(strBase);
     QStringList nameList = currentDirectoryListing();
     int iSuffix = 1;
@@ -837,10 +837,10 @@ void UIFileManagerTable::sltCreateNewDirectory()
     sltRefresh();
 
     /* Now we try to edit the newly created item thereby enabling the user to rename the new item: */
-    QList<UICustomFileSystemItem*> content = parentFolderItem->children();
-    UICustomFileSystemItem* newItem = 0;
+    QList<UIFileSystemItem*> content = parentFolderItem->children();
+    UIFileSystemItem* newItem = 0;
     /* Search the new item: */
-    foreach (UICustomFileSystemItem* childItem, content)
+    foreach (UIFileSystemItem* childItem, content)
     {
 
         if (childItem && newDirectoryName == childItem->fileObjectName())
@@ -908,7 +908,7 @@ void UIFileManagerTable::sltSearchTextChanged(const QString &strText)
     performSelectionSearch(strText);
 }
 
-void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, const QString &strOldPath,
+void UIFileManagerTable::sltHandleItemRenameAttempt(UIFileSystemItem *pItem, const QString &strOldPath,
                                                     const QString &strOldName, const QString &strNewName)
 {
     Q_UNUSED(strNewName);
@@ -918,7 +918,7 @@ void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pIte
     if (!renameItem(pItem, strOldPath))
     {
         /* Restore the previous name. relist the view: */
-        pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelData_Name));
+        pItem->setData(strOldName, static_cast<int>(UIFileSystemModelData_Name));
         relist();
         emit sigLogOutput(QString(pItem->path()).append(" could not be renamed"), QString(), FileManagerLogType_Error);
     }
@@ -960,7 +960,7 @@ void UIFileManagerTable::deSelectUpDirectoryItem()
         if (!index.isValid())
             continue;
 
-        UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+        UIFileSystemItem *item = static_cast<UIFileSystemItem*>(index.internalPointer());
         if (item && item->isUpDirectory())
         {
             QModelIndex indexToDeselect = m_pProxyModel ? m_pProxyModel->mapFromSource(index) : index;
@@ -1003,7 +1003,7 @@ void UIFileManagerTable::setSelection(const QModelIndex &indexInProxyModel)
 
 void UIFileManagerTable::deleteByIndex(const QModelIndex &itemIndex)
 {
-    UICustomFileSystemItem *treeItem = indexData(itemIndex);
+    UIFileSystemItem *treeItem = indexData(itemIndex);
     if (!treeItem)
         return;
     deleteByItem(treeItem);
@@ -1011,14 +1011,14 @@ void UIFileManagerTable::deleteByIndex(const QModelIndex &itemIndex)
 
 void UIFileManagerTable::retranslateUi()
 {
-    UICustomFileSystemItem *pRootItem = rootItem();
+    UIFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelData_Name);
-        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelData_Size);
-        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelData_ChangeTime);
-        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelData_Owner);
-        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelData_Permissions);
+        pRootItem->setData(UIFileManager::tr("Name"), UIFileSystemModelData_Name);
+        pRootItem->setData(UIFileManager::tr("Size"), UIFileSystemModelData_Size);
+        pRootItem->setData(UIFileManager::tr("Change Time"), UIFileSystemModelData_ChangeTime);
+        pRootItem->setData(UIFileManager::tr("Owner"), UIFileSystemModelData_Owner);
+        pRootItem->setData(UIFileManager::tr("Permissions"), UIFileSystemModelData_Permissions);
     }
 }
 
@@ -1086,9 +1086,9 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
     return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 }
 
-UICustomFileSystemItem *UIFileManagerTable::getStartDirectoryItem()
+UIFileSystemItem *UIFileManagerTable::getStartDirectoryItem()
 {
-    UICustomFileSystemItem* pRootItem = rootItem();
+    UIFileSystemItem* pRootItem = rootItem();
     if (!pRootItem)
         return 0;
     if (pRootItem->childCount() <= 0)
@@ -1103,7 +1103,7 @@ QString UIFileManagerTable::currentDirectoryPath() const
     QModelIndex currentRoot = currentRootIndex();
     if (!currentRoot.isValid())
         return QString();
-    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(currentRoot.internalPointer());
+    UIFileSystemItem *item = static_cast<UIFileSystemItem*>(currentRoot.internalPointer());
     if (!item)
         return QString();
     /* be paranoid: */
@@ -1124,7 +1124,7 @@ QStringList UIFileManagerTable::selectedItemPathList()
     {
         QModelIndex index =
             m_pProxyModel ? m_pProxyModel->mapToSource(selectedItemIndices.at(i)) : selectedItemIndices.at(i);
-        UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+        UIFileSystemItem *item = static_cast<UIFileSystemItem*>(index.internalPointer());
         if (!item)
             continue;
         pathList.push_back(item->path());
@@ -1150,7 +1150,7 @@ void UIFileManagerTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
         emit sigSelectionChanged(m_pView->hasSelection());
 }
 
-UICustomFileSystemItem* UIFileManagerTable::rootItem()
+UIFileSystemItem* UIFileManagerTable::rootItem()
 {
     if (!m_pModel)
         return 0;
@@ -1260,14 +1260,14 @@ void UIFileManagerTable::performSelectionSearch(const QString &strSearchText)
     }
 
     int rowCount = m_pProxyModel->rowCount(m_pView->rootIndex());
-    UICustomFileSystemItem *pFoundItem = 0;
+    UIFileSystemItem *pFoundItem = 0;
     QModelIndex index;
     for (int i = 0; i < rowCount && !pFoundItem; ++i)
     {
         index = m_pProxyModel->index(i, 0, m_pView->rootIndex());
         if (!index.isValid())
             continue;
-        pFoundItem = static_cast<UICustomFileSystemItem*>(m_pProxyModel->mapToSource(index).internalPointer());
+        pFoundItem = static_cast<UIFileSystemItem*>(m_pProxyModel->mapToSource(index).internalPointer());
         if (!pFoundItem)
             continue;
         const QString &strName = pFoundItem->fileObjectName();
@@ -1344,11 +1344,11 @@ void UIFileManagerTable::setSessionWidgetsEnabled(bool fEnabled)
 
 QStringList UIFileManagerTable::currentDirectoryListing() const
 {
-    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(currentRootIndex().internalPointer());
+    UIFileSystemItem *pItem = static_cast<UIFileSystemItem*>(currentRootIndex().internalPointer());
     if (!pItem)
         return QStringList();
     QStringList list;
-    foreach (const UICustomFileSystemItem *pChild, pItem->children())
+    foreach (const UIFileSystemItem *pChild, pItem->children())
     {
         if (pChild)
             list << pChild->fileObjectName();

@@ -819,7 +819,7 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIActionPoolRuntime.h \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UICommon.h \
-	src/globals/UICustomFileSystemModel.h \
+	src/globals/UIFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
@@ -1388,7 +1388,7 @@ UICommon_SOURCES = \
 	src/globals/UICloudNetworkingStuff.cpp \
 	src/globals/UICommon.cpp \
 	src/globals/UICursor.cpp \
-	src/globals/UICustomFileSystemModel.cpp \
+	src/globals/UIFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIDetailsGenerator.cpp \

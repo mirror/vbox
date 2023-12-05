@@ -37,7 +37,7 @@
 #include "UIActionPool.h"
 #include "UIConverter.h"
 #include "UICommon.h"
-#include "UICustomFileSystemModel.h"
+#include "UIFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIFileManager.h"
 #include "UIFileManagerHostTable.h"
@@ -514,7 +514,7 @@ void UIFileManagerGuestTable::retranslateUi()
 }
 
 bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
-                                     UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
+                                     UIFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
         return false;
@@ -548,7 +548,7 @@ bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
             }
         }
 
-        QMap<QString, UICustomFileSystemItem*> fileObjects;
+        QMap<QString, UIFileSystemItem*> fileObjects;
 
         while (directory.isOk())
         {
@@ -561,14 +561,13 @@ bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
                     QVector<QVariant> data;
                     QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
                     KFsObjType fsObjectType = fileType(fsInfo);
-                    UICustomFileSystemItem *item = new UICustomFileSystemItem(fsInfo.GetName(), parent, fsObjectType);
+                    UIFileSystemItem *item = new UIFileSystemItem(fsInfo.GetName(), parent, fsObjectType);
                     if (!item)
                         continue;
-                    item->setData(static_cast<qulonglong>(fsInfo.GetObjectSize()), UICustomFileSystemModelData_Size);
-                    item->setData(changeTime, UICustomFileSystemModelData_ChangeTime);
-                    item->setData(fsInfo.GetUserName(), UICustomFileSystemModelData_Owner);
-                    item->setData(permissionString(fsInfo), UICustomFileSystemModelData_Permissions);
-                    printf(" %s === %s\n", qPrintable(fsInfo.GetName()), qPrintable(fsInfo.GetFileAttributes()));
+                    item->setData(static_cast<qulonglong>(fsInfo.GetObjectSize()), UIFileSystemModelData_Size);
+                    item->setData(changeTime, UIFileSystemModelData_ChangeTime);
+                    item->setData(fsInfo.GetUserName(), UIFileSystemModelData_Owner);
+                    item->setData(permissionString(fsInfo), UIFileSystemModelData_Permissions);
                     item->setIsOpened(false);
                     item->setIsHidden(isFileObjectHidden(fsInfo));
                     fileObjects.insert(fsInfo.GetName(), item);
@@ -605,7 +604,7 @@ bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
     return true;
 }
 
-void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
+void UIFileManagerGuestTable::deleteByItem(UIFileSystemItem *item)
 {
     if (!item)
         return;
@@ -632,7 +631,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
         return;
     if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UICustomFileSystemItem *startDirItem = rootItem()->child(0);
+    UIFileSystemItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 
@@ -650,7 +649,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, const QString &strOldPath)
+bool UIFileManagerGuestTable::renameItem(UIFileSystemItem *item, const QString &strOldPath)
 {
     if (!item || item->isUpDirectory())
         return false;
