@@ -167,8 +167,7 @@ void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
     if (!directory.exists() || !directory.isReadable())
         return false;
     QFileInfoList entries = directory.entryInfoList(QDir::Hidden|QDir::AllEntries|QDir::NoDotAndDotDot);
-    if (entries.isEmpty())
-        return false;
+
     parent->setIsOpened(true);
     for (int i = 0; i < entries.size(); ++i)
     {
