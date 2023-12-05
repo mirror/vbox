@@ -70,6 +70,11 @@ protected:
     /** Handles resize @a pEvent. */
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
+private slots:
+
+    /** Updates palette. */
+    void sltUpdatePalette() { preparePalette(); }
+
 private:
 
     /** Prepares all. */

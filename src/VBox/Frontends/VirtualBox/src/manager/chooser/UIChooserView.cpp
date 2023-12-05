@@ -34,6 +34,7 @@
 #include "UIChooserModel.h"
 #include "UIChooserSearchWidget.h"
 #include "UIChooserView.h"
+#include "UICommon.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -293,6 +294,10 @@ void UIChooserView::prepareThis()
     /* Prepare scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    /* Prepare connections: */
+    connect(&uiCommon(), &UICommon::sigThemeChange,
+            this, &UIChooserView::sltUpdatePalette);
 }
 
 void UIChooserView::preparePalette()

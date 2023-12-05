@@ -30,6 +30,7 @@
 #include <QScrollBar>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIDetails.h"
 #include "UIDetailsItem.h"
 #include "UIDetailsModel.h"
@@ -202,6 +203,10 @@ void UIDetailsView::prepareThis()
     /* Prepare scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    /* Prepare connections: */
+    connect(&uiCommon(), &UICommon::sigThemeChange,
+            this, &UIDetailsView::sltUpdatePalette);
 }
 
 void UIDetailsView::preparePalette()

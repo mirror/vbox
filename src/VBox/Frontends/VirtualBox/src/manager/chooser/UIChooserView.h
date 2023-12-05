@@ -104,6 +104,12 @@ protected:
 
 private slots:
 
+    /** @name Theme stuff stuff.
+      * @{ */
+        /** Updates palette. */
+        void sltUpdatePalette() { preparePalette(); }
+    /** @} */
+
     /** @name Search stuff.
       * @{ */
         /** Handles request for a new search.
