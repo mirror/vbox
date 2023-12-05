@@ -609,7 +609,7 @@ void UIMediumSelector::selectMedium(const QUuid &uMediumID)
         m_pTreeWidget->setCurrentItem(pMediumItem);
         QModelIndex itemIndex = m_pTreeWidget->itemIndex(pMediumItem);
         if (itemIndex.isValid())
-            m_pTreeWidget->scrollTo(itemIndex, QAbstractItemView::EnsureVisible);
+            m_pTreeWidget->scrollTo(itemIndex, QAbstractItemView::PositionAtCenter);
     }
 }
 
