@@ -50,11 +50,11 @@ public:
     /** Handle types. */
     enum Type { Flat, Shade, Native };
 
-    /** Constructs splitter passing @a pParent to the base-class. */
-    QISplitter(QWidget *pParent = 0);
+    /** Constructs splitter passing @a enmOrientation and @a pParent to the base-class. */
+    QISplitter(Qt::Orientation enmOrientation = Qt::Horizontal, QWidget *pParent = 0);
     /** Constructs splitter passing @a enmOrientation and @a pParent to the base-class.
       * @param  enmType  Brings the splitter handle type. */
-    QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pParent = 0);
+    QISplitter(Type enmType, Qt::Orientation enmOrientation = Qt::Horizontal, QWidget *pParent = 0);
 
     /** Configure custom color defined as @a color. */
     void configureColor(const QColor &color);

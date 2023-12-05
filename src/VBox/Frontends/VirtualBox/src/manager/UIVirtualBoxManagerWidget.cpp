@@ -651,7 +651,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
         /* Create splitter: */
-        m_pSplitter = new QISplitter(Qt::Horizontal, QISplitter::Flat);
+        m_pSplitter = new QISplitter(QISplitter::Flat);
         if (m_pSplitter)
         {
             /* Configure splitter: */

@@ -4387,7 +4387,7 @@ void UIStorageSettingsEditor::prepareWidgets()
         pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create splitter: */
-        m_pSplitter = new QISplitter(this);
+        m_pSplitter = new QISplitter;
         if (m_pSplitter)
         {
             m_pSplitter->setChildrenCollapsible(false);

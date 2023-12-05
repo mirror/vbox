@@ -237,8 +237,8 @@ void QIDarwinSplitterHandle::paintEvent(QPaintEvent *)
 *   Class QISplitter  implementation.                                                                                            *
 *********************************************************************************************************************************/
 
-QISplitter::QISplitter(QWidget *pParent /* = 0 */)
-    : QSplitter(pParent)
+QISplitter::QISplitter(Qt::Orientation enmOrientation /* = Qt::Horizontal */, QWidget *pParent /* = 0 */)
+    : QSplitter(enmOrientation, pParent)
     , m_enmType(Shade)
     , m_fPolished(false)
 #ifdef VBOX_WS_MAC
@@ -248,7 +248,7 @@ QISplitter::QISplitter(QWidget *pParent /* = 0 */)
     qApp->installEventFilter(this);
 }
 
-QISplitter::QISplitter(Qt::Orientation enmOrientation, Type enmType, QWidget *pParent /* = 0 */)
+QISplitter::QISplitter(Type enmType, Qt::Orientation enmOrientation /* = Qt::Horizontal */, QWidget *pParent /* = 0 */)
     : QSplitter(enmOrientation, pParent)
     , m_enmType(enmType)
     , m_fPolished(false)
