@@ -877,9 +877,9 @@ QString UIVisoCreatorDialog::visoFileFullPath() const
 }
 
 /* static */
-void UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent,
-                                     const QString &strDefaultFolder /* = QString() */,
-                                     const QString &strMachineName /* = QString() */)
+QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent,
+                                      const QString &strDefaultFolder /* = QString() */,
+                                      const QString &strMachineName /* = QString() */)
 {
     QString strVisoSaveFolder(strDefaultFolder);
     if (strVisoSaveFolder.isEmpty())
@@ -888,19 +888,23 @@ void UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent,
                                                                 strVisoSaveFolder, strMachineName);
-    AssertPtrReturnVoid(pVisoCreator);
+    AssertPtrReturn(pVisoCreator, QUuid());
 
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
     pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
-
+    QUuid mediumId;
     if (pVisoCreator->exec(false /* not application modal */))
     {
         if (pVisoCreator->saveVISOFile())
+        {
+            QString strFilePath = pVisoCreator->visoFileFullPath();
             gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
+            mediumId = uiCommon().openMedium(UIMediumDeviceType_DVD, strFilePath);
+        }
     }
 
     delete pVisoCreator;
-    return;
+    return mediumId;
 }
 
 bool UIVisoCreatorDialog::saveVISOFile()

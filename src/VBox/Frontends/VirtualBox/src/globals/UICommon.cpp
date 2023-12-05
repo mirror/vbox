@@ -1639,7 +1639,7 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
             uMediumId = UIWizardNewVD::createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
-            UIVisoCreatorDialog::createViso(pActionPool, pParent, strDefaultFolder, strMachineName);
+            uMediumId = UIVisoCreatorDialog::createViso(pActionPool, pParent, strDefaultFolder, strMachineName);
             break;
         case UIMediumDeviceType_Floppy:
             uMediumId = UIFDCreationDialog::createFloppyDisk(pParent, strDefaultFolder, strMachineName);
