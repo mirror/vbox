@@ -104,7 +104,7 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
                             ShClPayloadFree(pPayload);
                         }
                         else /* No payload given; could happen on invalid / not-expected formats. */
-                            *pcbActual = 0;
+                            rc = VERR_NO_DATA;
                     }
                     else if (rc == VERR_SHCLPB_EVENT_FAILED)
                         rc = rcEvent;
@@ -570,7 +570,7 @@ int VBClX11ClipboardMain(void)
                                     ShClPayloadFree(pPayload);
                                 }
                                 else /* No payload given; could happen on invalid / not-expected formats. */
-                                    *pcbActual = 0;
+                                    rc = VERR_NO_DATA;
                             }
                             else if (rc == VERR_SHCLPB_EVENT_FAILED)
                                 rc = rcEvent;
