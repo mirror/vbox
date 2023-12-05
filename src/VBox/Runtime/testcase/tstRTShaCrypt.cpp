@@ -136,6 +136,22 @@ static struct
         /* rc */            VINF_SUCCESS,
         /* pszResultStr */  "$6$foo12345$cb11CtCP6YgoZr8SyNoD2TAdOY4OmTzA6kfDgju5JrNVzgeCBU1ALbJHVlEuSImPKAoSnT53N7k7BqzjYRRPk/"
     },
+    {   /* Expected string in Korean */
+        /* pszPassword */   "이것은 테스트입니다", /* "This is a test" */
+        /* pszSalt */       "foo12345",
+        /* cRounds */       RT_SHACRYPT_DEFAULT_ROUNDS,
+        /* enmType */       TST_DIGESTTYPE_SHA256,
+        /* rc */            VINF_SUCCESS,
+        /* pszResultStr */  "$5$foo12345$7fumMsJKgCGipks2nNPi185ANXwfTf9Ilz70J4wKqe1"
+    },
+    {   /* Expected string in Korean */
+        /* pszPassword */   "이것은 테스트입니다", /* "This is a test" */
+        /* pszSalt */       "foo12345",
+        /* cRounds */       RT_SHACRYPT_DEFAULT_ROUNDS,
+        /* enmType */       TST_DIGESTTYPE_SHA512,
+        /* rc */            VINF_SUCCESS,
+        /* pszResultStr */  "$6$foo12345$IWlIz4tyl39ETRpKlQ.R42tdeB2Ax9gz9sazAynilHDFm0zXUdsrm4nXzdlSd5jJhvwV7EPSc./2pBNoL1PIw1"
+    },
     {   /* Custom rounds */
         /* pszPassword */   "changeme",
         /* pszSalt */       "foo12345",
