@@ -634,10 +634,9 @@ UnattendedScriptTemplate::queryVariableForExpr(const char *pchName, size_t cchNa
 /* static */
 int UnattendedScriptTemplate::shaCryptGenerateSalt(char *pszSalt, size_t cchSalt)
 {
-    AssertPtrReturn(pszSalt, VERR_INVALID_POINTER);
 #ifdef IN_TST_UNATTENDED_SCRIPT
     /* Use a fixed salt to predict the hashing result with the testcases. */
-    return RTStrPrintf2(pszSalt, cchSalt, "testcase123") > 0 ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+    return RTStrCopy(pszSalt, cchSalt + 1, "testcase123");
 #else
     return RTCrShaCryptGenerateSalt(pszSalt, cchSalt);
 #endif
@@ -647,22 +646,24 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
 {
 #define IS_MATCH(a_szMatch) \
         (cchName == sizeof(a_szMatch) - 1U && memcmp(pchName, a_szMatch, sizeof(a_szMatch) - 1U) == 0)
-/** Uses the RTCrShaCrypt APIs to hash and crypt data. Uses a randomized salt + (recommended) default rounds. */
-#define SHACRYPT_AND_ASSIGN(a_szKey, a_fnHashAndCrypt, a_cbHashSize) \
+
+/** Uses the RTCrShaCrypt APIs to hash and crypt data. Uses a randomized salt + (recommended) default rounds.
+ * @todo r=bird: Iff a template needs the salted password more than once,
+ *        this approach will not deliver the same value.
+ */
+#define SHACRYPT_AND_ASSIGN(a_szKey, a_fnCrypt, a_cchMaxResult) \
         do { \
-            uint8_t abHash[a_cbHashSize]; \
-            char    szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1]; \
-            int vrc = UnattendedScriptTemplate::shaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
-            if (RT_SUCCESS(vrc)) \
+            if (ppszValue) \
             { \
-                vrc = a_fnHashAndCrypt(a_szKey, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, abHash); \
-                if (RT_SUCCESS(vrc)) \
-                { \
-                    char szDigest[a_cbHashSize * 4]; \
-                    vrc = a_fnHashAndCrypt##ToString(abHash, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, szDigest, sizeof(szDigest)); \
-                    if (RT_SUCCESS(vrc)) \
-                        pszValue = rstrTmp.assign(szDigest, strlen(szDigest)).c_str(); \
-                } \
+                char szSalt[RT_SHACRYPT_SALT_MAX_LEN + 1]; \
+                int vrc = UnattendedScriptTemplate::shaCryptGenerateSalt(szSalt, sizeof(szSalt) - 1); \
+                AssertRCReturnStmt(vrc, mpSetError->setErrorBoth(E_FAIL, vrc, tr("RTCrShaCryptGenerateSalt failed: %Rrc"), vrc), \
+                                   vrc); \
+                rstrTmp.reserve(a_cchMaxResult); \
+                vrc = a_fnCrypt(a_szKey, szSalt, RT_SHACRYPT_ROUNDS_DEFAULT, rstrTmp.mutableRaw(), a_cchMaxResult); \
+                AssertRCReturnStmt(vrc, mpSetError->setErrorBoth(E_FAIL, vrc, tr(#a_fnCrypt " failed: %Rrc"), vrc), vrc); \
+                rstrTmp.jolt(); \
+                pszValue = rstrTmp.c_str(); \
             } \
         } while (0)
 
@@ -676,11 +677,11 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
     else if (IS_MATCH("USER_PASSWORD"))
         pszValue = mpUnattended->i_getPassword().c_str();
     else if (IS_MATCH("USER_PASSWORD_SHACRYPT512"))
-        SHACRYPT_AND_ASSIGN(mpUnattended->i_getPassword().c_str(), RTCrShaCrypt512, RTSHA512_HASH_SIZE);
+        SHACRYPT_AND_ASSIGN(mpUnattended->i_getPassword().c_str(), RTCrShaCrypt512, RT_SHACRYPT_512_MAX_SIZE);
     else if (IS_MATCH("ROOT_PASSWORD"))
         pszValue = mpUnattended->i_getPassword().c_str();
     else if (IS_MATCH("ROOT_PASSWORD_SHACRYPT512"))
-        SHACRYPT_AND_ASSIGN(mpUnattended->i_getPassword().c_str(), RTCrShaCrypt512, RTSHA512_HASH_SIZE);
+        SHACRYPT_AND_ASSIGN(mpUnattended->i_getPassword().c_str(), RTCrShaCrypt512, RT_SHACRYPT_512_MAX_SIZE);
     else if (IS_MATCH("USER_FULL_NAME"))
         pszValue = mpUnattended->i_getFullUserName().c_str();
     else if (IS_MATCH("PRODUCT_KEY"))

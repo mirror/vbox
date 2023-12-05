@@ -34,9 +34,13 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/buildconfig.h>
 #include <iprt/crypto/shacrypt.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
@@ -47,12 +51,16 @@
 #include <iprt/string.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Method type. */
-typedef enum RTMKPASSWORD_METHODTYPE
+typedef enum RTMKPASSWDMETHOD
 {
-    RTMKPASSWORD_METHODTYPE_SHA256,
-    RTMKPASSWORD_METHODTYPE_SHA512
-} RTMKPASSWORD_METHODTYPE;
+    RTMKPASSWDMETHOD_SHA256,
+    RTMKPASSWDMETHOD_SHA512
+} RTMKPASSWDMETHOD;
+
 
 
 int main(int argc, char **argv)
@@ -75,11 +83,10 @@ int main(int argc, char **argv)
     int rc = RTGetOptInit(&GetState, argc, argv, aOpts, RT_ELEMENTS(aOpts), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
-    const char *pszKey                = NULL;
-          char   szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1];
-    const char *pszSalt               = NULL;
-    uint32_t    cRounds               = RT_SHACRYPT_DEFAULT_ROUNDS;
-    RTMKPASSWORD_METHODTYPE enmMethod = RTMKPASSWORD_METHODTYPE_SHA512; /* Go with strongest by default. */
+    const char         *pszKey      = NULL;
+    const char         *pszSalt     = NULL;
+    uint32_t            cRounds     = RT_SHACRYPT_ROUNDS_DEFAULT;
+    RTMKPASSWDMETHOD    enmMethod   = RTMKPASSWDMETHOD_SHA512; /* Go with strongest by default. */
 
     int           ch;
     RTGETOPTUNION ValueUnion;
@@ -90,9 +97,7 @@ int main(int argc, char **argv)
             case 'S':
             {
                 if (!pszSalt)
-                {
                     pszSalt = ValueUnion.psz;
-                }
                 else
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Salt already specified!\n");
                 break;
@@ -101,9 +106,9 @@ int main(int argc, char **argv)
             case 'R':
             {
                 cRounds = ValueUnion.u32;
-                if (cRounds < RT_SHACRYPT_DEFAULT_ROUNDS)
-                    RTMsgWarning("Using less rounds than the default (%zu) isn't a good idea!!\n",
-                                 RT_SHACRYPT_DEFAULT_ROUNDS);
+                if (cRounds < RT_SHACRYPT_ROUNDS_DEFAULT)
+                    RTMsgWarning("Using less rounds than the default (%u) isn't a good idea!!\n",
+                                 RT_SHACRYPT_ROUNDS_DEFAULT);
                 break;
             }
 
@@ -111,9 +116,9 @@ int main(int argc, char **argv)
             {
                 const char *pszMethod = ValueUnion.psz;
                 if (!RTStrICmp(pszMethod, "sha256"))
-                    enmMethod = RTMKPASSWORD_METHODTYPE_SHA256;
+                    enmMethod = RTMKPASSWDMETHOD_SHA256;
                 else if (!RTStrICmp(pszMethod, "sha512"))
-                    enmMethod = RTMKPASSWORD_METHODTYPE_SHA512;
+                    enmMethod = RTMKPASSWDMETHOD_SHA512;
                 else if (!RTStrICmp(pszMethod, "help"))
                 {
                     RTPrintf("Supported methods: sha256, sha512\n");
@@ -161,49 +166,42 @@ int main(int argc, char **argv)
 
     if (!pszKey)
          return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No password specified!\n");
+
+    char  szSalt[RT_SHACRYPT_SALT_MAX_LEN + 1];
     if (!pszSalt)
     {
-        int vrc2 = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN);
+        int vrc2 = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_SALT_MAX_LEN);
         AssertRCReturn(vrc2, RTEXITCODE_FAILURE);
         pszSalt = szSalt;
     }
-    else if (strlen(pszSalt) < RT_SHACRYPT_MIN_SALT_LEN)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Salt is too short (must be at least %zu characters)!\n",
-                              RT_SHACRYPT_MIN_SALT_LEN);
-    else if (strlen(pszSalt) > RT_SHACRYPT_MAX_SALT_LEN)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Salt is too long (must be less or equal than %zu characters)!\n",
-                              RT_SHACRYPT_MAX_SALT_LEN);
+    else if (strlen(pszSalt) < RT_SHACRYPT_SALT_MIN_LEN)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Salt is too short (must be at least %u characters)!\n",
+                              RT_SHACRYPT_SALT_MIN_LEN);
+    else if (strlen(pszSalt) > RT_SHACRYPT_SALT_MAX_LEN)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Salt is too long (must be less or equal than %u characters)!\n",
+                              RT_SHACRYPT_SALT_MAX_LEN);
 
-    uint8_t abDigest[RTSHA512_HASH_SIZE];
-    char    szResult[RTSHA512_DIGEST_LEN + 1];
-
+    /*
+     * Do the work.
+     */
+    char szResult[RT_SHACRYPT_512_MAX_SIZE];
     switch (enmMethod)
     {
-        case RTMKPASSWORD_METHODTYPE_SHA256:
-        {
-            rc = RTCrShaCrypt256(pszKey, pszSalt, cRounds, abDigest);
-            if (RT_SUCCESS(rc))
-                rc = RTCrShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+        case RTMKPASSWDMETHOD_SHA256:
+            rc = RTCrShaCrypt256(pszKey, pszSalt, cRounds, szResult, sizeof(szResult));
             break;
-        }
 
-        case RTMKPASSWORD_METHODTYPE_SHA512:
-        {
-            rc = RTCrShaCrypt512(pszKey, pszSalt, cRounds, abDigest);
-            if (RT_SUCCESS(rc))
-                rc = RTCrShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+        case RTMKPASSWDMETHOD_SHA512:
+            rc = RTCrShaCrypt512(pszKey, pszSalt, cRounds, szResult, sizeof(szResult));
             break;
-        }
 
         default:
-            AssertFailed();
+            AssertFailedStmt(rc = VERR_INTERNAL_ERROR_3);
             break;
     }
 
    if (RT_SUCCESS(rc))
-   {
         RTPrintf("%s\n", szResult);
-   }
    else
         RTMsgError("Failed with %Rrc\n", rc);
 

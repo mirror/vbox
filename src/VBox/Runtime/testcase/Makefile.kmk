@@ -76,6 +76,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstRTCritSect \
   	tstRTCritSectRw \
   	tstRTCrPkix-1 \
+  	tstRTCrShaCrypt \
   	tstRTCrX509-1 \
   	tstRTCType \
   	tstRTDigest \
@@ -143,7 +144,6 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstRTSemRW \
   	tstRTSemXRoads \
   	tstRTSg \
-  	tstRTShaCrypt \
   	tstRTSort \
   	tstRTStrAlloc \
   	tstRTStrCache \
@@ -837,8 +837,8 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  tstRTSg_TEMPLATE = VBoxR3TstExe
  tstRTSg_SOURCES = tstRTSg.cpp
 
- tstRTShaCrypt_TEMPLATE = VBoxR3TstExe
- tstRTShaCrypt_SOURCES = tstRTShaCrypt.cpp
+ tstRTCrShaCrypt_TEMPLATE = VBoxR3TstExe
+ tstRTCrShaCrypt_SOURCES = tstRTCrShaCrypt.cpp
 
  tstRTSort_TEMPLATE = VBoxR3TstExe
  tstRTSort_SOURCES = tstRTSort.cpp
