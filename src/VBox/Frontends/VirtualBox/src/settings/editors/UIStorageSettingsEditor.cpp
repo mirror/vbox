@@ -4386,13 +4386,11 @@ void UIStorageSettingsEditor::prepareWidgets()
     {
         pLayout->setContentsMargins(0, 0, 0, 0);
 
-        /* Create splitter: */
+        /* Prepare splitter: */
         m_pSplitter = new QISplitter;
         if (m_pSplitter)
         {
             m_pSplitter->setChildrenCollapsible(false);
-            m_pSplitter->setOrientation(Qt::Horizontal);
-            m_pSplitter->setHandleWidth(4);
 
             /* Prepare panes: */
             prepareLeftPane();

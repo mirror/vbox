@@ -651,12 +651,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
         /* Create splitter: */
-        m_pSplitter = new QISplitter(QISplitter::Flat);
+        m_pSplitter = new QISplitter;
         if (m_pSplitter)
         {
-            /* Configure splitter: */
-            m_pSplitter->setHandleWidth(1);
-
             /* Create Chooser-pane: */
             m_pPaneChooser = new UIChooser(this, actionPool());
             if (m_pPaneChooser)
@@ -767,8 +764,6 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                 m_pSplitter->addWidget(pWidgetRight);
             }
 
-            /* Adjust splitter colors according to main widgets it splits: */
-            m_pSplitter->configureColor(QApplication::palette().color(QPalette::Active, QPalette::Window).darker(130));
             /* Set the initial distribution. The right site is bigger. */
             m_pSplitter->setStretchFactor(0, 2);
             m_pSplitter->setStretchFactor(1, 3);

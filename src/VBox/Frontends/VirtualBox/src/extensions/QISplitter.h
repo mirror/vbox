@@ -47,19 +47,8 @@ class SHARED_LIBRARY_STUFF QISplitter : public QSplitter
 
 public:
 
-    /** Handle types. */
-    enum Type { Flat, Shade, Native };
-
     /** Constructs splitter passing @a enmOrientation and @a pParent to the base-class. */
     QISplitter(Qt::Orientation enmOrientation = Qt::Horizontal, QWidget *pParent = 0);
-    /** Constructs splitter passing @a enmOrientation and @a pParent to the base-class.
-      * @param  enmType  Brings the splitter handle type. */
-    QISplitter(Type enmType, Qt::Orientation enmOrientation = Qt::Horizontal, QWidget *pParent = 0);
-
-    /** Configure custom color defined as @a color. */
-    void configureColor(const QColor &color);
-    /** Configure custom colors defined as @a color1 and @a color2. */
-    void configureColors(const QColor &color1, const QColor &color2);
 
 protected:
 
@@ -67,32 +56,21 @@ protected:
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
-    /** Creates handle. */
-    QSplitterHandle *createHandle();
+    /** Creates a handle. */
+    virtual QSplitterHandle *createHandle() RT_OVERRIDE;
 
 private:
 
     /** Holds the serialized base-state. */
-    QByteArray m_baseState;
-
-    /** Holds the handle type. */
-    Type m_enmType;
+    QByteArray  m_baseState;
 
     /** Holds whether the splitter is polished. */
-    bool m_fPolished : 1;
-#ifdef VBOX_WS_MAC
-    /** Holds whether handle is grabbed. */
-    bool m_fHandleGrabbed : 1;
-#endif
+    bool  m_fPolished;
 
-    /** Holds color. */
-    QColor m_color;
-    /** Holds color1. */
-    QColor m_color1;
-    /** Holds color2. */
-    QColor m_color2;
+    /** Holds the handle color. */
+    QColor  m_color;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QISplitter_h */
