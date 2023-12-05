@@ -905,8 +905,7 @@ PL_ProcessEventsBeforeID(PLEventQueue *aSelf, unsigned long aID)
 
     while (fullCount-- > 0) {
         /* peek at the next event */
-        PLEvent *event;
-        event = PR_EVENT_PTR(aSelf->queue.next);
+        PLEvent *event = RTListGetFirst(&aSelf->queue, PLEvent, link);
         if (event == NULL)
             break;
         Log(("$$$ processing event %ld\n", event->id));
