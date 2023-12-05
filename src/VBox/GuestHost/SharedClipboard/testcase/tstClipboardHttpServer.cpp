@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
     static const char * const s_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
-    rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "TST_CLIPBOARDR_HTTPSERVER_RELEASE_LOG",
+    rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "TST_CLIPBOARD_HTTPSERVER_RELEASE_LOG",
                      RT_ELEMENTS(s_apszLogGroups), s_apszLogGroups, RTLOGDEST_STDOUT, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
     {
