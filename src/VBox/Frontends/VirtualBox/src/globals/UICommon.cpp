@@ -318,10 +318,8 @@ void UICommon::prepare()
     /* Load whether macOS is in Dark mode: */
     m_fDarkMode = UICocoaApplication::instance()->isDarkMode();
 #endif
-#ifdef VBOX_WS_WIN
     /* Load color theme: */
     loadColorTheme();
-#endif
 
     /* Load translation based on the user settings: */
     QString strLanguageId = gEDataManager->languageId();
@@ -956,10 +954,27 @@ QString UICommon::brandingGetKey(QString strKey) const
     return settings.value(QString("%1").arg(strKey)).toString();
 }
 
-#ifdef VBOX_WS_WIN
-/* static */
 void UICommon::loadColorTheme()
 {
+#if defined (VBOX_WS_MAC)
+    /* macOS has Window color hardcoded somewhere inside, Qt has no access to it,
+     * moreover these colors are influenced by window background blending,
+     * making Qt default colors incredibly inconsistent with native macOS apps. */
+    QPalette pal = qApp->palette();
+    if (isInDarkMode())
+    {
+        pal.setColor(QPalette::Active, QPalette::Window, QColor("#252328"));
+        pal.setColor(QPalette::Inactive, QPalette::Window, QColor("#2A2630"));
+    }
+    else
+    {
+        pal.setColor(QPalette::Active, QPalette::Window, QColor("#E1DEE4"));
+        pal.setColor(QPalette::Inactive, QPalette::Window, QColor("#EEE8E9"));
+    }
+    qApp->setPalette(pal);
+
+#elif defined(VBOX_WS_WIN)
+
     /* Load saved color theme: */
     UIColorThemeType enmColorTheme = gEDataManager->colorTheme();
 
@@ -1001,8 +1016,8 @@ void UICommon::loadColorTheme()
         qApp->setPalette(darkPalette);
         qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2b2b2b; border: 1px solid #737373; }");
     }
-}
 #endif /* VBOX_WS_WIN */
+}
 
 bool UICommon::processArgs()
 {
@@ -2745,6 +2760,7 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
         if (m_fDarkMode != fDarkMode)
         {
             m_fDarkMode = fDarkMode;
+            loadColorTheme();
             emit sigThemeChange();
         }
     }
