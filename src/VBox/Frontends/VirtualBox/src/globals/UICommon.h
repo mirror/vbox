@@ -93,6 +93,12 @@ signals:
         void sigAskToDetachCOM();
     /** @} */
 
+    /** @name Theme stuff.
+     * @{ */
+        /** Notifies listeners about theme change. */
+        void sigThemeChange();
+    /** @} */
+
     /** @name COM: Extension Pack stuff.
      * @{ */
         /** Notifies listeners about extension pack @a strName was installed. */
@@ -632,6 +638,11 @@ private:
 #ifdef VBOX_WS_WIN
         /** Holds whether overall GUI data is committed. */
         bool  m_fDataCommitted;
+#endif
+
+#ifdef VBOX_WS_MAC
+        /** Holds whether macOS is in Dark mode. */
+        bool  m_fDarkMode;
 #endif
     /** @} */
 

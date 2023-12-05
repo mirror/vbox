@@ -82,6 +82,7 @@
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
 #ifdef VBOX_WS_MAC
+# include "UICocoaApplication.h"
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
 #endif
@@ -188,6 +189,9 @@ UICommon::UICommon(UIType enmType)
     , m_fCleaningUp(false)
 #ifdef VBOX_WS_WIN
     , m_fDataCommitted(false)
+#endif
+#ifdef VBOX_WS_MAC
+    , m_fDarkMode(false)
 #endif
 #ifdef VBOX_WS_NIX
     , m_enmWindowManagerType(X11WMType_Unknown)
@@ -310,6 +314,10 @@ void UICommon::prepare()
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
     m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
 
+#ifdef VBOX_WS_MAC
+    /* Load whether macOS is in Dark mode: */
+    m_fDarkMode = UICocoaApplication::instance()->isDarkMode();
+#endif
 #ifdef VBOX_WS_WIN
     /* Load color theme: */
     loadColorTheme();
@@ -2728,10 +2736,23 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
+#ifdef VBOX_WS_MAC
+    /* Handle application palette change event: */
+    if (   pEvent->type() == QEvent::ApplicationPaletteChange
+        && pObject == windowManager().mainWindowShown())
+    {
+        const bool fDarkMode = UICocoaApplication::instance()->isDarkMode();
+        if (m_fDarkMode != fDarkMode)
+        {
+            m_fDarkMode = fDarkMode;
+            emit sigThemeChange();
+        }
+    }
+#endif
+
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
 }
-
 
 void UICommon::sltHandleFontScaleFactorChanged(int iFontScaleFactor)
 {

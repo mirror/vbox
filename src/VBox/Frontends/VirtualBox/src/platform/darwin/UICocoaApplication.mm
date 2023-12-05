@@ -328,6 +328,12 @@ bool UICocoaApplication::isActive() const
     return [m_pNative isActive];
 }
 
+bool UICocoaApplication::isDarkMode() const
+{
+    NativeNSStringRef pstrInterfaceMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+    return [pstrInterfaceMode isEqualToString :@"Dark"];
+}
+
 void UICocoaApplication::hide()
 {
     [m_pNative hide:m_pNative];
