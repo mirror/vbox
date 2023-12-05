@@ -96,7 +96,6 @@ static void *g_tst_pvDataVBox = NULL;
 static uint32_t g_tst_cbDataVBox = 0;
 static SHCLEVENTSOURCE g_EventSource;
 
-#if 0
 /* Set empty data in the simulated VBox clipboard. */
 static void tstClipEmptyVBox(PSHCLX11CTX pCtx, int retval)
 {
@@ -129,7 +128,6 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     ShClX11ReportFormatsToX11Async(pCtx, VBOX_SHCL_FMT_UNICODETEXT);
     return VINF_SUCCESS;
 }
-#endif
 
 Display *XtDisplay(Widget w) { NOREF(w); return (Display *) 0xffff; }
 
@@ -246,13 +244,12 @@ static uint32_t tstClipQueryFormats(void)
     return g_tst_uX11Formats;
 }
 
-#if 0
 static void tstClipInvalidateFormats(void)
 {
     g_tst_uX11Formats = ~0;
 }
-#endif
 
+static RTMSINTERVAL g_msTimeout = RT_MS_5SEC;
 /* Does our clipboard code currently own the selection? */
 static bool g_tst_fOwnsSel = false;
 /* The procedure that is called when we should convert the selection to a
@@ -278,7 +275,6 @@ Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
     return True;
 }
 
-#if 0
 void XtDisownSelection(Widget widget, Atom selection, Time time)
 {
     RT_NOREF(widget, time, selection);
@@ -313,7 +309,6 @@ static bool tstClipConvertSelection(const char *pcszTarget, Atom *type,
         g_tst_pfnSelDone(TESTCASE_WIDGET_ID, &clipAtom, &target);
     return true;
 }
-#endif
 
 /* Set the current X selection data */
 static void tstClipSetSelectionValues(const char *pcszTarget, Atom type,
@@ -337,13 +332,11 @@ static void tstClipSendTargetUpdate(PSHCLX11CTX pCtx)
     clipQueryX11Targets(pCtx);
 }
 
-#if 0
 /* Configure if and how the X11 TARGETS clipboard target will fail. */
 static void tstClipSetTargetsFailure(void)
 {
     g_tst_cTargets = 0;
 }
-#endif
 
 char *XtMalloc(Cardinal size)
 {
@@ -393,7 +386,6 @@ void XFreeStringList(char **list)
 
 static int g_tst_rcCompleted = VINF_SUCCESS;
 static int g_tst_cbCompleted = 0;
-//static SHCLX11REQUEST *g_tst_pCompletedReq = NULL;
 static char g_tst_abCompletedBuf[TESTCASE_MAX_BUF_SIZE];
 
 static DECLCALLBACK(int) tstShClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
@@ -432,7 +424,6 @@ static DECLCALLBACK(int) tstShClOnSendDataToDestCallback(PSHCLCONTEXT pCtx, void
     else
         g_tst_rcCompleted = VERR_BUFFER_OVERFLOW;
     g_tst_cbCompleted = cb;
-    //g_tst_pCompletedReq = pData->pReq;
 
     return VINF_SUCCESS;
 }
@@ -455,7 +446,6 @@ static SHCLX11FMTIDX tstClipFindX11FormatByAtomText(const char *pcszAtom)
     return NIL_CLIPX11FORMAT;
 }
 
-#if 0
 static bool tstClipTextFormatConversion(PSHCLX11CTX pCtx)
 {
     bool fSuccess = true;
@@ -473,17 +463,6 @@ static bool tstClipTextFormatConversion(PSHCLX11CTX pCtx)
         fSuccess = false;
     return fSuccess;
 }
-#endif
-
-/*
-static void tstClipGetCompletedRequest(int *prc, char ** ppc, uint32_t *pcb, SHCLX11REQREAD **ppReq)
-{
-    *prc = g_tst_rcCompleted;
-    *ppc = g_tst_abCompletedBuf;
-    *pcb = g_tst_cbCompleted;
-    *ppReq = g_tst_pCompletedReq;
-}
-*/
 
 static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                              const char *pcszExp, int rcExp)
@@ -498,7 +477,7 @@ static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
     {
         uint32_t cbActual = 0;
         uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
-        int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, RT_MS_30SEC, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
+        int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
         if (rc != rcExp)
             RTTestFailed(hTest, "Wrong return code, expected %Rrc, got %Rrc\n", rcExp, rc);
         else if (RT_FAILURE(rcExp))
@@ -533,7 +512,6 @@ static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                              pcszExp, rcExp);
 }
 
-#if 0
 static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                              const char *pcszExp, int rcExp)
 {
@@ -544,18 +522,11 @@ static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                      tstClipQueryFormats());
     else
     {
-        char *pc;
-        SHCLX11REQREAD *pReq = (SHCLX11REQREAD *)&pReq, *pReqRet = NULL;
-        ShClX11ReadDataFromX11Async(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
-        int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
-        tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
+        uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
+        int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
         if (rc != rcExp)
-            RTTestFailed(hTest, "Wrong return code, expected %Rrc, got %Rrc\n",
-                         rcExp, rc);
-        else if (pReqRet != pReq)
-            RTTestFailed(hTest, "Wrong returned request data, expected %p, got %p\n",
-                         pReq, pReqRet);
+            RTTestFailed(hTest, "Wrong return code, expected %Rrc, got %Rrc\n", rcExp, rc);
         else if (RT_FAILURE(rcExp))
             retval = true;
         else
@@ -569,16 +540,16 @@ static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
             if (cbActual != cbExp)
             {
                 RTTestFailed(hTest, "Returned string is the wrong size, string \"%.*ls\", size %u, expected \"%s\", size %u\n",
-                             RT_MIN(TESTCASE_MAX_BUF_SIZE, cbActual), pc, cbActual,
+                             RT_MIN(TESTCASE_MAX_BUF_SIZE, cbActual), abBuf, cbActual,
                              pcszExp, cbExp);
             }
             else
             {
-                if (memcmp(pc, wcExp, cbExp) == 0)
+                if (memcmp(abBuf, wcExp, cbExp) == 0)
                     retval = true;
                 else
                     RTTestFailed(hTest, "Returned string \"%.*ls\" does not match expected string \"%s\"\n",
-                                 TESTCASE_MAX_BUF_SIZE, pc, pcszExp);
+                                 TESTCASE_MAX_BUF_SIZE, abBuf, pcszExp);
             }
         }
     }
@@ -621,8 +592,9 @@ static void tstStringFromVBox(RTTEST hTest, PSHCLX11CTX pCtx, const char *pcszTa
 
 static void tstNoX11(PSHCLX11CTX pCtx, const char *pcszTestCtx)
 {
-    SHCLX11REQREAD *pReq = (SHCLX11REQREAD *)&pReq;
-    int rc = ShClX11ReadDataFromX11Async(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
+    uint32_t cbActual = 0;
+    uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
+    int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
     RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
 }
 
@@ -657,12 +629,9 @@ static void tstBadFormatRequestFromHost(RTTEST hTest, PSHCLX11CTX pCtx)
                      tstClipQueryFormats());
     else
     {
-        char *pc;
-        SHCLX11REQREAD *pReq = (SHCLX11REQREAD *)&pReq, *pReqRet = NULL;
-        ShClX11ReadDataFromX11Async(pCtx, 0xF000 /* vboxFormat */, pReq);  /* Bad format. */
-        int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
-        tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
+        uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
+        int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, g_msTimeout, 0xF000 /* vboxFormat */, abBuf, sizeof(abBuf), &cbActual);
         if (rc != VERR_NOT_IMPLEMENTED)
             RTTestFailed(hTest, "Wrong return code, expected VERR_NOT_IMPLEMENTED, got %Rrc\n",
                          rc);
@@ -672,7 +641,6 @@ static void tstBadFormatRequestFromHost(RTTEST hTest, PSHCLX11CTX pCtx)
             RTTestFailed(hTest, "Failed to report targets after bad host request.\n");
     }
 }
-#endif
 
 int main()
 {
@@ -698,6 +666,9 @@ int main()
     rc = ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, false /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
+    uint32_t cbActual = 0;
+    uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
+
     RTTESTI_CHECK_RC_OK(ShClEventSourceCreate(&g_EventSource, 0 /* ID */));
 
     /* UTF-8 from X11 */
@@ -706,7 +677,6 @@ int main()
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world", sizeof("hello world"), 8);
     tstStringFromX11(hTest, &X11Ctx, "hello world", VINF_SUCCESS);
 
-#if 0
     /* With an embedded carriage return */
     tstClipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
                               "hello\nworld", sizeof("hello\nworld"), 8);
@@ -771,7 +741,7 @@ int main()
     /*
      * Timeout from X11
      */
-    RTTestSub(hTest, "X11 timeout");
+    RTTestSub(hTest, "X11 conversion failure (timeout)");
     tstClipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, NULL,0, 8);
     tstStringFromX11(hTest, &X11Ctx, "", VERR_NO_DATA);
 
@@ -779,16 +749,11 @@ int main()
      * No data in X11 clipboard
      */
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
-    tstClipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
-                              0, 8);
-    ShClX11ReadDataFromX11Async(&X11Ctx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
-    tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
+    tstClipSetSelectionValues("UTF8_STRING", XA_STRING, NULL, 0, 8);
+    rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
                      (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
                       rc));
-    RTTEST_CHECK_MSG(hTest, pReqRet == pReq,
-                     (hTest, "Wrong returned request data, expected %p, got %p\n",
-                     pReq, pReqRet));
 
     /*
      * Ensure that VBox is notified when we return the CB to X11
@@ -805,15 +770,10 @@ int main()
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
     /* Testing for 0xffff will go into handling VBOX_SHCL_FMT_UNICODETEXT, where we don't have
      * have any data at the moment so far, so this will return VERR_NO_DATA. */
-    ShClX11ReadDataFromX11Async(&X11Ctx, 0xffff /* vboxFormat */, pReq);
-    tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
+    rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, 0xffff /* vboxFormat */, abBuf, sizeof(abBuf), &cbActual);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
                      (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
                       rc));
-    RTTEST_CHECK_MSG(hTest, pReqRet == pReq,
-                     (hTest, "Wrong returned request data, expected %p, got %p\n",
-                     pReq, pReqRet));
-
     /*
      * Targets failure from X11
      */
@@ -937,7 +897,7 @@ int main()
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "hello world",
                         sizeof("hello world") * 2);
     tstNoSelectionOwnership(&X11Ctx, "reading from VBox, headless clipboard");
-#endif
+
     ShClX11Destroy(&X11Ctx);
     ShClEventSourceDestroy(&g_EventSource);
 
