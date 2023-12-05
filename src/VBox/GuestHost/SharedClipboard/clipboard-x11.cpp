@@ -2324,6 +2324,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     PSHCLX11RESPONSE  pResp    = (PSHCLX11RESPONSE)RTMemAllocZ(cbResp);
     if (pResp)
     {
+        pResp->enmType     = SHCLX11EVENTTYPE_READ;
         pResp->Read.pvData = pvDst;
         pResp->Read.cbData = cbDst;
 
