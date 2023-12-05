@@ -1979,6 +1979,7 @@ static void ShClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval
     AssertPtrReturnVoid(pvUserData);
 
     PSHCLX11REQUEST pReq = (PSHCLX11REQUEST)pvUserData;
+    AssertReturnVoid(pReq->enmType == SHCLX11EVENTTYPE_REPORT_FORMATS);
 
     PSHCLX11CTX pCtx     = pReq->pCtx;
     SHCLFORMATS fFormats = pReq->Formats.fFormats;
@@ -2019,6 +2020,7 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
     PSHCLX11REQUEST pReq = (PSHCLX11REQUEST)RTMemAllocZ(sizeof(SHCLX11REQUEST));
     if (pReq)
     {
+        pReq->enmType          = SHCLX11EVENTTYPE_REPORT_FORMATS;
         pReq->pCtx             = pCtx;
         pReq->Formats.fFormats = uFormats;
 
@@ -2120,6 +2122,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     LogFlowFunc(("uFmtVBox=%#x, idxFmtX11=%u, pvSrc=%p, cbSrc=%u\n", pReq->Read.uFmtVBox, pReq->Read.idxFmtX11, pvSrc, cbSrc));
 
     /* Sanity. */
+    AssertReturnVoid(pReq->enmType == SHCLX11EVENTTYPE_READ);
     AssertReturnVoid(pReq->Read.uFmtVBox != VBOX_SHCL_FMT_NONE);
     AssertReturnVoid(pReq->Read.idxFmtX11 < SHCL_MAX_X11_FORMATS);
 
@@ -2378,6 +2381,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
         PSHCLX11REQUEST pReq = (PSHCLX11REQUEST)pClient;
         if (pReq) /* Give some more clues, if available. */
         {
+            AssertReturnVoid(pReq->enmType == SHCLX11EVENTTYPE_READ);
             char *pszFmts = ShClFormatsToStrA(pReq->Read.uFmtVBox);
             AssertPtrReturnVoid(pszFmts);
             AssertReturnVoid(pReq->Read.idxFmtX11 < SHCL_MAX_X11_FORMATS); /* Paranoia, should be checked already by the caller. */
@@ -2474,6 +2478,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     AssertPtrReturnVoid(pvUserData);
 
     PSHCLX11REQUEST   pReq = (PSHCLX11REQUEST)pvUserData;
+    AssertReturnVoid(pReq->enmType == SHCLX11EVENTTYPE_READ);
     SHCLX11CTX       *pCtx = pReq->pCtx;
     AssertPtrReturnVoid(pCtx);
 
@@ -2581,6 +2586,7 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
     PSHCLX11REQUEST pReq = (PSHCLX11REQUEST)RTMemAllocZ(sizeof(SHCLX11REQUEST));
     if (pReq)
     {
+        pReq->enmType       = SHCLX11EVENTTYPE_READ;
         pReq->pCtx          = pCtx;
         pReq->Read.uFmtVBox = uFmt;
         pReq->Read.cbMax    = cbMax;
@@ -2635,8 +2641,10 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
             {
                 if (pPayload)
                 {
-                    Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
+                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
                     PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
 
                     memcpy(pvBuf, pResp->Read.pvData, RT_MIN(cbBuf, pResp->Read.cbData));
                     *pcbRead = pResp->Read.cbData;

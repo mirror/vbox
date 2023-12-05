@@ -167,6 +167,21 @@ typedef struct _SHCLX11CTX
 } SHCLX11CTX, *PSHCLX11CTX;
 
 /**
+ * Enumeration for an X11 event type.
+ */
+typedef enum _SHCLX11EVENTTYPE
+{
+    /** Invalid event type. */
+    SHCLX11EVENTTYPE_INVALID = 0,
+    /** Reports formats to X11. */
+    SHCLX11EVENTTYPE_REPORT_FORMATS,
+    /** Reads clipboard from X11. */
+    SHCLX11EVENTTYPE_READ
+} SHCLX11EVENTTYPE;
+/** Pointer to an enumeration for an X11 event type. */
+typedef SHCLX11EVENTTYPE *PSHCLX11EVENTTYPE;
+
+/**
  * Structure describing an X11 clipboard request.
  */
 typedef struct _SHCLX11REQUEST
@@ -175,6 +190,8 @@ typedef struct _SHCLX11REQUEST
     SHCLX11CTX      *pCtx;
     /** Event associated to this request. */
     PSHCLEVENT       pEvent;
+    /** Request type for the union below. */
+    SHCLX11EVENTTYPE enmType;
     union
     {
         /** Format announcement to X. */
@@ -203,12 +220,18 @@ typedef SHCLX11REQUEST *PSHCLX11REQUEST;
  */
 typedef struct _SHCLX11RESPONSE
 {
-    int rc;
-    struct
+    /** Response type for the union below. */
+    SHCLX11EVENTTYPE enmType;
+    /** rc (IPRT-style) of the operation performed as part of the X event thread. */
+    int              rc;
+    union
     {
-        void    *pvData;
-        uint32_t cbData;
-    } Read;
+        struct
+        {
+            void    *pvData;
+            uint32_t cbData;
+        } Read;
+    };
 } SHCLX11RESPONSE;
 /** Pointer to an X11 clipboard response. */
 typedef SHCLX11RESPONSE *PSHCLX11RESPONSE;

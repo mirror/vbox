@@ -92,8 +92,10 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
                     {
                         if (pPayload)
                         {
-                            Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                            AssertReturnVoid(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                            AssertReturnVoid(pPayload->pvData);
                             PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+                            AssertReturnVoid(pResp->enmType == SHCLX11EVENTTYPE_READ);
 
                             rc = ShClTransferRootsInitFromStringListEx(pTransfer, (const char *)pResp->Read.pvData, pResp->Read.cbData,
                                                                        "\n" /* X11-based Desktop environments separate entries with "\n" */);
@@ -558,8 +560,10 @@ int VBClX11ClipboardMain(void)
                             {
                                 if (pPayload)
                                 {
-                                    Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                                    AssertBreakStmt(pPayload->cbData == sizeof(SHCLX11RESPONSE), rc = VERR_INVALID_PARAMETER);
+                                    AssertPtrBreakStmt(pPayload->pvData, rc = VERR_INVALID_POINTER);
                                     PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+                                    AssertBreakStmt(pResp->enmType == SHCLX11EVENTTYPE_READ, rc = VERR_INVALID_PARAMETER);
 
                                     rc = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pEvent->u.fReadData,
                                                                     pResp->Read.pvData, pResp->Read.cbData);
