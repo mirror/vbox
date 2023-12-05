@@ -251,6 +251,18 @@ void UIChooserView::retranslateUi()
     setWhatsThis(tr("Contains a tree of Virtual Machines and their groups"));
 }
 
+void UIChooserView::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIGraphicsView>::resizeEvent(pEvent);
+    /* Notify listeners: */
+    emit sigResized();
+
+    /* Update everything: */
+    updateSceneRect();
+    updateSearchWidgetGeometry();
+}
+
 void UIChooserView::prepare()
 {
     /* Install Chooser-view accessibility interface factory: */
@@ -271,10 +283,7 @@ void UIChooserView::prepare()
 void UIChooserView::prepareThis()
 {
     /* Prepare palette: */
-    QPalette pal = QApplication::palette();
-    pal.setColor(QPalette::Active, QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
-    pal.setColor(QPalette::Inactive, QPalette::Base, pal.color(QPalette::Inactive, QPalette::Window));
-    setPalette(pal);
+    preparePalette();
 
     /* Prepare frame: */
     setFrameShape(QFrame::NoFrame);
@@ -284,6 +293,14 @@ void UIChooserView::prepareThis()
     /* Prepare scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
+
+void UIChooserView::preparePalette()
+{
+    QPalette pal = QApplication::palette();
+    pal.setColor(QPalette::Active, QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
+    pal.setColor(QPalette::Inactive, QPalette::Base, pal.color(QPalette::Inactive, QPalette::Window));
+    setPalette(pal);
 }
 
 void UIChooserView::prepareWidget()
@@ -300,18 +317,6 @@ void UIChooserView::prepareWidget()
         connect(m_pSearchWidget, &UIChooserSearchWidget::sigToggleVisibility,
                 this, &UIChooserView::sltHandleSearchWidgetVisibilityToggle);
     }
-}
-
-void UIChooserView::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIGraphicsView>::resizeEvent(pEvent);
-    /* Notify listeners: */
-    emit sigResized();
-
-    /* Update everything: */
-    updateSceneRect();
-    updateSearchWidgetGeometry();
 }
 
 void UIChooserView::updateSceneRect()

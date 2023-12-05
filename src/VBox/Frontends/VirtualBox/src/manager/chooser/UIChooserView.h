@@ -124,6 +124,8 @@ private:
         void prepare();
         /** Prepares this. */
         void prepareThis();
+        /** Prepares palette. */
+        void preparePalette();
         /** Prepares widgets. */
         void prepareWidget();
     /** @} */
