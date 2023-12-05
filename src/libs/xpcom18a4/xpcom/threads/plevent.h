@@ -185,10 +185,10 @@ and to ensure that no more events will be delivered for that owner.
 #define plevent_h___
 
 #include "prtypes.h"
-#include "prclist.h"
 #include "prmon.h"
 
 #include <iprt/critsect.h>
+#include <iprt/list.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 
@@ -521,7 +521,7 @@ PL_FavorPerformanceHint(PRBool favorPerformanceOverEventStarvation, PRUint32 sta
  ******************************************************************************/
 
 struct PLEvent {
-    PRCList				link;
+    RTLISTNODE			link;
     PLHandleEventProc	handler;
     PLDestroyEventProc	destructor;
     void*				owner;

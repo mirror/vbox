@@ -69,7 +69,7 @@ typedef enum {
 
 struct PLEventQueue {
     const char*         name;
-    PRCList             queue;
+    RTLISTANCHOR        queue;
     PRMonitor*          monitor;
     RTTHREAD            handlerThread;
     EventQueueType      type;
@@ -128,7 +128,7 @@ static PLEventQueue * _pl_CreateEventQueue(const char *name,
     self->type = qtype;
     self->notified = PR_FALSE;
 
-    PR_INIT_CLIST(&self->queue);
+    RTListInit(&self->queue);
     if ( qtype == EventQueueIsNative ) {
         err = _pl_SetupNativeNotifier(self);
         if (err) goto error;
@@ -211,7 +211,7 @@ PL_PostEvent(PLEventQueue* self, PLEvent* event)
 
     /* insert event into thread's event queue: */
     if (event != NULL) {
-        PR_APPEND_LINK(&event->link, &self->queue);
+        RTListAppend(&self->queue, &event->link);
     }
 
     if (self->type == EventQueueIsNative && !self->notified) {
@@ -318,7 +318,7 @@ PL_GetEvent(PLEventQueue* self)
 
     PR_EnterMonitor(self->monitor);
 
-    if (!PR_CLIST_IS_EMPTY(&self->queue)) {
+    if (!RTListIsEmpty(&self->queue)) {
         if ( self->type == EventQueueIsNative &&
              self->notified                   &&
              !self->processingEvents          &&
@@ -331,8 +331,9 @@ PL_GetEvent(PLEventQueue* self)
             goto done;
 
         /* then grab the event and return it: */
-        event = PR_EVENT_PTR(self->queue.next);
-        PR_REMOVE_AND_INIT_LINK(&event->link);
+        event = RTListGetFirst(&self->queue, PLEvent, link);
+        RTListNodeRemove(&event->link);
+        RTListInit(&event->link);
     }
 
   done:
@@ -350,7 +351,7 @@ PL_EventAvailable(PLEventQueue* self)
 
     PR_EnterMonitor(self->monitor);
 
-    if (!PR_CLIST_IS_EMPTY(&self->queue))
+    if (!RTListIsEmpty(&self->queue))
         result = PR_TRUE;
 
     PR_ExitMonitor(self->monitor);
@@ -360,17 +361,14 @@ PL_EventAvailable(PLEventQueue* self)
 PR_IMPLEMENT(void)
 PL_MapEvents(PLEventQueue* self, PLEventFunProc fun, void* data)
 {
-    PRCList* qp;
-
     if (self == NULL)
         return;
 
     PR_EnterMonitor(self->monitor);
-    qp = self->queue.next;
-    while (qp != &self->queue) {
-        PLEvent* event = PR_EVENT_PTR(qp);
-        qp = qp->next;
-        (*fun)(event, data, self);
+    PLEvent *pIt, *pItNext;
+    RTListForEachSafe(&self->queue, pIt, pItNext, PLEvent, link)
+    {
+        (*fun)(pIt, data, self);
     }
     PR_ExitMonitor(self->monitor);
 }
@@ -421,11 +419,10 @@ PL_RevokeEvents(PLEventQueue* self, void* owner)
 
 #ifdef DEBUG
     {
-        PRCList* qp = self->queue.next;
-        while (qp != &self->queue) {
-            PLEvent* event = PR_EVENT_PTR(qp);
-            qp = qp->next;
-            Assert(event->owner != owner);
+        PLEvent *pIt;
+        RTListForEach(&self->queue, pIt, PLEvent, link)
+        {
+            Assert(pIt->owner != owner);
         }
     }
 #endif /* DEBUG */
@@ -438,14 +435,13 @@ PL_RevokeEvents(PLEventQueue* self, void* owner)
 static PRInt32
 _pl_GetEventCount(PLEventQueue* self)
 {
-    PRCList* node;
     PRInt32  count = 0;
 
     PR_EnterMonitor(self->monitor);
-    node = PR_LIST_HEAD(&self->queue);
-    while (node != &self->queue) {
+    PLEvent *pIt;
+    RTListForEach(&self->queue, pIt, PLEvent, link)
+    {
         count++;
-        node = PR_NEXT_LINK(node);
     }
     PR_ExitMonitor(self->monitor);
 
@@ -517,7 +513,7 @@ PL_InitEvent(PLEvent* self, void* owner,
              PLHandleEventProc handler,
              PLDestroyEventProc destructor)
 {
-    PR_INIT_CLIST(&self->link);
+    RTListInit(&self->link);
     self->handler = handler;
     self->destructor = destructor;
     self->owner = owner;
@@ -543,7 +539,7 @@ PL_HandleEvent(PLEvent* self)
         return;
 
     /* This event better not be on an event queue anymore. */
-    Assert(PR_CLIST_IS_EMPTY(&self->link));
+    Assert(RTListIsEmpty(&self->link));
 
     result = self->handler(self);
     if (NULL != self->synchronousResult) {
@@ -567,7 +563,7 @@ PL_DestroyEvent(PLEvent* self)
         return;
 
     /* This event better not be on an event queue anymore. */
-    Assert(PR_CLIST_IS_EMPTY(&self->link));
+    Assert(RTListIsEmpty(&self->link));
 
     if(self->condVar != NIL_RTSEMEVENT)
       RTSemEventDestroy(self->condVar);
@@ -591,7 +587,7 @@ PL_DequeueEvent(PLEvent* self, PLEventQueue* queue)
 
     PR_EnterMonitor(queue->monitor);
 
-    Assert(!PR_CLIST_IS_EMPTY(&self->link));
+    Assert(!RTListIsEmpty(&self->link));
 
 #if 0
     /*  I do not think that we need to do this anymore.
@@ -603,7 +599,8 @@ PL_DequeueEvent(PLEvent* self, PLEventQueue* queue)
       _pl_AcknowledgeNativeNotify(queue);
 #endif
 
-    PR_REMOVE_AND_INIT_LINK(&self->link);
+    RTListNodeRemove(&self->link);
+    RTListInit(&self->link);
 
     PR_ExitMonitor(queue->monitor);
 }

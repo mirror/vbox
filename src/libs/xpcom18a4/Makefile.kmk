@@ -155,7 +155,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/lib/ds/plarenas.h \
 	nsprpub/lib/ds/plhash.h \
 	nsprpub/pr/include/prbit.h \
-	nsprpub/pr/include/prclist.h \
 	nsprpub/pr/include/prinrval.h \
 	nsprpub/pr/include/prlong.h \
 	nsprpub/pr/include/prmem.h \
