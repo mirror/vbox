@@ -95,7 +95,7 @@ static const nsID kDConnectTargetID = DCONNECT_IPC_TARGETID;
 
 //-----------------------------------------------------------------------------
 
-#define DCON_WAIT_TIMEOUT PR_INTERVAL_NO_TIMEOUT
+#define DCON_WAIT_TIMEOUT RT_INDEFINITE_WAIT
 
 //-----------------------------------------------------------------------------
 
@@ -1280,11 +1280,11 @@ typedef struct ClientDownInfo
     ClientDownInfo(PRUint32 aClient)
     {
         uClient = aClient;
-        uTimestamp = PR_IntervalNow();
+        uTimestamp = RTTimeMilliTS();
     }
 
     PRUint32 uClient;
-    PRIntervalTime uTimestamp;
+    uint64_t uTimestamp;
 } ClientDownInfo;
 typedef std::map<PRUint32, ClientDownInfo *> ClientDownMap;
 typedef std::list<ClientDownInfo *> ClientDownList;
@@ -1325,14 +1325,14 @@ public:
     {
         // Insert new client down information. Start by expiring outdated
         // entries and free one element if there's still no space (if needed).
-        PRIntervalTime now = PR_IntervalNow();
+        uint64_t now = RTTimeMilliTS();
         while (!g_ClientDownList.empty())
         {
             ClientDownInfo *cInfo = g_ClientDownList.back();
             PRInt64 diff = (PRInt64)now - cInfo->uTimestamp;
             if (diff < 0)
-                diff += (PRInt64)((PRIntervalTime)-1) + 1;
-            if (diff > PR_SecondsToInterval(15 * 60))
+                diff += (PRInt64)((uint64_t)-1) + 1;
+            if (diff > 15 * 60 * RT_MS_1SEC)
             {
                 g_ClientDownMap.erase(cInfo->uClient);
                 g_ClientDownList.pop_back();
@@ -3556,9 +3556,8 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
     // wait a little while to let the workers empty the queue.
     mon.Exit();
     {
-      PRUint32 ticks = PR_MillisecondsToInterval(PR_MIN(mWorkers.Count() / 20 + 1, 10));
       nsAutoMonitor workersMon(mWaitingWorkersMon);
-      workersMon.Wait(ticks);
+      workersMon.Wait(PR_MIN(mWorkers.Count() / 20 + 1, 10));
     }
     mon.Enter();
     // examine the queue again

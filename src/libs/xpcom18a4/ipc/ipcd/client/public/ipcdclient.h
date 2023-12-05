@@ -53,7 +53,7 @@
 #include "ipcIMessageObserver.h"
 #include "ipcIClientObserver.h"
 
-#include "prinrval.h"
+#include <iprt/types.h>
 
 /* This API is only provided for the extensions compiled into the IPCDC
  * library, hence this API is hidden in the final DSO. */
@@ -239,7 +239,7 @@ IPC_METHOD IPC_WaitMessage(
   const nsID          &aTarget,
   ipcIMessageObserver *aObserver = nsnull,
   ipcIMessageObserver *aConsumer = nsnull,
-  PRIntervalTime       aTimeout = PR_INTERVAL_NO_TIMEOUT
+  RTMSINTERVAL        aTimeout = RT_INDEFINITE_WAIT
 );
 
 /*****************************************************************************/
