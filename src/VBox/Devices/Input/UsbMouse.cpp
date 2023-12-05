@@ -69,6 +69,8 @@
 #define USBHID_PID_MT_TOUCHPAD      0x0023
 /** @} */
 
+#define TOUCH_TIMER_MSEC            20      /* 50 Hz touch contact repeat timer. */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -226,6 +228,9 @@ typedef struct USBHID
     USBHIDMODE          enmMode;
     /** Tablet coordinate shift factor for old and broken operating systems. */
     uint8_t             u8CoordShift;
+
+    /** Contact repeat timer. */
+    TMTIMERHANDLE       hContactTimer;
 
     /**
      * Mouse port - LUN#0.
@@ -1991,6 +1996,8 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PUSBHID pThis,
         }
     }
 
+    bool fTouchActive = false;
+
     /* Mark still dirty existing contacts as cancelled, because a new set of contacts does not include them. */
     for (i = 0; i < RT_ELEMENTS(pThis->aCurrentContactState); i++)
     {
@@ -2000,6 +2007,8 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PUSBHID pThis,
             pCurContact->status |= MT_CONTACT_S_CANCELLED;
             pCurContact->status &= ~MT_CONTACT_S_DIRTY;
         }
+        if (pCurContact->flags & MT_CONTACT_F_IN_CONTACT)
+            fTouchActive = true;
     }
 
     pThis->u32LastTouchScanTime = u32ScanTime;
@@ -2023,6 +2032,15 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PUSBHID pThis,
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
+
+    /* If there is an active contact, set up a timer. Windows requires that touch input
+     * gets repeated as long as there's contact, otherwise the guest decides that there
+     * is no contact anymore, even though it was never told that.
+     */
+    if (fTouchActive)
+        PDMUsbHlpTimerSetMillies(pThis->pUsbIns, pThis->hContactTimer, TOUCH_TIMER_MSEC);
+    else
+        PDMUsbHlpTimerStop(pThis->pUsbIns, pThis->hContactTimer);
 
     RTCritSectLeave(&pThis->CritSect);
 
@@ -2714,6 +2732,23 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 
 
 /**
+ * @callback_method_impl{FNTMTIMERUSB}
+ *
+ * A touchscreen needs to repeatedly sent contact information as long
+ * as the contact is maintained.
+ */
+static DECLCALLBACK(void) usbHidContactTimer(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PUSBHID pThis = (PUSBHID)pvUser;
+
+    LogRel3(("usbHid: contact repeat timer\n"));
+    usbHidSendReport(pThis);
+
+    PDMUsbHlpTimerSetMillies(pUsbIns, hTimer, TOUCH_TIMER_MSEC);
+}
+
+
+/**
  * @interface_method_impl{PDMUSBREG,pfnDestruct}
  */
 static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
@@ -2734,6 +2769,8 @@ static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
         RTSemEventDestroy(pThis->hEvtDoneQueue);
         pThis->hEvtDoneQueue = NIL_RTSEMEVENT;
     }
+
+    PDMUsbHlpTimerDestroy(pUsbIns, pThis->hContactTimer);
 }
 
 
@@ -2808,6 +2845,14 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     rc = pHlp->pfnCFGMQueryU8Def(pCfg, "CoordShift", &pThis->u8CoordShift, 1);
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query shift factor"));
+
+    /*
+     * Create the touchscreen contact repeat timer.
+     */
+    rc = PDMUsbHlpTimerCreate(pUsbIns, TMCLOCK_VIRTUAL, usbHidContactTimer, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT,
+                              "Touchscreen Contact", &pThis->hContactTimer);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
