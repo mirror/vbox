@@ -2346,7 +2346,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         pPayload = NULL;
     }
 
-    LogRel2(("Shared Clipboard: Reading X11 clipboard data completed with %Rrc\n", rc));
+    LogRel2(("Shared Clipboard: Converting X11 clipboard data completed with %Rrc\n", rc));
 
     RTMemFree(pReq);
     RTMemFree(pvDst);
@@ -2536,6 +2536,20 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 #endif
         rc = VERR_NOT_IMPLEMENTED;
     }
+
+    /* If the above stuff fails, make sure to let the waiters know.
+     *
+     * Getting the actual selection value via clipGetSelectionValue[Ex]() above will happen in the X event thread,
+     * which has its own signalling then. So this check only handles errors which happens before we put anything
+     * onto the X event thread.
+     */
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = ShClEventSignalEx(pReq->pEvent, rc, NULL /* Payload */);
+        AssertRC(rc2);
+    }
+
+    LogRel2(("Shared Clipboard: Reading X11 clipboard data completed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
 }
