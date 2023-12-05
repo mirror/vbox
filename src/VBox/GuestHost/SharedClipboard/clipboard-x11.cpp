@@ -2647,7 +2647,10 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
                     ShClPayloadFree(pPayload);
                 }
                 else /* No payload given; could happen on invalid / not-expected formats. */
+                {
+                    rc = VERR_NO_DATA;
                     *pcbRead = 0;
+                }
             }
             else if (rc == VERR_SHCLPB_EVENT_FAILED)
                 rc = rcEvent;
