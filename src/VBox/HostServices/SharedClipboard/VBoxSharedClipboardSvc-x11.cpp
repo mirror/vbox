@@ -299,8 +299,9 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
         rc = ShClX11ReadDataFromX11Async(&pClient->State.pCtx->X11, uFormat, cbData, pEvent);
         if (RT_SUCCESS(rc))
         {
+            int               rcEvent;
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+            rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 if (pPayload)
@@ -326,6 +327,8 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
                 else /* No payload given; could happen on invalid / not-expected formats. */
                     *pcbActual = 0;
             }
+            else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                rc = rcEvent;
         }
 
         ShClEventRelease(pEvent);
@@ -721,8 +724,9 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
         if (RT_SUCCESS(rc))
         {
             /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
+            int               rcEvent;
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+            rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 if (pPayload)
@@ -743,9 +747,11 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
                     ShClPayloadFree(pPayload);
                     pPayload = NULL;
                 }
-                else
-                    rc = VERR_NO_DATA; /* No payload. */
+                else /* No payload given; could happen on invalid / not-expected formats. */
+                    *pcbActual = 0;
             }
+            else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                rc = rcEvent;
         }
 
         ShClEventRelease(pEvent);

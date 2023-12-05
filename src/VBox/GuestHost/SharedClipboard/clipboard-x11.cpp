@@ -2318,7 +2318,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 
     PSHCLEVENTPAYLOAD pPayload = NULL;
     size_t            cbResp   = sizeof(SHCLX11RESPONSE);
-    PSHCLX11RESPONSE  pResp    = (PSHCLX11RESPONSE)RTMemAlloc(cbResp);
+    PSHCLX11RESPONSE  pResp    = (PSHCLX11RESPONSE)RTMemAllocZ(cbResp);
     if (pResp)
     {
         pResp->Read.pvData = pvDst;
@@ -2614,8 +2614,9 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
         rc = ShClX11ReadDataFromX11Async(pCtx, uFmt, cbBuf, pEvent);
         if (RT_SUCCESS(rc))
         {
+            int               rcEvent;
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, msTimeout, &pPayload);
+            rc = ShClEventWaitEx(pEvent, msTimeout, &rcEvent, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 if (pPayload)
@@ -2631,7 +2632,11 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
 
                     ShClPayloadFree(pPayload);
                 }
+                else /* No payload given; could happen on invalid / not-expected formats. */
+                    *pcbRead = 0;
             }
+            else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                rc = rcEvent;
         }
     }
 

@@ -85,8 +85,9 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
                 rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, VBOX_SHCL_FMT_URI_LIST, UINT32_MAX, pEvent);
                 if (RT_SUCCESS(rc))
                 {
+                    int               rcEvent;
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+                    rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
                         if (pPayload)
@@ -102,7 +103,11 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
 
                             ShClPayloadFree(pPayload);
                         }
+                        else /* No payload given; could happen on invalid / not-expected formats. */
+                            *pcbActual = 0;
                     }
+                    else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                        rc = rcEvent;
                 }
             }
             break;
@@ -546,8 +551,9 @@ int VBClX11ClipboardMain(void)
                         rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, pEvent->u.fReadData, UINT32_MAX, pReadDataEvent);
                         if (RT_SUCCESS(rc))
                         {
+                            int               rcEvent;
                             PSHCLEVENTPAYLOAD pPayload;
-                            rc = ShClEventWait(pReadDataEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+                            rc = ShClEventWaitEx(pReadDataEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
                             if (RT_SUCCESS(rc))
                             {
                                 if (pPayload)
@@ -563,7 +569,11 @@ int VBClX11ClipboardMain(void)
 
                                     ShClPayloadFree(pPayload);
                                 }
+                                else /* No payload given; could happen on invalid / not-expected formats. */
+                                    *pcbActual = 0;
                             }
+                            else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                                rc = rcEvent;
                         }
 
                         ShClEventRelease(pReadDataEvent);
