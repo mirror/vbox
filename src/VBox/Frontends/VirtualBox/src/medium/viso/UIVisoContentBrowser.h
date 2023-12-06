@@ -31,7 +31,11 @@
 # pragma once
 #endif
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Qt includes: */
+#include <QItemSelection>
 #include <QWidget>
 
 /* COM includes: */
@@ -39,7 +43,9 @@
 
 /* Forward declarations: */
 class QFileInfo;
+class QGridLayout;
 class QLabel;
+class QIToolBar;
 class UIFileSystemItem;
 class UIFileSystemModel;
 class UIFileSystemProxyModel;
