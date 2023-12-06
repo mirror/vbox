@@ -1199,7 +1199,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_HLP_DECODED_NL_1(OP_SLDT, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT,  0,
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_GprFirst + IEM_GET_MODRM_RM(pVCpu, bRm)),
                                     iemCImpl_sldt_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
     }
 
@@ -1225,7 +1225,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_GprFirst + IEM_GET_MODRM_RM(pVCpu, bRm)),
                                     iemCImpl_str_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
     }
 
