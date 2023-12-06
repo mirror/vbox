@@ -1008,18 +1008,62 @@ void UICommon::loadColorTheme()
     /* macOS has Window color hardcoded somewhere inside, Qt has no access to it,
      * moreover these colors are influenced by window background blending,
      * making Qt default colors incredibly inconsistent with native macOS apps. */
-    QPalette pal = qApp->palette();
-    if (isInDarkMode())
+
+    /* Redefine colors for known OS types: */
+    enum ColorSlot
     {
-        pal.setColor(QPalette::Active, QPalette::Window, QColor("#252328"));
-        pal.setColor(QPalette::Inactive, QPalette::Window, QColor("#2A2630"));
-    }
-    else
+        ColorSlot_DarkActive,
+        ColorSlot_DarkInactive,
+        ColorSlot_LightActive,
+        ColorSlot_LightInactive,
+    };
+    QMap<ColorSlot, QColor> colors;
+    switch (osRelease())
     {
-        pal.setColor(QPalette::Active, QPalette::Window, QColor("#E1DEE4"));
-        pal.setColor(QPalette::Inactive, QPalette::Window, QColor("#EEE8E9"));
+        case MacOSXRelease_BigSur:
+        {
+            colors[ColorSlot_DarkActive] = QColor("#282628");
+            colors[ColorSlot_DarkInactive] = QColor("#2E292E");
+            colors[ColorSlot_LightActive] = QColor("#E7E2E3");
+            colors[ColorSlot_LightInactive] = QColor("#EEE9EA");
+            break;
+        }
+        case MacOSXRelease_Monterey:
+        {
+            colors[ColorSlot_DarkActive] = QColor("#252328");
+            colors[ColorSlot_DarkInactive] = QColor("#2A2630");
+            colors[ColorSlot_LightActive] = QColor("#E1DEE4");
+            colors[ColorSlot_LightInactive] = QColor("#EEE8E9");
+            break;
+        }
+        case MacOSXRelease_Ventura:
+        {
+            colors[ColorSlot_DarkActive] = QColor("#322827");
+            colors[ColorSlot_DarkInactive] = QColor("#332A28");
+            colors[ColorSlot_LightActive] = QColor("#E5E0DF");
+            colors[ColorSlot_LightInactive] = QColor("#ECE7E5");
+            break;
+        }
+        default:
+            break;
     }
-    qApp->setPalette(pal);
+
+    /* Do we have redefined colors? */
+    if (!colors.isEmpty())
+    {
+        QPalette pal = qApp->palette();
+        if (isInDarkMode())
+        {
+            pal.setColor(QPalette::Active, QPalette::Window, colors.value(ColorSlot_DarkActive));
+            pal.setColor(QPalette::Inactive, QPalette::Window, colors.value(ColorSlot_DarkInactive));
+        }
+        else
+        {
+            pal.setColor(QPalette::Active, QPalette::Window, colors.value(ColorSlot_LightActive));
+            pal.setColor(QPalette::Inactive, QPalette::Window, colors.value(ColorSlot_LightInactive));
+        }
+        qApp->setPalette(pal);
+    }
 
 #elif defined(VBOX_WS_WIN)
 
