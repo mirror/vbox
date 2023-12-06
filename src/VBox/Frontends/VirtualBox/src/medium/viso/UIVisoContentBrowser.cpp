@@ -39,7 +39,6 @@
 
 /* GUI includes: */
 #include "QIToolBar.h"
-#include "UIActionPool.h"
 #include "UIFileSystemModel.h"
 #include "UIFileTableNavigationWidget.h"
 #include "UIPathOperations.h"

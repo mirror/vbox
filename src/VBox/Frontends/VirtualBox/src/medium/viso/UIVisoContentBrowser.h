@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIActionPool.h"
 
 /* Qt includes: */
 #include <QItemSelection>
