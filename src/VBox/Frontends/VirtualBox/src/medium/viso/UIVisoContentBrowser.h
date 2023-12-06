@@ -34,9 +34,6 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* GUI includes: */
-#include "UIVisoBrowserBase.h"
-
 /* COM includes: */
 #include "COMEnums.h"
 
