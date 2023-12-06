@@ -1,9 +1,9 @@
 /* $Id$ */
 /** @file
- * IPRT - Crypto - SHA-crypt, code template for SHA-256 core.
+ * IPRT - Crypto - SHA-crypt, code template the core code.
  *
- * This is almost identical to shacrypt-512.cpp.h, fixes generally applies to
- * both. Diff the files after updates!
+ * This is included a couple of times from shacrypt.cpp with different set of
+ * defines for each variation.
  */
 
 /*
@@ -38,17 +38,18 @@
  */
 
 
-RTDECL(int) RTCrShaCrypt256(const char *pszPhrase, const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString)
+RTDECL(int) RTCrShaCryptTmpl(const char *pszPhrase, const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString)
 {
-    uint8_t abHash[RTSHA256_HASH_SIZE];
-    int rc = RTCrShaCrypt256Ex(pszPhrase, pszSalt, cRounds, abHash);
+    uint8_t abHash[TMPL_HASH_SIZE];
+    int rc = RTCrShaCryptTmplEx(pszPhrase, pszSalt, cRounds, abHash);
     if (RT_SUCCESS(rc))
-        rc = RTCrShaCrypt256ToString(abHash, pszSalt, cRounds, pszString, cbString);
+        rc = RTCrShaCryptTmplToString(abHash, pszSalt, cRounds, pszString, cbString);
     return rc;
 }
 
 
-RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint32_t cRounds, uint8_t pabHash[RTSHA256_HASH_SIZE])
+
+RTR3DECL(int) RTCrShaCryptTmplEx(const char *pszPhrase, const char *pszSalt, uint32_t cRounds, uint8_t pabHash[TMPL_HASH_SIZE])
 {
     /*
      * Validate and adjust input.
@@ -68,45 +69,45 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     /*
      * Get started...
      */
-    RTSHA256CONTEXT CtxA;
-    RTSha256Init(&CtxA);                                                        /* Step 1. */
-    RTSha256Update(&CtxA, pszPhrase, cchPhrase);                                /* Step 2. */
-    RTSha256Update(&CtxA, pszSalt, cchSalt);                                    /* Step 3. */
+    TMPL_HASH_CONTEXT_T CtxA;
+    TmplHashInit(&CtxA);                                                        /* Step 1. */
+    TmplHashUpdate(&CtxA, pszPhrase, cchPhrase);                                /* Step 2. */
+    TmplHashUpdate(&CtxA, pszSalt, cchSalt);                                    /* Step 3. */
 
-    RTSHA256CONTEXT CtxB;
-    RTSha256Init(&CtxB);                                                        /* Step 4. */
-    RTSha256Update(&CtxB, pszPhrase, cchPhrase);                                /* Step 5. */
-    RTSha256Update(&CtxB, pszSalt, cchSalt);                                    /* Step 6. */
-    RTSha256Update(&CtxB, pszPhrase, cchPhrase);                                /* Step 7. */
-    uint8_t abDigest[RTSHA256_HASH_SIZE];
-    RTSha256Final(&CtxB, abDigest);                                             /* Step 8. */
+    TMPL_HASH_CONTEXT_T CtxB;
+    TmplHashInit(&CtxB);                                                        /* Step 4. */
+    TmplHashUpdate(&CtxB, pszPhrase, cchPhrase);                                /* Step 5. */
+    TmplHashUpdate(&CtxB, pszSalt, cchSalt);                                    /* Step 6. */
+    TmplHashUpdate(&CtxB, pszPhrase, cchPhrase);                                /* Step 7. */
+    uint8_t abDigest[TMPL_HASH_SIZE];
+    TmplHashFinal(&CtxB, abDigest);                                             /* Step 8. */
 
     size_t cbLeft = cchPhrase;
-    while (cbLeft > RTSHA256_HASH_SIZE)                                         /* Step 9. */
+    while (cbLeft > TMPL_HASH_SIZE)                                             /* Step 9. */
     {
-        RTSha256Update(&CtxA, abDigest, sizeof(abDigest));
-        cbLeft -= RTSHA256_HASH_SIZE;
+        TmplHashUpdate(&CtxA, abDigest, sizeof(abDigest));
+        cbLeft -= TMPL_HASH_SIZE;
     }
-    RTSha256Update(&CtxA, abDigest, cbLeft);                                    /* Step 10. */
+    TmplHashUpdate(&CtxA, abDigest, cbLeft);                                    /* Step 10. */
 
     size_t iPhraseBit = cchPhrase;
     while (iPhraseBit)                                                          /* Step 11. */
     {
         if ((iPhraseBit & 1) != 0)
-            RTSha256Update(&CtxA, abDigest, sizeof(abDigest));                  /* a) */
+            TmplHashUpdate(&CtxA, abDigest, sizeof(abDigest));                  /* a) */
         else
-            RTSha256Update(&CtxA, pszPhrase, cchPhrase);                        /* b) */
+            TmplHashUpdate(&CtxA, pszPhrase, cchPhrase);                        /* b) */
         iPhraseBit >>= 1;
     }
 
-    RTSha256Final(&CtxA, abDigest);                                             /* Step 12. */
+    TmplHashFinal(&CtxA, abDigest);                                             /* Step 12. */
 
-    RTSha256Init(&CtxB);                                                        /* Step 13. */
+    TmplHashInit(&CtxB);                                                        /* Step 13. */
     for (size_t i = 0; i < cchPhrase; i++)                                      /* Step 14. */
-        RTSha256Update(&CtxB, pszPhrase, cchPhrase);
+        TmplHashUpdate(&CtxB, pszPhrase, cchPhrase);
 
-    uint8_t abDigestTemp[RTSHA256_HASH_SIZE];
-    RTSha256Final(&CtxB, abDigestTemp);                                         /* Step 15. */
+    uint8_t abDigestTemp[TMPL_HASH_SIZE];
+    TmplHashFinal(&CtxB, abDigestTemp);                                         /* Step 15. */
 
     /*
      * Byte sequence P (= password).
@@ -117,27 +118,27 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     uint8_t     *pb       = pabSeqP;
     AssertPtrReturn(pabSeqP, VERR_NO_MEMORY);
     cbLeft = cbSeqP;
-    while (cbLeft > RTSHA256_HASH_SIZE)
+    while (cbLeft > TMPL_HASH_SIZE)
     {
         memcpy(pb, abDigestTemp, sizeof(abDigestTemp));                         /* a) */
-        pb     += RTSHA256_HASH_SIZE;
-        cbLeft -= RTSHA256_HASH_SIZE;
+        pb     += TMPL_HASH_SIZE;
+        cbLeft -= TMPL_HASH_SIZE;
     }
     memcpy(pb, abDigestTemp, cbLeft);                                           /* b) */
 
-    RTSha256Init(&CtxB);                                                        /* Step 17. */
+    TmplHashInit(&CtxB);                                                        /* Step 17. */
 
     for (size_t i = 0; i < 16 + (unsigned)abDigest[0]; i++)                     /* Step 18. */
-        RTSha256Update(&CtxB, pszSalt, cchSalt);
+        TmplHashUpdate(&CtxB, pszSalt, cchSalt);
 
-    RTSha256Final(&CtxB, abDigestTemp);                                         /* Step 19. */
+    TmplHashFinal(&CtxB, abDigestTemp);                                         /* Step 19. */
 
     /*
      * Byte sequence S (= salt).
      */
     /* Step 20. */
     size_t   const  cbSeqS  = cchSalt;
-#if 0 /* Given that the salt has a fixed range (8 thru 16 bytes), and SHA-256
+#if 0 /* Given that the salt has a fixed range (8 thru 16 bytes), and SHA-512/256
        * producing 64 bytes, we can safely skip the loop part here (a) and go
        * straight for step (b). Further, we can drop the whole memory allocation,
        * let alone duplication (it's all overwritten!), and use an uninitalized
@@ -147,15 +148,15 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
 
     pb     = pabSeqS;
     cbLeft = cbSeqS;
-    while (cbLeft > RTSHA256_HASH_SIZE)
+    while (cbLeft > TMPL_HASH_SIZE)
     {
         memcpy(pb, (void *)abDigestTemp, sizeof(abDigestTemp));                 /* a) */
-        pb     += RTSHA256_HASH_SIZE;
-        cbLeft -= RTSHA256_HASH_SIZE
+        pb     += TMPL_HASH_SIZE;
+        cbLeft -= TMPL_HASH_SIZE
     }
     memcpy(pb, abDigestTemp, cbLeft);                                           /* b) */
 #else
-    AssertCompile(RT_SHACRYPT_SALT_MAX_LEN < RTSHA256_HASH_SIZE);
+    AssertCompile(RT_SHACRYPT_SALT_MAX_LEN < TMPL_HASH_SIZE);
     uint8_t         abSeqS[RT_SHACRYPT_SALT_MAX_LEN + 2];
     uint8_t * const pabSeqS = abSeqS;
     memcpy(abSeqS, abDigestTemp, cbSeqS);                                       /* b) */
@@ -164,37 +165,37 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     /* Step 21. */
     for (uint32_t iRound = 0; iRound < cRounds; iRound++)
     {
-        RTSHA256CONTEXT CtxC;
-        RTSha256Init(&CtxC);                                                    /* a) */
+        TMPL_HASH_CONTEXT_T CtxC;
+        TmplHashInit(&CtxC);                                                    /* a) */
 
         if ((iRound & 1) != 0)
-            RTSha256Update(&CtxC, pabSeqP, cbSeqP);                             /* b) */
+            TmplHashUpdate(&CtxC, pabSeqP, cbSeqP);                             /* b) */
         else
-            RTSha256Update(&CtxC, abDigest, sizeof(abDigest));                  /* c) */
+            TmplHashUpdate(&CtxC, abDigest, sizeof(abDigest));                  /* c) */
 
         if (iRound % 3 != 0)                                                    /* d) */
-            RTSha256Update(&CtxC, pabSeqS, cbSeqS);
+            TmplHashUpdate(&CtxC, pabSeqS, cbSeqS);
 
         if (iRound % 7 != 0)
-            RTSha256Update(&CtxC, pabSeqP, cbSeqP);                             /* e) */
+            TmplHashUpdate(&CtxC, pabSeqP, cbSeqP);                             /* e) */
 
         if ((iRound & 1) != 0)
-            RTSha256Update(&CtxC, abDigest, sizeof(abDigest));                  /* f) */
+            TmplHashUpdate(&CtxC, abDigest, sizeof(abDigest));                  /* f) */
         else
-            RTSha256Update(&CtxC, pabSeqP, cbSeqP);                             /* g) */
+            TmplHashUpdate(&CtxC, pabSeqP, cbSeqP);                             /* g) */
 
-        RTSha256Final(&CtxC, abDigest);                                         /* h) */
+        TmplHashFinal(&CtxC, abDigest);                                         /* h) */
     }
 
     /*
      * Done.
      */
-    memcpy(pabHash, abDigest, RTSHA256_HASH_SIZE);
+    memcpy(pabHash, abDigest, TMPL_HASH_SIZE);
 
     /*
      * Cleanup.
      */
-    RTMemWipeThoroughly(abDigestTemp, RTSHA256_HASH_SIZE, 3);
+    RTMemWipeThoroughly(abDigestTemp, TMPL_HASH_SIZE, 3);
     RTMemWipeThoroughly(pabSeqP, cbSeqP, 3);
     RTMemTmpFree(pabSeqP);
 #if 0
@@ -208,8 +209,8 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
 }
 
 
-RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t const pabHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
-                                      char *pszString, size_t cbString)
+RTR3DECL(int) RTCrShaCryptTmplToString(uint8_t const pabHash[TMPL_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
+                                       char *pszString, size_t cbString)
 {
     /*
      * Validate and adjust input.
@@ -235,18 +236,18 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t const pabHash[RTSHA256_HASH_SIZE],
         Assert(cchRounds > 0 && cchRounds <= 9);
     }
 
-    size_t const cchNeeded = sizeof(RT_SHACRYPT_ID_STR_256) - 1
+    size_t const cchNeeded = sizeof(TMPL_SHACRYPT_ID_STR) - 1
                            + (cRounds != RT_SHACRYPT_ROUNDS_DEFAULT ? cchRounds + sizeof("rounds=$") - 1 : 0)
                            + cchSalt + 1
-                           + RTSHA256_HASH_SIZE * 4 / 3
+                           + TMPL_HASH_SIZE * 4 / 3
                            + 1;
     AssertReturn(cbString > cchNeeded, VERR_BUFFER_OVERFLOW);
 
     /*
      * Do the formatting.
      */
-    memcpy(pszString, RT_STR_TUPLE(RT_SHACRYPT_ID_STR_256));
-    size_t off = sizeof(RT_SHACRYPT_ID_STR_256) - 1;
+    memcpy(pszString, RT_STR_TUPLE(TMPL_SHACRYPT_ID_STR));
+    size_t off = sizeof(TMPL_SHACRYPT_ID_STR) - 1;
 
     if (cRounds != RT_SHACRYPT_ROUNDS_DEFAULT)
     {
@@ -262,6 +263,31 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t const pabHash[RTSHA256_HASH_SIZE],
     off += cchSalt;
     pszString[off++] = '$';
 
+#if TMPL_HASH_BITS == 512
+    BASE64_ENCODE(pszString, off, pabHash[ 0], pabHash[21], pabHash[42], 4);
+    BASE64_ENCODE(pszString, off, pabHash[22], pabHash[43], pabHash[ 1], 4);
+    BASE64_ENCODE(pszString, off, pabHash[44], pabHash[ 2], pabHash[23], 4);
+    BASE64_ENCODE(pszString, off, pabHash[ 3], pabHash[24], pabHash[45], 4);
+    BASE64_ENCODE(pszString, off, pabHash[25], pabHash[46], pabHash[ 4], 4);
+    BASE64_ENCODE(pszString, off, pabHash[47], pabHash[ 5], pabHash[26], 4);
+    BASE64_ENCODE(pszString, off, pabHash[ 6], pabHash[27], pabHash[48], 4);
+    BASE64_ENCODE(pszString, off, pabHash[28], pabHash[49], pabHash[ 7], 4);
+    BASE64_ENCODE(pszString, off, pabHash[50], pabHash[ 8], pabHash[29], 4);
+    BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[30], pabHash[51], 4);
+    BASE64_ENCODE(pszString, off, pabHash[31], pabHash[52], pabHash[10], 4);
+    BASE64_ENCODE(pszString, off, pabHash[53], pabHash[11], pabHash[32], 4);
+    BASE64_ENCODE(pszString, off, pabHash[12], pabHash[33], pabHash[54], 4);
+    BASE64_ENCODE(pszString, off, pabHash[34], pabHash[55], pabHash[13], 4);
+    BASE64_ENCODE(pszString, off, pabHash[56], pabHash[14], pabHash[35], 4);
+    BASE64_ENCODE(pszString, off, pabHash[15], pabHash[36], pabHash[57], 4);
+    BASE64_ENCODE(pszString, off, pabHash[37], pabHash[58], pabHash[16], 4);
+    BASE64_ENCODE(pszString, off, pabHash[59], pabHash[17], pabHash[38], 4);
+    BASE64_ENCODE(pszString, off, pabHash[18], pabHash[39], pabHash[60], 4);
+    BASE64_ENCODE(pszString, off, pabHash[40], pabHash[61], pabHash[19], 4);
+    BASE64_ENCODE(pszString, off, pabHash[62], pabHash[20], pabHash[41], 4);
+    BASE64_ENCODE(pszString, off,           0,           0, pabHash[63], 2);
+
+#elif TMPL_HASH_BITS == 256
     BASE64_ENCODE(pszString, off, pabHash[00], pabHash[10], pabHash[20], 4);
     BASE64_ENCODE(pszString, off, pabHash[21], pabHash[ 1], pabHash[11], 4);
     BASE64_ENCODE(pszString, off, pabHash[12], pabHash[22], pabHash[ 2], 4);
@@ -274,9 +300,26 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t const pabHash[RTSHA256_HASH_SIZE],
     BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[19], pabHash[29], 4);
     BASE64_ENCODE(pszString, off, 0,           pabHash[31], pabHash[30], 3);
 
+#else
+# error "TMPL_HASH_BITS"
+#endif
+
     pszString[off] = '\0';
     Assert(off < cbString);
 
     return VINF_SUCCESS;
 }
+
+
+#undef TMPL_HASH_BITS
+#undef TMPL_HASH_SIZE
+#undef TMPL_HASH_CONTEXT_T
+#undef TmplHashInit
+#undef TmplHashUpdate
+#undef TmplHashFinal
+#undef TMPL_SHACRYPT_ID_STR
+#undef RTCrShaCryptTmpl
+#undef RTCrShaCryptTmplEx
+#undef RTCrShaCryptTmplToString
+
 

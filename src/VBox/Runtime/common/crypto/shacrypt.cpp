@@ -127,8 +127,38 @@ static const char *rtCrShaCryptExtractSaltAndRounds(const char *pszSalt, size_t 
     return pszSalt;
 }
 
-#include "shacrypt-256.cpp.h"
-#include "shacrypt-512.cpp.h"
+
+/*
+ * The algorithm for the SHA-256 and SHA-512 encryption is identical, except for
+ * how the bytes are distributed in the final step.  So we use a pre-processor
+ * code template for the implementation.
+ */
+
+/* SHA-256*/
+#define TMPL_HASH_BITS              256
+#define TMPL_HASH_SIZE              RTSHA256_HASH_SIZE
+#define TMPL_HASH_CONTEXT_T         RTSHA256CONTEXT
+#define TmplHashInit                RTSha256Init
+#define TmplHashUpdate              RTSha256Update
+#define TmplHashFinal               RTSha256Final
+#define TMPL_SHACRYPT_ID_STR        RT_SHACRYPT_ID_STR_256
+#define RTCrShaCryptTmpl            RTCrShaCrypt256
+#define RTCrShaCryptTmplEx          RTCrShaCrypt256Ex
+#define RTCrShaCryptTmplToString    RTCrShaCrypt256ToString
+#include "shacrypt-tmpl.cpp.h"
+
+/* SHA-512*/
+#define TMPL_HASH_BITS              512
+#define TMPL_HASH_SIZE              RTSHA512_HASH_SIZE
+#define TMPL_HASH_CONTEXT_T         RTSHA512CONTEXT
+#define TmplHashInit                RTSha512Init
+#define TmplHashUpdate              RTSha512Update
+#define TmplHashFinal               RTSha512Final
+#define TMPL_SHACRYPT_ID_STR        RT_SHACRYPT_ID_STR_512
+#define RTCrShaCryptTmpl            RTCrShaCrypt512
+#define RTCrShaCryptTmplEx          RTCrShaCrypt512Ex
+#define RTCrShaCryptTmplToString    RTCrShaCrypt512ToString
+#include "shacrypt-tmpl.cpp.h"
 
 
 RTDECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt)
