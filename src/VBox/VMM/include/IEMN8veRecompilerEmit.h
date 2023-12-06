@@ -104,6 +104,40 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitBrk(PIEMRECOMPILERSTATE pReNative, uint
 *   Loads, Stores and Related Stuff.                                                                                             *
 *********************************************************************************************************************************/
 
+#ifdef RT_ARCH_AMD64
+/**
+ * Common bit of iemNativeEmitLoadGprByGpr and friends.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitGprByGprDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, uint8_t iGprBase, int32_t offDisp)
+{
+    if (offDisp == 0 && (iGprBase & 7) != X86_GREG_xBP) /* Can use encoding w/o displacement field. */
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM0, iGprReg & 7, iGprBase & 7);
+        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
+            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
+    }
+    else if (offDisp == (int8_t)offDisp)
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, iGprBase & 7);
+        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
+            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
+        pbCodeBuf[off++] = (uint8_t)offDisp;
+    }
+    else
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprReg & 7, iGprBase & 7);
+        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
+            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
+    }
+    return off;
+}
+#endif /* RT_ARCH_AMD64 */
+
 /**
  * Emits setting a GPR to zero.
  */
@@ -888,7 +922,7 @@ iemNativeEmitLoadGprSignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 /**
  * Sign-extends 8-bit value in @a iGprSrc into a 32-bit value in @a iGprDst.
- * @note Bits 64 thru 32 are cleared.
+ * @note Bits 63 thru 32 are cleared.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitLoadGpr32SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
@@ -917,7 +951,7 @@ iemNativeEmitLoadGpr32SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32
 
 /**
  * Sign-extends 8-bit value in @a iGprSrc into a 16-bit value in @a iGprDst.
- * @note Bits 64 thru 16 are cleared.
+ * @note Bits 63 thru 16 are cleared.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitLoadGpr16SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
@@ -956,38 +990,29 @@ iemNativeEmitLoadGpr16SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32
 
 /**
  * Emits a gprdst = gprsrc + addend load.
+ * @note The added is 32-bit for AMD64 and 64-bit for ARM64.
  */
+#ifdef RT_ARCH_AMD64
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                       uint8_t iGprDst, uint8_t iGprSrc, int32_t iAddend)
 {
     Assert(iAddend != 0);
 
-#ifdef RT_ARCH_AMD64
     /* lea gprdst, [gprsrc + iAddend] */
-    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
-    if ((iGprDst | iGprSrc) >= 8)
-        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_W | X86_OP_REX_B
-                         : iGprSrc >= 8 ? X86_OP_REX_W | X86_OP_REX_R | X86_OP_REX_B
-                         :                X86_OP_REX_W | X86_OP_REX_R;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W;
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst >= 8 ? X86_OP_REX_R : 0) | (iGprSrc >= 8 ? X86_OP_REX_B : 0);
     pbCodeBuf[off++] = 0x8d;
-    if (iAddend >= -128 && iAddend < 128)
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprDst & 7, iGprSrc & 7);
-        pbCodeBuf[off++] = (int8_t)iAddend;
-    }
-    else
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprDst & 7, iGprSrc & 7);
-        pbCodeBuf[off++] = RT_BYTE1((uint32_t)iAddend);
-        pbCodeBuf[off++] = RT_BYTE2((uint32_t)iAddend);
-        pbCodeBuf[off++] = RT_BYTE3((uint32_t)iAddend);
-        pbCodeBuf[off++] = RT_BYTE4((uint32_t)iAddend);
-    }
+    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, iGprDst, iGprSrc, iAddend);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
 
 #elif defined(RT_ARCH_ARM64)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                      uint8_t iGprDst, uint8_t iGprSrc, int64_t iAddend)
+{
     if ((uint32_t)iAddend < 4096)
     {
         /* add dst, src, uimm12 */
@@ -1002,9 +1027,76 @@ iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t of
     }
     else
     {
-        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, (int64_t)iAddend);
+        Assert(iGprSrc != iGprDst);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, iAddend);
         uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, iGprSrc, iGprDst);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+#else
+# error "port me"
+#endif
+
+/**
+ * Emits a gprdst = gprsrc + addend load, accepting iAddend == 0.
+ * @note The added is 32-bit for AMD64 and 64-bit for ARM64.
+ */
+#ifdef RT_ARCH_AMD64
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGprWithAddendMaybeZero(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                               uint8_t iGprDst, uint8_t iGprSrc, int32_t iAddend)
+#else
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGprWithAddendMaybeZero(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                               uint8_t iGprDst, uint8_t iGprSrc, int64_t iAddend)
+#endif
+{
+    if (iAddend != 0)
+        return iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, iGprDst, iGprSrc, iAddend);
+    return iemNativeEmitLoadGprFromGpr(pReNative, off, iGprDst, iGprSrc);
+}
+
+
+/**
+ * Emits a gprdst = gprsrc32 + addend load.
+ * @note Bits 63 thru 32 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr32WithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                        uint8_t iGprDst, uint8_t iGprSrc, int32_t iAddend)
+{
+    Assert(iAddend != 0);
+
+#ifdef RT_ARCH_AMD64
+    /* a32 o32 lea gprdst, [gprsrc + iAddend] */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_ADDR;
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = (iGprDst >= 8 ? X86_OP_REX_R : 0) | (iGprSrc >= 8 ? X86_OP_REX_B : 0);
+    pbCodeBuf[off++] = 0x8d;
+    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, iGprDst, iGprSrc, iAddend);
+
+#elif defined(RT_ARCH_ARM64)
+    if ((uint32_t)iAddend < 4096)
+    {
+        /* add dst, src, uimm12 */
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, iGprSrc, (uint32_t)iAddend, false /*f64Bit*/);
+    }
+    else if ((uint32_t)-iAddend < 4096)
+    {
+        /* sub dst, src, uimm12 */
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, iGprSrc, (uint32_t)-iAddend, false /*f64Bit*/);
+    }
+    else
+    {
+        Assert(iGprSrc != iGprDst);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, (int64_t)iAddend);
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, iGprSrc, iGprDst, false /*f64Bit*/);
     }
 
 #else
@@ -1013,6 +1105,20 @@ iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t of
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
+
+
+/**
+ * Emits a gprdst = gprsrc32 + addend load, accepting iAddend == 0.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                 uint8_t iGprDst, uint8_t iGprSrc, int32_t iAddend)
+{
+    if (iAddend != 0)
+        return iemNativeEmitLoadGprFromGpr32WithAddend(pReNative, off, iGprDst, iGprSrc, iAddend);
+    return iemNativeEmitLoadGprFromGpr32(pReNative, off, iGprDst, iGprSrc);
+}
+
 
 
 #ifdef RT_ARCH_AMD64
@@ -1318,39 +1424,7 @@ iemNativeEmitStoreImm64ByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t
 }
 
 
-#ifdef RT_ARCH_AMD64
-/**
- * Common bit of iemNativeEmitLoadGprByGpr and friends.
- */
-DECL_FORCE_INLINE(uint32_t)
-iemNativeEmitGprByGprDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, uint8_t iGprBase, int32_t offDisp)
-{
-    if (offDisp == 0 && (iGprBase & 7) != X86_GREG_xBP) /* Can use encoding w/o displacement field. */
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM0, iGprReg & 7, iGprBase & 7);
-        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
-            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
-    }
-    else if (offDisp == (int8_t)offDisp)
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, iGprBase & 7);
-        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
-            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
-        pbCodeBuf[off++] = (uint8_t)offDisp;
-    }
-    else
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, iGprBase & 7);
-        if ((iGprBase & 7) == X86_GREG_xSP) /* for RSP/R12 relative addressing we have to use a SIB byte. */
-            pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_xSP, X86_GREG_xSP, 0); /* -> [RSP/R12] */
-        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
-    }
-    return off;
-}
-#elif defined(RT_ARCH_ARM64)
+#if defined(RT_ARCH_ARM64)
 /**
  * Common bit of iemNativeEmitLoadGprFromVCpuU64 and friends.
  */

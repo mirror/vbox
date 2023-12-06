@@ -61,9 +61,9 @@ g_dMcStmtThreaded = {
 
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16':                       (None, False, True,  ),
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32':                       (None, False, True,  ),
-    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32':                (None, False, False, ),
-    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS':                  (None, False, False, ),
-    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64':                       (None, False, False, ),
+    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32':                (None, False, True,  ),
+    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS':                  (None, False, True,  ),
+    'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64':                       (None, False, True,  ),
 
     'IEM_MC_CALL_CIMPL_1_THREADED':                              (None, True,  True,  ),
     'IEM_MC_CALL_CIMPL_2_THREADED':                              (None, True,  True,  ),

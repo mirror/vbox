@@ -5,7 +5,7 @@
  * Logging group IEM_RE_NATIVE assignments:
  *      - Level 1  (Log)  : ...
  *      - Flow  (LogFlow) : ...
- *      - Level 2  (Log2) : ...
+ *      - Level 2  (Log2) : Details calls as they're recompiled.
  *      - Level 3  (Log3) : Disassemble native code after recompiling.
  *      - Level 4  (Log4) : ...
  *      - Level 5  (Log5) : ...
@@ -3437,7 +3437,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
             AssertMsg(   enmIntendedUse != kIemNativeGstRegUse_ForUpdate
                       && enmIntendedUse != kIemNativeGstRegUse_ForFullWrite,
                       ("This shouldn't happen: idxReg=%d enmGstReg=%d enmIntendedUse=%s\n",
-                       idxReg, s_pszIntendedUse[enmIntendedUse]));
+                       idxReg, enmGstReg, s_pszIntendedUse[enmIntendedUse]));
 
             /*
              * Allocate a new register, copy the value and, if updating, the
@@ -8728,13 +8728,336 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
-    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff)
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, \
+                                                   a_u32Disp, a_cbImm, a_GCPtrEff, true /*f64Bit*/)
 
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
-    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff, 64)
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, \
+                                                   a_u32Disp, a_cbImm, a_GCPtrEff, true /*f64Bit*/)
 
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
-    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff, 32)
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, \
+                                                   a_u32Disp, a_cbImm, a_GCPtrEff, false /*f64Bit*/)
+
+/**
+ * Emit code for IEM_MC_CALC_RM_EFF_ADDR_THREADED_64*.
+ *
+ * @returns New off.
+ * @param   pReNative           .
+ * @param   off                 .
+ * @param   bRmEx               The ModRM byte but with bit 3 set to REX.B and
+ *                              bit 4 to REX.X.  The two bits are part of the
+ *                              REG sub-field, which isn't needed in this
+ *                              function.
+ * @param   uSibAndRspOffset    Two parts:
+ *                                - The first 8 bits make up the SIB byte.
+ *                                - The next 8 bits are the fixed RSP/ESP offset
+ *                                  in case of a pop [xSP].
+ * @param   u32Disp             The displacement byte/word/dword, if any.
+ * @param   cbInstr             The size of the fully decoded instruction. Used
+ *                              for RIP relative addressing.
+ * @param   idxVarRet           .
+ *
+ * @see iemOpHlpCalcRmEffAddrThreadedAddr64
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCalcRmEffAddrThreadedAddr64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t bRmEx, uint32_t uSibAndRspOffset,
+                                         uint32_t u32Disp, uint8_t cbInstr, uint8_t idxVarRet, bool f64Bit)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarRet);
+
+    /*
+     * Special case the rip + disp32 form first.
+     */
+    if ((bRmEx & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+    {
+        uint8_t const idxRegRet = iemNativeVarAllocRegister(pReNative, idxVarRet, &off);
+        uint8_t const idxRegPc  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                  kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+        if (f64Bit)
+        {
+            int64_t const offFinalDisp = (int64_t)(int32_t)u32Disp + cbInstr;
+            if ((int32_t)offFinalDisp == offFinalDisp)
+                off = iemNativeEmitLoadGprFromGprWithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, (int32_t)offFinalDisp);
+            else
+            {
+                off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, idxRegRet, idxRegPc, (int32_t)u32Disp);
+                off = iemNativeEmitAddGprImm8(pReNative, off, idxRegRet, cbInstr);
+            }
+        }
+        else
+            off = iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, (int32_t)u32Disp + cbInstr);
+
+#elif defined(RT_ARCH_ARM64)
+        if (f64Bit)
+            off = iemNativeEmitLoadGprFromGprWithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc,
+                                                                 (int64_t)(int32_t)u32Disp + cbInstr);
+        else
+            off = iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc,
+                                                                   (int32_t)u32Disp + cbInstr);
+
+#else
+# error "Port me!"
+#endif
+        iemNativeRegFreeTmp(pReNative, idxRegPc);
+        return off;
+    }
+
+    /* Calculate the fixed displacement (more down in SIB.B=4 and SIB.B=5 on this). */
+    int64_t i64EffAddr = 0;
+    switch ((bRmEx >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+    {
+        case 0: break;
+        case 1: i64EffAddr = (int8_t)u32Disp; break;
+        case 2: i64EffAddr = (int32_t)u32Disp; break;
+        default: AssertFailed();
+    }
+
+    /* Get the register (or SIB) value. */
+    uint8_t idxGstRegBase  = UINT8_MAX;
+    uint8_t idxGstRegIndex = UINT8_MAX;
+    uint8_t cShiftIndex    = 0;
+    if ((bRmEx & X86_MODRM_RM_MASK) != 4)
+        idxGstRegBase = bRmEx & (X86_MODRM_RM_MASK | 0x8); /* bRmEx[bit 3] = REX.B */
+    else /* SIB: */
+    {
+        /* index /w scaling . */
+        cShiftIndex    = (uSibAndRspOffset >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+        idxGstRegIndex = ((uSibAndRspOffset >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
+                       | ((bRmEx & 0x10) >> 1); /* bRmEx[bit 4] = REX.X */
+        if (idxGstRegIndex == 4)
+        {
+            /* no index */
+            cShiftIndex    = 0;
+            idxGstRegIndex = UINT8_MAX;
+        }
+
+        /* base */
+        idxGstRegBase = (uSibAndRspOffset & X86_SIB_BASE_MASK) | (bRmEx & 0x8); /* bRmEx[bit 3] = REX.B */
+        if (idxGstRegBase == 4)
+        {
+            /* pop [rsp] hack */
+            i64EffAddr += uSibAndRspOffset >> 8; /* (this is why i64EffAddr must be 64-bit) */
+        }
+        else if (   (idxGstRegBase & X86_SIB_BASE_MASK) == 5
+                 && (bRmEx & X86_MODRM_MOD_MASK) == 0)
+        {
+            /* mod=0 and base=5 -> disp32, no base reg. */
+            Assert(i64EffAddr == 0);
+            i64EffAddr    = (int32_t)u32Disp;
+            idxGstRegBase = UINT8_MAX;
+        }
+    }
+
+    /*
+     * If no registers are involved (SIB.B=5, SIB.X=4) repeat what we did at
+     * the start of the function.
+     */
+    if (idxGstRegBase == UINT8_MAX && idxGstRegIndex == UINT8_MAX)
+    {
+        if (f64Bit)
+            iemNativeVarSetKindToConst(pReNative, idxVarRet, (uint64_t)i64EffAddr);
+        else
+            iemNativeVarSetKindToConst(pReNative, idxVarRet, (uint64_t)(int32_t)i64EffAddr);
+        return off;
+    }
+
+    /*
+     * Now emit code that calculates:
+     *      idxRegRet = (uint64_t)(i64EffAddr [+ idxGstRegBase] [+ (idxGstRegIndex << cShiftIndex)])
+     * or if !f64Bit:
+     *      idxRegRet = (uint32_t)(i64EffAddr [+ idxGstRegBase] [+ (idxGstRegIndex << cShiftIndex)])
+     */
+    uint8_t const idxRegRet   = iemNativeVarAllocRegister(pReNative, idxVarRet, &off);
+    uint8_t       idxRegBase  = idxGstRegBase == UINT8_MAX ? UINT8_MAX
+                              : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegBase),
+                                                                kIemNativeGstRegUse_ReadOnly);
+    uint8_t       idxRegIndex = idxGstRegIndex == UINT8_MAX ? UINT8_MAX
+                              : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegIndex),
+                                                               kIemNativeGstRegUse_ReadOnly);
+
+    /* If base is not given and there is no shifting, swap the registers to avoid code duplication. */
+    if (idxRegBase == UINT8_MAX && cShiftIndex == 0)
+    {
+        idxRegBase  = idxRegIndex;
+        idxRegIndex = UINT8_MAX;
+    }
+
+#ifdef RT_ARCH_AMD64
+    uint8_t bFinalAdj;
+    if (!f64Bit || (int32_t)i64EffAddr == i64EffAddr)
+        bFinalAdj = 0; /* likely */
+    else
+    {
+        /* pop [rsp] with a problematic disp32 value.  Split out the
+           RSP offset and add it separately afterwards (bFinalAdj). */
+        /** @todo testcase: pop [rsp] with problematic disp32 (mod4).   */
+        Assert(idxGstRegBase == X86_GREG_xSP);
+        Assert(((bRmEx >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK) == X86_MOD_MEM4);
+        bFinalAdj   = (uint8_t)(uSibAndRspOffset >> 8);
+        Assert(bFinalAdj != 0);
+        i64EffAddr -= bFinalAdj;
+        Assert((int32_t)i64EffAddr == i64EffAddr);
+    }
+    uint32_t const u32EffAddr = (uint32_t)i64EffAddr;
+//pReNative->pInstrBuf[off++] = 0xcc;
+
+    if (idxRegIndex == UINT8_MAX)
+    {
+        if (u32EffAddr == 0)
+        {
+            /* mov ret, base */
+            if (f64Bit)
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegRet, idxRegBase);
+            else
+                off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegRet, idxRegBase);
+        }
+        else
+        {
+            /* lea ret, [base + disp32] */
+            Assert(idxRegBase != X86_GREG_xSP /*SIB*/);
+            uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+            if (f64Bit || idxRegRet >= 8 || idxRegBase >= 8)
+                pbCodeBuf[off++] = (idxRegRet  >= 8 ? X86_OP_REX_R : 0)
+                                 | (idxRegBase >= 8 ? X86_OP_REX_B : 0)
+                                 | (f64Bit          ? X86_OP_REX_W : 0);
+            pbCodeBuf[off++] = 0x8d;
+            uint8_t const bMod = (int8_t)u32EffAddr == (int32_t)u32EffAddr ? X86_MOD_MEM1 : X86_MOD_MEM4;
+            if (idxRegBase != X86_GREG_x12 /*SIB*/)
+                pbCodeBuf[off++] = X86_MODRM_MAKE(bMod, idxRegRet & 7, idxRegBase & 7);
+            else
+            {
+                pbCodeBuf[off++] = X86_MODRM_MAKE(bMod, idxRegRet & 7, 4 /*SIB*/);
+                pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_x12 & 7, 4 /*no index*/, 0);
+            }
+            pbCodeBuf[off++] = RT_BYTE1(u32EffAddr);
+            if (bMod == X86_MOD_MEM4)
+            {
+                pbCodeBuf[off++] = RT_BYTE2(u32EffAddr);
+                pbCodeBuf[off++] = RT_BYTE3(u32EffAddr);
+                pbCodeBuf[off++] = RT_BYTE4(u32EffAddr);
+            }
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        }
+    }
+    else
+    {
+        Assert(idxRegIndex != X86_GREG_xSP /*no-index*/);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+        if (idxRegBase == UINT8_MAX)
+        {
+            /* lea ret, [(index64 << cShiftIndex) + disp32] */
+            if (f64Bit || idxRegRet >= 8 || idxRegIndex >= 8)
+                pbCodeBuf[off++] = (idxRegRet   >= 8 ? X86_OP_REX_R : 0)
+                                 | (idxRegIndex >= 8 ? X86_OP_REX_X : 0)
+                                 | (f64Bit           ? X86_OP_REX_W : 0);
+            pbCodeBuf[off++] = 0x8d;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM0, idxRegRet & 7, 4 /*SIB*/);
+            pbCodeBuf[off++] = X86_SIB_MAKE(5 /*nobase/bp*/, idxRegIndex & 7, cShiftIndex);
+            pbCodeBuf[off++] = RT_BYTE1(u32EffAddr);
+            pbCodeBuf[off++] = RT_BYTE2(u32EffAddr);
+            pbCodeBuf[off++] = RT_BYTE3(u32EffAddr);
+            pbCodeBuf[off++] = RT_BYTE4(u32EffAddr);
+        }
+        else
+        {
+            /* lea ret, [(index64 << cShiftIndex) + base64 (+ disp32)] */
+            if (f64Bit || idxRegRet >= 8 || idxRegBase >= 8 || idxRegIndex >= 8)
+                pbCodeBuf[off++] = (idxRegRet   >= 8 ? X86_OP_REX_R : 0)
+                                 | (idxRegBase  >= 8 ? X86_OP_REX_B : 0)
+                                 | (idxRegIndex >= 8 ? X86_OP_REX_X : 0)
+                                 | (f64Bit           ? X86_OP_REX_W : 0);
+            pbCodeBuf[off++] = 0x8d;
+            uint8_t const bMod = u32EffAddr == 0 && (idxRegBase & 7) != X86_GREG_xBP ? X86_MOD_MEM0
+                               : (int8_t)u32EffAddr == (int32_t)u32EffAddr           ? X86_MOD_MEM1 : X86_MOD_MEM4;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(bMod, idxRegRet & 7, 4 /*SIB*/);
+            pbCodeBuf[off++] = X86_SIB_MAKE(idxRegBase & 7, idxRegIndex & 7, cShiftIndex);
+            if (bMod != X86_MOD_MEM0)
+            {
+                pbCodeBuf[off++] = RT_BYTE1(u32EffAddr);
+                if (bMod == X86_MOD_MEM4)
+                {
+                    pbCodeBuf[off++] = RT_BYTE2(u32EffAddr);
+                    pbCodeBuf[off++] = RT_BYTE3(u32EffAddr);
+                    pbCodeBuf[off++] = RT_BYTE4(u32EffAddr);
+                }
+            }
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+
+    if (!bFinalAdj)
+    { /* likely */ }
+    else
+    {
+        Assert(f64Bit);
+        off = iemNativeEmitAddGprImm8(pReNative, off, idxRegRet, bFinalAdj);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    if (i64EffAddr == 0)
+    {
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        if (idxRegIndex == UINT8_MAX)
+            pu32CodeBuf[off++] = Armv8A64MkInstrMov(idxRegRet, idxRegBase, f64Bit);
+        else if (idxRegBase != UINT8_MAX)
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegBase, idxRegIndex,
+                                                          f64Bit, false /*fSetFlags*/, cShiftIndex);
+        else
+        {
+            Assert(cShiftIndex != 0); /* See base = index swap above when shift is 0 and we have no base reg. */
+            pu32CodeBuf[off++] = Armv8A64MkInstrLslImm(idxRegRet, idxRegIndex, cShiftIndex, f64Bit);
+        }
+    }
+    else
+    {
+        if (f64Bit)
+        { /* likely */ }
+        else
+            i64EffAddr = (int32_t)i64EffAddr;
+
+        if (i64EffAddr < 4096 && i64EffAddr >= 0 && idxRegBase != UINT8_MAX)
+        {
+            uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, idxRegRet, idxRegBase, i64EffAddr, f64Bit);
+        }
+        else if (i64EffAddr > -4096 && i64EffAddr < 0 && idxRegBase != UINT8_MAX)
+        {
+            uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxRegRet, idxRegBase, (uint32_t)-i64EffAddr, f64Bit);
+        }
+        else
+        {
+            if (f64Bit)
+                off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegRet, i64EffAddr);
+            else
+                off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegRet, (uint32_t)i64EffAddr);
+            if (idxRegBase != UINT8_MAX)
+            {
+                uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+                pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegBase, f64Bit);
+            }
+        }
+        if (idxRegIndex != UINT8_MAX)
+        {
+            uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegIndex,
+                                                          f64Bit, false /*fSetFlags*/, cShiftIndex);
+        }
+    }
+
+#else
+# error "port me"
+#endif
+
+    if (idxRegIndex != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxRegIndex);
+    if (idxRegBase != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxRegBase);
+    return off;
+}
+
 
 
 
@@ -9279,7 +9602,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitMemStoreConstDataCommon(pReNative, off, a_u32ConstValue, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU32, pCallEntry->idxInstr)
 
-#define IEM_MC_STORE_MEM_FLAT_U64_CONST(_GCPtrMem, a_u64ConstValue) \
+#define IEM_MC_STORE_MEM_FLAT_U64_CONST(a_GCPtrMem, a_u64ConstValue) \
     off = iemNativeEmitMemStoreConstDataCommon(pReNative, off, a_u64ConstValue, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU64, pCallEntry->idxInstr)
 
@@ -10124,6 +10447,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
         uint8_t const           cRanges          = RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges));
         uint32_t                offRange         = 0;
         uint32_t                offOpcodes       = 0;
+        uint32_t const          cbOpcodes        = pTb->cbOpcodes;
         RTGCPHYS                GCPhysPc         = pTb->GCPhysPc;
         uint32_t const          cDbgEntries      = pDbgInfo->cEntries;
         uint32_t                iDbgEntry        = 1;
@@ -10161,17 +10485,17 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                instruction was translated to a threaded call.  This may happen when we run out
                                of ranges, or when some complicated interrupts/FFs are found to be pending or
                                similar.  So, we just deal with it here rather than in the compiler code as it
-                               is a lot simpler to do up here. */
+                               is a lot simpler to do here. */
                             if (   idxRange == UINT8_MAX
                                 || idxRange >= cRanges
                                 || offRange >= pTb->aRanges[idxRange].cbOpcodes)
                             {
                                 idxRange += 1;
                                 if (idxRange < cRanges)
-                                    offRange = 0;
+                                    offRange = !idxRange ? 0 : offRange - pTb->aRanges[idxRange - 1].cbOpcodes;
                                 else
                                     continue;
-                                Assert(offOpcodes == pTb->aRanges[idxRange].offOpcodes);
+                                Assert(offOpcodes == pTb->aRanges[idxRange].offOpcodes + offRange);
                                 GCPhysPc = pTb->aRanges[idxRange].offPhysPage
                                          + (pTb->aRanges[idxRange].idxPhysPage == 0
                                             ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
@@ -10179,10 +10503,12 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 pHlp->pfnPrintf(pHlp, "  Range #%u: GCPhysPc=%RGp LB %#x [idxPg=%d]\n",
                                                 idxRange, GCPhysPc, pTb->aRanges[idxRange].cbOpcodes,
                                                 pTb->aRanges[idxRange].idxPhysPage);
+                                GCPhysPc += offRange;
                             }
 
                             /* Disassemble the instruction. */
-                            uint8_t const cbInstrMax = RT_MIN(pTb->aRanges[idxRange].cbOpcodes - offRange, 15);
+                            //uint8_t const cbInstrMax = RT_MIN(pTb->aRanges[idxRange].cbOpcodes - offRange, 15);
+                            uint8_t const cbInstrMax = RT_MIN(cbOpcodes - offRange, 15);
                             uint32_t      cbInstr    = 1;
                             int rc = DISInstrWithPrefetchedBytes(GCPhysPc, enmGstCpuMode, DISOPTYPE_ALL,
                                                                  &pTb->pabOpcodes[offOpcodes], cbInstrMax,
@@ -10220,11 +10546,11 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 
                         case kIemTbDbgEntryType_ThreadedCall:
                             pHlp->pfnPrintf(pHlp,
-                                            "  Call #%u to %s (%u args)%s\n",
+                                            "  Call #%u to %s (%u args) - %s\n",
                                             idxThreadedCall,
                                             g_apszIemThreadedFunctions[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall],
                                             g_acIemThreadedFunctionUsedArgs[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall],
-                                            pDbgInfo->aEntries[iDbgEntry].ThreadedCall.fRecompiled ? " - recompiled" : "");
+                                            pDbgInfo->aEntries[iDbgEntry].ThreadedCall.fRecompiled ? "recompiled" : "todo");
                             idxThreadedCall++;
                             continue;
 
@@ -10330,10 +10656,10 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
-                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args)%s\n",
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args) - %s\n",
                                         pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
-                                        uInfo & 0x8000 ? " - recompiled" : "");
+                                        uInfo & 0x8000 ? "recompiled" : "todo");
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
@@ -10416,6 +10742,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
             pHlp->pfnPrintf(pHlp, "  Range #%u: GCPhysPc=%RGp LB %#x [idxPg=%d]\n",
                             i, GCPhysPc, pTb->aRanges[i].cbOpcodes, pTb->aRanges[i].idxPhysPage);
             unsigned       off       = pTb->aRanges[i].offOpcodes;
+            /** @todo this ain't working when crossing pages!   */
             unsigned const cbOpcodes = pTb->aRanges[i].cbOpcodes + off;
             while (off < cbOpcodes)
             {
@@ -10459,10 +10786,10 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
-                        pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args)%s\n",
+                        pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args) - %s\n",
                                         pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
-                                        uInfo & 0x8000 ? " - recompiled" : "");
+                                        uInfo & 0x8000 ? "recompiled" : "todo");
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
@@ -10624,7 +10951,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
              * Actual work.
              */
             Log2(("%u[%u]: %s%s\n", pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr,
-                  g_apszIemThreadedFunctions[pCallEntry->enmFunction], pfnRecom ? "" : "(todo)"));
+                  g_apszIemThreadedFunctions[pCallEntry->enmFunction], pfnRecom ? "(recompiled)" : "(todo)"));
             if (pfnRecom) /** @todo stats on this.   */
             {
                 off = pfnRecom(pReNative, off, pCallEntry);

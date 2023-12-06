@@ -2655,6 +2655,14 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrr(uint32_t iRegResult, uint32_t iRe
 }
 
 
+/** A64: Encodes an MOV instruction.
+ * This is an alias for "orr dst, xzr, src".  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMov(uint32_t iRegResult, uint32_t idxRegSrc, bool f64Bit = true)
+{
+    return Armv8A64MkInstrOrr(iRegResult, ARMV8_A64_REG_XZR, idxRegSrc, f64Bit);
+}
+
+
 /** A64: Encodes an ORN instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrn(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,

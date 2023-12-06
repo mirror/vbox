@@ -1032,6 +1032,7 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
             IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+IEM_MC_NO_NATIVE_RECOMPILE(); /** @todo sort out the IEM_IS_GUEST_CPU_AMD stuff. */
             if (IEM_IS_GUEST_CPU_AMD(pVCpu)) /** @todo testcase: rev 3.15 of the amd manuals claims it only loads a 32-bit greg. */
                 IEM_MC_FETCH_MEM_U32_SX_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
             else

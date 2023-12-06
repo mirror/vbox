@@ -536,7 +536,7 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, 
  *                              function.
  * @param   uSibAndRspOffset    Two parts:
  *                                - The first 8 bits make up the SIB byte.
- *                                - The next 8 bits are the fixed RSP/ESP offse
+ *                                - The next 8 bits are the fixed RSP/ESP offset
  *                                  in case of a pop [xSP].
  * @param   u32Disp             The displacement byte/word/dword, if any.
  * @param   cbInstr             The size of the fully decoded instruction. Used

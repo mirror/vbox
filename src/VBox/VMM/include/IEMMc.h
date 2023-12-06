@@ -978,7 +978,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_FLAT_R80(a_r80Dst, a_GCPtrMem) \
     iemMemFlatFetchDataR80Jmp(pVCpu, &(a_r80Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_D80(a_d80Dst, a_GCPtrMem) \
-    iemMemFetchDataD80Jmp(pVCpu, &(a_d80Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataD80Jmp(pVCpu, &(a_d80Dst), (a_GCPtrMem))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -1077,7 +1077,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_FLAT_XMM_U32(a_XmmDst, a_iDWord, a_GCPtrMem) \
     (a_XmmDst).au32[(a_iDWord)] = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_U64(a_XmmDst, a_iQWord, a_GCPtrMem) \
-    (a_XmmDst).au64[(a_iQWord)] = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem))
+    (a_XmmDst).au64[(a_iQWord)] = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_U128_AND_XREG_U128(a_Dst, a_iXReg1, a_iSeg2, a_GCPtrMem2) do { \
         iemMemFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, (a_iSeg2), (a_GCPtrMem2)); \
