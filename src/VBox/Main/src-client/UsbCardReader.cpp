@@ -791,7 +791,10 @@ int UsbCardReader::VRDEResponse(int rcRequest, void *pvUser, uint32_t u32Functio
                         continue;
                     }
 
-                    RTStrCopy(pRemote->reader.szReaderName, sizeof(pRemote->reader.szReaderName), pRsp->apszNames[i]);
+                    if (pRsp->apszNames[i])
+                        RTStrCopy(pRemote->reader.szReaderName, sizeof(pRemote->reader.szReaderName), pRsp->apszNames[i]);
+                    else
+                        RT_ZERO(pRemote->reader.szReaderName);
                     pRemote->reader.fHandle = false;
                     pRemote->reader.fAvailable = true;
                 }
