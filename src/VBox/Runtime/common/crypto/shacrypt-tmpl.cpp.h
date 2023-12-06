@@ -263,46 +263,100 @@ RTR3DECL(int) RTCrShaCryptTmplToString(uint8_t const pabHash[TMPL_HASH_SIZE], co
     off += cchSalt;
     pszString[off++] = '$';
 
-#if TMPL_HASH_BITS == 512
-    BASE64_ENCODE(pszString, off, pabHash[ 0], pabHash[21], pabHash[42], 4);
-    BASE64_ENCODE(pszString, off, pabHash[22], pabHash[43], pabHash[ 1], 4);
-    BASE64_ENCODE(pszString, off, pabHash[44], pabHash[ 2], pabHash[23], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 3], pabHash[24], pabHash[45], 4);
-    BASE64_ENCODE(pszString, off, pabHash[25], pabHash[46], pabHash[ 4], 4);
-    BASE64_ENCODE(pszString, off, pabHash[47], pabHash[ 5], pabHash[26], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 6], pabHash[27], pabHash[48], 4);
-    BASE64_ENCODE(pszString, off, pabHash[28], pabHash[49], pabHash[ 7], 4);
-    BASE64_ENCODE(pszString, off, pabHash[50], pabHash[ 8], pabHash[29], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[30], pabHash[51], 4);
-    BASE64_ENCODE(pszString, off, pabHash[31], pabHash[52], pabHash[10], 4);
-    BASE64_ENCODE(pszString, off, pabHash[53], pabHash[11], pabHash[32], 4);
-    BASE64_ENCODE(pszString, off, pabHash[12], pabHash[33], pabHash[54], 4);
-    BASE64_ENCODE(pszString, off, pabHash[34], pabHash[55], pabHash[13], 4);
-    BASE64_ENCODE(pszString, off, pabHash[56], pabHash[14], pabHash[35], 4);
-    BASE64_ENCODE(pszString, off, pabHash[15], pabHash[36], pabHash[57], 4);
-    BASE64_ENCODE(pszString, off, pabHash[37], pabHash[58], pabHash[16], 4);
-    BASE64_ENCODE(pszString, off, pabHash[59], pabHash[17], pabHash[38], 4);
-    BASE64_ENCODE(pszString, off, pabHash[18], pabHash[39], pabHash[60], 4);
-    BASE64_ENCODE(pszString, off, pabHash[40], pabHash[61], pabHash[19], 4);
-    BASE64_ENCODE(pszString, off, pabHash[62], pabHash[20], pabHash[41], 4);
-    BASE64_ENCODE(pszString, off,           0,           0, pabHash[63], 2);
+#ifdef SHACRYPT_MINIMAL
+    /*
+     * Use a table for the shuffling of the digest bytes and work it in a loop.
+     */
+    static uint8_t const s_abMapping[] =
+    {
+# if TMPL_HASH_BITS == 512
+        42, 21,  0,
+         1, 43, 22,
+        23,  2, 44,
+        45, 24,  3,
+         4, 46, 25,
+        26,  5, 47,
+        48, 27,  6,
+         7, 49, 28,
+        29,  8, 50,
+        51, 30,  9,
+        10, 52, 31,
+        32, 11, 53,
+        54, 33, 12,
+        13, 55, 34,
+        35, 14, 56,
+        57, 36, 15,
+        16, 58, 37,
+        38, 17, 59,
+        60, 39, 18,
+        19, 61, 40,
+        41, 20, 62,
+        63
+# elif TMPL_HASH_BITS == 256
+        20, 10,  0,
+        11,  1, 21,
+         2, 22, 12,
+        23, 13,  3,
+        14,  4, 24,
+         5, 25, 15,
+        26, 16,  6,
+        17,  7, 27,
+         8, 28, 18,
+        29, 19,  9,
+        30, 31,
+# else
+#  error "TMPL_HASH_BITS"
+# endif
+    };
+    AssertCompile(sizeof(s_abMapping) == TMPL_HASH_SIZE);
+    off = rtCrShaCryptDigestToChars(pszString, off, pabHash, TMPL_HASH_SIZE, s_abMapping);
 
-#elif TMPL_HASH_BITS == 256
-    BASE64_ENCODE(pszString, off, pabHash[00], pabHash[10], pabHash[20], 4);
-    BASE64_ENCODE(pszString, off, pabHash[21], pabHash[ 1], pabHash[11], 4);
-    BASE64_ENCODE(pszString, off, pabHash[12], pabHash[22], pabHash[ 2], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 3], pabHash[13], pabHash[23], 4);
-    BASE64_ENCODE(pszString, off, pabHash[24], pabHash[ 4], pabHash[14], 4);
-    BASE64_ENCODE(pszString, off, pabHash[15], pabHash[25], pabHash[ 5], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 6], pabHash[16], pabHash[26], 4);
-    BASE64_ENCODE(pszString, off, pabHash[27], pabHash[ 7], pabHash[17], 4);
-    BASE64_ENCODE(pszString, off, pabHash[18], pabHash[28], pabHash[ 8], 4);
-    BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[19], pabHash[29], 4);
-    BASE64_ENCODE(pszString, off, 0,           pabHash[31], pabHash[30], 3);
+#else /* !SHACRYPT_MINIMAL */
+    /*
+     * Unroll the digest shuffling and conversion to characters.
+     * This takes a lot of code space.
+     */
+# if TMPL_HASH_BITS == 512
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 0], pabHash[21], pabHash[42], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[22], pabHash[43], pabHash[ 1], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[44], pabHash[ 2], pabHash[23], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 3], pabHash[24], pabHash[45], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[25], pabHash[46], pabHash[ 4], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[47], pabHash[ 5], pabHash[26], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 6], pabHash[27], pabHash[48], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[28], pabHash[49], pabHash[ 7], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[50], pabHash[ 8], pabHash[29], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[30], pabHash[51], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[31], pabHash[52], pabHash[10], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[53], pabHash[11], pabHash[32], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[12], pabHash[33], pabHash[54], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[34], pabHash[55], pabHash[13], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[56], pabHash[14], pabHash[35], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[15], pabHash[36], pabHash[57], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[37], pabHash[58], pabHash[16], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[59], pabHash[17], pabHash[38], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[18], pabHash[39], pabHash[60], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[40], pabHash[61], pabHash[19], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[62], pabHash[20], pabHash[41], 4);
+    NOT_BASE64_ENCODE(pszString, off,           0,           0, pabHash[63], 2);
 
-#else
-# error "TMPL_HASH_BITS"
-#endif
+# elif TMPL_HASH_BITS == 256
+    NOT_BASE64_ENCODE(pszString, off, pabHash[00], pabHash[10], pabHash[20], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[21], pabHash[ 1], pabHash[11], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[12], pabHash[22], pabHash[ 2], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 3], pabHash[13], pabHash[23], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[24], pabHash[ 4], pabHash[14], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[15], pabHash[25], pabHash[ 5], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 6], pabHash[16], pabHash[26], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[27], pabHash[ 7], pabHash[17], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[18], pabHash[28], pabHash[ 8], 4);
+    NOT_BASE64_ENCODE(pszString, off, pabHash[ 9], pabHash[19], pabHash[29], 4);
+    NOT_BASE64_ENCODE(pszString, off, 0,           pabHash[31], pabHash[30], 3);
+
+# else
+#  error "TMPL_HASH_BITS"
+# endif
+#endif  /* !SHACRYPT_MINIMAL */
 
     pszString[off] = '\0';
     Assert(off < cbString);

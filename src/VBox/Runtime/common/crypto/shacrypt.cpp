@@ -50,7 +50,23 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define BASE64_ENCODE(a_psz, a_off, a_bVal2, a_bVal1, a_bVal0, a_cOutputChars) \
+/*
+ * The SHACRYPT_MINIMAL option reduces the .text + .rdata size in a Windows release
+ * build from 6956 to 4592 bytes by not unrolling the not-base64 encoding and instead
+ * using common code w/ a mapping table.
+ */
+#define SHACRYPT_MINIMAL /* don't unroll the digest -> characters conversion */
+
+/**
+ * Encode a byte triplet into four characters (or less), base64-style.
+ *
+ * @note This differs from base64 in that it is LSB oriented,
+ *       so where base64 will use bits[7:2] from the first byte for the first
+ *       char, this will use bits [5:0].
+ *
+ *       The character set is also different.
+ */
+#define NOT_BASE64_ENCODE(a_psz, a_off, a_bVal2, a_bVal1, a_bVal0, a_cOutputChars) \
     do { \
         uint32_t uWord = RT_MAKE_U32_FROM_MSB_U8(0, a_bVal2, a_bVal1, a_bVal0); \
         a_psz[(a_off)++] = g_achCryptBase64[uWord & 0x3f]; \
@@ -75,9 +91,51 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** This is the non-standard base-64 encoding characters. */
+/** This is the non-standard base64 encoding characters used by SHA-crypt and friends. */
 static const char g_achCryptBase64[] = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 AssertCompile(sizeof(g_achCryptBase64) == 64 + 1);
+
+
+#ifdef SHACRYPT_MINIMAL
+/**
+ * Common "base64" encoding function used by RTCrShaCrypt256ToString and
+ * RTCrShaCrypt512ToString in minimal mode.
+ */
+static size_t rtCrShaCryptDigestToChars(char *pszString, size_t off, uint8_t const *pabHash, size_t cbHash,
+                                        uint8_t const *pabMapping)
+{
+    /* full triplets first: */
+    uintptr_t idx = 0;
+    while (idx + 3 <= cbHash)
+    {
+        NOT_BASE64_ENCODE(pszString, off,
+                          pabHash[pabMapping[idx + 2]],
+                          pabHash[pabMapping[idx + 1]],
+                          pabHash[pabMapping[idx + 0]], 4);
+        idx += 3;
+    }
+
+    /* Anything remaining: Either 1 or 2, never zero. */
+    switch (cbHash - idx)
+    {
+        case 1:
+            NOT_BASE64_ENCODE(pszString, off,
+                              0,
+                              0,
+                              pabHash[pabMapping[idx + 0]], 2);
+            break;
+        case 2:
+            NOT_BASE64_ENCODE(pszString, off,
+                              0,
+                              pabHash[pabMapping[idx + 1]],
+                              pabHash[pabMapping[idx + 0]], 3);
+            break;
+        default: AssertFailedBreak();
+    }
+
+    return off;
+}
+#endif /* SHACRYPT_MINIMAL */
 
 
 /**
