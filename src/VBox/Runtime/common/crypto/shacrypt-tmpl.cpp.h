@@ -376,4 +376,3 @@ RTR3DECL(int) RTCrShaCryptTmplToString(uint8_t const pabHash[TMPL_HASH_SIZE], co
 #undef RTCrShaCryptTmplEx
 #undef RTCrShaCryptTmplToString
 
-
