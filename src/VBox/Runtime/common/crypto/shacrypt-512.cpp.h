@@ -110,7 +110,7 @@ RTR3DECL(int) RTCrShaCrypt512Ex(const char *pszPhrase, const char *pszSalt, uint
      * Byte sequence P (= password).
      */
     size_t const cbSeqP  = cchPhrase;
-    uint8_t     *pabSeqP = (uint8_t *)RTMemDup(pszPhrase, cbSeqP + 1);          /* +1 because the password may be empty */
+    uint8_t     *pabSeqP = (uint8_t *)RTMemTmpAllocZ(cbSeqP + 1);               /* +1 because the password may be empty */
     uint8_t     *pb       = pabSeqP;
     AssertPtrReturn(pabSeqP, VERR_NO_MEMORY);
 
@@ -190,7 +190,7 @@ RTR3DECL(int) RTCrShaCrypt512Ex(const char *pszPhrase, const char *pszSalt, uint
      */
     RTMemWipeThoroughly(abDigestTemp, RTSHA512_HASH_SIZE, 3);
     RTMemWipeThoroughly(pabSeqP, cbSeqP, 3);
-    RTMemFree(pabSeqP);
+    RTMemTmpFree(pabSeqP);
 #if 0
     RTMemWipeThoroughly(pabSeqS, cbSeqS, 3);
     RTMemFree(pabSeqS);
