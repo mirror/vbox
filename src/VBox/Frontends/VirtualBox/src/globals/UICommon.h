@@ -213,6 +213,11 @@ public:
     /** @name Host OS stuff.
      * @{ */
 #ifdef VBOX_WS_MAC
+        /** macOS: Returns #MacOSXRelease determined by <i>uname</i> call. */
+        static MacOSXRelease determineOsRelease();
+        /** macOS: Returns #MacOSXRelease determined during UICommon prepare routine. */
+        MacOSXRelease osRelease() const { return m_enmMacOSVersion; }
+
         /** macOS: Returns whether macOS is in Dark mode. */
         bool isInDarkMode() const { return m_fDarkMode; }
 #endif
@@ -653,6 +658,9 @@ private:
     /** @name Host OS stuff.
      * @{ */
 #ifdef VBOX_WS_MAC
+        /** macOS: Holds the #MacOSXRelease determined using <i>uname</i> call. */
+        MacOSXRelease  m_enmMacOSVersion;
+
         /** macOS: Holds whether macOS is in Dark mode. */
         bool  m_fDarkMode;
 #endif

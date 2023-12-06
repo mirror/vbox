@@ -191,6 +191,7 @@ UICommon::UICommon(UIType enmType)
     , m_fDataCommitted(false)
 #endif
 #ifdef VBOX_WS_MAC
+    , m_enmMacOSVersion(MacOSXRelease_Old)
     , m_fDarkMode(false)
 #endif
 #ifdef VBOX_WS_NIX
@@ -247,6 +248,11 @@ void UICommon::prepare()
     connect(qApp, &QGuiApplication::commitDataRequest,
             this, &UICommon::sltHandleCommitDataRequest);
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+
+#ifdef VBOX_WS_MAC
+    /* Determine OS release early: */
+    m_enmMacOSVersion = determineOsRelease();
+#endif
 
 #ifdef VBOX_WS_NIX
     /* Detect display server type: */
@@ -953,6 +959,29 @@ QString UICommon::brandingGetKey(QString strKey) const
     QSettings settings(m_strBrandingConfigFilePath, QSettings::IniFormat);
     return settings.value(QString("%1").arg(strKey)).toString();
 }
+
+#ifdef VBOX_WS_MAC
+/* static */
+MacOSXRelease UICommon::determineOsRelease()
+{
+    /* Prepare 'utsname' struct: */
+    utsname info;
+    if (uname(&info) != -1)
+    {
+        /* Cut the major release index of the string we have, s.a. 'man uname': */
+        const int iRelease = QString(info.release).section('.', 0, 0).toInt();
+        /* Check boundaries: */
+        if (iRelease <= MacOSXRelease_FirstUnknown)
+            return MacOSXRelease_Old;
+        else if (iRelease >= MacOSXRelease_LastUnknown)
+            return MacOSXRelease_New;
+        else
+            return (MacOSXRelease)iRelease;
+    }
+    /* Return 'Old' by default: */
+    return MacOSXRelease_Old;
+}
+#endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_NIX
 bool UICommon::X11ServerAvailable() const
