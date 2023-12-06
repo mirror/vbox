@@ -267,14 +267,19 @@ typedef struct
 {
     VBSVGA3dVideoProcessorStreamSetMask SetMask;
 
-    uint32 SourceRectEnable : 1;
-    uint32 DestRectEnable : 1;
-    uint32 AlphaEnable : 1;
-    uint32 AspectRatioEnable : 1;
-    uint32 LumaKeyEnable : 1;
-    uint32 StereoFormatEnable : 1;
-    uint32 AutoProcessingModeEnable : 1;
-    uint32 RotationEnable : 1;
+    union {
+       uint32 value;
+       struct {
+           uint32 SourceRectEnable : 1;
+           uint32 DestRectEnable : 1;
+           uint32 AlphaEnable : 1;
+           uint32 AspectRatioEnable : 1;
+           uint32 LumaKeyEnable : 1;
+           uint32 StereoFormatEnable : 1;
+           uint32 AutoProcessingModeEnable : 1;
+           uint32 RotationEnable : 1;
+       };
+    };
 
     VBSVGA3dVideoFrameFormat FrameFormat;
     VBSVGA3dVideoProcessorColorSpace ColorSpace;
@@ -291,8 +296,9 @@ typedef struct
     float LumaKeyLower;
     float LumaKeyUpper;
     VBSVGA3dVideoProcessorStereoFormat StereoFormat;
-    uint32 LeftViewFrame0 : 1;
-    uint32 BaseViewFrame0 : 1;
+    uint8 LeftViewFrame0;
+    uint8 BaseViewFrame0;
+    uint8 pad[2];
     VBSVGA3dVideoProcessorStereoFlipMode FlipMode;
     int32 MonoOffset;
     uint32 FilterEnableMask;
@@ -314,10 +320,15 @@ typedef struct
 {
     VBSVGA3dVideoProcessorOutputSetMask SetMask;
 
-    uint32 TargetRectEnable : 1;
-    uint32 BackgroundColorYCbCr : 1;
-    uint32 ConstrictionEnable : 1;
-    uint32 StereoModeEnable : 1;
+    union {
+       uint32 value;
+       struct {
+           uint32 TargetRectEnable : 1;
+           uint32 BackgroundColorYCbCr : 1;
+           uint32 ConstrictionEnable : 1;
+           uint32 StereoModeEnable : 1;
+       };
+    };
 
     SVGASignedRect TargetRect;
     VBSVGA3dVideoColor BackgroundColor;
