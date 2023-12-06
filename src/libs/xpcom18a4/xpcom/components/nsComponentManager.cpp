@@ -1236,7 +1236,7 @@ nsComponentManagerImpl::ReadPersistentRegistry()
         // */
             { 0 }
         };
-        for (int i=0; abusedContracts[i] && *abusedContracts[i]; i++) {
+        for (int i=0; i < RT_ELEMENTS(abusedContracts) && *abusedContracts[i]; i++) {
             nsFactoryEntry *entry = nsnull;
             nsContractIDTableEntry* contractIDTableEntry =
                 NS_STATIC_CAST(nsContractIDTableEntry*,

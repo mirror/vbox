@@ -151,9 +151,9 @@ public:
 
     NS_IMETHOD AddManyManyFloats(float p1, float p2, float p3, float p4,
                                  float p5, float p6, float p7, float p8,
-                                 float p9, float p10, float p11, float p12, 
-                                 float p13, float p14, float p15, float p16, 
-                                 float p17, float p18, float p19, float p20, 
+                                 float p9, float p10, float p11, float p12,
+                                 float p13, float p14, float p15, float p16,
+                                 float p17, float p18, float p19, float p20,
                                  float *retval) = 0;
 
     NS_IMETHOD AddMixedInts(PRInt64 p1, PRInt32 p2, PRInt64 p3, PRInt32 p4,
@@ -197,12 +197,12 @@ public:
                              float p9, float p10, float* retval);
 
     NS_IMETHOD AddMixedInts(PRInt64 p1, PRInt32 p2, PRInt64 p3, PRInt32 p4,
-			    PRInt32 p5, PRInt64 p6, PRInt32 p7, PRInt32 p8,
-			    PRInt64 p9, PRInt32 p10, PRInt64* retval);
+                PRInt32 p5, PRInt64 p6, PRInt32 p7, PRInt32 p8,
+                PRInt64 p9, PRInt32 p10, PRInt64* retval);
 
     NS_IMETHOD AddMixedInts2(PRInt32 p1, PRInt64 p2, PRInt32 p3, PRInt64 p4,
-			     PRInt64 p5, PRInt32 p6, PRInt64 p7, PRInt64 p8,
-			     PRInt32 p9, PRInt64 p10, PRInt64* retval);
+                 PRInt64 p5, PRInt32 p6, PRInt64 p7, PRInt64 p8,
+                 PRInt32 p9, PRInt64 p10, PRInt64* retval);
 
     NS_IMETHOD AddMixedFloats(float p1, float p2, double p3, double p4,
                               float p5, float p6, double p7, double p8,
@@ -211,9 +211,9 @@ public:
 
     NS_IMETHOD AddManyManyFloats(float p1, float p2, float p3, float p4,
                                  float p5, float p6, float p7, float p8,
-                                 float p9, float p10, float p11, float p12, 
-                                 float p13, float p14, float p15, float p16, 
-                                 float p17, float p18, float p19, float p20, 
+                                 float p9, float p10, float p11, float p12,
+                                 float p13, float p14, float p15, float p16,
+                                 float p17, float p18, float p19, float p20,
                                  float *retval);
 
     NS_IMETHOD PassTwoStrings(const char* s1, const char* s2, char** retval);
@@ -262,7 +262,7 @@ InvokeTestTarget::AddManyInts(PRInt32 p1, PRInt32 p2, PRInt32 p3, PRInt32 p4,
                               PRInt32 p9, PRInt32 p10, PRInt32* retval)
 {
 #ifdef DEBUG_TESTINVOKE
-    printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
+    printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
            p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 #endif
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10;
@@ -285,7 +285,7 @@ InvokeTestTarget::AddManyDoubles(double p1, double p2, double p3, double p4,
                                  double p9, double p10, double* retval)
 {
 #ifdef DEBUG_TESTINVOKE
-    printf("%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n", 
+    printf("%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
            p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 #endif
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10;
@@ -298,7 +298,7 @@ InvokeTestTarget::AddManyFloats(float p1, float p2, float p3, float p4,
                                 float p9, float p10, float* retval)
 {
 #ifdef DEBUG_TESTINVOKE
-    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", 
+    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
            p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 #endif
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10;
@@ -312,7 +312,7 @@ InvokeTestTarget::AddMixedFloats(float p1, float p2, double p3, double p4,
                                  double *retval)
 {
 #ifdef DEBUG_TESTINVOKE
-    printf("%f, %f, %lf, %lf, %f, %f, %lf, %lf, %f, %lf, %f\n", 
+    printf("%f, %f, %lf, %lf, %f, %f, %lf, %lf, %f, %lf, %f\n",
            p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
 #endif
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11;
@@ -322,14 +322,14 @@ InvokeTestTarget::AddMixedFloats(float p1, float p2, double p3, double p4,
 NS_IMETHODIMP
 InvokeTestTarget::AddManyManyFloats(float p1, float p2, float p3, float p4,
                                     float p5, float p6, float p7, float p8,
-                                    float p9, float p10, float p11, float p12, 
-                                    float p13, float p14, float p15, float p16, 
+                                    float p9, float p10, float p11, float p12,
+                                    float p13, float p14, float p15, float p16,
                                     float p17, float p18, float p19, float p20,
                                     float *retval)
 {
 #ifdef DEBUG_TESTINVOKE
     printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, "
-           "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", 
+           "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
            p1, p2, p3, p4, p5, p6, p7, p8, p9, p10,
            p11, p12, p13, p14, p15, p16, p17, p18, p19, p20);
 #endif
@@ -340,8 +340,8 @@ InvokeTestTarget::AddManyManyFloats(float p1, float p2, float p3, float p4,
 
 NS_IMETHODIMP
 InvokeTestTarget::AddMixedInts(PRInt64 p1, PRInt32 p2, PRInt64 p3, PRInt32 p4,
-			       PRInt32 p5, PRInt64 p6, PRInt32 p7, PRInt32 p8,
-			       PRInt64 p9, PRInt32 p10, PRInt64* retval)
+                   PRInt32 p5, PRInt64 p6, PRInt32 p7, PRInt32 p8,
+                   PRInt64 p9, PRInt32 p10, PRInt64* retval)
 {
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10;
     return NS_OK;
@@ -349,8 +349,8 @@ InvokeTestTarget::AddMixedInts(PRInt64 p1, PRInt32 p2, PRInt64 p3, PRInt32 p4,
 
 NS_IMETHODIMP
 InvokeTestTarget::AddMixedInts2(PRInt32 p1, PRInt64 p2, PRInt32 p3, PRInt64 p4,
-				PRInt64 p5, PRInt32 p6, PRInt64 p7, PRInt64 p8,
-				PRInt32 p9, PRInt64 p10, PRInt64* retval)
+                PRInt64 p5, PRInt32 p6, PRInt64 p7, PRInt64 p8,
+                PRInt32 p9, PRInt64 p10, PRInt64* retval)
 {
     *retval = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10;
     return NS_OK;
@@ -360,10 +360,11 @@ NS_IMETHODIMP
 InvokeTestTarget::PassTwoStrings(const char* s1, const char* s2, char** retval)
 {
     const char milk[] = "milk";
-    char *ret = (char*)nsMemory::Alloc(sizeof(milk));
+    const size_t cb = sizeof(milk);
+    char *ret = (char*)nsMemory::Alloc(cb);
     if (!ret)
       return NS_ERROR_OUT_OF_MEMORY;
-    strncpy(ret, milk, sizeof(milk));
+    strncpy(ret, milk, cb);
     printf("\t%s %s", s1, s2);
     *retval = ret;
     return NS_OK;
@@ -444,7 +445,7 @@ int main()
      }
      else
          bufprintf("\tFAILED");
- 
+
      if(NS_SUCCEEDED(test->AddMixedInts2(1,2,3,4,5,6,7,8,9,10,&out64)))
      {
           LL_L2I(tmp32, out64);
@@ -846,7 +847,7 @@ int main()
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 12, 11, var)))
         bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
-	       (int)var[10].val.i64);
+           (int)var[10].val.i64);
     else
         bufprintf("\tFAILED");
 
@@ -897,7 +898,7 @@ int main()
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 13, 11, var)))
         bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
-	       (int)var[10].val.i64);
+           (int)var[10].val.i64);
     else
         bufprintf("\tFAILED");
 
@@ -963,12 +964,12 @@ int main()
     var[1].val.p = (void*)"cow";
     var[1].type = nsXPTType::T_CHAR_STR;
     var[1].flags = 0;
-    
+
     var[2].val.p = 0;
     var[2].type = nsXPTType::T_CHAR_STR;
     var[2].flags = nsXPTCVariant::PTR_IS_DATA;
     var[2].ptr = &var[2].val.p;
-    
+
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 15, 3, var)))
     {
         bufprintf(" = %s\n", var[2].val.p);
@@ -1442,23 +1443,23 @@ static void DoSpeedTest()
     uint64_t interval_invoke;
 
     printf("Speed test...\n\n");
-    printf("Doing %d direct call iterations...\n", count); 
+    printf("Doing %d direct call iterations...\n", count);
     start = RTTimeNanoTS();
     for(i = count; i; i--)
         (void)test->AddTwoInts(in1, in2, &out);
     interval_direct = RTTimeNanoTS() - start;
 
-    printf("Doing %d invoked call iterations...\n", count); 
+    printf("Doing %d invoked call iterations...\n", count);
     start = RTTimeNanoTS();
     for(i = count; i; i--)
         (void)XPTC_InvokeByIndex(test, 3, 3, var);
     interval_invoke = RTTimeNanoTS() - start;
 
-    printf(" direct took %0.2f seconds\n", 
+    printf(" direct took %0.2f seconds\n",
             (double)interval_direct/(double)RT_NS_1SEC);
-    printf(" invoke took %0.2f seconds\n", 
+    printf(" invoke took %0.2f seconds\n",
             (double)interval_invoke/(double)RT_NS_1SEC);
-    printf(" So, invoke overhead was ~ %0.2f seconds (~ %0.0f%%)\n", 
+    printf(" So, invoke overhead was ~ %0.2f seconds (~ %0.0f%%)\n",
             (double)(interval_invoke-interval_direct)/(double)RT_NS_1SEC,
             (double)(interval_invoke-interval_direct)/(double)interval_invoke*100);
-}        
+}
