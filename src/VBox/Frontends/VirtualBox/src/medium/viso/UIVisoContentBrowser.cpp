@@ -33,6 +33,7 @@
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QMimeData>
+#include <QLabel>
 #include <QTableView>
 #include <QTextStream>
 
@@ -40,6 +41,7 @@
 #include "QIToolBar.h"
 #include "UIActionPool.h"
 #include "UIFileSystemModel.h"
+#include "UIFileTableNavigationWidget.h"
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
 
@@ -240,15 +242,23 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
 *********************************************************************************************************************************/
 
 UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *pParent)
-    : UIVisoBrowserBase(pActionPool, pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTableView(0)
     , m_pModel(0)
     , m_pTableProxyModel(0)
+    , m_pMainLayout(0)
+    , m_pToolBar(0)
+    , m_pNavigationWidget(0)
+    , m_pFileTableLabel(0)
+    , m_pActionPool(pActionPool)
     , m_pRemoveAction(0)
     , m_pRestoreAction(0)
     , m_pCreateNewDirectoryAction(0)
     , m_pRenameAction(0)
     , m_pResetAction(0)
+    , m_pGoUp(0)
+    , m_pGoForward(0)
+    , m_pGoBackward(0)
 {
     prepareObjects();
     prepareToolBar();
@@ -576,7 +586,29 @@ void UIVisoContentBrowser::markRemovedUnremovedItemParents(UIFileSystemItem *pIt
 
 void UIVisoContentBrowser::prepareObjects()
 {
-    UIVisoBrowserBase::prepareObjects();
+    m_pMainLayout = new QGridLayout;
+    AssertPtrReturnVoid(m_pMainLayout);
+    setLayout(m_pMainLayout);
+
+    QHBoxLayout *pTopLayout = new QHBoxLayout;
+    AssertPtrReturnVoid(pTopLayout);
+
+    m_pToolBar = new QIToolBar;
+    m_pNavigationWidget = new UIFileTableNavigationWidget;
+    m_pFileTableLabel = new QLabel;
+
+    AssertReturnVoid(m_pToolBar);
+    AssertReturnVoid(m_pNavigationWidget);
+    AssertReturnVoid(m_pFileTableLabel);
+
+    pTopLayout->addWidget(m_pFileTableLabel);
+    pTopLayout->addWidget(m_pNavigationWidget);
+
+    m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 4);
+    m_pMainLayout->addLayout(pTopLayout, 1, 0, 1, 4);
+
+    m_pMainLayout->setRowStretch(2, 2);
+
 
     m_pModel = new UIFileSystemModel(this);
     m_pTableProxyModel = new UIFileSystemProxyModel(this);
@@ -712,12 +744,14 @@ bool UIVisoContentBrowser::hasContent() const
 
 void UIVisoContentBrowser::prepareConnections()
 {
-    UIVisoBrowserBase::prepareConnections();
+    if (m_pNavigationWidget)
+        connect(m_pNavigationWidget, &UIFileTableNavigationWidget::sigPathChanged,
+                this, &UIVisoContentBrowser::sltNavigationWidgetPathChange);
 
     if (m_pTableView)
     {
         connect(m_pTableView, &UIVisoContentTableView::doubleClicked,
-                this, &UIVisoBrowserBase::sltTableViewItemDoubleClick);
+                this, &UIVisoContentBrowser::sltTableViewItemDoubleClick);
         connect(m_pTableView, &UIVisoContentTableView::sigNewItemsDropped,
                 this, &UIVisoContentBrowser::sltDroppedItems);
         connect(m_pTableView, &QTableView::customContextMenuRequested,
@@ -1129,6 +1163,29 @@ void UIVisoContentBrowser::sltGoUp()
     goUp();
 }
 
+void UIVisoContentBrowser::sltNavigationWidgetPathChange(const QString &strPath)
+{
+    setPathFromNavigationWidget(strPath);
+    enableForwardBackwardActions();
+}
+
+void UIVisoContentBrowser::sltTableViewItemDoubleClick(const QModelIndex &index)
+{
+    tableViewItemDoubleClick(index);
+}
+
+void UIVisoContentBrowser::sltGoForward()
+{
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goForwardInHistory();
+}
+
+void UIVisoContentBrowser::sltGoBackward()
+{
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goBackwardInHistory();
+}
+
 QList<UIFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
 {
     QList<UIFileSystemItem*> selectedItems;
@@ -1224,6 +1281,28 @@ void UIVisoContentBrowser::enableDisableSelectionDependentActions()
         m_pRestoreAction->setEnabled(fSelection);
     if (m_pRenameAction)
         m_pRenameAction->setEnabled(fSelection);
+}
+
+void UIVisoContentBrowser::updateNavigationWidgetPath(const QString &strPath)
+{
+    if (!m_pNavigationWidget)
+        return;
+    m_pNavigationWidget->setPath(strPath);
+}
+
+void UIVisoContentBrowser::setFileTableLabelText(const QString &strText)
+{
+    if (m_pFileTableLabel)
+        m_pFileTableLabel->setText(strText);
+}
+
+void UIVisoContentBrowser::enableForwardBackwardActions()
+{
+    AssertReturnVoid(m_pNavigationWidget);
+    if (m_pGoForward)
+        m_pGoForward->setEnabled(m_pNavigationWidget->canGoForward());
+    if (m_pGoBackward)
+        m_pGoBackward->setEnabled(m_pNavigationWidget->canGoBackward());
 }
 
 #include "UIVisoContentBrowser.moc"

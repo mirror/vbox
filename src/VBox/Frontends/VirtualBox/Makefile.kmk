@@ -860,7 +860,6 @@ UICommon_QT_MOCHDRS = \
 	src/medium/UIMediumItem.h \
 	src/medium/UIMediumSearchWidget.h \
 	src/medium/UIMediumSelector.h \
-	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
 	src/notificationcenter/UINotificationCenter.h \
@@ -1442,7 +1441,6 @@ UICommon_SOURCES = \
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/UIMediumSelector.cpp \
-	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
 	src/notificationcenter/UINotificationCenter.cpp \
