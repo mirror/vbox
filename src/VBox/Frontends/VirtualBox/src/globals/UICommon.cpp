@@ -954,6 +954,25 @@ QString UICommon::brandingGetKey(QString strKey) const
     return settings.value(QString("%1").arg(strKey)).toString();
 }
 
+#ifdef VBOX_WS_NIX
+bool UICommon::X11ServerAvailable() const
+{
+    return VBGHDisplayServerTypeIsXAvailable(m_enmDisplayServerType);
+}
+
+VBGHDISPLAYSERVERTYPE UICommon::displayServerType() const
+{
+    return m_enmDisplayServerType;
+}
+#endif
+
+QString UICommon::hostOperatingSystem() const
+{
+    if (!m_comHost.isOk())
+        return QString();
+    return m_comHost.GetOperatingSystem();
+}
+
 void UICommon::loadColorTheme()
 {
 #if defined (VBOX_WS_MAC)
@@ -3012,23 +3031,4 @@ void UICommon::comWrappersReinit()
 
     /* Mark wrappers valid: */
     m_fWrappersValid = true;
-}
-
-#ifdef VBOX_WS_NIX
-bool UICommon::X11ServerAvailable() const
-{
-    return VBGHDisplayServerTypeIsXAvailable(m_enmDisplayServerType);
-}
-
-VBGHDISPLAYSERVERTYPE UICommon::displayServerType() const
-{
-    return m_enmDisplayServerType;
-}
-#endif
-
-QString UICommon::hostOperatingSystem() const
-{
-    if (!m_comHost.isOk())
-        return QString();
-    return m_comHost.GetOperatingSystem();
 }
