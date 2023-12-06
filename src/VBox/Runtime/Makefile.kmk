@@ -2614,7 +2614,6 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
 	common/string/mempcpy.asm \
-	common/string/RTUtf16CopyAscii.cpp \
 	common/string/RTUtf16End.cpp \
 	common/string/RTUtf16NLenEx.cpp \
 	common/string/RTUtf16ICmpAscii.cpp \
