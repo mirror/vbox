@@ -327,7 +327,7 @@ int main()
      * Init.
      */
     RTTEST hTest;
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTShaCrypt", &hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTCrShaCrypt", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
