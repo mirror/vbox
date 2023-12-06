@@ -36,6 +36,7 @@
 
 /* Qt includes: */
 #include <QItemSelection>
+#include <QPointer>
 #include <QWidget>
 
 /* COM includes: */
