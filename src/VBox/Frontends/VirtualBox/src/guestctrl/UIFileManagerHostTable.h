@@ -55,6 +55,7 @@ public:
 
     static KFsObjType  fileType(const QFileInfo &fsInfo);
     static KFsObjType  fileType(const QString &strPath);
+    virtual bool    isWindowsFileSystem() const override final;
 
 protected:
 
@@ -75,7 +76,7 @@ protected:
     virtual void    prepareToolbar() override final;
     virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
     virtual void    toggleForwardBackwardActions() override final;
-    virtual bool    isWindowsFileSystem() const override final;
+
     /** @name Copy/Cut host-to-host stuff. Currently not implemented.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */

@@ -244,7 +244,7 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTableView(0)
     , m_pModel(0)
-    , m_pTableProxyModel(0)
+    , m_pProxyModel(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pNavigationWidget(0)
@@ -266,8 +266,8 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
 
     /* Assuming the root items only child is the one with the path '/', navigate into it. */
     /* Hack alert. for some reason without invalidating proxy models mapFromSource return invalid index. */
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 
     if (rootItem() && rootItem()->childCount() > 0)
     {
@@ -331,8 +331,8 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
         pAddedItem->setIsOpened(false);
 
     }
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
     pParentItem->setIsOpened(true);
     emit sigISOContentImportedOrRemoved(true /* imported*/);
 }
@@ -355,8 +355,8 @@ void UIVisoContentBrowser::removeISOContentFromViso()
 
     foreach (UIFileSystemItem *pItem, itemsToDelete)
             m_pModel->deleteItem(pItem);
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 
     setImportedISOPath();
     emit sigISOContentImportedOrRemoved(false /* imported*/);
@@ -368,7 +368,7 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
         return;
 
     /* Insert items to the current directory shown in the table view: */
-    QModelIndex parentIndex = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex parentIndex = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
     if (!parentIndex.isValid())
          return;
 
@@ -396,8 +396,8 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
         }
         createVisoEntry(pAddedItem->path(), pAddedItem->data(UIFileSystemModelData_LocalPath).toString(), false);
     }
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::createVisoEntry(const QString &strPath, const QString &strLocalPath, bool bRemove /* = false */)
@@ -449,10 +449,10 @@ void UIVisoContentBrowser::retranslateUi()
 
 void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
 {
-    if (!index.isValid() || !m_pTableProxyModel)
+    if (!index.isValid() || !m_pProxyModel)
         return;
     UIFileSystemItem *pClickedItem =
-        static_cast<UIFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
+        static_cast<UIFileSystemItem*>(m_pProxyModel->mapToSource(index).internalPointer());
     if (!pClickedItem)
         return;
     if (!pClickedItem->isDirectory() && !pClickedItem->isSymLinkToADirectory())
@@ -486,7 +486,7 @@ void UIVisoContentBrowser::sltCreateNewDirectory()
     while (currentListing.contains(strNewDirectoryName))
         strNewDirectoryName = QString("%1_%2").arg(strBaseName).arg(QString::number(iSuffix++));
 
-    QModelIndex parentIndex = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex parentIndex = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
     if (!parentIndex.isValid())
          return;
 
@@ -506,8 +506,8 @@ void UIVisoContentBrowser::sltCreateNewDirectory()
                                                                     KFsObjType_Directory);
 
     pAddedItem->setIsOpened(false);
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 
     renameFileObject(pAddedItem);
 }
@@ -525,7 +525,7 @@ void UIVisoContentBrowser::sltRestoreItems()
 void UIVisoContentBrowser::removeItems(const QList<UIFileSystemItem*> itemList)
 {
     AssertReturnVoid(m_pModel);
-    AssertReturnVoid(m_pTableProxyModel);
+    AssertReturnVoid(m_pProxyModel);
     foreach(UIFileSystemItem *pItem, itemList)
     {
         if (!pItem || pItem->isUpDirectory())
@@ -544,7 +544,7 @@ void UIVisoContentBrowser::removeItems(const QList<UIFileSystemItem*> itemList)
         m_pModel->deleteItem(pItem);
     }
 
-    m_pTableProxyModel->invalidate();
+    m_pProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::restoreItems(const QList<UIFileSystemItem*> itemList)
@@ -565,8 +565,8 @@ void UIVisoContentBrowser::restoreItems(const QList<UIFileSystemItem*> itemList)
 
         markRemovedUnremovedItemParents(pItem, false);
     }
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::markRemovedUnremovedItemParents(UIFileSystemItem *pItem, bool fRemoved)
@@ -610,11 +610,11 @@ void UIVisoContentBrowser::prepareObjects()
 
 
     m_pModel = new UIFileSystemModel(this);
-    m_pTableProxyModel = new UIFileSystemProxyModel(this);
-    if (m_pTableProxyModel)
+    m_pProxyModel = new UIFileSystemProxyModel(this);
+    if (m_pProxyModel)
     {
-        m_pTableProxyModel->setSourceModel(m_pModel);
-        m_pTableProxyModel->setListDirectoriesOnTop(true);
+        m_pProxyModel->setSourceModel(m_pModel);
+        m_pProxyModel->setListDirectoriesOnTop(true);
     }
 
     initializeModel();
@@ -644,7 +644,7 @@ void UIVisoContentBrowser::prepareObjects()
     pHorizontalHeader->setHighlightSections(false);
     pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
 
-    m_pTableView->setModel(m_pTableProxyModel);
+    m_pTableView->setModel(m_pProxyModel);
     setTableRootIndex();
     m_pTableView->hideColumn(UIFileSystemModelData_Owner);
     m_pTableView->hideColumn(UIFileSystemModelData_Permissions);
@@ -973,8 +973,8 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
         }
     }
 
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 
 }
 
@@ -996,10 +996,10 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
     if (!index.isValid())
         return QModelIndex();
 
-    if (index.model() == m_pTableProxyModel)
+    if (index.model() == m_pProxyModel)
         return index;
     else if (index.model() == m_pModel)
-        return m_pTableProxyModel->mapFromSource(index);
+        return m_pProxyModel->mapFromSource(index);
     return QModelIndex();
 }
 
@@ -1064,14 +1064,14 @@ void UIVisoContentBrowser::updateStartItemName()
 
     rootItem()->child(0)->setData(strName, UIFileSystemModelData_Name);
     /* If the table root index is the start item then we have to update the location selector text here: */
-    // if (m_pTableProxyModel->mapToSource(m_pTableView->rootIndex()).internalPointer() == rootItem()->child(0))
+    // if (m_pProxyModel->mapToSource(m_pTableView->rootIndex()).internalPointer() == rootItem()->child(0))
     //     updateLocationSelectorText(strName);
-    m_pTableProxyModel->invalidate();
+    m_pProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::renameFileObject(UIFileSystemItem *pItem)
 {
-    m_pTableView->edit(m_pTableProxyModel->mapFromSource(m_pModel->index(pItem)));
+    m_pTableView->edit(m_pProxyModel->mapFromSource(m_pModel->index(pItem)));
 }
 
 void UIVisoContentBrowser::sltItemRenameAction()
@@ -1114,8 +1114,8 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UIFileSystemItem *pItem, const Q
             m_entryMap.insert(strOldPath, cRemoveText);
     }
 
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -1133,8 +1133,8 @@ void UIVisoContentBrowser::sltResetAction()
     goToStart();
     rootItem()->child(0)->removeChildren();
     m_entryMap.clear();
-    if (m_pTableProxyModel)
-        m_pTableProxyModel->invalidate();
+    if (m_pProxyModel)
+        m_pProxyModel->invalidate();
     m_strImportedISOPath.clear();
 }
 
@@ -1188,7 +1188,7 @@ void UIVisoContentBrowser::sltGoBackward()
 QList<UIFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
 {
     QList<UIFileSystemItem*> selectedItems;
-    if (!m_pTableProxyModel)
+    if (!m_pProxyModel)
         return selectedItems;
     QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
     if (!selectionModel || selectionModel->selectedIndexes().isEmpty())
@@ -1197,7 +1197,7 @@ QList<UIFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
     foreach (QModelIndex index, list)
     {
         UIFileSystemItem *pItem =
-            static_cast<UIFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
+            static_cast<UIFileSystemItem*>(m_pProxyModel->mapToSource(index).internalPointer());
         if (pItem)
             selectedItems << pItem;
     }
@@ -1208,7 +1208,7 @@ QString UIVisoContentBrowser::currentPath() const
 {
     if (!m_pTableView || !m_pTableView->rootIndex().isValid())
         return QString();
-    QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex index = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
     UIFileSystemItem *pItem = static_cast<UIFileSystemItem*>((index).internalPointer());
     if (!pItem)
         return QString();
@@ -1219,7 +1219,7 @@ bool UIVisoContentBrowser::onStartItem()
 {
     if (!m_pTableView || !m_pModel)
         return false;
-    QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex index = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
     UIFileSystemItem *pItem = static_cast<UIFileSystemItem*>((index).internalPointer());
     if (!index.isValid() || !pItem)
         return false;
@@ -1230,9 +1230,9 @@ bool UIVisoContentBrowser::onStartItem()
 
 void UIVisoContentBrowser::goUp()
 {
-    AssertReturnVoid(m_pTableProxyModel);
+    AssertReturnVoid(m_pProxyModel);
     AssertReturnVoid(m_pTableView);
-    QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex currentRoot = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
     if (!currentRoot.isValid())
         return;
     /* Go up if we are not already in root: */
@@ -1250,7 +1250,7 @@ const UIFileSystemItem* UIVisoContentBrowser::currentDirectoryItem() const
 {
     if (!m_pTableView || !m_pTableView->rootIndex().isValid())
         return 0;
-    QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    QModelIndex currentRoot = m_pProxyModel->mapToSource(m_pTableView->rootIndex());
 
     return static_cast<UIFileSystemItem*>(currentRoot.internalPointer());
 }
@@ -1302,6 +1302,16 @@ void UIVisoContentBrowser::enableForwardBackwardActions()
         m_pGoForward->setEnabled(m_pNavigationWidget->canGoForward());
     if (m_pGoBackward)
         m_pGoBackward->setEnabled(m_pNavigationWidget->canGoBackward());
+}
+
+void UIVisoContentBrowser::setSortCaseSensitive(bool fCaseSensitive)
+{
+    if (!m_pProxyModel)
+        return;
+    if (fCaseSensitive)
+        m_pProxyModel->setSortCaseSensitivity(Qt::CaseSensitive);
+    else
+        m_pProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 }
 
 #include "UIVisoContentBrowser.moc"

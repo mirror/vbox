@@ -76,6 +76,7 @@ public:
     QUuid machineId();
     bool isGuestSessionRunning() const;
     void setIsCurrent(bool fIsCurrent);
+    virtual bool  isWindowsFileSystem() const override final;
 
 protected:
 
@@ -100,7 +101,6 @@ protected:
     virtual void  toggleForwardBackwardActions() override final;
     virtual void  setState();
     virtual void  setSessionDependentWidgetsEnabled();
-    virtual bool  isWindowsFileSystem() const override final;
 
 private slots:
 

@@ -88,6 +88,8 @@ public:
 
     bool hasContent() const;
 
+    void setSortCaseSensitive(bool fCaseSensitive);
+
 public slots:
 
     void sltCreateNewDirectory();
@@ -163,7 +165,7 @@ private:
     void        enableForwardBackwardActions();
     UIVisoContentTableView *m_pTableView;
     UIFileSystemModel      *m_pModel;
-    UIFileSystemProxyModel *m_pTableProxyModel;
+    UIFileSystemProxyModel *m_pProxyModel;
     QPointer<QMenu>        m_pSubMenu;
     QString                m_strImportedISOPath;
     /** keys of m_entryMap are iso locations and values are
