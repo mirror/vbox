@@ -81,10 +81,13 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     uint8_t abDigest[RTSHA256_HASH_SIZE];
     RTSha256Final(&CtxB, abDigest);                                             /* Step 8. */
 
-    size_t i = cchPhrase;
-    for (; i > RTSHA256_HASH_SIZE; i -= RTSHA256_HASH_SIZE)                     /* Step 9. */
+    size_t cbLeft = cchPhrase;
+    while (cbLeft > RTSHA256_HASH_SIZE)                                         /* Step 9. */
+    {
         RTSha256Update(&CtxA, abDigest, sizeof(abDigest));
-    RTSha256Update(&CtxA, abDigest, i);                                         /* Step 10. */
+        cbLeft -= RTSHA256_HASH_SIZE;
+    }
+    RTSha256Update(&CtxA, abDigest, cbLeft);                                    /* Step 10. */
 
     size_t iPhraseBit = cchPhrase;
     while (iPhraseBit)                                                          /* Step 11. */
@@ -99,7 +102,7 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     RTSha256Final(&CtxA, abDigest);                                             /* Step 12. */
 
     RTSha256Init(&CtxB);                                                        /* Step 13. */
-    for (i = 0; i < cchPhrase; i++)                                             /* Step 14. */
+    for (size_t i = 0; i < cchPhrase; i++)                                      /* Step 14. */
         RTSha256Update(&CtxB, pszPhrase, cchPhrase);
 
     uint8_t abDigestTemp[RTSHA256_HASH_SIZE];
@@ -108,21 +111,23 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     /*
      * Byte sequence P (= password).
      */
+    /* Step 16. */
     size_t const cbSeqP  = cchPhrase;
     uint8_t     *pabSeqP = (uint8_t *)RTMemTmpAllocZ(cbSeqP + 1);               /* +1 because the password may be empty */
     uint8_t     *pb       = pabSeqP;
     AssertPtrReturn(pabSeqP, VERR_NO_MEMORY);
-
-    for (i = cbSeqP; i > RTSHA256_HASH_SIZE; i -= RTSHA256_HASH_SIZE)           /* Step 16. */
+    cbLeft = cbSeqP;
+    while (cbLeft > RTSHA256_HASH_SIZE)
     {
         memcpy(pb, abDigestTemp, sizeof(abDigestTemp));                         /* a) */
-        pb += RTSHA256_HASH_SIZE;
+        pb     += RTSHA256_HASH_SIZE;
+        cbLeft -= RTSHA256_HASH_SIZE;
     }
-    memcpy(pb, abDigestTemp, i);                                                /* b) */
+    memcpy(pb, abDigestTemp, cbLeft);                                           /* b) */
 
     RTSha256Init(&CtxB);                                                        /* Step 17. */
 
-    for (i = 0; i < 16 + (unsigned)abDigest[0]; i++)                            /* Step 18. */
+    for (size_t i = 0; i < 16 + (unsigned)abDigest[0]; i++)                     /* Step 18. */
         RTSha256Update(&CtxB, pszSalt, cchSalt);
 
     RTSha256Final(&CtxB, abDigestTemp);                                         /* Step 19. */
@@ -140,13 +145,15 @@ RTR3DECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint
     uint8_t * const pabSeqS = (uint8_t *)RTMemDup(pszSalt, cbSeqS + 1);
     AssertPtrReturn(pabSeqS, VERR_NO_MEMORY);
 
-    pb = pabSeqS;
-    for (i = cbSeqS; i > RTSHA256_HASH_SIZE; i -= RTSHA256_HASH_SIZE)
+    pb     = pabSeqS;
+    cbLeft = cbSeqS;
+    while (cbLeft > RTSHA256_HASH_SIZE)
     {
         memcpy(pb, (void *)abDigestTemp, sizeof(abDigestTemp));                 /* a) */
-        pb += RTSHA256_HASH_SIZE;
+        pb     += RTSHA256_HASH_SIZE;
+        cbLeft -= RTSHA256_HASH_SIZE
     }
-    memcpy(pb, abDigestTemp, i);                                                /* b) */
+    memcpy(pb, abDigestTemp, cbLeft);                                           /* b) */
 #else
     AssertCompile(RT_SHACRYPT_SALT_MAX_LEN < RTSHA256_HASH_SIZE);
     uint8_t         abSeqS[RT_SHACRYPT_SALT_MAX_LEN + 2];

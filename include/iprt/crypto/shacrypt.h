@@ -114,9 +114,10 @@ RTDECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt);
  *                      be within RT_SHACRYPT_MIN_SALT_LEN to
  *                      RT_SHACRYPT_MAX_SALT_LEN, both inclusive.
  *
- * @param   cRounds     Number of rounds to use (@see
- *                      RT_SHACRYPT_ROUNDS_DEFAULT).  This is ignored if the
- *                      salt includes a 'rounds=xxx$' part.
+ * @param   cRounds     Number of rounds to use, must be in the range
+ *                      RT_SHACRYPT_ROUNDS_MIN thru RT_SHACRYPT_ROUNDS_MAX.
+ *                      If unsure, use RT_SHACRYPT_ROUNDS_DEFAULT.  This is
+ *                      ignored if the salt includes a 'rounds=xxx$' part.
  * @param   pszString   Where to store the string on success.
  * @param   cbString    The size of the buffer pointed to by @a pszString.
  *
@@ -144,6 +145,10 @@ RTDECL(int) RTCrShaCrypt256(const char *pszPhrase, const char *pszSalt, uint32_t
  *                      be within RT_SHACRYPT_MIN_SALT_LEN to
  *                      RT_SHACRYPT_MAX_SALT_LEN, both inclusive.
  *
+ * @param   cRounds     Number of rounds to use, must be in the range
+ *                      RT_SHACRYPT_ROUNDS_MIN thru RT_SHACRYPT_ROUNDS_MAX.
+ *                      If unsure, use RT_SHACRYPT_ROUNDS_DEFAULT.  This is
+ *                      ignored if the salt includes a 'rounds=xxx$' part.
  * @param   pszString   Where to store the string on success.
  * @param   cbString    The size of the buffer pointed to by @a pszString.
  *
@@ -174,8 +179,10 @@ RTDECL(int) RTCrShaCrypt512(const char *pszPhrase, const char *pszSalt, uint32_t
  *                      be within RT_SHACRYPT_MIN_SALT_LEN to
  *                      RT_SHACRYPT_MAX_SALT_LEN, both inclusive.
  *
- * @param   cRounds     Number of rounds to use (@see
- *                      RT_SHACRYPT_ROUNDS_DEFAULT).
+ * @param   cRounds     Number of rounds to use, must be in the range
+ *                      RT_SHACRYPT_ROUNDS_MIN thru RT_SHACRYPT_ROUNDS_MAX.
+ *                      If unsure, use RT_SHACRYPT_ROUNDS_DEFAULT.  This is
+ *                      ignored if the salt includes a 'rounds=xxx$' part.
  * @param   pabHash     Where to return the hash on success.
  * @see     RTCrShaCrypt256, RTCrShaCrypt256ToString
  */
@@ -200,8 +207,10 @@ RTDECL(int) RTCrShaCrypt256Ex(const char *pszPhrase, const char *pszSalt, uint32
  *                      be within RT_SHACRYPT_MIN_SALT_LEN to
  *                      RT_SHACRYPT_MAX_SALT_LEN, both inclusive.
  *
- * @param   cRounds     Number of rounds to use (@see
- *                      RT_SHACRYPT_ROUNDS_DEFAULT).
+ * @param   cRounds     Number of rounds to use, must be in the range
+ *                      RT_SHACRYPT_ROUNDS_MIN thru RT_SHACRYPT_ROUNDS_MAX.
+ *                      If unsure, use RT_SHACRYPT_ROUNDS_DEFAULT.  This is
+ *                      ignored if the salt includes a 'rounds=xxx$' part.
  * @param   pabHash     Where to return the hash on success.
  * @see     RTCrShaCrypt512, RTCrShaCrypt512ToString
  */
