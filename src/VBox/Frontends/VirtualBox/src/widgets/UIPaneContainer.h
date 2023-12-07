@@ -39,8 +39,6 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
-class QIToolButton;
-
 
 /** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */
 class SHARED_LIBRARY_STUFF UIPaneContainer : public QIWithRetranslateUI<QWidget>
@@ -72,7 +70,6 @@ private slots:
 private:
 
     QTabWidget    *m_pTabWidget;
-    QIToolButton  *m_pCloseButton;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h */

@@ -34,7 +34,6 @@
 #include <QToolButton>
 
 /* GUI includes: */
-#include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIPaneContainer.h"
 #ifdef VBOX_WS_MAC
@@ -47,7 +46,6 @@
 UIPaneContainer::UIPaneContainer(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTabWidget(0)
-    , m_pCloseButton(0)
 {
     prepare();
     retranslateUi();
@@ -55,8 +53,6 @@ UIPaneContainer::UIPaneContainer(QWidget *pParent /* = 0 */)
 
 void UIPaneContainer::retranslateUi()
 {
-    if (m_pCloseButton)
-        m_pCloseButton->setToolTip(tr("Close"));
 }
 
 void UIPaneContainer::prepare()
@@ -70,13 +66,6 @@ void UIPaneContainer::prepare()
     connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
     AssertReturnVoid(m_pTabWidget);
     pLayout->addWidget(m_pTabWidget);
-
-    /* Add a button to close the tab widget: */
-    m_pCloseButton = new QIToolButton;
-    AssertReturnVoid(m_pCloseButton);
-    m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-    connect(m_pCloseButton, &QIToolButton::clicked, this, &UIPaneContainer::sltHide);
-    m_pTabWidget->setCornerWidget(m_pCloseButton);
 }
 
 void UIPaneContainer::sltHide()
