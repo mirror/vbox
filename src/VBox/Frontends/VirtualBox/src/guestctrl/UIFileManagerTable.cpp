@@ -328,8 +328,8 @@ UIDirectoryStatistics::UIDirectoryStatistics()
 }
 
 /*********************************************************************************************************************************
-+*   UIFileDeleteConfirmationDialog implementation.                                                                                *
-+*********************************************************************************************************************************/
+*   UIFileDeleteConfirmationDialog implementation.                                                                               *
+*********************************************************************************************************************************/
 
 UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     :QIDialog(pParent, enmFlags)
