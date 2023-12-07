@@ -264,6 +264,10 @@ public:
         /** Defines whether we should fRestore current snapshot before VM started. */
         void setShouldRestoreCurrentSnapshot(bool fRestore) { m_fRestoreCurrentSnapshot = fRestore; }
 
+        /** Returns the --no-keyboard-grabbing option value (whether we should restore
+         *  grab the keyboard or not - for debugging). */
+        bool shouldNotGrabKeyboard() const { return m_fNoKeyboardGrabbing; }
+
         /** Returns the --fda option value (whether we have floppy image). */
         bool hasFloppyImageToMount() const { return !m_uFloppyImage.isNull(); }
         /** Returns the --dvd | --cdrom option value (whether we have DVD image). */
@@ -692,6 +696,9 @@ private:
 
         /** Holds the --restore-current option value. */
         bool  m_fRestoreCurrentSnapshot;
+
+        /** Holds the --no-keyboard-grabbing option value. */
+        bool  m_fNoKeyboardGrabbing;
 
         /** Holds the --fda option value (floppy image). */
         QUuid  m_uFloppyImage;

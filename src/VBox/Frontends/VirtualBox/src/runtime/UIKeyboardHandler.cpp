@@ -1143,8 +1143,10 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 #elif defined(VBOX_WS_WIN)
 
                 /* If keyboard-hook is NOT installed;
-                 * Or installed but NOT for that view: */
-                if (!m_keyboardHook || (int)uScreenId != m_iKeyboardHookViewIndex)
+                 * Or installed but NOT for that view
+                 * AND no --no-keyboard-grabbing option: */
+                if (   (!m_keyboardHook || (int)uScreenId != m_iKeyboardHookViewIndex)
+                    && !uiCommon().shouldNotGrabKeyboard())
                 {
                     /* If keyboard-hook is installed: */
                     if (m_keyboardHook)
