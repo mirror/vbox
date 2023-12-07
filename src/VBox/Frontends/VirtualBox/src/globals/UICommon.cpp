@@ -192,13 +192,13 @@ UICommon::UICommon(UIType enmType)
 #endif
 #ifdef VBOX_WS_MAC
     , m_enmMacOSVersion(MacOSXRelease_Old)
-    , m_fDarkMode(false)
 #endif
 #ifdef VBOX_WS_NIX
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_fCompositingManagerRunning(false)
     , m_enmDisplayServerType(VBGHDISPLAYSERVERTYPE_NONE)
 #endif
+    , m_fDarkMode(false)
     , m_fSeparateProcess(false)
     , m_fShowStartVMErrors(true)
 #if defined(DEBUG_bird)
@@ -321,9 +321,11 @@ void UICommon::prepare()
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
     m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
 
-#ifdef VBOX_WS_MAC
-    /* Load whether macOS is in Dark mode: */
+    /* Load whether host OS is in Dark mode: */
+#if defined(VBOX_WS_MAC)
     m_fDarkMode = UICocoaApplication::instance()->isDarkMode();
+#elif defined(VBOX_WS_WIN)
+    m_fDarkMode = isWindowsInDarkMode();
 #endif
     /* Load color theme: */
     loadColorTheme();
@@ -1094,7 +1096,7 @@ void UICommon::loadColorTheme()
 #elif defined(VBOX_WS_WIN)
 
     /* For the Dark mode! */
-    if (isWindowsInDarkMode())
+    if (isInDarkMode())
     {
         qApp->setStyle(QStyleFactory::create("Fusion"));
         QPalette darkPalette;
@@ -2857,12 +2859,16 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
-#ifdef VBOX_WS_MAC
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Handle application palette change event: */
     if (   pEvent->type() == QEvent::ApplicationPaletteChange
         && pObject == windowManager().mainWindowShown())
     {
+# if defined(VBOX_WS_MAC)
         const bool fDarkMode = UICocoaApplication::instance()->isDarkMode();
+# elif defined(VBOX_WS_WIN)
+        const bool fDarkMode = isWindowsInDarkMode();
+# endif
         if (m_fDarkMode != fDarkMode)
         {
             m_fDarkMode = fDarkMode;
@@ -2870,7 +2876,7 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
             emit sigThemeChange();
         }
     }
-#endif
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
