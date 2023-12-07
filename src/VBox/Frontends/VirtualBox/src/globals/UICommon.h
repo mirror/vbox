@@ -235,6 +235,11 @@ public:
         /** Returns the name of the host OS by using IHost::getOperatingSystem. */
         QString hostOperatingSystem() const;
 
+#ifdef VBOX_WS_WIN
+        /** Returns whether Windows host is in Dark mode. */
+        bool isWindowsInDarkMode() const;
+#endif
+
         /** Loads the color theme. */
         void loadColorTheme();
     /** @} */

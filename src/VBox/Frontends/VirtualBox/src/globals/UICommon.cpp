@@ -1008,6 +1008,26 @@ QString UICommon::hostOperatingSystem() const
     return m_comHost.GetOperatingSystem();
 }
 
+#ifdef VBOX_WS_WIN
+bool UICommon::isWindowsInDarkMode() const
+{
+    /* Load saved color theme: */
+    UIColorThemeType enmColorTheme = gEDataManager->colorTheme();
+
+    /* Check whether we have dark system theme requested: */
+    if (enmColorTheme == UIColorThemeType_Auto)
+    {
+        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                           QSettings::NativeFormat);
+        if (settings.value("AppsUseLightTheme") == 0)
+            enmColorTheme = UIColorThemeType_Dark;
+    }
+
+    /* Return result: */
+    return enmColorTheme == UIColorThemeType_Dark;
+}
+#endif /* VBOX_WS_WIN */
+
 void UICommon::loadColorTheme()
 {
 #if defined (VBOX_WS_MAC)
@@ -1073,20 +1093,8 @@ void UICommon::loadColorTheme()
 
 #elif defined(VBOX_WS_WIN)
 
-    /* Load saved color theme: */
-    UIColorThemeType enmColorTheme = gEDataManager->colorTheme();
-
-    /* Check whether we have dark system theme requested: */
-    if (enmColorTheme == UIColorThemeType_Auto)
-    {
-        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                           QSettings::NativeFormat);
-        if (settings.value("AppsUseLightTheme") == 0)
-            enmColorTheme = UIColorThemeType_Dark;
-    }
-
-    /* Check whether dark theme was requested by any means: */
-    if (enmColorTheme == UIColorThemeType_Dark)
+    /* For the Dark mode! */
+    if (isWindowsInDarkMode())
     {
         qApp->setStyle(QStyleFactory::create("Fusion"));
         QPalette darkPalette;
