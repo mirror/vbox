@@ -33,6 +33,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UISettingsPage.h"
 #include "UISettingsPageValidator.h"
@@ -193,86 +194,44 @@ void UISettingsPageFrame::paintEvent(QPaintEvent *pPaintEvent)
 {
     /* Prepare painter: */
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
     /* Avoid painting more than necessary: */
     painter.setClipRect(pPaintEvent->rect());
 
-    /* Prepare palette colors: */
-    const QPalette pal = QApplication::palette();
-    QColor color0 = pal.color(QPalette::Window);
-    QColor color1 = pal.color(QPalette::Window).lighter(110);
-    color1.setAlpha(0);
-    QColor color2 = pal.color(QPalette::Window).darker(200);
-
-    /* Acquire contents rect: */
-    QRect cRect = m_pWidget->geometry();
-    const int iX = cRect.x();
-    const int iY = cRect.y();
-    const int iWidth = cRect.width();
-    const int iHeight = cRect.height();
-
-    /* Invent pixel metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-
-    /* Top-left corner: */
-    QRadialGradient grad1(QPointF(iX + iMetric, iY + iMetric), iMetric);
+    /* Prepare colors: */
+    const bool fActive = window() && window()->isActiveWindow();
+    QColor col1;
+    QColor col2;
+    if (uiCommon().isInDarkMode())
     {
-        grad1.setColorAt(0, color2);
-        grad1.setColorAt(1, color1);
+        col1 = qApp->palette().color(fActive ? QPalette::Active : QPalette::Inactive, QPalette::Window).lighter(130);
+        col2 = qApp->palette().color(fActive ? QPalette::Active : QPalette::Inactive, QPalette::Window).lighter(150);
     }
-    /* Top-right corner: */
-    QRadialGradient grad2(QPointF(iX + iWidth - iMetric, iY + iMetric), iMetric);
+    else
     {
-        grad2.setColorAt(0, color2);
-        grad2.setColorAt(1, color1);
-    }
-    /* Bottom-left corner: */
-    QRadialGradient grad3(QPointF(iX + iMetric, iY + iHeight - iMetric), iMetric);
-    {
-        grad3.setColorAt(0, color2);
-        grad3.setColorAt(1, color1);
-    }
-    /* Botom-right corner: */
-    QRadialGradient grad4(QPointF(iX + iWidth - iMetric, iY + iHeight - iMetric), iMetric);
-    {
-        grad4.setColorAt(0, color2);
-        grad4.setColorAt(1, color1);
+        col1 = qApp->palette().color(fActive ? QPalette::Active : QPalette::Inactive, QPalette::Window).darker(105);
+        col2 = qApp->palette().color(fActive ? QPalette::Active : QPalette::Inactive, QPalette::Window).darker(120);
     }
 
-    /* Top line: */
-    QLinearGradient grad5(QPointF(iX + iMetric, iY), QPointF(iX + iMetric, iY + iMetric));
-    {
-        grad5.setColorAt(0, color1);
-        grad5.setColorAt(1, color2);
-    }
-    /* Bottom line: */
-    QLinearGradient grad6(QPointF(iX + iMetric, iY + iHeight), QPointF(iX + iMetric, iY + iHeight - iMetric));
-    {
-        grad6.setColorAt(0, color1);
-        grad6.setColorAt(1, color2);
-    }
-    /* Left line: */
-    QLinearGradient grad7(QPointF(iX, iY + iHeight - iMetric), QPointF(iX + iMetric, iY + iHeight - iMetric));
-    {
-        grad7.setColorAt(0, color1);
-        grad7.setColorAt(1, color2);
-    }
-    /* Right line: */
-    QLinearGradient grad8(QPointF(iX + iWidth, iY + iHeight - iMetric), QPointF(iX + iWidth - iMetric, iY + iHeight - iMetric));
-    {
-        grad8.setColorAt(0, color1);
-        grad8.setColorAt(1, color2);
-    }
+    /* Prepare painter path: */
+    const QRect widgetRect = rect();
+    QPainterPath path;
+    int iRadius = 6;
+    QSizeF arcSize(2 * iRadius, 2 * iRadius);
+    path.moveTo(widgetRect.x() + iRadius, widgetRect.y());
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iRadius, 0), 90, 90);
+    path.lineTo(path.currentPosition().x(), widgetRect.height() - iRadius);
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -iRadius), 180, 90);
+    path.lineTo(widgetRect.width() - iRadius, path.currentPosition().y());
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iRadius, -2 * iRadius), 270, 90);
+    path.lineTo(path.currentPosition().x(), widgetRect.y() + iRadius);
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * iRadius, -iRadius), 0, 90);
+    path.closeSubpath();
 
-    /* Paint shape/shadow: */
-    painter.fillRect(QRect(iX + iMetric,          iY + iMetric,           iWidth - iMetric * 2, iHeight - iMetric * 2), color0);
-    painter.fillRect(QRect(iX,                    iY,                     iMetric,              iMetric),               grad1);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY,                     iMetric,              iMetric),               grad2);
-    painter.fillRect(QRect(iX,                    iY + iHeight - iMetric, iMetric,              iMetric),               grad3);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY + iHeight - iMetric, iMetric,              iMetric),               grad4);
-    painter.fillRect(QRect(iX + iMetric,          iY,                     iWidth - iMetric * 2, iMetric),               grad5);
-    painter.fillRect(QRect(iX + iMetric,          iY + iHeight - iMetric, iWidth - iMetric * 2, iMetric),               grad6);
-    painter.fillRect(QRect(iX,                    iY + iMetric,           iMetric,              iHeight - iMetric * 2), grad7);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY + iMetric,           iMetric,              iHeight - iMetric * 2), grad8);
+    /* Painting stuff: */
+    painter.fillPath(path, col1);
+    painter.strokePath(path, col2);
 }
 
 void UISettingsPageFrame::prepare()
@@ -284,9 +243,6 @@ void UISettingsPageFrame::prepare()
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-        pLayoutMain->setSpacing(0);
-
         /* Create name label: */
         m_pLabelName = new QLabel(this);
         if (m_pLabelName)
@@ -304,6 +260,8 @@ void UISettingsPageFrame::prepare()
             m_pLayout = new QVBoxLayout(m_pWidget);
             if (m_pLayout)
             {
+                m_pLayout->setContentsMargins(0, 0, 0, 0);
+
                 m_pLayout->addWidget(m_pPage);
                 /// @todo what about removal handling?
                 addEditor(m_pPage);
