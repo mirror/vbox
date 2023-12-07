@@ -66,6 +66,7 @@
 #include <VBox/platforms/vbox-armv8.h>
 
 #include "BusAssignmentManager.h"
+#include "ResourceAssignmentManager.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -89,9 +90,6 @@
  * @param   pAlock      The automatic lock instance.  This is for when we have
  *                      to leave it in order to avoid deadlocks (ext packs and
  *                      more).
- *
- * @todo This is a big hack at the moment and provides a static VM config to work with, will be adjusted later
- *       on to adhere to the VM config when sorting out the API bits.
  */
 int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock)
 {
@@ -177,6 +175,12 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
 
     BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(pVMM, chipsetType, IommuType_None);
+    ResourceAssignmentManager *pResMgr = ResourceAssignmentManager::createInstance(pVMM, chipsetType, IommuType_None,
+                                                                                   GCPhysTopOfAddrSpace - sizeof(VBOXPLATFORMARMV8),
+                                                                                   _1G,             /*GCPhysRam*/
+                                                                                   128 * _1M,       /*GCPhysMmio32Start*/
+                                                                                   _1G - 128 * _1M, /*cbMmio32*/
+                                                                                   32               /*cInterrupts*/);
 
     /*
      * Get root node first.
@@ -184,6 +188,8 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
      */
     PCFGMNODE pRoot = pVMM->pfnCFGMR3GetRootU(pUVM);
     Assert(pRoot);
+
+    RTGCPHYS GCPhysRam = NIL_RTGCPHYS;
 
     // catching throws from InsertConfigString and friends.
     try
@@ -270,13 +276,15 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         PCFGMNODE pMem = NULL;
         InsertConfigNode(pMM, "MemRegions", &pMem);
 
+        hrc = pResMgr->assignRamRegion("Conventional", cbRam, &GCPhysRam);                  H();
+
         PCFGMNODE pMemRegion = NULL;
         InsertConfigNode(pMem, "Conventional", &pMemRegion);
-        InsertConfigInteger(pMemRegion, "GCPhysStart", 0x40000000);
+        InsertConfigInteger(pMemRegion, "GCPhysStart", GCPhysRam);
         InsertConfigInteger(pMemRegion, "Size", cbRam);
 
-        vrc = RTFdtNodeAddF(hFdt, "memory@%RX32", 0x40000000);                              VRC();
-        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x40000000, cbRam);              VRC();
+        vrc = RTFdtNodeAddF(hFdt, "memory@%RGp", GCPhysRam);                                VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysRam, cbRam);               VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "device_type",      "memory");             VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
@@ -385,25 +393,34 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /*
          * Configure the interrupt controller.
          */
+        RTGCPHYS GCPhysIntcDist;
+        RTGCPHYS GCPhysIntcReDist;
+        RTGCPHYS cbMmioIntcDist;
+        RTGCPHYS cbMmioIntcReDist;
+
+        /* Each vCPU needs on re-distributor, this would allow for up to 256 vCPUs in the future. */
+        hrc = pResMgr->assignMmioRegion("gic", 256 * _64K, &GCPhysIntcReDist, &cbMmioIntcReDist);       H();
+        hrc = pResMgr->assignMmioRegion("gic", _64K, &GCPhysIntcDist, &cbMmioIntcDist);                 H();
+
         InsertConfigNode(pDevices, "gic",                   &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);
         InsertConfigInteger(pInst, "Trusted",               1);
         InsertConfigNode(pInst,    "Config",                &pCfg);
-        InsertConfigInteger(pCfg,  "DistributorMmioBase",   0x08000000);
-        InsertConfigInteger(pCfg,  "RedistributorMmioBase", 0x080a0000);
+        InsertConfigInteger(pCfg,  "DistributorMmioBase",   GCPhysIntcDist);
+        InsertConfigInteger(pCfg,  "RedistributorMmioBase", GCPhysIntcReDist);
 
-        vrc = RTFdtNodeAddF(hFdt, "intc@%RX32", 0x08000000);                                VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle",          idPHandleIntCtrl);     VRC();
+        vrc = RTFdtNodeAddF(hFdt, "intc@%RGp", GCPhysIntcDist);                                         VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle",          idPHandleIntCtrl);                 VRC();
         vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 4,
-                                           0x08000000, 0x10000,   /* Distributor */
-                                           0x080a0000, 0xf60000); /* Re-Distributor */      VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#redistributor-regions", 1);              VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,gic-v3");         VRC();
-        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "ranges");                                 VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      2);                    VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells",   2);                    VRC();
-        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "interrupt-controller");                   VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 3);                    VRC();
+                                           GCPhysIntcDist, cbMmioIntcDist,      /* Distributor */
+                                           GCPhysIntcReDist, cbMmioIntcReDist); /* Re-Distributor */    VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#redistributor-regions", 1);                          VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,gic-v3");                     VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "ranges");                                             VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      2);                                VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells",   2);                                VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "interrupt-controller");                               VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 3);                                VRC();
 
 #if 0
         vrc = RTFdtNodeAddF(hFdt, "its@%RX32", 0x08080000);                                 VRC();
@@ -417,21 +434,25 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
+        RTGCPHYS GCPhysMmioStart;
+        RTGCPHYS cbMmio;
         if (enmGraphicsController == GraphicsControllerType_QemuRamFB)
         {
+            hrc = pResMgr->assignMmioRegion("qemu-fw-cfg", _4K, &GCPhysMmioStart, &cbMmio); H();
+
             InsertConfigNode(pDevices, "qemu-fw-cfg",   &pDev);
             InsertConfigNode(pDev,     "0",            &pInst);
             InsertConfigNode(pInst,    "Config",        &pCfg);
-            InsertConfigInteger(pCfg,  "MmioSize",       4096);
-            InsertConfigInteger(pCfg,  "MmioBase", 0x09020000);
+            InsertConfigInteger(pCfg,  "MmioSize",       cbMmio);
+            InsertConfigInteger(pCfg,  "MmioBase", GCPhysMmioStart);
             InsertConfigInteger(pCfg,  "DmaEnabled",        1);
             InsertConfigInteger(pCfg,  "QemuRamfbSupport",  1);
             InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
             InsertConfigString(pLunL0, "Driver",          "MainDisplay");
 
-            vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                          VRC();
+            vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RGp", GCPhysMmioStart);                      VRC();
             vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                       VRC();
-            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09020000, 0x18);           VRC();
+            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysMmioStart, cbMmio);    VRC();
             vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "qemu,fw-cfg-mmio");     VRC();
             vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
         }
@@ -474,18 +495,22 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst, "Config", &pCfg);
 
-            InsertConfigInteger(pCfg,  "Irq",               1);
-            InsertConfigInteger(pCfg,  "MmioBase", 0x09000000);
+            uint32_t iIrq = 0;
+            hrc = pResMgr->assignSingleInterrupt("arm-pl011", &iIrq);                               H();
+            hrc = pResMgr->assignMmioRegion("arm-pl011", _4K, &GCPhysMmioStart, &cbMmio);           H();
 
-            vrc = RTFdtNodeAddF(hFdt, "pl011@%RX32", 0x09000000);                               VRC();
-            vrc = RTFdtNodePropertyAddStringList(hFdt, "clock-names", 2, "uartclk", "apb_pclk"); VRC();
+            InsertConfigInteger(pCfg,  "Irq",      iIrq);
+            InsertConfigInteger(pCfg,  "MmioBase", GCPhysMmioStart);
+
+            vrc = RTFdtNodeAddF(hFdt, "pl011@%RGp", GCPhysMmioStart);                               VRC();
+            vrc = RTFdtNodePropertyAddStringList(hFdt, "clock-names", 2, "uartclk", "apb_pclk");    VRC();
             vrc = RTFdtNodePropertyAddCellsU32(hFdt, "clocks", 2,
-                                               idPHandleAbpPClk, idPHandleAbpPClk);             VRC();
-            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x01, 0x04);        VRC();
-            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09000000, _4K);                VRC();
+                                               idPHandleAbpPClk, idPHandleAbpPClk);                 VRC();
+            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, iIrq, 0x04);            VRC();
+            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysMmioStart, cbMmio);            VRC();
             vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
-                                                 "arm,pl011", "arm,primecell");                 VRC();
-            vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+                                                 "arm,pl011", "arm,primecell");                     VRC();
+            vrc = RTFdtNodeFinalize(hFdt);                                                          VRC();
 
             BOOL  fServer;
             hrc = serialPort->COMGETTER(Server)(&fServer);                                  H();
@@ -506,38 +531,43 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         BOOL fRTCUseUTC;
         hrc = platform->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                  H();
 
+        uint32_t iIrq = 0;
+        hrc = pResMgr->assignSingleInterrupt("arm-pl031-rtc", &iIrq);                       H();
+        hrc = pResMgr->assignMmioRegion("arm-pl031-rtc", _4K, &GCPhysMmioStart, &cbMmio);   H();
         InsertConfigNode(pDevices, "arm-pl031-rtc", &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "Irq",               2);
-        InsertConfigInteger(pCfg,  "MmioBase", 0x09010000);
+        InsertConfigInteger(pCfg,  "Irq",            iIrq);
+        InsertConfigInteger(pCfg,  "MmioBase", GCPhysMmioStart);
         InsertConfigInteger(pCfg,  "UtcOffset", fRTCUseUTC ? 1 : 0);
 
-        vrc = RTFdtNodeAddF(hFdt, "pl032@%RX32", 0x09010000);                               VRC();
+        vrc = RTFdtNodeAddF(hFdt, "pl032@%RGp", GCPhysMmioStart);                           VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "clock-names", "apb_pclk");                VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "clocks", idPHandleAbpPClk);               VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x02, 0x04);        VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09010000, 0, 0x1000);       VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, iIrq, 0x04);        VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysMmioStart, cbMmio);        VRC();
         vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
                                              "arm,pl031", "arm,primecell");                 VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         /* Configure gpio keys. */
+        hrc = pResMgr->assignSingleInterrupt("arm-pl061-gpio", &iIrq);                      H();
+        hrc = pResMgr->assignMmioRegion("arm-pl061-gpio", _4K, &GCPhysMmioStart, &cbMmio);  H();
         InsertConfigNode(pDevices, "arm-pl061-gpio",&pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "Irq",               7);
-        InsertConfigInteger(pCfg,  "MmioBase", 0x09030000);
-        vrc = RTFdtNodeAddF(hFdt, "pl061@%RX32", 0x09030000);                               VRC();
+        InsertConfigInteger(pCfg,  "Irq",            iIrq);
+        InsertConfigInteger(pCfg,  "MmioBase", GCPhysMmioStart);
+        vrc = RTFdtNodeAddF(hFdt, "pl061@%RGp", GCPhysMmioStart);                           VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle", idPHandleGpio);                 VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "clock-names", "apb_pclk");                VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "clocks", idPHandleAbpPClk);               VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x07, 0x04);        VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, iIrq, 0x04);        VRC();
         vrc = RTFdtNodePropertyAddEmpty(   hFdt, "gpio-controller");                        VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "#gpio-cells", 2);                         VRC();
         vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
                                              "arm,pl061", "arm,primecell");                 VRC();
-        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09030000, _4K);                VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysMmioStart, cbMmio);        VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
@@ -563,19 +593,27 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
-        uint32_t aPinIrqs[] = { 3, 4, 5, 6 };
+        hrc = pResMgr->assignInterrupts("pci-generic-ecam", 4 /*cInterrupts*/, &iIrq);      H();
+        uint32_t aPinIrqs[] = { iIrq, iIrq + 1, iIrq + 2, iIrq + 3 };
+        RTGCPHYS GCPhysPciMmioEcam, GCPhysPciMmio, GCPhysPciMmio32;
+        RTGCPHYS cbPciMmioEcam, cbPciMmio, cbPciMmio32;
+        hrc = pResMgr->assignMmioRegionAligned("pci-pio",    _64K, _64K,         &GCPhysMmioStart,   &cbMmio);         H();
+        hrc = pResMgr->assignMmioRegion(       "pci-ecam",   16 * _1M,           &GCPhysPciMmioEcam, &cbPciMmioEcam);  H();
+        hrc = pResMgr->assignMmioRegion(       "pci-mmio",   _2G,                &GCPhysPciMmio,     &cbPciMmio);      H();
+        hrc = pResMgr->assignMmio32Region(     "pci-mmio32", (1024 - 128) * _1M, &GCPhysPciMmio32,   &cbPciMmio32);    H();
+
         InsertConfigNode(pDevices, "pci-generic-ecam",  &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "MmioEcamBase",   0x3f000000);
-        InsertConfigInteger(pCfg,  "MmioEcamLength", 0x01000000);
-        InsertConfigInteger(pCfg,  "MmioPioBase",    0x3eff0000);
-        InsertConfigInteger(pCfg,  "MmioPioSize",    0x0000ffff);
+        InsertConfigInteger(pCfg,  "MmioEcamBase",   GCPhysPciMmioEcam);
+        InsertConfigInteger(pCfg,  "MmioEcamLength", cbPciMmioEcam);
+        InsertConfigInteger(pCfg,  "MmioPioBase",    GCPhysMmioStart);
+        InsertConfigInteger(pCfg,  "MmioPioSize",    cbMmio);
         InsertConfigInteger(pCfg,  "IntPinA",        aPinIrqs[0]);
         InsertConfigInteger(pCfg,  "IntPinB",        aPinIrqs[1]);
         InsertConfigInteger(pCfg,  "IntPinC",        aPinIrqs[2]);
         InsertConfigInteger(pCfg,  "IntPinD",        aPinIrqs[3]);
-        vrc = RTFdtNodeAddF(hFdt, "pcie@%RX32", 0x10000000);                                VRC();
+        vrc = RTFdtNodeAddF(hFdt, "pcie@%RGp", GCPhysPciMmio);                              VRC();
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map-mask", 4, 0xf800, 0, 0, 7); VRC();
 
         uint32_t aIrqCells[32 * 4 * 10]; RT_ZERO(aIrqCells); /* Maximum of 32 devices on the root bus, each supporting 4 interrupts (INTA# ... INTD#). */
@@ -603,21 +641,24 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         }
 
         vrc = RTFdtNodePropertyAddCellsU32AsArray(hFdt, "interrupt-map", RT_ELEMENTS(aIrqCells), &aIrqCells[0]);
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 1);                    VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 14,
-                                           0x1000000, 0, 0, 0, 0x3eff0000, 0, 0x10000,
-                                           0x2000000, 0, 0x10000000, 0, 0x10000000, 0,
-                                           0x2eff0000);                                     VRC();
-        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x3f000000, 0x1000000);          VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 1);                        VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 21,
+                                           0x1000000, 0, 0,
+                                           GCPhysMmioStart >> 32, GCPhysMmioStart, cbMmio >> 32, cbMmio,
+                                           0x2000000, GCPhysPciMmio32 >> 32, GCPhysPciMmio32, GCPhysPciMmio32 >> 32, GCPhysPciMmio32,
+                                           cbPciMmio32 >> 32, cbPciMmio32,
+                                           0x3000000, GCPhysPciMmio >> 32, GCPhysPciMmio, GCPhysPciMmio >> 32, GCPhysPciMmio,
+                                           cbPciMmio >> 32, cbPciMmio);                         VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, GCPhysPciMmioEcam, cbPciMmioEcam);   VRC();
         /** @todo msi-map */
-        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "bus-range", 2, 0, 0xf);                   VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,pci-domain", 0);                    VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells", 2);                         VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells", 3);                      VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "device_type", "pci");                     VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "pci-host-ecam-generic");    VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                               VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "bus-range", 2, 0, 0xf);                       VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,pci-domain", 0);                        VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells", 2);                             VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells", 3);                          VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "device_type", "pci");                         VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "pci-host-ecam-generic");        VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                          VRC();
 
         /*
          * VMSVGA compliant graphics controller.
@@ -724,11 +765,21 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     vrc = RTVfsIoStrmZeroFill(hVfsIosDesc, (RTFOFF)(RT_ALIGN_64(ArmV8Platform.cbFdt, _64K) - ArmV8Platform.cbFdt));
     AssertRCReturn(vrc, vrc);
 
+    RTGCPHYS GCPhysMmioStart;
+    RTGCPHYS cbMmio;
+    hrc = pResMgr->queryMmioRegion(&GCPhysMmioStart, &cbMmio);
+    Assert(SUCCEEDED(hrc));
+
+    RTGCPHYS GCPhysMmio32Start;
+    RTGCPHYS cbMmio32;
+    hrc = pResMgr->queryMmio32Region(&GCPhysMmio32Start, &cbMmio32);
+    Assert(SUCCEEDED(hrc));
+
     ArmV8Platform.u32Magic            = VBOXPLATFORMARMV8_MAGIC;
     ArmV8Platform.u32Version          = VBOXPLATFORMARMV8_VERSION;
     ArmV8Platform.cbDesc              = sizeof(ArmV8Platform);
     ArmV8Platform.fFlags              = 0;
-    ArmV8Platform.u64PhysAddrRamBase  = UINT64_C(0x40000000);
+    ArmV8Platform.u64PhysAddrRamBase  = GCPhysRam;
     ArmV8Platform.cbRamBase           = cbRam;
     ArmV8Platform.u64OffBackFdt       = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
     ArmV8Platform.cbFdt               = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
@@ -736,8 +787,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     ArmV8Platform.cbAcpiXsdp          = 0;
     ArmV8Platform.u64OffBackUefiRom   = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform);
     ArmV8Platform.cbUefiRom           = _64M; /** @todo Fixed reservation but the ROM region is usually much smaller. */
-    ArmV8Platform.u64OffBackMmio      = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - 0x08000000; /** @todo Start of generic MMIO area containing the GIC,UART,RTC, etc. Will be changed soon */
-    ArmV8Platform.cbMmio              = _128M;
+    ArmV8Platform.u64OffBackMmio      = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - GCPhysMmioStart;
+    ArmV8Platform.cbMmio              = cbMmio;
+    ArmV8Platform.u64OffBackMmio32    = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - GCPhysMmio32Start;
+    ArmV8Platform.cbMmio32            = cbMmio32;
 
     /* Add the VBox platform descriptor to the resource store. */
     vrc = RTVfsIoStrmWrite(hVfsIosDesc, &ArmV8Platform, sizeof(ArmV8Platform), true /*fBlocking*/, NULL /*pcbWritten*/);
@@ -757,6 +810,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
     }
 
+    delete pResMgr; /* Delete the address/interrupt assignment manager. */
 
     /*
      * Apply the CFGM overlay.
