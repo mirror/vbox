@@ -4734,66 +4734,64 @@ static HRESULT APIENTRY vboxDXGetSupportedVersions(D3D10DDI_HADAPTER hAdapter, U
 static HRESULT APIENTRY vboxDXGetCaps(D3D10DDI_HADAPTER hAdapter, const D3D10_2DDIARG_GETCAPS* pArg)
 {
     //DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(hAdapter);
+    PVBOXDXADAPTER pAdapter = (PVBOXDXADAPTER)hAdapter.pDrvPrivate;
+    RT_NOREF(pAdapter);
     LogFlow(("vboxDXGetCaps: Type %d", pArg->Type));
 
     switch (pArg->Type)
     {
-    case D3D11DDICAPS_THREADING:
-    {
-        D3D11DDI_THREADING_CAPS* pCaps = (D3D11DDI_THREADING_CAPS *)pArg->pData;
-        // TBD: Support these capabilities:
-        // D3D11DDICAPS_FREETHREADED, D3D11DDICAPS_COMMANDLISTS and D3D11DDICAPS_COMMANDLISTS_BUILD_2
-        pCaps->Caps = 0;
-        break;
-    }
+        case D3D11DDICAPS_THREADING:
+        {
+            D3D11DDI_THREADING_CAPS *pCaps = (D3D11DDI_THREADING_CAPS *)pArg->pData;
+            pCaps->Caps = 0;
+            break;
+        }
 
-    case D3D11DDICAPS_SHADER:
-    {
-        D3D11DDI_SHADER_CAPS* pCaps = (D3D11DDI_SHADER_CAPS*)pArg->pData;
-        pCaps->Caps = D3D11DDICAPS_SHADER_COMPUTE_PLUS_RAW_AND_STRUCTURED_BUFFERS_IN_SHADER_4_X;
-        break;
-    }
-    break;
+        case D3D11DDICAPS_SHADER:
+        {
+            D3D11DDI_SHADER_CAPS *pCaps = (D3D11DDI_SHADER_CAPS *)pArg->pData;
+            pCaps->Caps = D3D11DDICAPS_SHADER_COMPUTE_PLUS_RAW_AND_STRUCTURED_BUFFERS_IN_SHADER_4_X;
+            break;
+        }
 
-    case D3D11_1DDICAPS_D3D11_OPTIONS:
-    {
-        D3D11_1DDI_D3D11_OPTIONS_DATA* pCaps = (D3D11_1DDI_D3D11_OPTIONS_DATA*)pArg->pData;
-        pCaps->OutputMergerLogicOp = TRUE;
-        pCaps->AssignDebugBinarySupport = TRUE;
-    }
-    break;
+        case D3D11_1DDICAPS_D3D11_OPTIONS:
+        {
+            D3D11_1DDI_D3D11_OPTIONS_DATA *pCaps = (D3D11_1DDI_D3D11_OPTIONS_DATA *)pArg->pData;
+            pCaps->OutputMergerLogicOp = TRUE; /* Required for 11.1 driver. */
+            pCaps->AssignDebugBinarySupport = FALSE;
+            break;
+        }
 
-    case D3D11_1DDICAPS_ARCHITECTURE_INFO:
-    {
-        D3DDDICAPS_ARCHITECTURE_INFO* pCaps = (D3DDDICAPS_ARCHITECTURE_INFO *)pArg->pData;
-        pCaps->TileBasedDeferredRenderer = FALSE;
-    }
-    break;
+        case D3D11_1DDICAPS_ARCHITECTURE_INFO:
+        {
+            D3DDDICAPS_ARCHITECTURE_INFO *pCaps = (D3DDDICAPS_ARCHITECTURE_INFO *)pArg->pData;
+            pCaps->TileBasedDeferredRenderer = FALSE;
+            break;
+        }
 
-    case D3D11_1DDICAPS_SHADER_MIN_PRECISION_SUPPORT:
-    {
-        D3DDDICAPS_SHADER_MIN_PRECISION_SUPPORT* pCaps = (D3DDDICAPS_SHADER_MIN_PRECISION_SUPPORT *)pArg->pData;
-        // The driver supports only the default precision for the shader model, and not a lower precision.
-        pCaps->VertexShaderMinPrecision = 0;
-        pCaps->PixelShaderMinPrecision  = 0;
-    }
-    break;
+        case D3D11_1DDICAPS_SHADER_MIN_PRECISION_SUPPORT:
+        {
+            D3DDDICAPS_SHADER_MIN_PRECISION_SUPPORT *pCaps = (D3DDDICAPS_SHADER_MIN_PRECISION_SUPPORT *)pArg->pData;
+            /* The driver supports only the default precision for the shader model, and not a lower precision. */
+            pCaps->VertexShaderMinPrecision = 0;
+            pCaps->PixelShaderMinPrecision  = 0;
+            break;
+        }
 
-    case D3D11DDICAPS_3DPIPELINESUPPORT:
-    {
-        D3D11DDI_3DPIPELINESUPPORT_CAPS* pCaps = (D3D11DDI_3DPIPELINESUPPORT_CAPS *)pArg->pData;
+        case D3D11DDICAPS_3DPIPELINESUPPORT:
+        {
+            D3D11DDI_3DPIPELINESUPPORT_CAPS *pCaps = (D3D11DDI_3DPIPELINESUPPORT_CAPS *)pArg->pData;
 
-        /* Support of 11.1 pipeline assumes the support of 11.0, 10.1 and 10.0 pipelines*/
-        pCaps->Caps =
-            D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11_1DDI_3DPIPELINELEVEL_11_1) |
-            D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_11_0) |
-            D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_10_1) |
-            D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_10_0);
-        break;
-    }
-    default:
-        break;
+            /* Support of 11.1 pipeline assumes the support of 11.0, 10.1 and 10.0 pipelines. */
+            pCaps->Caps =
+                D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11_1DDI_3DPIPELINELEVEL_11_1) |
+                D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_11_0) |
+                D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_10_1) |
+                D3D11DDI_ENCODE_3DPIPELINESUPPORT_CAP(D3D11DDI_3DPIPELINELEVEL_10_0);
+            break;
+        }
+        default:
+            break;
     }
 
     return S_OK;
