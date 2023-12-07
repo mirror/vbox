@@ -4707,8 +4707,8 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                     pCtxMsrs->msr.MtrrFix4K_E8000  = 0x0505050505050505;
                     pCtxMsrs->msr.MtrrFix4K_F0000  = 0x0505050505050505;
                     pCtxMsrs->msr.MtrrFix4K_F8000  = 0x0505050505050505;
-                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst   | X86_MTRR_MT_WB;
-                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = fMtrrPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
+                    //pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst   | X86_MTRR_MT_WB;
+                    //pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = fMtrrPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
                 }
                 LogRel(("CPUM: Initialized MTRRs (fMtrrPhysMask=%RGp GCPhysLast=%RGp)\n", fMtrrPhysMask, GCPhysLast));
             }
