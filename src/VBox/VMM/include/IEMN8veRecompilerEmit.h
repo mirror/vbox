@@ -2662,7 +2662,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToNewLabel(PIEMRECOMPILERSTATE pReNat
 
 /**
  * Emits a Jcc rel32 / B.cc imm19 with a fixed displacement.
- * How @a offJmp is applied is are target specific.
+ *
+ * The @a offTarget is applied x86-style, so zero means the next instruction.
+ * The unit is IEMNATIVEINSTR.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget, IEMNATIVEINSTRCOND enmCond)
@@ -2687,7 +2689,7 @@ iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t off
 
 #elif defined(RT_ARCH_ARM64)
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offTarget);
+    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offTarget + 1);
 
 #else
 # error "Port me!"
@@ -2699,7 +2701,9 @@ iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t off
 
 /**
  * Emits a JZ/JE rel32 / B.EQ imm19 with a fixed displacement.
- * How @a offJmp is applied is are target specific.
+ *
+ * The @a offTarget is applied x86-style, so zero means the next instruction.
+ * The unit is IEMNATIVEINSTR.
  */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitJzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
 {
@@ -2715,7 +2719,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJzToFixed(PIEMRECOMPILERSTATE pReNative
 
 /**
  * Emits a JNZ/JNE rel32 / B.NE imm19 with a fixed displacement.
- * How @a offJmp is applied is are target specific.
+ *
+ * The @a offTarget is applied x86-style, so zero means the next instruction.
+ * The unit is IEMNATIVEINSTR.
  */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
 {
@@ -2731,7 +2737,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzToFixed(PIEMRECOMPILERSTATE pReNativ
 
 /**
  * Emits a JBE/JNA rel32 / B.LS imm19 with a fixed displacement.
- * How @a offJmp is applied is are target specific.
+ *
+ * The @a offTarget is applied x86-style, so zero means the next instruction.
+ * The unit is IEMNATIVEINSTR.
  */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
 {
@@ -2747,7 +2755,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNativ
 
 /**
  * Emits a JA/JNBE rel32 / B.EQ imm19 with a fixed displacement.
- * How @a offJmp is applied is are target specific.
+ *
+ * The @a offTarget is applied x86-style, so zero means the next instruction.
+ * The unit is IEMNATIVEINSTR.
  */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
 {
@@ -2969,15 +2979,15 @@ iemNativeEmitTestAnyBitsInGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     /* ands xzr, src, [tmp|#imm] */
     uint32_t uImmR     = 0;
     uint32_t uImmNandS = 0;
-    if (Armv8A64ConvertMask32ToImmRImmS(uImm, &uImmNandS, &uImmR))
+    if (Armv8A64ConvertMask32ToImmRImmS(fBits, &uImmNandS, &uImmR))
     {
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-        pu32CodeBuf[off++] = Armv8A64MkInstrAndsImm(ARMV8_A64_REG_XZR, iGprDst, uImmNandS, uImmR, false /*f64Bit*/);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAndsImm(ARMV8_A64_REG_XZR, iGprSrc, uImmNandS, uImmR, false /*f64Bit*/);
     }
     else
     {
         /* Use temporary register for the 64-bit immediate. */
-        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, fBits);
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         pu32CodeBuf[off++] = Armv8A64MkInstrAnds(ARMV8_A64_REG_XZR, iGprSrc, iTmpReg, false /*f64Bit*/);
         iemNativeRegFreeTmpImm(pReNative, iTmpReg);
