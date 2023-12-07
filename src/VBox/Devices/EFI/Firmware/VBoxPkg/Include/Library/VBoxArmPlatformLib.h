@@ -126,5 +126,21 @@ EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformMmioStartGetPhysAddr(VOID);
  */
 UINTN EFIAPI VBoxArmPlatformMmioSizeGet(VOID);
 
+
+/**
+ * Returns the physical address of the start of the MMIO32 region.
+ *
+ * @returns Physical address of the MMIO32 region start.
+ */
+EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformMmio32StartGetPhysAddr(VOID);
+
+
+/**
+ * Returns the size of the MMIO32 region.
+ *
+ * @returns Size of the MMIO32 region.
+ */
+UINTN EFIAPI VBoxArmPlatformMmio32SizeGet(VOID);
+
 #endif
 

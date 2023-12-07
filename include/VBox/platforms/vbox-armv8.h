@@ -77,8 +77,12 @@ typedef struct VBOXPLATFORMARMV8
     uint64_t                    u64OffBackMmio;
     /** Size of the MMIO region in bytes, 0 if not available. */
     uint64_t                    cbMmio;
+    /** Offset backwards to the start of the MMIO32 region from the start of this descriptor, 0 if not available. */
+    uint64_t                    u64OffBackMmio32;
+    /** Size of the MMIO32 region in bytes, 0 if not available. */
+    uint64_t                    cbMmio32;
     /** Padding to 64KiB. */
-    uint8_t                     abPadding[_64K - 4 * sizeof(uint32_t) - 10 * sizeof(uint64_t)];
+    uint8_t                     abPadding[_64K - 4 * sizeof(uint32_t) - 12 * sizeof(uint64_t)];
 } VBOXPLATFORMARMV8;
 AssertCompileSize(VBOXPLATFORMARMV8, _64K);
 typedef VBOXPLATFORMARMV8 *PVBOXPLATFORMARMV8;

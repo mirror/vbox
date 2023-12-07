@@ -147,3 +147,24 @@ UINTN EFIAPI VBoxArmPlatformMmioSizeGet(VOID)
 
     return pDesc->cbMmio;
 }
+
+
+EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformMmio32StartGetPhysAddr(VOID)
+{
+    PCVBOXPLATFORMARMV8 pDesc = (PCVBOXPLATFORMARMV8)VBoxArmPlatformDescGet();
+    ASSERT(pDesc->u32Magic == VBOXPLATFORMARMV8_MAGIC);
+
+    if (!pDesc->cbMmio)
+        return 0;
+
+    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc - pDesc->u64OffBackMmio32);
+}
+
+
+UINTN EFIAPI VBoxArmPlatformMmio32SizeGet(VOID)
+{
+    PCVBOXPLATFORMARMV8 pDesc = (PCVBOXPLATFORMARMV8)VBoxArmPlatformDescGet();
+    ASSERT(pDesc->u32Magic == VBOXPLATFORMARMV8_MAGIC);
+
+    return pDesc->cbMmio32;
+}

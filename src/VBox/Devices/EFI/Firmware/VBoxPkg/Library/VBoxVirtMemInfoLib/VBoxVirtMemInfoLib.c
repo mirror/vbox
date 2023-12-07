@@ -45,7 +45,7 @@
 #include <Library/VBoxArmPlatformLib.h>
 
 // Number of Virtual Memory Map Descriptors
-#define MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS  6
+#define MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS  7
 
 /**
   Default library constructur that obtains the memory size from a PCD.
@@ -125,14 +125,23 @@ ArmVirtGetMemoryMap (
   VirtualMemoryTable[3].Length       = VBoxArmPlatformFdtSizeGet();
   VirtualMemoryTable[3].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_RO;
 
-  // Map the VBox descriptor region readonnly.
+  // Map the VBox descriptor region readonly.
   VirtualMemoryTable[4].PhysicalBase = VBoxArmPlatformDescGetPhysAddr();
   VirtualMemoryTable[4].VirtualBase  = VirtualMemoryTable[4].PhysicalBase;
   VirtualMemoryTable[4].Length       = VBoxArmPlatformDescSizeGet();
   VirtualMemoryTable[4].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_RO;
 
+  // Map the MMIO32 region if it exists.
+  if (VBoxArmPlatformMmio32SizeGet() != 0)
+  {
+    VirtualMemoryTable[5].PhysicalBase = VBoxArmPlatformMmio32StartGetPhysAddr();
+    VirtualMemoryTable[5].VirtualBase  = VirtualMemoryTable[5].PhysicalBase;
+    VirtualMemoryTable[5].Length       = VBoxArmPlatformMmio32SizeGet();
+    VirtualMemoryTable[5].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
+  }
+
   // End of Table
-  ZeroMem (&VirtualMemoryTable[5], sizeof (ARM_MEMORY_REGION_DESCRIPTOR));
+  ZeroMem (&VirtualMemoryTable[6], sizeof (ARM_MEMORY_REGION_DESCRIPTOR));
 
   for (UINTN i = 0; i < MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS; i++)
   {
