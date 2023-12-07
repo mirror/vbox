@@ -312,7 +312,11 @@ LibRtcInitialize (
   EFI_HANDLE  Handle;
 
   // Initialize RTC Base Address
+#ifdef VBOX
+  mPL031RtcBase = PcdGet64 (PcdPL031RtcBase);
+#else
   mPL031RtcBase = PcdGet32 (PcdPL031RtcBase);
+#endif
 
   // Declare the controller as EFI_MEMORY_RUNTIME
   Status = gDS->AddMemorySpace (

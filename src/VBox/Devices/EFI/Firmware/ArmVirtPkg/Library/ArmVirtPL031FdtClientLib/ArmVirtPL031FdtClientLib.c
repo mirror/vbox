@@ -66,9 +66,13 @@ ArmVirtPL031FdtClientLibConstructor (
   ASSERT (RegSize == 16);
 
   RegBase = SwapBytes64 (Reg[0]);
+#ifdef VBOX
+  PcdStatus = PcdSet64S (PcdPL031RtcBase, RegBase);
+#else
   ASSERT (RegBase < MAX_UINT32);
 
   PcdStatus = PcdSet32S (PcdPL031RtcBase, (UINT32)RegBase);
+#endif
   ASSERT_RETURN_ERROR (PcdStatus);
 
   DEBUG ((DEBUG_INFO, "Found PL031 RTC @ 0x%Lx\n", RegBase));

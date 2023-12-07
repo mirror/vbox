@@ -118,7 +118,7 @@
 
 [PcdsFixedAtBuild.common,PcdsDynamic.common]
   ## PL031 RealTimeClock
-  gArmPlatformTokenSpaceGuid.PcdPL031RtcBase|0x0|UINT32|0x00000024
+  gArmPlatformTokenSpaceGuid.PcdPL031RtcBase|0x0|UINT64|0x00000024 # VBox: Changed from UINT32 to UINT64
   gArmPlatformTokenSpaceGuid.PcdPL031RtcPpmAccuracy|300000000|UINT32|0x00000022
 
   gArmPlatformTokenSpaceGuid.PcdWatchdogCount|0x0|UINT32|0x00000033
