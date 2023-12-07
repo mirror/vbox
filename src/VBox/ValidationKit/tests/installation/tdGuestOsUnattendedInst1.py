@@ -250,8 +250,15 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         # downloading updates and doing database updates during installation.
         # We want predicable results.
         #
+        # On macOS however this will result in HostOnly networking being used
+        # with an incompatible IP address, resulting in the TXS service not being
+        # able to contact the host. Until this is fixed properly just get along
+        # with inconsistent results, still better than completely failing testcases.
+        #
         if eNic0AttachType is None:
-            if self.isLinux() \
+            if utils.getHostOs() != 'darwin' \
+               and oTestDrv.fpApiVer < 7.0 \
+               and self.isLinux() \
                and (   'ubuntu' in self.sKind.lower()
                     or 'debian' in self.sKind.lower()):
                 eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
