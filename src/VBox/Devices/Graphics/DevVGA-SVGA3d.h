@@ -87,9 +87,11 @@ typedef struct VMSVGA3D_MAPPED_SURFACE
     SVGA3dSurfaceFormat format;
     SVGA3dBox box;
     uint32_t cbBlock;        /* Size of pixel block, usualy of 1 pixel for uncompressed formats. */
+    uint32_t cxBlocks;
+    uint32_t cyBlocks;
     uint32_t cbRow;          /* Bytes per row. */
     uint32_t cbRowPitch;     /* Bytes between rows. */
-    uint32_t cRows;          /* Number of rows. */
+    uint32_t cRows;          /* Number of rows. It is greater than cxBlocks for planar formats. */
     uint32_t cbDepthPitch;   /* Bytes between planes. */
     void *pvData;
 } VMSVGA3D_MAPPED_SURFACE;
@@ -177,7 +179,8 @@ typedef struct VMSGA3D_BOX_DIMENSIONS
     uint32_t offBox;         /* Offset of the box in the miplevel. */
     uint32_t cbRow;          /* Bytes per row. */
     int32_t  cbPitch;        /* Bytes between rows. */
-    uint32_t cyBlocks;       /* Number of rows. */
+    uint32_t cyBlocks;       /* Image height in blocks. */
+    uint32_t cRows;          /* Number of rows. It is greater than cyBlocks for planar formats. */
     uint32_t cbDepthPitch;   /* Number of bytes between planes. */
 } VMSGA3D_BOX_DIMENSIONS;
 
@@ -339,7 +342,15 @@ void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow);
 
 uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
                                    uint32_t *pu32BlockWidth,
-                                   uint32_t *pu32BlockHeight);
+                                   uint32_t *pu32BlockHeight,
+                                   uint32_t *pcbPitchBlock);
+void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapSize,
+                                  uint32_t *pcBlocksX,
+                                  uint32_t *pcBlocksY,
+                                  uint32_t *pcbSurfacePitch,
+                                  uint32_t *pcbSurfacePlane,
+                                  uint32_t *pcbSurface);
+
 
 #ifdef LOG_ENABLED
 const char *vmsvga3dGetCapString(uint32_t idxCap);
@@ -550,7 +561,63 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnSurfaceStretchBltNonMSToMS,  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBindShaderIface,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnVBDXClearRenderTargetViewRegion, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dRenderTargetViewId renderTargetViewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXClearUAV,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dUAViewId viewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
 } VMSVGA3DBACKENDFUNCSDX;
+
+#define VMSVGA3D_BACKEND_INTERFACE_NAME_DXVIDEO "DXVIDEO"
+typedef struct
+{
+    DECLCALLBACKMEMBER(int, pfnVBDXDefineVideoProcessor,    (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGACOTableDXVideoProcessorEntry const *pEntry));
+    DECLCALLBACKMEMBER(int, pfnVBDXDefineVideoDecoderOutputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId, VBSVGACOTableDXVideoDecoderOutputViewEntry const *pEntry));
+    DECLCALLBACKMEMBER(int, pfnVBDXDefineVideoDecoder,      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGACOTableDXVideoDecoderEntry const *pEntry));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoDecoderBeginFrame,  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoDecoderSubmitBuffers, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, uint32_t cBuffer, VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoDecoderEndFrame,    (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId));
+    DECLCALLBACKMEMBER(int, pfnVBDXDefineVideoProcessorInputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId, VBSVGACOTableDXVideoProcessorInputViewEntry const *pEntry));
+    DECLCALLBACKMEMBER(int, pfnVBDXDefineVideoProcessorOutputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId, VBSVGACOTableDXVideoProcessorOutputViewEntry const *pEntry));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorBlt, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                                                       uint32_t OutputFrame, uint32_t StreamCount, VBSVGA3dVideoProcessorStream const *pVideoProcessorStreams));
+    DECLCALLBACKMEMBER(int, pfnVBDXDestroyVideoDecoder,     (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId));
+    DECLCALLBACKMEMBER(int, pfnVBDXDestroyVideoDecoderOutputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId));
+    DECLCALLBACKMEMBER(int, pfnVBDXDestroyVideoProcessor,   (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId));
+    DECLCALLBACKMEMBER(int, pfnVBDXDestroyVideoProcessorInputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId));
+    DECLCALLBACKMEMBER(int, pfnVBDXDestroyVideoProcessorOutputView, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputTargetRect, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint8 enable, SVGASignedRect const &outputRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputBackgroundColor, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 YCbCr, VBSVGA3dVideoColor const &color));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputColorSpace, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorColorSpace const &colorSpace));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputAlphaFillMode, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorAlphaFillMode fillMode, uint32 streamIndex));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputConstriction, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 enabled, uint32 width, uint32 height));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetOutputStereoMode, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 enable));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamFrameFormat, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 streamIndex, VBSVGA3dVideoFrameFormat format));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamColorSpace, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 streamIndex, VBSVGA3dVideoProcessorColorSpace colorSpace));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamOutputRate, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                       uint32 streamIndex, VBSVGA3dVideoProcessorOutputRate outputRate, uint32 repeatFrame, SVGA3dFraction64 const &customRate));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamSourceRect, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                       uint32 streamIndex, uint32 enable, SVGASignedRect const &sourceRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamDestRect, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                     uint32 streamIndex, uint32 enable, SVGASignedRect const &destRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamAlpha, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                  uint32 streamIndex, uint32 enable, float alpha));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamPalette, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                    uint32 streamIndex, uint32_t cEntries, uint32_t const *paEntries));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamPixelAspectRatio, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                             uint32 streamIndex, uint32 enable, SVGA3dFraction64 const &sourceRatio, SVGA3dFraction64 const &destRatio));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamLumaKey, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                    uint32 streamIndex, uint32 enable, float lower, float upper));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamStereoFormat, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                         uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorStereoFormat stereoFormat,
+                                                                         uint8 leftViewFrame0, uint8 baseViewFrame0, VBSVGA3dVideoProcessorStereoFlipMode flipMode, int32 monoOffset));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamAutoProcessingMode, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                               uint32 streamIndex, uint32 enable));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamFilter, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                   uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorFilter filter, int32 level));
+    DECLCALLBACKMEMBER(int, pfnVBDXVideoProcessorSetStreamRotation, (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                     uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorRotation rotation));
+    DECLCALLBACKMEMBER(int, pfnVBDXGetVideoCapability,      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoCapability capability, void *pvData, uint32 cbData, uint32 *pcbOut));
+    DECLCALLBACKMEMBER(int, pfnVBDXClearVDOV,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId viewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXClearVPIV,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId viewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
+    DECLCALLBACKMEMBER(int, pfnVBDXClearVPOV,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId viewId, SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect));
+} VMSVGA3DBACKENDFUNCSDXVIDEO;
 
 typedef struct VMSVGA3DBACKENDDESC
 {
@@ -676,6 +743,47 @@ int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC,
 int vmsvga3dDXSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
 
 int vmsvga3dVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdVBDXClearRenderTargetViewRegion const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+
+int vmsvga3dVBDXDefineVideoProcessor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessor const *pCmd);
+int vmsvga3dVBDXDefineVideoDecoderOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoDecoderOutputView const *pCmd);
+int vmsvga3dVBDXDefineVideoDecoder(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoDecoder const *pCmd);
+int vmsvga3dVBDXVideoDecoderBeginFrame(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderBeginFrame const *pCmd);
+int vmsvga3dVBDXVideoDecoderSubmitBuffers(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderSubmitBuffers const *pCmd, uint32_t cBuffer, VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc);
+int vmsvga3dVBDXVideoDecoderEndFrame(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderEndFrame const *pCmd);
+int vmsvga3dVBDXDefineVideoProcessorInputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessorInputView const *pCmd);
+int vmsvga3dVBDXDefineVideoProcessorOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessorOutputView const *pCmd);
+int vmsvga3dVBDXVideoProcessorBlt(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorBlt const *pCmd, uint32_t cbCmd);
+int vmsvga3dVBDXDestroyVideoDecoder(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoDecoder const *pCmd);
+int vmsvga3dVBDXDestroyVideoDecoderOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoDecoderOutputView const *pCmd);
+int vmsvga3dVBDXDestroyVideoProcessor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessor const *pCmd);
+int vmsvga3dVBDXDestroyVideoProcessorInputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessorInputView const *pCmd);
+int vmsvga3dVBDXDestroyVideoProcessorOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessorOutputView const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputTargetRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputBackgroundColor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputColorSpace(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputAlphaFillMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputConstriction(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputConstriction const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetOutputStereoMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamFrameFormat(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamColorSpace(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamOutputRate(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamSourceRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamDestRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamDestRect const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamAlpha(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamAlpha const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamPalette(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamPalette const *pCmd, uint32_t cEntries, uint32_t const *paEntries);
+int vmsvga3dVBDXVideoProcessorSetStreamPixelAspectRatio(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamLumaKey(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamStereoFormat(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamAutoProcessingMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamFilter(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamFilter const *pCmd);
+int vmsvga3dVBDXVideoProcessorSetStreamRotation(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamRotation const *pCmd);
+int vmsvga3dVBDXGetVideoCapability(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXGetVideoCapability const *pCmd);
+int vmsvga3dVBDXClearRTV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+int vmsvga3dVBDXClearUAV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+int vmsvga3dVBDXClearVDOV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+int vmsvga3dVBDXClearVPIV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+int vmsvga3dVBDXClearVPOV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView const *pCmd, uint32_t cRect, SVGASignedRect const *paRect);
+
 #endif /* VMSVGA3D_DX */
 
 

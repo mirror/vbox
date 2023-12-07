@@ -297,6 +297,47 @@ static const char *vmsvgaFifo3dCmdToString(SVGAFifo3dCmdId enmCmdId)
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DX_BIND_SHADER_IFACE);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_MAX);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_FUTURE_MAX);
+
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_DECODER_BEGIN_FRAME);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_DECODER_SUBMIT_BUFFERS);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_DECODER_END_FRAME);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_BLT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_COLOR_SPACE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_ALPHA_FILL_MODE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_CONSTRICTION);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_STEREO_MODE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FRAME_FORMAT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_COLOR_SPACE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_OUTPUT_RATE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_SOURCE_RECT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_DEST_RECT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ALPHA);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PALETTE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PIXEL_ASPECT_RATIO);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_LUMA_KEY);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_STEREO_FORMAT);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_AUTO_PROCESSING_MODE);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_CLEAR_RTV);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_CLEAR_UAV);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_CLEAR_VDOV);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_CLEAR_VPIV);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_DX_CLEAR_VPOV);
+        SVGA_CASE_ID2STR(VBSVGA_3D_CMD_MAX);
 #ifndef DEBUG_sunlover
         default: break; /* Compiler warning. */
 #endif
@@ -342,8 +383,8 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
         SVGA_CASE_ID2STR(SVGA_CMD_NOP_ERROR);
         SVGA_CASE_ID2STR(SVGA_CMD_MAX);
         default:
-            if (   u32Cmd >= SVGA_3D_CMD_BASE
-                && u32Cmd <  SVGA_3D_CMD_MAX)
+            if (   (u32Cmd >= SVGA_3D_CMD_BASE && u32Cmd < SVGA_3D_CMD_MAX)
+                || (u32Cmd >= VBSVGA_3D_CMD_BASE && u32Cmd < VBSVGA_3D_CMD_MAX))
                 return vmsvgaFifo3dCmdToString((SVGAFifo3dCmdId)u32Cmd);
     }
     return "UNKNOWN";
@@ -4263,6 +4304,558 @@ static int vmsvga3dCmdVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint3
 }
 
 
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR  VBSVGA_3D_CMD_BASE + 0 */
+static int vmsvga3dVBCmdDXDefineVideoProcessor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessor *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDefineVideoProcessor(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW  VBSVGA_3D_CMD_BASE + 1 */
+static int vmsvga3dVBCmdDXDefineVideoDecoderOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoDecoderOutputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDefineVideoDecoderOutputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER  VBSVGA_3D_CMD_BASE + 2 */
+static int vmsvga3dVBCmdDXDefineVideoDecoder(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoDecoder *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDefineVideoDecoder(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_DECODER_BEGIN_FRAME  VBSVGA_3D_CMD_BASE + 3 */
+static int vmsvga3dVBCmdDXVideoDecoderBeginFrame(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderBeginFrame *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoDecoderBeginFrame(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_DECODER_SUBMIT_BUFFERS  VBSVGA_3D_CMD_BASE + 4 */
+static int vmsvga3dVBCmdDXVideoDecoderSubmitBuffers(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderSubmitBuffers *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc = (VBSVGA3dVideoDecoderBufferDesc *)&pCmd[1];
+    uint32_t const cBuffer = (cbCmd - sizeof(*pCmd)) / sizeof(VBSVGA3dVideoDecoderBufferDesc);
+    return vmsvga3dVBDXVideoDecoderSubmitBuffers(pThisCC, idDXContext, pCmd, cBuffer, paBufferDesc);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_DECODER_END_FRAME  VBSVGA_3D_CMD_BASE + 5 */
+static int vmsvga3dVBCmdDXVideoDecoderEndFrame(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoDecoderEndFrame *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoDecoderEndFrame(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW  VBSVGA_3D_CMD_BASE + 6 */
+static int vmsvga3dVBCmdDXDefineVideoProcessorInputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessorInputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDefineVideoProcessorInputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW  VBSVGA_3D_CMD_BASE + 7 */
+static int vmsvga3dVBCmdDXDefineVideoProcessorOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDefineVideoProcessorOutputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDefineVideoProcessorOutputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_BLT  VBSVGA_3D_CMD_BASE + 8 */
+static int vmsvga3dVBCmdDXVideoProcessorBlt(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorBlt *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    return vmsvga3dVBDXVideoProcessorBlt(pThisCC, idDXContext, pCmd, cbCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER  VBSVGA_3D_CMD_BASE + 9 */
+static int vmsvga3dVBCmdDXDestroyVideoDecoder(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoDecoder *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDestroyVideoDecoder(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW  VBSVGA_3D_CMD_BASE + 10 */
+static int vmsvga3dVBCmdDXDestroyVideoDecoderOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoDecoderOutputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDestroyVideoDecoderOutputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR  VBSVGA_3D_CMD_BASE + 11 */
+static int vmsvga3dVBCmdDXDestroyVideoProcessor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessor *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDestroyVideoProcessor(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW  VBSVGA_3D_CMD_BASE + 12 */
+static int vmsvga3dVBCmdDXDestroyVideoProcessorInputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessorInputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDestroyVideoProcessorInputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW  VBSVGA_3D_CMD_BASE + 13 */
+static int vmsvga3dVBCmdDXDestroyVideoProcessorOutputView(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXDestroyVideoProcessorOutputView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXDestroyVideoProcessorOutputView(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT  VBSVGA_3D_CMD_BASE + 14 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputTargetRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputTargetRect(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR  VBSVGA_3D_CMD_BASE + 15 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputBackgroundColor(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputBackgroundColor(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_COLOR_SPACE  VBSVGA_3D_CMD_BASE + 16 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputColorSpace(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputColorSpace(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_ALPHA_FILL_MODE  VBSVGA_3D_CMD_BASE + 17 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputAlphaFillMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputAlphaFillMode(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_CONSTRICTION  VBSVGA_3D_CMD_BASE + 18 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputConstriction(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputConstriction const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputConstriction(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_STEREO_MODE  VBSVGA_3D_CMD_BASE + 19 */
+static int vmsvga3dVBCmdDXVideoProcessorSetOutputStereoMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetOutputStereoMode(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FRAME_FORMAT  VBSVGA_3D_CMD_BASE + 20 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamFrameFormat(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamFrameFormat(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_COLOR_SPACE  VBSVGA_3D_CMD_BASE + 21 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamColorSpace(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamColorSpace(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_OUTPUT_RATE  VBSVGA_3D_CMD_BASE + 22 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamOutputRate(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamOutputRate(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_SOURCE_RECT  VBSVGA_3D_CMD_BASE + 23 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamSourceRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamSourceRect(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_DEST_RECT  VBSVGA_3D_CMD_BASE + 24 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamDestRect(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamDestRect const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamDestRect(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ALPHA  VBSVGA_3D_CMD_BASE + 25 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamAlpha(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamAlpha const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamAlpha(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PALETTE  VBSVGA_3D_CMD_BASE + 26, */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamPalette(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamPalette const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    uint32_t const *paEntries = (uint32_t *)&pCmd[1];
+    uint32_t const cEntries = (cbCmd - sizeof(*pCmd)) / sizeof(uint32_t);
+    return vmsvga3dVBDXVideoProcessorSetStreamPalette(pThisCC, idDXContext, pCmd, cEntries, paEntries);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PIXEL_ASPECT_RATIO  VBSVGA_3D_CMD_BASE + 27 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamPixelAspectRatio(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamPixelAspectRatio(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_LUMA_KEY  VBSVGA_3D_CMD_BASE + 28 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamLumaKey(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamLumaKey(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_STEREO_FORMAT  VBSVGA_3D_CMD_BASE + 29 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamStereoFormat(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamStereoFormat(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_AUTO_PROCESSING_MODE  VBSVGA_3D_CMD_BASE + 30 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamAutoProcessingMode(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamAutoProcessingMode(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER  VBSVGA_3D_CMD_BASE + 31 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamFilter(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamFilter const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamFilter(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION  VBSVGA_3D_CMD_BASE + 32 */
+static int vmsvga3dVBCmdDXVideoProcessorSetStreamRotation(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXVideoProcessorSetStreamRotation const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXVideoProcessorSetStreamRotation(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY  VBSVGA_3D_CMD_BASE + 33 */
+static int vmsvga3dVBCmdDXGetVideoCapability(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXGetVideoCapability const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dVBDXGetVideoCapability(pThisCC, idDXContext, pCmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_CLEAR_RTV  VBSVGA_3D_CMD_BASE + 34 */
+static int vmsvga3dVBCmdDXClearRTV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearRTV(pThisCC, idDXContext, pCmd, cRect, cRect ? paRect : NULL);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_CLEAR_UAV  VBSVGA_3D_CMD_BASE + 35 */
+static int vmsvga3dVBCmdDXClearUAV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearUAV(pThisCC, idDXContext, pCmd, cRect, cRect ? paRect : NULL);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_CLEAR_VDOV  VBSVGA_3D_CMD_BASE + 36 */
+static int vmsvga3dVBCmdDXClearVDOV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearVDOV(pThisCC, idDXContext, pCmd, cRect, cRect ? paRect : NULL);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_CLEAR_VPIV  VBSVGA_3D_CMD_BASE + 37 */
+static int vmsvga3dVBCmdDXClearVPIV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearVPIV(pThisCC, idDXContext, pCmd, cRect, cRect ? paRect : NULL);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* VBSVGA_3D_CMD_DX_CLEAR_VPOV  VBSVGA_3D_CMD_BASE + 38 */
+static int vmsvga3dVBCmdDXClearVPOV(PVGASTATECC pThisCC, uint32_t idDXContext, VBSVGA3dCmdDXClearView *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
+    uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+    return vmsvga3dVBDXClearVPOV(pThisCC, idDXContext, pCmd, cRect, cRect ? paRect : NULL);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
 /** @def VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
  * Check that the 3D command has at least a_cbMin of payload bytes after the
  * header.  Will break out of the switch if it doesn't.
@@ -4291,12 +4884,6 @@ static int vmsvga3dCmdVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint3
  */
 int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXContext, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd)
 {
-    if (enmCmdId > SVGA_3D_CMD_MAX)
-    {
-        LogRelMax(16, ("VMSVGA: unsupported 3D command %d\n", enmCmdId));
-        ASSERT_GUEST_FAILED_RETURN(VERR_NOT_IMPLEMENTED);
-    }
-
     int rcParse = VINF_SUCCESS;
     PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
@@ -6215,6 +6802,318 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         break;
     }
 
+    case VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR:
+    {
+        VBSVGA3dCmdDXDefineVideoProcessor *pCmd = (VBSVGA3dCmdDXDefineVideoProcessor *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDefineVideoProcessor(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDefineVideoDecoderOutputView *pCmd = (VBSVGA3dCmdDXDefineVideoDecoderOutputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDefineVideoDecoderOutputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER:
+    {
+        VBSVGA3dCmdDXDefineVideoDecoder *pCmd = (VBSVGA3dCmdDXDefineVideoDecoder *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDefineVideoDecoder(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_DECODER_BEGIN_FRAME:
+    {
+        VBSVGA3dCmdDXVideoDecoderBeginFrame *pCmd = (VBSVGA3dCmdDXVideoDecoderBeginFrame *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoDecoderBeginFrame(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_DECODER_SUBMIT_BUFFERS:
+    {
+        VBSVGA3dCmdDXVideoDecoderSubmitBuffers *pCmd = (VBSVGA3dCmdDXVideoDecoderSubmitBuffers *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoDecoderSubmitBuffers(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_DECODER_END_FRAME:
+    {
+        VBSVGA3dCmdDXVideoDecoderEndFrame *pCmd = (VBSVGA3dCmdDXVideoDecoderEndFrame *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoDecoderEndFrame(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDefineVideoProcessorInputView *pCmd = (VBSVGA3dCmdDXDefineVideoProcessorInputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDefineVideoProcessorInputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDefineVideoProcessorOutputView *pCmd = (VBSVGA3dCmdDXDefineVideoProcessorOutputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDefineVideoProcessorOutputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_BLT:
+    {
+        VBSVGA3dCmdDXVideoProcessorBlt *pCmd = (VBSVGA3dCmdDXVideoProcessorBlt *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorBlt(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER:
+    {
+        VBSVGA3dCmdDXDestroyVideoDecoder *pCmd = (VBSVGA3dCmdDXDestroyVideoDecoder *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDestroyVideoDecoder(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDestroyVideoDecoderOutputView *pCmd = (VBSVGA3dCmdDXDestroyVideoDecoderOutputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDestroyVideoDecoderOutputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR:
+    {
+        VBSVGA3dCmdDXDestroyVideoProcessor *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessor *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDestroyVideoProcessor(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDestroyVideoProcessorInputView *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessorInputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDestroyVideoProcessorInputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW:
+    {
+        VBSVGA3dCmdDXDestroyVideoProcessorOutputView *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessorOutputView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXDestroyVideoProcessorOutputView(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputTargetRect(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputBackgroundColor(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_COLOR_SPACE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputColorSpace(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_ALPHA_FILL_MODE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputAlphaFillMode(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_CONSTRICTION:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputConstriction *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputConstriction *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputConstriction(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_STEREO_MODE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode *pCmd = (VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetOutputStereoMode(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FRAME_FORMAT:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamFrameFormat(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_COLOR_SPACE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamColorSpace(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_OUTPUT_RATE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamOutputRate(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_SOURCE_RECT:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamSourceRect(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_DEST_RECT:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamDestRect *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamDestRect *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamDestRect(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ALPHA:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamAlpha *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamAlpha *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamAlpha(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PALETTE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamPalette *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamPalette *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamPalette(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PIXEL_ASPECT_RATIO:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamPixelAspectRatio(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_LUMA_KEY:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamLumaKey(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_STEREO_FORMAT:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamStereoFormat(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_AUTO_PROCESSING_MODE:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamAutoProcessingMode(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamFilter *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamFilter *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamFilter(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION:
+    {
+        VBSVGA3dCmdDXVideoProcessorSetStreamRotation *pCmd = (VBSVGA3dCmdDXVideoProcessorSetStreamRotation *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXVideoProcessorSetStreamRotation(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY:
+    {
+        VBSVGA3dCmdDXGetVideoCapability *pCmd = (VBSVGA3dCmdDXGetVideoCapability *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXGetVideoCapability(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_CLEAR_RTV:
+    {
+        VBSVGA3dCmdDXClearView *pCmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXClearRTV(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_CLEAR_UAV:
+    {
+        VBSVGA3dCmdDXClearView *pCmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXClearUAV(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_CLEAR_VDOV:
+    {
+        VBSVGA3dCmdDXClearView *pCmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXClearVDOV(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_CLEAR_VPIV:
+    {
+        VBSVGA3dCmdDXClearView *pCmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXClearVPIV(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case VBSVGA_3D_CMD_DX_CLEAR_VPOV:
+    {
+        VBSVGA3dCmdDXClearView *pCmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dVBCmdDXClearVPOV(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
     /* Unsupported commands. */
     case SVGA_3D_CMD_DEAD4: /* SVGA_3D_CMD_VIDEO_CREATE_DECODER */
     case SVGA_3D_CMD_DEAD5: /* SVGA_3D_CMD_VIDEO_DESTROY_DECODER */
@@ -6228,6 +7127,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     case SVGA_3D_CMD_LEGACY_BASE:
     case SVGA_3D_CMD_MAX:
     case SVGA_3D_CMD_FUTURE_MAX:
+    case VBSVGA_3D_CMD_MAX:
 #ifndef DEBUG_sunlover
     default: /* Compiler warning. */
 #else

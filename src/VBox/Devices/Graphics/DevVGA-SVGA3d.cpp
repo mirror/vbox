@@ -234,7 +234,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
     pSurface->paMipmapLevels    = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(numMipLevels * pSurface->surfaceDesc.numArrayElements * sizeof(VMSVGA3DMIPMAPLEVEL));
     AssertReturn(pSurface->paMipmapLevels, VERR_NO_MEMORY);
 
-    pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format, &pSurface->cxBlock, &pSurface->cyBlock);
+    pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format, &pSurface->cxBlock, &pSurface->cyBlock, &pSurface->cbPitchBlock);
     AssertReturn(pSurface->cbBlock, VERR_INVALID_PARAMETER);
 
     /** @todo cbMemRemaining = value of SVGA_REG_MOB_MAX_SIZE */
@@ -253,38 +253,12 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
 
             uint32_t cBlocksX;
             uint32_t cBlocksY;
-            if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
-            {
-                cBlocksX = mipmapSize.width;
-                cBlocksY = mipmapSize.height;
-            }
-            else
-            {
-                cBlocksX = mipmapSize.width / pSurface->cxBlock;
-                if (mipmapSize.width % pSurface->cxBlock)
-                    ++cBlocksX;
-                cBlocksY = mipmapSize.height / pSurface->cyBlock;
-                if (mipmapSize.height % pSurface->cyBlock)
-                    ++cBlocksY;
-            }
-
-            AssertBreakStmt(cBlocksX > 0 && cBlocksY > 0 && mipmapSize.depth > 0, rc = VERR_INVALID_PARAMETER);
-
-            const uint32_t cMaxBlocksX = cbMemRemaining / pSurface->cbBlock;
-            AssertBreakStmt(cBlocksX < cMaxBlocksX, rc = VERR_INVALID_PARAMETER);
-
-            const uint32_t cbSurfacePitch = pSurface->cbBlock * cBlocksX;
-            LogFunc(("cbSurfacePitch=0x%x\n", cbSurfacePitch));
-
-            const uint32_t cMaxBlocksY = cbMemRemaining / cbSurfacePitch;
-            AssertBreakStmt(cBlocksY < cMaxBlocksY, rc = VERR_INVALID_PARAMETER);
-
-            const uint32_t cbSurfacePlane = cbSurfacePitch * cBlocksY;
-
-            const uint32_t cMaxDepth = cbMemRemaining / cbSurfacePlane;
-            AssertBreakStmt(mipmapSize.depth < cMaxDepth, rc = VERR_INVALID_PARAMETER);
-
-            const uint32_t cbSurface = cbSurfacePlane * mipmapSize.depth;
+            uint32_t cbSurfacePitch;
+            uint32_t cbSurfacePlane;
+            uint32_t cbSurface;
+            vmsvga3dSurfaceMipBufferSize(format, mipmapSize,
+                                         &cBlocksX, &cBlocksY, &cbSurfacePitch, &cbSurfacePlane, &cbSurface);
+            AssertBreakStmt(cbMemRemaining >= cbSurface, rc = VERR_INVALID_PARAMETER);
 
             PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iMipmap];
             pMipmapLevel->mipmapSize     = mipmapSize;
@@ -1610,12 +1584,14 @@ void vmsvga3dSurfaceMapInit(VMSVGA3D_MAPPED_SURFACE *pMap, VMSVGA3D_SURFACE_MAP 
     pMap->format       = pSurface->format;
     pMap->box          = *pBox;
     pMap->cbBlock      = pSurface->cbBlock;
-    pMap->cbRow        = cxBlocks * pSurface->cbBlock;
+    pMap->cxBlocks     = cxBlocks;
+    pMap->cyBlocks     = cyBlocks;
+    pMap->cbRow        = cxBlocks * pSurface->cbPitchBlock;
     pMap->cbRowPitch   = cbRowPitch;
-    pMap->cRows        = cyBlocks;
+    pMap->cRows        = (cyBlocks * pSurface->cbBlock) / pSurface->cbPitchBlock;
     pMap->cbDepthPitch = cbDepthPitch;
     pMap->pvData       = (uint8_t *)pvData
-                       + (pBox->x / pSurface->cxBlock) * pSurface->cbBlock
+                       + (pBox->x / pSurface->cxBlock) * pSurface->cbPitchBlock
                        + (pBox->y / pSurface->cyBlock) * cbRowPitch
                        + pBox->z * cbDepthPitch;
 }
@@ -1791,12 +1767,13 @@ int vmsvga3dGetBoxDimensions(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pI
     uint32_t const cBlocksY = (clipBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
 
     pResult->offSubresource = vmsvga3dCalcSubresourceOffset(pThisCC, pImage);
-    pResult->offBox   = (clipBox.x / pSurface->cxBlock) * pSurface->cbBlock
+    pResult->offBox   = (clipBox.x / pSurface->cxBlock) * pSurface->cbPitchBlock
                       + (clipBox.y / pSurface->cyBlock) * pMipLevel->cbSurfacePitch
                       + clipBox.z * pMipLevel->cbSurfacePlane;
-    pResult->cbRow    = cBlocksX * pSurface->cbBlock;
+    pResult->cbRow    = cBlocksX * pSurface->cbPitchBlock;
     pResult->cbPitch  = pMipLevel->cbSurfacePitch;
     pResult->cyBlocks = cBlocksY;
+    pResult->cRows    = (cBlocksY * pSurface->cbBlock) / pSurface->cbPitchBlock;
     pResult->cbDepthPitch = pMipLevel->cbSurfacePlane;
 
     return VINF_SUCCESS;

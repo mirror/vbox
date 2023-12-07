@@ -159,6 +159,7 @@ typedef struct VMSVGAR3STATE
     VMSVGA3DBACKENDFUNCSMAP *pFuncsMap;
     VMSVGA3DBACKENDFUNCSGBO *pFuncsGBO;
     VMSVGA3DBACKENDFUNCSDX  *pFuncsDX;
+    VMSVGA3DBACKENDFUNCSDXVIDEO *pFuncsDXVideo;
 # endif
 
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */

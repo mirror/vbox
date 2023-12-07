@@ -3722,7 +3722,8 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
         LogFunc(("[cid=%d] %s %d\n", (int32_t)idDXContext, vmsvgaR3FifoCmdToString(cmdId), cmdId));
 # ifdef LOG_ENABLED
 #  ifdef VBOX_WITH_VMSVGA3D
-        if (SVGA_3D_CMD_BASE <= cmdId && cmdId < SVGA_3D_CMD_MAX)
+        if (   (cmdId >= SVGA_3D_CMD_BASE && cmdId < SVGA_3D_CMD_MAX)
+            || (cmdId >= VBSVGA_3D_CMD_BASE && cmdId < VBSVGA_3D_CMD_MAX))
         {
             SVGA3dCmdHeader const *header = (SVGA3dCmdHeader *)pu8Cmd;
             svga_dump_command(cmdId, (uint8_t *)&header[1], header->size);
@@ -4019,8 +4020,9 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
             default:
             {
 # ifdef VBOX_WITH_VMSVGA3D
-                if (   cmdId >= SVGA_3D_CMD_BASE
-                    && cmdId <  SVGA_3D_CMD_MAX)
+                if (   (cmdId >= SVGA_3D_CMD_BASE && cmdId < SVGA_3D_CMD_MAX)
+                    || (   pThis->svga.fVBoxExtensions
+                        && (cmdId >= VBSVGA_3D_CMD_BASE && cmdId < VBSVGA_3D_CMD_MAX)))
                 {
                     RT_UNTRUSTED_VALIDATED_FENCE();
 
@@ -5283,8 +5285,9 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
             default:
 # ifdef VBOX_WITH_VMSVGA3D
-                if (    (int)enmCmdId >= SVGA_3D_CMD_BASE
-                    &&  (int)enmCmdId <  SVGA_3D_CMD_MAX)
+                if (   ((int)enmCmdId >= SVGA_3D_CMD_BASE && (int)enmCmdId <  SVGA_3D_CMD_MAX)
+                    || (   pThis->svga.fVBoxExtensions
+                        && ((int)enmCmdId >= VBSVGA_3D_CMD_BASE && (int)enmCmdId < VBSVGA_3D_CMD_MAX)))
                 {
                     RT_UNTRUSTED_VALIDATED_FENCE();
 
@@ -6586,6 +6589,8 @@ static void vmsvga3dR3Free3dInterfaces(PVGASTATECC pThisCC)
     pSVGAState->pFuncsGBO = NULL;
     RTMemFree(pSVGAState->pFuncsDX);
     pSVGAState->pFuncsDX = NULL;
+    RTMemFree(pSVGAState->pFuncsDXVideo);
+    pSVGAState->pFuncsDXVideo = NULL;
     RTMemFree(pSVGAState->pFuncsVGPU9);
     pSVGAState->pFuncsVGPU9 = NULL;
     RTMemFree(pSVGAState->pFuncs3D);
@@ -6625,6 +6630,7 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
         ENTRY_3D_INTERFACE(3D,    pFuncs3D),
         ENTRY_3D_INTERFACE(VGPU9, pFuncsVGPU9),
         ENTRY_3D_INTERFACE(DX,    pFuncsDX),
+        ENTRY_3D_INTERFACE(DXVIDEO, pFuncsDXVideo),
         ENTRY_3D_INTERFACE(MAP,   pFuncsMap),
         ENTRY_3D_INTERFACE(GBO,   pFuncsGBO),
     };
@@ -6777,7 +6783,15 @@ static void vmsvgaR3InitFifo3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
         uint32_t val = 0;
         int rc = vmsvga3dQueryCaps(pThisCC, (SVGA3dDevCapIndex)i, &val);
         if (RT_SUCCESS(rc))
+        {
+            if (!pThis->svga.fVBoxExtensions)
+            {
+                /* Hide extended VBoxSVGA capabilities. */
+                if (i == SVGA3D_DEVCAP_3D)
+                    val &= VBSVGA3D_CAP_3D;
+            }
             pThis->svga.au32DevCaps[i] = val;
+        }
         else
             pThis->svga.au32DevCaps[i] = 0;
 
@@ -7045,6 +7059,9 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
         pThis->svga.u32MaxHeight -= 256;
     }
     Log(("VMSVGA: Maximum size (%d,%d)\n", pThis->svga.u32MaxWidth, pThis->svga.u32MaxHeight));
+
+    /* VBox commands and capabilities are always enabled for VirtualBox PCI device. */
+    pThis->svga.fVBoxExtensions = !pThis->fVMSVGAPciId;
 
 # ifdef DEBUG_GMR_ACCESS
     /* Register the GMR access handler type. */

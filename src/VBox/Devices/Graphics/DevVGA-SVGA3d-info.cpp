@@ -667,7 +667,8 @@ void vmsvga3dAsciiPrint(PFNVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
     uint32_t cyPerChar = cy / cchMaxY + 1;
     /** @todo try keep aspect...   */
     uint32_t const cchLine = (cx + cxPerChar - 1) / cxPerChar;
-    uint32_t const cbSrcPixel = vmsvga3dSurfaceFormatSize(enmFormat, NULL, NULL);
+    uint32_t u32Dummy;
+    uint32_t const cbSrcPixel = vmsvga3dSurfaceFormatSize(enmFormat, &u32Dummy, &u32Dummy, &u32Dummy);
 
     /*
      * The very simple conversion we're doing in this function is based on
@@ -1748,7 +1749,8 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                     "%s" RTPATH_SLASH_STR "%s-%u-sid%u-%u%s.bmp",
                     pszPath, pszNamePrefix, u32Seq, pSurface->id, i, pszNameSuffix);
 
-        const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
+        uint32_t u32Dummy;
+        const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, &u32Dummy, &u32Dummy, &u32Dummy);
         int rc = vmsvga3dInfoBmpWrite(szFilepath,
                                       pSurface->paMipmapLevels[i].pSurfaceData,
                                       pSurface->paMipmapLevels[i].mipmapSize.width,

@@ -425,7 +425,7 @@ typedef struct VMSVGA3DMIPMAPLEVEL
     uint32_t                cBlocksY;
     /** Number of blocks: cBlocksX * cBlocksY * mipmapSize.depth. SSM: not saved, recalculated on load. */
     uint32_t                cBlocks;
-    /** The scanline/pitch size in bytes: at least cBlocksX * cbBlock. */
+    /** The scanline/pitch size in bytes: at least cBlocksX * cbPitchBlock. */
     uint32_t                cbSurfacePitch;
     /** The size (in bytes) of the mipmap plane: cbSurfacePitch * cBlocksY */
     uint32_t                cbSurfacePlane;
@@ -610,6 +610,7 @@ typedef struct VMSVGA3DSURFACE
 #endif
 
     uint32_t                cbBlock;        /* block/pixel size in bytes */
+    uint32_t                cbPitchBlock;   /* block/pixel size of one row in bytes */
     /* Dimensions of the surface block, usually 1x1 except for compressed formats. */
     uint32_t                cxBlock;        /* Block width in pixels. SSM: not saved, recalculated on load. */
     uint32_t                cyBlock;        /* Block height in pixels. SSM: not saved, recalculated on load. */
@@ -998,7 +999,7 @@ typedef struct VMSVGA3DDXCONTEXT
     /** Copy of the guest memory for this context. The guest will be updated on unbind. */
     SVGADXContextMobFormat    svgaDXContext;
     /* Context-Object Tables bound to this context. */
-    PVMSVGAMOB aCOTMobs[SVGA_COTABLE_MAX];
+    PVMSVGAMOB aCOTMobs[VBSVGA_NUM_COTABLES];
     struct
     {
         SVGACOTableDXRTViewEntry          *paRTView;
@@ -1025,6 +1026,17 @@ typedef struct VMSVGA3DDXCONTEXT
         uint32_t                           cQuery;
         uint32_t                           cShader;
         uint32_t                           cUAView;
+
+        VBSVGACOTableDXVideoProcessorEntry *paVideoProcessor;
+        VBSVGACOTableDXVideoDecoderOutputViewEntry  *paVideoDecoderOutputView;
+        VBSVGACOTableDXVideoDecoderEntry  *paVideoDecoder;
+        VBSVGACOTableDXVideoProcessorInputViewEntry  *paVideoProcessorInputView;
+        VBSVGACOTableDXVideoProcessorOutputViewEntry  *paVideoProcessorOutputView;
+        uint32_t                           cVideoProcessor;
+        uint32_t                           cVideoDecoderOutputView;
+        uint32_t                           cVideoDecoder;
+        uint32_t                           cVideoProcessorInputView;
+        uint32_t                           cVideoProcessorOutputView;
     } cot;
 } VMSVGA3DDXCONTEXT;
 /** Pointer to a VMSVGA3D DX context. */

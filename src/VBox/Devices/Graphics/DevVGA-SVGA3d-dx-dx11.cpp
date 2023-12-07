@@ -106,6 +106,8 @@ typedef struct DXDEVICE
     IDXGIFactory               *pDxgiFactory;          /* DXGI Factory. */
     D3D_FEATURE_LEVEL           FeatureLevel;
 
+    ID3D11VideoDevice          *pVideoDevice;
+    ID3D11VideoContext         *pVideoContext;
 #ifdef DX_COMMON_STAGING_BUFFER
     /* Staging buffer for transfer to surface buffers. */
     ID3D11Buffer              *pStagingBuffer;         /* The staging buffer resource. */
@@ -122,7 +124,10 @@ typedef enum VMSVGA3DBACKVIEWTYPE
     VMSVGA3D_VIEWTYPE_RENDERTARGET   = 1,
     VMSVGA3D_VIEWTYPE_DEPTHSTENCIL   = 2,
     VMSVGA3D_VIEWTYPE_SHADERRESOURCE = 3,
-    VMSVGA3D_VIEWTYPE_UNORDEREDACCESS = 4
+    VMSVGA3D_VIEWTYPE_UNORDEREDACCESS = 4,
+    VMSVGA3D_VIEWTYPE_VIDEODECODEROUTPUT = 5,
+    VMSVGA3D_VIEWTYPE_VIDEOPROCESSORINPUT = 6,
+    VMSVGA3D_VIEWTYPE_VIDEOPROCESSOROUTPUT = 7
 } VMSVGA3DBACKVIEWTYPE;
 
 /* Information about a texture view to track all created views:.
@@ -152,6 +157,9 @@ typedef struct DXVIEW
         ID3D11DepthStencilView   *pDepthStencilView;
         ID3D11ShaderResourceView *pShaderResourceView;
         ID3D11UnorderedAccessView *pUnorderedAccessView;
+        ID3D11VideoDecoderOutputView *pVideoDecoderOutputView;
+        ID3D11VideoProcessorInputView *pVideoProcessorInputView;
+        ID3D11VideoProcessorOutputView *pVideoProcessorOutputView;
     } u;
 
     RTLISTNODE nodeSurfaceView;                        /* Views are linked to the surface. */
@@ -278,6 +286,17 @@ typedef struct DXQUERY
     };
 } DXQUERY;
 
+typedef struct DXVIDEOPROCESSOR
+{
+    ID3D11VideoProcessorEnumerator *pEnum;
+    ID3D11VideoProcessor       *pVideoProcessor;
+} DXVIDEOPROCESSOR;
+
+typedef struct DXVIDEODECODER
+{
+    ID3D11VideoDecoder         *pVideoDecoder;
+} DXVIDEODECODER;
+
 typedef struct DXSTREAMOUTPUT
 {
     UINT                       cDeclarationEntry;
@@ -342,6 +361,17 @@ typedef struct VMSVGA3DBACKENDDXCONTEXT
     DXSTREAMOUTPUT            *paStreamOutput;
     DXVIEW                    *paUnorderedAccessView;
 
+    uint32_t                   cVideoProcessor;        /* paVideoProcessor */
+    uint32_t                   cVideoDecoderOutputView; /* paVideoDecoderOutputView */
+    uint32_t                   cVideoDecoder;          /* paVideoDecoder */
+    uint32_t                   cVideoProcessorInputView; /* paVideoProcessorInputView */
+    uint32_t                   cVideoProcessorOutputView; /* paVideoProcessorOutputView */
+    DXVIDEOPROCESSOR          *paVideoProcessor;
+    DXVIEW                    *paVideoDecoderOutputView;
+    DXVIDEODECODER            *paVideoDecoder;
+    DXVIEW                    *paVideoProcessorInputView;
+    DXVIEW                    *paVideoProcessorOutputView;
+
     uint32_t                   cSOTarget;              /* How many SO targets are currently set (SetSOTargets) */
 
     DXBOUNDRESOURCES           resources;
@@ -360,6 +390,8 @@ typedef struct VMSVGA3DBACKEND
     PFN_D3D_DISASSEMBLE        pfnD3DDisassemble;
 
     DXDEVICE                   dxDevice;               /* Device for the VMSVGA3D context independent operation. */
+    UINT                       VendorId;
+    UINT                       DeviceId;
 
     DXBOUNDRESOURCES           resources;              /* What is currently applied to the pipeline. */
 
@@ -381,6 +413,11 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool f
 static int dxDestroyShader(DXSHADER *pDXShader);
 static int dxDestroyQuery(DXQUERY *pDXQuery);
 static int dxReadBuffer(DXDEVICE *pDevice, ID3D11Buffer *pBuffer, UINT Offset, UINT Bytes, void **ppvData, uint32_t *pcbData);
+
+static int dxCreateVideoProcessor(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGACOTableDXVideoProcessorEntry const *pEntry);
+static void dxDestroyVideoProcessor(DXVIDEOPROCESSOR *pDXVideoProcessor);
+static int dxCreateVideoDecoder(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGACOTableDXVideoDecoderEntry const *pEntry);
+static void dxDestroyVideoDecoder(DXVIDEODECODER *pDXVideoDecoder);
 
 static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext);
 static void BlitRelease(D3D11BLITTER *pBlitter);
@@ -474,8 +511,8 @@ static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
         case SVGA3D_G16R16:                     return DXGI_FORMAT_;
         case SVGA3D_A16B16G16R16:               return DXGI_FORMAT_;
         case SVGA3D_UYVY:                       return DXGI_FORMAT_;
-        case SVGA3D_YUY2:                       return DXGI_FORMAT_;
-        case SVGA3D_NV12:                       return DXGI_FORMAT_;
+        case SVGA3D_YUY2:                       return DXGI_FORMAT_YUY2;
+        case SVGA3D_NV12:                       return DXGI_FORMAT_NV12;
         case SVGA3D_FORMAT_DEAD2:               break; /* Old SVGA3D_AYUV */
         case SVGA3D_R32G32B32A32_TYPELESS:      return DXGI_FORMAT_R32G32B32A32_TYPELESS;
         case SVGA3D_R32G32B32A32_UINT:          return DXGI_FORMAT_R32G32B32A32_UINT;
@@ -593,7 +630,7 @@ static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
         case SVGA3D_BC7_TYPELESS:               return DXGI_FORMAT_BC7_TYPELESS;
         case SVGA3D_BC7_UNORM:                  return DXGI_FORMAT_BC7_UNORM;
         case SVGA3D_BC7_UNORM_SRGB:             return DXGI_FORMAT_BC7_UNORM_SRGB;
-        case SVGA3D_AYUV:                       return DXGI_FORMAT_;
+        case SVGA3D_AYUV:                       return DXGI_FORMAT_AYUV;
 
         case SVGA3D_FORMAT_INVALID:
         case SVGA3D_FORMAT_MAX:                 break;
@@ -895,6 +932,264 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
 }
 
 
+static void dxLogRelVideoCaps(ID3D11VideoDevice *pVideoDevice)
+{
+#define FORMAT_ELEMENT(aFormat) { aFormat, #aFormat }
+    static const struct {
+        DXGI_FORMAT format;
+        char const *pszFormat;
+    } aVDFormats[] =
+    {
+        FORMAT_ELEMENT(DXGI_FORMAT_NV12),
+        FORMAT_ELEMENT(DXGI_FORMAT_YUY2),
+        FORMAT_ELEMENT(DXGI_FORMAT_AYUV),
+    };
+
+    static const struct {
+        DXGI_FORMAT format;
+        char const *pszFormat;
+    } aVPFormats[] =
+    {
+        // Queried from driver
+        FORMAT_ELEMENT(DXGI_FORMAT_R8_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_R16_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_NV12),
+        FORMAT_ELEMENT(DXGI_FORMAT_420_OPAQUE),
+        FORMAT_ELEMENT(DXGI_FORMAT_P010),
+        FORMAT_ELEMENT(DXGI_FORMAT_P016),
+        FORMAT_ELEMENT(DXGI_FORMAT_YUY2),
+        FORMAT_ELEMENT(DXGI_FORMAT_NV11),
+        FORMAT_ELEMENT(DXGI_FORMAT_AYUV),
+        FORMAT_ELEMENT(DXGI_FORMAT_R16G16B16A16_FLOAT),
+        FORMAT_ELEMENT(DXGI_FORMAT_Y216),
+        FORMAT_ELEMENT(DXGI_FORMAT_B8G8R8X8_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_B8G8R8A8_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_R8G8B8A8_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_R10G10B10A2_UNORM),
+
+        // From format table
+        FORMAT_ELEMENT(DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM),
+        FORMAT_ELEMENT(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB),
+        FORMAT_ELEMENT(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB),
+        FORMAT_ELEMENT(DXGI_FORMAT_Y410),
+        FORMAT_ELEMENT(DXGI_FORMAT_Y416),
+        FORMAT_ELEMENT(DXGI_FORMAT_Y210),
+        FORMAT_ELEMENT(DXGI_FORMAT_AI44),
+        FORMAT_ELEMENT(DXGI_FORMAT_IA44),
+        FORMAT_ELEMENT(DXGI_FORMAT_P8),
+        FORMAT_ELEMENT(DXGI_FORMAT_A8P8),
+    };
+#undef FORMAT_ELEMENT
+
+    static char const *apszFilterName[] =
+    {
+        "BRIGHTNESS",
+        "CONTRAST",
+        "HUE",
+        "SATURATION",
+        "NOISE_REDUCTION",
+        "EDGE_ENHANCEMENT",
+        "ANAMORPHIC_SCALING",
+        "STEREO_ADJUSTMENT",
+    };
+
+    HRESULT hr;
+
+    UINT cProfiles = pVideoDevice->GetVideoDecoderProfileCount();
+    for (UINT i = 0; i < cProfiles; ++i)
+    {
+        GUID DecodeProfile;
+        hr = pVideoDevice->GetVideoDecoderProfile(i, &DecodeProfile);
+        if (SUCCEEDED(hr))
+            LogRel(("VMSVGA: DecodeProfile[%d]: %RTuuid\n", i, &DecodeProfile));
+    }
+
+    D3D11_VIDEO_DECODER_DESC DecoderDesc;
+    // Commonly used D3D11_DECODER_PROFILE_H264_VLD_NOFGT
+    DecoderDesc.Guid         = { 0x1b81be68, 0xa0c7,0x11d3,0xb9,0x84,0x00,0xc0,0x4f,0x2e,0x73,0xc5 };
+    DecoderDesc.SampleWidth  = 1920;
+    DecoderDesc.SampleHeight = 1080;
+    DecoderDesc.OutputFormat = DXGI_FORMAT_NV12;
+
+    UINT cConfigs = 0;
+    hr = pVideoDevice->GetVideoDecoderConfigCount(&DecoderDesc, &cConfigs);
+    for (UINT i = 0; i < cConfigs; ++i)
+    {
+        D3D11_VIDEO_DECODER_CONFIG DecoderConfig;
+        hr = pVideoDevice->GetVideoDecoderConfig(&DecoderDesc, i, &DecoderConfig);
+        if (SUCCEEDED(hr))
+        {
+            LogRel2(("VMSVGA: Config[%d]:\n"
+                     "VMSVGA:   %RTuuid\n"
+                     "VMSVGA:   %RTuuid\n"
+                     "VMSVGA:   %RTuuid\n"
+                     "VMSVGA:   BitstreamRaw 0x%x\n"
+                     "VMSVGA:   MBCRO        0x%x\n"
+                     "VMSVGA:   RDH          0x%x\n"
+                     "VMSVGA:   SR8          0x%x\n"
+                     "VMSVGA:   R8Sub        0x%x\n"
+                     "VMSVGA:   SH8or9C      0x%x\n"
+                     "VMSVGA:   SRInterlea   0x%x\n"
+                     "VMSVGA:   IRUnsigned   0x%x\n"
+                     "VMSVGA:   RDAccel      0x%x\n"
+                     "VMSVGA:   HInvScan     0x%x\n"
+                     "VMSVGA:   SpecIDCT     0x%x\n"
+                     "VMSVGA:   4GCoefs      0x%x\n"
+                     "VMSVGA:   MinRTBC      0x%x\n"
+                     "VMSVGA:   DecSpec      0x%x\n"
+                     ,
+                     i, &DecoderConfig.guidConfigBitstreamEncryption,
+                     &DecoderConfig.guidConfigMBcontrolEncryption,
+                     &DecoderConfig.guidConfigResidDiffEncryption,
+                     DecoderConfig.ConfigBitstreamRaw,
+                     DecoderConfig.ConfigMBcontrolRasterOrder,
+                     DecoderConfig.ConfigResidDiffHost,
+                     DecoderConfig.ConfigSpatialResid8,
+                     DecoderConfig.ConfigResid8Subtraction,
+                     DecoderConfig.ConfigSpatialHost8or9Clipping,
+                     DecoderConfig.ConfigSpatialResidInterleaved,
+                     DecoderConfig.ConfigIntraResidUnsigned,
+                     DecoderConfig.ConfigResidDiffAccelerator,
+                     DecoderConfig.ConfigHostInverseScan,
+                     DecoderConfig.ConfigSpecificIDCT,
+                     DecoderConfig.Config4GroupedCoefs,
+                     DecoderConfig.ConfigMinRenderTargetBuffCount,
+                     DecoderConfig.ConfigDecoderSpecific
+                   ));
+        }
+    }
+
+    for (UINT idxFormat = 0; idxFormat < RT_ELEMENTS(aVDFormats); ++idxFormat)
+    {
+        BOOL Supported;
+        hr = pVideoDevice->CheckVideoDecoderFormat(&DecoderDesc.Guid, aVDFormats[idxFormat].format, &Supported);
+        if (FAILED(hr))
+            Supported = FALSE;
+        LogRel(("VMSVGA: %s: %s\n", aVDFormats[idxFormat].pszFormat, Supported ? "supported" : "-"));
+    }
+
+    /* An arbitrary common video content. */
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC Desc;
+    Desc.InputFrameFormat            = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+    Desc.InputFrameRate.Numerator    = 25;
+    Desc.InputFrameRate.Denominator  = 1;
+    Desc.InputWidth                  = 1920;
+    Desc.InputHeight                 = 1080;
+    Desc.OutputFrameRate.Numerator   = 30;
+    Desc.OutputFrameRate.Denominator = 1;
+    Desc.OutputWidth                 = 864;
+    Desc.OutputHeight                = 486;
+    Desc.Usage                       = D3D11_VIDEO_USAGE_OPTIMAL_QUALITY;
+
+    ID3D11VideoProcessorEnumerator *pEnum = 0;
+    hr = pVideoDevice->CreateVideoProcessorEnumerator(&Desc, &pEnum);
+    if (SUCCEEDED(hr))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(aVPFormats); ++i)
+        {
+            UINT Flags;
+            hr = pEnum->CheckVideoProcessorFormat(aVPFormats[i].format, &Flags);
+            if (FAILED(hr))
+                Flags = 0;
+            LogRel(("VMSVGA: %s: flags %x\n", aVPFormats[i].pszFormat, Flags));
+        }
+
+        D3D11_VIDEO_PROCESSOR_CAPS Caps;
+        hr = pEnum->GetVideoProcessorCaps(&Caps);
+        if (SUCCEEDED(hr))
+        {
+            LogRel(("VMSVGA: VideoProcessorCaps:\n"
+                    "VMSVGA:   DeviceCaps %x\n"
+                    "VMSVGA:   FeatureCaps %x\n"
+                    "VMSVGA:   FilterCaps %x\n"
+                    "VMSVGA:   InputFormatCaps %x\n"
+                    "VMSVGA:   AutoStreamCaps %x\n"
+                    "VMSVGA:   StereoCaps %x\n"
+                    "VMSVGA:   RateConversionCapsCount %d\n"
+                    "VMSVGA:   MaxInputStreams %d\n"
+                    "VMSVGA:   MaxStreamStates %d\n"
+                    "",
+                    Caps.DeviceCaps,
+                    Caps.FeatureCaps,
+                    Caps.FilterCaps,
+                    Caps.InputFormatCaps,
+                    Caps.AutoStreamCaps,
+                    Caps.StereoCaps,
+                    Caps.RateConversionCapsCount,
+                    Caps.MaxInputStreams,
+                    Caps.MaxStreamStates
+                  ));
+
+            for (unsigned i = 0; i < RT_ELEMENTS(apszFilterName); ++i)
+            {
+                if (Caps.FilterCaps & (1 << i))
+                {
+                    D3D11_VIDEO_PROCESSOR_FILTER_RANGE Range;
+                    hr = pEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &Range);
+                    if (SUCCEEDED(hr))
+                    {
+                        LogRel(("VMSVGA: Filter[%s]: Min %d, Max %d, Default %d, Multiplier " FLOAT_FMT_STR "\n",
+                                 apszFilterName[i],
+                                 Range.Minimum,
+                                 Range.Maximum,
+                                 Range.Default,
+                                 FLOAT_FMT_ARGS(Range.Multiplier)
+                                ));
+                    }
+                }
+            }
+
+            for (unsigned idxRateCaps = 0; idxRateCaps < Caps.RateConversionCapsCount; ++idxRateCaps)
+            {
+                D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS RateCaps;
+                hr = pEnum->GetVideoProcessorRateConversionCaps(idxRateCaps, &RateCaps);
+                if (SUCCEEDED(hr))
+                {
+                    LogRel(("VMSVGA: RateConversionCaps[%u]:\n"
+                            "VMSVGA:   PastFrames %d\n"
+                            "VMSVGA:   FutureFrames %d\n"
+                            "VMSVGA:   ProcessorCaps %x\n"
+                            "VMSVGA:   ITelecineCaps %x\n"
+                            "VMSVGA:   CustomRateCount %d\n"
+                            "",
+                            idxRateCaps,
+                            RateCaps.PastFrames,
+                            RateCaps.FutureFrames,
+                            RateCaps.ProcessorCaps,
+                            RateCaps.ITelecineCaps,
+                            RateCaps.CustomRateCount
+                          ));
+
+                    for (unsigned idxCustomRateCap = 0; idxCustomRateCap < RateCaps.CustomRateCount; ++idxCustomRateCap)
+                    {
+                        D3D11_VIDEO_PROCESSOR_CUSTOM_RATE Rate;
+                        hr = pEnum->GetVideoProcessorCustomRate(idxRateCaps, idxCustomRateCap, &Rate);
+                        if (SUCCEEDED(hr))
+                        {
+                            LogRel(("VMSVGA:   CustomRate[%u][%u]:\n"
+                                    "VMSVGA:     CustomRate %d/%d\n"
+                                    "VMSVGA:     OutputFrames %d\n"
+                                    "VMSVGA:     InputInterlaced %d\n"
+                                    "VMSVGA:     InputFramesOrFields %d\n"
+                                    "",
+                                    idxRateCaps, idxCustomRateCap,
+                                    Rate.CustomRate.Numerator,
+                                    Rate.CustomRate.Denominator,
+                                    Rate.OutputFrames,
+                                    Rate.InputInterlaced,
+                                    Rate.InputFramesOrFields
+                                  ));
+                        }
+                    }
+                }
+            }
+        }
+
+        D3D_RELEASE(pEnum);
+    }
+}
+
+
 static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
 {
     int rc = VINF_SUCCESS;
@@ -911,6 +1206,14 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
         pDXDevice->pDxgiFactory->AddRef();
 
         pDXDevice->FeatureLevel = pBackend->dxDevice.FeatureLevel;
+
+        pDXDevice->pVideoDevice = pBackend->dxDevice.pVideoDevice;
+        if (pDXDevice->pVideoDevice)
+            pDXDevice->pVideoDevice->AddRef();
+
+        pDXDevice->pVideoContext = pBackend->dxDevice.pVideoContext;
+        if (pDXDevice->pVideoContext)
+            pDXDevice->pVideoContext->AddRef();
 
 #ifdef DX_COMMON_STAGING_BUFFER
         pDXDevice->pStagingBuffer = 0;
@@ -979,9 +1282,9 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
                          D3D_RELEASE(pImmediateContext); D3D_RELEASE(pDXDevice->pDevice); D3D_RELEASE(pDevice),
                          VERR_NOT_SUPPORTED);
 
+        HRESULT hr2;
 #ifdef DEBUG
         /* Break into debugger when DX runtime detects anything unusual. */
-        HRESULT hr2;
         ID3D11Debug *pDebug = 0;
         hr2 = pDXDevice->pDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&pDebug);
         if (SUCCEEDED(hr2))
@@ -1033,6 +1336,26 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
 
             D3D_RELEASE(pDxgiDevice);
         }
+
+        /* Failure to query VideoDevice should be ignored. */
+        hr2 = pDXDevice->pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&pDXDevice->pVideoDevice);
+        Assert(SUCCEEDED(hr2));
+        if (SUCCEEDED(hr2))
+        {
+            hr2 = pDXDevice->pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&pDXDevice->pVideoContext);
+            Assert(SUCCEEDED(hr2));
+            if (SUCCEEDED(hr2))
+            {
+                LogRel(("VMSVGA: VideoDevice available\n"));
+            }
+            else
+            {
+                D3D_RELEASE(pDXDevice->pVideoDevice);
+                pDXDevice->pVideoContext = NULL;
+            }
+        }
+        else
+            pDXDevice->pVideoDevice = NULL;
     }
 
     if (SUCCEEDED(hr))
@@ -1053,6 +1376,9 @@ static void dxDeviceDestroy(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
 #ifdef DX_COMMON_STAGING_BUFFER
     D3D_RELEASE(pDevice->pStagingBuffer);
 #endif
+
+    D3D_RELEASE(pDevice->pVideoDevice);
+    D3D_RELEASE(pDevice->pVideoContext);
 
     D3D_RELEASE(pDevice->pDxgiFactory);
     D3D_RELEASE(pDevice->pImmediateContext);
@@ -1174,10 +1500,17 @@ static DXDEVICE *dxDeviceFromCid(uint32_t cid, PVMSVGA3DSTATE pState)
 
 static DXDEVICE *dxDeviceFromContext(PVMSVGA3DSTATE p3dState, VMSVGA3DDXCONTEXT *pDXContext)
 {
+    DXDEVICE *pDXDevice;
     if (pDXContext && !p3dState->pBackend->fSingleDevice)
-        return &pDXContext->pBackendDXContext->dxDevice;
+        pDXDevice = &pDXContext->pBackendDXContext->dxDevice;
+    else
+        pDXDevice = &p3dState->pBackend->dxDevice;
 
-    return &p3dState->pBackend->dxDevice;
+#ifdef DEBUG
+    HRESULT hr = pDXDevice->pDevice->GetDeviceRemovedReason();
+    Assert(SUCCEEDED(hr));
+#endif
+    return pDXDevice;
 }
 
 
@@ -2193,6 +2526,7 @@ static UINT dxBindFlags(SVGA3dSurfaceAllFlags surfaceFlags)
     if (surfaceFlags & SVGA3D_SURFACE_BIND_DEPTH_STENCIL)   BindFlags |= D3D11_BIND_DEPTH_STENCIL;
     if (surfaceFlags & SVGA3D_SURFACE_BIND_STREAM_OUTPUT)   BindFlags |= D3D11_BIND_STREAM_OUTPUT;
     if (surfaceFlags & SVGA3D_SURFACE_BIND_UAVIEW)          BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+    if (surfaceFlags & SVGA3D_SURFACE_RESERVED1)            BindFlags |= D3D11_BIND_DECODER;
 
     return BindFlags;
 }
@@ -2369,9 +2703,12 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
     /* Create typeless textures, unless it is a depth/stencil resource,
      * because D3D11_BIND_DEPTH_STENCIL requires a depth/stencil format.
      * Always use typeless format for staging/dynamic resources.
+     * Use explicit format for screen targets. For example they can be used
+     * for video processor output view, which does not allow a typeless format.
      */
     DXGI_FORMAT const dxgiFormatTypeless = dxGetDxgiTypelessFormat(dxgiFormat);
-    if (!dxIsDepthStencilFormat(dxgiFormat))
+    if (   !dxIsDepthStencilFormat(dxgiFormat)
+        && !RT_BOOL(pSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET))
         dxgiFormat = dxgiFormatTypeless;
 
     /* Format for staging resource is always the typeless one. */
@@ -3053,6 +3390,35 @@ static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCON
 }
 
 
+static int dxEnsureResource(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t sid,
+                            PVMSVGA3DSURFACE *ppSurface, ID3D11Resource **ppResource)
+{
+    /* Get corresponding resource for sid. Create the surface if does not yet exist. */
+    PVMSVGA3DSURFACE pSurface;
+    int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
+    AssertRCReturn(rc, rc);
+
+    if (pSurface->pBackendSurface == NULL)
+    {
+        /* Create the actual texture or buffer. */
+        /** @todo One function to create all resources from surfaces. */
+        if (pSurface->format != SVGA3D_BUFFER)
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSurface);
+        else
+            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
+
+        AssertRCReturn(rc, rc);
+    }
+
+    ID3D11Resource *pResource = dxResource(pThisCC->svga.p3dState, pSurface, pDXContext);
+    AssertReturn(pResource, VERR_INVALID_STATE);
+
+    *ppSurface = pSurface;
+    *ppResource  = pResource;
+    return VINF_SUCCESS;
+}
+
+
 #ifdef DX_COMMON_STAGING_BUFFER
 static int dxStagingBufferRealloc(DXDEVICE *pDXDevice, uint32_t cbRequiredSize)
 {
@@ -3159,14 +3525,20 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
             hr = pAdapter->GetDesc(&desc);
             if (SUCCEEDED(hr))
             {
+                pBackend->VendorId = desc.VendorId;
+                pBackend->DeviceId = desc.DeviceId;
+
                 char sz[RT_ELEMENTS(desc.Description)];
                 for (unsigned i = 0; i < RT_ELEMENTS(desc.Description); ++i)
                     sz[i] = (char)desc.Description[i];
-                LogRelMax(1, ("VMSVGA: Adapter [%s]\n", sz));
+                LogRelMax(1, ("VMSVGA: Adapter %04x:%04x [%s]\n", pBackend->VendorId, pBackend->DeviceId, sz));
             }
 
             pAdapter->Release();
         }
+
+        if (pBackend->dxDevice.pVideoDevice)
+            dxLogRelVideoCaps(pBackend->dxDevice.pVideoDevice);
     }
     return rc;
 }
@@ -3923,7 +4295,9 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
     switch (idx3dCaps)
     {
     case SVGA3D_DEVCAP_3D:
-        *pu32Val = 1;
+        *pu32Val = VBSVGA3D_CAP_3D;
+        if (pState->pBackend->dxDevice.pVideoDevice)
+            *pu32Val |= VBSVGA3D_CAP_VIDEO;
         break;
 
     case SVGA3D_DEVCAP_MAX_LIGHTS:
@@ -4952,8 +5326,27 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool f
                         RT_ZERO(*pEntry);
                         break;
                     }
-                    default:
+                    case VMSVGA3D_VIEWTYPE_VIDEODECODEROUTPUT:
+                    {
+                        VBSVGACOTableDXVideoDecoderOutputViewEntry *pEntry = &pDXContext->cot.paVideoDecoderOutputView[pIter->viewId];
+                        RT_ZERO(*pEntry);
+                        break;
+                    }
+                    case VMSVGA3D_VIEWTYPE_VIDEOPROCESSORINPUT:
+                    {
+                        VBSVGACOTableDXVideoProcessorInputViewEntry *pEntry = &pDXContext->cot.paVideoProcessorInputView[pIter->viewId];
+                        RT_ZERO(*pEntry);
+                        break;
+                    }
+                    case VMSVGA3D_VIEWTYPE_VIDEOPROCESSOROUTPUT:
+                    {
+                        VBSVGACOTableDXVideoProcessorOutputViewEntry *pEntry = &pDXContext->cot.paVideoProcessorOutputView[pIter->viewId];
+                        RT_ZERO(*pEntry);
+                        break;
+                    }
+                    case VMSVGA3D_VIEWTYPE_NONE:
                         AssertFailed();
+                        break;
                 }
             }
         }
@@ -5089,6 +5482,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTAT
         || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
         /** @todo This is generic code and should be in DevVGA-SVGA3d.cpp for backends which support Map/Unmap. */
+        /** @todo Use vmsvga3dGetBoxDimensions because it does clipping and calculations. */
         uint32_t const u32GuestBlockX = pBox->srcx / pSurface->cxBlock;
         uint32_t const u32GuestBlockY = pBox->srcy / pSurface->cyBlock;
         Assert(u32GuestBlockX * pSurface->cxBlock == pBox->srcx);
@@ -5305,6 +5699,32 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
             for (uint32_t i = 0; i < pBackendDXContext->cUnorderedAccessView; ++i)
                 D3D_RELEASE(pBackendDXContext->paUnorderedAccessView[i].u.pUnorderedAccessView);
         }
+        if (pBackendDXContext->paVideoProcessor)
+        {
+            for (uint32_t i = 0; i < pBackendDXContext->cVideoProcessor; ++i)
+                dxDestroyVideoProcessor(&pBackendDXContext->paVideoProcessor[i]);
+        }
+        if (pBackendDXContext->paVideoDecoderOutputView)
+        {
+            /** @todo dxViewDestroy? */
+            for (uint32_t i = 0; i < pBackendDXContext->cVideoDecoderOutputView; ++i)
+                D3D_RELEASE(pBackendDXContext->paVideoDecoderOutputView[i].u.pVideoDecoderOutputView);
+        }
+        if (pBackendDXContext->paVideoDecoder)
+        {
+            for (uint32_t i = 0; i < pBackendDXContext->cVideoDecoder; ++i)
+                dxDestroyVideoDecoder(&pBackendDXContext->paVideoDecoder[i]);
+        }
+        if (pBackendDXContext->paVideoProcessorInputView)
+        {
+            for (uint32_t i = 0; i < pBackendDXContext->cVideoProcessorInputView; ++i)
+                D3D_RELEASE(pBackendDXContext->paVideoProcessorInputView[i].u.pVideoProcessorInputView);
+        }
+        if (pBackendDXContext->paVideoProcessorOutputView)
+        {
+            for (uint32_t i = 0; i < pBackendDXContext->cVideoProcessorOutputView; ++i)
+                D3D_RELEASE(pBackendDXContext->paVideoProcessorOutputView[i].u.pVideoProcessorOutputView);
+        }
 
         RTMemFreeZ(pBackendDXContext->papBlendState, sizeof(pBackendDXContext->papBlendState[0]) * pBackendDXContext->cBlendState);
         RTMemFreeZ(pBackendDXContext->papDepthStencilState, sizeof(pBackendDXContext->papDepthStencilState[0]) * pBackendDXContext->cDepthStencilState);
@@ -5318,6 +5738,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         RTMemFreeZ(pBackendDXContext->paShader, sizeof(pBackendDXContext->paShader[0]) * pBackendDXContext->cShader);
         RTMemFreeZ(pBackendDXContext->paStreamOutput, sizeof(pBackendDXContext->paStreamOutput[0]) * pBackendDXContext->cStreamOutput);
         RTMemFreeZ(pBackendDXContext->paUnorderedAccessView, sizeof(pBackendDXContext->paUnorderedAccessView[0]) * pBackendDXContext->cUnorderedAccessView);
+        RTMemFreeZ(pBackendDXContext->paVideoProcessor, sizeof(pBackendDXContext->paVideoProcessor[0]) * pBackendDXContext->cVideoProcessor);
+        RTMemFreeZ(pBackendDXContext->paVideoDecoderOutputView, sizeof(pBackendDXContext->paVideoDecoderOutputView[0]) * pBackendDXContext->cVideoDecoderOutputView);
+        RTMemFreeZ(pBackendDXContext->paVideoDecoder, sizeof(pBackendDXContext->paVideoDecoder[0]) * pBackendDXContext->cVideoDecoder);
+        RTMemFreeZ(pBackendDXContext->paVideoProcessorInputView, sizeof(pBackendDXContext->paVideoProcessorInputView[0]) * pBackendDXContext->cVideoProcessorInputView);
+        RTMemFreeZ(pBackendDXContext->paVideoProcessorOutputView, sizeof(pBackendDXContext->paVideoProcessorOutputView[0]) * pBackendDXContext->cVideoProcessorOutputView);
 
         /* Destroy backend surfaces which belong to this context. */
         /** @todo The context should have a list of surfaces (and also shared resources). */
@@ -5445,7 +5870,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
             float *pValuesF = (float *)initialData.pSysMem;
             for (unsigned i = 0; i < sizeInBytes / sizeof(float) / 4; ++i)
             {
-                Log(("ConstantF[%d]: " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR "\n",
+                Log(("ConstantF[%d]: " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ",\n",
                      i, FLOAT_FMT_ARGS(pValuesF[i*4 + 0]), FLOAT_FMT_ARGS(pValuesF[i*4 + 1]), FLOAT_FMT_ARGS(pValuesF[i*4 + 2]), FLOAT_FMT_ARGS(pValuesF[i*4 + 3])));
             }
         }
@@ -6095,7 +6520,7 @@ static void dxDbgDumpVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
                         dxDbgLogVertexElement(pElement->Format, pu8VertexData + pElement->AlignedByteOffset);
                 }
 
-                Log8((" }\n"));
+                Log8((" },\n"));
 
                 if (pBufferPipeline->stride == 0)
                     break;
@@ -6189,7 +6614,7 @@ static void dxDbgDumpIndexedVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT p
                         }
                     }
 
-                    Log8((" }\n"));
+                    Log8((" },\n"));
 
                     if (pVB->stride == 0)
                         break;
@@ -6259,7 +6684,7 @@ static void dxDbgDumpInstanceData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXCon
                         dxDbgLogVertexElement(pElement->Format, pu8Vertex + pElement->AlignedByteOffset);
                     }
                 }
-                Log8((" }\n"));
+                Log8((" },\n"));
 
                 vmsvga3dBackSurfaceUnmap(pThisCC, &image, &mapVB, /* fWritten =  */ false);
             }
@@ -9226,6 +9651,140 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
             }
             break;
         case SVGA_COTABLE_MAX: break; /* Compiler warning */
+        case VBSVGA_COTABLE_VIDEOPROCESSOR:
+            if (pBackendDXContext->paVideoProcessor)
+            {
+                /* Destroy the no longer used entries. */
+                for (uint32_t i = cValidEntries; i < pBackendDXContext->cVideoProcessor; ++i)
+                    dxDestroyVideoProcessor(&pBackendDXContext->paVideoProcessor[i]);
+            }
+
+            rc = dxCOTableRealloc((void **)&pBackendDXContext->paVideoProcessor, &pBackendDXContext->cVideoProcessor,
+                                  sizeof(pBackendDXContext->paVideoProcessor[0]), pDXContext->cot.cVideoProcessor, cValidEntries);
+            AssertRCBreak(rc);
+
+            for (uint32_t i = 0; i < cValidEntries; ++i)
+            {
+                VBSVGACOTableDXVideoProcessorEntry const *pEntry = &pDXContext->cot.paVideoProcessor[i];
+                if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
+                    continue; /* Skip uninitialized entry. */
+
+                DXVIDEOPROCESSOR *pDXVideoProcessor = &pBackendDXContext->paVideoProcessor[i];
+                if (pDXVideoProcessor->pVideoProcessor == NULL)
+                    dxCreateVideoProcessor(pThisCC, pDXContext, i, pEntry);
+            }
+            break;
+        case VBSVGA_COTABLE_VDOV:
+            if (pBackendDXContext->paVideoDecoderOutputView)
+            {
+                /* Destroy the no longer used entries. */
+                for (uint32_t i = 0; i < pBackendDXContext->cVideoDecoderOutputView; ++i)
+                {
+                    DXVIEW *pDXView = &pBackendDXContext->paVideoDecoderOutputView[i];
+                    if (i < cValidEntries)
+                        dxViewRemoveFromList(pDXView); /* Remove from list because DXVIEW array will be reallocated. */
+                    else
+                        dxViewDestroy(pDXView);
+                }
+            }
+
+            rc = dxCOTableRealloc((void **)&pBackendDXContext->paVideoDecoderOutputView, &pBackendDXContext->cVideoDecoderOutputView,
+                                  sizeof(pBackendDXContext->paVideoDecoderOutputView[0]), pDXContext->cot.cVideoDecoderOutputView, cValidEntries);
+            AssertRCBreak(rc);
+
+            for (uint32_t i = 0; i < cValidEntries; ++i)
+            {
+                VBSVGACOTableDXVideoDecoderOutputViewEntry const *pEntry = &pDXContext->cot.paVideoDecoderOutputView[i];
+                if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
+                    continue; /* Skip uninitialized entry. */
+
+                DXVIEW *pDXView = &pBackendDXContext->paVideoDecoderOutputView[i];
+                if (pDXView->u.pView)
+                    dxViewAddToList(pThisCC, pDXView);
+            }
+            break;
+        case VBSVGA_COTABLE_VIDEODECODER:
+            if (pBackendDXContext->paVideoDecoder)
+            {
+                /* Destroy the no longer used entries. */
+                for (uint32_t i = cValidEntries; i < pBackendDXContext->cVideoDecoder; ++i)
+                    dxDestroyVideoDecoder(&pBackendDXContext->paVideoDecoder[i]);
+            }
+
+            rc = dxCOTableRealloc((void **)&pBackendDXContext->paVideoDecoder, &pBackendDXContext->cVideoDecoder,
+                                  sizeof(pBackendDXContext->paVideoDecoder[0]), pDXContext->cot.cVideoDecoder, cValidEntries);
+            AssertRCBreak(rc);
+
+            for (uint32_t i = 0; i < cValidEntries; ++i)
+            {
+                VBSVGACOTableDXVideoDecoderEntry const *pEntry = &pDXContext->cot.paVideoDecoder[i];
+                if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
+                    continue; /* Skip uninitialized entry. */
+
+                DXVIDEODECODER *pDXVideoDecoder = &pBackendDXContext->paVideoDecoder[i];
+                if (pDXVideoDecoder->pVideoDecoder == NULL)
+                    dxCreateVideoDecoder(pThisCC, pDXContext, i, pEntry);
+            }
+            break;
+        case VBSVGA_COTABLE_VPIV:
+            if (pBackendDXContext->paVideoProcessorInputView)
+            {
+                /* Destroy the no longer used entries. */
+                for (uint32_t i = 0; i < pBackendDXContext->cVideoProcessorInputView; ++i)
+                {
+                    DXVIEW *pDXView = &pBackendDXContext->paVideoProcessorInputView[i];
+                    if (i < cValidEntries)
+                        dxViewRemoveFromList(pDXView); /* Remove from list because DXVIEW array will be reallocated. */
+                    else
+                        dxViewDestroy(pDXView);
+                }
+            }
+
+            rc = dxCOTableRealloc((void **)&pBackendDXContext->paVideoProcessorInputView, &pBackendDXContext->cVideoProcessorInputView,
+                                  sizeof(pBackendDXContext->paVideoProcessorInputView[0]), pDXContext->cot.cVideoProcessorInputView, cValidEntries);
+            AssertRCBreak(rc);
+
+            for (uint32_t i = 0; i < cValidEntries; ++i)
+            {
+                VBSVGACOTableDXVideoProcessorInputViewEntry const *pEntry = &pDXContext->cot.paVideoProcessorInputView[i];
+                if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
+                    continue; /* Skip uninitialized entry. */
+
+                DXVIEW *pDXView = &pBackendDXContext->paVideoProcessorInputView[i];
+                if (pDXView->u.pView)
+                    dxViewAddToList(pThisCC, pDXView);
+            }
+            break;
+        case VBSVGA_COTABLE_VPOV:
+            if (pBackendDXContext->paVideoProcessorOutputView)
+            {
+                /* Destroy the no longer used entries. */
+                for (uint32_t i = 0; i < pBackendDXContext->cVideoProcessorOutputView; ++i)
+                {
+                    DXVIEW *pDXView = &pBackendDXContext->paVideoProcessorOutputView[i];
+                    if (i < cValidEntries)
+                        dxViewRemoveFromList(pDXView); /* Remove from list because DXVIEW array will be reallocated. */
+                    else
+                        dxViewDestroy(pDXView);
+                }
+            }
+
+            rc = dxCOTableRealloc((void **)&pBackendDXContext->paVideoProcessorOutputView, &pBackendDXContext->cVideoProcessorOutputView,
+                                  sizeof(pBackendDXContext->paVideoProcessorOutputView[0]), pDXContext->cot.cVideoProcessorOutputView, cValidEntries);
+            AssertRCBreak(rc);
+
+            for (uint32_t i = 0; i < cValidEntries; ++i)
+            {
+                VBSVGACOTableDXVideoProcessorOutputViewEntry const *pEntry = &pDXContext->cot.paVideoProcessorOutputView[i];
+                if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
+                    continue; /* Skip uninitialized entry. */
+
+                DXVIEW *pDXView = &pBackendDXContext->paVideoProcessorOutputView[i];
+                if (pDXView->u.pView)
+                    dxViewAddToList(pThisCC, pDXView);
+            }
+            break;
+        case VBSVGA_COTABLE_MAX: break; /* Compiler warning */
 #ifndef DEBUG_sunlover
         default: break; /* Compiler warning. */
 #endif
@@ -9907,6 +10466,1519 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShaderIface(PVGASTATECC pThisCC, PVMS
 }
 
 
+/*
+ *
+ * Video decoding and processing callbacks.
+ *
+ */
+
+/*
+ * Conversion between the device and D3D11 constants.
+ */
+
+static D3D11_VIDEO_FRAME_FORMAT dxVideoFrameFormat(VBSVGA3dVideoFrameFormat FrameFormat)
+{
+    switch (FrameFormat)
+    {
+        case VBSVGA3D_VIDEO_FRAME_FORMAT_PROGRESSIVE:                   return D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+        case VBSVGA3D_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST:    return D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
+        case VBSVGA3D_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST: return D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+}
+
+
+static D3D11_VIDEO_USAGE dxVideoUsage(VBSVGA3dVideoUsage Usage)
+{
+    switch (Usage)
+    {
+        case VBSVGA3D_VIDEO_USAGE_PLAYBACK_NORMAL: return D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+        case VBSVGA3D_VIDEO_USAGE_OPTIMAL_SPEED:   return D3D11_VIDEO_USAGE_OPTIMAL_SPEED;
+        case VBSVGA3D_VIDEO_USAGE_OPTIMAL_QUALITY: return D3D11_VIDEO_USAGE_OPTIMAL_QUALITY;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+}
+
+
+static D3D11_VDOV_DIMENSION dxVDOVDimension(VBSVGA3dVDOVDimension ViewDimension)
+{
+    switch (ViewDimension)
+    {
+        case VBSVGA3D_VDOV_DIMENSION_UNKNOWN:   return D3D11_VDOV_DIMENSION_UNKNOWN;
+        case VBSVGA3D_VDOV_DIMENSION_TEXTURE2D: return D3D11_VDOV_DIMENSION_TEXTURE2D;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VDOV_DIMENSION_UNKNOWN;
+}
+
+
+static D3D11_VPIV_DIMENSION dxVPIVDimension(VBSVGA3dVPIVDimension ViewDimension)
+{
+    switch (ViewDimension)
+    {
+        case VBSVGA3D_VPIV_DIMENSION_UNKNOWN:   return D3D11_VPIV_DIMENSION_UNKNOWN;
+        case VBSVGA3D_VPIV_DIMENSION_TEXTURE2D: return D3D11_VPIV_DIMENSION_TEXTURE2D;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VPIV_DIMENSION_UNKNOWN;
+}
+
+
+static D3D11_VPOV_DIMENSION dxVPOVDimension(VBSVGA3dVPOVDimension ViewDimension)
+{
+    switch (ViewDimension)
+    {
+        case VBSVGA3D_VPOV_DIMENSION_UNKNOWN:        return D3D11_VPOV_DIMENSION_UNKNOWN;
+        case VBSVGA3D_VPOV_DIMENSION_TEXTURE2D:      return D3D11_VPOV_DIMENSION_TEXTURE2D;
+        case VBSVGA3D_VPOV_DIMENSION_TEXTURE2DARRAY: return D3D11_VPOV_DIMENSION_TEXTURE2DARRAY;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VPOV_DIMENSION_UNKNOWN;
+}
+
+
+static D3D11_VIDEO_DECODER_BUFFER_TYPE dxVideoDecoderBufferType(VBSVGA3dVideoDecoderBufferType BufferType)
+{
+    switch (BufferType)
+    {
+        case VBSVGA3D_VD_BUFFER_PICTURE_PARAMETERS:          return D3D11_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS;
+        case VBSVGA3D_VD_BUFFER_MACROBLOCK_CONTROL:          return D3D11_VIDEO_DECODER_BUFFER_MACROBLOCK_CONTROL;
+        case VBSVGA3D_VD_BUFFER_RESIDUAL_DIFFERENCE:         return D3D11_VIDEO_DECODER_BUFFER_RESIDUAL_DIFFERENCE;
+        case VBSVGA3D_VD_BUFFER_DEBLOCKING_CONTROL:          return D3D11_VIDEO_DECODER_BUFFER_DEBLOCKING_CONTROL;
+        case VBSVGA3D_VD_BUFFER_INVERSE_QUANTIZATION_MATRIX: return D3D11_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX;
+        case VBSVGA3D_VD_BUFFER_SLICE_CONTROL:               return D3D11_VIDEO_DECODER_BUFFER_SLICE_CONTROL;
+        case VBSVGA3D_VD_BUFFER_BITSTREAM:                   return D3D11_VIDEO_DECODER_BUFFER_BITSTREAM;
+        case VBSVGA3D_VD_BUFFER_MOTION_VECTOR:               return D3D11_VIDEO_DECODER_BUFFER_MOTION_VECTOR;
+        case VBSVGA3D_VD_BUFFER_FILM_GRAIN:                  return D3D11_VIDEO_DECODER_BUFFER_FILM_GRAIN;
+        default:
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+    return D3D11_VIDEO_DECODER_BUFFER_BITSTREAM;
+}
+
+
+/*
+ * D3D11 wrappers.
+ */
+
+static void dxVideoProcessorSetOutputTargetRect(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint8 enable, SVGASignedRect const &outputRect)
+{
+    RECT OutputRect;
+    OutputRect.left   = outputRect.left;
+    OutputRect.top    = outputRect.top;
+    OutputRect.right  = outputRect.right;
+    OutputRect.bottom = outputRect.bottom;
+
+    pDXDevice->pVideoContext->VideoProcessorSetOutputTargetRect(pDXVideoProcessor->pVideoProcessor, RT_BOOL(enable), &OutputRect);
+}
+
+
+static void dxVideoProcessorSetOutputBackgroundColor(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint32 YCbCr, VBSVGA3dVideoColor const &color)
+{
+    D3D11_VIDEO_COLOR Color;
+    Color.RGBA.R = color.r;
+    Color.RGBA.G = color.g;
+    Color.RGBA.B = color.b;
+    Color.RGBA.A = color.a;
+
+    pDXDevice->pVideoContext->VideoProcessorSetOutputBackgroundColor(pDXVideoProcessor->pVideoProcessor, RT_BOOL(YCbCr), &Color);
+}
+
+
+static void dxVideoProcessorSetOutputColorSpace(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, VBSVGA3dVideoProcessorColorSpace const &colorSpace)
+{
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE ColorSpace;
+    ColorSpace.Usage         = colorSpace.Usage;
+    ColorSpace.RGB_Range     = colorSpace.RGB_Range;
+    ColorSpace.YCbCr_Matrix  = colorSpace.YCbCr_Matrix;
+    ColorSpace.YCbCr_xvYCC   = colorSpace.YCbCr_xvYCC;
+    ColorSpace.Nominal_Range = colorSpace.Nominal_Range;
+    ColorSpace.Reserved      = colorSpace.Reserved;
+
+    pDXDevice->pVideoContext->VideoProcessorSetOutputColorSpace(pDXVideoProcessor->pVideoProcessor, &ColorSpace);
+}
+
+
+static void dxVideoProcessorSetOutputAlphaFillMode(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, VBSVGA3dVideoProcessorAlphaFillMode fillMode, uint32 streamIndex)
+{
+    D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE AlphaFillMode = (D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE)fillMode;
+
+    pDXDevice->pVideoContext->VideoProcessorSetOutputAlphaFillMode(pDXVideoProcessor->pVideoProcessor, AlphaFillMode, streamIndex);
+}
+
+
+static void dxVideoProcessorSetOutputConstriction(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint32 enable, uint32 width, uint32 height)
+{
+    SIZE Size;
+    Size.cx = width;
+    Size.cy = height;
+
+    pDXDevice->pVideoContext->VideoProcessorSetOutputConstriction(pDXVideoProcessor->pVideoProcessor, RT_BOOL(enable), Size);
+}
+
+
+static void dxVideoProcessorSetOutputStereoMode(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint32 enable)
+{
+    pDXDevice->pVideoContext->VideoProcessorSetOutputStereoMode(pDXVideoProcessor->pVideoProcessor, RT_BOOL(enable));
+}
+
+
+static void dxVideoProcessorSetStreamFrameFormat(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint32 streamIndex, VBSVGA3dVideoFrameFormat format)
+{
+    D3D11_VIDEO_FRAME_FORMAT FrameFormat = (D3D11_VIDEO_FRAME_FORMAT)format;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamFrameFormat(pDXVideoProcessor->pVideoProcessor, streamIndex, FrameFormat);
+}
+
+
+static void dxVideoProcessorSetStreamColorSpace(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, uint32 streamIndex, VBSVGA3dVideoProcessorColorSpace colorSpace)
+{
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE ColorSpace;
+    ColorSpace.Usage         = colorSpace.Usage;
+    ColorSpace.RGB_Range     = colorSpace.RGB_Range;
+    ColorSpace.YCbCr_Matrix  = colorSpace.YCbCr_Matrix;
+    ColorSpace.YCbCr_xvYCC   = colorSpace.YCbCr_xvYCC;
+    ColorSpace.Nominal_Range = colorSpace.Nominal_Range;
+    ColorSpace.Reserved      = colorSpace.Reserved;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamColorSpace(pDXVideoProcessor->pVideoProcessor, streamIndex, &ColorSpace);
+}
+
+
+static void dxVideoProcessorSetStreamOutputRate(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                                uint32 streamIndex, VBSVGA3dVideoProcessorOutputRate outputRate, uint32 repeatFrame, SVGA3dFraction64 const &customRate)
+{
+    D3D11_VIDEO_PROCESSOR_OUTPUT_RATE OutputRate = (D3D11_VIDEO_PROCESSOR_OUTPUT_RATE)outputRate;
+    DXGI_RATIONAL CustomRate;
+    CustomRate.Numerator   = customRate.numerator;
+    CustomRate.Denominator = customRate.denominator;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamOutputRate(pDXVideoProcessor->pVideoProcessor, streamIndex, OutputRate, RT_BOOL(repeatFrame), &CustomRate);
+}
+
+
+static void dxVideoProcessorSetStreamSourceRect(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                                uint32 streamIndex, uint32 enable, SVGASignedRect const &sourceRect)
+{
+    RECT Rect;
+    Rect.left   = sourceRect.left;
+    Rect.top    = sourceRect.top;
+    Rect.right  = sourceRect.right;
+    Rect.bottom = sourceRect.bottom;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamSourceRect(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), &Rect);
+}
+
+
+static void dxVideoProcessorSetStreamDestRect(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                              uint32 streamIndex, uint32 enable, SVGASignedRect const &destRect)
+{
+    RECT Rect;
+    Rect.left   = destRect.left;
+    Rect.top    = destRect.top;
+    Rect.right  = destRect.right;
+    Rect.bottom = destRect.bottom;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamDestRect(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), &Rect);
+}
+
+
+static void dxVideoProcessorSetStreamAlpha(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                           uint32 streamIndex, uint32 enable, float alpha)
+{
+    pDXDevice->pVideoContext->VideoProcessorSetStreamAlpha(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), alpha);
+}
+
+
+static void dxVideoProcessorSetStreamPalette(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                             uint32 streamIndex, uint32_t cEntries, uint32_t const *paEntries)
+{
+    pDXDevice->pVideoContext->VideoProcessorSetStreamPalette(pDXVideoProcessor->pVideoProcessor, streamIndex, cEntries, paEntries);
+}
+
+
+static void dxVideoProcessorSetStreamPixelAspectRatio(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                                      uint32 streamIndex, uint32 enable, SVGA3dFraction64 const &sourceRatio, SVGA3dFraction64 const &destRatio)
+{
+    DXGI_RATIONAL SourceAspectRatio;
+    SourceAspectRatio.Numerator   = sourceRatio.numerator;
+    SourceAspectRatio.Denominator = sourceRatio.denominator;
+
+    DXGI_RATIONAL DestinationAspectRatio;
+    DestinationAspectRatio.Numerator   = destRatio.numerator;
+    DestinationAspectRatio.Denominator = destRatio.denominator;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamPixelAspectRatio(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), &SourceAspectRatio, &DestinationAspectRatio);
+}
+
+
+static void dxVideoProcessorSetStreamLumaKey(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                             uint32 streamIndex, uint32 enable, float lower, float upper)
+{
+    pDXDevice->pVideoContext->VideoProcessorSetStreamLumaKey(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), lower, upper);
+}
+
+
+static void dxVideoProcessorSetStreamStereoFormat(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                                  uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorStereoFormat stereoFormat,
+                                                  uint8 leftViewFrame0, uint8 baseViewFrame0, VBSVGA3dVideoProcessorStereoFlipMode flipMode, int32 monoOffset)
+{
+    D3D11_VIDEO_PROCESSOR_STEREO_FORMAT Format = (D3D11_VIDEO_PROCESSOR_STEREO_FORMAT)stereoFormat;
+    D3D11_VIDEO_PROCESSOR_STEREO_FLIP_MODE FlipMode = (D3D11_VIDEO_PROCESSOR_STEREO_FLIP_MODE)flipMode;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamStereoFormat(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), Format, RT_BOOL(leftViewFrame0), RT_BOOL(baseViewFrame0), FlipMode, monoOffset);
+}
+
+
+static void dxVideoProcessorSetStreamAutoProcessingMode(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                                        uint32 streamIndex, uint32 enable)
+{
+    pDXDevice->pVideoContext->VideoProcessorSetStreamAutoProcessingMode(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable));
+}
+
+
+static void dxVideoProcessorSetStreamFilter(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                            uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorFilter filter, int32 level)
+{
+    D3D11_VIDEO_PROCESSOR_FILTER Filter = (D3D11_VIDEO_PROCESSOR_FILTER)filter;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamFilter(pDXVideoProcessor->pVideoProcessor, streamIndex, Filter, RT_BOOL(enable), level);
+}
+
+
+static void dxVideoProcessorSetStreamRotation(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor,
+                                              uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorRotation rotation)
+{
+    D3D11_VIDEO_PROCESSOR_ROTATION Rotation = (D3D11_VIDEO_PROCESSOR_ROTATION)rotation;
+
+    pDXDevice->pVideoContext->VideoProcessorSetStreamRotation(pDXVideoProcessor->pVideoProcessor, streamIndex, RT_BOOL(enable), Rotation);
+}
+
+
+static int dxCreateVideoDecoderOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId, VBSVGACOTableDXVideoDecoderOutputViewEntry const *pEntry)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoDevice, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSurface;
+    ID3D11Resource *pResource;
+    int rc = dxEnsureResource(pThisCC, pDXContext, pEntry->sid, &pSurface, &pResource);
+    AssertRCReturn(rc, rc);
+
+    DXVIEW *pView = &pDXContext->pBackendDXContext->paVideoDecoderOutputView[videoDecoderOutputViewId];
+    Assert(pView->u.pView == NULL);
+
+    D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC Desc;
+    RT_ZERO(Desc);
+    memcpy(&Desc.DecodeProfile, &pEntry->desc.DecodeProfile, sizeof(GUID));
+    Desc.ViewDimension        = dxVDOVDimension(pEntry->desc.ViewDimension);
+    Desc.Texture2D.ArraySlice = pEntry->desc.Texture2D.ArraySlice;
+
+    ID3D11VideoDecoderOutputView *pVDOView;
+    HRESULT hr = pDXDevice->pVideoDevice->CreateVideoDecoderOutputView(pResource, &Desc, &pVDOView);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return dxViewInit(pView, pSurface, pDXContext, videoDecoderOutputViewId, VMSVGA3D_VIEWTYPE_VIDEODECODEROUTPUT, pVDOView);
+}
+
+
+static int dxCreateVideoProcessorInputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId, VBSVGACOTableDXVideoProcessorInputViewEntry const *pEntry)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoDevice, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSurface;
+    ID3D11Resource *pResource;
+    int rc = dxEnsureResource(pThisCC, pDXContext, pEntry->sid, &pSurface, &pResource);
+    AssertRCReturn(rc, rc);
+
+    DXVIEW *pView = &pDXContext->pBackendDXContext->paVideoProcessorInputView[videoProcessorInputViewId];
+    Assert(pView->u.pView == NULL);
+
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
+    RT_ZERO(ContentDesc);
+    ContentDesc.InputFrameFormat            = dxVideoFrameFormat(pEntry->contentDesc.InputFrameFormat);
+    ContentDesc.InputFrameRate.Numerator    = pEntry->contentDesc.InputFrameRate.numerator;
+    ContentDesc.InputFrameRate.Denominator  = pEntry->contentDesc.InputFrameRate.denominator;
+    ContentDesc.InputWidth                  = pEntry->contentDesc.InputWidth;
+    ContentDesc.InputHeight                 = pEntry->contentDesc.InputHeight;
+    ContentDesc.OutputFrameRate.Numerator   = pEntry->contentDesc.OutputFrameRate.numerator;
+    ContentDesc.OutputFrameRate.Denominator = pEntry->contentDesc.OutputFrameRate.denominator;
+    ContentDesc.OutputWidth                 = pEntry->contentDesc.OutputWidth;
+    ContentDesc.OutputHeight                = pEntry->contentDesc.OutputHeight;
+    ContentDesc.Usage                       = dxVideoUsage(pEntry->contentDesc.Usage);
+
+    ID3D11VideoProcessorEnumerator *pEnum;
+    HRESULT hr = pDXDevice->pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC Desc;
+    RT_ZERO(Desc);
+    Desc.FourCC               = pEntry->desc.FourCC;
+    Desc.ViewDimension        = dxVPIVDimension(pEntry->desc.ViewDimension);
+    Desc.Texture2D.MipSlice   = pEntry->desc.Texture2D.MipSlice;
+    Desc.Texture2D.ArraySlice = pEntry->desc.Texture2D.ArraySlice;
+
+    ID3D11VideoProcessorInputView *pVPIView;
+    hr = pDXDevice->pVideoDevice->CreateVideoProcessorInputView(pResource, pEnum, &Desc, &pVPIView);
+    D3D_RELEASE(pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return dxViewInit(pView, pSurface, pDXContext, videoProcessorInputViewId, VMSVGA3D_VIEWTYPE_VIDEOPROCESSORINPUT, pVPIView);
+}
+
+
+static int dxCreateVideoProcessorOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId, VBSVGACOTableDXVideoProcessorOutputViewEntry const *pEntry)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoDevice, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSurface;
+    ID3D11Resource *pResource;
+    int rc = dxEnsureResource(pThisCC, pDXContext, pEntry->sid, &pSurface, &pResource);
+    AssertRCReturn(rc, rc);
+
+    DXVIEW *pView = &pDXContext->pBackendDXContext->paVideoProcessorOutputView[videoProcessorOutputViewId];
+    Assert(pView->u.pView == NULL);
+
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
+    RT_ZERO(ContentDesc);
+    ContentDesc.InputFrameFormat            = dxVideoFrameFormat(pEntry->contentDesc.InputFrameFormat);
+    ContentDesc.InputFrameRate.Numerator    = pEntry->contentDesc.InputFrameRate.numerator;
+    ContentDesc.InputFrameRate.Denominator  = pEntry->contentDesc.InputFrameRate.denominator;
+    ContentDesc.InputWidth                  = pEntry->contentDesc.InputWidth;
+    ContentDesc.InputHeight                 = pEntry->contentDesc.InputHeight;
+    ContentDesc.OutputFrameRate.Numerator   = pEntry->contentDesc.OutputFrameRate.numerator;
+    ContentDesc.OutputFrameRate.Denominator = pEntry->contentDesc.OutputFrameRate.denominator;
+    ContentDesc.OutputWidth                 = pEntry->contentDesc.OutputWidth;
+    ContentDesc.OutputHeight                = pEntry->contentDesc.OutputHeight;
+    ContentDesc.Usage                       = dxVideoUsage(pEntry->contentDesc.Usage);
+
+    ID3D11VideoProcessorEnumerator *pEnum;
+    HRESULT hr = pDXDevice->pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC Desc;
+    RT_ZERO(Desc);
+    Desc.ViewDimension                      = dxVPOVDimension(pEntry->desc.ViewDimension);
+    if (Desc.ViewDimension == D3D11_VPOV_DIMENSION_TEXTURE2D)
+    {
+        Desc.Texture2D.MipSlice             = pEntry->desc.Texture2D.MipSlice;
+    }
+    else if (Desc.ViewDimension == D3D11_VPOV_DIMENSION_TEXTURE2DARRAY)
+    {
+        Desc.Texture2DArray.MipSlice        = pEntry->desc.Texture2DArray.MipSlice;
+        Desc.Texture2DArray.FirstArraySlice = pEntry->desc.Texture2DArray.FirstArraySlice;
+        Desc.Texture2DArray.ArraySize       = pEntry->desc.Texture2DArray.ArraySize;
+    }
+
+    ID3D11VideoProcessorOutputView *pVPOView;
+    hr = pDXDevice->pVideoDevice->CreateVideoProcessorOutputView(pResource, pEnum, &Desc, &pVPOView);
+    D3D_RELEASE(pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return dxViewInit(pView, pSurface, pDXContext, videoProcessorOutputViewId, VMSVGA3D_VIEWTYPE_VIDEOPROCESSOROUTPUT, pVPOView);
+}
+
+
+static int dxEnsureVideoDecoderOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId viewId, DXVIEW **ppResult)
+{
+    ASSERT_GUEST_RETURN(viewId < pDXContext->cot.cVideoDecoderOutputView, VERR_INVALID_PARAMETER);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoDecoderOutputView[viewId];
+    if (!pDXView->u.pView)
+    {
+        VBSVGACOTableDXVideoDecoderOutputViewEntry const *pEntry = &pDXContext->cot.paVideoDecoderOutputView[viewId];
+        int rc = dxCreateVideoDecoderOutputView(pThisCC, pDXContext, viewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    *ppResult = pDXView;
+    return VINF_SUCCESS;
+}
+
+
+static int dxEnsureVideoProcessorInputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId viewId, DXVIEW **ppResult)
+{
+    ASSERT_GUEST_RETURN(viewId < pDXContext->cot.cVideoProcessorInputView, VERR_INVALID_PARAMETER);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoProcessorInputView[viewId];
+    if (!pDXView->u.pView)
+    {
+        VBSVGACOTableDXVideoProcessorInputViewEntry const *pEntry = &pDXContext->cot.paVideoProcessorInputView[viewId];
+        int rc = dxCreateVideoProcessorInputView(pThisCC, pDXContext, viewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    *ppResult = pDXView;
+    return VINF_SUCCESS;
+}
+
+
+static int dxEnsureVideoProcessorOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId viewId, DXVIEW **ppResult)
+{
+    ASSERT_GUEST_RETURN(viewId < pDXContext->cot.cVideoProcessorOutputView, VERR_INVALID_PARAMETER);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoProcessorOutputView[viewId];
+    if (!pDXView->u.pView)
+    {
+        VBSVGACOTableDXVideoProcessorOutputViewEntry const *pEntry = &pDXContext->cot.paVideoProcessorOutputView[viewId];
+        int rc = dxCreateVideoProcessorOutputView(pThisCC, pDXContext, viewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    *ppResult = pDXView;
+    return VINF_SUCCESS;
+}
+
+
+static int dxVideoDecoderBeginFrame(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                    VBSVGA3dVideoDecoderId videoDecoderId,
+                                    VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEODECODER *pDXVideoDecoder = &pDXContext->pBackendDXContext->paVideoDecoder[videoDecoderId];
+
+    DXVIEW *pDXView;
+    int rc = dxEnsureVideoDecoderOutputView(pThisCC, pDXContext, videoDecoderOutputViewId, &pDXView);
+    AssertRCReturn(rc, rc);
+
+    HRESULT hr = pDXDevice->pVideoContext->DecoderBeginFrame(pDXVideoDecoder->pVideoDecoder,
+                                                             pDXView->u.pVideoDecoderOutputView,
+                                                             0, NULL);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return VINF_SUCCESS;
+}
+
+
+static void dxSetupVideoProcessor(DXDEVICE *pDXDevice, DXVIDEOPROCESSOR *pDXVideoProcessor, VBSVGACOTableDXVideoProcessorEntry const *pEntry)
+{
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_TARGET_RECT)
+        dxVideoProcessorSetOutputTargetRect(pDXDevice, pDXVideoProcessor, pEntry->output.TargetRectEnable, pEntry->output.TargetRect);
+
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_BACKGROUND_COLOR)
+        dxVideoProcessorSetOutputBackgroundColor(pDXDevice, pDXVideoProcessor, pEntry->output.BackgroundColorYCbCr, pEntry->output.BackgroundColor);
+
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_COLOR_SPACE)
+        dxVideoProcessorSetOutputColorSpace(pDXDevice, pDXVideoProcessor, pEntry->output.ColorSpace);
+
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_ALPHA_FILL_MODE)
+        dxVideoProcessorSetOutputAlphaFillMode(pDXDevice, pDXVideoProcessor, pEntry->output.AlphaFillMode, pEntry->output.AlphaFillStreamIndex);
+
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_CONSTRICTION)
+        dxVideoProcessorSetOutputConstriction(pDXDevice, pDXVideoProcessor, pEntry->output.ConstrictionEnable, pEntry->output.ConstrictionWidth, pEntry->output.ConstrictionHeight);
+
+    if (pEntry->output.SetMask & VBSVGA3D_VP_SET_OUTPUT_STEREO_MODE)
+        dxVideoProcessorSetOutputStereoMode(pDXDevice, pDXVideoProcessor, pEntry->output.StereoModeEnable);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pEntry->aStreamState); ++i)
+    {
+        VBSVGA3dVideoProcessorStreamState const *pStreamState = &pEntry->aStreamState[i];
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_FRAME_FORMAT)
+            dxVideoProcessorSetStreamFrameFormat(pDXDevice, pDXVideoProcessor, i, pStreamState->FrameFormat);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_COLOR_SPACE)
+            dxVideoProcessorSetStreamColorSpace(pDXDevice, pDXVideoProcessor, i, pStreamState->ColorSpace);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_OUTPUT_RATE)
+            dxVideoProcessorSetStreamOutputRate(pDXDevice, pDXVideoProcessor, i, pStreamState->OutputRate, pStreamState->RepeatFrame, pStreamState->CustomRate);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_SOURCE_RECT)
+            dxVideoProcessorSetStreamSourceRect(pDXDevice, pDXVideoProcessor, i, pStreamState->SourceRectEnable, pStreamState->SourceRect);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_DEST_RECT)
+            dxVideoProcessorSetStreamDestRect(pDXDevice, pDXVideoProcessor, i, pStreamState->DestRectEnable, pStreamState->DestRect);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_ALPHA)
+            dxVideoProcessorSetStreamAlpha(pDXDevice, pDXVideoProcessor, i, pStreamState->AlphaEnable, pStreamState->Alpha);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_PALETTE)
+            dxVideoProcessorSetStreamPalette(pDXDevice, pDXVideoProcessor, i, pStreamState->PaletteCount, &pStreamState->aPalette[0]);\
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_ASPECT_RATIO)
+            dxVideoProcessorSetStreamPixelAspectRatio(pDXDevice, pDXVideoProcessor, i, pStreamState->AspectRatioEnable, pStreamState->AspectSourceRatio, pStreamState->AspectDestRatio);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_LUMA_KEY)
+            dxVideoProcessorSetStreamLumaKey(pDXDevice, pDXVideoProcessor, i, pStreamState->LumaKeyEnable, pStreamState->LumaKeyLower, pStreamState->LumaKeyUpper);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_STEREO_FORMAT)
+            dxVideoProcessorSetStreamStereoFormat(pDXDevice, pDXVideoProcessor, i, pStreamState->StereoFormatEnable, pStreamState->StereoFormat,
+                                                  pStreamState->LeftViewFrame0, pStreamState->BaseViewFrame0, pStreamState->FlipMode, pStreamState->MonoOffset);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_AUTO_PROCESSING_MODE)
+            dxVideoProcessorSetStreamAutoProcessingMode(pDXDevice, pDXVideoProcessor, i, pStreamState->AutoProcessingModeEnable);
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_FILTER)
+        {
+            for (uint32_t idxFilter = 0; idxFilter < VBSVGA3D_VP_MAX_FILTER_COUNT; ++idxFilter)
+            {
+                uint32_t const enable = pStreamState->FilterEnableMask & ~(1 << idxFilter);
+                int32 const level = pStreamState->aFilter[idxFilter].Level;
+                dxVideoProcessorSetStreamFilter(pDXDevice, pDXVideoProcessor, i, enable, (VBSVGA3dVideoProcessorFilter)idxFilter, level);
+            }
+        }
+
+        if (pStreamState->SetMask & VBSVGA3D_VP_SET_STREAM_ROTATION)
+            dxVideoProcessorSetStreamRotation(pDXDevice, pDXVideoProcessor, i, pStreamState->RotationEnable, pStreamState->Rotation);
+    }
+}
+
+
+static int dxCreateVideoProcessor(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGACOTableDXVideoProcessorEntry const *pEntry)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoDevice, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC Desc;
+    RT_ZERO(Desc);
+    Desc.InputFrameFormat            = dxVideoFrameFormat(pEntry->desc.InputFrameFormat);
+    Desc.InputFrameRate.Numerator    = pEntry->desc.InputFrameRate.numerator;
+    Desc.InputFrameRate.Denominator  = pEntry->desc.InputFrameRate.denominator;
+    Desc.InputWidth                  = pEntry->desc.InputWidth;
+    Desc.InputHeight                 = pEntry->desc.InputHeight;
+    Desc.OutputFrameRate.Numerator   = pEntry->desc.OutputFrameRate.numerator;
+    Desc.OutputFrameRate.Denominator = pEntry->desc.OutputFrameRate.denominator;
+    Desc.OutputWidth                 = pEntry->desc.OutputWidth;
+    Desc.OutputHeight                = pEntry->desc.OutputHeight;
+    Desc.Usage                       = dxVideoUsage(pEntry->desc.Usage);
+
+    HRESULT hr = pDXDevice->pVideoDevice->CreateVideoProcessorEnumerator(&Desc, &pDXVideoProcessor->pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    hr = pDXDevice->pVideoDevice->CreateVideoProcessor(pDXVideoProcessor->pEnum, 0, &pDXVideoProcessor->pVideoProcessor);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    dxSetupVideoProcessor(pDXDevice, pDXVideoProcessor, pEntry);
+    return VINF_SUCCESS;
+}
+
+
+static void dxDestroyVideoProcessor(DXVIDEOPROCESSOR *pDXVideoProcessor)
+{
+    D3D_RELEASE(pDXVideoProcessor->pEnum);
+    D3D_RELEASE(pDXVideoProcessor->pVideoProcessor);
+}
+
+
+static int dxCreateVideoDecoder(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGACOTableDXVideoDecoderEntry const *pEntry)
+{
+    HRESULT hr;
+
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoDevice, VERR_INVALID_STATE);
+
+    DXVIDEODECODER *pDXVideoDecoder = &pDXContext->pBackendDXContext->paVideoDecoder[videoDecoderId];
+
+    D3D11_VIDEO_DECODER_DESC VideoDesc;
+    RT_ZERO(VideoDesc);
+    memcpy(&VideoDesc.Guid, &pEntry->desc.DecodeProfile, sizeof(GUID));
+    VideoDesc.SampleWidth  = pEntry->desc.SampleWidth;
+    VideoDesc.SampleHeight = pEntry->desc.SampleHeight;
+    VideoDesc.OutputFormat = vmsvgaDXSurfaceFormat2Dxgi(pEntry->desc.OutputFormat);
+
+    D3D11_VIDEO_DECODER_CONFIG Config;
+    RT_ZERO(Config);
+    memcpy(&Config.guidConfigBitstreamEncryption, &pEntry->config.guidConfigBitstreamEncryption, sizeof(GUID));
+    memcpy(&Config.guidConfigMBcontrolEncryption, &pEntry->config.guidConfigMBcontrolEncryption, sizeof(GUID));
+    memcpy(&Config.guidConfigResidDiffEncryption, &pEntry->config.guidConfigResidDiffEncryption, sizeof(GUID));
+    Config.ConfigBitstreamRaw             = pEntry->config.ConfigBitstreamRaw;
+    Config.ConfigMBcontrolRasterOrder     = pEntry->config.ConfigMBcontrolRasterOrder;
+    Config.ConfigResidDiffHost            = pEntry->config.ConfigResidDiffHost;
+    Config.ConfigSpatialResid8            = pEntry->config.ConfigSpatialResid8;
+    Config.ConfigResid8Subtraction        = pEntry->config.ConfigResid8Subtraction;
+    Config.ConfigSpatialHost8or9Clipping  = pEntry->config.ConfigSpatialHost8or9Clipping;
+    Config.ConfigSpatialResidInterleaved  = pEntry->config.ConfigSpatialResidInterleaved;
+    Config.ConfigIntraResidUnsigned       = pEntry->config.ConfigIntraResidUnsigned;
+    Config.ConfigResidDiffAccelerator     = pEntry->config.ConfigResidDiffAccelerator;
+    Config.ConfigHostInverseScan          = pEntry->config.ConfigHostInverseScan;
+    Config.ConfigSpecificIDCT             = pEntry->config.ConfigSpecificIDCT;
+    Config.Config4GroupedCoefs            = pEntry->config.Config4GroupedCoefs;
+    Config.ConfigMinRenderTargetBuffCount = pEntry->config.ConfigMinRenderTargetBuffCount;
+    Config.ConfigDecoderSpecific          = pEntry->config.ConfigDecoderSpecific;
+
+    hr = pDXDevice->pVideoDevice->CreateVideoDecoder(&VideoDesc, &Config, &pDXVideoDecoder->pVideoDecoder);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+    LogFlowFunc(("Using DecodeProfile %RTuuid\n", &VideoDesc.Guid));
+
+    /* COTables are restored from saved state in ascending order. Output View must be created before Decoder. */
+    AssertCompile(VBSVGA_COTABLE_VDOV < VBSVGA_COTABLE_VIDEODECODER);
+    if (pEntry->vdovId != SVGA3D_INVALID_ID)
+    {
+        int rc = dxVideoDecoderBeginFrame(pThisCC, pDXContext, videoDecoderId, pEntry->vdovId);
+        AssertRC(rc); RT_NOREF(rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static void dxDestroyVideoDecoder(DXVIDEODECODER *pDXVideoDecoder)
+{
+    D3D_RELEASE(pDXVideoDecoder->pVideoDecoder);
+}
+
+
+/*
+ * Backend callbacks.
+ */
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDefineVideoProcessor(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGACOTableDXVideoProcessorEntry const *pEntry)
+{
+    return dxCreateVideoProcessor(pThisCC, pDXContext, videoProcessorId, pEntry);
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDefineVideoDecoderOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId, VBSVGACOTableDXVideoDecoderOutputViewEntry const *pEntry)
+{
+    /* The view is created when it is used: either in BeginFrame or ClearView. */
+    RT_NOREF(pThisCC, pDXContext, videoDecoderOutputViewId, pEntry);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDefineVideoDecoder(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGACOTableDXVideoDecoderEntry const *pEntry)
+{
+    return dxCreateVideoDecoder(pThisCC, pDXContext, videoDecoderId, pEntry);
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoDecoderBeginFrame(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId)
+{
+    return dxVideoDecoderBeginFrame(pThisCC, pDXContext, videoDecoderId, videoDecoderOutputViewId);
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoDecoderSubmitBuffers(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, uint32_t cBuffer, VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc)
+{
+    HRESULT hr;
+
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEODECODER *pDXVideoDecoder = &pDXContext->pBackendDXContext->paVideoDecoder[videoDecoderId];
+
+    D3D11_VIDEO_DECODER_BUFFER_DESC *paDesc = (D3D11_VIDEO_DECODER_BUFFER_DESC *)RTMemTmpAllocZ(cBuffer * sizeof(D3D11_VIDEO_DECODER_BUFFER_DESC));
+    AssertReturn(paDesc, VERR_NO_MEMORY);
+
+    for (uint32_t i = 0; i < cBuffer; ++i)
+    {
+        VBSVGA3dVideoDecoderBufferDesc const *s = &paBufferDesc[i];
+
+        PVMSVGA3DSURFACE pSurface;
+        int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, s->sidBuffer, &pSurface);
+        ASSERT_GUEST_CONTINUE(RT_SUCCESS(rc));
+
+        uint32_t const cbSurface = pSurface->paMipmapLevels[0].cbSurface;
+        ASSERT_GUEST_CONTINUE(   s->dataSize <= cbSurface
+                              && s->dataOffset <= cbSurface - s->dataSize);
+
+        D3D11_VIDEO_DECODER_BUFFER_DESC *d = &paDesc[i];
+        d->BufferType     = dxVideoDecoderBufferType(s->bufferType);
+        d->DataOffset     = 0;
+        d->DataSize       = s->dataSize;
+        d->FirstMBaddress = s->firstMBaddress;
+        d->NumMBsInBuffer = s->numMBsInBuffer;
+
+        UINT DecoderBufferSize;
+        void *pDecoderBuffer;
+        hr = pDXDevice->pVideoContext->GetDecoderBuffer(pDXVideoDecoder->pVideoDecoder, d->BufferType,
+                                                        &DecoderBufferSize, &pDecoderBuffer);
+        AssertReturnStmt(SUCCEEDED(hr), RTMemTmpFree(paDesc), VERR_NOT_SUPPORTED);
+
+        ASSERT_GUEST_CONTINUE(DecoderBufferSize >= s->dataSize);
+
+        if (pSurface->pBackendSurface)
+        {
+            void *pvGuestBuffer;
+            uint32_t cbGuestBuffer;
+            rc = dxReadBuffer(pDXDevice, pSurface->pBackendSurface->u.pBuffer, s->dataOffset, s->dataSize,
+                              &pvGuestBuffer, &cbGuestBuffer);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(pDecoderBuffer, pvGuestBuffer, cbGuestBuffer);
+                RTMemFree(pvGuestBuffer);
+            }
+        }
+        else
+            memcpy(pDecoderBuffer, (uint8_t *)pSurface->paMipmapLevels[0].pSurfaceData + s->dataOffset, s->dataSize);
+
+        hr = pDXDevice->pVideoContext->ReleaseDecoderBuffer(pDXVideoDecoder->pVideoDecoder, d->BufferType);
+        AssertReturnStmt(SUCCEEDED(hr), RTMemTmpFree(paDesc), VERR_NOT_SUPPORTED);
+    }
+
+    hr = pDXDevice->pVideoContext->SubmitDecoderBuffers(pDXVideoDecoder->pVideoDecoder, cBuffer, paDesc);
+    AssertReturnStmt(SUCCEEDED(hr), RTMemTmpFree(paDesc), VERR_NOT_SUPPORTED);
+
+    RTMemTmpFree(paDesc);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoDecoderEndFrame(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEODECODER *pDXVideoDecoder = &pDXContext->pBackendDXContext->paVideoDecoder[videoDecoderId];
+
+    HRESULT hr = pDXDevice->pVideoContext->DecoderEndFrame(pDXVideoDecoder->pVideoDecoder);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDefineVideoProcessorInputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId, VBSVGACOTableDXVideoProcessorInputViewEntry const *pEntry)
+{
+    /* The view is created when it is used: either in VideoProcessorBlt or ClearView. */
+    RT_NOREF(pThisCC, pDXContext, videoProcessorInputViewId, pEntry);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDefineVideoProcessorOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId, VBSVGACOTableDXVideoProcessorOutputViewEntry const *pEntry)
+{
+    /* The view is created when it is used: either in VideoProcessorBlt or ClearView. */
+    RT_NOREF(pThisCC, pDXContext, videoProcessorOutputViewId, pEntry);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorBlt(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                                                           uint32_t OutputFrame, uint32_t StreamCount, VBSVGA3dVideoProcessorStream const *pVideoProcessorStreams)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+
+    DXVIEW *pVPOView;
+    int rc = dxEnsureVideoProcessorOutputView(pThisCC, pDXContext, videoProcessorOutputViewId, &pVPOView);
+    AssertRCReturn(rc, rc);
+
+    uint32_t cbStreams = StreamCount * sizeof(D3D11_VIDEO_PROCESSOR_STREAM);
+
+    /* ID3D11VideoProcessorInputView arrays for past and future frames. */
+    VBSVGA3dVideoProcessorStream const *pVPS = pVideoProcessorStreams;
+    for (uint32_t i = 0; i < StreamCount; ++i)
+    {
+        uint32_t const cIds = (pVPS->StereoFormatSeparate == 0 ? 1 : 2) * (pVPS->PastFrames + 1 + pVPS->FutureFrames);
+
+        uint32_t const cPastFutureViews = (pVPS->StereoFormatSeparate == 0 ? 1 : 2) * (pVPS->PastFrames + pVPS->FutureFrames);
+        cbStreams += cPastFutureViews * sizeof(ID3D11VideoProcessorInputView *);
+
+        pVPS = (VBSVGA3dVideoProcessorStream *)((uint8_t *)&pVPS[1] + cIds * sizeof(VBSVGA3dVideoProcessorInputViewId));
+    }
+
+    D3D11_VIDEO_PROCESSOR_STREAM *paStreams = (D3D11_VIDEO_PROCESSOR_STREAM *)RTMemTmpAllocZ(cbStreams);
+    AssertReturn(paStreams, VERR_NO_MEMORY);
+    ID3D11VideoProcessorInputView **ppSurfaces = (ID3D11VideoProcessorInputView **)&paStreams[StreamCount];
+
+    pVPS = pVideoProcessorStreams;
+    for (uint32_t i = 0; i < StreamCount; ++i)
+    {
+        D3D11_VIDEO_PROCESSOR_STREAM *d = &paStreams[i];
+        d->Enable            = pVPS->Enable;
+        d->OutputIndex       = pVPS->OutputIndex;
+        d->InputFrameOrField = pVPS->InputFrameOrField;
+        d->PastFrames        = pVPS->PastFrames;
+        d->FutureFrames      = pVPS->FutureFrames;
+
+        /*
+         * Fetch input frames.
+         */
+        uint32_t const cIds = (pVPS->StereoFormatSeparate == 0 ? 1 : 2) * (pVPS->PastFrames + 1 + pVPS->FutureFrames);
+        VBSVGA3dVideoProcessorInputViewId const *pId = (VBSVGA3dVideoProcessorInputViewId *)&pVPS[1];
+        DXVIEW *pVPIView;
+
+        /* Past frames. */
+        if (pVPS->PastFrames)
+        {
+            DEBUG_BREAKPOINT_TEST();
+            d->ppPastSurfaces = ppSurfaces;
+            for (UINT j = 0; j < pVPS->PastFrames; ++j, ++ppSurfaces)
+            {
+                rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+                AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+                d->ppPastSurfaces[j] = pVPIView->u.pVideoProcessorInputView;
+            }
+        }
+
+        /* CurrentFrame */
+        rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+        AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+        d->pInputSurface = pVPIView->u.pVideoProcessorInputView;
+
+        /* Future frames. */
+        if (pVPS->FutureFrames)
+        {
+            d->ppFutureSurfaces = ppSurfaces;
+            for (UINT j = 0; j < pVPS->FutureFrames; ++j, ++ppSurfaces)
+            {
+                rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+                AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+                d->ppFutureSurfaces[j] = pVPIView->u.pVideoProcessorInputView;
+            }
+        }
+
+        /* Right frames for stereo. */
+        if (pVPS->StereoFormatSeparate)
+        {
+            /* Past frames. */
+            if (pVPS->PastFrames)
+            {
+                 d->ppPastSurfacesRight = ppSurfaces;
+                 for (UINT j = 0; j < pVPS->PastFrames; ++j, ++ppSurfaces)
+                 {
+                     rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+                     AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+                     d->ppPastSurfacesRight[j] = pVPIView->u.pVideoProcessorInputView;
+                 }
+            }
+
+            /* CurrentFrame */
+            rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+            AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+            d->pInputSurfaceRight = pVPIView->u.pVideoProcessorInputView;
+
+            /* Future frames. */
+            if (pVPS->FutureFrames)
+            {
+                d->ppFutureSurfacesRight = ppSurfaces;
+                for (UINT j = 0; j < pVPS->FutureFrames; ++j, ++ppSurfaces)
+                {
+                    rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, *pId++, &pVPIView);
+                    AssertRCReturnStmt(rc, RTMemTmpFree(paStreams), rc);
+                    d->ppFutureSurfacesRight[j] = pVPIView->u.pVideoProcessorInputView;
+                }
+            }
+        }
+
+        pVPS = (VBSVGA3dVideoProcessorStream *)((uint8_t *)&pVPS[1] + cIds * sizeof(VBSVGA3dVideoProcessorInputViewId));
+    }
+
+    HRESULT hr = pDXDevice->pVideoContext->VideoProcessorBlt(pDXVideoProcessor->pVideoProcessor, pVPOView->u.pVideoProcessorOutputView,
+                                                             OutputFrame, StreamCount, paStreams);
+    RTMemTmpFree(paStreams);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDestroyVideoDecoder(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXVIDEODECODER *pDXVideoDecoder = &pDXContext->pBackendDXContext->paVideoDecoder[videoDecoderId];
+    dxDestroyVideoDecoder(pDXVideoDecoder);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDestroyVideoDecoderOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoDecoderOutputView[videoDecoderOutputViewId];
+    dxViewDestroy(pDXView);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDestroyVideoProcessor(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxDestroyVideoProcessor(pDXVideoProcessor);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDestroyVideoProcessorInputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoProcessorInputView[videoProcessorInputViewId];
+    dxViewDestroy(pDXView);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXDestroyVideoProcessorOutputView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paVideoProcessorOutputView[videoProcessorOutputViewId];
+    dxViewDestroy(pDXView);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputTargetRect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint8 enable, SVGASignedRect const &outputRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputTargetRect(pDXDevice, pDXVideoProcessor, enable, outputRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputBackgroundColor(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 YCbCr, VBSVGA3dVideoColor const &color)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputBackgroundColor(pDXDevice, pDXVideoProcessor, YCbCr, color);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputColorSpace(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorColorSpace const &colorSpace)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputColorSpace(pDXDevice, pDXVideoProcessor, colorSpace);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputAlphaFillMode(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, VBSVGA3dVideoProcessorAlphaFillMode fillMode, uint32 streamIndex)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputAlphaFillMode(pDXDevice, pDXVideoProcessor, fillMode, streamIndex);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputConstriction(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 enabled, uint32 width, uint32 height)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputConstriction(pDXDevice, pDXVideoProcessor, enabled, width, height);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetOutputStereoMode(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 enable)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetOutputStereoMode(pDXDevice, pDXVideoProcessor, enable);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamFrameFormat(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 streamIndex, VBSVGA3dVideoFrameFormat format)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamFrameFormat(pDXDevice, pDXVideoProcessor, streamIndex, format);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamColorSpace(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId, uint32 streamIndex, VBSVGA3dVideoProcessorColorSpace colorSpace)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamColorSpace(pDXDevice, pDXVideoProcessor, streamIndex, colorSpace);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamOutputRate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                           uint32 streamIndex, VBSVGA3dVideoProcessorOutputRate outputRate, uint32 repeatFrame, SVGA3dFraction64 const &customRate)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamOutputRate(pDXDevice, pDXVideoProcessor, streamIndex, outputRate, repeatFrame, customRate);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamSourceRect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                           uint32 streamIndex, uint32 enable, SVGASignedRect const &sourceRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamSourceRect(pDXDevice, pDXVideoProcessor, streamIndex, enable, sourceRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamDestRect(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                         uint32 streamIndex, uint32 enable, SVGASignedRect const &destRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamDestRect(pDXDevice, pDXVideoProcessor, streamIndex, enable, destRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamAlpha(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                      uint32 streamIndex, uint32 enable, float alpha)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamAlpha(pDXDevice, pDXVideoProcessor, streamIndex, enable, alpha);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamPalette(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                        uint32 streamIndex, uint32_t cEntries, uint32_t const *paEntries)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamPalette(pDXDevice, pDXVideoProcessor, streamIndex, cEntries, paEntries);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamPixelAspectRatio(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                                 uint32 streamIndex, uint32 enable, SVGA3dFraction64 const &sourceRatio, SVGA3dFraction64 const &destRatio)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamPixelAspectRatio(pDXDevice, pDXVideoProcessor, streamIndex, enable, sourceRatio, destRatio);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamLumaKey(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                        uint32 streamIndex, uint32 enable, float lower, float upper)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamLumaKey(pDXDevice, pDXVideoProcessor, streamIndex, enable, lower, upper);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamStereoFormat(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                             uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorStereoFormat stereoFormat,
+                                                                             uint8 leftViewFrame0, uint8 baseViewFrame0, VBSVGA3dVideoProcessorStereoFlipMode flipMode, int32 monoOffset)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamStereoFormat(pDXDevice, pDXVideoProcessor, streamIndex, enable, stereoFormat,
+                                          leftViewFrame0, baseViewFrame0, flipMode, monoOffset);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamAutoProcessingMode(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                                   uint32 streamIndex, uint32 enable)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamAutoProcessingMode(pDXDevice, pDXVideoProcessor, streamIndex, enable);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamFilter(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                       uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorFilter filter, int32 level)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamFilter(pDXDevice, pDXVideoProcessor, streamIndex, enable, filter, level);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXVideoProcessorSetStreamRotation(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorId videoProcessorId,
+                                                                         uint32 streamIndex, uint32 enable, VBSVGA3dVideoProcessorRotation rotation)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    DXVIDEOPROCESSOR *pDXVideoProcessor = &pDXContext->pBackendDXContext->paVideoProcessor[videoProcessorId];
+    dxVideoProcessorSetStreamRotation(pDXDevice, pDXVideoProcessor, streamIndex, enable, rotation);
+    return VINF_SUCCESS;
+}
+
+
+static int dxGetVideoCapDecodeProfile(PVGASTATECC pThisCC, DXDEVICE *pDXDevice, void *pvData, uint32 cbData, uint32 *pcbOut)
+{
+    VBSVGA3dDecodeProfileInfo *paDecodeProfileInfo = (VBSVGA3dDecodeProfileInfo *)pvData;
+
+    UINT ProfileCount = pDXDevice->pVideoDevice->GetVideoDecoderProfileCount();
+    ProfileCount = RT_MIN(ProfileCount, cbData / sizeof(paDecodeProfileInfo[0]));
+
+#ifndef DEBUG_sunlover
+    /** @todo Allocation of video decoder output texture often fails on NVidia. Disable video decoding for now. */
+    if (pThisCC->svga.p3dState->pBackend->VendorId == 0x10de)
+        ProfileCount = 0;
+#else
+    RT_NOREF(pThisCC);
+#endif
+
+    for (UINT i = 0; i < ProfileCount; ++i)
+    {
+        VBSVGA3dDecodeProfileInfo *d = &paDecodeProfileInfo[i];
+
+        /* GUID and VBSVGA3dGuid are identical. */
+        GUID *pGuid = (GUID *)&d->DecodeProfile;
+        HRESULT hr = pDXDevice->pVideoDevice->GetVideoDecoderProfile(i, pGuid);
+        Assert(SUCCEEDED(hr));
+        if (SUCCEEDED(hr))
+        {
+            struct
+            {
+                DXGI_FORMAT format;
+                uint8 *pSupported;
+            } aFormats[] =
+            {
+                { DXGI_FORMAT_AYUV, &d->fAYUV },
+                { DXGI_FORMAT_NV12, &d->fNV12 },
+                { DXGI_FORMAT_YUY2, &d->fYUY2 },
+            };
+
+            for (unsigned idxFormat = 0; idxFormat < RT_ELEMENTS(aFormats); ++idxFormat)
+            {
+                BOOL Supported = FALSE;
+                pDXDevice->pVideoDevice->CheckVideoDecoderFormat(pGuid, aFormats[idxFormat].format, &Supported);
+                *aFormats[idxFormat].pSupported = RT_BOOL(Supported);
+            }
+        }
+
+        if (FAILED(hr))
+            RT_ZERO(*d);
+    }
+
+    *pcbOut = ProfileCount * sizeof(VBSVGA3dDecodeProfileInfo);
+    return VINF_SUCCESS;
+}
+
+
+static int dxGetVideoCapDecodeConfig(DXDEVICE *pDXDevice, void *pvData, uint32 cbData, uint32 *pcbOut)
+{
+    ASSERT_GUEST_RETURN(cbData >= sizeof(VBSVGA3dVideoDecoderDesc), VERR_INVALID_PARAMETER);
+    VBSVGA3dDecodeConfigInfo *pConfigInfo = (VBSVGA3dDecodeConfigInfo *)pvData;
+
+    D3D11_VIDEO_DECODER_DESC Desc;
+    RT_ZERO(Desc);
+    memcpy(&Desc.Guid, &pConfigInfo->desc.DecodeProfile, sizeof(GUID));
+    Desc.SampleWidth  = pConfigInfo->desc.SampleWidth;
+    Desc.SampleHeight = pConfigInfo->desc.SampleHeight;
+    Desc.OutputFormat = vmsvgaDXSurfaceFormat2Dxgi(pConfigInfo->desc.OutputFormat);
+
+    UINT ConfigCount;
+    HRESULT hr = pDXDevice->pVideoDevice->GetVideoDecoderConfigCount(&Desc, &ConfigCount);
+    if (FAILED(hr))
+        ConfigCount = 0;
+    ConfigCount = RT_MIN(ConfigCount, (cbData - sizeof(pConfigInfo->desc)) / sizeof(pConfigInfo->aConfig[0]));
+
+    UINT cConfigOut = 0;
+    for (UINT i = 0; i < ConfigCount; ++i)
+    {
+        D3D11_VIDEO_DECODER_CONFIG Config;
+        hr = pDXDevice->pVideoDevice->GetVideoDecoderConfig(&Desc, i, &Config);
+        Assert(SUCCEEDED(hr));
+        if (SUCCEEDED(hr))
+        {
+            /* Filter out configs with encryption. */
+            static GUID const NoEncrypt = { 0x1b81beD0, 0xa0c7,0x11d3,0xb9,0x84,0x00,0xc0,0x4f,0x2e,0x73,0xc5 };
+            if (   memcmp(&NoEncrypt, &Config.guidConfigBitstreamEncryption, sizeof(GUID)) == 0
+                && memcmp(&NoEncrypt, &Config.guidConfigMBcontrolEncryption, sizeof(GUID)) == 0
+                && memcmp(&NoEncrypt, &Config.guidConfigResidDiffEncryption, sizeof(GUID)) == 0)
+            {
+                VBSVGA3dVideoDecoderConfig *d = &pConfigInfo->aConfig[cConfigOut++];
+
+                memcpy(&d->guidConfigBitstreamEncryption, &Config.guidConfigBitstreamEncryption, sizeof(VBSVGA3dGuid));
+                memcpy(&d->guidConfigMBcontrolEncryption, &Config.guidConfigMBcontrolEncryption, sizeof(VBSVGA3dGuid));
+                memcpy(&d->guidConfigResidDiffEncryption, &Config.guidConfigResidDiffEncryption, sizeof(VBSVGA3dGuid));
+                d->ConfigBitstreamRaw             = Config.ConfigBitstreamRaw;
+                d->ConfigMBcontrolRasterOrder     = Config.ConfigMBcontrolRasterOrder;
+                d->ConfigResidDiffHost            = Config.ConfigResidDiffHost;
+                d->ConfigSpatialResid8            = Config.ConfigSpatialResid8;
+                d->ConfigResid8Subtraction        = Config.ConfigResid8Subtraction;
+                d->ConfigSpatialHost8or9Clipping  = Config.ConfigSpatialHost8or9Clipping;
+                d->ConfigSpatialResidInterleaved  = Config.ConfigSpatialResidInterleaved;
+                d->ConfigIntraResidUnsigned       = Config.ConfigIntraResidUnsigned;
+                d->ConfigResidDiffAccelerator     = Config.ConfigResidDiffAccelerator;
+                d->ConfigHostInverseScan          = Config.ConfigHostInverseScan;
+                d->ConfigSpecificIDCT             = Config.ConfigSpecificIDCT;
+                d->Config4GroupedCoefs            = Config.Config4GroupedCoefs;
+                d->ConfigMinRenderTargetBuffCount = Config.ConfigMinRenderTargetBuffCount;
+                d->ConfigDecoderSpecific          = Config.ConfigDecoderSpecific;
+            }
+        }
+    }
+
+    //DEBUG_BREAKPOINT_TEST();
+    *pcbOut = sizeof(VBSVGA3dVideoDecoderDesc) + cConfigOut * sizeof(VBSVGA3dVideoDecoderConfig);
+    return VINF_SUCCESS;
+}
+
+
+static int dxGetVideoCapProcessorEnum(DXDEVICE *pDXDevice, void *pvData, uint32 cbData, uint32 *pcbOut)
+{
+    ASSERT_GUEST_RETURN(cbData >= sizeof(VBSVGA3dProcessorEnumInfo), VERR_INVALID_PARAMETER);
+
+    VBSVGA3dProcessorEnumInfo *pInfo = (VBSVGA3dProcessorEnumInfo *)pvData;
+    RT_ZERO(pInfo->info);
+
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
+    RT_ZERO(ContentDesc);
+    ContentDesc.InputFrameFormat            = dxVideoFrameFormat(pInfo->desc.InputFrameFormat);
+    ContentDesc.InputFrameRate.Numerator    = pInfo->desc.InputFrameRate.numerator;
+    ContentDesc.InputFrameRate.Denominator  = pInfo->desc.InputFrameRate.denominator;
+    ContentDesc.InputWidth                  = pInfo->desc.InputWidth;
+    ContentDesc.InputHeight                 = pInfo->desc.InputHeight;
+    ContentDesc.OutputFrameRate.Numerator   = pInfo->desc.OutputFrameRate.numerator;
+    ContentDesc.OutputFrameRate.Denominator = pInfo->desc.OutputFrameRate.denominator;
+    ContentDesc.OutputWidth                 = pInfo->desc.OutputWidth;
+    ContentDesc.OutputHeight                = pInfo->desc.OutputHeight;
+    ContentDesc.Usage                       = dxVideoUsage(pInfo->desc.Usage);
+
+    ID3D11VideoProcessorEnumerator *pEnum;
+    HRESULT hr = pDXDevice->pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pEnum);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    struct
+    {
+        DXGI_FORMAT format;
+        uint8 *pFlags;
+    } aFormats[] =
+    {
+        { DXGI_FORMAT_R8_UNORM,            &pInfo->info.fR8_UNORM },
+        { DXGI_FORMAT_R16_UNORM,           &pInfo->info.fR16_UNORM },
+        { DXGI_FORMAT_NV12,                &pInfo->info.fNV12 },
+        { DXGI_FORMAT_YUY2,                &pInfo->info.fYUY2 },
+        { DXGI_FORMAT_R16G16B16A16_FLOAT,  &pInfo->info.fR16G16B16A16_FLOAT },
+        { DXGI_FORMAT_B8G8R8X8_UNORM,      &pInfo->info.fB8G8R8X8_UNORM },
+        { DXGI_FORMAT_B8G8R8A8_UNORM,      &pInfo->info.fB8G8R8A8_UNORM },
+        { DXGI_FORMAT_R8G8B8A8_UNORM,      &pInfo->info.fR8G8B8A8_UNORM },
+        { DXGI_FORMAT_R10G10B10A2_UNORM,   &pInfo->info.fR10G10B10A2_UNORM },
+        { DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM, &pInfo->info.fR10G10B10_XR_BIAS_A2_UNORM },
+        { DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, &pInfo->info.fR8G8B8A8_UNORM_SRGB },
+        { DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, &pInfo->info.fB8G8R8A8_UNORM_SRGB },
+    };
+
+    for (unsigned idxFormat = 0; idxFormat < RT_ELEMENTS(aFormats); ++idxFormat)
+    {
+        UINT Flags = 0;
+        hr = pEnum->CheckVideoProcessorFormat(aFormats[idxFormat].format, &Flags);
+        if (SUCCEEDED(hr))
+            *aFormats[idxFormat].pFlags = Flags;
+    }
+
+    D3D11_VIDEO_PROCESSOR_CAPS Caps;
+    hr = pEnum->GetVideoProcessorCaps(&Caps);
+    if (SUCCEEDED(hr))
+    {
+        pInfo->info.Caps.DeviceCaps              = Caps.DeviceCaps;
+        pInfo->info.Caps.FeatureCaps             = Caps.FeatureCaps;
+        pInfo->info.Caps.FilterCaps              = Caps.FilterCaps;
+        pInfo->info.Caps.InputFormatCaps         = Caps.InputFormatCaps;
+        pInfo->info.Caps.AutoStreamCaps          = Caps.AutoStreamCaps;
+        pInfo->info.Caps.StereoCaps              = Caps.StereoCaps;
+        pInfo->info.Caps.RateConversionCapsCount = RT_MIN(Caps.RateConversionCapsCount, VBSVGA3D_MAX_VIDEO_RATE_CONVERSION_CAPS);
+        pInfo->info.Caps.MaxInputStreams         = RT_MIN(Caps.MaxInputStreams, VBSVGA3D_MAX_VIDEO_STREAMS);
+        pInfo->info.Caps.MaxStreamStates         = RT_MIN(Caps.MaxStreamStates, VBSVGA3D_MAX_VIDEO_STREAMS);
+    }
+
+    D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS RateCaps;
+    hr = pEnum->GetVideoProcessorRateConversionCaps(0, &RateCaps);
+    if (SUCCEEDED(hr))
+    {
+        pInfo->info.RateCaps.PastFrames      = RateCaps.PastFrames;
+        pInfo->info.RateCaps.FutureFrames    = RateCaps.FutureFrames;
+        pInfo->info.RateCaps.ProcessorCaps   = RateCaps.ProcessorCaps;
+        pInfo->info.RateCaps.ITelecineCaps   = RateCaps.ITelecineCaps;
+        pInfo->info.RateCaps.CustomRateCount = RT_MIN(RateCaps.CustomRateCount, VBSVGA3D_MAX_VIDEO_CUSTOM_RATE_CAPS);
+    }
+
+    for (unsigned i = 0; i < pInfo->info.RateCaps.CustomRateCount; ++i)
+    {
+        D3D11_VIDEO_PROCESSOR_CUSTOM_RATE Rate;
+        hr = pEnum->GetVideoProcessorCustomRate(0, i, &Rate);
+        if (SUCCEEDED(hr))
+        {
+            pInfo->info.aCustomRateCaps[i].CustomRate.numerator   = Rate.CustomRate.Numerator;
+            pInfo->info.aCustomRateCaps[i].CustomRate.denominator = Rate.CustomRate.Denominator;
+            pInfo->info.aCustomRateCaps[i].OutputFrames           = Rate.OutputFrames;
+            pInfo->info.aCustomRateCaps[i].InputInterlaced        = Rate.InputInterlaced;
+            pInfo->info.aCustomRateCaps[i].InputFramesOrFields    = Rate.InputFramesOrFields;
+        }
+    }
+
+    for (unsigned i = 0; i < VBSVGA3D_VP_MAX_FILTER_COUNT; ++i)
+    {
+        if (pInfo->info.Caps.FilterCaps & (1 << i))
+        {
+            D3D11_VIDEO_PROCESSOR_FILTER_RANGE Range;
+            hr = pEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &Range);
+            if (SUCCEEDED(hr))
+            {
+                pInfo->info.aFilterRange[i].Minimum = Range.Minimum;
+                pInfo->info.aFilterRange[i].Maximum = Range.Maximum;
+                pInfo->info.aFilterRange[i].Default = Range.Default;
+                pInfo->info.aFilterRange[i].Multiplier = Range.Multiplier;
+            }
+        }
+    }
+
+    //DEBUG_BREAKPOINT_TEST();
+    D3D_RELEASE(pEnum);
+
+    *pcbOut = sizeof(VBSVGA3dProcessorEnumInfo);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXGetVideoCapability(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoCapability capability, void *pvData, uint32 cbData, uint32 *pcbOut)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pVideoContext, VERR_INVALID_STATE);
+
+    switch (capability)
+    {
+        case VBSVGA3D_VIDEO_CAPABILITY_DECODE_PROFILE:
+            return dxGetVideoCapDecodeProfile(pThisCC, pDXDevice, pvData, cbData, pcbOut);
+        case VBSVGA3D_VIDEO_CAPABILITY_DECODE_CONFIG:
+            return dxGetVideoCapDecodeConfig(pDXDevice, pvData, cbData, pcbOut);
+        case VBSVGA3D_VIDEO_CAPABILITY_PROCESSOR_ENUM:
+            return dxGetVideoCapProcessorEnum(pDXDevice, pvData, cbData, pcbOut);
+        default:
+            break;
+    }
+
+    return VERR_NOT_SUPPORTED;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXClearUAV(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dUAViewId viewId,
+                                                  SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paUnorderedAccessView[viewId];
+    if (!pDXView->u.pView)
+    {
+        /* (Re-)create the view, because a creation of a view is deferred until a draw or a clear call. */
+        SVGACOTableDXUAViewEntry const *pEntry = &pDXContext->cot.paUAView[viewId];
+        int rc = dxDefineUnorderedAccessView(pThisCC, pDXContext, viewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    pDXDevice->pImmediateContext->ClearView(pDXView->u.pView, pColor->value, (D3D11_RECT *)paRect, cRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXClearVDOV(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderOutputViewId viewId,
+                                                   SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    DXVIEW *pDXView;
+    int rc = dxEnsureVideoDecoderOutputView(pThisCC, pDXContext, viewId, &pDXView);
+    AssertRCReturn(rc, rc);
+
+    pDXDevice->pImmediateContext->ClearView(pDXView->u.pView, pColor->value, (D3D11_RECT *)paRect, cRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXClearVPIV(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorInputViewId viewId,
+                                                   SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    DXVIEW *pDXView;
+    int rc = dxEnsureVideoProcessorInputView(pThisCC, pDXContext, viewId, &pDXView);
+    AssertRCReturn(rc, rc);
+
+    pDXDevice->pImmediateContext->ClearView(pDXView->u.pView, pColor->value, (D3D11_RECT *)paRect, cRect);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackVBDXClearVPOV(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoProcessorOutputViewId viewId,
+                                                   SVGA3dRGBAFloat const *pColor, uint32_t cRect, SVGASignedRect const *paRect)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    DXVIEW *pDXView;
+    int rc = dxEnsureVideoProcessorOutputView(pThisCC, pDXContext, viewId, &pDXView);
+    AssertRCReturn(rc, rc);
+
+    pDXDevice->pImmediateContext->ClearView(pDXView->u.pView, pColor->value, (D3D11_RECT *)paRect, cRect);
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) vmsvga3dBackDXLoadState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     RT_NOREF(pThisCC);
@@ -10136,6 +12208,59 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnSurfaceStretchBltNonMSToMS  = vmsvga3dBackSurfaceStretchBltNonMSToMS;
                 p->pfnDXBindShaderIface           = vmsvga3dBackDXBindShaderIface;
                 p->pfnVBDXClearRenderTargetViewRegion = vmsvga3dBackVBDXClearRenderTargetViewRegion;
+                p->pfnVBDXClearUAV                = vmsvga3dBackVBDXClearUAV;
+            }
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (RTStrCmp(pszInterfaceName, VMSVGA3D_BACKEND_INTERFACE_NAME_DXVIDEO) == 0)
+    {
+        if (cbInterfaceFuncs == sizeof(VMSVGA3DBACKENDFUNCSDXVIDEO))
+        {
+            if (pvInterfaceFuncs)
+            {
+                VMSVGA3DBACKENDFUNCSDXVIDEO *p = (VMSVGA3DBACKENDFUNCSDXVIDEO *)pvInterfaceFuncs;
+                p->pfnVBDXDefineVideoProcessor              = vmsvga3dBackVBDXDefineVideoProcessor;
+                p->pfnVBDXDefineVideoDecoderOutputView      = vmsvga3dBackVBDXDefineVideoDecoderOutputView;
+                p->pfnVBDXDefineVideoDecoder                = vmsvga3dBackVBDXDefineVideoDecoder;
+                p->pfnVBDXVideoDecoderBeginFrame            = vmsvga3dBackVBDXVideoDecoderBeginFrame;
+                p->pfnVBDXVideoDecoderSubmitBuffers         = vmsvga3dBackVBDXVideoDecoderSubmitBuffers;
+                p->pfnVBDXVideoDecoderEndFrame              = vmsvga3dBackVBDXVideoDecoderEndFrame;
+                p->pfnVBDXDefineVideoProcessorInputView     = vmsvga3dBackVBDXDefineVideoProcessorInputView;
+                p->pfnVBDXDefineVideoProcessorOutputView    = vmsvga3dBackVBDXDefineVideoProcessorOutputView;
+                p->pfnVBDXVideoProcessorBlt                 = vmsvga3dBackVBDXVideoProcessorBlt;
+                p->pfnVBDXDestroyVideoDecoder               = vmsvga3dBackVBDXDestroyVideoDecoder;
+                p->pfnVBDXDestroyVideoDecoderOutputView     = vmsvga3dBackVBDXDestroyVideoDecoderOutputView;
+                p->pfnVBDXDestroyVideoProcessor             = vmsvga3dBackVBDXDestroyVideoProcessor;
+                p->pfnVBDXDestroyVideoProcessorInputView    = vmsvga3dBackVBDXDestroyVideoProcessorInputView;
+                p->pfnVBDXDestroyVideoProcessorOutputView   = vmsvga3dBackVBDXDestroyVideoProcessorOutputView;
+                p->pfnVBDXVideoProcessorSetOutputTargetRect = vmsvga3dBackVBDXVideoProcessorSetOutputTargetRect;
+                p->pfnVBDXVideoProcessorSetOutputBackgroundColor = vmsvga3dBackVBDXVideoProcessorSetOutputBackgroundColor;
+                p->pfnVBDXVideoProcessorSetOutputColorSpace = vmsvga3dBackVBDXVideoProcessorSetOutputColorSpace;
+                p->pfnVBDXVideoProcessorSetOutputAlphaFillMode = vmsvga3dBackVBDXVideoProcessorSetOutputAlphaFillMode;
+                p->pfnVBDXVideoProcessorSetOutputConstriction = vmsvga3dBackVBDXVideoProcessorSetOutputConstriction;
+                p->pfnVBDXVideoProcessorSetOutputStereoMode = vmsvga3dBackVBDXVideoProcessorSetOutputStereoMode;
+                p->pfnVBDXVideoProcessorSetStreamFrameFormat = vmsvga3dBackVBDXVideoProcessorSetStreamFrameFormat;
+                p->pfnVBDXVideoProcessorSetStreamColorSpace = vmsvga3dBackVBDXVideoProcessorSetStreamColorSpace;
+                p->pfnVBDXVideoProcessorSetStreamOutputRate = vmsvga3dBackVBDXVideoProcessorSetStreamOutputRate;
+                p->pfnVBDXVideoProcessorSetStreamSourceRect = vmsvga3dBackVBDXVideoProcessorSetStreamSourceRect;
+                p->pfnVBDXVideoProcessorSetStreamDestRect   = vmsvga3dBackVBDXVideoProcessorSetStreamDestRect;
+                p->pfnVBDXVideoProcessorSetStreamAlpha      = vmsvga3dBackVBDXVideoProcessorSetStreamAlpha;
+                p->pfnVBDXVideoProcessorSetStreamPalette    = vmsvga3dBackVBDXVideoProcessorSetStreamPalette;
+                p->pfnVBDXVideoProcessorSetStreamPixelAspectRatio = vmsvga3dBackVBDXVideoProcessorSetStreamPixelAspectRatio;
+                p->pfnVBDXVideoProcessorSetStreamLumaKey    = vmsvga3dBackVBDXVideoProcessorSetStreamLumaKey;
+                p->pfnVBDXVideoProcessorSetStreamStereoFormat = vmsvga3dBackVBDXVideoProcessorSetStreamStereoFormat;
+                p->pfnVBDXVideoProcessorSetStreamAutoProcessingMode = vmsvga3dBackVBDXVideoProcessorSetStreamAutoProcessingMode;
+                p->pfnVBDXVideoProcessorSetStreamFilter     = vmsvga3dBackVBDXVideoProcessorSetStreamFilter;
+                p->pfnVBDXVideoProcessorSetStreamRotation   = vmsvga3dBackVBDXVideoProcessorSetStreamRotation;
+                p->pfnVBDXGetVideoCapability                = vmsvga3dBackVBDXGetVideoCapability;
+                p->pfnVBDXClearVDOV                         = vmsvga3dBackVBDXClearVDOV;
+                p->pfnVBDXClearVPIV                         = vmsvga3dBackVBDXClearVPIV;
+                p->pfnVBDXClearVPOV                         = vmsvga3dBackVBDXClearVPOV;
             }
         }
         else

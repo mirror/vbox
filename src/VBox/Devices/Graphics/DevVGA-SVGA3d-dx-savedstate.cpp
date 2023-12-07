@@ -140,11 +140,12 @@ static int vmsvga3dDXLoadContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
 
     pHlp->pfnSSMGetMem(pSSM, &pDXContext->svgaDXContext, sizeof(SVGADXContextMobFormat));
 
-    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    uint32_t cCOTMobs;
+    rc = pHlp->pfnSSMGetU32(pSSM, &cCOTMobs);
     AssertLogRelRCReturn(rc, rc);
-    AssertReturn(u32 == RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_STATE);
+    AssertReturn(cCOTMobs <= RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_STATE);
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pDXContext->aCOTMobs); ++i)
+    for (unsigned i = 0; i < cCOTMobs; ++i)
     {
         rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertLogRelRCReturn(rc, rc);
@@ -172,11 +173,24 @@ static int vmsvga3dDXLoadContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
         {SVGA_COTABLE_DXQUERY,         sizeof(SVGACOTableDXQueryEntry),           &pDXContext->cot.cQuery,           (void **)&pDXContext->cot.paQuery},
         {SVGA_COTABLE_DXSHADER,        sizeof(SVGACOTableDXShaderEntry),          &pDXContext->cot.cShader,          (void **)&pDXContext->cot.paShader},
         {SVGA_COTABLE_UAVIEW,          sizeof(SVGACOTableDXUAViewEntry),          &pDXContext->cot.cUAView,          (void **)&pDXContext->cot.paUAView},
+        {VBSVGA_COTABLE_VIDEOPROCESSOR, sizeof(VBSVGACOTableDXVideoProcessorEntry), &pDXContext->cot.cVideoProcessor, (void **)&pDXContext->cot.paVideoProcessor},
+        {VBSVGA_COTABLE_VDOV,          sizeof(VBSVGACOTableDXVideoDecoderOutputViewEntry), &pDXContext->cot.cVideoDecoderOutputView, (void **)&pDXContext->cot.paVideoDecoderOutputView},
+        {VBSVGA_COTABLE_VIDEODECODER,  sizeof(VBSVGACOTableDXVideoDecoderEntry), &pDXContext->cot.cVideoDecoder, (void **)&pDXContext->cot.paVideoDecoder},
+        {VBSVGA_COTABLE_VPIV,          sizeof(VBSVGACOTableDXVideoProcessorInputViewEntry), &pDXContext->cot.cVideoProcessorInputView, (void **)&pDXContext->cot.paVideoProcessorInputView},
+        {VBSVGA_COTABLE_VPOV,          sizeof(VBSVGACOTableDXVideoProcessorOutputViewEntry), &pDXContext->cot.cVideoProcessorOutputView, (void **)&pDXContext->cot.paVideoProcessorOutputView},
     };
 
     AssertCompile(RT_ELEMENTS(cot) == RT_ELEMENTS(pDXContext->aCOTMobs));
-    for (unsigned i = 0; i < RT_ELEMENTS(cot); ++i)
+    for (unsigned i = 0; i < cCOTMobs; ++i)
     {
+        uint32_t idxCOTable;
+        if (cot[i].COTableType < SVGA_COTABLE_MAX)
+            idxCOTable = cot[i].COTableType;
+        else if (cot[i].COTableType >= VBSVGA_COTABLE_MIN && cot[i].COTableType < VBSVGA_COTABLE_MAX)
+            idxCOTable = SVGA_COTABLE_MAX + (cot[i].COTableType - VBSVGA_COTABLE_MIN);
+        else
+            AssertFailedReturn(VERR_INVALID_STATE);
+
         uint32_t cEntries;
         pHlp->pfnSSMGetU32(pSSM, &cEntries);
         rc = pHlp->pfnSSMGetU32(pSSM, &u32);
@@ -184,7 +198,7 @@ static int vmsvga3dDXLoadContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
         AssertReturn(u32 == cot[i].cbEntry, VERR_INVALID_STATE);
 
         *cot[i].pcEntries = cEntries;
-        *cot[i].ppaEntries = vmsvgaR3MobBackingStorePtr(pDXContext->aCOTMobs[cot[i].COTableType], 0);
+        *cot[i].ppaEntries = vmsvgaR3MobBackingStorePtr(pDXContext->aCOTMobs[idxCOTable], 0);
 
         if (cEntries)
         {
@@ -342,7 +356,7 @@ static int vmsvga3dDXSaveSurface(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
                         for (uint32_t z = 0; z < map.box.d; ++z)
                         {
                             uint8_t *pu8MapPlane = pu8Map;
-                            for (uint32_t y = 0; y < dims.cyBlocks; ++y)
+                            for (uint32_t y = 0; y < map.cRows; ++y)
                             {
                                 rc = pHlp->pfnSSMPutMem(pSSM, pu8MapPlane, dims.cbRow);
                                 AssertRCReturn(rc, rc);
@@ -413,6 +427,11 @@ static int vmsvga3dDXSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
         {pDXContext->cot.cQuery,           sizeof(SVGACOTableDXQueryEntry),           pDXContext->cot.paQuery},
         {pDXContext->cot.cShader,          sizeof(SVGACOTableDXShaderEntry),          pDXContext->cot.paShader},
         {pDXContext->cot.cUAView,          sizeof(SVGACOTableDXUAViewEntry),          pDXContext->cot.paUAView},
+        {pDXContext->cot.cVideoProcessor,  sizeof(VBSVGACOTableDXVideoProcessorEntry), pDXContext->cot.paVideoProcessor},
+        {pDXContext->cot.cVideoDecoderOutputView, sizeof(VBSVGACOTableDXVideoDecoderOutputViewEntry), pDXContext->cot.paVideoDecoderOutputView},
+        {pDXContext->cot.cVideoDecoder,    sizeof(VBSVGACOTableDXVideoDecoderEntry),  pDXContext->cot.paVideoDecoder},
+        {pDXContext->cot.cVideoProcessorInputView, sizeof(VBSVGACOTableDXVideoProcessorInputViewEntry), pDXContext->cot.paVideoProcessorInputView},
+        {pDXContext->cot.cVideoProcessorOutputView, sizeof(VBSVGACOTableDXVideoProcessorOutputViewEntry), pDXContext->cot.paVideoProcessorOutputView},
     };
 
     AssertCompile(RT_ELEMENTS(cot) == RT_ELEMENTS(pDXContext->aCOTMobs));
