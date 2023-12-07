@@ -46,7 +46,6 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UIFileManagerHostTable.h"
 #include "UIIconPool.h"
 #include "UIPaneContainer.h"
 #include "UIModalWindowManager.h"
@@ -94,6 +93,63 @@ private:
     QCheckBox    *m_pShowHiddenObjectsCheckBox;
     QGridLayout  *m_pVisoOptionsGridLayout;
 };
+
+
+/*********************************************************************************************************************************
+*   UIVisoHostBrowser implementation.                                                                                            *
+*********************************************************************************************************************************/
+
+UIVisoHostBrowser::UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+    :UIFileManagerHostTable(pActionPool, pParent)
+{
+}
+
+void UIVisoHostBrowser::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
+{
+    if (!pWidget)
+        return;
+
+    QMenu menu;
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
+
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
+    menu.exec(pWidget->mapToGlobal(point));
+}
+
+void UIVisoHostBrowser::prepareMainMenu(QMenu *pMenu)
+{
+    AssertReturnVoid(pMenu);
+    QMenu *pSubMenu = new QMenu(QApplication::translate("UIVisoCreatorWidget", "Host Browser"), pMenu);
+    pMenu->addMenu(pSubMenu);
+    AssertReturnVoid(pSubMenu);
+    m_pSubMenu = pSubMenu;
+
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
+
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
+    pSubMenu->addSeparator();
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
+    pSubMenu->addSeparator();
+    pSubMenu->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
+}
+
+
+void UIVisoHostBrowser::retranslateUi()
+{
+    UIFileManagerHostTable::retranslateUi();
+    if (m_pSubMenu)
+        m_pSubMenu->setTitle(QApplication::translate("UIVisoCreatorWidget", "VISO Browser"));
+
+    //setFileTableLabelText(QApplication::translate("UIVisoCreatorWidget","VISO Content"));
+}
 
 
 /*********************************************************************************************************************************
@@ -487,10 +543,9 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(pContainerLayout);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pHostFileBrowser = new UIFileManagerHostTable(m_pActionPool);
+    m_pHostFileBrowser = new UIVisoHostBrowser(m_pActionPool);
     AssertPtrReturnVoid(m_pHostFileBrowser);
     pContainerLayout->addWidget(m_pHostFileBrowser, 0, 0, 1, 4);
-    m_pHostFileBrowser->setModifierActionsVisible(false);
     m_pHostFileBrowser->setDragDropMode(QAbstractItemView::DragOnly);
 
     prepareVerticalToolBar();
@@ -522,7 +577,7 @@ void UIVisoCreatorWidget::prepareConnections()
     {
     //     connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
     //             this, &UIVisoCreatorWidget::sltAddObjectsToViso);
-        connect(m_pHostFileBrowser, &UIFileManagerHostTable::sigSelectionChanged,
+        connect(m_pHostFileBrowser, &UIVisoHostBrowser::sigSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged);
     }
 
@@ -607,8 +662,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pMainMenu->addAction(m_pRemoveISOAction);
     }
 
-    // if (m_pHostBrowser)
-    //     m_pHostBrowser->prepareMainMenu(m_pMainMenu);
+    if (m_pHostFileBrowser)
+        m_pHostFileBrowser->prepareMainMenu(m_pMainMenu);
 
     if (m_pVISOContentBrowser)
         m_pVISOContentBrowser->prepareMainMenu(m_pMainMenu);

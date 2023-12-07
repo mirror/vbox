@@ -50,8 +50,6 @@ class UIFileManagerHostTable : public UIFileManagerTable
 public:
 
     UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent = 0);
-    /** Hide delete, rename, new folder actions. */
-    void setModifierActionsVisible(bool fShown);
 
     static KFsObjType  fileType(const QFileInfo &fsInfo);
     static KFsObjType  fileType(const QString &strPath);
@@ -63,7 +61,7 @@ protected:
      *  tree under the @p parent. */
     static bool scanDirectory(const QString& strPath, UIFileSystemItem *parent,
                               QMap<QString, UIFileSystemItem*> &fileObjects);
-    void            retranslateUi() override final;
+    void            retranslateUi() override;
     virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) override final;
     virtual void    deleteByItem(UIFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
@@ -74,7 +72,7 @@ protected:
     virtual void    determineDriveLetters() override final;
     virtual void    determinePathSeparator() override final;
     virtual void    prepareToolbar() override final;
-    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
+    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override;
     virtual void    toggleForwardBackwardActions() override final;
 
     /** @name Copy/Cut host-to-host stuff. Currently not implemented.

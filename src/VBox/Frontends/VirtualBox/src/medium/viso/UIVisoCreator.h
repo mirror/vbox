@@ -38,6 +38,7 @@
 #include "QIMainDialog.h"
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
+#include "UIFileManagerHostTable.h"
 
 #include <iprt/stream.h>
 
@@ -50,9 +51,25 @@ class QMenu;
 class QIDialogButtonBox;
 class QIToolBar;
 class UIActionPool;
-class UIFileManagerHostTable;
 class UIVisoContentBrowser;
 class UIVisoSettingWidget;
+
+
+class UIVisoHostBrowser : public UIFileManagerHostTable
+{
+
+public:
+
+    UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent = 0);
+    void prepareMainMenu(QMenu *pMenu);
+
+private:
+
+    virtual void createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
+    virtual void retranslateUi() override;
+    QPointer<QMenu>        m_pSubMenu;
+};
+
 
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
   * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
@@ -153,7 +170,7 @@ private:
 
     QVBoxLayout            *m_pMainLayout;
     UIVisoContentBrowser   *m_pVISOContentBrowser;
-    UIFileManagerHostTable *m_pHostFileBrowser;
+    UIVisoHostBrowser      *m_pHostFileBrowser;
 
     QIToolBar             *m_pToolBar;
     QIToolBar             *m_pVerticalToolBar;

@@ -144,18 +144,6 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     retranslateUi();
 }
 
-void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
-{
-    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete))
-        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete)->setVisible(fShown);
-    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename))
-        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename)->setVisible(fShown);
-    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory))
-        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory)->setVisible(fShown);
-    if (m_pModifierActionSeparator)
-        m_pModifierActionSeparator->setVisible(fShown);
-}
-
 /* static */ bool UIFileManagerHostTable::scanDirectory(const QString& strPath, UIFileSystemItem *parent,
                                                         QMap<QString, UIFileSystemItem*> &fileObjects)
 {
