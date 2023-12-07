@@ -89,14 +89,14 @@
 
 typedef struct D3D11BLITTER
 {
-    ID3D11Device           *pDevice;
-    ID3D11DeviceContext    *pImmediateContext;
+    ID3D11Device1          *pDevice;
+    ID3D11DeviceContext1   *pImmediateContext;
 
     ID3D11VertexShader     *pVertexShader;
     ID3D11PixelShader      *pPixelShader;
     ID3D11SamplerState     *pSamplerState;
-    ID3D11RasterizerState  *pRasterizerState;
-    ID3D11BlendState       *pBlendState;
+    ID3D11RasterizerState1 *pRasterizerState;
+    ID3D11BlendState1      *pBlendState;
 } D3D11BLITTER;
 
 typedef struct DXDEVICE
@@ -348,10 +348,10 @@ typedef struct VMSVGA3DBACKENDDXCONTEXT
     uint32_t                   cShader;                /* paShader */
     uint32_t                   cStreamOutput;          /* paStreamOutput */
     uint32_t                   cUnorderedAccessView;   /* paUnorderedAccessView */
-    ID3D11BlendState         **papBlendState;
+    ID3D11BlendState1        **papBlendState;
     ID3D11DepthStencilState  **papDepthStencilState;
     ID3D11SamplerState       **papSamplerState;
-    ID3D11RasterizerState    **papRasterizerState;
+    ID3D11RasterizerState1   **papRasterizerState;
     DXELEMENTLAYOUT           *paElementLayout;
     DXVIEW                    *paRenderTargetView;
     DXVIEW                    *paDepthStencilView;
@@ -419,7 +419,7 @@ static void dxDestroyVideoProcessor(DXVIDEOPROCESSOR *pDXVideoProcessor);
 static int dxCreateVideoDecoder(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, VBSVGA3dVideoDecoderId videoDecoderId, VBSVGACOTableDXVideoDecoderEntry const *pEntry);
 static void dxDestroyVideoDecoder(DXVIDEODECODER *pDXVideoDecoder);
 
-static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext);
+static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device1 *pDevice, ID3D11DeviceContext1 *pImmediateContext);
 static void BlitRelease(D3D11BLITTER *pBlitter);
 
 
@@ -1911,26 +1911,33 @@ static D3D11_BLEND_OP dxBlendOp(uint8_t svgaBlendEq)
 }
 
 
-/** @todo AssertCompile for types like D3D11_COMPARISON_FUNC and SVGA3dComparisonFunc */
-static HRESULT dxBlendStateCreate(DXDEVICE *pDevice, SVGACOTableDXBlendStateEntry const *pEntry, ID3D11BlendState **pp)
+static D3D11_LOGIC_OP dxLogicOp(uint8_t svgaLogicEq)
 {
-    D3D11_BLEND_DESC BlendDesc;
+    return (D3D11_LOGIC_OP)svgaLogicEq;
+}
+
+
+/** @todo AssertCompile for types like D3D11_COMPARISON_FUNC and SVGA3dComparisonFunc */
+static HRESULT dxBlendStateCreate(DXDEVICE *pDevice, SVGACOTableDXBlendStateEntry const *pEntry, ID3D11BlendState1 **pp)
+{
+    D3D11_BLEND_DESC1 BlendDesc;
     BlendDesc.AlphaToCoverageEnable = RT_BOOL(pEntry->alphaToCoverageEnable);
     BlendDesc.IndependentBlendEnable = RT_BOOL(pEntry->independentBlendEnable);
     for (int i = 0; i < SVGA3D_MAX_RENDER_TARGETS; ++i)
     {
         BlendDesc.RenderTarget[i].BlendEnable           = RT_BOOL(pEntry->perRT[i].blendEnable);
+        BlendDesc.RenderTarget[i].LogicOpEnable         = RT_BOOL(pEntry->perRT[i].logicOpEnable);
         BlendDesc.RenderTarget[i].SrcBlend              = dxBlendFactorColor(pEntry->perRT[i].srcBlend);
         BlendDesc.RenderTarget[i].DestBlend             = dxBlendFactorColor(pEntry->perRT[i].destBlend);
         BlendDesc.RenderTarget[i].BlendOp               = dxBlendOp         (pEntry->perRT[i].blendOp);
         BlendDesc.RenderTarget[i].SrcBlendAlpha         = dxBlendFactorAlpha(pEntry->perRT[i].srcBlendAlpha);
         BlendDesc.RenderTarget[i].DestBlendAlpha        = dxBlendFactorAlpha(pEntry->perRT[i].destBlendAlpha);
         BlendDesc.RenderTarget[i].BlendOpAlpha          = dxBlendOp         (pEntry->perRT[i].blendOpAlpha);
+        BlendDesc.RenderTarget[i].LogicOp               = dxLogicOp         (pEntry->perRT[i].logicOp);
         BlendDesc.RenderTarget[i].RenderTargetWriteMask = pEntry->perRT[i].renderTargetWriteMask;
-        /** @todo logicOpEnable and logicOp */
     }
 
-    HRESULT hr = pDevice->pDevice->CreateBlendState(&BlendDesc, pp);
+    HRESULT hr = pDevice->pDevice->CreateBlendState1(&BlendDesc, pp);
     Assert(SUCCEEDED(hr));
     return hr;
 }
@@ -1998,11 +2005,17 @@ static D3D11_FILL_MODE dxFillMode(uint8_t svgaFillMode)
 }
 
 
-static HRESULT dxRasterizerStateCreate(DXDEVICE *pDevice, SVGACOTableDXRasterizerStateEntry const *pEntry, ID3D11RasterizerState **pp)
+static D3D11_CULL_MODE dxCullMode(uint8_t svgaCullMode)
 {
-    D3D11_RASTERIZER_DESC desc;
+    return (D3D11_CULL_MODE)svgaCullMode;
+}
+
+
+static HRESULT dxRasterizerStateCreate(DXDEVICE *pDevice, SVGACOTableDXRasterizerStateEntry const *pEntry, ID3D11RasterizerState1 **pp)
+{
+    D3D11_RASTERIZER_DESC1 desc;
     desc.FillMode              = dxFillMode(pEntry->fillMode);
-    desc.CullMode              = (D3D11_CULL_MODE)pEntry->cullMode;
+    desc.CullMode              = dxCullMode(pEntry->cullMode);
     desc.FrontCounterClockwise = pEntry->frontCounterClockwise;
     /** @todo provokingVertexLast */
     desc.DepthBias             = pEntry->depthBias;
@@ -2012,9 +2025,10 @@ static HRESULT dxRasterizerStateCreate(DXDEVICE *pDevice, SVGACOTableDXRasterize
     desc.ScissorEnable         = pEntry->scissorEnable;
     desc.MultisampleEnable     = pEntry->multisampleEnable;
     desc.AntialiasedLineEnable = pEntry->antialiasedLineEnable;
-    /** @todo lineWidth lineStippleEnable lineStippleFactor lineStipplePattern forcedSampleCount */
+    desc.ForcedSampleCount     = pEntry->forcedSampleCount;
+    /** @todo lineWidth lineStippleEnable lineStippleFactor lineStipplePattern */
 
-    HRESULT hr = pDevice->pDevice->CreateRasterizerState(&desc, pp);
+    HRESULT hr = pDevice->pDevice->CreateRasterizerState1(&desc, pp);
     Assert(SUCCEEDED(hr));
     return hr;
 }
@@ -7844,7 +7858,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetBlendState(PVGASTATECC pThisCC, PVMSVG
 
     if (blendId != SVGA3D_INVALID_ID)
     {
-        ID3D11BlendState *pBlendState = pDXContext->pBackendDXContext->papBlendState[blendId];
+        ID3D11BlendState1 *pBlendState = pDXContext->pBackendDXContext->papBlendState[blendId];
         pDevice->pImmediateContext->OMSetBlendState(pBlendState, blendFactor, sampleMask);
     }
     else
@@ -7884,7 +7898,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetRasterizerState(PVGASTATECC pThisCC, P
 
     if (rasterizerId != SVGA3D_INVALID_ID)
     {
-        ID3D11RasterizerState *pRasterizerState = pDXContext->pBackendDXContext->papRasterizerState[rasterizerId];
+        ID3D11RasterizerState1 *pRasterizerState = pDXContext->pBackendDXContext->papRasterizerState[rasterizerId];
         pDevice->pImmediateContext->RSSetState(pRasterizerState);
     }
     else
@@ -8496,7 +8510,7 @@ static void BlitRelease(D3D11BLITTER *pBlitter)
 }
 
 
-static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext)
+static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device1 *pDevice, ID3D11DeviceContext1 *pImmediateContext)
 {
     HRESULT hr;
 
@@ -8524,7 +8538,7 @@ static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11Dev
     SamplerDesc.MaxLOD         = 0.0f;
     HTEST(pBlitter->pDevice->CreateSamplerState(&SamplerDesc, &pBlitter->pSamplerState));
 
-    D3D11_RASTERIZER_DESC RasterizerDesc;
+    D3D11_RASTERIZER_DESC1 RasterizerDesc;
     RasterizerDesc.FillMode              = D3D11_FILL_SOLID;
     RasterizerDesc.CullMode              = D3D11_CULL_NONE;
     RasterizerDesc.FrontCounterClockwise = FALSE;
@@ -8535,23 +8549,26 @@ static HRESULT BlitInit(D3D11BLITTER *pBlitter, ID3D11Device *pDevice, ID3D11Dev
     RasterizerDesc.ScissorEnable         = FALSE;
     RasterizerDesc.MultisampleEnable     = FALSE;
     RasterizerDesc.AntialiasedLineEnable = FALSE;
-    HTEST(pBlitter->pDevice->CreateRasterizerState(&RasterizerDesc, &pBlitter->pRasterizerState));
+    RasterizerDesc.ForcedSampleCount     = 0;
+    HTEST(pBlitter->pDevice->CreateRasterizerState1(&RasterizerDesc, &pBlitter->pRasterizerState));
 
-    D3D11_BLEND_DESC BlendDesc;
+    D3D11_BLEND_DESC1 BlendDesc;
     BlendDesc.AlphaToCoverageEnable = FALSE;
     BlendDesc.IndependentBlendEnable = FALSE;
     for (unsigned i = 0; i < RT_ELEMENTS(BlendDesc.RenderTarget); ++i)
     {
         BlendDesc.RenderTarget[i].BlendEnable           = FALSE;
+        BlendDesc.RenderTarget[i].LogicOpEnable         = FALSE;
         BlendDesc.RenderTarget[i].SrcBlend              = D3D11_BLEND_SRC_COLOR;
         BlendDesc.RenderTarget[i].DestBlend             = D3D11_BLEND_ZERO;
         BlendDesc.RenderTarget[i].BlendOp               = D3D11_BLEND_OP_ADD;
         BlendDesc.RenderTarget[i].SrcBlendAlpha         = D3D11_BLEND_SRC_ALPHA;
         BlendDesc.RenderTarget[i].DestBlendAlpha        = D3D11_BLEND_ZERO;
         BlendDesc.RenderTarget[i].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
+        BlendDesc.RenderTarget[i].LogicOp               = D3D11_LOGIC_OP_CLEAR;
         BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xF;
     }
-    HTEST(pBlitter->pDevice->CreateBlendState(&BlendDesc, &pBlitter->pBlendState));
+    HTEST(pBlitter->pDevice->CreateBlendState1(&BlendDesc, &pBlitter->pBlendState));
 
     return S_OK;
 }
