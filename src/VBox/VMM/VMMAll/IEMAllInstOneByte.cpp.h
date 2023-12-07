@@ -5277,7 +5277,7 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
             IEM_MC_ARG_LOCAL_REF(uint8_t *, pu8Reg, uTmpReg, 1); \
             \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+            IEMOP_HLP_DONE_DECODING(); /** @todo testcase: lock xchg */ \
             IEM_MC_MEM_MAP_U8_RW(pu8Mem, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
             IEM_MC_FETCH_GREG_U8(uTmpReg, IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_CALL_VOID_AIMPL_2(a_fnWorker, pu8Mem, pu8Reg); \
@@ -5380,7 +5380,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                         IEM_MC_ARG_LOCAL_REF(uint16_t *, pu16Reg, uTmpReg, 1); \
                         \
                         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                        IEMOP_HLP_DONE_DECODING(); /** @todo testcase: lock xchg */ \
                         IEM_MC_MEM_MAP_U16_RW(pu16Mem, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_FETCH_GREG_U16(uTmpReg, IEM_GET_MODRM_REG(pVCpu, bRm)); \
                         IEM_MC_CALL_VOID_AIMPL_2(a_fnWorker16, pu16Mem, pu16Reg); \
@@ -5400,7 +5400,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                         IEM_MC_ARG_LOCAL_REF(uint32_t *, pu32Reg, uTmpReg, 1); \
                         \
                         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                        IEMOP_HLP_DONE_DECODING(); \
                         IEM_MC_MEM_MAP_U32_RW(pu32Mem, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_FETCH_GREG_U32(uTmpReg, IEM_GET_MODRM_REG(pVCpu, bRm)); \
                         IEM_MC_CALL_VOID_AIMPL_2(a_fnWorker32, pu32Mem, pu32Reg); \
@@ -5420,7 +5420,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                         IEM_MC_ARG_LOCAL_REF(uint64_t *, pu64Reg, uTmpReg, 1); \
                         \
                         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                        IEMOP_HLP_DONE_DECODING(); \
                         IEM_MC_MEM_MAP_U64_RW(pu64Mem, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_FETCH_GREG_U64(uTmpReg, IEM_GET_MODRM_REG(pVCpu, bRm)); \
                         IEM_MC_CALL_VOID_AIMPL_2(a_fnWorker64, pu64Mem, pu64Reg); \
@@ -13124,7 +13124,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU16, pu16Dst, pEFlags); \
@@ -13143,7 +13143,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU32, pu32Dst, pEFlags); \
@@ -13162,7 +13162,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU64, pu64Dst, pEFlags); \
