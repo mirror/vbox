@@ -476,7 +476,9 @@ typedef struct IEMNATIVEVAR
     /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not.
      * @todo not sure what this really is for...   */
     IEMNATIVEGSTREG     enmGstReg;
-    uint8_t             bAlign;
+    /** Set if the registered is currently used exclusively, false if the
+     *  variable is idle and the register can be grabbed. */
+    bool                fRegAcquired;
 
     union
     {
