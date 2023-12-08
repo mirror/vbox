@@ -1656,18 +1656,16 @@ void UIMachineLogic::sltShowInformationDialog()
     if (!isMachineWindowsCreated())
         return;
 
+    /* Create instance if not yet created: */
     if (!m_pVMInformationDialog)
-        m_pVMInformationDialog = new UIVMInformationDialog;
-
-    if (m_pVMInformationDialog)
     {
-        m_pVMInformationDialog->show();
-        m_pVMInformationDialog->raise();
-        m_pVMInformationDialog->setWindowState(m_pVMInformationDialog->windowState() & ~Qt::WindowMinimized);
-        m_pVMInformationDialog->activateWindow();
+        m_pVMInformationDialog = new UIVMInformationDialog;
         connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose,
                 this, &UIMachineLogic::sltCloseInformationDialog);
     }
+
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_pVMInformationDialog);
 }
 
 void UIMachineLogic::sltCloseInformationDialog()
@@ -2032,24 +2030,20 @@ void UIMachineLogic::sltShowKeyboardSettings()
 
 void UIMachineLogic::sltShowSoftKeyboard()
 {
-    if (!activeMachineWindow())
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
         return;
 
+    /* Create instance if not yet created: */
     if (!m_pSoftKeyboardDialog)
     {
-        QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
-        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), pCenterWidget, uimachine()->machineName());
+        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), activeMachineWindow(), uimachine()->machineName());
         connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose,
                 this, &UIMachineLogic::sltCloseSoftKeyboard);
     }
 
-    if (m_pSoftKeyboardDialog)
-    {
-        m_pSoftKeyboardDialog->show();
-        m_pSoftKeyboardDialog->raise();
-        m_pSoftKeyboardDialog->setWindowState(m_pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
-        m_pSoftKeyboardDialog->activateWindow();
-    }
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_pSoftKeyboardDialog);
 }
 
 void UIMachineLogic::sltCloseSoftKeyboard()
