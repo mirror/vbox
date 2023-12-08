@@ -721,7 +721,7 @@ static DECLCALLBACK(int) qemuFwCfgR3ReadFileDir(PDEVQEMUFWCFG pThis, PCQEMUFWCFG
         pThis->u.CfgFile.cbFile   = RT_H2BE_U32(pEntry->cbFile);
         pThis->u.CfgFile.uCfgItem = RT_H2BE_U16(pEntry->Cfg.uCfgItem);
         pThis->u.CfgFile.u16Rsvd  = 0;
-        strncpy(&pThis->u.CfgFile.szFilename[0], pEntry->Cfg.pszItem, sizeof(pThis->u.CfgFile.szFilename));
+        strncpy(pThis->u.CfgFile.szFilename, pEntry->Cfg.pszItem, sizeof(pThis->u.CfgFile.szFilename));
         pThis->u.CfgFile.szFilename[QEMU_FW_CFG_ITEM_FILE_NAME_MAX] = '\0';
 
         memcpy(pvBuf, &pThis->u.ab[off], cbToRead);
