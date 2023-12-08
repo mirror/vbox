@@ -57,6 +57,17 @@
       g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 
+#define ENTRY_FIX(a_Name)    ENTRY_FIX_EX(a_Name, 0)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define ENTRY_FIX_EX(a_Name, a_uExtra) \
+    { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
+      g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, \
+      RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
+#else
+# define ENTRY_FIX_EX(a_Name, a_uExtra) ENTRY_EX(a_Name, a_uExtra)
+#endif
+
 #define ENTRY_PFN_CAST(a_Name, a_pfnType)  ENTRY_PFN_CAST_EX(a_Name, a_pfnType, 0)
 #define ENTRY_PFN_CAST_EX(a_Name, a_pfnType, a_uExtra) \
     { RT_XSTR(a_Name), (a_pfnType)iemAImpl_ ## a_Name, NULL, \
@@ -118,6 +129,8 @@
         uint32_t const         *pcTests; \
         uint32_t                uExtra; \
         uint8_t                 idxCpuEflFlavour; \
+        uint16_t                cFixedTests; \
+        a_TestType const       *paFixedTests; \
     } a_TypeName
 
 #define COUNT_VARIATIONS(a_SubTest) \
@@ -1346,6 +1359,20 @@ static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint3
             RTStrmPrintf(pOutFn, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %#x }, /* #%u */\n", \
                          Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
         } \
+        for (uint32_t iTest = 0; iTest < g_aBinU ## a_cBits[iFn].cFixedTests; iTest++ ) \
+        { \
+            a_TestType Test; \
+            Test.fEflIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].fEflIn == UINT32_MAX ? RandEFlags() \
+                           : g_aBinU ## a_cBits[iFn].paFixedTests[iTest].fEflIn; \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uDstIn; \
+            Test.uDstOut   = Test.uDstIn; \
+            Test.uSrcIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uSrcIn; \
+            Test.uMisc     = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uMisc; \
+            pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
+            RTStrmPrintf(pOutFn, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %#x }, /* fixed #%u */\n", \
+                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+        } \
         GenerateArrayEnd(pOutFn, g_aBinU ## a_cBits[iFn].pszName); \
     } \
 }
@@ -1423,9 +1450,16 @@ TEST_BINARY_OPS(8, uint8_t, "%#04x", BINU8_TEST_T, g_aBinU8)
 /*
  * 16-bit binary operations.
  */
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const BINU16_TEST_T g_aFixedTests_add_u16[] =
+{
+    /* efl in, efl out, uDstIn, uDstOut,       uSrc, uExtra */
+    { UINT32_MAX,    0,      1,       0, UINT16_MAX,      0 },
+};
+#endif
 static const BINU16_T g_aBinU16[] =
 {
-    ENTRY(add_u16),
+    ENTRY_FIX(add_u16),
     ENTRY(add_u16_locked),
     ENTRY(adc_u16),
     ENTRY(adc_u16_locked),
@@ -1462,9 +1496,16 @@ TEST_BINARY_OPS(16, uint16_t, "%#06x", BINU16_TEST_T, g_aBinU16)
 /*
  * 32-bit binary operations.
  */
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const BINU32_TEST_T g_aFixedTests_add_u32[] =
+{
+    /* efl in, efl out, uDstIn, uDstOut,       uSrc, uExtra */
+    { UINT32_MAX,    0,      1,       0, UINT32_MAX,      0 },
+};
+#endif
 static const BINU32_T g_aBinU32[] =
 {
-    ENTRY(add_u32),
+    ENTRY_FIX(add_u32),
     ENTRY(add_u32_locked),
     ENTRY(adc_u32),
     ENTRY(adc_u32_locked),
@@ -1500,9 +1541,16 @@ TEST_BINARY_OPS(32, uint32_t, "%#010RX32", BINU32_TEST_T, g_aBinU32)
 /*
  * 64-bit binary operations.
  */
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const BINU64_TEST_T g_aFixedTests_add_u64[] =
+{
+    /* efl in, efl out, uDstIn, uDstOut,       uSrc, uExtra */
+    { UINT32_MAX,    0,      1,       0, UINT64_MAX,      0 },
+};
+#endif
 static const BINU64_T g_aBinU64[] =
 {
-    ENTRY(add_u64),
+    ENTRY_FIX(add_u64),
     ENTRY(add_u64_locked),
     ENTRY(adc_u64),
     ENTRY(adc_u64_locked),
