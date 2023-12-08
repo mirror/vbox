@@ -8785,7 +8785,9 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
  * @param   u32Disp             The displacement byte/word/dword, if any.
  * @param   cbInstr             The size of the fully decoded instruction. Used
  *                              for RIP relative addressing.
- * @param   idxVarRet           .
+ * @param   idxVarRet           The result variable number.
+ * @param   f64Bit              Whether to use a 64-bit or 32-bit address size
+ *                              when calculating the address.
  *
  * @see iemOpHlpCalcRmEffAddrThreadedAddr64
  */
