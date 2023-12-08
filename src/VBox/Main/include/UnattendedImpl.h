@@ -79,7 +79,8 @@ public:
     // public methods for internal purposes
     Utf8Str const &i_getIsoPath() const;
     Utf8Str const &i_getUser() const;
-    Utf8Str const &i_getPassword() const;
+    Utf8Str const &i_getUserPassword() const;
+    Utf8Str const &i_getAdminPassword() const;
     Utf8Str const &i_getFullUserName() const;
     Utf8Str const &i_getProductKey() const;
     Utf8Str const &i_getProxy() const;
@@ -127,7 +128,8 @@ private:
     /** @name Values of the IUnattended attributes.
      * @{ */
     Utf8Str         mStrUser;
-    Utf8Str         mStrPassword;
+    Utf8Str         mStrUserPassword;
+    Utf8Str         mStrAdminPassword;
     Utf8Str         mStrFullUserName;
     Utf8Str         mStrProductKey;
     Utf8Str         mStrIsoPath;
@@ -197,8 +199,10 @@ private:
     HRESULT setIsoPath(const com::Utf8Str &isoPath);
     HRESULT getUser(com::Utf8Str &user);
     HRESULT setUser(const com::Utf8Str &user);
-    HRESULT getPassword(com::Utf8Str &password);
-    HRESULT setPassword(const com::Utf8Str &password);
+    HRESULT getUserPassword(com::Utf8Str &password);
+    HRESULT setUserPassword(const com::Utf8Str &password);
+    HRESULT getAdminPassword(com::Utf8Str &password);
+    HRESULT setAdminPassword(const com::Utf8Str &password);
     HRESULT getFullUserName(com::Utf8Str &user);
     HRESULT setFullUserName(const com::Utf8Str &user);
     HRESULT getProductKey(com::Utf8Str &productKey);

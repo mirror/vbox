@@ -314,7 +314,8 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
     try
     {
         mStrUser                    = "vboxuser";
-        mStrPassword                = "changeme";
+        mStrUserPassword            = "changeme";
+        /* Note: For mStrAdminPassword see Unattended::i_getAdminPassword(). */
         mfInstallGuestAdditions     = false;
         mfInstallTestExecService    = false;
         mfInstallUserPayload        = false;
@@ -3461,18 +3462,33 @@ HRESULT Unattended::setUser(const com::Utf8Str &user)
     return S_OK;
 }
 
-HRESULT Unattended::getPassword(com::Utf8Str &password)
+HRESULT Unattended::getUserPassword(com::Utf8Str &password)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    password = mStrPassword;
+    password = mStrUserPassword;
     return S_OK;
 }
 
-HRESULT Unattended::setPassword(const com::Utf8Str &password)
+HRESULT Unattended::setUserPassword(const com::Utf8Str &password)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
-    mStrPassword = password;
+    mStrUserPassword = password;
+    return S_OK;
+}
+
+HRESULT Unattended::getAdminPassword(com::Utf8Str &password)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    password = mStrAdminPassword;
+    return S_OK;
+}
+
+HRESULT Unattended::setAdminPassword(const com::Utf8Str &password)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    mStrAdminPassword = password;
     return S_OK;
 }
 
@@ -4147,10 +4163,19 @@ Utf8Str const &Unattended::i_getUser() const
     return mStrUser;
 }
 
-Utf8Str const &Unattended::i_getPassword() const
+Utf8Str const &Unattended::i_getUserPassword() const
 {
     Assert(isReadLockedOnCurrentThread());
-    return mStrPassword;
+    return mStrUserPassword;
+}
+
+Utf8Str const &Unattended::i_getAdminPassword() const
+{
+    Assert(isReadLockedOnCurrentThread());
+
+    /* If no Administrator / 'root' password is being set, the user password will be used instead.
+     * Also see API documentation. */
+    return mStrAdminPassword.isEmpty() ? mStrUserPassword : mStrAdminPassword;
 }
 
 Utf8Str const &Unattended::i_getFullUserName() const

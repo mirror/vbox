@@ -4961,7 +4961,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="1136224d-0ba7-45d6-9aee-03b628da46b6"
+    uuid="a71e5822-365b-49ba-bd14-c8d616e6740d"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -5009,14 +5009,22 @@
 
     <attribute name="user" type="wstring">
       <desc>
-        Assign an user login name.
+        Assigns an user login name.
       </desc>
     </attribute>
 
-    <attribute name="password" type="wstring">
+    <attribute name="userPassword" type="wstring">
       <desc>
-        Assign a password to the user. The password is the same for both
-        normal user and for Administrator / 'root' accounts.
+        Assigns a password to the user.
+      </desc>
+    </attribute>
+
+    <attribute name="adminPassword" type="wstring">
+      <desc>
+        Assigns a password to the Administrator / 'root' accounts.
+
+        If no Administrator / 'root' password is being set explicitly, the password set via <link to="IUnattended::userPassword"/>
+        will be used instead.
       </desc>
     </attribute>
 

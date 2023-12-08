@@ -249,8 +249,9 @@ HRESULT UnattendedInstaller::initInstaller()
         return mpParent->setError(E_INVALIDARG, tr("Cannot proceed with an empty installation ISO path"));
     if (mpParent->i_getUser().isEmpty())
         return mpParent->setError(E_INVALIDARG, tr("Empty user name is not allowed"));
-    if (mpParent->i_getPassword().isEmpty())
-        return mpParent->setError(E_INVALIDARG, tr("Empty password is not allowed"));
+    if (mpParent->i_getUserPassword().isEmpty())
+        return mpParent->setError(E_INVALIDARG, tr("Empty user password is not allowed"));
+    /* If admin password is empty, the user password will be used instead. */
 
     LogRelFunc(("UnattendedInstaller::savePassedData(): \n"));
     return S_OK;

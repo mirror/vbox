@@ -30,7 +30,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox & VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=& --lt=< --gt=> --dq-word="word" --sq-word='word'
@@ -74,7 +74,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox & VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=& --lt=< --gt=> --dq-word="word" --sq-word='word'
@@ -118,7 +118,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04='VBox & VBox;'
 05=911
 06='/bin/post-install-command arg1 arg2 --amp=& --lt=< --gt=> --dq-word="word" --sq-word='"'"'word'"'"''
@@ -162,7 +162,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04='VBox & VBox;'
 05=911
 06='/bin/post-install-command arg1 arg2 --amp=& --lt=< --gt=> --dq-word="word" --sq-word='"'"'word'"'"''
@@ -206,7 +206,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox &amp; VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=&amp; --lt=&lt; --gt=&gt; --dq-word=&quot;word&quot; --sq-word=&apos;word&apos;
@@ -250,7 +250,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox &amp; VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=&amp; --lt=&lt; --gt=&gt; --dq-word=&quot;word&quot; --sq-word=&apos;word&apos;
@@ -294,7 +294,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox &amp; VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=&amp; --lt=&lt; --gt=&gt; --dq-word=&quot;word&quot; --sq-word='word'
@@ -338,7 +338,7 @@
 /* variables */
 01=vboxuser
 02=changeme
-03=changeme
+03=adminpw
 04=VBox &amp; VBox;
 05=911
 06=/bin/post-install-command arg1 arg2 --amp=&amp; --lt=&lt; --gt=&gt; --dq-word=&quot;word&quot; --sq-word='word'
@@ -383,9 +383,9 @@
 02:  GUEST_OS_VERSION <= 3.4.2
 
 /*
- * SHAcrypt 512. Contains the word "changeme" as hashed results.
+ * SHAcrypt 512. Contains the word "changeme" (01) and "adminpw" (02) as hashed results.
  * Note: This uses a fixed salt ("testcase123") within UnattendedScript.cpp, so that we can compare the outputs.
  */
 01=$6$testcase123$AtdiLq2Dp.l/NRkh9/9Ai6Eapd6d0bGxCOmqErpuGa4unRjiohzK5YERWtLHKvAYx26X0YhIrgSFRimkaLToI1
-02=$6$testcase123$AtdiLq2Dp.l/NRkh9/9Ai6Eapd6d0bGxCOmqErpuGa4unRjiohzK5YERWtLHKvAYx26X0YhIrgSFRimkaLToI1
+02=$6$testcase123$.ul/vC02q6oasrgQH/gqtOwHCo0jALPhIY63uypm0Mb2kJeDT0yedResX/mMNVZkm0fuMj24tpxs9gMAm7sEC0
 
