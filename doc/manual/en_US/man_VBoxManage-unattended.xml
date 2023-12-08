@@ -59,7 +59,8 @@
       </group>
       <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
       <arg>--user=<replaceable>login</replaceable></arg>
-      <arg>--password=<replaceable>password</replaceable></arg>
+      <arg>--user-password=<replaceable>password</replaceable></arg>
+      <arg>--admin-password=<replaceable>password</replaceable></arg>
       <arg>--password-file=<replaceable>file</replaceable></arg>
       <arg>--full-user-name=<replaceable>name</replaceable></arg>
       <arg>--key=<replaceable>product-key</replaceable></arg>
@@ -129,10 +130,16 @@
           <listitem><para>The login name. (default: vboxuser)</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--password=<replaceable>password</replaceable></option></term>
+          <term><option>--user-password=<replaceable>password</replaceable></option></term>
           <listitem>
-            <para>The login password.  This is used for the user given by <option>--user</option> as well as the
-              root/administrator user.  (default: changeme)</para></listitem>
+            <para>The user login password.  This is used for the user given by <option>--user</option>
+              (default: changeme)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--admin-password=<replaceable>password</replaceable></option></term>
+          <listitem>
+            <para>The admin / root login password.  If not specified, the password from <option>--user-password</option>
+              will be used.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--password-file=<replaceable>file</replaceable></option></term>

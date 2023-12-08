@@ -2130,11 +2130,17 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Parse options.
      */
+    enum kUnattendedInstallOpt
+    {
+        kUnattendedInstallOpt_AdminPassword = 1000
+    };
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
         { "--user",                             'u', RTGETOPT_REQ_STRING },
-        { "--password",                         'p', RTGETOPT_REQ_STRING }, /* Sets the user password. Keep for backwards compatibility! */
+        { "--password",                         'p', RTGETOPT_REQ_STRING }, /* Keep for backwards compatibility! */
+        { "--user-password",                    'p', RTGETOPT_REQ_STRING },
+        { "--admin-password",                   kUnattendedInstallOpt_AdminPassword, RTGETOPT_REQ_STRING },
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
         { "--key",                              'k', RTGETOPT_REQ_STRING },
         { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
@@ -2192,8 +2198,12 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(User)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
-            case 'p':   // --password
+            case 'p':   // --[user-]password
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(UserPassword)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
+                break;
+
+            case kUnattendedInstallOpt_AdminPassword: // --admin-password
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AdminPassword)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'X':   // --password-file
@@ -2411,6 +2421,8 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     SHOW_STR_ATTR(IsoPath,                       "isoPath");
     SHOW_STR_ATTR(User,                          "user");
     SHOW_STR_ATTR(UserPassword,                  "password"); /* Keep for backwards compatibility! */
+    SHOW_STR_ATTR(UserPassword,                  "user-password");
+    SHOW_STR_ATTR(AdminPassword,                 "admin-password");
     SHOW_STR_ATTR(FullUserName,                  "fullUserName");
     SHOW_STR_ATTR(ProductKey,                    "productKey");
     SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
