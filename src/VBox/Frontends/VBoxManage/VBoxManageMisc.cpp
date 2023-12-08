@@ -2410,7 +2410,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     SHOW_STR_ATTR(IsoPath,                       "isoPath");
     SHOW_STR_ATTR(User,                          "user");
-    SHOW_STR_ATTR(UserPassword,                  "password") /* Keep for backwards compatibility! */
+    SHOW_STR_ATTR(UserPassword,                  "password"); /* Keep for backwards compatibility! */
     SHOW_STR_ATTR(FullUserName,                  "fullUserName");
     SHOW_STR_ATTR(ProductKey,                    "productKey");
     SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
