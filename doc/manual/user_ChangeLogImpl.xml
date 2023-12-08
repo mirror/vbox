@@ -102,6 +102,11 @@ Rules for adding a changelog entry to make them look more uniform:
          this enables installing more modern Linux-based guest OSes in Unattended mode</para>
       </listitem>
 
+      <listitem>
+       <para>Unattended Installation: Added support for specifying separate passwords for
+         the user and admin / root accounts</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
