@@ -237,8 +237,7 @@ private slots:
     void sltCloseSettingsDialog();
     void sltTakeSnapshot();
     void sltShowInformationDialog();
-    void sltCloseInformationDialog(bool fAsync = false);
-    void sltCloseInformationDialogDefault() { sltCloseInformationDialog(true); }
+    void sltCloseInformationDialog();
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
     void sltShowLogDialog();
@@ -262,8 +261,7 @@ private slots:
     /* "Input" menu functionality: */
     void sltShowKeyboardSettings();
     void sltShowSoftKeyboard();
-    void sltCloseSoftKeyboard(bool fAsync = false);
-    void sltCloseSoftKeyboardDefault() { sltCloseSoftKeyboard(true); }
+    void sltCloseSoftKeyboard();
     void sltTypeCAD();
 #ifdef VBOX_WS_NIX
     void sltTypeCABS();

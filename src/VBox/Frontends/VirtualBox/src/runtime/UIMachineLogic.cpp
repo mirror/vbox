@@ -1665,18 +1665,14 @@ void UIMachineLogic::sltShowInformationDialog()
         m_pVMInformationDialog->raise();
         m_pVMInformationDialog->setWindowState(m_pVMInformationDialog->windowState() & ~Qt::WindowMinimized);
         m_pVMInformationDialog->activateWindow();
-        connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose, this, &UIMachineLogic::sltCloseInformationDialogDefault);
+        connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose,
+                this, &UIMachineLogic::sltCloseInformationDialog);
     }
 }
 
-void UIMachineLogic::sltCloseInformationDialog(bool fAsync /* = false */)
+void UIMachineLogic::sltCloseInformationDialog()
 {
-    if (!m_pVMInformationDialog)
-        return;
-    if (fAsync)
-        m_pVMInformationDialog->deleteLater();
-    else
-        delete m_pVMInformationDialog;
+    delete m_pVMInformationDialog;
     m_pVMInformationDialog = 0;
 }
 
@@ -2043,7 +2039,8 @@ void UIMachineLogic::sltShowSoftKeyboard()
     {
         QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
         m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), pCenterWidget, uimachine()->machineName());
-        connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
+        connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose,
+                this, &UIMachineLogic::sltCloseSoftKeyboard);
     }
 
     if (m_pSoftKeyboardDialog)
@@ -2055,14 +2052,9 @@ void UIMachineLogic::sltShowSoftKeyboard()
     }
 }
 
-void UIMachineLogic::sltCloseSoftKeyboard(bool fAsync /* = false */)
+void UIMachineLogic::sltCloseSoftKeyboard()
 {
-    if (!m_pSoftKeyboardDialog)
-        return;
-    if (fAsync)
-        m_pSoftKeyboardDialog->deleteLater();
-    else
-        delete m_pSoftKeyboardDialog;
+    delete m_pSoftKeyboardDialog;
     m_pSoftKeyboardDialog = 0;
 }
 
