@@ -1207,6 +1207,8 @@ void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, con
         openMachineSession();
     else if (enmMachineState != KMachineState_Paused)
         cleanAll();
+    else if (enmMachineState != KMachineState_Saving)
+        cleanAll();
     setStateAndEnableWidgets();
 }
 

@@ -112,6 +112,7 @@ private slots:
     void sltHandleHelpRequest();
     void sltSaveSettings();
     void sltReleaseKeys();
+    void sltApplicationAboutToQuit();
 
 private:
 
@@ -139,6 +140,7 @@ private:
     UISoftKeyboardSettingsWidget  *m_pSettingsWidget;
     UISoftKeyboardStatusBarWidget *m_pStatusBarWidget;
     int m_iGeometrySaveTimerId;
+    bool m_fApplicationAboutToQuit;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */

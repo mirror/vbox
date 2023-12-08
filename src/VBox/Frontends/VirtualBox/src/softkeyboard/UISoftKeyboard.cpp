@@ -3952,6 +3952,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
     , m_pSettingsWidget(0)
     , m_pStatusBarWidget(0)
     , m_iGeometrySaveTimerId(-1)
+    , m_fApplicationAboutToQuit(false)
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
     prepareObjects();
@@ -3968,6 +3969,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
     configure();
     retranslateUi();
     uiCommon().setHelpKeyword(this, "soft-keyb");
+    connect(qApp, &QGuiApplication::aboutToQuit, this, &UISoftKeyboard::sltApplicationAboutToQuit);
 }
 
 void UISoftKeyboard::retranslateUi()
@@ -3983,7 +3985,7 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
 {
     QStringList strNameList = m_pKeyboardWidget->unsavedLayoutsNameList();
     /* Show a warning dialog when there are not saved layouts: */
-    if (m_pKeyboardWidget && !strNameList.empty())
+    if (m_pKeyboardWidget && !strNameList.empty() && !m_fApplicationAboutToQuit)
     {
         QString strJoinedString = strNameList.join("<br/>");
         if (!msgCenter().questionBinary(this, MessageType_Warning,
@@ -3998,7 +4000,6 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
     }
     m_pMachine->releaseKeys();
     emit sigClose();
-    event->ignore();
 }
 
 bool UISoftKeyboard::event(QEvent *pEvent)
@@ -4385,6 +4386,11 @@ void UISoftKeyboard::sltSaveSettings()
 void UISoftKeyboard::sltReleaseKeys()
 {
     m_pMachine->releaseKeys();
+}
+
+void UISoftKeyboard::sltApplicationAboutToQuit()
+{
+    m_fApplicationAboutToQuit = true;
 }
 
 void UISoftKeyboard::loadSettings()
