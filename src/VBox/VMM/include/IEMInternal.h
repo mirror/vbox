@@ -1212,6 +1212,10 @@ typedef struct IEMTBALLOCATOR
     uint32_t        iPruneFrom;
     /** Hint about which bit to start scanning the bitmap from. */
     uint32_t        iStartHint;
+    /** Where to start pruning native TBs from when we're out of executable memory.
+     *  See iemTbAllocatorFreeupNativeSpace for details. */
+    uint32_t        iPruneNativeFrom;
+    uint32_t        uPadding;
 
     /** Statistics: Number of TB allocation calls. */
     STAMCOUNTER     StatAllocs;
@@ -1219,6 +1223,8 @@ typedef struct IEMTBALLOCATOR
     STAMCOUNTER     StatFrees;
     /** Statistics: Time spend pruning. */
     STAMPROFILE     StatPrune;
+    /** Statistics: Time spend pruning native TBs. */
+    STAMPROFILE     StatPruneNative;
 
     /** The delayed free list (see iemTbAlloctorScheduleForFree). */
     PIEMTB          pDelayedFreeHead;
@@ -5586,7 +5592,8 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 DECLCALLBACK(int)   iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
                               uint64_t cbInitialExec, uint64_t cbMaxExec, uint32_t cbChunkExec);
 void                iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree);
-void                iemTbAllocatorProcessDelayedFrees(PVMCPU pVCpu, PIEMTBALLOCATOR pTbAllocator);
+void                iemTbAllocatorProcessDelayedFrees(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator);
+void                iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs);
 
 
 /** @todo FNIEMTHREADEDFUNC and friends may need more work... */

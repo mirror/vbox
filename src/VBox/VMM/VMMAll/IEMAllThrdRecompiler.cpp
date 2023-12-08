@@ -966,7 +966,7 @@ static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
  * This is called by the allocator function as well as the native recompile
  * function before making any TB or executable memory allocations respectively.
  */
-void iemTbAllocatorProcessDelayedFrees(PVMCPU pVCpu, PIEMTBALLOCATOR pTbAllocator)
+void iemTbAllocatorProcessDelayedFrees(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator)
 {
     PIEMTB pTb = pTbAllocator->pDelayedFreeHead;
     pTbAllocator->pDelayedFreeHead = NULL;
@@ -974,7 +974,7 @@ void iemTbAllocatorProcessDelayedFrees(PVMCPU pVCpu, PIEMTBALLOCATOR pTbAllocato
     {
         PIEMTB const pTbNext = pTb->pNext;
         Assert(pVCpu->iem.s.pCurTbR3 != pTb);
-        iemTbAlloctorScheduleForFree(pVCpu, pTb);
+        iemTbAllocatorFree(pVCpu, pTb);
         pTb = pTbNext;
     }
 }
@@ -1168,6 +1168,94 @@ DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAlloc(PVMCPUCC pVCpu, bool fThreaded)
     return iemTbAllocatorAllocSlow(pVCpu, pTbAllocator, fThreaded);
 }
 
+
+/**
+ * This is called when we're out of space for native TBs.
+ *
+ * This uses a variation on the pruning in iemTbAllocatorAllocSlow.
+ * The difference is that we only prune native TBs and will only free any if
+ * there are least two in a group.  The conditions under which we're called are
+ * different - there will probably be free TBs in the table when we're called.
+ * Therefore we increase the group size and max scan length, though we'll stop
+ * scanning once we've reached the requested size (@a cNeededInstrs) and freed
+ * up at least 8 TBs.
+ */
+void iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs)
+{
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    AssertReturnVoid(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
+
+    STAM_REL_PROFILE_START(&pTbAllocator->StatPruneNative, a);
+
+    /*
+     * Flush the delayed free list before we start freeing TBs indiscriminately.
+     */
+    iemTbAllocatorProcessDelayedFrees(pVCpu, pTbAllocator);
+
+    /*
+     * Scan and free TBs.
+     */
+    uint32_t const msNow          = pVCpu->iem.s.msRecompilerPollNow;
+    uint32_t const cTbsToPrune    = 128 * 8;
+    uint32_t const cTbsPerGroup   = 4   * 4;
+    uint32_t       cFreedTbs      = 0;
+    uint32_t       cMaxInstrs     = 0;
+    uint32_t       idxTbPruneFrom = pTbAllocator->iPruneNativeFrom & ~(uint32_t)(cTbsPerGroup - 1);
+    for (uint32_t i = 0; i < cTbsToPrune; i += cTbsPerGroup, idxTbPruneFrom += cTbsPerGroup)
+    {
+        if (idxTbPruneFrom >= pTbAllocator->cTotalTbs)
+            idxTbPruneFrom = 0;
+        uint32_t idxChunk   = IEMTBALLOC_IDX_TO_CHUNK(pTbAllocator, idxTbPruneFrom);
+        uint32_t idxInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTbPruneFrom, idxChunk);
+        PIEMTB   pTb        = &pTbAllocator->aChunks[idxChunk].paTbs[idxInChunk];
+        uint32_t cMsAge     = pTb->fFlags & IEMTB_F_TYPE_NATIVE ? msNow - pTb->msLastUsed : msNow;
+        uint8_t  cNativeTbs = (pTb->fFlags & IEMTB_F_TYPE_NATIVE) != 0;
+
+        for (uint32_t j = 1, idxChunk2 = idxChunk, idxInChunk2 = idxInChunk + 1; j < cTbsPerGroup; j++, idxInChunk2++)
+        {
+            if (idxInChunk2 < pTbAllocator->cTbsPerChunk)
+            { /* likely */ }
+            else
+            {
+                idxInChunk2 = 0;
+                idxChunk2  += 1;
+                if (idxChunk2 >= pTbAllocator->cAllocatedChunks)
+                    idxChunk2 = 0;
+            }
+            PIEMTB const pTb2 = &pTbAllocator->aChunks[idxChunk2].paTbs[idxInChunk2];
+            if (pTb2->fFlags & IEMTB_F_TYPE_NATIVE)
+            {
+                cNativeTbs += 1;
+                uint32_t const cMsAge2 = msNow - pTb2->msLastUsed;
+                if (   cMsAge2 > cMsAge
+                    || (   cMsAge2 == cMsAge
+                        && (   pTb2->cUsed < pTb->cUsed
+                            || (   pTb2->cUsed == pTb->cUsed
+                                && pTb2->Native.cInstructions > pTb->Native.cInstructions)))
+                    || !(pTb->fFlags & IEMTB_F_TYPE_NATIVE))
+                {
+                    pTb        = pTb2;
+                    idxChunk   = idxChunk2;
+                    idxInChunk = idxInChunk2;
+                    cMsAge     = cMsAge2;
+                }
+            }
+        }
+
+        /* Free the TB if we found at least two native one in this group. */
+        if (cNativeTbs >= 2)
+        {
+            cMaxInstrs = RT_MAX(cMaxInstrs, pTb->Native.cInstructions);
+            iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, idxInChunk);
+            cFreedTbs++;
+            if (cFreedTbs >= 8 && cMaxInstrs >= cNeededInstrs)
+                break;
+        }
+    }
+    pTbAllocator->iPruneNativeFrom = idxTbPruneFrom;
+
+    STAM_REL_PROFILE_STOP(&pTbAllocator->StatPruneNative, a);
+}
 
 
 /*********************************************************************************************************************************

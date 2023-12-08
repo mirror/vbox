@@ -334,6 +334,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatPrune,          STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                         "Time spent freeing up TBs when full at alloc", "/IEM/CPU%u/re/TbPruningAlloc", idCpu);
 # endif
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatPruneNative,    STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                        "Time spent freeing up native TBs when out of executable memory", "/IEM/CPU%u/re/TbPruningNative", idCpu);
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->cAllocatedChunks,   STAMTYPE_U16,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Populated TB chunks",                          "/IEM/CPU%u/re/cTbChunks", idCpu);
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->cMaxChunks,         STAMTYPE_U8,    STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,

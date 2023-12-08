@@ -511,56 +511,68 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
     AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
     AssertMsgReturn(cbReq > 32 && cbReq < _512K, ("%#x\n", cbReq), NULL);
 
-    /*
-     * Adjust the request size so it'll fit the allocator alignment/whatnot.
-     *
-     * For the RTHeapSimple allocator this means to follow the logic described
-     * in iemExecMemAllocatorGrow and attempt to allocate it from one of the
-     * existing chunks if we think we've got sufficient free memory around.
-     *
-     * While for the alternative one we just align it up to a whole unit size.
-     */
+
+    for (unsigned iIteration = 0;; iIteration++)
+    {
+        /*
+         * Adjust the request size so it'll fit the allocator alignment/whatnot.
+         *
+         * For the RTHeapSimple allocator this means to follow the logic described
+         * in iemExecMemAllocatorGrow and attempt to allocate it from one of the
+         * existing chunks if we think we've got sufficient free memory around.
+         *
+         * While for the alternative one we just align it up to a whole unit size.
+         */
 #ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
-    cbReq = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+        cbReq = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
 #else
-    cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
+        cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
 #endif
-    if (cbReq <= pExecMemAllocator->cbFree)
-    {
-        uint32_t const cChunks      = pExecMemAllocator->cChunks;
-        uint32_t const idxChunkHint = pExecMemAllocator->idxChunkHint < cChunks ? pExecMemAllocator->idxChunkHint : 0;
-        for (uint32_t idxChunk = idxChunkHint; idxChunk < cChunks; idxChunk++)
+        if (cbReq <= pExecMemAllocator->cbFree)
         {
+            uint32_t const cChunks      = pExecMemAllocator->cChunks;
+            uint32_t const idxChunkHint = pExecMemAllocator->idxChunkHint < cChunks ? pExecMemAllocator->idxChunkHint : 0;
+            for (uint32_t idxChunk = idxChunkHint; idxChunk < cChunks; idxChunk++)
+            {
+                void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
+                if (pvRet)
+                    return pvRet;
+            }
+            for (uint32_t idxChunk = 0; idxChunk < idxChunkHint; idxChunk++)
+            {
+                void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
+                if (pvRet)
+                    return pvRet;
+            }
+        }
+
+        /*
+         * Can we grow it with another chunk?
+         */
+        if (pExecMemAllocator->cChunks < pExecMemAllocator->cMaxChunks)
+        {
+            int rc = iemExecMemAllocatorGrow(pVCpu, pExecMemAllocator);
+            AssertLogRelRCReturn(rc, NULL);
+
+            uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
             void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
             if (pvRet)
                 return pvRet;
+            AssertFailed();
         }
-        for (uint32_t idxChunk = 0; idxChunk < idxChunkHint; idxChunk++)
+
+        /*
+         * Try prune native TBs once.
+         */
+        if (iIteration == 0)
+            iemTbAllocatorFreeupNativeSpace(pVCpu, cbReq / sizeof(IEMNATIVEINSTR));
+        else
         {
-            void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
-            if (pvRet)
-                return pvRet;
+            /** @todo stats...   */
+            return NULL;
         }
     }
 
-    /*
-     * Can we grow it with another chunk?
-     */
-    if (pExecMemAllocator->cChunks < pExecMemAllocator->cMaxChunks)
-    {
-        int rc = iemExecMemAllocatorGrow(pVCpu, pExecMemAllocator);
-        AssertLogRelRCReturn(rc, NULL);
-
-        uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
-        void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
-        if (pvRet)
-            return pvRet;
-        AssertFailed();
-    }
-
-    /* What now? Prune native translation blocks from the cache? */
-    AssertFailed();
-    return NULL;
 }
 
 
