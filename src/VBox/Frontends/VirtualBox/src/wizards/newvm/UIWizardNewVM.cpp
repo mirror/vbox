@@ -614,13 +614,13 @@ void UIWizardNewVM::setUserName(const QString &strUserName)
 QString UIWizardNewVM::password() const
 {
     AssertReturn(!m_comUnattended.isNull(), QString());
-    return m_comUnattended.GetPassword();
+    return m_comUnattended.GetUserPassword();
 }
 
 void UIWizardNewVM::setPassword(const QString &strPassword)
 {
     AssertReturnVoid(!m_comUnattended.isNull());
-    m_comUnattended.SetPassword(strPassword);
+    m_comUnattended.SetUserPassword(strPassword);
     AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 

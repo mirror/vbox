@@ -2134,8 +2134,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     {
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
         { "--user",                             'u', RTGETOPT_REQ_STRING },
-        { "--password",                         'p', RTGETOPT_REQ_STRING },
-        { "--password-file",                    'X', RTGETOPT_REQ_STRING },
+        { "--password",                         'p', RTGETOPT_REQ_STRING }, /* Sets the user password. Keep for backwards compatibility! */
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
         { "--key",                              'k', RTGETOPT_REQ_STRING },
         { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
@@ -2194,7 +2193,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 break;
 
             case 'p':   // --password
-                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Password)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(UserPassword)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'X':   // --password-file
@@ -2203,7 +2202,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
-                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Password)(Bstr(strPassword).raw()), RTEXITCODE_FAILURE);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(UserPassword)(Bstr(strPassword).raw()), RTEXITCODE_FAILURE);
                 break;
             }
 
@@ -2411,7 +2410,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     SHOW_STR_ATTR(IsoPath,                       "isoPath");
     SHOW_STR_ATTR(User,                          "user");
-    SHOW_STR_ATTR(Password,                      "password");
+    SHOW_STR_ATTR(UserPassword,                  "password") /* Keep for backwards compatibility! */
     SHOW_STR_ATTR(FullUserName,                  "fullUserName");
     SHOW_STR_ATTR(ProductKey,                    "productKey");
     SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
