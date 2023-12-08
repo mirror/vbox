@@ -2139,6 +2139,7 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
         { "--user",                             'u', RTGETOPT_REQ_STRING },
         { "--password",                         'p', RTGETOPT_REQ_STRING }, /* Keep for backwards compatibility! */
+        { "--password-file",                    'X', RTGETOPT_REQ_STRING }, /* Keep for backwards compatibility! */
         { "--user-password",                    'p', RTGETOPT_REQ_STRING },
         { "--admin-password",                   kUnattendedInstallOpt_AdminPassword, RTGETOPT_REQ_STRING },
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
