@@ -8890,7 +8890,7 @@ iemNativeEmitCalcRmEffAddrThreadedAddr64(PIEMRECOMPILERSTATE pReNative, uint32_t
         if (f64Bit)
             iemNativeVarSetKindToConst(pReNative, idxVarRet, (uint64_t)i64EffAddr);
         else
-            iemNativeVarSetKindToConst(pReNative, idxVarRet, (uint64_t)(int32_t)i64EffAddr);
+            iemNativeVarSetKindToConst(pReNative, idxVarRet, (uint32_t)i64EffAddr);
         return off;
     }
 
