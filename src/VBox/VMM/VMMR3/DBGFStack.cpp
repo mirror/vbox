@@ -82,7 +82,7 @@ typedef struct DBGFUNWINDCTX
         if (pInitialCtx)
         {
 #if defined(VBOX_VMM_TARGET_ARMV8)
-            AssertReleaseFailed();
+            AssertFailed();
 #else
             m_State.u.x86.auRegs[X86_GREG_xAX] = pInitialCtx->rax;
             m_State.u.x86.auRegs[X86_GREG_xCX] = pInitialCtx->rcx;
