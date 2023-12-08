@@ -319,12 +319,12 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
  */
 void GuestSession::uninit(void)
 {
+    LogFlowThisFuncEnter();
+
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
-
-    LogFlowThisFuncEnter();
 
     /* Call i_onRemove to take care of the object cleanups. */
     i_onRemove();
@@ -3373,12 +3373,17 @@ int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVC
     LogFlowThisFuncEnter();
 
 #ifndef VBOX_GUESTCTRL_TEST_CASE
+    AutoCaller autoCallerParent(mParent);
+    if (FAILED(autoCallerParent.hrc()))
+        return VERR_STATE_CHANGED;
+
     ComObjPtr<Console> pConsole = mParent->i_getConsole();
     Assert(!pConsole.isNull());
 
     /* Forward the information to the VMM device. */
     VMMDev *pVMMDev = pConsole->i_getVMMDev();
-    AssertPtrReturn(pVMMDev, VERR_STATE_CHANGED);
+    if (!pVMMDev)
+        return VERR_STATE_CHANGED;
 
     LogFlowThisFunc(("uMessage=%RU32 (%s), uParms=%RU32\n", uMessage, GstCtrlHostMsgtoStr((guestControl::eHostMsg)uMessage), uParms));
 
@@ -3850,6 +3855,9 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
 
 HRESULT GuestSession::close()
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
+
     LogFlowThisFuncEnter();
 
     /* Note: Don't check if the session is ready via i_isStartedExternal() here;
@@ -3878,14 +3886,24 @@ HRESULT GuestSession::close()
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
-    /* Destroy session + remove ourselves from the session list. */
-    AssertPtr(mParent);
-    int vrc2 = mParent->i_sessionDestroy(mData.mSession.mID);
-    if (vrc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
-        vrc2 = VINF_SUCCESS;
+    /* We have to make sure that our parent (IGuest) still is alive and in a working shapee.
+     * If not, skip removing the session from it. */
+    AutoCaller autoCallerParent(mParent);
+    if (SUCCEEDED(autoCallerParent.hrc()))
+    {
+        LogFlowThisFunc(("Removing session '%s' from parent ...", mData.mSession.mName.c_str()));
 
-    if (RT_SUCCESS(vrc))
-        vrc = vrc2;
+        /* Remove ourselves from the session list. */
+        AssertPtr(mParent);
+        int vrc2 = mParent->i_sessionRemove(mData.mSession.mID);
+        if (vrc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
+            vrc2 = VINF_SUCCESS;
+
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+    }
+    else /* Do the session remove stuff ourselves. */
+        vrc = i_onRemove();
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
 

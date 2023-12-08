@@ -349,22 +349,22 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
 }
 
 /**
- * Destroys a given guest session and removes it from the internal list.
+ * Removes a given guest session and removes it from the internal list.
  *
  * @returns VBox status code.
  * @param   uSessionID          ID of the guest control session to destroy.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read + write locks.
  */
-int Guest::i_sessionDestroy(uint32_t uSessionID)
+int Guest::i_sessionRemove(uint32_t uSessionID)
 {
     LogFlowThisFuncEnter();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     int vrc = VERR_NOT_FOUND;
 
-    LogFlowThisFunc(("Destroying session (ID=%RU32) ...\n", uSessionID));
+    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", uSessionID));
+
+    AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
 
     GuestSessions::iterator itSessions = mData.mGuestSessions.find(uSessionID);
     if (itSessions == mData.mGuestSessions.end())
@@ -378,9 +378,12 @@ int Guest::i_sessionDestroy(uint32_t uSessionID)
                      uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
 
     vrc = pSession->i_onRemove();
-    mData.mGuestSessions.erase(itSessions);
 
-    alock.release(); /* Release lock before firing off event. */
+    arlock.release();
+
+    AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
+    mData.mGuestSessions.erase(itSessions);
+    awlock.release(); /* Release write lock before firing off event. */
 
     ::FireGuestSessionRegisteredEvent(mEventSource, pSession, false /* Unregistered */);
     pSession.setNull();
