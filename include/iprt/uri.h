@@ -143,7 +143,7 @@ RTDECL(int) RTUriParse(const char *pszUri, PRTURIPARSED pParsed);
 /**
  * Extract the scheme out of a parsed URI.
  *
- * @returns the scheme if the URI is valid, NULL otherwise.
+ * @returns The allocated scheme if the URI is valid, NULL otherwise.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -153,7 +153,7 @@ RTDECL(char *) RTUriParsedScheme(const char *pszUri, PCRTURIPARSED pParsed);
 /**
  * Extract the authority out of a parsed URI.
  *
- * @returns the authority if the URI contains one, NULL otherwise.
+ * @returns The allocated authority if the URI contains one, NULL otherwise.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -164,7 +164,7 @@ RTDECL(char *) RTUriParsedAuthority(const char *pszUri, PCRTURIPARSED pParsed);
 /**
  * Extract the username out of the authority component in a parsed URI.
  *
- * @returns The username if the URI contains one, otherwise NULL.
+ * @returns The allocated username if the URI contains one, otherwise NULL.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -177,7 +177,7 @@ RTDECL(char *) RTUriParsedAuthorityUsername(const char *pszUri, PCRTURIPARSED pP
 /**
  * Extract the password out of the authority component in a parsed URI.
  *
- * @returns The password if the URI contains one, otherwise NULL.
+ * @returns The allocated password if the URI contains one, otherwise NULL.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -190,7 +190,7 @@ RTDECL(char *) RTUriParsedAuthorityPassword(const char *pszUri, PCRTURIPARSED pP
 /**
  * Extract the host out of the authority component in a parsed URI.
  *
- * @returns The host if the URI contains one, otherwise NULL.
+ * @returns The allocated host if the URI contains one, otherwise NULL.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -213,7 +213,7 @@ RTDECL(uint32_t) RTUriParsedAuthorityPort(const char *pszUri, PCRTURIPARSED pPar
 /**
  * Extract the path out of a parsed URI.
  *
- * @returns the path if the URI contains one, NULL otherwise.
+ * @returns The allocated path if the URI contains one, NULL otherwise.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -223,7 +223,7 @@ RTDECL(char *) RTUriParsedPath(const char *pszUri, PCRTURIPARSED pParsed);
 /**
  * Extract the query out of a parsed URI.
  *
- * @returns the query if the URI contains one, NULL otherwise.
+ * @returns The allocated query if the URI contains one, NULL otherwise.  Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -233,7 +233,7 @@ RTDECL(char *) RTUriParsedQuery(const char *pszUri, PCRTURIPARSED pParsed);
 /**
  * Extract the fragment out of a parsed URI.
  *
- * @returns the fragment if the URI contains one, NULL otherwise.
+ * @returns The allocated fragment if the URI contains one, NULL otherwise.   Must be free'd via RTStrFree().
  * @param   pszUri              The URI passed to RTUriParse when producing the
  *                              info in @a pParsed.
  * @param   pParsed             Pointer to the RTUriParse output.
@@ -245,9 +245,7 @@ RTDECL(char *) RTUriParsedFragment(const char *pszUri, PCRTURIPARSED pParsed);
 /**
  * Creates a generic URI.
  *
- * The returned pointer must be freed using RTStrFree().
- *
- * @returns the new URI on success, NULL otherwise.
+ * @returns The allocated URI on success, NULL otherwise.  Must be free'd via RTStrFree().
  * @param   pszScheme           The URI scheme.
  * @param   pszAuthority        The authority part of the URI (optional).
  * @param   pszPath             The path part of the URI (optional).
