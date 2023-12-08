@@ -1534,7 +1534,7 @@ void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QS
         m_settings[UIAdvancedSettingsDialog::Type_Global] = new UIAdvancedSettingsDialogGlobal(activeMachineWindow(),
                                                                                                strCategory,
                                                                                                strControl);
-        connect(m_settings[UIAdvancedSettingsDialog::Type_Global], &UIAdvancedSettingsDialogGlobal::sigClose,
+        connect(m_settings[UIAdvancedSettingsDialog::Type_Global], &UIAdvancedSettingsDialog::sigClose,
                 this, &UIMachineLogic::sltClosePreferencesDialog);
         const bool fSuccess = m_settings.value(UIAdvancedSettingsDialog::Type_Global)->load();
         if (!fSuccess)
@@ -1583,7 +1583,7 @@ void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QStri
                                                                                                  actionPool(),
                                                                                                  strCategory,
                                                                                                  strControl);
-        connect(m_settings[UIAdvancedSettingsDialog::Type_Machine], &UIAdvancedSettingsDialogGlobal::sigClose,
+        connect(m_settings[UIAdvancedSettingsDialog::Type_Machine], &UIAdvancedSettingsDialog::sigClose,
                 this, &UIMachineLogic::sltCloseSettingsDialog);
         const bool fSuccess = m_settings.value(UIAdvancedSettingsDialog::Type_Machine)->load();
         if (!fSuccess)
