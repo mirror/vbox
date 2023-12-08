@@ -2132,7 +2132,8 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
      */
     enum kUnattendedInstallOpt
     {
-        kUnattendedInstallOpt_AdminPassword = 1000
+        kUnattendedInstallOpt_AdminPassword = 1000,
+        kUnattendedInstallOpt_AdminPasswordFile
     };
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -2141,7 +2142,9 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--password",                         'p', RTGETOPT_REQ_STRING }, /* Keep for backwards compatibility! */
         { "--password-file",                    'X', RTGETOPT_REQ_STRING }, /* Keep for backwards compatibility! */
         { "--user-password",                    'p', RTGETOPT_REQ_STRING },
+        { "--user-password-file",               'X', RTGETOPT_REQ_STRING },
         { "--admin-password",                   kUnattendedInstallOpt_AdminPassword, RTGETOPT_REQ_STRING },
+        { "--admin-password-file",              kUnattendedInstallOpt_AdminPasswordFile, RTGETOPT_REQ_STRING },
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
         { "--key",                              'k', RTGETOPT_REQ_STRING },
         { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
@@ -2207,13 +2210,23 @@ static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AdminPassword)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
-            case 'X':   // --password-file
+            case 'X':   // --[user-]password-file
             {
                 Utf8Str strPassword;
                 RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(UserPassword)(Bstr(strPassword).raw()), RTEXITCODE_FAILURE);
+                break;
+            }
+
+            case kUnattendedInstallOpt_AdminPasswordFile:
+            {
+                Utf8Str strPassword;
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AdminPassword)(Bstr(strPassword).raw()), RTEXITCODE_FAILURE);
                 break;
             }
 

@@ -136,15 +136,21 @@
               (default: changeme)</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><option>--user-password-file=<replaceable>file</replaceable></option></term>
+          <listitem>
+            <para>Alternative to <option>--user-password</option> for providing the user password.  Special filename
+              <computeroutput>stdin</computeroutput> can be used to read the password from standard input.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--admin-password=<replaceable>password</replaceable></option></term>
           <listitem>
             <para>The admin / root login password.  If not specified, the password from <option>--user-password</option>
               will be used.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--password-file=<replaceable>file</replaceable></option></term>
+          <term><option>--admin-password-file=<replaceable>file</replaceable></option></term>
           <listitem>
-            <para>Alternative to <option>--password</option> for providing the password.  Special filename
+            <para>Alternative to <option>--admin-password</option> for providing the admin / root password.  Special filename
               <computeroutput>stdin</computeroutput> can be used to read the password from standard input.</para></listitem>
         </varlistentry>
         <varlistentry>
