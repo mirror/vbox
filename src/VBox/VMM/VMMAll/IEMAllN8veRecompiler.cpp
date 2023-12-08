@@ -3380,7 +3380,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                 IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse)
 {
     Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
     static const char * const s_pszIntendedUse[] = { "fetch", "update", "full write", "destructive calc" };
 #endif
 
@@ -6103,6 +6103,9 @@ static void iemNativeVarSetKindToConst(PIEMRECOMPILERSTATE pReNative, uint8_t id
     AssertStmt(pReNative->Core.aVars[idxVar].idxReg == UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_2));
 
     pReNative->Core.aVars[idxVar].u.uValue = uValue;
+    AssertMsg(   pReNative->Core.aVars[idxVar].cbVar >= sizeof(uint64_t)
+              || pReNative->Core.aVars[idxVar].u.uValue < RT_BIT_64(pReNative->Core.aVars[idxVar].cbVar * 8),
+              ("idxVar=%d cbVar=%u uValue=%#RX64\n", idxVar, pReNative->Core.aVars[idxVar].cbVar, uValue));
 }
 
 
@@ -6182,6 +6185,22 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeArgAlloc(PIEMRECOMPILERSTATE pReNative, uint
 DECL_HIDDEN_THROW(uint8_t) iemNativeArgAllocConst(PIEMRECOMPILERSTATE pReNative, uint8_t iArgNo, uint8_t cbType, uint64_t uValue)
 {
     uint8_t const idxVar = iemNativeArgAllocInt(pReNative, iArgNo, cbType);
+
+    /* Since we're using a generic uint64_t value type, we must truncate it if
+       the variable is smaller otherwise we may end up with too large value when
+       scaling up a imm8 w/ sign-extension.
+
+       This caused trouble with a "add bx, 0xffff" instruction (around f000:ac60
+       in the bios, bx=1) when running on arm, because clang expect 16-bit
+       register parameters to have bits 16 and up set to zero.  Instead of
+       setting x1 = 0xffff we ended up with x1 = 0xffffffffffffff and the wrong
+       CF value in the result.  */
+    switch (cbType)
+    {
+        case sizeof(uint8_t):   uValue &= UINT64_C(0xff); break;
+        case sizeof(uint16_t):  uValue &= UINT64_C(0xffff); break;
+        case sizeof(uint32_t):  uValue &= UINT64_C(0xffffffff); break;
+    }
     iemNativeVarSetKindToConst(pReNative, idxVar, uValue);
     return idxVar;
 }
@@ -6212,6 +6231,16 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAlloc(PIEMRECOMPILERSTATE pReNative, uint
 DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative, uint8_t cbType, uint64_t uValue)
 {
     uint8_t const idxVar = iemNativeVarAllocInt(pReNative, cbType);
+
+    /* Since we're using a generic uint64_t value type, we must truncate it if
+       the variable is smaller otherwise we may end up with too large value when
+       scaling up a imm8 w/ sign-extension. */
+    switch (cbType)
+    {
+        case sizeof(uint8_t):   uValue &= UINT64_C(0xff); break;
+        case sizeof(uint16_t):  uValue &= UINT64_C(0xffff); break;
+        case sizeof(uint32_t):  uValue &= UINT64_C(0xffffffff); break;
+    }
     iemNativeVarSetKindToConst(pReNative, idxVar, uValue);
     return idxVar;
 }
@@ -11111,6 +11140,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 # endif
     }
 #endif
+    /*iemNativeDisassembleTb(pTb, DBGFR3InfoLogRelHlp());*/
 
     STAM_REL_PROFILE_STOP(&pVCpu->iem.s.StatNativeRecompilation, a);
     return pTb;

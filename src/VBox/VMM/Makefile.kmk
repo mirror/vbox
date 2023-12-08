@@ -232,6 +232,8 @@ VBoxVMM_SOURCES.amd64 += \
 	VMMR3/PGMR3DbgA.asm \
 	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
 	VMMAll/VMMAllA.asm
+VBoxVMM_SOURCES.arm64 += \
+	VMMAll/IEMAllAImpl-arm64.S
 ifdef VBOX_WITH_VUSB
  VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp
 endif

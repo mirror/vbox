@@ -348,7 +348,9 @@ tstIEMAImpl_SOURCES.amd64 += tstIEMAImplDataSseBinary.asm
 tstIEMAImplDataSseBinary.asm_DEPS = \
 	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 
-tstIEMAImpl_SOURCES.arm64 += tstIEMAImplDataSseBinary.S
+tstIEMAImpl_SOURCES.arm64  = \
+	tstIEMAImplDataSseBinary.S \
+	../VMMAll/IEMAllAImpl-arm64.S
 tstIEMAImplDataSseBinary.S_DEPS   = \
 	$(TSTIEMAIMPL_TEST_DATA_DEPS)
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
