@@ -215,12 +215,16 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         Logs the attributes of the unattended installation object.
         """
         fRc = True;
-        asAttribs = ( 'isoPath', 'user', 'password', 'fullUserName', 'productKey', 'additionsIsoPath', 'installGuestAdditions',
+        asAttribs = [ 'isoPath', 'user', 'fullUserName', 'productKey', 'additionsIsoPath', 'installGuestAdditions',
                       'validationKitIsoPath', 'installTestExecService', 'timeZone', 'locale', 'language', 'country', 'proxy',
                       'packageSelectionAdjustments', 'hostname', 'auxiliaryBasePath', 'imageIndex', 'machine',
                       'scriptTemplatePath', 'postInstallScriptTemplatePath', 'postInstallCommand',
                       'extraInstallKernelParameters', 'detectedOSTypeId', 'detectedOSVersion', 'detectedOSLanguages',
-                      'detectedOSFlavor', 'detectedOSHints', );
+                      'detectedOSFlavor', 'detectedOSHints' ];
+        if oTestDrv.fpApiVer >= 7.1: # Since 7.1 we offer different passwords for user and admin/root accounts.
+            asAttribs.append( [ 'user-password', 'admin-password' ] );
+        else:
+            asAttribs.append( [ 'password' ] );
         for sAttrib in asAttribs:
             try:
                 oValue = getattr(oIUnattended, sAttrib);
