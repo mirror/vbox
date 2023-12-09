@@ -887,7 +887,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
         RT_NOREF(pAddrFrame, pAddrStack);
-        AssertReleaseFailed();
+        AssertFailed();
         rc = VERR_NOT_IMPLEMENTED;
 #else
         if (pAddrStack)
