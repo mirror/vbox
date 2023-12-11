@@ -924,9 +924,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_PUSH_U32(a_u32Value)                                     do { CHK_VAR(a_u32Value); (void)fMcBegin; } while (0)
 #define IEM_MC_PUSH_U32_SREG(a_u32Value)                                do { CHK_VAR(a_u32Value); (void)fMcBegin; } while (0)
 #define IEM_MC_PUSH_U64(a_u64Value)                                     do { CHK_VAR(a_u64Value); (void)fMcBegin; } while (0)
-#define IEM_MC_POP_U16(a_pu16Value)                                     do { CHK_VAR(a_pu16Value); (void)fMcBegin; } while (0)
-#define IEM_MC_POP_U32(a_pu32Value)                                     do { CHK_VAR(a_pu32Value); (void)fMcBegin; } while (0)
-#define IEM_MC_POP_U64(a_pu64Value)                                     do { CHK_VAR(a_pu64Value); (void)fMcBegin; } while (0)
+#define IEM_MC_POP_GREG_U16(a_iGReg)                                    do { CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
+#define IEM_MC_POP_GREG_U32(a_iGReg)                                    do { CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
+#define IEM_MC_POP_GREG_U64(a_iGReg)                                    do { CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 
 #define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pd80Mem); (a_pd80Mem) = NULL; CHK_PTYPE(RTPBCD80U *,      a_pd80Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 #define IEM_MC_MEM_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pi16Mem); (a_pi16Mem) = NULL; CHK_PTYPE(int16_t *,        a_pi16Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)

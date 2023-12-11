@@ -2351,32 +2351,25 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 1, 0, 0);
+            IEM_MC_BEGIN(0, 0, 0, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint16_t *, pu16Dst);
-            IEM_MC_REF_GREG_U16(pu16Dst, iReg);
-            IEM_MC_POP_U16(pu16Dst);
+            IEM_MC_POP_GREG_U16(iReg);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT, 0);
+            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint32_t *, pu32Dst);
-            IEM_MC_REF_GREG_U32(pu32Dst, iReg);
-            IEM_MC_POP_U32(pu32Dst);
-            IEM_MC_CLEAR_HIGH_GREG_U64(iReg); /** @todo testcase*/
+            IEM_MC_POP_GREG_U32(iReg);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
 
         case IEMMODE_64BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
+            IEM_MC_BEGIN(0, 0, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint64_t *, pu64Dst);
-            IEM_MC_REF_GREG_U64(pu64Dst, iReg);
-            IEM_MC_POP_U64(pu64Dst);
+            IEM_MC_POP_GREG_U64(iReg);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -2432,58 +2425,7 @@ FNIEMOP_DEF(iemOp_pop_eBX)
 FNIEMOP_DEF(iemOp_pop_eSP)
 {
     IEMOP_MNEMONIC(pop_rSP, "pop rSP");
-    if (IEM_IS_64BIT_CODE(pVCpu))
-    {
-        if (pVCpu->iem.s.uRexB)
-            return FNIEMOP_CALL_1(iemOpCommonPopGReg, X86_GREG_xSP);
-        pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
-        pVCpu->iem.s.enmEffOpSize = !(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_OP) ? IEMMODE_64BIT : IEMMODE_16BIT;
-    }
-
-    /** @todo add testcase for this instruction. */
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 2, 0, 0);
-            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
-                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
-            IEM_MC_LOCAL(uint16_t,    u16Dst);
-            IEM_MC_LOCAL(uint16_t *,  pu16Dst);
-            IEM_MC_REF_LOCAL(pu16Dst, u16Dst);
-            IEM_MC_POP_U16(pu16Dst); /** @todo not correct MC, fix later. */
-            IEM_MC_STORE_GREG_U16(X86_GREG_xSP, u16Dst);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 2, IEM_MC_F_MIN_386, 0);
-            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
-                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
-            IEM_MC_LOCAL(uint32_t,    u32Dst);
-            IEM_MC_LOCAL(uint32_t *,  pu32Dst);
-            IEM_MC_REF_LOCAL(pu32Dst, u32Dst);
-            IEM_MC_POP_U32(pu32Dst);
-            IEM_MC_STORE_GREG_U32(X86_GREG_xSP, u32Dst);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        case IEMMODE_64BIT:
-            IEM_MC_BEGIN(0, 2, IEM_MC_F_64BIT, 0);
-            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
-                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
-            IEM_MC_LOCAL(uint64_t,    u64Dst);
-            IEM_MC_LOCAL(uint64_t *,  pu64Dst);
-            IEM_MC_REF_LOCAL(pu64Dst, u64Dst);
-            IEM_MC_POP_U64(pu64Dst);
-            IEM_MC_STORE_GREG_U64(X86_GREG_xSP, u64Dst);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    return FNIEMOP_CALL_1(iemOpCommonPopGReg, X86_GREG_xSP);
 }
 
 

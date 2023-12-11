@@ -733,9 +733,9 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_PUSH_U32':                        (  'IEM_MC_FLAT32_PUSH_U32',      'IEM_MC_PUSH_U32', ),
         'IEM_MC_PUSH_U64':                        (  'IEM_MC_PUSH_U64',             'IEM_MC_FLAT64_PUSH_U64', ),
         'IEM_MC_PUSH_U32_SREG':                   (  'IEM_MC_FLAT32_PUSH_U32_SREG', 'IEM_MC_PUSH_U32_SREG' ),
-        'IEM_MC_POP_U16':                         (  'IEM_MC_FLAT32_POP_U16',       'IEM_MC_FLAT64_POP_U16', ),
-        'IEM_MC_POP_U32':                         (  'IEM_MC_FLAT32_POP_U32',       'IEM_MC_POP_U32', ),
-        'IEM_MC_POP_U64':                         (  'IEM_MC_POP_U64',              'IEM_MC_FLAT64_POP_U64', ),
+        'IEM_MC_POP_GREG_U16':                    (  'IEM_MC_FLAT32_POP_GREG_U16',  'IEM_MC_FLAT64_POP_GREG_U16', ),
+        'IEM_MC_POP_GREG_U32':                    (  'IEM_MC_FLAT32_POP_GREG_U32',  'IEM_MC_POP_GREG_U32', ),
+        'IEM_MC_POP_GREG_U64':                    (  'IEM_MC_POP_GREG_U64',         'IEM_MC_FLAT64_POP_GREG_U64', ),
     };
 
     kdThreadedCalcRmEffAddrMcByVariation = {

@@ -784,11 +784,13 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE u
 
 
 /**
- * Stack pop function that longjmps on error.
+ * Stack pop greg function that longjmps on error.
  */
-DECL_INLINE_THROW(TMPL_MEM_TYPE)
-RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Assert(iGReg < 16);
+
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Increment the stack pointer (prep), apply segmentation and check that
@@ -819,16 +821,23 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
                 /*
-                 * Do the push and return.
+                 * Do the pop.
                  */
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                                          GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uRet));
-                pVCpu->cpum.GstCtx.rsp = uNewRsp;
-                return uRet;
+                TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " (r%u)\n",
+                                          GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue, iGReg));
+                pVCpu->cpum.GstCtx.rsp               = uNewRsp;  /* must be first for 16-bit */
+#  if TMPL_MEM_TYPE_SIZE == 2
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
+#  elif TMPL_MEM_TYPE_SIZE == 4 || TMPL_MEM_TYPE_SIZE == 8
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
+#  else
+#   error "TMPL_MEM_TYPE_SIZE"
+#  endif
+                return;
             }
         }
     }
@@ -837,7 +846,7 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
 #  endif
-    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+    RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iGReg);
 }
 
 #   ifdef TMPL_WITH_PUSH_SREG
@@ -967,19 +976,20 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
 
 
 /**
- * 32-bit flat stack pop function that longjmps on error.
+ * 32-bit flat stack greg pop function that longjmps on error.
  */
-DECL_INLINE_THROW(TMPL_MEM_TYPE)
-RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Assert(iGReg < 16);
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint32_t const uOldEsp = pVCpu->cpum.GstCtx.esp;
-#  if TMPL_MEM_TYPE_SIZE > 1
+#   if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(uOldEsp)))
-#  endif
+#   endif
     {
         /*
          * TLB lookup.
@@ -999,16 +1009,23 @@ RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
                 /*
-                 * Do the push and return.
+                 * Do the pop and update the register values.
                  */
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldEsp & GUEST_PAGE_OFFSET_MASK];
-                pVCpu->cpum.GstCtx.rsp = uOldEsp + sizeof(TMPL_MEM_TYPE);
-                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX32 (->%RX32): " TMPL_MEM_FMT_TYPE "\n",
-                                          uOldEsp, uOldEsp + sizeof(TMPL_MEM_TYPE), uRet));
-                return uRet;
+                TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldEsp & GUEST_PAGE_OFFSET_MASK];
+                pVCpu->cpum.GstCtx.rsp = uOldEsp + sizeof(TMPL_MEM_TYPE); /* must be first for 16-bit */
+#   if TMPL_MEM_TYPE_SIZE == 2
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
+#   elif TMPL_MEM_TYPE_SIZE == 4
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
+#   else
+#    error "TMPL_MEM_TYPE_SIZE"
+#   endif
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX32 (->%RX32): " TMPL_MEM_FMT_TYPE " (r%u)\n",
+                                          uOldEsp, uOldEsp + sizeof(TMPL_MEM_TYPE), uValue, iGReg));
+                return;
             }
         }
     }
@@ -1017,7 +1034,7 @@ RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uOldEsp));
 #  endif
-    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+    RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iGReg);
 }
 
 #   endif /* TMPL_MEM_TYPE_SIZE != 8*/
@@ -1088,14 +1105,14 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
 DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint64_t const uNewRsp = pVCpu->cpum.GstCtx.rsp - sizeof(TMPL_MEM_TYPE);
-#  if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(uNewRsp)))
-#  endif
+#     endif
     {
         /*
          * TLB lookup.
@@ -1133,7 +1150,7 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX64 falling back\n", LOG_FN_NAME, uNewRsp));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
 
@@ -1141,17 +1158,18 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
 /**
  * 64-bit flat stack pop function that longjmps on error.
  */
-DECL_INLINE_THROW(TMPL_MEM_TYPE)
-RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemFlat64StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    Assert(iGReg < 16);
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint64_t const uOldRsp = pVCpu->cpum.GstCtx.rsp;
-#  if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(uOldRsp)))
-#  endif
+#     endif
     {
         /*
          * TLB lookup.
@@ -1176,11 +1194,18 @@ RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldRsp & GUEST_PAGE_OFFSET_MASK];
-                pVCpu->cpum.GstCtx.rsp = uOldRsp + sizeof(TMPL_MEM_TYPE);
-                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX64 (->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                                          uOldRsp, uOldRsp + sizeof(TMPL_MEM_TYPE), uRet));
-                return uRet;
+                TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldRsp & GUEST_PAGE_OFFSET_MASK];
+                pVCpu->cpum.GstCtx.rsp = uOldRsp + sizeof(TMPL_MEM_TYPE);  /* must be first for 16-bit */
+#     if TMPL_MEM_TYPE_SIZE == 2
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
+#     elif TMPL_MEM_TYPE_SIZE == 8
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
+#     else
+#      error "TMPL_MEM_TYPE_SIZE"
+#     endif
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX64 (->%RX64): " TMPL_MEM_FMT_TYPE " (r%u)\n",
+                                          uOldRsp, uOldRsp + sizeof(TMPL_MEM_TYPE), uValue, iGReg));
+                return;
             }
         }
     }
@@ -1188,11 +1213,11 @@ RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX64 falling back\n", LOG_FN_NAME, uOldRsp));
-#  endif
-    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+#   endif
+    RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iGReg);
 }
 
-#endif /* TMPL_MEM_TYPE_SIZE != 4 */
+#   endif /* TMPL_MEM_TYPE_SIZE != 4 */
 
 #  endif /* IEM_WITH_SETJMP */
 # endif /* TMPL_MEM_WITH_STACK */

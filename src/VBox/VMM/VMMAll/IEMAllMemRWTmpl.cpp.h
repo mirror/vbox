@@ -259,6 +259,49 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pb
 #ifdef TMPL_MEM_WITH_STACK
 
 /**
+ * Pops a general purpose register off the stack.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ * @param   iGReg               The GREG to load the popped value into.
+ */
+VBOXSTRICTRC RT_CONCAT(iemMemStackPopGReg,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t iGReg) RT_NOEXCEPT
+{
+    Assert(iGReg < 16);
+
+    /* Increment the stack pointer. */
+    uint64_t    uNewRsp;
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
+
+    /* Load the word the lazy way. */
+    uint8_t              bUnmapInfo;
+    TMPL_MEM_TYPE const *puSrc;
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puSrc, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrTop,
+                                IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
+    if (rc == VINF_SUCCESS)
+    {
+        TMPL_MEM_TYPE const uValue = *puSrc;
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+
+        /* Commit the register and new RSP values. */
+        if (rc == VINF_SUCCESS)
+        {
+            Log10(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " (r%u)\n",
+                   GCPtrTop, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue, iGReg));
+            pVCpu->cpum.GstCtx.rsp = uNewRsp;
+            if (sizeof(TMPL_MEM_TYPE) != sizeof(uint16_t))
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
+            else
+                pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
+            return VINF_SUCCESS;
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Pushes an item onto the stack, regular version.
  *
  * @returns Strict VBox status code.
@@ -297,7 +340,9 @@ VBOXSTRICTRC RT_CONCAT(iemMemStackPush,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, TMPL_ME
 
 
 /**
- * Pops an item off the stack.
+ * Pops a generic item off the stack, regular version.
+ *
+ * This is used by C-implementation code.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the
@@ -440,9 +485,9 @@ void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_M
 
 
 /**
- * Safe/fallback stack pop function that longjmps on error.
+ * Safe/fallback stack pop greg function that longjmps on error.
  */
-TMPL_MEM_TYPE RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+void RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
@@ -456,16 +501,19 @@ TMPL_MEM_TYPE RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu
     uint8_t              bUnmapInfo;
     TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS,
                                                                      GCPtrTop, IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
-    TMPL_MEM_TYPE const  uRet = *puSrc;
+    TMPL_MEM_TYPE const  uValue = *puSrc;
     iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
 
-    /* Commit the RSP change and return the popped value. */
-    Log10(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-           GCPtrTop, pVCpu->cpum.GstCtx.rsp, uNewRsp, uRet));
+    /* Commit the register and RSP values. */
+    Log10(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " (r%u)\n",
+           GCPtrTop, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue, iGReg));
     pVCpu->cpum.GstCtx.rsp = uNewRsp;
-
-    return uRet;
+    if (sizeof(TMPL_MEM_TYPE) != sizeof(uint16_t))
+        pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = *puSrc;
+    else
+        pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = *puSrc;
 }
+
 
 #  ifdef TMPL_WITH_PUSH_SREG
 /**

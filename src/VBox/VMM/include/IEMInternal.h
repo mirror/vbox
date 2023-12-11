@@ -5220,20 +5220,20 @@ void            iemMemStackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_N
 void            iemMemStackPushU32SafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemStackPushU32SRegSafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemStackPushU64SafeJmp(PVMCPUCC pVCpu, uint64_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
-uint16_t        iemMemStackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
-uint32_t        iemMemStackPopU32SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
-uint64_t        iemMemStackPopU64SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPopGRegU16SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPopGRegU32SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPopGRegU64SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
 
 void            iemMemFlat32StackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemFlat32StackPushU32SafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemFlat32StackPushU32SRegSafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
-uint16_t        iemMemFlat32StackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
-uint32_t        iemMemFlat32StackPopU32SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat32StackPopGRegU16SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat32StackPopGRegU32SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
 
 void            iemMemFlat64StackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemFlat64StackPushU64SafeJmp(PVMCPUCC pVCpu, uint64_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
-uint16_t        iemMemFlat64StackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
-uint64_t        iemMemFlat64StackPopU64SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat64StackPopGRegU16SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat64StackPopGRegU64SafeJmp(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP;
 #endif
 
 /** @} */
