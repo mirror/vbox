@@ -56,9 +56,12 @@ void QIManagerDialogFactory::prepare(QIManagerDialog *&pDialog, QWidget *pCenter
 
 void QIManagerDialogFactory::cleanup(QIManagerDialog *&pDialog)
 {
-    pDialog->cleanup();
-    pDialog->deleteLater();
-    pDialog = 0;
+    if (pDialog)
+    {
+        pDialog->cleanup();
+        delete pDialog;
+        pDialog = 0;
+    }
 }
 
 

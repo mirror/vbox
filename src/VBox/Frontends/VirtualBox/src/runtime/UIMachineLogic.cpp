@@ -1676,81 +1676,52 @@ void UIMachineLogic::sltCloseInformationDialog()
 
 void UIMachineLogic::sltShowFileManagerDialog()
 {
-    if (!activeMachineWindow())
+    /* Do not process if window(s) missed! */
+    if (   !isMachineWindowsCreated()
+        || !activeMachineWindow())
         return;
 
-    /* Create a file manager only if we don't have one already: */
-    if (m_pFileManagerDialog)
+    /* Create instance if not yet created: */
+    if (!m_pFileManagerDialog)
     {
-        m_pFileManagerDialog->activateWindow();
-        m_pFileManagerDialog->raise();
-        return;
-    }
-
-    QIManagerDialog *pFileManagerDialog;
-    UIFileManagerDialogFactory dialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName());
-    dialogFactory.prepare(pFileManagerDialog, activeMachineWindow());
-    if (pFileManagerDialog)
-    {
-        m_pFileManagerDialog = pFileManagerDialog;
-
-        /* Show instance: */
-        pFileManagerDialog->show();
-        pFileManagerDialog->setWindowState(pFileManagerDialog->windowState() & ~Qt::WindowMinimized);
-        pFileManagerDialog->activateWindow();
-        pFileManagerDialog->raise();
-        connect(pFileManagerDialog, &QIManagerDialog::sigClose,
+        UIFileManagerDialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName())
+            .prepare(m_pFileManagerDialog, activeMachineWindow());
+        connect(m_pFileManagerDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseFileManagerDialog);
     }
+
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_pFileManagerDialog);
 }
 
 void UIMachineLogic::sltCloseFileManagerDialog()
 {
-    if (!m_pFileManagerDialog)
-        return;
-
-    QIManagerDialog* pDialog = m_pFileManagerDialog;
-    /* Set the m_pFileManagerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pFileManagerDialog = 0;
-    pDialog->close();
-    UIFileManagerDialogFactory().cleanup(pDialog);
+    UIFileManagerDialogFactory().cleanup(m_pFileManagerDialog);
 }
 
 void UIMachineLogic::sltShowLogDialog()
 {
-    if (!activeMachineWindow())
+    /* Do not process if window(s) missed! */
+    if (   !isMachineWindowsCreated()
+        || !activeMachineWindow())
         return;
 
-    /* Create a logviewer only if we don't have one already */
-    if (m_pLogViewerDialog)
-        return;
-
-    QIManagerDialog *pLogViewerDialog;
-    UIVMLogViewerDialogFactory dialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName());
-    dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
-    if (pLogViewerDialog)
+    /* Create instance if not yet created: */
+    if (!m_pLogViewerDialog)
     {
-        m_pLogViewerDialog = pLogViewerDialog;
-
-        /* Show instance: */
-        pLogViewerDialog->show();
-        pLogViewerDialog->setWindowState(pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
-        pLogViewerDialog->activateWindow();
-        connect(pLogViewerDialog, &QIManagerDialog::sigClose,
+        UIVMLogViewerDialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName())
+            .prepare(m_pLogViewerDialog, activeMachineWindow());
+        connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseLogDialog);
     }
+
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_pLogViewerDialog);
 }
 
 void UIMachineLogic::sltCloseLogDialog()
 {
-    if (!m_pLogViewerDialog)
-        return;
-
-    QIManagerDialog* pDialog = m_pLogViewerDialog;
-    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pLogViewerDialog = 0;
-    pDialog->close();
-    UIVMLogViewerDialogFactory().cleanup(pDialog);
+    UIVMLogViewerDialogFactory().cleanup(m_pLogViewerDialog);
 }
 
 void UIMachineLogic::sltPause(bool fOn)
@@ -2031,7 +2002,8 @@ void UIMachineLogic::sltShowKeyboardSettings()
 void UIMachineLogic::sltShowSoftKeyboard()
 {
     /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
+    if (   !isMachineWindowsCreated()
+        || !activeMachineWindow())
         return;
 
     /* Create instance if not yet created: */
@@ -2414,39 +2386,26 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 
 void UIMachineLogic::sltShowGuestControlConsoleDialog()
 {
-    if (!activeMachineWindow())
+    /* Do not process if window(s) missed! */
+    if (   !isMachineWindowsCreated()
+        || !activeMachineWindow())
         return;
 
-    /* Create the dialog only if we don't have one already */
-    if (m_pProcessControlDialog)
-        return;
-
-    QIManagerDialog *pProcessControlDialog;
-    UIGuestProcessControlDialogFactory dialogFactory;
-    dialogFactory.prepare(pProcessControlDialog, activeMachineWindow());
-    if (pProcessControlDialog)
+    /* Create instance if not yet created: */
+    if (!m_pProcessControlDialog)
     {
-        m_pProcessControlDialog = pProcessControlDialog;
-
-        /* Show instance: */
-        pProcessControlDialog->show();
-        pProcessControlDialog->setWindowState(pProcessControlDialog->windowState() & ~Qt::WindowMinimized);
-        pProcessControlDialog->activateWindow();
-        connect(pProcessControlDialog, &QIManagerDialog::sigClose,
+        UIGuestProcessControlDialogFactory().prepare(m_pProcessControlDialog, activeMachineWindow());
+        connect(m_pProcessControlDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseGuestControlConsoleDialog);
     }
+
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_pProcessControlDialog);
 }
 
 void UIMachineLogic::sltCloseGuestControlConsoleDialog()
 {
-    if (!m_pProcessControlDialog)
-        return;
-
-    QIManagerDialog* pDialog = m_pProcessControlDialog;
-    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pProcessControlDialog = 0;
-    pDialog->close();
-    UIGuestProcessControlDialogFactory().cleanup(pDialog);
+    UIGuestProcessControlDialogFactory().cleanup(m_pProcessControlDialog);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
