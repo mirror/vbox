@@ -1709,7 +1709,8 @@ void UIMachineLogic::sltShowLogDialog()
     /* Create instance if not yet created: */
     if (!m_pLogViewerDialog)
     {
-        UIVMLogViewerDialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName())
+        const QList<QUuid> machineIDs = QList<QUuid>() << uiCommon().managedVMUuid();
+        UIVMLogViewerDialogFactory(actionPool(), machineIDs, uimachine()->machineName())
             .prepare(m_pLogViewerDialog, activeMachineWindow());
         connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseLogDialog);

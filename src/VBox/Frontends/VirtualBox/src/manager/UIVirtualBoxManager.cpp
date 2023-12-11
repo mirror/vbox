@@ -2223,7 +2223,7 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
         m_pWidget->closeMachineTool(UIToolType_Logs);
     }
 
-    QList<UIVirtualMachineItem*> itemsToShowLogs;
+    QList<QUuid> machineIDs;
 
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
@@ -2236,23 +2236,20 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
         /* Check if log could be show for the current item: */
         if (!isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
             continue;
-        itemsToShowLogs << pItem;
+        machineIDs << pItem->id();
     }
 
-    if (itemsToShowLogs.isEmpty())
+    if (machineIDs.isEmpty())
         return;
     if (!m_pLogViewerDialog)
     {
-        UIVMLogViewerDialogFactory dialogFactory(actionPool(), QUuid());
+        UIVMLogViewerDialogFactory dialogFactory(actionPool(), machineIDs);
         dialogFactory.prepare(m_pLogViewerDialog, this);
         if (m_pLogViewerDialog)
             connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,
                     this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
     }
     AssertPtrReturnVoid(m_pLogViewerDialog);
-    UIVMLogViewerDialog *pDialog = qobject_cast<UIVMLogViewerDialog*>(m_pLogViewerDialog);
-    if (pDialog)
-        pDialog->addSelectedVMListItems(itemsToShowLogs);
     m_pLogViewerDialog->show();
     m_pLogViewerDialog->setWindowState(m_pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
     m_pLogViewerDialog->activateWindow();

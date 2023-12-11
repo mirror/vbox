@@ -49,17 +49,17 @@
 *********************************************************************************************************************************/
 
 UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(UIActionPool *pActionPool /* = 0 */,
-                                                       const QUuid &uMachineId /* = QUuid()*/,
+                                                       const QList<QUuid> &machineIDs /* = QList<QUuid>() */,
                                                        const QString &strMachineName /* = QString() */)
     : m_pActionPool(pActionPool)
-    , m_uMachineId(uMachineId)
+    , m_machineIDs(machineIDs)
     , m_strMachineName(strMachineName)
 {
 }
 
 void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_pActionPool, m_uMachineId, m_strMachineName);
+    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_pActionPool, m_machineIDs, m_strMachineName);
 }
 
 
@@ -68,11 +68,11 @@ void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *********************************************************************************************************************************/
 
 UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool,
-                                         const QUuid &uMachineId /* = QUuid()*/,
+                                         const QList<QUuid> &machineIDs /* = QList<QUuid>() */,
                                          const QString &strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
-    , m_uMachineId(uMachineId)
+    , m_machineIDs(machineIDs)
     , m_iGeometrySaveTimerId(-1)
     , m_strMachineName(strMachineName)
 {
@@ -88,14 +88,6 @@ void UIVMLogViewerDialog::setSelectedVMListItems(const QList<UIVirtualMachineIte
     UIVMLogViewerWidget *pLogViewerWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
     if (pLogViewerWidget)
         pLogViewerWidget->setSelectedVMListItems(items);
-}
-
-void UIVMLogViewerDialog::addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
-{
-    Q_UNUSED(items);
-    UIVMLogViewerWidget *pLogViewerWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
-    if (pLogViewerWidget)
-        pLogViewerWidget->addSelectedVMListItems(items);
 }
 
 void UIVMLogViewerDialog::retranslateUi()
@@ -157,7 +149,7 @@ void UIVMLogViewerDialog::configure()
 void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_uMachineId, this);
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_machineIDs, this);
     if (pWidget)
     {
         /* Configure widget: */

@@ -202,7 +202,7 @@ UITabWidget::UITabWidget(QWidget *pParent /* = 0 */)
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
                                          bool fShowToolbar /* = true */,
-                                         const QUuid &uMachineId /* = QUuid() */,
+                                         const QList<QUuid> &machineIDs /* = QList<QUuid>() */,
                                          QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
@@ -223,8 +223,8 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
 {
     /* Prepare VM Log-Viewer: */
     prepare();
-    if (!uMachineId.isNull())
-        setMachines(QVector<QUuid>() << uMachineId);
+    if (!machineIDs.isEmpty())
+        setMachines(machineIDs);
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIVMLogViewerWidget::sltCommitDataSignalReceived);
 }
@@ -262,23 +262,9 @@ QMenu *UIVMLogViewerWidget::menu() const
     return m_pActionPool->action(UIActionIndex_M_LogWindow)->menu();
 }
 
-
 void UIVMLogViewerWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
     QVector<QUuid> selectedMachines;
-
-    foreach (const UIVirtualMachineItem *item, items)
-    {
-        if (!item)
-            continue;
-        selectedMachines << item->id();
-    }
-    setMachines(selectedMachines);
-}
-
-void UIVMLogViewerWidget::addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
-{
-    QVector<QUuid> selectedMachines(m_machines);
 
     foreach (const UIVirtualMachineItem *item, items)
     {

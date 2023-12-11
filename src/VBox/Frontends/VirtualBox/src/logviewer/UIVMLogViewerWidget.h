@@ -77,9 +77,9 @@ public:
       * @param  enmEmbedding  Brings the type of widget embedding.
       * @param  pActionPool   Brings the action-pool reference.
       * @param  fShowToolbar  Brings whether we should create/show toolbar.
-      * @param  uMachineId    Brings the machine id for which VM Log-Viewer is requested. */
+      * @param  machineIDs    Brings the list of machine IDs. */
     UIVMLogViewerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                        bool fShowToolbar = true, const QUuid &uMachineId = QUuid(), QWidget *pParent = 0);
+                        bool fShowToolbar = true, const QList<QUuid> &machineIDs = QList<QUuid>(), QWidget *pParent = 0);
     ~UIVMLogViewerWidget();
     /** Returns the width of the current log page. return 0 if there is no current log page: */
     int defaultLogPageWidth() const;
@@ -93,7 +93,6 @@ public:
 #endif
 
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
-    void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
 protected:

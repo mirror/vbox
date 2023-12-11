@@ -51,8 +51,9 @@ public:
 
     /** Constructs Log Viewer factory acquiring additional arguments.
       * @param  pActionPool  Brings the action-pool reference.
-      * @param  uMachineId   Brings the machine id for which VM Log-Viewer is requested. */
-    UIVMLogViewerDialogFactory(UIActionPool *pActionPool = 0, const QUuid &uMachineId = QUuid(),
+      * @param  machineIDs   Brings the list of machine IDs. */
+    UIVMLogViewerDialogFactory(UIActionPool *pActionPool = 0,
+                               const QList<QUuid> &machineIDs = QList<QUuid>(),
                                const QString &strMachineName = QString());
 
 protected:
@@ -63,9 +64,9 @@ protected:
 
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine id. */
-    QUuid      m_uMachineId;
-    QString    m_strMachineName;
+    /** Holds the list of machine IDs. */
+    QList<QUuid>  m_machineIDs;
+    QString       m_strMachineName;
 };
 
 
@@ -79,12 +80,12 @@ public:
     /** Constructs Log Viewer dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference.
-      * @param  machine id     Brings the machine id. */
+      * @param  machineIDs     Brings the list of machine IDs. */
     UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool,
-                        const QUuid &uMachineId = QUuid(), const QString &strMachineName = QString());
+                        const QList<QUuid> &machineIDs = QList<QUuid>(),
+                        const QString &strMachineName = QString());
     ~UIVMLogViewerDialog();
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
-    void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
 
 protected:
 
@@ -125,10 +126,10 @@ private:
 
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine id. */
-    QUuid      m_uMachineId;
-    int m_iGeometrySaveTimerId;
-    QString    m_strMachineName;
+    /** Holds the list of machine IDs. */
+    QList<QUuid>  m_machineIDs;
+    int           m_iGeometrySaveTimerId;
+    QString       m_strMachineName;
 };
 
 
