@@ -195,16 +195,35 @@ typedef struct RTHTTPBODY
 typedef RTHTTPBODY *PRTHTTPBODY;
 
 /**
- * Returns the name of the HTTP method.
+ * Returns the name of the HTTP method as a string.
+ *
  * @returns Read only string.
- * @param   enmMethod       The HTTP method to name.
+ * @param   enmMethod       The HTTP method to return string for.
  */
 RTR3DECL(const char *) RTHttpMethodToStr(RTHTTPMETHOD enmMethod);
 
+/**
+ * Returns the name of the HTTP status as a string.
+ *
+ * @returns Read only string.
+ * @param   enmSts          The HTTP status to return string for.
+ */
 RTR3DECL(const char *) RTHttpStatusToStr(RTHTTPSTATUS enmSts);
 
+/**
+ * Initializes an HTTP header list.
+ *
+ * @returns VBox status code.
+ * @param   hHdrList            Header list to initialize.
+ */
 RTR3DECL(int) RTHttpHeaderListInit(PRTHTTPHEADERLIST hHdrList);
 
+/**
+ * Destroys an HTTP header list.
+ *
+ * @param   hHdrList            Header list to destroy.
+ *                              The object will be invalid on return.
+ */
 RTR3DECL(void) RTHttpHeaderListDestroy(RTHTTPHEADERLIST hHdrList);
 
 /**

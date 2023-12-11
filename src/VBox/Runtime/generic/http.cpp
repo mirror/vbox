@@ -209,17 +209,15 @@ RTR3DECL(int) RTHttpHeaderListInit(PRTHTTPHEADERLIST hHdrLst)
 }
 
 
-/**
- * Destroys the headers associated with this list (w/o telling cURL about it).
- *
- * @param   hHdrLst       The HTTP header list instance.
- */
 RTR3DECL(void) RTHttpHeaderListDestroy(RTHTTPHEADERLIST hHdrLst)
 {
     PRTHTTPHEADERLISTINTERNAL pThis = hHdrLst;
     RTHTTPHEADERLIST_VALID_RETURN_VOID(pThis);
 
     rtHttpHeaderListRemoveAll(pThis);
+
+    RTMemFree(hHdrLst);
+    hHdrLst = NIL_RTHTTPHEADERLIST;
 }
 
 
