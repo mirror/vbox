@@ -509,9 +509,9 @@ void RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uin
            GCPtrTop, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue, iGReg));
     pVCpu->cpum.GstCtx.rsp = uNewRsp;
     if (sizeof(TMPL_MEM_TYPE) != sizeof(uint16_t))
-        pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = *puSrc;
+        pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
     else
-        pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = *puSrc;
+        pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
 }
 
 
