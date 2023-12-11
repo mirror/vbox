@@ -160,7 +160,7 @@ static const char *rtCrShaCryptExtractSaltAndRounds(const char *pszSalt, size_t 
     /* Look for 'rounds=xxxxx$'. */
     if (strncmp(pszSalt, RT_STR_TUPLE("rounds=")) == 0)
     {
-        const char * const pszValue  = &pszSalt[sizeof("rounds=") - 1];
+        const char * const pszValue  = pszSalt ? &pszSalt[sizeof("rounds=") - 1] : NULL; /* For ASAN build (false positive). */
         const char * const pszDollar = strchr(pszValue, '$');
         if (pszDollar)
         {
