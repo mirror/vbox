@@ -422,6 +422,7 @@ static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
     RTStrFree(pReq->pszUrl);
 
     RTHttpHeaderListDestroy(pReq->hHdrLst);
+    pReq->hHdrLst = NIL_RTHTTPHEADERLIST;
 
     rtHttpServerBodyDestroy(&pReq->Body);
 
@@ -472,6 +473,7 @@ RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp)
     pResp->enmSts = RTHTTPSTATUS_INTERNAL_NOT_SET;
 
     RTHttpHeaderListDestroy(pResp->hHdrLst);
+    pResp->hHdrLst = NIL_RTHTTPHEADERLIST;
 
     rtHttpServerBodyDestroy(&pResp->Body);
 }
@@ -498,7 +500,8 @@ static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const
 
     char **ppapszStrings;
     size_t cStrings;
-    int rc2 = RTStrSplit(pszData, strlen(pszData), RTHTTPSERVER_HTTP11_EOL_STR, &ppapszStrings, &cStrings);
+    int rc2 = RTStrSplit(pszData, strlen(pszData) + 1 /* Must include terminator */,
+                         RTHTTPSERVER_HTTP11_EOL_STR, &ppapszStrings, &cStrings);
     if (RT_SUCCESS(rc2))
     {
         for (size_t i = 0; i < cStrings; i++)
@@ -788,6 +791,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
         rc = rtHttpServerSendResponseEx(pClient, enmStsResponse, &HdrLst);
 
         RTHttpHeaderListDestroy(HdrLst);
+        HdrLst = NIL_RTHTTPHEADERLIST;
 
         if (rc == VERR_BROKEN_PIPE) /* Could happen on fast reloads. */
             break;
@@ -882,6 +886,7 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
         AssertRCReturn(rc, rc);
 
         RTHttpHeaderListDestroy(HdrLst);
+        HdrLst = NIL_RTHTTPHEADERLIST;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -963,6 +968,7 @@ static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient,
             AssertRCReturn(rc, rc);
 
             RTHttpHeaderListDestroy(HdrLst);
+            HdrLst = NIL_RTHTTPHEADERLIST;
 
             size_t cbToRead  = fsObj.cbObject;
             size_t cbRead    = 0; /* Shut up GCC. */
