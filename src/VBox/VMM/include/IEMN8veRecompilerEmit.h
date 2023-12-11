@@ -3214,7 +3214,10 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
     {
         Assert(!(RT_BIT_32(idxRegVar) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
         if (!offAddend)
-            off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArg, idxRegVar);
+        {
+            if (idxRegArg != idxRegVar)
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArg, idxRegVar);
+        }
         else
             off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, idxRegArg, idxRegVar, offAddend);
     }

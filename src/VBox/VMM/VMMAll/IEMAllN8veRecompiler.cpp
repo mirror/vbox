@@ -3774,11 +3774,16 @@ DECLHIDDEN(void) iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxH
  *                          It is presumed that the host register part of these have
  *                          been allocated as such already and won't need moving,
  *                          just freeing.
+ * @param   fKeepVars       Mask of variables that should keep their register
+ *                          assignments.  Caller must take care to handle these.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs)
+iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint32_t fKeepVars = 0)
 {
     Assert(cArgs <= IEMNATIVE_CALL_MAX_ARG_COUNT);
+
+    /* fKeepVars will reduce this mask. */
+    uint32_t fRegsToFree = IEMNATIVE_CALL_VOLATILE_GREG_MASK;
 
     /*
      * Move anything important out of volatile registers.
@@ -3810,12 +3815,17 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
                     Assert(idxVar < RT_ELEMENTS(pReNative->Core.aVars));
                     Assert(pReNative->Core.bmVars & RT_BIT_32(idxVar));
                     Assert(pReNative->Core.aVars[idxVar].idxReg == idxReg);
-                    Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: idxVar=%d enmKind=%d idxReg=%d\n",
-                           idxVar, pReNative->Core.aVars[idxVar].enmKind, pReNative->Core.aVars[idxVar].idxReg));
-                    if (pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack)
-                        pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
+                    if (!(RT_BIT_32(idxVar) & fKeepVars))
+                    {
+                        Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: idxVar=%d enmKind=%d idxReg=%d\n",
+                               idxVar, pReNative->Core.aVars[idxVar].enmKind, pReNative->Core.aVars[idxVar].idxReg));
+                        if (pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack)
+                            pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
+                        else
+                            off = iemNativeRegMoveOrSpillStackVar(pReNative, off, idxVar);
+                    }
                     else
-                        off = iemNativeRegMoveOrSpillStackVar(pReNative, off, idxVar);
+                        fRegsToFree &= ~RT_BIT_32(idxReg);
                     continue;
                 }
 
@@ -3843,13 +3853,14 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
     /*
      * Do the actual freeing.
      */
-    if (pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK)
-        Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: bmHstRegs %#x -> %#x\n", pReNative->Core.bmHstRegs, pReNative->Core.bmHstRegs & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK));
-    pReNative->Core.bmHstRegs &= ~IEMNATIVE_CALL_VOLATILE_GREG_MASK;
+    if (pReNative->Core.bmHstRegs & fRegsToFree)
+        Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: bmHstRegs %#x -> %#x\n",
+               pReNative->Core.bmHstRegs, pReNative->Core.bmHstRegs & ~fRegsToFree));
+    pReNative->Core.bmHstRegs &= ~fRegsToFree;
 
     /* If there are guest register shadows in any call-volatile register, we
        have to clear the corrsponding guest register masks for each register. */
-    uint32_t fHstRegsWithGstShadow = pReNative->Core.bmHstRegsWithGstShadow & IEMNATIVE_CALL_VOLATILE_GREG_MASK;
+    uint32_t fHstRegsWithGstShadow = pReNative->Core.bmHstRegsWithGstShadow & fRegsToFree;
     if (fHstRegsWithGstShadow)
     {
         Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: bmHstRegsWithGstShadow %#RX32 -> %#RX32; removed %#RX32\n",
@@ -6288,9 +6299,10 @@ DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNativ
  * @param  fInitialized Set if the variable must already have been initialized.
  *                      Will throw VERR_IEM_VAR_NOT_INITIALIZED if this is not
  *                      the case.
+ * @param  idxRegPref   Preferred register number or UINT8_MAX.
  */
-DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
-                                                       uint32_t *poff, bool fInitialized = false)
+DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff,
+                                                       bool fInitialized = false, uint8_t idxRegPref = UINT8_MAX)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
     Assert(pReNative->Core.aVars[idxVar].cbVar <= 8);
@@ -6339,7 +6351,8 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNa
         iemNativeRegClearGstRegShadowing(pReNative, idxReg, *poff);
         Log11(("iemNativeVarRegisterAcquire: idxVar=%u idxReg=%u (matching arg %u)\n", idxVar, idxReg, uArgNo));
     }
-    else
+    else if (   idxRegPref < RT_ELEMENTS(pReNative->Core.aHstRegs)
+             || (pReNative->Core.bmHstRegs & RT_BIT_32(idxRegPref)))
     {
         uint32_t const fNotArgsMask = ~g_afIemNativeCallRegs[RT_MIN(pReNative->cArgs, IEMNATIVE_CALL_ARG_GREG_COUNT)];
         uint32_t const fRegs        = ~pReNative->Core.bmHstRegs
@@ -6362,6 +6375,12 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNa
             AssertStmt(idxReg != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_ALLOCATOR_NO_FREE_VAR));
             Log11(("iemNativeVarRegisterAcquire: idxVar=%u idxReg=%u (slow, uArgNo=%u)\n", idxVar, idxReg, uArgNo));
         }
+    }
+    else
+    {
+        idxReg = idxRegPref;
+        iemNativeRegClearGstRegShadowing(pReNative, idxReg, *poff);
+        Log11(("iemNativeVarRegisterAcquire: idxVar=%u idxReg=%u (preferred)\n", idxVar, idxReg));
     }
     iemNativeRegMarkAllocated(pReNative, idxReg, kIemNativeWhat_Var, idxVar);
     pReNative->Core.aVars[idxVar].idxReg = idxReg;
@@ -10144,6 +10163,8 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
         case IEM_ACCESS_TYPE_READ:                         Assert(pfnFunction == (uintptr_t)iemNativeHlpMemCommitAndUnmapRo); break;
         default: AssertFailed();
     }
+#else
+    RT_NOREF(fAccess);
 #endif
 
     /*
@@ -10158,18 +10179,25 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
     /*
      * Move/spill/flush stuff out of call-volatile registers.
+     *
+     * We exclude any register holding the bUnmapInfo variable, as we'll be
+     * checking it after returning from the call and will free it afterwards.
      */
     /** @todo save+restore active registers and maybe guest shadows in miss
      *        scenario. */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */, RT_BIT_32(idxVarUnmapInfo));
 
     /*
      * If idxVarUnmapInfo is zero, we can skip all this. Otherwise we'll have
      * to call the unmap helper function.
+     *
+     * The likelyhood of it being zero is higher than for the TLB hit when doing
+     * the mapping, as a TLB miss for an well aligned and unproblematic memory
+     * access should also end up with a mapping that won't need special unmapping.
      */
-//pReNative->pInstrBuf[off++] = 0xcc;
-    RT_NOREF(fAccess);
-
+    /** @todo Go over iemMemMapJmp and implement the no-unmap-needed case!  That
+     *        should speed up things for the pure interpreter as well when TLBs
+     *        are enabled. */
 #ifdef RT_ARCH_AMD64
     if (pReNative->Core.aVars[idxVarUnmapInfo].idxReg == UINT8_MAX)
     {
@@ -10184,7 +10212,8 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     else
 #endif
     {
-        uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVarUnmapInfo, &off);
+        uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVarUnmapInfo, &off,
+                                                              true /*fInitialized*/, IEMNATIVE_CALL_ARG1_GREG /*idxRegPref*/);
         off = iemNativeEmitTestAnyBitsInGpr8(pReNative, off, idxVarReg, 0xff);
         iemNativeVarRegisterRelease(pReNative, idxVarUnmapInfo);
     }
@@ -10200,7 +10229,7 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     RT_NOREF(idxInstr);
 #endif
 
-    /* IEMNATIVE_CALL_ARG1_GREG = idxVarUnmapInfo */
+    /* IEMNATIVE_CALL_ARG1_GREG = idxVarUnmapInfo (first!) */
     off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarUnmapInfo);
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
@@ -10208,6 +10237,9 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
     /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
+
+    /* The bUnmapInfo variable is implictly free by these MCs. */
+    iemNativeVarFreeLocal(pReNative, idxVarUnmapInfo);
 
     /*
      * Done, just fixup the jump for the non-call case.

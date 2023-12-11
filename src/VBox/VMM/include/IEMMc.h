@@ -2259,6 +2259,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** Commits the memory and unmaps guest memory previously mapped RW.
  * @remarks     May return.
+ * @note        Implictly frees the a_bMapInfo variable.
  */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
@@ -2268,6 +2269,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** Commits the memory and unmaps guest memory previously mapped W.
  * @remarks     May return.
+ * @note        Implictly frees the a_bMapInfo variable.
  */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
@@ -2277,6 +2279,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** Commits the memory and unmaps guest memory previously mapped R.
  * @remarks     May return.
+ * @note        Implictly frees the a_bMapInfo variable.
  */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_bMapInfo)         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, a_bMapInfo))
@@ -2293,6 +2296,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * store, while \#P will not.
  *
  * @remarks     May in theory return - for now.
+ * @note        Implictly frees both the a_bMapInfo and a_u16FSW variables.
  */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_bMapInfo, a_u16FSW) do { \
@@ -2314,7 +2318,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 #endif
 
-/** Rolls back (conceptually only, assumes no writes) and unmaps the guest  memory. */
+/** Rolls back (conceptually only, assumes no writes) and unmaps the guest memory.
+ * @note        Implictly frees the a_bMapInfo variable. */
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_bMapInfo)       iemMemRollbackAndUnmap(pVCpu, a_bMapInfo)
 #else
