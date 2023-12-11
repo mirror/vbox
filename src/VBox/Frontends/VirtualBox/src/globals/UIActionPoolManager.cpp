@@ -1274,44 +1274,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Machine Logs' action class. */
-class UIActionSimpleManagerCommonShowMachineLogs : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerCommonShowMachineLogs(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
-                         ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("LogViewer");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
-    {
-        return QKeySequence("Ctrl+L");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE
-    {
-        setName(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show log files of selected virtual machines"));
-    }
-};
-
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionSimpleManagerCommonPerformRefresh : public UIActionSimple
 {
@@ -1904,6 +1866,12 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineLogViewer");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence("Ctrl+L");
     }
 
     /** Handles translation event. */
@@ -3661,8 +3629,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_FileManager] = new UIActionToggleManagerToolsMachineShowFileManager(this);
     m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
-    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
-    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Group_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);
     m_pool[UIActionIndexMN_M_Group_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
     m_pool[UIActionIndexMN_M_Group_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
@@ -3708,7 +3674,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_FileManager] = new UIActionToggleManagerToolsMachineShowFileManager(this);
     m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
-    m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);
     m_pool[UIActionIndexMN_M_Machine_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
     m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
@@ -3964,7 +3929,6 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Group_S_Reset)
                     // << action(UIActionIndexMN_M_Group_S_Detach)
                     << action(UIActionIndexMN_M_Group_S_Discard)
-                    << action(UIActionIndexMN_M_Group_S_ShowLogDialog)
                     << action(UIActionIndexMN_M_Group_S_Refresh)
                     << action(UIActionIndexMN_M_Group_S_ShowInFileManager)
                     << action(UIActionIndexMN_M_Group_S_CreateShortcut)
@@ -4000,7 +3964,6 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexMN_M_Machine_S_Reset)
                     // << action(UIActionIndexMN_M_Machine_S_Detach)
                     << action(UIActionIndexMN_M_Machine_S_Discard)
-                    << action(UIActionIndexMN_M_Machine_S_ShowLogDialog)
                     << action(UIActionIndexMN_M_Machine_S_Refresh)
                     << action(UIActionIndexMN_M_Machine_S_ShowInFileManager)
                     << action(UIActionIndexMN_M_Machine_S_CreateShortcut)

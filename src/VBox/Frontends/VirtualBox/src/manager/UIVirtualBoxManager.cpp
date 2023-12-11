@@ -587,7 +587,6 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
-    , m_pLogViewerDialog(0)
     , m_pWidget(0)
     , m_iGeometrySaveTimerId(-1)
     , m_fSnapshotCloneByDefault(false)
@@ -949,16 +948,6 @@ void UIVirtualBoxManager::sltHandleMachineToolTypeChange()
     /* Update actions stuff: */
     updateActionsVisibility();
     updateActionsAppearance();
-
-    /* Make sure separate dialog closed when corresponding tool opened: */
-    switch (m_pWidget->toolsTypeMachine())
-    {
-        case UIToolType_Logs:
-            sltCloseLogViewerWindow();
-            break;
-        default:
-            break;
-    }
 }
 
 void UIVirtualBoxManager::sltCreateMedium()
@@ -1032,6 +1021,23 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
             case UIToolType_Network: UINetworkManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
             case UIToolType_Cloud: UICloudProfileManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
             case UIToolType_CloudConsole: UICloudConsoleManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            case UIToolType_Logs:
+            {
+                /* Compose a list of selected machine IDs: */
+                QList<QUuid> machineIDs;
+                /* For each selected item: */
+                foreach (UIVirtualMachineItem *pItem, currentItems())
+                {
+                    /* Make sure current item is local one: */
+                    UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
+                    if (!pItemLocal)
+                        continue;
+                    /* Append machine ID: */
+                    machineIDs << pItemLocal->id();
+                }
+                UIVMLogViewerDialogFactory(m_pActionPool, machineIDs).prepare(m_managers[enmType], this);
+                break;
+            }
             default: break;
         }
 
@@ -1072,6 +1078,7 @@ void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolTy
             case UIToolType_Network: UINetworkManagerFactory().cleanup(m_managers[enmType]); break;
             case UIToolType_Cloud: UICloudProfileManagerFactory().cleanup(m_managers[enmType]); break;
             case UIToolType_CloudConsole: UICloudConsoleManagerFactory().cleanup(m_managers[enmType]); break;
+            case UIToolType_Logs: UIVMLogViewerDialogFactory().cleanup(m_managers[enmType]); break;
             default: break;
         }
 
@@ -2210,62 +2217,6 @@ void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
     m_pWidget->setToolsTypeMachine(pAction->property("UIToolType").value<UIToolType>());
 }
 
-void UIVirtualBoxManager::sltOpenLogViewerWindow()
-{
-    /* Get selected items: */
-    QList<UIVirtualMachineItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isMachineToolOpened(UIToolType_Logs))
-    {
-        m_pWidget->setToolsTypeMachine(UIToolType_Details);
-        m_pWidget->closeMachineTool(UIToolType_Logs);
-    }
-
-    QList<QUuid> machineIDs;
-
-    /* For each selected item: */
-    foreach (UIVirtualMachineItem *pItem, items)
-    {
-        /* Make sure current item is local one: */
-        UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
-        if (!pItemLocal)
-            continue;
-
-        /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
-            continue;
-        machineIDs << pItem->id();
-    }
-
-    if (machineIDs.isEmpty())
-        return;
-    if (!m_pLogViewerDialog)
-    {
-        UIVMLogViewerDialogFactory dialogFactory(actionPool(), machineIDs);
-        dialogFactory.prepare(m_pLogViewerDialog, this);
-        if (m_pLogViewerDialog)
-            connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,
-                    this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
-    }
-    AssertPtrReturnVoid(m_pLogViewerDialog);
-    m_pLogViewerDialog->show();
-    m_pLogViewerDialog->setWindowState(m_pLogViewerDialog->windowState() & ~Qt::WindowMinimized);
-    m_pLogViewerDialog->activateWindow();
-}
-
-void UIVirtualBoxManager::sltCloseLogViewerWindow()
-{
-    if (!m_pLogViewerDialog)
-        return;
-
-    QIManagerDialog* pDialog = m_pLogViewerDialog;
-    m_pLogViewerDialog = 0;
-    pDialog->close();
-    UIVMLogViewerDialogFactory().cleanup(pDialog);
-}
-
 void UIVirtualBoxManager::sltPerformRefreshMachine()
 {
     m_pWidget->refreshMachine();
@@ -2567,8 +2518,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
-    connect(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformRefreshMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager), &UIAction::triggered,
@@ -2611,8 +2560,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformRefreshMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager), &UIAction::triggered,
@@ -3139,7 +3086,6 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Tools)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager));
@@ -3205,7 +3151,6 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Tools)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager));
@@ -3498,7 +3443,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Reset, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Discard, items));
-    actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Refresh, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_ShowInFileManager, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_CreateShortcut, items));
@@ -3518,7 +3462,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Reset, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Discard, items));
-    actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Refresh, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ShowInFileManager, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_CreateShortcut, items));
@@ -3767,12 +3710,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
                    isAtLeastOneItemDiscardable(items) &&
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
-        }
-        case UIActionIndexMN_M_Group_S_ShowLogDialog:
-        case UIActionIndexMN_M_Machine_S_ShowLogDialog:
-        {
-            return isItemsLocal(items) &&
-                   isAtLeastOneItemAccessible(items);
         }
         case UIActionIndexMN_M_Group_T_Pause:
         case UIActionIndexMN_M_Machine_T_Pause:

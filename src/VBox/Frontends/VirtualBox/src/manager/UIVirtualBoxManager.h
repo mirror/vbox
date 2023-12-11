@@ -319,11 +319,6 @@ private slots:
         /** Handles call to show machine tool corresponding to passed @a pAction. */
         void sltPerformShowMachineTool(QAction *pAction);
 
-        /** Handles call to open machine Log Viewer window. */
-        void sltOpenLogViewerWindow();
-        /** Handles call to close machine Log Viewer window. */
-        void sltCloseLogViewerWindow();
-
         /** Handles call to refresh machine. */
         void sltPerformRefreshMachine();
 
@@ -524,9 +519,6 @@ private:
 
     /** Holds the map of various wizards. */
     QMap<WizardType, UINativeWizard*>  m_wizards;
-
-    /** Holds the instance of UIVMLogViewerDialog. */
-    QIManagerDialog *m_pLogViewerDialog;
 
     /** Holds the central-widget instance. */
     UIVirtualBoxManagerWidget *m_pWidget;
