@@ -300,6 +300,7 @@ typedef struct px_proxy_factory *PLIBPROXYFACTORY;
 typedef PLIBPROXYFACTORY (* PFNLIBPROXYFACTORYCTOR)(void);
 typedef void             (* PFNLIBPROXYFACTORYDTOR)(PLIBPROXYFACTORY);
 typedef char          ** (* PFNLIBPROXYFACTORYGETPROXIES)(PLIBPROXYFACTORY, const char *);
+typedef void             (* PFNLIBPROXYFACTORYFREEPROXIES)(char **);
 #endif
 
 
@@ -363,6 +364,8 @@ static RTLDRMOD                                 g_hLdrLibProxy = NIL_RTLDRMOD;
 static PFNLIBPROXYFACTORYCTOR                   g_pfnLibProxyFactoryCtor = NULL;
 static PFNLIBPROXYFACTORYDTOR                   g_pfnLibProxyFactoryDtor = NULL;
 static PFNLIBPROXYFACTORYGETPROXIES             g_pfnLibProxyFactoryGetProxies = NULL;
+/** Note: Only valid for libproxy >= 0.4.16. */
+static PFNLIBPROXYFACTORYFREEPROXIES            g_pfnLibProxyFactoryFreeProxies = NULL;
 /** @} */
 #endif
 
@@ -1064,6 +1067,11 @@ static DECLCALLBACK(int) rtHttpLibProxyResolveImports(void *pvUser)
             rc = RTLdrGetSymbol(hMod, "px_proxy_factory_get_proxies", (void **)&g_pfnLibProxyFactoryGetProxies);
         if (RT_SUCCESS(rc))
         {
+            /* libproxy < 0.4.16 does not have this function, so this is not fatal if not found. */
+            RTLdrGetSymbol(hMod, "px_proxy_factory_free_proxies", (void **)&g_pfnLibProxyFactoryFreeProxies);
+        }
+        if (RT_SUCCESS(rc))
+        {
             RTMEM_WILL_LEAK(hMod);
             g_hLdrLibProxy = hMod;
         }
@@ -1097,7 +1105,6 @@ static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char 
         if (pFactory)
         {
             char **papszProxies = g_pfnLibProxyFactoryGetProxies(pFactory, pszUrl);
-            g_pfnLibProxyFactoryDtor(pFactory);
             if (papszProxies)
             {
                 /*
@@ -1119,11 +1126,21 @@ static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char 
                         break;
                 }
 
-                /* free the result. */
-                for (unsigned i = 0; papszProxies[i]; i++)
-                    free(papszProxies[i]);
-                free(papszProxies);
+                /* Free the result. */
+                if (g_pfnLibProxyFactoryFreeProxies) /* libproxy >= 0.4.16. */
+                {
+                    g_pfnLibProxyFactoryFreeProxies(papszProxies);
+                }
+                else
+                {
+                    for (unsigned i = 0; papszProxies[i]; i++)
+                        free(papszProxies[i]);
+                    free(papszProxies);
+                }
+                papszProxies = NULL;
             }
+
+            g_pfnLibProxyFactoryDtor(pFactory);
         }
     }
 
