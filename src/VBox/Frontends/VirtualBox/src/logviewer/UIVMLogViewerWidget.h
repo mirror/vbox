@@ -142,7 +142,6 @@ private slots:
         void sltResetOptionsToDefault();
     /** @} */
     void sltCloseMachineLogs();
-    void sltTabCloseButtonClick();
     void sltCommitDataSignalReceived();
     void sltPanelContainerHidden();
     void sltPanelCurrentTabChanged(int iIndex);

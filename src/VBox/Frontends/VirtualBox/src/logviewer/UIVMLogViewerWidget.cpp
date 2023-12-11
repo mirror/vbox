@@ -323,27 +323,9 @@ void UIVMLogViewerWidget::markLabelTabs()
     for (int i = 0; i < pTabBar->count(); ++i)
     {
         if (qobject_cast<UILabelTab*>(m_pTabWidget->widget(i)))
-        {
             pTabBar->setTabData(i, true);
-            /* Add close button only for dialog mode in manager UI. */
-            if (uiCommon().uiType() == UICommon::UIType_SelectorUI && m_enmEmbedding == EmbedTo_Dialog)
-            {
-                UIVMLogTab *pTab = logTab(i);
-                if (pTab)
-                {
-                    UILogTabCloseButton *pCloseButton = new UILogTabCloseButton(0, pTab->machineId());
-                    pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-                    pTabBar->setTabButton(i, QTabBar::RightSide, pCloseButton);
-                    pCloseButton->setToolTip(tr("Close this machine's logs"));
-                    connect(pCloseButton, &UILogTabCloseButton::clicked, this, &UIVMLogViewerWidget::sltTabCloseButtonClick);
-                }
-            }
-        }
         else
-        {
             pTabBar->setTabData(i, false);
-        }
-
     }
 }
 
@@ -671,18 +653,6 @@ void UIVMLogViewerWidget::sltCloseMachineLogs()
     QVector<QUuid> machineList;
     machineList << machineId;
     removeLogViewerPages(machineList);
-}
-
-void UIVMLogViewerWidget::sltTabCloseButtonClick()
-{
-    UILogTabCloseButton *pButton = qobject_cast<UILogTabCloseButton*>(sender());
-    if (!pButton)
-        return;
-    if (pButton->machineId().isNull())
-        return;
-    QVector<QUuid> list;
-    list << pButton->machineId();
-    removeLogViewerPages(list);
 }
 
 void UIVMLogViewerWidget::sltCommitDataSignalReceived()
