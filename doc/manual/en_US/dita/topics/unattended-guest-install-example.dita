@@ -3,7 +3,7 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="unattended-guest-install-example">
                <title>Using VBoxManage Commands for Unattended Guest Installation</title>
-               
+
                <body>
                   <p>
         The following example shows how to perform an unattended guest
@@ -124,7 +124,7 @@
           </p>
                         <pre xml:space="preserve"># VBoxManage unattended install $VM \
 --iso=/u01/Software/OL/OracleLinux-R7-U6-Server-x86_64-dvd.iso \
---user=<varname>login</varname> --full-user-name=<varname>name</varname> --password <varname>password</varname> \
+--user=<varname>login</varname> --full-user-name=<varname>name</varname> --user-password <varname>password</varname> \
 --install-additions --time-zone=CET</pre>
                         <p>
             The previous command does the following:
@@ -183,5 +183,5 @@
                      </li>
                   </ol>
                </body>
-               
+
             </topic>
