@@ -2291,18 +2291,18 @@ FNIEMOP_DEF(iemOp_push_eBX)
 FNIEMOP_DEF(iemOp_push_eSP)
 {
     IEMOP_MNEMONIC(push_rSP, "push rSP");
-    if (IEM_GET_TARGET_CPU(pVCpu) == IEMTARGETCPU_8086)
-    {
-        IEM_MC_BEGIN(0, 1, IEM_MC_F_ONLY_8086, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_LOCAL(uint16_t, u16Value);
-        IEM_MC_FETCH_GREG_U16(u16Value, X86_GREG_xSP);
-        IEM_MC_SUB_LOCAL_U16(u16Value, 2);
-        IEM_MC_PUSH_U16(u16Value);
-        IEM_MC_ADVANCE_RIP_AND_FINISH();
-        IEM_MC_END();
-    }
-    return FNIEMOP_CALL_1(iemOpCommonPushGReg, X86_GREG_xSP);
+    if (IEM_GET_TARGET_CPU(pVCpu) != IEMTARGETCPU_8086)
+        return FNIEMOP_CALL_1(iemOpCommonPushGReg, X86_GREG_xSP);
+
+    /* 8086 works differently wrt to 'push sp' compared to 80186 and later. */
+    IEM_MC_BEGIN(0, 1, IEM_MC_F_ONLY_8086, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_LOCAL(uint16_t, u16Value);
+    IEM_MC_FETCH_GREG_U16(u16Value, X86_GREG_xSP);
+    IEM_MC_SUB_LOCAL_U16(u16Value, 2);
+    IEM_MC_PUSH_U16(u16Value);
+    IEM_MC_ADVANCE_RIP_AND_FINISH();
+    IEM_MC_END();
 }
 
 

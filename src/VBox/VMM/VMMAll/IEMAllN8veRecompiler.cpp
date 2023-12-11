@@ -1735,6 +1735,72 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU64,(PVMCPUCC pVCpu, RTGCP
 
 
 
+/**
+ * Used by TB code to push unsigned 16-bit value onto a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPushU16,(PVMCPUCC pVCpu, uint16_t u16Value))
+{
+    iemMemStackPushU16Jmp(pVCpu, u16Value); /** @todo iemMemStackPushU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to push unsigned 32-bit value onto a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPushU32,(PVMCPUCC pVCpu, uint32_t u32Value))
+{
+    iemMemStackPushU32Jmp(pVCpu, u32Value); /** @todo iemMemStackPushU32SafeJmp */
+}
+
+
+/**
+ * Used by TB code to push 32-bit selector value onto a generic stack.
+ *
+ * Intel CPUs doesn't do write a whole dword, thus the special function.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPushU32SReg,(PVMCPUCC pVCpu, uint32_t u32Value))
+{
+    iemMemStackPushU32SRegJmp(pVCpu, u32Value); /** @todo iemMemStackPushU32SRegSafeJmp */
+}
+
+
+/**
+ * Used by TB code to push unsigned 64-bit value onto a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPushU64,(PVMCPUCC pVCpu, uint64_t u64Value))
+{
+    iemMemStackPushU64Jmp(pVCpu, u64Value); /** @todo iemMemStackPushU64SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 16-bit general purpose register off a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemStackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 32-bit general purpose register off a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU32,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemStackPopGRegU32Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU32SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 64-bit general purpose register off a generic stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU64,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemStackPopGRegU64Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU64SafeJmp */
+}
+
+
+
 /*********************************************************************************************************************************
 *   Helpers: Flat memory fetches and stores.                                                                                     *
 *********************************************************************************************************************************/
@@ -1877,6 +1943,92 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, R
 {
     iemMemFlatStoreDataU64Jmp(pVCpu, GCPtrMem, u64Value); /** @todo use iemMemStoreDataU64SafeJmp */
 }
+
+
+
+/**
+ * Used by TB code to push unsigned 16-bit value onto a flat 32-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PushU16,(PVMCPUCC pVCpu, uint16_t u16Value))
+{
+    iemMemFlat32StackPushU16Jmp(pVCpu, u16Value); /** @todo iemMemFlat32StackPushU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to push unsigned 32-bit value onto a flat 32-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PushU32,(PVMCPUCC pVCpu, uint32_t u32Value))
+{
+    iemMemFlat32StackPushU32Jmp(pVCpu, u32Value); /** @todo iemMemFlat32StackPushU32SafeJmp */
+}
+
+
+/**
+ * Used by TB code to push segment selector value onto a flat 32-bit stack.
+ *
+ * Intel CPUs doesn't do write a whole dword, thus the special function.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PushU32SReg,(PVMCPUCC pVCpu, uint32_t u32Value))
+{
+    iemMemFlat32StackPushU32SRegJmp(pVCpu, u32Value); /** @todo iemMemFlat32StackPushU32SRegSafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 16-bit general purpose register off a flat 32-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemFlat32StackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemFlat32StackPopGRegU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 64-bit general purpose register off a flat 32-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PopGRegU32,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemFlat32StackPopGRegU32Jmp(pVCpu, iGReg); /** @todo iemMemFlat32StackPopGRegU32SafeJmp */
+}
+
+
+
+/**
+ * Used by TB code to push unsigned 16-bit value onto a flat 64-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PushU16,(PVMCPUCC pVCpu, uint16_t u16Value))
+{
+    iemMemFlat64StackPushU16Jmp(pVCpu, u16Value); /** @todo iemMemFlat64StackPushU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to push unsigned 64-bit value onto a flat 64-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PushU64,(PVMCPUCC pVCpu, uint64_t u64Value))
+{
+    iemMemFlat64StackPushU64Jmp(pVCpu, u64Value); /** @todo iemMemFlat64StackPushU64SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 16-bit general purpose register off a flat 64-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemFlat64StackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemFlat64StackPopGRegU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to pop a 64-bit general purpose register off a flat 64-bit stack.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PopGRegU64,(PVMCPUCC pVCpu, uint8_t iGReg))
+{
+    iemMemFlat64StackPopGRegU64Jmp(pVCpu, iGReg); /** @todo iemMemFlat64StackPopGRegU64SafeJmp */
+}
+
 
 
 /*********************************************************************************************************************************
@@ -9745,6 +9897,167 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /*********************************************************************************************************************************
+*   Stack Accesses.                                                                                                              *
+*********************************************************************************************************************************/
+/*                                                     RT_MAKE_U32_FROM_U8(cBitsVar, cBitsFlat, fSReg, 0) */
+#define IEM_MC_PUSH_U16(a_u16Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU16)
+#define IEM_MC_PUSH_U32(a_u32Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU32)
+#define IEM_MC_PUSH_U32_SREG(a_uSegVal) \
+    off = iemNativeEmitStackPush(pReNative, off, a_uSegVal,  RT_MAKE_U32_FROM_U8(32,  0, 1, 0), (uintptr_t)iemNativeHlpStackPushU32SReg)
+#define IEM_MC_PUSH_U64(a_u64Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU64)
+
+#define IEM_MC_FLAT32_PUSH_U16(a_u16Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 32, 0, 0), (uintptr_t)iemNativeHlpStackFlat32PushU16)
+#define IEM_MC_FLAT32_PUSH_U32(a_u32Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 0, 0), (uintptr_t)iemNativeHlpStackFlat32PushU32)
+#define IEM_MC_FLAT32_PUSH_U32_SREG(a_u32Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 1, 0), (uintptr_t)iemNativeHlpStackFlat32PushU32SReg)
+
+#define IEM_MC_FLAT64_PUSH_U16(a_u16Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 64, 0, 0), (uintptr_t)iemNativeHlpStackFlat64PushU16)
+#define IEM_MC_FLAT64_PUSH_U64(a_u64Value) \
+    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), (uintptr_t)iemNativeHlpStackFlat64PushU64)
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarValue,
+                       uint32_t cBitsVarAndFlat, uintptr_t pfnFunction)
+{
+    RT_NOREF(pReNative, off, idxVarValue, cBitsVarAndFlat, pfnFunction);
+    AssertReleaseFailed();
+    return off;
+}
+
+
+
+/*                                                     RT_MAKE_U32_FROM_U8(cBitsVar, cBitsFlat, 0, 0) */
+#define IEM_MC_POP_GREG_U16(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16,  0, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackPopGRegU16, pCallEntry->idxInstr)
+#define IEM_MC_POP_GREG_U32(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(32,  0, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackPopGRegU32, pCallEntry->idxInstr)
+#define IEM_MC_POP_GREG_U64(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(64,  0, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackPopGRegU64, pCallEntry->idxInstr)
+
+#define IEM_MC_FLAT32_POP_GREG_U16(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16, 32, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackFlat32PopGRegU16, pCallEntry->idxInstr)
+#define IEM_MC_FLAT32_POP_GREG_U32(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(32, 32, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackFlat32PopGRegU32, pCallEntry->idxInstr)
+
+#define IEM_MC_FLAT64_POP_GREG_U16(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16, 64, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackFlat64PopGRegU16, pCallEntry->idxInstr)
+#define IEM_MC_FLAT64_POP_GREG_U64(a_iGReg) \
+    off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), \
+                                    (uintptr_t)iemNativeHlpStackFlat64PopGRegU64, pCallEntry->idxInstr)
+
+/** IEM_MC[|_FLAT32|_FLAT64]_POP_GREG_U16/32/64 */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGReg,
+                          uint32_t cBitsVarAndFlat, uintptr_t pfnFunction, uint8_t idxInstr)
+{
+    /*
+     * Assert sanity.
+     */
+    Assert(idxGReg < 16);
+#ifdef VBOX_STRICT
+    if (RT_BYTE2(cBitsVarAndFlat) != 0)
+    {
+        Assert(   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 16, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU64
+                   : UINT64_C(0xc000b000a0009000) ));
+    }
+    else
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU64
+                   : UINT64_C(0xc000b000a0009000) ));
+#endif
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that the fExec flags we've got make sense.
+     */
+    off = iemNativeEmitExecFlagsCheck(pReNative, off, pReNative->fExec);
+#endif
+
+    /*
+     * To keep things simple we have to commit any pending writes first as we
+     * may end up making calls.
+     */
+    /** @todo we could postpone this till we make the call and reload the
+     * registers after returning from the call. Not sure if that's sensible or
+     * not, though. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /*
+     * Move/spill/flush stuff out of call-volatile registers.
+     * This is the easy way out. We could contain this to the tlb-miss branch
+     * by saving and restoring active stuff here.
+     */
+    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
+
+    /* For now, flush the any shadow copy of the guest register that is about
+       to be popped and the xSP register. */
+    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_GPR(idxGReg)) | RT_BIT_64(X86_GREG_xSP));
+
+    /*
+     * Define labels and allocate the result register (trying for the return
+     * register if we can).
+     */
+    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+
+    /*
+     * First we try to go via the TLB.
+     */
+//pReNative->pInstrBuf[off++] = 0xcc;
+    /** @todo later. */
+    RT_NOREF(cBitsVarAndFlat);
+
+    /*
+     * Call helper to do the popping.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* IEMNATIVE_CALL_ARG1_GREG = iGReg */
+    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxGReg);
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
+
+    iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+
+    return off;
+}
+
+
+
+/*********************************************************************************************************************************
 *   Memory mapping (IEM_MEM_MAP_XXX, IEM_MEM_FLAT_MAP_XXX).                                                                      *
 *********************************************************************************************************************************/
 
@@ -10249,27 +10562,6 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     return off;
 }
 
-
-
-/*********************************************************************************************************************************
-*   Stack Accesses.                                                                                                              *
-*********************************************************************************************************************************/
-#define IEM_MC_PUSH_U16(a_u16Value)            iemMemStackPushU16Jmp(pVCpu, (a_u16Value))
-#define IEM_MC_PUSH_U32(a_u32Value)            iemMemStackPushU32Jmp(pVCpu, (a_u32Value))
-#define IEM_MC_PUSH_U32_SREG(a_uSegVal)        iemMemStackPushU32SRegJmp(pVCpu, (a_uSegVal))
-#define IEM_MC_PUSH_U64(a_u64Value)            iemMemStackPushU64Jmp(pVCpu, (a_u64Value))
-#define IEM_MC_FLAT32_PUSH_U16(a_u16Value)
-#define IEM_MC_FLAT32_PUSH_U32(a_u32Value)
-#define IEM_MC_FLAT64_PUSH_U16(a_u16Value)
-#define IEM_MC_FLAT64_PUSH_U64(a_u64Value)
-
-#define IEM_MC_POP_GREG_U16(a_pu16Value)            (*(a_pu16Value) = iemMemStackPopU16Jmp(pVCpu))
-#define IEM_MC_POP_U32(a_pu32Value)            (*(a_pu32Value) = iemMemStackPopU32Jmp(pVCpu))
-#define IEM_MC_POP_U64(a_pu64Value)            (*(a_pu64Value) = iemMemStackPopU64Jmp(pVCpu))
-#define IEM_MC_FLAT64_POP_U16(a_pu16Value)
-#define IEM_MC_FLAT64_POP_U64(a_pu32Value)
-#define IEM_MC_FLAT32_POP_U16(a_pu16Value)
-#define IEM_MC_FLAT32_POP_U32(a_pu64Value)
 
 
 /*********************************************************************************************************************************
