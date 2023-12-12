@@ -5329,7 +5329,7 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 {
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
 
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right value is in CPUMCTX. */
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /* Allocate a temporary PC register. */
@@ -5391,7 +5391,7 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 {
     Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
 
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right value is in CPUMCTX. */
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /* Allocate a temporary PC register. */
@@ -5442,7 +5442,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                  uint8_t cbInstr, int32_t offDisp, uint8_t idxInstr)
 {
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right value is in CPUMCTX. */
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /* Allocate a temporary PC register. */
@@ -5466,12 +5466,105 @@ iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, 
 *   Emitters for changing PC/RIP/EIP/IP with a indirect jump (IEM_MC_SET_RIP_UXX_AND_FINISH).                                    *
 *********************************************************************************************************************************/
 
-/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP)       return iemRegRipJumpU16AndFinishClearningRF((pVCpu), (a_u16NewIP))
-/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP)       return iemRegRipJumpU32AndFinishClearningRF((pVCpu), (a_u32NewIP))
-/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP)       return iemRegRipJumpU64AndFinishClearningRF((pVCpu), (a_u64NewIP))
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for pre-386 targets. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16(a_u16NewIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u16NewIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint16_t))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for 386+ targets. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32(a_u16NewIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u16NewIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint16_t))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC64(a_u16NewIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u16NewIP),  true /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint16_t))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16NewIP) \
+    IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16(a_u16NewIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16NewIP) \
+    IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32(a_u16NewIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for use in 64-bit code that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u16NewIP) \
+    IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC64(a_u16NewIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef IEM_MC_SET_RIP_U16_AND_FINISH
+
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for 386+ targets. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u32NewEIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint32_t))
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC64(a_u32NewEIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u32NewEIP),  true /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint32_t))
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u32NewEIP) \
+    IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u32NewEIP) \
+    IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC64(a_u32NewEIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef IEM_MC_SET_RIP_U32_AND_FINISH
+
+
+/** Variant of IEM_MC_SET_RIP_U64_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64(a_u64NewEIP) \
+    off = iemNativeEmitRipJumpNoFlags(pReNative, off, (a_u64NewEIP),  true /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint64_t))
+
+/** Variant of IEM_MC_SET_RIP_U64_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u64NewEIP) \
+    IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64(a_u64NewEIP); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef IEM_MC_SET_RIP_U64_AND_FINISH
+
+
+/** Same as iemRegRipJumpU16AndFinishNoFlags,
+ *  iemRegRipJumpU32AndFinishNoFlags and iemRegRipJumpU64AndFinishNoFlags. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarPc, bool f64Bit,
+                            uint8_t idxInstr, uint8_t cbVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarPc);
+    Assert(pReNative->Core.aVars[idxVarPc].cbVar == cbVar);
+
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /* Get a register with the new PC loaded from idxVarPc.
+       Note! This ASSUMES that the high bits of the GPR is zeroed. */
+    uint8_t const idxPcReg = iemNativeVarRegisterAcquireForGuestReg(pReNative, idxVarPc, kIemNativeGstReg_Pc, &off);
+
+    /* Check limit (may #GP(0) + exit TB). */
+    if (!f64Bit)
+        off = iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, X86_SREG_CS, idxInstr);
+    /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
+    else if (cbVar > sizeof(uint32_t))
+        off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+
+    /* Store the result. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /** @todo implictly free the variable? */
+
+    return off;
+}
 
 
 
