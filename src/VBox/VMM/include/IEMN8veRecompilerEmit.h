@@ -3203,7 +3203,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitCallImm(PIEMRECOMPILERSTATE pReNative, 
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
 iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxRegArg, uint8_t idxVar,
-                                     int32_t offAddend = 0)
+                                     int32_t offAddend = 0, bool fVarAllowInVolatileReg = false)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
     AssertStmt(pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack,
@@ -3212,7 +3212,7 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
     uint8_t const idxRegVar = pReNative->Core.aVars[idxVar].idxReg;
     if (idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
-        Assert(!(RT_BIT_32(idxRegVar) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
+        Assert(!(RT_BIT_32(idxRegVar) & IEMNATIVE_CALL_VOLATILE_GREG_MASK) || fVarAllowInVolatileReg);
         if (!offAddend)
         {
             if (idxRegArg != idxRegVar)
@@ -3240,13 +3240,13 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
 iemNativeEmitLoadArgGregFromImmOrStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxRegArg, uint8_t idxVar,
-                                          int32_t offAddend = 0)
+                                          int32_t offAddend = 0, bool fVarAllowInVolatileReg = false)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
     if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Immediate)
         off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArg, pReNative->Core.aVars[idxVar].u.uValue + offAddend);
     else
-        off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, idxRegArg, idxVar, offAddend);
+        off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, idxRegArg, idxVar, offAddend, fVarAllowInVolatileReg);
     return off;
 }
 

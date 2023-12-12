@@ -173,12 +173,12 @@ g_dMcStmtThreaded = {
     'IEM_MC_STORE_MEM_FLAT_U8_CONST':                            (None, True,  True,  ),
 
     # Flat Stack:
-    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
+    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  True,  ),
+    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  True,  ),
     'IEM_MC_FLAT64_POP_GREG_U16':                                (None, True,  True,  ),
     'IEM_MC_FLAT64_POP_GREG_U64':                                (None, True,  True,  ),
-    'IEM_MC_FLAT32_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT32_PUSH_U32':                                    (None, True,  False, ),
+    'IEM_MC_FLAT32_PUSH_U16':                                    (None, True,  True,  ),
+    'IEM_MC_FLAT32_PUSH_U32':                                    (None, True,  True,  ),
     'IEM_MC_FLAT32_POP_GREG_U16':                                (None, True,  True,  ),
     'IEM_MC_FLAT32_POP_GREG_U32':                                (None, True,  True,  ),
 };

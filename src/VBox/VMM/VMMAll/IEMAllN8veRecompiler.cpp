@@ -9901,32 +9901,134 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 *********************************************************************************************************************************/
 /*                                                     RT_MAKE_U32_FROM_U8(cBitsVar, cBitsFlat, fSReg, 0) */
 #define IEM_MC_PUSH_U16(a_u16Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU16)
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16,  0, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackPushU16, pCallEntry->idxInstr)
 #define IEM_MC_PUSH_U32(a_u32Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU32)
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32,  0, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackPushU32, pCallEntry->idxInstr)
 #define IEM_MC_PUSH_U32_SREG(a_uSegVal) \
-    off = iemNativeEmitStackPush(pReNative, off, a_uSegVal,  RT_MAKE_U32_FROM_U8(32,  0, 1, 0), (uintptr_t)iemNativeHlpStackPushU32SReg)
+    off = iemNativeEmitStackPush(pReNative, off, a_uSegVal,  RT_MAKE_U32_FROM_U8(32,  0, 1, 0), \
+                                 (uintptr_t)iemNativeHlpStackPushU32SReg, pCallEntry->idxInstr)
 #define IEM_MC_PUSH_U64(a_u64Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64,  0, 0, 0), (uintptr_t)iemNativeHlpStackPushU64)
+    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64,  0, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackPushU64, pCallEntry->idxInstr)
 
 #define IEM_MC_FLAT32_PUSH_U16(a_u16Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 32, 0, 0), (uintptr_t)iemNativeHlpStackFlat32PushU16)
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 32, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackFlat32PushU16, pCallEntry->idxInstr)
 #define IEM_MC_FLAT32_PUSH_U32(a_u32Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 0, 0), (uintptr_t)iemNativeHlpStackFlat32PushU32)
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackFlat32PushU32, pCallEntry->idxInstr)
 #define IEM_MC_FLAT32_PUSH_U32_SREG(a_u32Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 1, 0), (uintptr_t)iemNativeHlpStackFlat32PushU32SReg)
+    off = iemNativeEmitStackPush(pReNative, off, a_u32Value, RT_MAKE_U32_FROM_U8(32, 32, 1, 0), \
+                                 (uintptr_t)iemNativeHlpStackFlat32PushU32SReg, pCallEntry->idxInstr)
 
 #define IEM_MC_FLAT64_PUSH_U16(a_u16Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 64, 0, 0), (uintptr_t)iemNativeHlpStackFlat64PushU16)
+    off = iemNativeEmitStackPush(pReNative, off, a_u16Value, RT_MAKE_U32_FROM_U8(16, 64, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackFlat64PushU16, pCallEntry->idxInstr)
 #define IEM_MC_FLAT64_PUSH_U64(a_u64Value) \
-    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), (uintptr_t)iemNativeHlpStackFlat64PushU64)
+    off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), \
+                                 (uintptr_t)iemNativeHlpStackFlat64PushU64, pCallEntry->idxInstr)
 
+/** IEM_MC[|_FLAT32|_FLAT64]_PUSH_U16/32/32_SREG/64 */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarValue,
-                       uint32_t cBitsVarAndFlat, uintptr_t pfnFunction)
+                       uint32_t cBitsVarAndFlat, uintptr_t pfnFunction, uint8_t idxInstr)
 {
-    RT_NOREF(pReNative, off, idxVarValue, cBitsVarAndFlat, pfnFunction);
-    AssertReleaseFailed();
+    /*
+     * Assert sanity.
+     */
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarValue);
+#ifdef VBOX_STRICT
+    if (RT_BYTE2(cBitsVarAndFlat) != 0)
+    {
+        Assert(   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 1, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU32SReg
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 16, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PushU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PushU64
+                   : UINT64_C(0xc000b000a0009000) ));
+    }
+    else
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPushU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPushU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 1, 0) ? (uintptr_t)iemNativeHlpStackPushU32SReg
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPushU64
+                   : UINT64_C(0xc000b000a0009000) ));
+#endif
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that the fExec flags we've got make sense.
+     */
+    off = iemNativeEmitExecFlagsCheck(pReNative, off, pReNative->fExec);
+#endif
+
+    /*
+     * To keep things simple we have to commit any pending writes first as we
+     * may end up making calls.
+     */
+    /** @todo we could postpone this till we make the call and reload the
+     * registers after returning from the call. Not sure if that's sensible or
+     * not, though. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /*
+     * Move/spill/flush stuff out of call-volatile registers, keeping whatever
+     * idxVarValue might be occupying.
+     *
+     * This is the easy way out. We could contain this to the tlb-miss branch
+     * by saving and restoring active stuff here.
+     */
+    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */, RT_BIT_32(idxVarValue));
+
+    /* For now, flush any shadow copy of the xSP register. */
+    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_GPR(X86_GREG_xSP)));
+
+    /*
+     * Define labels and allocate the result register (trying for the return
+     * register if we can).
+     */
+    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+
+    /*
+     * First we try to go via the TLB.
+     */
+//pReNative->pInstrBuf[off++] = 0xcc;
+    /** @todo later. */
+    RT_NOREF(cBitsVarAndFlat);
+
+    /*
+     * Call helper to do the popping.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* IEMNATIVE_CALL_ARG1_GREG = idxVarValue (first) */
+    off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarValue,
+                                                    0 /*offAddend*/, true /*fVarAllowInVolatileReg*/);
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
+
+    iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+
     return off;
 }
 
@@ -10013,7 +10115,8 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
     /* For now, flush the any shadow copy of the guest register that is about
        to be popped and the xSP register. */
-    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_GPR(idxGReg)) | RT_BIT_64(X86_GREG_xSP));
+    iemNativeRegFlushGuestShadows(pReNative,
+                                  RT_BIT_64(IEMNATIVEGSTREG_GPR(idxGReg)) | RT_BIT_64(IEMNATIVEGSTREG_GPR(X86_GREG_xSP)));
 
     /*
      * Define labels and allocate the result register (trying for the return
