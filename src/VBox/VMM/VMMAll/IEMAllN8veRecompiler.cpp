@@ -8279,6 +8279,113 @@ iemNativeEmitClearHighGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 *   General purpose register manipulation (add, sub).                                                                            *
 *********************************************************************************************************************************/
 
+#define IEM_MC_ADD_GREG_U16(a_iGReg, a_u8SubtrahendConst) \
+    off = iemNativeEmitAddGregU16(pReNative, off, a_iGReg, a_u8SubtrahendConst)
+
+/** Emits code for IEM_MC_ADD_GREG_U16. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t uAddend)
+{
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (idxGstTmpReg >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    if (uAddend == 1)
+    {
+        pbCodeBuf[off++] = 0xff; /* inc */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = uAddend;
+        pbCodeBuf[off++] = 0;
+    }
+
+#else
+    uint8_t const    idxTmpReg   = iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+
+    /* sub tmp, gstgrp, uAddend */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, idxTmpReg, idxGstTmpReg, uAddend, false /*f64Bit*/);
+
+    /* bfi w1, w2, 0, 16 - moves bits 15:0 from tmpreg2 to tmpreg. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxTmpReg, 0, 16);
+
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+#define IEM_MC_ADD_GREG_U32(a_iGReg, a_u8Const) \
+    off = iemNativeEmitAddGregU32U64(pReNative, off, a_iGReg, a_u8Const, false /*f64Bit*/)
+
+#define IEM_MC_ADD_GREG_U64(a_iGReg, a_u8Const) \
+    off = iemNativeEmitAddGregU32U64(pReNative, off, a_iGReg, a_u8Const, true /*f64Bit*/)
+
+/** Emits code for IEM_MC_ADD_GREG_U32 and IEM_MC_ADD_GREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t uAddend, bool f64Bit)
+{
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    if (f64Bit)
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg >= 8 ? X86_OP_REX_B : 0);
+    else if (idxGstTmpReg >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    if (uAddend == 1)
+    {
+        pbCodeBuf[off++] = 0xff; /* inc */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+    }
+    else if (uAddend < 128)
+    {
+        pbCodeBuf[off++] = 0x83; /* add */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uAddend);
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81; /* add */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uAddend);
+        pbCodeBuf[off++] = 0;
+        pbCodeBuf[off++] = 0;
+        pbCodeBuf[off++] = 0;
+    }
+
+#else
+    /* sub tmp, gstgrp, uAddend */
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, idxGstTmpReg, idxGstTmpReg, uAddend, f64Bit);
+
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+
 #define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8SubtrahendConst) \
     off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u8SubtrahendConst)
 
@@ -8290,11 +8397,11 @@ iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGR
                                                                  kIemNativeGstRegUse_ForUpdate);
 
 #ifdef RT_ARCH_AMD64
-    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (idxGstTmpReg >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B;
-    if (uSubtrahend)
+    if (uSubtrahend == 1)
     {
         pbCodeBuf[off++] = 0xff; /* dec */
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, idxGstTmpReg & 7);
@@ -8343,15 +8450,14 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
                                                                  kIemNativeGstRegUse_ForUpdate);
 
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     if (f64Bit)
         pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg >= 8 ? X86_OP_REX_B : 0);
     else if (idxGstTmpReg >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B;
     if (uSubtrahend == 1)
     {
-        /* dec */
-        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = 0xff; /* dec */
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, idxGstTmpReg & 7);
     }
     else if (uSubtrahend < 128)
