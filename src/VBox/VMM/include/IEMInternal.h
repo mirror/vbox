@@ -4993,9 +4993,6 @@ VBOXSTRICTRC    iemRegRipRelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8
 VBOXSTRICTRC    iemRegRipRelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int16_t offNextInstr) RT_NOEXCEPT;
 VBOXSTRICTRC    iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offNextInstr,
                                                             IEMMODE enmEffOpSize) RT_NOEXCEPT;
-VBOXSTRICTRC    iemRegRipJumpU16AndFinishClearningRF(PVMCPUCC pVCpu, uint16_t uNewRip) RT_NOEXCEPT;
-VBOXSTRICTRC    iemRegRipJumpU32AndFinishClearningRF(PVMCPUCC pVCpu, uint32_t uNewRip) RT_NOEXCEPT;
-VBOXSTRICTRC    iemRegRipJumpU64AndFinishClearningRF(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT;
 /** @} */
 
 /** @name FPU access and helpers.

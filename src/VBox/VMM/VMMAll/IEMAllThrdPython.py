@@ -829,9 +829,13 @@ class ThreadedFunctionVariation(object):
                                 self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
                             ];
                 # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED_PCxx[_WITH_FLAGS] ...
-                elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
-                                        'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
-                    oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
+                elif (   oNewStmt.sName
+                      in ('IEM_MC_ADVANCE_RIP_AND_FINISH',
+                          'IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH',
+                          'IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH', 'IEM_MC_SET_RIP_U64_AND_FINISH', )):
+                    if oNewStmt.sName not in ('IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH',
+                                              'IEM_MC_SET_RIP_U64_AND_FINISH', ):
+                        oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
                     if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', )
                         and self.sVariation not in (self.ksVariation_16_Pre386, self.ksVariation_16f_Pre386,)):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
@@ -1478,6 +1482,9 @@ class ThreadedFunction(object):
                                             'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
                                             'IEM_MC_REL_JMP_S16_AND_FINISH': True,
                                             'IEM_MC_REL_JMP_S32_AND_FINISH': True,
+                                            'IEM_MC_SET_RIP_U16_AND_FINISH': True,
+                                            'IEM_MC_SET_RIP_U32_AND_FINISH': True,
+                                            'IEM_MC_SET_RIP_U64_AND_FINISH': True,
                                            }):
             asVariations = [sVariation for sVariation in asVariations
                             if sVariation not in ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing];

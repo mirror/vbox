@@ -2772,6 +2772,147 @@ DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu) RT_N
 #endif
 
 
+
+/**
+ * Performs a near jump to the specified address, no checking or clearing of
+ * flags
+ *
+ * May raise a \#GP(0) if the new IP outside the code segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewIp              The new IP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU16AndFinishNoFlags(PVMCPUCC pVCpu, uint16_t uNewIp) RT_NOEXCEPT
+{
+    if (RT_LIKELY(   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+                  || IEM_IS_64BIT_CODE(pVCpu) /* no limit checks in 64-bit mode */))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address, no checking or clearing of
+ * flags
+ *
+ * May raise a \#GP(0) if the new RIP is outside the code segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewEip             The new EIP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU32AndFinishNoFlags(PVMCPUCC pVCpu, uint32_t uNewEip) RT_NOEXCEPT
+{
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+    if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewEip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address, no checking or clearing of
+ * flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewRip             The new RIP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU64AndFinishNoFlags(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT
+{
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
+    if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+        pVCpu->cpum.GstCtx.rip = uNewRip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address.
+ *
+ * May raise a \#GP(0) if the new IP outside the code segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewIp              The new IP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU16AndFinishClearingRF(PVMCPUCC pVCpu, uint16_t uNewIp) RT_NOEXCEPT
+{
+    if (RT_LIKELY(   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+                  || IEM_IS_64BIT_CODE(pVCpu) /* no limit checks in 64-bit mode */))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address.
+ *
+ * May raise a \#GP(0) if the new RIP is outside the code segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewEip             The new EIP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU32AndFinishClearingRF(PVMCPUCC pVCpu, uint32_t uNewEip) RT_NOEXCEPT
+{
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+    if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewEip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Performs a near jump to the specified address.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uNewRip             The new RIP value.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU64AndFinishClearingRF(PVMCPUCC pVCpu, uint64_t uNewRip) RT_NOEXCEPT
+{
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
+    if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+        pVCpu->cpum.GstCtx.rip = uNewRip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
+#endif
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+
 /**
  * Adds to the stack pointer.
  *

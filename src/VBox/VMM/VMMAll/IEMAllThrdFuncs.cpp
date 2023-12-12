@@ -217,12 +217,76 @@
     return iemRegEip32RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
- *  an extra parameter, for use in 64-bit codeand we need to check and clear
+ *  an extra parameter, for use in 64-bit code and we need to check and clear
  *  flags. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i32, a_cbInstr) \
     return iemRegRip64RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
 
 #undef  IEM_MC_REL_JMP_S32_AND_FINISH
+
+
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for pre-386 targets. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishNoFlags((pVCpu), (a_u16NewIP))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for 386+ targets. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishNoFlags((pVCpu), (a_u16NewIP))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC64(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishNoFlags((pVCpu), (a_u16NewIP))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishClearingRF((pVCpu), (a_u16NewIP))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishClearingRF((pVCpu), (a_u16NewIP))
+
+/** Variant of IEM_MC_SET_RIP_U16_AND_FINISH for use in 64-bit code that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishClearingRF((pVCpu), (a_u16NewIP))
+
+#undef IEM_MC_SET_RIP_U16_AND_FINISH
+
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for 386+ targets. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP) \
+    return iemRegRipJumpU32AndFinishNoFlags((pVCpu), (a_u32NewEIP))
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC64(a_u32NewEIP) \
+    return iemRegRipJumpU32AndFinishNoFlags((pVCpu), (a_u32NewEIP))
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u32NewEIP) \
+    return iemRegRipJumpU32AndFinishClearingRF((pVCpu), (a_u32NewEIP))
+
+/** Variant of IEM_MC_SET_RIP_U32_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u32NewEIP) \
+    return iemRegRipJumpU32AndFinishClearingRF((pVCpu), (a_u32NewEIP))
+
+#undef IEM_MC_SET_RIP_U32_AND_FINISH
+
+
+/** Variant of IEM_MC_SET_RIP_U64_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64(a_u32NewEIP) \
+    return iemRegRipJumpU64AndFinishNoFlags((pVCpu), (a_u32NewEIP))
+
+/** Variant of IEM_MC_SET_RIP_U64_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u32NewEIP) \
+    return iemRegRipJumpU64AndFinishClearingRF((pVCpu), (a_u32NewEIP))
+
+#undef IEM_MC_SET_RIP_U64_AND_FINISH
 
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit. */

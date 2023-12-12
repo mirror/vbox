@@ -5463,6 +5463,19 @@ iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, 
 
 
 /*********************************************************************************************************************************
+*   Emitters for changing PC/RIP/EIP/IP with a indirect jump (IEM_MC_SET_RIP_UXX_AND_FINISH).                                    *
+*********************************************************************************************************************************/
+
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP)       return iemRegRipJumpU16AndFinishClearningRF((pVCpu), (a_u16NewIP))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP)       return iemRegRipJumpU32AndFinishClearningRF((pVCpu), (a_u32NewIP))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP)       return iemRegRipJumpU64AndFinishClearningRF((pVCpu), (a_u64NewIP))
+
+
+
+/*********************************************************************************************************************************
 *   Emitters for conditionals (IEM_MC_IF_XXX, IEM_MC_ELSE, IEM_MC_ENDIF)                                                         *
 *********************************************************************************************************************************/
 
