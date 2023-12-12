@@ -72,11 +72,14 @@
 #define IEM_MC_REL_JMP_S32_AND_FINISH(a_i32) \
     return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i32), pVCpu->iem.s.enmEffOpSize)
 /** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP)       return iemRegRipJumpU16AndFinishClearingRF((pVCpu), (a_u16NewIP))
+#define IEM_MC_SET_RIP_U16_AND_FINISH(a_u16NewIP) \
+    return iemRegRipJumpU16AndFinishClearingRF((pVCpu), (a_u16NewIP), IEM_GET_INSTR_LEN(pVCpu))
 /** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP)       return iemRegRipJumpU32AndFinishClearingRF((pVCpu), (a_u32NewIP))
+#define IEM_MC_SET_RIP_U32_AND_FINISH(a_u32NewIP) \
+    return iemRegRipJumpU32AndFinishClearingRF((pVCpu), (a_u32NewIP), IEM_GET_INSTR_LEN(pVCpu))
 /** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
-#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP)       return iemRegRipJumpU64AndFinishClearingRF((pVCpu), (a_u64NewIP))
+#define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP) \
+    return iemRegRipJumpU64AndFinishClearingRF((pVCpu), (a_u64NewIP), IEM_GET_INSTR_LEN(pVCpu))
 
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
