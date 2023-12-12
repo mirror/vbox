@@ -7613,7 +7613,7 @@ iemNativeEmitCallAImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGRegEx, int8_t cbZeroExtended)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbZeroExtended); RT_NOREF(cbZeroExtended);
     Assert(iGRegEx < 20);
 
@@ -7649,7 +7649,7 @@ iemNativeEmitFetchGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU8Sx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGRegEx, uint8_t cbSignExtended)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbSignExtended);
     Assert(iGRegEx < 20);
 
@@ -7714,7 +7714,7 @@ iemNativeEmitFetchGregU8Sx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg, uint8_t cbZeroExtended)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbZeroExtended); RT_NOREF(cbZeroExtended);
     Assert(iGReg < 16);
 
@@ -7748,7 +7748,7 @@ iemNativeEmitFetchGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU16Sx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg, uint8_t cbSignExtended)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbSignExtended);
     Assert(iGReg < 16);
 
@@ -7788,7 +7788,7 @@ iemNativeEmitFetchGregU16Sx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg, uint8_t cbZeroExtended)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbZeroExtended); RT_NOREF_PV(cbZeroExtended);
     Assert(iGReg < 16);
 
@@ -7819,7 +7819,7 @@ iemNativeEmitFetchGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU32SxU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint64_t));
     Assert(iGReg < 16);
 
@@ -7854,7 +7854,7 @@ iemNativeEmitFetchGregU32SxU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGReg)
 {
-    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint64_t));
     Assert(iGReg < 16);
 
@@ -8434,6 +8434,51 @@ iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxReg, kIemNativeGstReg_EFlags, off);
     off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxReg, RT_UOFFSETOF_DYN(VMCPUCC, cpum.GstCtx.eflags));
     iemNativeVarRegisterRelease(pReNative, idxVarEFlags);
+    return off;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Emitters for segment register fetches (IEM_MC_FETCH_SREG_XXX).
+*********************************************************************************************************************************/
+
+#define IEM_MC_FETCH_SREG_U16(a_u16Dst, a_iSReg) \
+    off = iemNativeEmitFetchSReg(pReNative, off, a_u16Dst, a_iSReg, sizeof(uint16_t))
+
+#define IEM_MC_FETCH_SREG_ZX_U32(a_u32Dst, a_iSReg) \
+    off = iemNativeEmitFetchSReg(pReNative, off, a_u32Dst, a_iSReg, sizeof(uint32_t))
+
+#define IEM_MC_FETCH_SREG_ZX_U64(a_u64Dst, a_iSReg) \
+    off = iemNativeEmitFetchSReg(pReNative, off, a_u64Dst, a_iSReg, sizeof(uint64_t))
+
+
+/** Emits code for IEM_MC_FETCH_SREG_U16, IEM_MC_FETCH_SREG_ZX_U32 and
+ *  IEM_MC_FETCH_SREG_ZX_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchSReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iSReg, int8_t cbVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    Assert(pReNative->Core.aVars[idxDstVar].cbVar == cbVar); RT_NOREF(cbVar);
+    Assert(iSReg < X86_SREG_COUNT);
+
+    /*
+     * For now, we will not create a shadow copy of a selector.  The rational
+     * is that since we do not recompile the popping and loading of segment
+     * registers and that the the IEM_MC_FETCH_SREG_U* MCs are only used for
+     * pushing and moving to registers, there is only a small chance that the
+     * shadow copy will be accessed again before the register is reloaded.  One
+     * scenario would be nested called in 16-bit code, but I doubt it's worth
+     * the extra register pressure atm.
+     *
+     * What we really need first, though, is to combine iemNativeRegAllocTmpForGuestReg
+     * and iemNativeVarRegisterAcquire for a load scenario. We only got the
+     * store scencario covered at present (r160730).
+     */
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+    off = iemNativeEmitLoadGprFromVCpuU16(pReNative, off, idxVarReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aSRegs[iSReg].Sel));
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
     return off;
 }
 
