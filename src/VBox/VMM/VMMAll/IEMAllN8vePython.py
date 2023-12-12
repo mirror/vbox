@@ -384,7 +384,21 @@ class NativeRecompFunctionVariation(object):
                             dFreedVars[sParam] = oVarInfo;
                             del dVars[sParam];
                         else:
-                            self.raiseProblem('Variable %s was used after implictly frees by %s!' % (sParam, oStmt.sName,));
+                            self.raiseProblem('Variable %s was used after implictly freed by %s!' % (sParam, oStmt.sName,));
+
+                elif oStmt.sName in ('IEM_MC_PUSH_U16', 'IEM_MC_PUSH_U32', 'IEM_MC_PUSH_U32_SREG', 'IEM_MC_PUSH_U64',
+                                     'IEM_MC_FLAT32_PUSH_U16', 'IEM_MC_FLAT32_PUSH_U32', 'IEM_MC_FLAT32_PUSH_U32_SREG',
+                                     'IEM_MC_FLAT64_PUSH_U16', 'IEM_MC_FLAT64_PUSH_U64',):
+                    #
+                    # The variable being pushed is implicitly freed.
+                    #
+                    for sParam in oStmt.asParams:
+                        oVarInfo = dVars.get(sParam);
+                        if oVarInfo:
+                            dFreedVars[sParam] = oVarInfo;
+                            del dVars[sParam];
+                        else:
+                            self.raiseProblem('Variable %s was used after implictly freed by %s!' % (sParam, oStmt.sName,));
                 else:
                     #
                     # Scan all the parameters of generic statements.

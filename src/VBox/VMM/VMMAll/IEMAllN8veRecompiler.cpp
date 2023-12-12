@@ -10027,6 +10027,9 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
 
+    /* The value variable is implictly flushed. */
+    iemNativeVarFreeLocal(pReNative, idxVarValue);
+
     iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
 
     return off;
