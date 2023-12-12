@@ -3213,6 +3213,7 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
     if (idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
         Assert(!(RT_BIT_32(idxRegVar) & IEMNATIVE_CALL_VOLATILE_GREG_MASK) || fVarAllowInVolatileReg);
+        RT_NOREF(fVarAllowInVolatileReg);
         if (!offAddend)
         {
             if (idxRegArg != idxRegVar)
