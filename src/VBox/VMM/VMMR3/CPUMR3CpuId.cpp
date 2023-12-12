@@ -3286,7 +3286,8 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         {
             /* Check if MTRR read+write support is enabled. */
             bool fEnableMtrrWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRRWrite", &fEnableMtrrWrite, true);
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRRWrite", &fEnableMtrrWrite,
+                                    false /** @todo true - 2023-12-12 bird: does not work yet, so disabled it */);
             AssertRCReturn(rc, rc);
             if (fEnableMtrrWrite)
             {
