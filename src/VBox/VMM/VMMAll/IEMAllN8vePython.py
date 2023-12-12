@@ -288,6 +288,14 @@ class NativeRecompFunctionVariation(object):
             if dVars is not None:
                 del dVars[sVarName];
 
+        def implicitFree(oStmt, dFreedVars, dVars, sVar):
+            oVarInfo = dVars.get(sVar);
+            if oVarInfo:
+                dFreedVars[sVar] = oVarInfo;
+                del dVars[sVar];
+            else:
+                self.raiseProblem('Variable %s was used after implictly freed by %s!' % (sVar, oStmt.sName,));
+
         dFreedVars = {};
         for iStmt in range(len(aoStmts) - 1, -1, -1):
             oStmt = aoStmts[iStmt];
@@ -379,12 +387,7 @@ class NativeRecompFunctionVariation(object):
                     # an additional a_u16FSW argument, which receives the same treatement.
                     #
                     for sParam in oStmt.asParams:
-                        oVarInfo = dVars.get(sParam);
-                        if oVarInfo:
-                            dFreedVars[sParam] = oVarInfo;
-                            del dVars[sParam];
-                        else:
-                            self.raiseProblem('Variable %s was used after implictly freed by %s!' % (sParam, oStmt.sName,));
+                        implicitFree(oStmt, dFreedVars, dVars, sParam);
 
                 elif oStmt.sName in ('IEM_MC_PUSH_U16', 'IEM_MC_PUSH_U32', 'IEM_MC_PUSH_U32_SREG', 'IEM_MC_PUSH_U64',
                                      'IEM_MC_FLAT32_PUSH_U16', 'IEM_MC_FLAT32_PUSH_U32', 'IEM_MC_FLAT32_PUSH_U32_SREG',
@@ -393,12 +396,7 @@ class NativeRecompFunctionVariation(object):
                     # The variable being pushed is implicitly freed.
                     #
                     for sParam in oStmt.asParams:
-                        oVarInfo = dVars.get(sParam);
-                        if oVarInfo:
-                            dFreedVars[sParam] = oVarInfo;
-                            del dVars[sParam];
-                        else:
-                            self.raiseProblem('Variable %s was used after implictly freed by %s!' % (sParam, oStmt.sName,));
+                        implicitFree(oStmt, dFreedVars, dVars, sParam);
                 else:
                     #
                     # Scan all the parameters of generic statements.
