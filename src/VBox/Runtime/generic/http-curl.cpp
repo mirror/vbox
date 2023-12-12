@@ -364,7 +364,7 @@ static RTLDRMOD                                 g_hLdrLibProxy = NIL_RTLDRMOD;
 static PFNLIBPROXYFACTORYCTOR                   g_pfnLibProxyFactoryCtor = NULL;
 static PFNLIBPROXYFACTORYDTOR                   g_pfnLibProxyFactoryDtor = NULL;
 static PFNLIBPROXYFACTORYGETPROXIES             g_pfnLibProxyFactoryGetProxies = NULL;
-/** Note: Only valid for libproxy >= 0.4.16. */
+/** Can be NULL, as it was introduced with libproxy v0.4.16 (2020-12-04). */
 static PFNLIBPROXYFACTORYFREEPROXIES            g_pfnLibProxyFactoryFreeProxies = NULL;
 /** @} */
 #endif
@@ -1066,10 +1066,8 @@ static DECLCALLBACK(int) rtHttpLibProxyResolveImports(void *pvUser)
         if (RT_SUCCESS(rc))
             rc = RTLdrGetSymbol(hMod, "px_proxy_factory_get_proxies", (void **)&g_pfnLibProxyFactoryGetProxies);
         if (RT_SUCCESS(rc))
-        {
-            /* libproxy < 0.4.16 does not have this function, so this is not fatal if not found. */
+            /* libproxy < 0.4.16 does not have this function, so ignore the return code. */
             RTLdrGetSymbol(hMod, "px_proxy_factory_free_proxies", (void **)&g_pfnLibProxyFactoryFreeProxies);
-        }
         if (RT_SUCCESS(rc))
         {
             RTMEM_WILL_LEAK(hMod);
@@ -1099,7 +1097,7 @@ static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char 
     if (RT_SUCCESS(rc))
     {
         /*
-         * Instance the factory and ask for a list of proxies.
+         * Instanciate the factory and ask for a list of proxies.
          */
         PLIBPROXYFACTORY pFactory = g_pfnLibProxyFactoryCtor();
         if (pFactory)
@@ -1128,9 +1126,7 @@ static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char 
 
                 /* Free the result. */
                 if (g_pfnLibProxyFactoryFreeProxies) /* libproxy >= 0.4.16. */
-                {
                     g_pfnLibProxyFactoryFreeProxies(papszProxies);
-                }
                 else
                 {
                     for (unsigned i = 0; papszProxies[i]; i++)
@@ -1139,7 +1135,6 @@ static int rtHttpLibProxyConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char 
                 }
                 papszProxies = NULL;
             }
-
             g_pfnLibProxyFactoryDtor(pFactory);
         }
     }
