@@ -1187,7 +1187,8 @@ static void APIENTRY ddi11_1RelocateDeviceFuncs(
     D3D11_1DDI_DEVICEFUNCS* pDeviceFunctions // The new location of the driver function table.
 )
 {
-    //DEBUG_BREAKPOINT_TEST();
+    /* This is usually a sign of trouble. Break into debugger. */
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(hDevice, pDeviceFunctions);
     LogFlowFunc(("pDeviceFunctions %p", pDeviceFunctions));
     /* Nothing to do in this driver. */
@@ -1198,7 +1199,7 @@ static void APIENTRY ddi11RelocateDeviceFuncs(
     D3D11DDI_DEVICEFUNCS* pDeviceFunctions // The new location of the driver function table.
 )
 {
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(hDevice, pDeviceFunctions);
     LogFlowFunc(("pDeviceFunctions %p", pDeviceFunctions));
     /* Nothing to do in this driver. */
@@ -1209,7 +1210,7 @@ static void APIENTRY ddi10_1RelocateDeviceFuncs(
     D3D10_1DDI_DEVICEFUNCS* pDeviceFunctions // The new location of the driver function table.
 )
 {
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(hDevice, pDeviceFunctions);
     LogFlowFunc(("pDeviceFunctions %p", pDeviceFunctions));
     /* Nothing to do in this driver. */
@@ -1220,7 +1221,7 @@ static void APIENTRY ddi10RelocateDeviceFuncs(
     D3D10DDI_DEVICEFUNCS* pDeviceFunctions // The new location of the driver function table.
 )
 {
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(hDevice, pDeviceFunctions);
     LogFlowFunc(("pDeviceFunctions %p", pDeviceFunctions));
     /* Nothing to do in this driver. */
