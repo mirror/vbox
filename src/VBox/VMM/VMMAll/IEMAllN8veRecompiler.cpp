@@ -1585,13 +1585,8 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu,
 /**
  * Used by TB code when it wants to raise a \#GP(0).
  */
-IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
 {
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    pVCpu->iem.s.idxTbCurInstr = idxInstr;
-#else
-    RT_NOREF(idxInstr);
-#endif
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -4500,13 +4495,17 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxAddrReg, uint8_t idxInstr)
 {
-    RT_NOREF(idxInstr);
-
     /*
      * Make sure we don't have any outstanding guest register writes as we may
      * raise an #GP(0) and all guest register must be up to date in CPUMCTX.
      */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
 
 #ifdef RT_ARCH_AMD64
     /*
@@ -4520,16 +4519,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
     off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
     off = iemNativeEmitAddGpr32Imm(pReNative, off, iTmpReg, (int32_t)0x8000);
     off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 16);
-
-# ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeEmitJnzToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-# else
-    uint32_t const offFixup = off;
-    off = iemNativeEmitJzToFixed(pReNative, off, 0);
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxInstr);
-    off = iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-    iemNativeFixupFixedJump(pReNative, offFixup, off /*offTarget*/);
-# endif
 
     iemNativeRegFreeTmp(pReNative, iTmpReg);
 
@@ -4541,29 +4531,14 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
      *     mov     x1, 0x800000000000
      *     add     x1, x0, x1
      *     cmp     xzr, x1, lsr 48
-     * and either:
      *     b.ne    .Lraisexcpt
-     * or:
-     *     b.eq    .Lnoexcept
-     *     movz    x1, #instruction-number
-     *     b       .Lraisexcpt
-     * .Lnoexcept:
      */
     uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
 
     off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
     off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
     off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, idxAddrReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
-
-# ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeEmitJnzToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-# else
-    uint32_t const offFixup = off;
-    off = iemNativeEmitJzToFixed(pReNative, off, 0);
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxInstr);
-    off = iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-    iemNativeFixupFixedJump(pReNative, offFixup, off /*offTarget*/);
-# endif
 
     iemNativeRegFreeTmp(pReNative, iTmpReg);
 
@@ -4597,6 +4572,12 @@ iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNativ
      */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
     /** @todo implement expand down/whatnot checking */
     AssertStmt(idxSegReg == X86_SREG_CS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1));
 
@@ -4605,17 +4586,7 @@ iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNativ
                                                                kIemNativeGstRegUse_ForUpdate);
 
     off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, iTmpLimReg);
-
-#ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeEmitJaToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-    RT_NOREF(idxInstr);
-#else
-    uint32_t const offFixup = off;
-    off = iemNativeEmitJbeToFixed(pReNative, off, 0);
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxInstr);
-    off = iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
-    iemNativeFixupFixedJump(pReNative, offFixup, off /*offTarget*/);
-#endif
 
     iemNativeRegFreeTmp(pReNative, iTmpLimReg);
     return off;
@@ -4807,11 +4778,8 @@ static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t of
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
 
-        /* iemNativeHlpExecRaiseGp0(PVMCPUCC pVCpu, uint8_t idxInstr) */
+        /* iemNativeHlpExecRaiseGp0(PVMCPUCC pVCpu) */
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-#ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, 0);
-#endif
         off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseGp0);
 
         /* jump back to the return sequence. */
@@ -11075,6 +11043,553 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 }
 
 
+/**
+ * Macro that emits the 16/32-bit CS.LIM check.
+ */
+#define BODY_CHECK_CS_LIM(a_cbInstr) \
+    off = iemNativeEmitBltInCheckCsLim(pReNative, off, (a_cbInstr), pCallEntry->idxInstr)
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr)
+{
+    Assert(cbInstr >  0);
+    Assert(cbInstr < 16);
+
+    /* Before we start, update the instruction number in case we raise an exception. */
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /*
+     * We need CS.LIM and RIP here. When cbInstr is larger than 1, we also need
+     * a temporary register for calculating the last address of the instruction.
+     *
+     * The calculation and comparisons are 32-bit.  We ASSUME that the incoming
+     * RIP isn't totally invalid, i.e. that any jump/call/ret/iret instruction
+     * that last updated EIP here checked it already, and that we're therefore
+     * safe in the 32-bit wrap-around scenario to only check that the last byte
+     * is within CS.LIM.  In the case of instruction-by-instruction advancing
+     * up to a EIP wrap-around, we know that CS.LIM is 4G-1 because the limit
+     * must be using 4KB granularity and the previous instruction was fine.
+     */
+    uint8_t const  idxRegPc     = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                  kIemNativeGstRegUse_ReadOnly);
+    uint8_t const  idxRegCsLim  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_LIMIT(X86_SREG_CS),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pbCodeBuf   = iemNativeInstrBufEnsure(pReNative, off, 8+1);
+#elif defined(RT_ARCH_ARM64)
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+#else
+# error "Port me"
+#endif
+
+    if (cbInstr != 1)
+    {
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
+
+        /*
+         * 1. idxRegTmp = idxRegPc + cbInstr;
+         * 2. if idxRegTmp > idxRegCsLim then raise #GP(0).
+         */
+#ifdef RT_ARCH_AMD64
+        /* 1. lea tmp32, [Pc + cbInstr - 1] */
+        if (idxRegTmp >= 8 || idxRegPc >= 8)
+            pbCodeBuf[off++] = (idxRegTmp < 8 ? 0 : X86_OP_REX_R) | (idxRegPc < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x8d;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, idxRegTmp & 7, idxRegPc & 7);
+        if ((idxRegPc & 7) == X86_GREG_xSP)
+            pbCodeBuf[off++] = X86_SIB_MAKE(idxRegPc & 7, 4 /*no index*/, 0);
+        pbCodeBuf[off++] = cbInstr - 1;
+
+        /* 2. cmp tmp32(r), CsLim(r/m). */
+        if (idxRegTmp >= 8 || idxRegCsLim >= 8)
+            pbCodeBuf[off++] = (idxRegTmp < 8 ? 0 : X86_OP_REX_R) | (idxRegCsLim < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x3b;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegTmp & 7, idxRegCsLim & 7);
+
+#elif defined(RT_ARCH_ARM64)
+        /* 1. add tmp32, Pc, #cbInstr-1 */
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, idxRegTmp, idxRegPc, cbInstr - 1, false /*f64Bit*/);
+        /* 2. cmp tmp32, CsLim */
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, ARMV8_A64_REG_XZR, idxRegTmp, idxRegCsLim,
+                                                      false /*f64Bit*/, true /*fSetFlags*/);
+
+#endif
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    }
+    else
+    {
+        /*
+         * Here we can skip step 1 and compare PC and CS.LIM directly.
+         */
+#ifdef RT_ARCH_AMD64
+        /* 2. cmp eip(r), CsLim(r/m). */
+        if (idxRegPc >= 8 || idxRegCsLim >= 8)
+            pbCodeBuf[off++] = (idxRegPc < 8 ? 0 : X86_OP_REX_R) | (idxRegCsLim < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x3b;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegPc & 7, idxRegCsLim & 7);
+
+#elif defined(RT_ARCH_ARM64)
+        /* 2. cmp Pc, CsLim */
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, ARMV8_A64_REG_XZR, idxRegPc, idxRegCsLim,
+                                                      false /*f64Bit*/, true /*fSetFlags*/);
+
+#endif
+    }
+
+    /* 3. Jump if greater. */
+    off = iemNativeEmitJaToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
+    iemNativeRegFreeTmp(pReNative, idxRegPc);
+    return off;
+}
+
+#ifdef BODY_CHECK_CS_LIM
+/**
+ * Built-in function that checks the EIP/IP + uParam0 is within CS.LIM,
+ * raising a \#GP(0) if this isn't the case.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLim)
+{
+    uint32_t const cbInstr = (uint32_t)pCallEntry->auParams[0];
+    BODY_CHECK_CS_LIM(cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for re-checking opcodes and CS.LIM after an instruction
+ * that may have modified them.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes)
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES)
+/**
+ * Built-in function for re-checking opcodes after an instruction that may have
+ * modified them.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for re-checking opcodes and considering the need for CS.LIM
+ * checking after an instruction that may have modified them.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    return off;
+}
+#endif
+
+
+/*
+ * Post-branching checkers.
+ */
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_CHECK_PC_AFTER_BRANCH) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for checking CS.LIM, checking the PC and checking opcodes
+ * after conditional branching within the same page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckPcAndOpcodes
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpcodes)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_CHECK_PC_AFTER_BRANCH)
+/**
+ * Built-in function for checking the PC and checking opcodes after conditional
+ * branching within the same page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_CHECK_PC_AFTER_BRANCH) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for checking the PC and checking opcodes and considering
+ * the need for CS.LIM checking after conditional branching within the same
+ * page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_AFTER_BRANCH) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
+ * transitioning to a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_AFTER_BRANCH)
+/**
+ * Built-in function for loading TLB and checking opcodes when transitioning to
+ * a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlb)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_AFTER_BRANCH) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when transitioning to a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pReNative->pTbOrg;
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return off;
+}
+#endif
+
+
+
+/*
+ * Natural page crossing checkers.
+ */
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes on
+ * both pages when transitioning to a different code page.
+ *
+ * This is used when the previous instruction requires revalidation of opcodes
+ * bytes and the current instruction stries a page boundrary with opcode bytes
+ * in both the old and new page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE)
+/**
+ * Built-in function for loading TLB and checking opcodes on both pages when
+ * transitioning to a different code page.
+ *
+ * This is used when the previous instruction requires revalidation of opcodes
+ * bytes and the current instruction stries a page boundrary with opcode bytes
+ * in both the old and new page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for loading TLB and checking opcodes on both pages and
+ * considering the need for CS.LIM checking when transitioning to a different
+ * code page.
+ *
+ * This is used when the previous instruction requires revalidation of opcodes
+ * bytes and the current instruction stries a page boundrary with opcode bytes
+ * in both the old and new page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
+ * advancing naturally to a different code page.
+ *
+ * Only opcodes on the new page is checked.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    //uint32_t const offRange1   = (uint32_t)uParam2;
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE)
+/**
+ * Built-in function for loading TLB and checking opcodes when advancing
+ * naturally to a different code page.
+ *
+ * Only opcodes on the new page is checked.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when advancing naturally to a different code page.
+ *
+ * Only opcodes on the new page is checked.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
+    uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
+    //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CHECK_CS_LIM)
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
+ * advancing naturally to a different code page with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    //Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE)
+/**
+ * Built-in function for loading TLB and checking opcodes when advancing
+ * naturally to a different code page with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    //Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
+    return off;
+}
+#endif
+
+
+#if defined(BODY_CHECK_OPCODES) && defined(BODY_LOAD_TLB_FOR_NEW_PAGE) && defined(BODY_CONSIDER_CS_LIM_CHECKING)
+/**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when advancing naturally to a different code page
+ * with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    //Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
+    return off;
+}
+#endif
+
 
 /*********************************************************************************************************************************
 *   The native code generator functions for each MC block.                                                                       *
@@ -11420,11 +11935,11 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                     fNumbered = true;
                                     break;
                                 case kIemNativeLabelType_TlbMiss:
-                                    pszName = "CheckIrq_TlbMiss";
+                                    pszName = "TlbMiss";
                                     fNumbered = true;
                                     break;
                                 case kIemNativeLabelType_TlbDone:
-                                    pszName = "CheckIrq_TlbDone";
+                                    pszName = "TlbDone";
                                     fNumbered = true;
                                     break;
                                 case kIemNativeLabelType_Invalid:

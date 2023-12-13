@@ -1963,7 +1963,7 @@ class IEMThreadedGenerator(object):
         ( 'CheckIrq',                                           0, True  ),
         ( 'CheckMode',                                          1, True  ),
         ( 'CheckHwInstrBps',                                    0, False ),
-        ( 'CheckCsLim',                                         1, False ),
+        ( 'CheckCsLim',                                         1, True  ),
 
         ( 'CheckCsLimAndOpcodes',                               3, False ),
         ( 'CheckOpcodes',                                       3, False ),

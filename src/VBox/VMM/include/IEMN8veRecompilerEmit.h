@@ -2754,7 +2754,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNativ
 
 
 /**
- * Emits a JA/JNBE rel32 / B.EQ imm19 with a fixed displacement.
+ * Emits a JA/JNBE rel32 / B.HI imm19 with a fixed displacement.
  *
  * The @a offTarget is applied x86-style, so zero means the next instruction.
  * The unit is IEMNATIVEINSTR.
