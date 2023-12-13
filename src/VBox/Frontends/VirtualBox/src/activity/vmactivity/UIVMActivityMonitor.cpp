@@ -317,7 +317,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     , m_fUseAreaChart(true)
     , m_fIsAvailable(true)
     , m_fIsAreaChartAllowed(false)
-    , m_fDrawCurenValueIndicators(false)
+    , m_fDrawCurenValueIndicators(true)
     , m_iRightMarginCharWidth(10)
     , m_iMaximumQueueSize(iMaximumQueueSize)
 {
@@ -485,9 +485,11 @@ void UIChart::resizeEvent(QResizeEvent *pEvent)
 void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
 {
     const int iX = width() - pEvent->position().x() - m_iMarginRight;
+    QPoint eventPosition(pEvent->position().x(), pEvent->position().y());
     m_iDataIndexUnderCursor = -1;
-    if (iX > m_iMarginLeft && iX <= width() - m_iMarginRight)
-        m_iDataIndexUnderCursor = (int)((iX) / m_fPixelPerDataPoint) + 1;
+    if (m_lineChartRect.contains(eventPosition))
+        m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
+    //printf("m_iDataIndexUnderCursor %d\n", m_iDataIndexUnderCursor);
     update();
     QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
 }
@@ -548,11 +550,12 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     quint64 iMaximum = m_pMetric->maximum();
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
-    int iAverageFontWidth = fontMetrics.averageCharWidth();
 
     /* Draw the data lines: */
     float fBarWidth = m_lineChartRect.width() / (float) (m_iMaximumQueueSize - 1);
     float fH = iMaximum == 0 ? 0 : m_lineChartRect.height() / (float)iMaximum;
+    const float fPenWidth = 1.5f;
+    const float fPointSize = 3.5f;
     for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
         if (m_fUseGradientLineColor)
@@ -560,17 +563,18 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             QLinearGradient gradient(0, 0, 0, m_lineChartRect.height());
             gradient.setColorAt(0, Qt::black);
             gradient.setColorAt(1, m_dataSeriesColor[k]);
-            painter.setPen(QPen(gradient, 2.5));
+            painter.setPen(QPen(gradient, fPenWidth));
         }
         const QQueue<quint64> *data = m_pMetric->data(k);
         if (!m_fUseGradientLineColor)
-            painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
+            painter.setPen(QPen(m_dataSeriesColor[k], fPenWidth));
         if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
             QVector<QPointF> points;
             for (int i = 0; i < data->size(); ++i)
             {
                 float fHeight = fH * data->at(i);
+                /* Stack 0th data series on top of the 1st data series: */
                 if (k == 0)
                 {
                     if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
@@ -589,15 +593,24 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         }
         else
         {
+            /* Draw lines between data  points: */
             for (int i = 0; i < data->size() - 1; ++i)
             {
                 int j = i + 1;
                 float fHeight = fH * data->at(i);
-                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
+                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
                 float fHeight2 = fH * data->at(j);
-                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+                float fX2 = (width() - m_iMarginRight) - ((data->size() - j - 1) * fBarWidth);
                 QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
                 painter.drawLine(bar);
+            }
+            /* Draw a point at each data point: */
+            painter.setPen(QPen(m_dataSeriesColor[k], fPointSize));
+            for (int i = 0; i < data->size(); ++i)
+            {
+                float fHeight = fH * data->at(i);
+                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                painter.drawPoint(fX, height() - (fHeight + m_iMarginBottom));
             }
         }
         /* Draw a horizontal and vertical line on data point under the mouse cursor
@@ -608,20 +621,20 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             float fHeight = fH * data->at(data->size() - m_iDataIndexUnderCursor);
             if (fHeight > 0)
             {
-                painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
-                                 width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
-                QPoint cursorPosition = mapFromGlobal(cursor().pos());
+                // painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
+                //                  width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
                 painter.setPen(mainAxisColor);
-                painter.drawLine(cursorPosition.x(), 0,
-                                 cursorPosition.x(), height() - m_iMarginBottom);
-                QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-                painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
-                                 height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
-#else
-                painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
-                                 height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
-#endif
+                float fX = (width() - m_iMarginRight) - ((data->size() - m_iDataIndexUnderCursor - 1) * fBarWidth);
+                painter.drawLine(fX, 0, fX, height() - m_iMarginBottom);
+                //    int iAverageFontWidth = fontMetrics.averageCharWidth();
+//                 QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
+// #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+//                 painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
+//                                  height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+// #else
+//                 painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
+//                                  height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+// #endif
 
             }
         }
@@ -892,6 +905,7 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData)
     if (m_fAutoUpdateMaximum)
         m_iMaximum = qMax(m_iMaximum, iData);
 
+    /* dequeue if needed and update the maximum value: */
     if (m_data[iDataSeriesIndex].size() > m_iMaximumQueueSize)
     {
         bool fSearchMax = false;
@@ -1141,13 +1155,6 @@ void UIVMActivityMonitor::prepareWidgets()
         ++iRow;
     }
 
-    /* Configure charts: */
-    if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
-    {
-        m_charts[m_strCPUMetricName]->setIsPieChartAllowed(true);
-        m_charts[m_strCPUMetricName]->setIsAreaChartAllowed(true);
-    }
-
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
@@ -1292,6 +1299,13 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
     setMachine(machine);
+
+    /* Configure charts: */
+    if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
+    {
+        m_charts[m_strCPUMetricName]->setIsPieChartAllowed(true);
+        m_charts[m_strCPUMetricName]->setIsAreaChartAllowed(true);
+    }
 }
 
 void UIVMActivityMonitorLocal::start()
