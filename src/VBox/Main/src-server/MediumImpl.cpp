@@ -5636,7 +5636,8 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, i_getLocationFull().c_str() ));
 
         if (    !(m->formatObj->i_getCapabilities() & (  MediumFormatCapabilities_CreateDynamic
-                                                       | MediumFormatCapabilities_CreateFixed)))
+                                                       | MediumFormatCapabilities_CreateFixed
+                                                       | MediumFormatCapabilities_File)))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support storage deletion"),
                            m->strFormat.c_str());
