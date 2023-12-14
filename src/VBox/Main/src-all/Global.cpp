@@ -810,6 +810,102 @@ Global::stringifyDeviceType(DeviceType_T aType)
 }
 
 /* static */ const char *
+Global::stringifyGuestSessionStatus(GuestSessionStatus_T aStatus)
+{
+    switch (aStatus)
+    {
+        case GuestSessionStatus_Starting:           return GlobalCtx::tr("starting");
+        case GuestSessionStatus_Started:            return GlobalCtx::tr("started");
+        case GuestSessionStatus_Terminating:        return GlobalCtx::tr("terminating");
+        case GuestSessionStatus_Terminated:         return GlobalCtx::tr("terminated");
+        case GuestSessionStatus_TimedOutKilled:     return GlobalCtx::tr("timed out");
+        case GuestSessionStatus_TimedOutAbnormally: return GlobalCtx::tr("timed out, hanging");
+        case GuestSessionStatus_Down:               return GlobalCtx::tr("killed");
+        case GuestSessionStatus_Error:              return GlobalCtx::tr("error");
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aStatus, aStatus), ::stringifyGuestSessionStatus(aStatus));
+    }
+}
+
+/* static */ const char *
+Global::stringifyProcessStatus(ProcessStatus_T aStatus)
+{
+    switch (aStatus)
+    {
+        case ProcessStatus_Starting:             return GlobalCtx::tr("starting");
+        case ProcessStatus_Started:              return GlobalCtx::tr("started");
+        case ProcessStatus_Paused:               return GlobalCtx::tr("paused");
+        case ProcessStatus_Terminating:          return GlobalCtx::tr("terminating");
+        case ProcessStatus_TerminatedNormally:   return GlobalCtx::tr("successfully terminated");
+        case ProcessStatus_TerminatedSignal:     return GlobalCtx::tr("terminated by signal");
+        case ProcessStatus_TerminatedAbnormally: return GlobalCtx::tr("abnormally aborted");
+        case ProcessStatus_TimedOutKilled:       return GlobalCtx::tr("timed out");
+        case ProcessStatus_TimedOutAbnormally:   return GlobalCtx::tr("timed out, hanging");
+        case ProcessStatus_Down:                 return GlobalCtx::tr("killed");
+        case ProcessStatus_Error:                return GlobalCtx::tr("error");
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aStatus, aStatus), ::stringifyProcessStatus(aStatus));
+    }
+}
+
+/* static */ const char *
+Global::stringifyProcessWaitResult(ProcessWaitResult_T aWaitResult)
+{
+    switch (aWaitResult)
+    {
+        case ProcessWaitResult_Start:                return GlobalCtx::tr("started");
+        case ProcessWaitResult_Terminate:            return GlobalCtx::tr("terminated");
+        case ProcessWaitResult_Status:               return GlobalCtx::tr("status changed");
+        case ProcessWaitResult_Error:                return GlobalCtx::tr("error");
+        case ProcessWaitResult_Timeout:              return GlobalCtx::tr("timed out");
+        case ProcessWaitResult_StdIn:                return GlobalCtx::tr("stdin ready");
+        case ProcessWaitResult_StdOut:               return GlobalCtx::tr("data on stdout");
+        case ProcessWaitResult_StdErr:               return GlobalCtx::tr("data on stderr");
+        case ProcessWaitResult_WaitFlagNotSupported: return GlobalCtx::tr("waiting flag not supported");
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aWaitResult, aWaitResult), ::stringifyProcessWaitResult(aWaitResult));
+    }
+}
+
+/* static */ const char *
+Global::stringifyFileStatus(FileStatus_T aStatus)
+{
+    switch (aStatus)
+    {
+        case FileStatus_Opening: return GlobalCtx::tr("opening");
+        case FileStatus_Open:    return GlobalCtx::tr("open");
+        case FileStatus_Closing: return GlobalCtx::tr("closing");
+        case FileStatus_Closed:  return GlobalCtx::tr("closed");
+        case FileStatus_Down:    return GlobalCtx::tr("killed");
+        case FileStatus_Error:   return GlobalCtx::tr("error");
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aStatus, aStatus), ::stringifyFileStatus(aStatus));
+    }
+}
+
+/* static */ const char *
+Global::stringifyFsObjType(FsObjType_T aType)
+{
+    switch (aType)
+    {
+        case FsObjType_Unknown:     return GlobalCtx::tr("unknown");
+        case FsObjType_Fifo:        return GlobalCtx::tr("fifo");
+        case FsObjType_DevChar:     return GlobalCtx::tr("char-device");
+        case FsObjType_Directory:   return GlobalCtx::tr("directory");
+        case FsObjType_DevBlock:    return GlobalCtx::tr("block-device");
+        case FsObjType_File:        return GlobalCtx::tr("file");
+        case FsObjType_Symlink:     return GlobalCtx::tr("symlink");
+        case FsObjType_Socket:      return GlobalCtx::tr("socket");
+        case FsObjType_WhiteOut:    return GlobalCtx::tr("white-out");
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case FsObjType_32BitHack:   RT_FALL_THROUGH();
+#endif
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aType, aType), ::stringifyFsObjType(aType));
+    }
+}
+
+/* static */ const char *
 Global::stringifyPlatformArchitecture(PlatformArchitecture_T aEnmArchitecture)
 {
     switch (aEnmArchitecture)

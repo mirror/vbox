@@ -202,6 +202,61 @@ public:
     static const char *stringifyDeviceType(DeviceType_T aType);
 
     /**
+     * Stringify a guest session status.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aStatus     The guest session status.
+     */
+    static const char *stringifyGuestSessionStatus(GuestSessionStatus_T aStatus);
+
+    /**
+     * Stringify a process status.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aStatus     The process status.
+     */
+    static const char *stringifyProcessStatus(ProcessStatus_T aStatus);
+
+    /**
+     * Stringify a process wait result.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aStatus     The process wait result.
+     */
+    static const char *stringifyProcessWaitResult(ProcessWaitResult_T aWaitResult);
+
+    /**
+     * Stringify a file status..
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aStatus     The file status.
+     */
+    static const char *stringifyFileStatus(FileStatus_T aStatus);
+
+    /**
+     * Stringify a filesystem object type.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aStatus     The filesystem object type.
+     */
+    static const char *stringifyFsObjType(FsObjType_T aType);
+
+    /**
      * Stringify a platform architecture to a string.
      *
      * @returns Platform architecture as a string.
