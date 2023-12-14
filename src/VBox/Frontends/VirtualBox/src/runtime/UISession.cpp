@@ -299,6 +299,21 @@ void UISession::acquireUserMachineIcon(QIcon &icon)
         icon = machineIcon;
 }
 
+bool UISession::acquireArchitectureType(KPlatformArchitecture &enmType)
+{
+    CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture enmArchType = comPlatform.GetArchitecture();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmType = enmArchType;
+    return fSuccess;
+}
+
 bool UISession::acquireChipsetType(KChipsetType &enmType)
 {
     CMachine comMachine = machine();
@@ -1244,39 +1259,44 @@ bool UISession::acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled)
 
 bool UISession::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
 {
-    /* Acquire system properties: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    AssertReturn(comVBox.isNotNull(), false);
-    CPlatformProperties comProperties = comVBox.GetPlatformProperties(KPlatformArchitecture_x86);
-    if (!comVBox.isOk())
+    /* Acquire architecture type: */
+    KPlatformArchitecture enmArchType = KPlatformArchitecture_None;
+    bool fSuccess = acquireArchitectureType(enmArchType);
     {
-        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
-        return false;
-    }
-
-    /* Acquire chipset type: */
-    KChipsetType enmChipsetType = KChipsetType_Null;
-    bool fSuccess = acquireChipsetType(enmChipsetType);
-    if (fSuccess)
-    {
-        /* Acquire maximum network adapters count: */
-        const ulong uSlots = comProperties.GetMaxNetworkAdapters(enmChipsetType);
-        fSuccess = comProperties.isOk();
+        /* Acquire system properties: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        AssertReturn(comVBox.isNotNull(), false);
+        CPlatformProperties comProperties = comVBox.GetPlatformProperties(enmArchType);
+        fSuccess = comVBox.isOk();
         if (!fSuccess)
-            UINotificationMessage::cannotAcquirePlatformPropertiesParameter(comProperties);
+            UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
         else
         {
-            /* Search for 1st enabled adapter: */
-            for (ulong uSlot = 0; uSlot < uSlots; ++uSlot)
+            /* Acquire chipset type: */
+            KChipsetType enmChipsetType = KChipsetType_Null;
+            fSuccess = acquireChipsetType(enmChipsetType);
+            if (fSuccess)
             {
-                bool fAdapterEnabled = false;
-                fSuccess = acquireWhetherNetworkAdapterEnabled(uSlot, fAdapterEnabled);
+                /* Acquire maximum network adapters count: */
+                const ulong cMaxNetworkAdapters = comProperties.GetMaxNetworkAdapters(enmChipsetType);
+                fSuccess = comProperties.isOk();
                 if (!fSuccess)
-                    break;
-                if (!fAdapterEnabled)
-                    continue;
-                fEnabled = true;
-                break;
+                    UINotificationMessage::cannotAcquirePlatformPropertiesParameter(comProperties);
+                else
+                {
+                    /* Search for 1st enabled adapter: */
+                    for (ulong uSlot = 0; uSlot < cMaxNetworkAdapters; ++uSlot)
+                    {
+                        bool fAdapterEnabled = false;
+                        fSuccess = acquireWhetherNetworkAdapterEnabled(uSlot, fAdapterEnabled);
+                        if (!fSuccess)
+                            break;
+                        if (!fAdapterEnabled)
+                            continue;
+                        fEnabled = true;
+                        break;
+                    }
+                }
             }
         }
     }

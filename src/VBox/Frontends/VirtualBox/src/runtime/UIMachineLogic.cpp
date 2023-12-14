@@ -2665,9 +2665,11 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
 void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
 {
     /* Determine how many adapters we should display: */
+    KPlatformArchitecture enmArchType = KPlatformArchitecture_None;
+    uimachine()->acquireArchitectureType(enmArchType);
     KChipsetType enmChipsetType = KChipsetType_Null;
     uimachine()->acquireChipsetType(enmChipsetType);
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArchType);
     const ulong uCount = qMin((ulong)4, (ulong)comProperties.GetMaxNetworkAdapters(enmChipsetType));
 
     /* Enumerate existing network adapters: */

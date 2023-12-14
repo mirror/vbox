@@ -259,6 +259,11 @@ void UIMachine::acquireUserMachineIcon(QIcon &icon)
     return uisession()->acquireUserMachineIcon(icon);
 }
 
+bool UIMachine::acquireArchitectureType(KPlatformArchitecture &enmType)
+{
+    return uisession()->acquireArchitectureType(enmType);
+}
+
 bool UIMachine::acquireChipsetType(KChipsetType &enmType)
 {
     return uisession()->acquireChipsetType(enmType);

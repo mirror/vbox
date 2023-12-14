@@ -200,6 +200,8 @@ public:
         /** Acquire user machine icon. */
         void acquireUserMachineIcon(QIcon &icon);
 
+        /** Acquires architecture type. */
+        bool acquireArchitectureType(KPlatformArchitecture &enmType);
         /** Acquires chipset type. */
         bool acquireChipsetType(KChipsetType &enmType);
     /** @} */
