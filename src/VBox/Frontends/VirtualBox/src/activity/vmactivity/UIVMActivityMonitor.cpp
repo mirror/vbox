@@ -60,8 +60,7 @@
 
 /** The time in seconds between metric inquries done to API. */
 const ULONG g_iPeriod = 1;
-/** The number of data points we store in UIChart. with g_iPeriod=1 it corresponds to 2 min. of data. */
-//const int m_iMaximumQueueSize = 120;
+
 /** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
 const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
@@ -201,6 +200,7 @@ private:
        void drawDisabledChartRectangle(QPainter &painter);
        QConicalGradient conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex);
     /** @} */
+    int maxDataSize() const;
 
     UIMetric *m_pMetric;
     QSize m_size;
@@ -486,10 +486,14 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
 {
     const int iX = width() - pEvent->position().x() - m_iMarginRight;
     QPoint eventPosition(pEvent->position().x(), pEvent->position().y());
+    int iDataSize = maxDataSize();
     m_iDataIndexUnderCursor = -1;
-    if (m_lineChartRect.contains(eventPosition))
+    if (iDataSize > 0 && m_lineChartRect.contains(eventPosition))
+    {
         m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
-    //printf("m_iDataIndexUnderCursor %d\n", m_iDataIndexUnderCursor);
+        m_iDataIndexUnderCursor = m_iDataIndexUnderCursor - (m_iMaximumQueueSize - iDataSize);
+    }
+
     update();
     QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
 }
@@ -613,30 +617,16 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 painter.drawPoint(fX, height() - (fHeight + m_iMarginBottom));
             }
         }
+
         /* Draw a horizontal and vertical line on data point under the mouse cursor
          * and draw the value on the left hand side of the chart: */
         if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
         {
-            painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
-            float fHeight = fH * data->at(data->size() - m_iDataIndexUnderCursor);
-            if (fHeight > 0)
-            {
-                // painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
-                //                  width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
-                painter.setPen(mainAxisColor);
-                float fX = (width() - m_iMarginRight) - ((data->size() - m_iDataIndexUnderCursor - 1) * fBarWidth);
-                painter.drawLine(fX, 0, fX, height() - m_iMarginBottom);
-                //    int iAverageFontWidth = fontMetrics.averageCharWidth();
-//                 QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
-// #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-//                 painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
-//                                  height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
-// #else
-//                 painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
-//                                  height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
-// #endif
 
-            }
+            painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
+            painter.setPen(mainAxisColor);
+            float fX = (width() - m_iMarginRight) - ((data->size() - m_iDataIndexUnderCursor - 1) * fBarWidth);
+            painter.drawLine(fX, 0, fX, height() - m_iMarginBottom);
         }
     }
 
@@ -743,6 +733,17 @@ QConicalGradient UIChart::conicalGradientForDataSeries(const QRectF &rectangle, 
     pieColor.setAlpha(m_iOverlayAlpha);
     gradient.setColorAt(1, pieColor);
     return gradient;
+}
+
+int UIChart::maxDataSize() const
+{
+    int iSize = 0;
+    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+    {
+        if (m_pMetric->data(k))
+            iSize = qMax(iSize, m_pMetric->data(k)->size());
+    }
+    return iSize;
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
@@ -857,18 +858,15 @@ UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQ
     , m_fAutoUpdateMaximum(false)
     , m_iMaximumQueueSize(iMaximumQueueSize)
 {
-    RT_NOREF(iMaximumQueueSize); /* Unused according to Clang 11. */
     m_iTotal[0] = 0;
     m_iTotal[1] = 0;
 }
 
 UIMetric::UIMetric()
     : m_iMaximum(0)
-#if 0 /* Unused according to Clang 11. */
-    , m_iMaximumQueueSize(0)
-#endif
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
+    , m_iMaximumQueueSize(0)
 {
 }
 
