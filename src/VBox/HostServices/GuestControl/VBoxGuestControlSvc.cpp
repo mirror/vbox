@@ -623,8 +623,8 @@ typedef struct ClientState
         m_PendingReq.mHandle   = NULL;
         m_PendingReq.mParms    = NULL;
         m_PendingReq.mNumParms = 0;
-        m_enmPendingMsg            = (guestControl::eGuestMsg)0;
-        m_fPendingCancel      = false;
+        m_enmPendingMsg        = (guestControl::eGuestMsg)0;
+        m_fPendingCancel       = false;
         return VINF_SUCCESS;
     }
 
@@ -1382,7 +1382,7 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
     pClient->m_PendingReq.mHandle   = hCall;
     pClient->m_PendingReq.mNumParms = cParms;
     pClient->m_PendingReq.mParms    = paParms;
-    pClient->m_enmPendingMsg         = GUEST_MSG_PEEK_WAIT;
+    pClient->m_enmPendingMsg        = GUEST_MSG_PEEK_WAIT;
     LogFlowFunc(("[Client %RU32] Is now in pending mode...\n", pClient->m_idClient));
     return VINF_HGCM_ASYNC_EXECUTE;
 }
@@ -2505,7 +2505,7 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
         AssertRCReturn(rc, rc);
         if (uSubVersion != 1)
             return pVMM->pfnSSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                     "sub version %u, expected 1\n", uSubVersion);
+                                              "sub version %u, expected 1\n", uSubVersion);
         bool fLegacyMode;
         rc = pVMM->pfnSSMR3GetBool(pSSM, &fLegacyMode);
         AssertRCReturn(rc, rc);
