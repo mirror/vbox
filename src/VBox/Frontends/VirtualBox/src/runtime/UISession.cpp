@@ -305,12 +305,18 @@ bool UISession::acquireArchitectureType(KPlatformArchitecture &enmType)
     if (comMachine.isNull())
         return false;
     CPlatform comPlatform = comMachine.GetPlatform();
-    const KPlatformArchitecture enmArchType = comPlatform.GetArchitecture();
-    const bool fSuccess = comMachine.isOk();
+    bool fSuccess = comMachine.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
     else
-        enmType = enmArchType;
+    {
+        const KPlatformArchitecture enmArchType = comPlatform.GetArchitecture();
+        fSuccess = comPlatform.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquirePlatformParameter(comPlatform);
+        else
+            enmType = enmArchType;
+    }
     return fSuccess;
 }
 
@@ -320,12 +326,18 @@ bool UISession::acquireChipsetType(KChipsetType &enmType)
     if (comMachine.isNull())
         return false;
     CPlatform comPlatform = comMachine.GetPlatform();
-    const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
-    const bool fSuccess = comMachine.isOk();
+    bool fSuccess = comMachine.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
     else
-        enmType = enmChipsetType;
+    {
+        const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
+        fSuccess = comPlatform.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquirePlatformParameter(comPlatform);
+        else
+            enmType = enmChipsetType;
+    }
     return fSuccess;
 }
 
