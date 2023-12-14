@@ -1361,8 +1361,7 @@ typedef struct IEMCPU
 
     /** @name Decoder state.
      * @{ */
-#ifndef IEM_WITH_OPAQUE_DECODER_STATE
-# ifdef IEM_WITH_CODE_TLB
+#ifdef IEM_WITH_CODE_TLB
     /** The offset of the next instruction byte. */
     uint32_t                offInstrNextByte;                                                               /* 0x08 */
     /** The number of bytes available at pbInstrBuf for the current instruction.
@@ -1382,9 +1381,9 @@ typedef struct IEMCPU
      * therefore precludes stuff like <tt>pbInstrBuf[offInstrNextByte + cbInstrBuf - cbCurInstr]</tt>
      */
     uint8_t const          *pbInstrBuf;                                                                     /* 0x10 */
-#  if ARCH_BITS == 32
+# if ARCH_BITS == 32
     uint32_t                uInstrBufHigh; /** The high dword of the host context pbInstrBuf member. */
-#  endif
+# endif
     /** The program counter corresponding to pbInstrBuf.
      * This is set to a non-canonical address when we need to invalidate it. */
     uint64_t                uInstrBufPc;                                                                    /* 0x18 */
@@ -1393,6 +1392,7 @@ typedef struct IEMCPU
     /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
      * This takes the CS segment limit into account. */
     uint16_t                cbInstrBufTotal;                                                                /* 0x28 */
+# ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** Offset into pbInstrBuf of the first byte of the current instruction.
      * Can be negative to efficiently handle cross page instructions. */
     int16_t                 offCurInstrStart;                                                               /* 0x2a */
@@ -1419,7 +1419,12 @@ typedef struct IEMCPU
 #  else
     uint8_t                 bUnused;                                                                        /* 0x35 */
 #  endif
-# else  /* !IEM_WITH_CODE_TLB */
+# else  /* IEM_WITH_OPAQUE_DECODER_STATE */
+    uint8_t                 abOpaqueDecoderPart1[0x36 - 0x2a];
+# endif /* IEM_WITH_OPAQUE_DECODER_STATE */
+
+#else  /* !IEM_WITH_CODE_TLB */
+#  ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
     /** The current offset into abOpcode. */
@@ -1440,8 +1445,12 @@ typedef struct IEMCPU
     /** The extra REX SIB index field bit (REX.X << 3). */
     uint8_t                 uRexIndex;                                                                      /*       0x12 */
 
-# endif /* !IEM_WITH_CODE_TLB */
+# else  /* IEM_WITH_OPAQUE_DECODER_STATE */
+    uint8_t                 abOpaqueDecoderPart1[0x13 - 0x08];
+# endif /* IEM_WITH_OPAQUE_DECODER_STATE */
+#endif /* !IEM_WITH_CODE_TLB */
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** The effective operand mode. */
     IEMMODE                 enmEffOpSize;                                                                   /* 0x36, 0x13 */
     /** The default addressing mode. */
@@ -1480,8 +1489,13 @@ typedef struct IEMCPU
 # else
     uint8_t                 abAlignment2c[0x4f - 0x2f];                                                     /*       0x2f */
 # endif
+
 #else  /* IEM_WITH_OPAQUE_DECODER_STATE */
-    uint8_t                 abOpaqueDecoder[0x4f - 0x8];
+# ifdef IEM_WITH_CODE_TLB
+    uint8_t                 abOpaqueDecoderPart2[0x4f - 0x36];
+# else
+    uint8_t                 abOpaqueDecoderPart2[0x4f - 0x13];
+# endif
 #endif /* IEM_WITH_OPAQUE_DECODER_STATE */
     /** @} */
 
