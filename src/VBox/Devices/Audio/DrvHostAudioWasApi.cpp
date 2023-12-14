@@ -1234,6 +1234,8 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
     HRESULT hrc = pIDevice->GetId(&pwszDevId);
     if (SUCCEEDED(hrc))
     {
+        LogRel2(("WasAPI: Checking for cached device '%ls' ...\n", pwszDevId));
+
         size_t cwcDevId = RTUtf16Len(pwszDevId);
 
         /*
@@ -1262,6 +1264,9 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
                     Log2Func(("Cache hit for device '%ls': Stale interface (new: %p, old: %p)\n",
                               pDevEntry->wszDevId, pIDevice, pDevEntry->pIDevice));
 
+                    LogRel(("WasAPI: Stale audio interface '%ls' detected! Invalidating audio interface ...\n",
+                            pDevEntry->wszDevId));
+
                     drvHostAudioWasCacheInvalidateDevEntryConfig(pThis, pDevEntry);
                     RTListNodeRemove(&pDevEntry->ListEntry);
                     drvHostAudioWasCacheDestroyDevEntry(pThis, pDevEntry);
@@ -1276,7 +1281,8 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
         }
         RTCritSectLeave(&pThis->CritSectCache);
 
-        Log8Func(("Cache miss for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
+        if (pDevEntry)
+            Log8Func(("Cache miss for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
 
         /*
          * Device not in the cache, add it.
