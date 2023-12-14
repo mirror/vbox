@@ -746,10 +746,12 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
     }
 
     /* Iterate over all the adapters: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
     CPlatform comPlatform = comMachine.GetPlatform();
-    const ulong uCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
-    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+    const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    const ulong cMaxNetworkAdapters = comProperties.GetMaxNetworkAdapters(enmChipsetType);
+    for (ulong uSlot = 0; uSlot < cMaxNetworkAdapters; ++uSlot)
     {
         const QString strAnchorType = QString("network_attachment_type");
         const CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
@@ -913,9 +915,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
     }
 
     /* Iterate over all the ports: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
-    const ulong uCount = comProperties.GetSerialPortCount();
-    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    const ulong cMaxSerialPorts = comProperties.GetSerialPortCount();
+    for (ulong uSlot = 0; uSlot < cMaxSerialPorts; ++uSlot)
     {
         const CSerialPort comPort = comMachine.GetSerialPort(uSlot);
 
@@ -1325,11 +1329,11 @@ void UIDetailsGenerator::acquireNetworkStatusInfo(CMachine &comMachine, QString 
                                                   bool &fAdaptersPresent, bool &fCablesDisconnected)
 {
     /* Determine max amount of network adapters: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
     CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
     const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
-    CPlatformProperties comPlatformProperties = comVBox.GetPlatformProperties(KPlatformArchitecture_x86);
-    const ulong cMaxNetworkAdapters = comPlatformProperties.GetMaxNetworkAdapters(enmChipsetType);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    const ulong cMaxNetworkAdapters = comProperties.GetMaxNetworkAdapters(enmChipsetType);
 
     /* Gather adapter properties: */
     RTTIMESPEC time;
