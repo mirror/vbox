@@ -1711,7 +1711,9 @@ QString UISnapshotDetailsWidget::bootOrderReport(const CMachine &comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through boot device types: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
     for (ulong i = 1; i <= comProperties.GetMaxBootPosition(); ++i)
     {
         const KDeviceType enmDevice = comMachine.GetBootOrder(i);
@@ -1957,10 +1959,12 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine network adapters: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
     CPlatform comPlatform = comMachine.GetPlatform();
-    const ulong iCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
-    for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+    const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    const ulong cMaxNetworkAdapters = comProperties.GetMaxNetworkAdapters(enmChipsetType);
+    for (ulong iSlot = 0; iSlot < cMaxNetworkAdapters; ++iSlot)
     {
         /* Get current network adapter: */
         const CNetworkAdapter &comAdapter = comMachine.GetNetworkAdapter(iSlot);
@@ -2017,9 +2021,11 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine serial ports: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
-    const ulong iCount = comProperties.GetSerialPortCount();
-    for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    const ulong cMaxSerialPorts = comProperties.GetSerialPortCount();
+    for (ulong iSlot = 0; iSlot < cMaxSerialPorts; ++iSlot)
     {
         /* Get current serial port: */
         const CSerialPort &comPort = comMachine.GetSerialPort(iSlot);
