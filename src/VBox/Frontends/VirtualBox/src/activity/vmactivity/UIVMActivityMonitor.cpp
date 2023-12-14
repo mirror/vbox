@@ -138,6 +138,7 @@ class UIChart : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigExportMetricsToFile();
+    void sigDataIndexUnderCursor(int iIndex);
 
 public:
 
@@ -172,6 +173,8 @@ public:
 
     void setMouseOver(bool isOver);
 
+    void setDataIndexUnderCursor(int iIndex);
+
 protected:
 
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
@@ -180,6 +183,7 @@ protected:
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
     virtual QSize sizeHint() const  RT_OVERRIDE;
     virtual void retranslateUi()  RT_OVERRIDE;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -452,7 +456,17 @@ void UIChart::setIsAvailable(bool fIsAvailable)
 void UIChart::setMouseOver(bool isOver)
 {
     if (!isOver)
+    {
         m_iDataIndexUnderCursor = -1;
+        emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
+    }
+
+}
+
+void UIChart::setDataIndexUnderCursor(int iIndex)
+{
+    m_iDataIndexUnderCursor = iIndex;
+    update();
 }
 
 QSize UIChart::minimumSizeHint() const
@@ -474,6 +488,16 @@ void UIChart::retranslateUi()
     update();
 }
 
+bool UIChart::event(QEvent *pEvent)
+{
+    if (pEvent->type() == QEvent::Leave)
+    {
+        m_iDataIndexUnderCursor = -1;
+        emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
+    }
+    return QIWithRetranslateUI<QWidget>::event(pEvent);
+}
+
 void UIChart::resizeEvent(QResizeEvent *pEvent)
 {
     int iWidth = width() - m_iMarginLeft - m_iMarginRight;
@@ -493,6 +517,8 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
         m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
         m_iDataIndexUnderCursor = m_iDataIndexUnderCursor - (m_iMaximumQueueSize - iDataSize);
     }
+
+    emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
 
     update();
     QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
@@ -1085,17 +1111,17 @@ void UIVMActivityMonitor::retranslateUi()
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelReadTotal.length());
 }
 
-bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
-{
-    if (pEvent-> type() == QEvent::Enter ||
-        pEvent-> type() == QEvent::Leave)
-    {
-        UIChart *pChart = qobject_cast<UIChart*>(pObj);
-        if (pChart)
-            pChart->setMouseOver(pEvent-> type() == QEvent::Enter);
-    }
-    return false;
-}
+// bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
+// {
+//     if (pEvent-> type() == QEvent::Enter ||
+//         pEvent-> type() == QEvent::Leave)
+//     {
+//         UIChart *pChart = qobject_cast<UIChart*>(pObj);
+//         if (pChart)
+//             pChart->setMouseOver(pEvent-> type() == QEvent::Enter);
+//     }
+//     return false;
+// }
 
 void UIVMActivityMonitor::prepareWidgets()
 {
@@ -1143,9 +1169,11 @@ void UIVMActivityMonitor::prepareWidgets()
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
-        pChart->installEventFilter(this);
+        //pChart->installEventFilter(this);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
+        connect(pChart, &UIChart::sigDataIndexUnderCursor,
+                this, &UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged);
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);
@@ -1192,6 +1220,18 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
     pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
     connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
     menu.exec(mapToGlobal(point));
+}
+
+void UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged(int iIndex)
+{
+    foreach (UIChart *chart, m_charts)
+    {
+        if (chart && chart != sender())
+        {
+            chart->setDataIndexUnderCursor(iIndex);
+        }
+
+    }
 }
 
 void UIVMActivityMonitor::prepareActions()

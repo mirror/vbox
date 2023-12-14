@@ -146,7 +146,7 @@ public slots:
 protected:
 
     virtual void retranslateUi() RT_OVERRIDE;
-    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
+    //virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
     virtual void obtainDataAndUpdate() = 0;
     virtual QString defaultMachineFolder() const = 0;
     virtual void reset() = 0;
@@ -229,6 +229,7 @@ private slots:
     /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
     void sltCreateContextMenu(const QPoint &point);
+    void sltChatDataIndexUnderCursorChanged(int iIndex);
 
 private:
 
