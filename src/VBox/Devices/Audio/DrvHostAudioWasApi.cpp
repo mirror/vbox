@@ -814,6 +814,9 @@ static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOS
 /**
  * Invalidates device cache entry configurations.
  *
+ * This is needed in order to not run into deadlocks when trying to release a stale device interface
+ * via Release().
+ *
  * @param   pThis       The WASAPI host audio driver instance data.
  * @param   pDevEntry   The device entry to invalidate.
  */
@@ -840,9 +843,7 @@ static void drvHostAudioWasCacheDestroyDevEntry(PDRVHOSTAUDIOWAS pThis, PDRVHOST
 
     PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg, pDevCfgNext;
     RTListForEachSafe(&pDevEntry->ConfigList, pDevCfg, pDevCfgNext, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
-    {
         drvHostAudioWasCacheDestroyDevConfig(pThis, pDevCfg);
-    }
 
     uint32_t cDevRefs = 0;
     if (pDevEntry->pIDevice /* paranoia */)
@@ -1261,7 +1262,7 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
                  */
                 if (pIDevice != pDevEntry->pIDevice)
                 {
-                    Log2Func(("Cache hit for device '%ls': Stale interface (new: %p, old: %p)\n",
+                    LogRel2(("WasAPI: Cache hit for device '%ls': Stale interface (new: %p, old: %p)\n",
                               pDevEntry->wszDevId, pIDevice, pDevEntry->pIDevice));
 
                     LogRel(("WasAPI: Stale audio interface '%ls' detected! Invalidating audio interface ...\n",
@@ -1274,15 +1275,17 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
                     break;
                 }
 
+                LogRel2(("WasAPI: Cache hit for device '%ls' (%p)\n", pwszDevId, pIDevice));
+
                 CoTaskMemFree(pwszDevId);
-                Log8Func(("Cache hit for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
+                pwszDevId = NULL;
+
                 return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry, pCfgReq, fOnWorker, ppDevCfg);
             }
         }
         RTCritSectLeave(&pThis->CritSectCache);
 
-        if (pDevEntry)
-            Log8Func(("Cache miss for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
+        LogRel2(("WasAPI: Cache miss for device '%ls' (%p)\n", pwszDevId, pIDevice));
 
         /*
          * Device not in the cache, add it.
