@@ -1084,7 +1084,6 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_iTimeStep(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
-    , m_strDiskMetricName("Disk Usage")
     , m_strNetworkMetricName("Network")
     , m_strDiskIOMetricName("DiskIO")
     , m_strVMExitMetricName("VMExits")
@@ -1180,7 +1179,7 @@ void UIVMActivityMonitor::prepareWidgets()
 
     QStringList chartOrder;
     chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
-        m_strDiskMetricName << m_strNetworkMetricName << m_strDiskIOMetricName << m_strVMExitMetricName;
+        m_strNetworkMetricName << m_strDiskIOMetricName << m_strVMExitMetricName;
     int iRow = 0;
     foreach (const QString &strMetricName, chartOrder)
     {
@@ -1265,18 +1264,6 @@ void UIVMActivityMonitor::prepareActions()
 {
 }
 
-void UIVMActivityMonitorLocal::resetCPUInfoLabel()
-{
-    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
-    {
-        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-            .arg(m_strCPUInfoLabelTitle)
-            .arg(m_strCPUInfoLabelGuest).arg("--")
-            .arg(m_strCPUInfoLabelVMM).arg("--");
-        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
-    }
-}
-
 void UIVMActivityMonitor::resetRAMInfoLabel()
 {
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
@@ -1286,34 +1273,6 @@ void UIVMActivityMonitor::resetRAMInfoLabel()
             .arg(m_strRAMInfoLabelFree).arg("--")
             .arg(m_strRAMInfoLabelUsed).arg("--");
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetNetworkInfoLabel()
-{
-    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
-    {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strNetworkInfoLabelTitle)
-            .arg(m_strNetworkInfoLabelReceived).arg("--")
-            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
-            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
-            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
-        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetDiskIOInfoLabel()
-{
-    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
-    {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strDiskIOInfoLabelTitle)
-            .arg(m_strDiskIOInfoLabelWritten).arg("--")
-            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
-            .arg(m_strDiskIOInfoLabelRead).arg("--")
-            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
-        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
 }
 
@@ -1820,6 +1779,46 @@ void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
     }
 }
 
+void UIVMActivityMonitorLocal::resetCPUInfoLabel()
+{
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(m_strCPUInfoLabelGuest).arg("--")
+            .arg(m_strCPUInfoLabelVMM).arg("--");
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitorLocal::resetNetworkInfoLabel()
+{
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(m_strNetworkInfoLabelReceived).arg("--")
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
+            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitorLocal::resetDiskIOInfoLabel()
+{
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(m_strDiskIOInfoLabelWritten).arg("--")
+            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
+            .arg(m_strDiskIOInfoLabelRead).arg("--")
+            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    }
+}
+
 /*********************************************************************************************************************************
 *   UIVMActivityMonitorCloud definition.                                                                         *
 *********************************************************************************************************************************/
@@ -1829,8 +1828,8 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
 {
     m_metricTypeNames[KMetricType_CpuUtilization] = m_strCPUMetricName;
     m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
-    m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskMetricName;
-    m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskIOMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskIOMetricName;
     m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkMetricName;
     m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkMetricName;
 
@@ -1840,6 +1839,8 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     prepareActions();
     setMachine(machine);
     resetCPUInfoLabel();
+    resetNetworkInfoLabel();
+    resetDiskIOInfoLabel();
 }
 
 
@@ -1862,7 +1863,10 @@ void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> met
 {
     m_availableMetricTypes.clear();
     foreach (const QString &strName, metricNameList)
+    {
+        ///printf("%s\n", qPrintable(strName));
         m_availableMetricTypes << gpConverter->fromInternalString<KMetricType>(strName);
+    }
 
     if (!m_availableMetricTypes.isEmpty())
         start();
@@ -1881,6 +1885,21 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
             float fValue = data[i].toFloat();
             updateCPUGraphsAndMetric((ULONG) fValue, 0);
         }
+        else if (enmMetricType == KMetricType_NetworksBytesIn)
+        {
+            //printf("%s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
+        }
+        else if (enmMetricType == KMetricType_DiskBytesRead)
+        {
+            //printf("diskread %s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
+        }
+        else if (enmMetricType == KMetricType_DiskBytesWritten)
+        {
+            //printf("diskwrite %s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
+        }
+
+    // KMetricType_DiskBytesWritten = 4,
+
     }
     sender()->deleteLater();
 }
@@ -1911,6 +1930,7 @@ void UIVMActivityMonitorCloud::obtainDataAndUpdate()
 {
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
     {
+        printf("enm %d\n", enmMetricType);
         UIMetric metric;
         int iDataSeriesIndex = 0;
         if (!findMetric(enmMetricType, metric, iDataSeriesIndex))
@@ -1921,6 +1941,7 @@ void UIVMActivityMonitorCloud::obtainDataAndUpdate()
         int iDataSize = 1;
         if (metric.dataSize(iDataSeriesIndex) == 0)
             iDataSize = 60;
+
         UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comMachine,
                                                                                                        enmMetricType, iDataSize);
         connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
@@ -2000,24 +2021,20 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     cpuMetric.setDataSeriesName(0, "CPU Utilization");
     m_metrics.insert(m_strCPUMetricName, cpuMetric);
 
-    // /* Network metric: */
-    // UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
-    // networkMetric.setDataSeriesName(0, "Receive Rate");
-    // networkMetric.setDataSeriesName(1, "Transmit Rate");
-    // networkMetric.setAutoUpdateMaximum(true);
-    // m_metrics.insert(m_strNetworkMetricName, networkMetric);
+    /* Network metric: */
+    UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
+    networkMetric.setDataSeriesName(0, "Receive Rate");
+    networkMetric.setDataSeriesName(1, "Transmit Rate");
+    networkMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strNetworkMetricName, networkMetric);
 
-    // /* Disk IO metric */
-    // UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
-    // diskIOMetric.setDataSeriesName(0, "Write Rate");
-    // diskIOMetric.setDataSeriesName(1, "Read Rate");
-    // diskIOMetric.setAutoUpdateMaximum(true);
-    // m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
+    /* Disk IO metric */
+    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
+    diskIOMetric.setDataSeriesName(0, "Write Rate");
+    diskIOMetric.setDataSeriesName(1, "Read Rate");
+    diskIOMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
-    // /* VM exits metric */
-    // UIMetric VMExitsMetric(m_strVMExitMetricName, "times", m_iMaximumQueueSize);
-    // VMExitsMetric.setAutoUpdateMaximum(true);
-    // m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 void UIVMActivityMonitorCloud::prepareWidgets()
 {
@@ -2037,6 +2054,31 @@ void UIVMActivityMonitorCloud::resetCPUInfoLabel()
             .arg(m_strCPUInfoLabelGuest).arg("---");
 
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitorCloud::resetNetworkInfoLabel()
+{
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(m_strNetworkInfoLabelReceived).arg("--")
+            .arg(m_strNetworkInfoLabelTransmitted).arg("--");
+
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitorCloud::resetDiskIOInfoLabel()
+{
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(m_strDiskIOInfoLabelWritten).arg("--")
+            .arg(m_strDiskIOInfoLabelRead).arg("--");
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
 }
 

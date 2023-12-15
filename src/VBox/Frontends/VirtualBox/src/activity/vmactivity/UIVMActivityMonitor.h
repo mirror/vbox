@@ -166,9 +166,9 @@ protected:
     /** @name The following functions reset corresponding info labels
       * @{ */
         virtual void resetCPUInfoLabel() = 0;
+        virtual void resetNetworkInfoLabel() = 0;
+        virtual void resetDiskIOInfoLabel() = 0;
         void resetRAMInfoLabel();
-        void resetNetworkInfoLabel();
-        void resetDiskIOInfoLabel();
     /** @} */
 
     virtual void prepareWidgets();
@@ -182,7 +182,6 @@ protected:
       * @{ */
         QString m_strCPUMetricName;
         QString m_strRAMMetricName;
-        QString m_strDiskMetricName;
         QString m_strNetworkMetricName;
         QString m_strDiskIOMetricName;
         QString m_strVMExitMetricName;
@@ -290,6 +289,8 @@ private:
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
     virtual void resetCPUInfoLabel();
+    virtual void resetNetworkInfoLabel();
+    virtual void resetDiskIOInfoLabel();
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
     CSession m_comSession;
@@ -336,6 +337,9 @@ private:
         virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) RT_OVERRIDE;
     /** @} */
     virtual void resetCPUInfoLabel();
+    virtual void resetNetworkInfoLabel();
+    virtual void resetDiskIOInfoLabel();
+
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
     CCloudMachine m_comMachine;
