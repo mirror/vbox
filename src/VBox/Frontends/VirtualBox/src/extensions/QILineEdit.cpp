@@ -32,7 +32,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
-#include <QPalette>
 #include <QStyleOptionFrame>
 #include <QWindow>
 

@@ -114,8 +114,89 @@ private:
 };
 
 
+/** QILineEdit subclass used as filter line-edit. */
+class UIFilterLineEdit : public QILineEdit
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs line-edit passing @a pParent to the base-class. */
+    UIFilterLineEdit(QWidget *pParent)
+        : QILineEdit(pParent)
+        , m_iRadius(0)
+    {
+        prepare();
+    }
+
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE
+    {
+        /* Prepare painter: */
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::TextAntialiasing);
+        /* Avoid painting more than necessary: */
+        painter.setClipRect(pEvent->rect());
+
+        /* Prepare colors: */
+        const bool fActive = window() && window()->isActiveWindow();
+        const QPalette::ColorGroup enmColorGroup = fActive ? QPalette::Active : QPalette::Inactive;
+        QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
+        QColor colorFrame;
+        if (uiCommon().isInDarkMode())
+            colorFrame = qApp->palette().color(enmColorGroup, QPalette::Window).lighter(120);
+        else
+            colorFrame = qApp->palette().color(enmColorGroup, QPalette::Window).darker(120);
+
+        /* Prepare base/frame painter path: */
+        const QRect widgetRect = rect();
+        QPainterPath path;
+        QSizeF arcSize(2 * m_iRadius, 2 * m_iRadius);
+        path.moveTo(widgetRect.x() + m_iRadius, widgetRect.y());
+        path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, 0), 90, 90);
+        path.lineTo(path.currentPosition().x(), widgetRect.height() - m_iRadius);
+        path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -m_iRadius), 180, 90);
+        path.lineTo(widgetRect.width() - m_iRadius, path.currentPosition().y());
+        path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, -2 * m_iRadius), 270, 90);
+        path.lineTo(path.currentPosition().x(), widgetRect.y() + m_iRadius);
+        path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * m_iRadius, -m_iRadius), 0, 90);
+        path.closeSubpath();
+
+        /* Draw base/frame: */
+        painter.fillPath(path, colorBase);
+        painter.strokePath(path, colorFrame);
+
+        /* Call to base-class: */
+        QILineEdit::paintEvent(pEvent);
+    }
+
+private:
+
+    /** Prepares everything. */
+    void prepare()
+    {
+        /* A bit of magic to be able to replace the frame.
+         * Disable border, adjust margins and make background transparent. */
+        setStyleSheet("QLineEdit {\
+                       background-color: rgba(255, 255, 255, 0%);\
+                       border: 0px none black;\
+                       margin: 3px 10px 3px 10px;\
+                       }");
+
+        /* Init the decoration radius: */
+        m_iRadius = 10;
+    }
+
+    /** Holds the decoration radius. */
+    int  m_iRadius;
+};
+
+
 /** QWidget reimplementation
-  * wrapping custom QILineEdit and
+  * wrapping UIFilterLineEdit and
   * representing filter editor for advanced settings dialog. */
 class UIFilterEditor : public QWidget
 {
@@ -185,9 +266,9 @@ private:
     int focusedEditorWidth() const { return m_iFocusedEditorWidth; }
 
     /** Holds the filter editor instance. */
-    QILineEdit  *m_pLineEdit;
+    UIFilterLineEdit *m_pLineEdit;
     /** Holds the filter reset button instance. */
-    QToolButton *m_pToolButton;
+    QToolButton      *m_pToolButton;
 
     /** Holds whether filter editor focused. */
     bool         m_fFocused;
@@ -443,11 +524,11 @@ void UIFilterEditor::sltHandleButtonClicked()
 void UIFilterEditor::prepare()
 {
     /* Prepare filter editor: */
-    m_pLineEdit = new QILineEdit(this);
+    m_pLineEdit = new UIFilterLineEdit(this);
     if (m_pLineEdit)
     {
         m_pLineEdit->installEventFilter(this);
-        connect(m_pLineEdit, &QILineEdit::textChanged,
+        connect(m_pLineEdit, &UIFilterLineEdit::textChanged,
                 this, &UIFilterEditor::sltHandleEditorTextChanged);
     }
 
