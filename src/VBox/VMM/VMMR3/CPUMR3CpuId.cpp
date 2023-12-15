@@ -3047,6 +3047,120 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 
 
 /**
+ * Checks and fixes the maximum physical address width supported by the
+ * variable-range MTRR MSRs to be consistent with what is reported in CPUID.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   cVarMtrrs   The number of variable-range MTRRs reported to the guest.
+ */
+static int cpumR3FixVarMtrrPhysAddrWidths(PVM pVM, uint8_t const cVarMtrrs)
+{
+    AssertLogRelMsgReturn(cVarMtrrs <= RT_ELEMENTS(pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr.aMtrrVarMsrs),
+                          ("Invalid number of variable range MTRRs reported (%u)\n", cVarMtrrs),
+                          VERR_CPUM_IPE_2);
+
+    /*
+     * CPUID determines the actual maximum physical address width reported and supported. 
+     * If the CPU DB profile reported fewer address bits, we must correct it here by 
+     * updating the MSR write #GP masks of all the variable-range MTRR MSRs. Otherwise, 
+     * they cause problems when guests write to these MTRR MSRs, see @bugref{10498#c32}.
+     */
+    for (uint8_t iVarMtrr = 0; iVarMtrr < cVarMtrrs; iVarMtrr++)
+    {
+        PCPUMMSRRANGE pBaseRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSBASE0 + (iVarMtrr * 2));
+        AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSBASE[%u] MSR range\n", iVarMtrr),
+                              VERR_NOT_FOUND);
+
+        PCPUMMSRRANGE pMaskRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSMASK0 + (iVarMtrr * 2));
+        AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSMASK[%u] MSR range\n", iVarMtrr),
+                              VERR_NOT_FOUND);
+
+        uint64_t const fBaseWrGpMask = pBaseRange->fWrGpMask;
+        uint64_t const fMaskWrGpMask = pMaskRange->fWrGpMask;
+
+        uint8_t const  cGuestMaxPhysAddrWidth           = pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth;
+        uint8_t const  cProfilePhysBaseMaxPhysAddrWidth = ASMBitLastSetU64(~fBaseWrGpMask);
+        uint8_t const  cProfilePhysMaskMaxPhysAddrWidth = ASMBitLastSetU64(~fMaskWrGpMask);
+
+        AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth == cProfilePhysMaskMaxPhysAddrWidth,
+                              ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK report different physical address widths (%u and %u)\n",
+                               cProfilePhysBaseMaxPhysAddrWidth, cProfilePhysMaskMaxPhysAddrWidth),
+                              VERR_CPUM_IPE_2);
+        AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth > 12 && cProfilePhysBaseMaxPhysAddrWidth <= 64,
+                              ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK reports an invalid physical address width of %u bits\n",
+                               cProfilePhysBaseMaxPhysAddrWidth), VERR_CPUM_IPE_2);
+
+        if (cProfilePhysBaseMaxPhysAddrWidth < cGuestMaxPhysAddrWidth)
+        {
+            uint64_t fNewBaseWrGpMask = fBaseWrGpMask;
+            uint64_t fNewMaskWrGpMask = fMaskWrGpMask;
+            int8_t   cBits = cGuestMaxPhysAddrWidth - cProfilePhysBaseMaxPhysAddrWidth;
+            while (cBits)
+            {
+                uint64_t const fWrGpAndMask = ~(uint64_t)RT_BIT_64(cProfilePhysBaseMaxPhysAddrWidth + cBits - 1);
+                fNewBaseWrGpMask &= fWrGpAndMask;
+                fNewMaskWrGpMask &= fWrGpAndMask;
+                --cBits;
+            }
+
+            pBaseRange->fWrGpMask = fBaseWrGpMask;
+            pMaskRange->fWrGpMask = fMaskWrGpMask;
+
+            LogRel(("CPUM: Updated IA32_MTRR_PHYSBASE[%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
+                    iVarMtrr, fBaseWrGpMask, fNewBaseWrGpMask));
+            LogRel(("CPUM: Updated IA32_MTRR_PHYSMASK[%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
+                    iVarMtrr, fMaskWrGpMask, fNewMaskWrGpMask));
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Initialize MTRR capability based on what the guest CPU profile (typically host)
+ * supports.
+ *  
+ * @reports VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int cpumR3InitMtrrCap(PVM pVM)
+{
+#ifdef RT_ARCH_AMD64
+    Assert(pVM->cpum.s.HostFeatures.fMtrr);
+#endif
+
+    /* Lookup the number of variable-range MTRRs supported by the CPU profile. */
+    PCCPUMMSRRANGE pMtrrCapRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_CAP);
+    AssertLogRelMsgReturn(pMtrrCapRange, ("Failed to lookup IA32_MTRR_CAP MSR range\n"), VERR_NOT_FOUND);
+    uint8_t const cProfileVarRangeRegs = pMtrrCapRange->uValue & MSR_IA32_MTRR_CAP_VCNT_MASK;
+
+    /* Construct guest MTRR support capabilities. */
+    uint8_t const  cGuestVarRangeRegs = RT_MIN(cProfileVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
+    uint64_t const uGstMtrrCap        = cGuestVarRangeRegs
+                                      | MSR_IA32_MTRR_CAP_FIX
+                                      | MSR_IA32_MTRR_CAP_WC;
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->cpum.s.GuestMsrs.msr.MtrrCap     = uGstMtrrCap;
+        pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType = MSR_IA32_MTRR_DEF_TYPE_FIXED_EN
+                                                | MSR_IA32_MTRR_DEF_TYPE_MTRR_EN
+                                                | X86_MTRR_MT_UC;
+    }
+
+    LogRel(("CPUM: Enabled fixed-range MTRRs and %u variable-range MTRRs\n", cGuestVarRangeRegs));
+
+    /*
+     * Ensure that the maximum physical address width supported by the variable-range MTRRs 
+     * are consistent with what is reported to the guest via CPUID.
+     */
+    return cpumR3FixVarMtrrPhysAddrWidths(pVM, cGuestVarRangeRegs);
+}
+
+
+/**
  * Initializes the emulated CPU's CPUID & MSR information.
  *
  * @returns VBox status code.
@@ -3307,28 +3421,11 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             Assert(!pVM->cpum.s.fMtrrWrite || pVM->cpum.s.fMtrrRead);
             if (pVM->cpum.s.fMtrrRead)
             {
-#ifdef RT_ARCH_AMD64
-                Assert(pVM->cpum.s.HostFeatures.fMtrr);
-#endif
-                /* Lookup the number of variable-range MTRRs supported by the CPU profile. */
-                PCCPUMMSRRANGE pMtrrCapRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_CAP);
-                AssertLogRelReturn(pMtrrCapRange, VERR_CPUM_IPE_2);
-                uint8_t const cProfileVarRangeRegs = pMtrrCapRange->uValue & MSR_IA32_MTRR_CAP_VCNT_MASK;
-
-                /* Construct guest MTRR support capabilities. */
-                uint8_t const  cGuestVarRangeRegs = RT_MIN(cProfileVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
-                uint64_t const uGstMtrrCap        = cGuestVarRangeRegs
-                                                  | MSR_IA32_MTRR_CAP_FIX
-                                                  | MSR_IA32_MTRR_CAP_WC;
-                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-                {
-                    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-                    pVCpu->cpum.s.GuestMsrs.msr.MtrrCap     = uGstMtrrCap;
-                    pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType = MSR_IA32_MTRR_DEF_TYPE_FIXED_EN
-                                                            | MSR_IA32_MTRR_DEF_TYPE_MTRR_EN
-                                                            | X86_MTRR_MT_UC;
-                }
-                LogRel(("CPUM: Enabled fixed-range MTRRs and %u variable-range MTRRs\n", cGuestVarRangeRegs));
+                rc = cpumR3InitMtrrCap(pVM);
+                if (RT_SUCCESS(rc))
+                { /* likely */ }
+                else
+                    return rc;
             }
         }
 
