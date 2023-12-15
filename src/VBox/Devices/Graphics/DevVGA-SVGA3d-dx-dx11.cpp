@@ -5884,8 +5884,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
             float *pValuesF = (float *)initialData.pSysMem;
             for (unsigned i = 0; i < sizeInBytes / sizeof(float) / 4; ++i)
             {
-                Log(("ConstantF[%d]: " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ",\n",
-                     i, FLOAT_FMT_ARGS(pValuesF[i*4 + 0]), FLOAT_FMT_ARGS(pValuesF[i*4 + 1]), FLOAT_FMT_ARGS(pValuesF[i*4 + 2]), FLOAT_FMT_ARGS(pValuesF[i*4 + 3])));
+                Log8(("ConstF /*%d*/ " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ",\n",
+                      i, FLOAT_FMT_ARGS(pValuesF[i*4 + 0]), FLOAT_FMT_ARGS(pValuesF[i*4 + 1]), FLOAT_FMT_ARGS(pValuesF[i*4 + 2]), FLOAT_FMT_ARGS(pValuesF[i*4 + 3])));
             }
         }
 #endif
@@ -6418,7 +6418,7 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
         case DXGI_FORMAT_R16G16_FLOAT:
         {
             uint16_t const *pValues = (uint16_t const *)pvElementData;
-            Log8(("{ f16 " FLOAT_FMT_STR ", " FLOAT_FMT_STR " },",
+            Log8(("{ /*f16*/ " FLOAT_FMT_STR ", " FLOAT_FMT_STR " },",
                  FLOAT_FMT_ARGS(float16ToFloat(pValues[0])), FLOAT_FMT_ARGS(float16ToFloat(pValues[1]))));
             break;
         }
@@ -6453,29 +6453,57 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
         case DXGI_FORMAT_R16G16_SINT:
         {
             int16_t const *pValues = (int16_t const *)pvElementData;
-            Log8(("{ s %d, %d },",
+            Log8(("{ /*s16*/ %d, %d },",
                  pValues[0], pValues[1]));
             break;
         }
         case DXGI_FORMAT_R16G16_UINT:
         {
             uint16_t const *pValues = (uint16_t const *)pvElementData;
-            Log8(("{ u %u, %u },",
+            Log8(("{ /*u16*/ %u, %u },",
                  pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R16G16_SNORM:
+        {
+            int16_t const *pValues = (int16_t const *)pvElementData;
+            Log8(("{ /*sn16*/ 0x%x, 0x%x },",
+                 pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R16G16_UNORM:
+        {
+            uint16_t const *pValues = (uint16_t const *)pvElementData;
+            Log8(("{ /*un16*/ 0x%x, 0x%x },",
+                 pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R16_UINT:
+        {
+            uint16_t const *pValues = (uint16_t const *)pvElementData;
+            Log8(("{ /*u16*/ %u },",
+                 pValues[0]));
             break;
         }
         case DXGI_FORMAT_R8G8B8A8_UNORM:
         {
             uint8_t const *pValues = (uint8_t const *)pvElementData;
-            Log8(("{ 8unorm  %u, %u, %u, %u },",
+            Log8(("{ /*8unorm*/  %u, %u, %u, %u },",
                  pValues[0], pValues[1], pValues[2], pValues[3]));
             break;
         }
         case DXGI_FORMAT_R8G8_UNORM:
         {
             uint8_t const *pValues = (uint8_t const *)pvElementData;
-            Log8(("{ 8unorm  %u, %u },",
+            Log8(("{ /*8unorm*/  %u, %u },",
                  pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R8_UINT:
+        {
+            uint8_t const *pValues = (uint8_t const *)pvElementData;
+            Log8(("{ /*8unorm*/  %u },",
+                 pValues[0]));
             break;
         }
         default:
@@ -6525,7 +6553,7 @@ static void dxDbgDumpVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
 
             for (uint32_t v = 0; v < vertexCount; ++v)
             {
-                Log8(("slot[%u] v%u { ", iSlot, startVertexLocation + v));
+                Log8(("slot[%u] /* v%u */ { ", iSlot, startVertexLocation + v));
 
                 for (uint32_t iElement = 0; iElement < pDXElementLayout->cElementDesc; ++iElement)
                 {
@@ -6613,7 +6641,7 @@ static void dxDbgDumpIndexedVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT p
                     else
                         Index = ((uint32_t *)pu8IndexData)[i];
 
-                    Log8(("slot[%u] v%u { ", iSlot, Index));
+                    Log8(("slot[%u] /* v%u */ { ", iSlot, Index));
 
                     for (uint32_t iElement = 0; iElement < pDXElementLayout->cElementDesc; ++iElement)
                     {
@@ -6685,7 +6713,7 @@ static void dxDbgDumpInstanceData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXCon
                 Log8(("Instance data dump: sid = %u, iInstance %u, startInstanceLocation %d, offset = %d, stride = %d:\n",
                       sidVB, iInstance, startInstanceLocation, pVB->offset, pVB->stride));
 
-                Log8(("slot[%u] i%u { ", iSlot, iInstance));
+                Log8(("slot[%u] /* i%u */ { ", iSlot, iInstance));
                 for (uint32_t iElement = 0; iElement < pDXElementLayout->cElementDesc; ++iElement)
                 {
                     D3D11_INPUT_ELEMENT_DESC *pElement = &pDXElementLayout->aElementDesc[iElement];
@@ -6803,7 +6831,9 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     AssertContinue(RT_SUCCESS(rc));
                 }
 
-                LogFunc(("srv[%d][%d] sid = %u, srvid = %u, format = %s(%d)\n", idxShaderState, idxSR, sid, shaderResourceViewId, vmsvgaLookupEnum((int)pSRViewEntry->format, &g_SVGA3dSurfaceFormat2String), pSRViewEntry->format));
+                LogFunc(("srv[%d][%d] sid = %u, srvid = %u, format = %s(%d), %dx%d\n",
+                         idxShaderState, idxSR, sid, shaderResourceViewId, vmsvgaLookupEnum((int)pSRViewEntry->format, &g_SVGA3dSurfaceFormat2String), pSRViewEntry->format,
+                         pSurface->paMipmapLevels[0].cBlocksX * pSurface->cxBlock, pSurface->paMipmapLevels[0].cBlocksY * pSurface->cyBlock));
 
 #ifdef DUMP_BITMAPS
                 SVGA3dSurfaceImageId image;
@@ -7135,6 +7165,9 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
     }
 
     pDevice->pImmediateContext->IASetInputLayout(pInputLayout);
+
+    LogFunc(("Topology %u\n", pDXContext->svgaDXContext.inputAssembly.topology));
+    LogFunc(("Blend id %u\n", pDXContext->svgaDXContext.renderState.blendStateId));
 }
 
 
@@ -7709,6 +7742,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetIndexBuffer(PVGASTATECC pThisCC, PVMSV
 
 static D3D11_PRIMITIVE_TOPOLOGY dxTopology(SVGA3dPrimitiveType primitiveType)
 {
+    ASSERT_GUEST_RETURN(primitiveType < SVGA3D_PRIMITIVE_MAX, D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED);
+
     static D3D11_PRIMITIVE_TOPOLOGY const aD3D11PrimitiveTopology[SVGA3D_PRIMITIVE_MAX] =
     {
         D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED,

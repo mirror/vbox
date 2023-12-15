@@ -1485,7 +1485,7 @@ float float16ToFloat(uint16_t f16)
 
 static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
 {
-    if (   pMap->cbBlock != 4 && pMap->cbBlock != 1
+    if (   pMap->cbBlock != 4 && pMap->cbBlock != 2 && pMap->cbBlock != 1
         && pMap->format != SVGA3D_R16G16B16A16_FLOAT
         && pMap->format != SVGA3D_R32G32B32A32_FLOAT)
         return VERR_NOT_SUPPORTED;
@@ -1600,6 +1600,21 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
         for (uint32_t iRow = 0; iRow < pMap->cRows; ++iRow)
         {
             fwrite(s, 1, pMap->cbRow, f);
+
+            s += pMap->cbRowPitch;
+        }
+    }
+    else if (pMap->cbBlock == 2)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (uint32_t iRow = 0; iRow < pMap->cRows; ++iRow)
+        {
+            for (int32_t x = 0; x < w; ++x)
+            {
+                uint16_t const *pPixel = (uint16_t *)(s + x * sizeof(uint16_t));
+                uint32_t u32Pixel = *pPixel;
+                fwrite(&u32Pixel, 1, 4, f);
+            }
 
             s += pMap->cbRowPitch;
         }
