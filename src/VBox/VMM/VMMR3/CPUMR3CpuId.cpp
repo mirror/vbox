@@ -3171,7 +3171,7 @@ static int cpumR3InitMtrrCap(PVM pVM)
     LogRel(("CPUM: Enabled fixed-range MTRRs and %u variable-range MTRRs\n", cGuestVarRangeRegs));
 
     /*
-     * Ensure that the maximum physical address width supported by the variable-range MTRRs 
+     * Ensure that the maximum physical address width supported by the variable-range MTRRs
      * are consistent with what is reported to the guest via CPUID.
      */
     return cpumR3FixVarMtrrPhysAddrWidths(pVM, cGuestVarRangeRegs);
