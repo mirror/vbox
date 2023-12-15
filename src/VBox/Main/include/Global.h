@@ -235,7 +235,7 @@ public:
     static const char *stringifyProcessWaitResult(ProcessWaitResult_T aWaitResult);
 
     /**
-     * Stringify a file status..
+     * Stringify a file status.
      *
      * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
      * version of this method.
