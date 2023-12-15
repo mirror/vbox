@@ -3061,57 +3061,75 @@ static int cpumR3FixVarMtrrPhysAddrWidths(PVM pVM, uint8_t const cVarMtrrs)
                           VERR_CPUM_IPE_2);
 
     /*
-     * CPUID determines the actual maximum physical address width reported and supported. 
-     * If the CPU DB profile reported fewer address bits, we must correct it here by 
-     * updating the MSR write #GP masks of all the variable-range MTRR MSRs. Otherwise, 
+     * CPUID determines the actual maximum physical address width reported and supported.
+     * If the CPU DB profile reported fewer address bits, we must correct it here by
+     * updating the MSR write #GP masks of all the variable-range MTRR MSRs. Otherwise,
      * they cause problems when guests write to these MTRR MSRs, see @bugref{10498#c32}.
      */
-    for (uint8_t iVarMtrr = 0; iVarMtrr < cVarMtrrs; iVarMtrr++)
+    PCPUMMSRRANGE pBaseRange0 = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSBASE0);
+    AssertLogRelMsgReturn(pBaseRange0, ("Failed to lookup the IA32_MTRR_PHYSBASE[0] MSR range\n"), VERR_NOT_FOUND);
+
+    PCPUMMSRRANGE pMaskRange0 = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSMASK0);
+    AssertLogRelMsgReturn(pMaskRange0, ("Failed to lookup the IA32_MTRR_PHYSMASK[0] MSR range\n"), VERR_NOT_FOUND);
+
+    uint64_t const fPhysBaseWrGpMask = pBaseRange0->fWrGpMask;
+    uint64_t const fPhysMaskWrGpMask = pMaskRange0->fWrGpMask;
+
+    uint8_t const  cGuestMaxPhysAddrWidth           = pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth;
+    uint8_t const  cProfilePhysBaseMaxPhysAddrWidth = ASMBitLastSetU64(~fPhysBaseWrGpMask);
+    uint8_t const  cProfilePhysMaskMaxPhysAddrWidth = ASMBitLastSetU64(~fPhysMaskWrGpMask);
+
+    AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth == cProfilePhysMaskMaxPhysAddrWidth,
+                          ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK report different physical address widths (%u and %u)\n",
+                           cProfilePhysBaseMaxPhysAddrWidth, cProfilePhysMaskMaxPhysAddrWidth),
+                          VERR_CPUM_IPE_2);
+    AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth > 12 && cProfilePhysBaseMaxPhysAddrWidth <= 64,
+                          ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK reports an invalid physical address width of %u bits\n",
+                           cProfilePhysBaseMaxPhysAddrWidth), VERR_CPUM_IPE_2);
+
+    if (cProfilePhysBaseMaxPhysAddrWidth < cGuestMaxPhysAddrWidth)
     {
-        PCPUMMSRRANGE pBaseRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSBASE0 + (iVarMtrr * 2));
-        AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSBASE[%u] MSR range\n", iVarMtrr),
-                              VERR_NOT_FOUND);
-
-        PCPUMMSRRANGE pMaskRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSMASK0 + (iVarMtrr * 2));
-        AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSMASK[%u] MSR range\n", iVarMtrr),
-                              VERR_NOT_FOUND);
-
-        uint64_t const fBaseWrGpMask = pBaseRange->fWrGpMask;
-        uint64_t const fMaskWrGpMask = pMaskRange->fWrGpMask;
-
-        uint8_t const  cGuestMaxPhysAddrWidth           = pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth;
-        uint8_t const  cProfilePhysBaseMaxPhysAddrWidth = ASMBitLastSetU64(~fBaseWrGpMask);
-        uint8_t const  cProfilePhysMaskMaxPhysAddrWidth = ASMBitLastSetU64(~fMaskWrGpMask);
-
-        AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth == cProfilePhysMaskMaxPhysAddrWidth,
-                              ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK report different physical address widths (%u and %u)\n",
-                               cProfilePhysBaseMaxPhysAddrWidth, cProfilePhysMaskMaxPhysAddrWidth),
-                              VERR_CPUM_IPE_2);
-        AssertLogRelMsgReturn(cProfilePhysBaseMaxPhysAddrWidth > 12 && cProfilePhysBaseMaxPhysAddrWidth <= 64,
-                              ("IA32_MTRR_PHYSBASE and IA32_MTRR_PHYSMASK reports an invalid physical address width of %u bits\n",
-                               cProfilePhysBaseMaxPhysAddrWidth), VERR_CPUM_IPE_2);
-
-        if (cProfilePhysBaseMaxPhysAddrWidth < cGuestMaxPhysAddrWidth)
+        uint64_t fNewPhysBaseWrGpMask = fPhysBaseWrGpMask;
+        uint64_t fNewPhysMaskWrGpMask = fPhysMaskWrGpMask;
+        int8_t   cBits = cGuestMaxPhysAddrWidth - cProfilePhysBaseMaxPhysAddrWidth;
+        while (cBits)
         {
-            uint64_t fNewBaseWrGpMask = fBaseWrGpMask;
-            uint64_t fNewMaskWrGpMask = fMaskWrGpMask;
-            int8_t   cBits = cGuestMaxPhysAddrWidth - cProfilePhysBaseMaxPhysAddrWidth;
-            while (cBits)
-            {
-                uint64_t const fWrGpAndMask = ~(uint64_t)RT_BIT_64(cProfilePhysBaseMaxPhysAddrWidth + cBits - 1);
-                fNewBaseWrGpMask &= fWrGpAndMask;
-                fNewMaskWrGpMask &= fWrGpAndMask;
-                --cBits;
-            }
-
-            pBaseRange->fWrGpMask = fBaseWrGpMask;
-            pMaskRange->fWrGpMask = fMaskWrGpMask;
-
-            LogRel(("CPUM: Updated IA32_MTRR_PHYSBASE[%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
-                    iVarMtrr, fBaseWrGpMask, fNewBaseWrGpMask));
-            LogRel(("CPUM: Updated IA32_MTRR_PHYSMASK[%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
-                    iVarMtrr, fMaskWrGpMask, fNewMaskWrGpMask));
+            uint64_t const fWrGpAndMask = ~(uint64_t)RT_BIT_64(cProfilePhysBaseMaxPhysAddrWidth + cBits - 1);
+            fNewPhysBaseWrGpMask &= fWrGpAndMask;
+            fNewPhysMaskWrGpMask &= fWrGpAndMask;
+            --cBits;
         }
+
+        for (uint8_t iVarMtrr = 1; iVarMtrr < cVarMtrrs; iVarMtrr++)
+        {
+            PCPUMMSRRANGE pBaseRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSBASE0 + (iVarMtrr * 2));
+            AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSBASE[%u] MSR range\n", iVarMtrr),
+                                  VERR_NOT_FOUND);
+
+            PCPUMMSRRANGE pMaskRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_PHYSMASK0 + (iVarMtrr * 2));
+            AssertLogRelMsgReturn(pBaseRange, ("Failed to lookup the IA32_MTRR_PHYSMASK[%u] MSR range\n", iVarMtrr),
+                                  VERR_NOT_FOUND);
+
+            AssertLogRelMsgReturn(pBaseRange->fWrGpMask == fPhysBaseWrGpMask,
+                                  ("IA32_MTRR_PHYSBASE[%u] write GP mask (%#016RX64) differs from IA32_MTRR_PHYSBASE[0] write GP mask (%#016RX64)\n",
+                                   iVarMtrr, pBaseRange->fWrGpMask, fPhysBaseWrGpMask),
+                                  VERR_CPUM_IPE_1);
+            AssertLogRelMsgReturn(pMaskRange->fWrGpMask == fPhysMaskWrGpMask,
+                                  ("IA32_MTRR_PHYSMASK[%u] write GP mask (%#016RX64) differs from IA32_MTRR_PHYSMASK[0] write GP mask (%#016RX64)\n",
+                                   iVarMtrr, pMaskRange->fWrGpMask, fPhysMaskWrGpMask),
+                                  VERR_CPUM_IPE_1);
+
+            pBaseRange->fWrGpMask = fNewPhysBaseWrGpMask;
+            pMaskRange->fWrGpMask = fNewPhysMaskWrGpMask;
+        }
+
+        pBaseRange0->fWrGpMask = fNewPhysBaseWrGpMask;
+        pMaskRange0->fWrGpMask = fNewPhysMaskWrGpMask;
+
+        LogRel(("CPUM: Updated IA32_MTRR_PHYSBASE[0..%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
+                cVarMtrrs - 1, fPhysBaseWrGpMask, fNewPhysBaseWrGpMask));
+        LogRel(("CPUM: Updated IA32_MTRR_PHYSMASK[0..%u] MSR write #GP mask (old=%#016RX64 new=%#016RX64)\n",
+                cVarMtrrs - 1, fPhysMaskWrGpMask, fNewPhysMaskWrGpMask));
     }
 
     return VINF_SUCCESS;
