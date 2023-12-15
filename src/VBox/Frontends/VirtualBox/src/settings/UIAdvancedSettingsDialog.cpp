@@ -153,15 +153,15 @@ protected:
 
         /* Prepare base/frame painter path: */
         const QRect widgetRect = rect();
+        const QSizeF arcSize(2 * m_iRadius, 2 * m_iRadius);
         QPainterPath path;
-        QSizeF arcSize(2 * m_iRadius, 2 * m_iRadius);
         path.moveTo(widgetRect.x() + m_iRadius, widgetRect.y());
         path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, 0), 90, 90);
-        path.lineTo(path.currentPosition().x(), widgetRect.height() - m_iRadius);
+        path.lineTo(path.currentPosition().x(), path.currentPosition().y() + widgetRect.height() - 2 * m_iRadius);
         path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -m_iRadius), 180, 90);
-        path.lineTo(widgetRect.width() - m_iRadius, path.currentPosition().y());
+        path.lineTo(path.currentPosition().x() + widgetRect.width() - 2 * m_iRadius, path.currentPosition().y());
         path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, -2 * m_iRadius), 270, 90);
-        path.lineTo(path.currentPosition().x(), widgetRect.y() + m_iRadius);
+        path.lineTo(path.currentPosition().x(), path.currentPosition().y() - widgetRect.height() + 2 * m_iRadius);
         path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * m_iRadius, -m_iRadius), 0, 90);
         path.closeSubpath();
 
