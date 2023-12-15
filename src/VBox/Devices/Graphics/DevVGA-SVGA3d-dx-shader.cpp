@@ -2079,7 +2079,7 @@ static DECLCALLBACK(int) signatureEntryCmp(void const *pvElement1, void const *p
 
 
 static void dxbcGenerateSemantics(DXShaderInfo *pInfo, uint32_t cSignature,
-                                  SVGA3dDXSignatureEntry const *paSignature,
+                                  SVGA3dDXSignatureEntry *paSignature,
                                   DXShaderAttributeSemantic *paSemantic,
                                   uint32_t u32BlobType);
 
@@ -2417,17 +2417,16 @@ static VGPUSemanticInfo const g_aSemanticInfo[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX
     { "SV_InstanceID",                  1 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_INSTANCE_ID                        8
     { "SV_IsFrontFace",                 1 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_IS_FRONT_FACE                      9
     { "SV_SampleIndex",                 1 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_SAMPLE_INDEX                       10
-    /** @todo  Is this a correct name for all TessFactors? */
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_EQ_0_EDGE_TESSFACTOR  11
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_EQ_0_EDGE_TESSFACTOR  12
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_EQ_1_EDGE_TESSFACTOR  13
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_EQ_1_EDGE_TESSFACTOR  14
-    { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_INSIDE_TESSFACTOR     15
-    { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_INSIDE_TESSFACTOR     16
+    { "SV_InsideTessFactor",            3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_INSIDE_TESSFACTOR     15
+    { "SV_InsideTessFactor",            3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_INSIDE_TESSFACTOR     16
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_U_EQ_0_EDGE_TESSFACTOR   17
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_V_EQ_0_EDGE_TESSFACTOR   18
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_W_EQ_0_EDGE_TESSFACTOR   19
-    { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_INSIDE_TESSFACTOR        20
+    { "SV_InsideTessFactor",            3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_INSIDE_TESSFACTOR        20
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_LINE_DETAIL_TESSFACTOR       21
     { "SV_TessFactor",                  3 }, // SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_LINE_DENSITY_TESSFACTOR      22
 };
@@ -2435,6 +2434,60 @@ static VGPUSemanticInfo const g_aSemanticInfo[SVGADX_SIGNATURE_SEMANTIC_NAME_MAX
 static VGPUSemanticInfo const g_SemanticPSOutput =
     { "SV_TARGET",                      3 }; // SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED                          0
 
+
+/* A clone of D3D_NAME */
+typedef enum
+{
+    D3D_SV_UNDEFINED = 0,
+    D3D_SV_POSITION = 1,
+    D3D_SV_CLIP_DISTANCE = 2,
+    D3D_SV_CULL_DISTANCE = 3,
+    D3D_SV_RENDER_TARGET_ARRAY_INDEX = 4,
+    D3D_SV_VIEWPORT_ARRAY_INDEX = 5,
+    D3D_SV_VERTEX_ID = 6,
+    D3D_SV_PRIMITIVE_ID = 7,
+    D3D_SV_INSTANCE_ID = 8,
+    D3D_SV_IS_FRONT_FACE = 9,
+    D3D_SV_SAMPLE_INDEX = 10,
+    D3D_SV_FINAL_QUAD_EDGE_TESSFACTOR = 11,
+    D3D_SV_FINAL_QUAD_INSIDE_TESSFACTOR = 12,
+    D3D_SV_FINAL_TRI_EDGE_TESSFACTOR = 13,
+    D3D_SV_FINAL_TRI_INSIDE_TESSFACTOR = 14,
+    D3D_SV_FINAL_LINE_DETAIL_TESSFACTOR = 15,
+    D3D_SV_FINAL_LINE_DENSITY_TESSFACTOR = 16
+} D3DSYSTEMVALUE;
+
+static uint32_t svga2dxSystemValue(SVGA3dDXSignatureSemanticName semanticName)
+{
+    switch (semanticName)
+    {
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED:                 return D3D_SV_UNDEFINED;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_POSITION:                  return D3D_SV_POSITION;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_CLIP_DISTANCE:             return D3D_SV_CLIP_DISTANCE;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_CULL_DISTANCE:             return D3D_SV_CULL_DISTANCE;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_RENDER_TARGET_ARRAY_INDEX: return D3D_SV_RENDER_TARGET_ARRAY_INDEX;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_VIEWPORT_ARRAY_INDEX:      return D3D_SV_VIEWPORT_ARRAY_INDEX;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_VERTEX_ID:                 return D3D_SV_VERTEX_ID;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_PRIMITIVE_ID:              return D3D_SV_PRIMITIVE_ID;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_INSTANCE_ID:               return D3D_SV_INSTANCE_ID;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_IS_FRONT_FACE:             return D3D_SV_IS_FRONT_FACE;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_SAMPLE_INDEX:              return D3D_SV_SAMPLE_INDEX;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_EQ_0_EDGE_TESSFACTOR: return D3D_SV_FINAL_QUAD_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_EQ_0_EDGE_TESSFACTOR: return D3D_SV_FINAL_QUAD_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_EQ_1_EDGE_TESSFACTOR: return D3D_SV_FINAL_QUAD_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_EQ_1_EDGE_TESSFACTOR: return D3D_SV_FINAL_QUAD_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_U_INSIDE_TESSFACTOR:    return D3D_SV_FINAL_QUAD_INSIDE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_QUAD_V_INSIDE_TESSFACTOR:    return D3D_SV_FINAL_QUAD_INSIDE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_U_EQ_0_EDGE_TESSFACTOR:  return D3D_SV_FINAL_TRI_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_V_EQ_0_EDGE_TESSFACTOR:  return D3D_SV_FINAL_TRI_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_W_EQ_0_EDGE_TESSFACTOR:  return D3D_SV_FINAL_TRI_EDGE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_TRI_INSIDE_TESSFACTOR:       return D3D_SV_FINAL_TRI_INSIDE_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_LINE_DETAIL_TESSFACTOR:      return D3D_SV_FINAL_LINE_DETAIL_TESSFACTOR;
+        case SVGADX_SIGNATURE_SEMANTIC_NAME_FINAL_LINE_DENSITY_TESSFACTOR:     return D3D_SV_FINAL_LINE_DENSITY_TESSFACTOR;
+    }
+
+    AssertFailedReturn(D3D_SV_UNDEFINED);
+}
 
 static VGPUSemanticInfo const *dxbcSemanticInfo(DXShaderInfo const *pInfo, SVGA3dDXSignatureSemanticName enmSemanticName, uint32_t u32BlobType)
 {
@@ -2451,25 +2504,27 @@ static VGPUSemanticInfo const *dxbcSemanticInfo(DXShaderInfo const *pInfo, SVGA3
 
 
 static void dxbcGenerateSemantics(DXShaderInfo *pInfo, uint32_t cSignature,
-                                  SVGA3dDXSignatureEntry const *paSignature,
+                                  SVGA3dDXSignatureEntry *paSignature,
                                   DXShaderAttributeSemantic *paSemantic,
                                   uint32_t u32BlobType)
 {
     for (uint32_t iSignatureEntry = 0; iSignatureEntry < cSignature; ++iSignatureEntry)
     {
-        SVGA3dDXSignatureEntry const *src = &paSignature[iSignatureEntry];
-        DXShaderAttributeSemantic *dst = &paSemantic[iSignatureEntry];
+        SVGA3dDXSignatureEntry *pSignatureEntry = &paSignature[iSignatureEntry];
+        DXShaderAttributeSemantic *pSemantic = &paSemantic[iSignatureEntry];
 
-        ASSERT_GUEST_RETURN_VOID(src->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX);
+        ASSERT_GUEST_RETURN_VOID(pSignatureEntry->semanticName < SVGADX_SIGNATURE_SEMANTIC_NAME_MAX);
 
-        VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
-        dst->pcszSemanticName = pSemanticInfo->pszName;
-        dst->SemanticIndex = 0;
+        VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, pSignatureEntry->semanticName, u32BlobType);
+        pSemantic->pcszSemanticName = pSemanticInfo->pszName;
+        pSemantic->SemanticIndex = 0;
+        if (pSignatureEntry->componentType == SVGADX_SIGNATURE_REGISTER_COMPONENT_UNKNOWN)
+            pSignatureEntry->componentType = pSemanticInfo->u32Type;
         for (uint32_t i = 0; i < iSignatureEntry; ++i)
         {
-            DXShaderAttributeSemantic const *pSemantic = &paSemantic[i];
-            if (RTStrCmp(pSemantic->pcszSemanticName, dst->pcszSemanticName) == 0)
-                ++dst->SemanticIndex;
+            DXShaderAttributeSemantic const *pPriorSemantic = &paSemantic[i];
+            if (RTStrCmp(pPriorSemantic->pcszSemanticName, pSemantic->pcszSemanticName) == 0)
+                ++pSemantic->SemanticIndex;
         }
     }
 }
@@ -2519,7 +2574,7 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
             }
         }
         dst->idxSemantic      = srcSemantic->SemanticIndex;
-        dst->enmSystemValue   = srcEntry->semanticName;
+        dst->enmSystemValue   = svga2dxSystemValue(srcEntry->semanticName);
         dst->enmComponentType = srcEntry->componentType;
         dst->idxRegister      = srcEntry->registerIndex;
         dst->u.mask           = srcEntry->mask;
