@@ -34,6 +34,7 @@
 #include <QGridLayout>
 #include <QScrollArea>
 #include <QStyle>
+#include <QToolTip>
 #include <QXmlStreamReader>
 #include <QTimer>
 
@@ -205,6 +206,7 @@ private:
        QConicalGradient conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex);
     /** @} */
     int maxDataSize() const;
+    QString toolTipText() const;
 
     UIMetric *m_pMetric;
     QSize m_size;
@@ -325,6 +327,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     , m_iRightMarginCharWidth(10)
     , m_iMaximumQueueSize(iMaximumQueueSize)
 {
+    setToolTipDuration(-1);
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -495,6 +498,15 @@ bool UIChart::event(QEvent *pEvent)
         m_iDataIndexUnderCursor = -1;
         emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
     }
+    else if (pEvent->type() == QEvent::ToolTip)
+    {
+        QHelpEvent *pToolTipEvent = static_cast<QHelpEvent *>(pEvent);
+        if (m_iDataIndexUnderCursor == -1)
+            QToolTip::hideText();
+        else
+            QToolTip::showText(pToolTipEvent->globalPos(), toolTipText(), this, m_lineChartRect);
+
+    }
     return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
@@ -512,6 +524,7 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
     QPoint eventPosition(pEvent->position().x(), pEvent->position().y());
     int iDataSize = maxDataSize();
     m_iDataIndexUnderCursor = -1;
+
     if (iDataSize > 0 && m_lineChartRect.contains(eventPosition))
     {
         m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
@@ -677,7 +690,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 QString UIChart::YAxisValueLabel(quint64 iValue) const
 {
     if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
-        return QString::number(iValue);
+        return QString::number(iValue).append("%");
     if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
         return UITranslator::formatSize(_1K * (quint64)iValue, g_iDecimalCount);
     if (   m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0
@@ -770,6 +783,20 @@ int UIChart::maxDataSize() const
             iSize = qMax(iSize, m_pMetric->data(k)->size());
     }
     return iSize;
+}
+
+QString UIChart::toolTipText() const
+{
+    if (m_iDataIndexUnderCursor == -1)
+        return QString();
+    QStringList toolTipStrings;
+    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+    {
+        const QQueue<quint64> *data = m_pMetric->data(k);
+        if (data && data->size() > 0 && m_iDataIndexUnderCursor < data->size())
+            toolTipStrings << YAxisValueLabel(data->at(m_iDataIndexUnderCursor));
+    }
+    return toolTipStrings.join(" / ");
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
