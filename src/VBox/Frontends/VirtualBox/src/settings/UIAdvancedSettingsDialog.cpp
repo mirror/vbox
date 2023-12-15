@@ -233,11 +233,11 @@ protected:
     /** Returns the minimum widget size. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
-    /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
-
     /** Preprocesses Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -474,15 +474,6 @@ QSize UIFilterEditor::minimumSizeHint() const
     return m_pLineEdit ? m_pLineEdit->minimumSizeHint() : QWidget::minimumSizeHint();
 }
 
-void UIFilterEditor::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QWidget::resizeEvent(pEvent);
-
-    /* Adjust filter editor geometry on each parent resize: */
-    adjustEditorGeometry();
-}
-
 bool UIFilterEditor::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Preprocess events for m_pLineEdit only: */
@@ -508,6 +499,15 @@ bool UIFilterEditor::eventFilter(QObject *pObject, QEvent *pEvent)
 
     /* Call to base-class: */
     return QWidget::eventFilter(pObject, pEvent);
+}
+
+void UIFilterEditor::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QWidget::resizeEvent(pEvent);
+
+    /* Adjust filter editor geometry on each parent resize: */
+    adjustEditorGeometry();
 }
 
 void UIFilterEditor::sltHandleEditorTextChanged(const QString &strText)
@@ -583,7 +583,7 @@ void UIFilterEditor::adjustEditorGeometry()
     const int iMinimumButtonWidth = bsh.width();
     const int iMinimumButtonHeight = bsh.height();
     const int iButtonY = iMinimumEditorHeight > iMinimumButtonHeight
-                       ? (iMinimumEditorHeight - iMinimumButtonHeight) / 2
+                       ? (iMinimumEditorHeight - iMinimumButtonHeight) / 2 + 1
                        : 0;
     m_pToolButton->setGeometry(iWidth - iMinimumButtonWidth - 1, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
 }
