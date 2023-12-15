@@ -230,7 +230,7 @@ public:
      * version of this method.
      *
      * @returns Pointer to a read only string.
-     * @param   aStatus     The process wait result.
+     * @param   aWaitResult The process wait result.
      */
     static const char *stringifyProcessWaitResult(ProcessWaitResult_T aWaitResult);
 
@@ -252,7 +252,7 @@ public:
      * version of this method.
      *
      * @returns Pointer to a read only string.
-     * @param   aStatus     The filesystem object type.
+     * @param   aType       The filesystem object type.
      */
     static const char *stringifyFsObjType(FsObjType_T aType);
 
