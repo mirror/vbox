@@ -3139,7 +3139,7 @@ static int cpumR3FixVarMtrrPhysAddrWidths(PVM pVM, uint8_t const cVarMtrrs)
 /**
  * Initialize MTRR capability based on what the guest CPU profile (typically host)
  * supports.
- *  
+ *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
