@@ -220,7 +220,8 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     /*
      * Initialize our data members from the input.
      */
-    mParent = pGuest;
+    mParent  = pGuest;
+    mConsole = pGuest->i_getConsole();
 
     /* Copy over startup info. */
     /** @todo Use an overloaded copy operator. Later. */
@@ -1439,10 +1440,7 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo, ComObj
      * write lock. */
     alock.release();
 
-    Console *pConsole = mParent->i_getConsole();
-    AssertPtr(pConsole);
-
-    vrc = pDirectory->init(pConsole, this /* Parent */, idObject, openInfo);
+    vrc = pDirectory->init(mConsole, this /* Parent */, idObject, openInfo);
     if (RT_SUCCESS(vrc))
         vrc = pDirectory->i_open(pvrcGuest);
 
@@ -1922,10 +1920,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
         return vrc;
     }
 
-    Console *pConsole = mParent->i_getConsole();
-    AssertPtr(pConsole);
-
-    vrc = pFile->init(pConsole, this /* GuestSession */, idObject, openInfo);
+    vrc = pFile->init(mConsole, this /* GuestSession */, idObject, openInfo);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -2307,20 +2302,46 @@ bool GuestSession::i_isStarted(void) const
 }
 
 /**
- * Checks if this session is ready state where it can handle
+ * Checks if this session is in a ready state where it can handle
  * all session-bound actions (like guest processes, guest files).
- * Only used by official API methods. Will set an external
- * error when not ready.
+ *
+ * Only used by official API methods.
+ * Takes the read lock.
+ *
+ * @returns S_OK if ready, E_FAIL if not.
+ * @note    Will set an external error when not ready.
  */
 HRESULT GuestSession::i_isStartedExternal(void)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo Be a bit more informative. */
     if (!i_isStarted())
-        return setError(E_UNEXPECTED, tr("Session is not in started state"));
-
+        return setError(E_FAIL, tr("Session is not in started state (state is '%s')",
+                                   Global::stringifyGuestSessionStatus(mData.mStatus)));
     return S_OK;
+}
+
+/**
+ * Returns if this session is in a ready-to-use state or not.
+ *
+ * @returns \c true if ready, or \c false if not.
+ */
+bool GuestSession::i_isReady(void)
+{
+    /* Check if the VM has the right machine state we can operate with. Also make sure that
+     * the VM is in an online *and* non-transient state while at it.
+     *
+     * This for instance is required if we want to close a guest session while the VM state is being saved or
+     * is doing some other lenghtly operations we can't operate with the guest.
+     */
+    MachineState_T enmMachineState = MachineState_Null;
+    HRESULT hrc = mConsole->COMGETTER(State)(&enmMachineState);
+    ComAssertComRCRet(hrc, false);
+    if (   !Global::IsOnline(enmMachineState)
+        ||  Global::IsTransient(enmMachineState))
+        return false;
+
+    return true;
 }
 
 /**
@@ -3276,7 +3297,7 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
         return vrc;
     }
 
-    vrc = pProcess->init(mParent->i_getConsole() /* Console */, this /* Session */, idObject, procInfo, mData.mpBaseEnvironment);
+    vrc = pProcess->init(mConsole, this /* Session */, idObject, procInfo, mData.mpBaseEnvironment);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -3362,6 +3383,7 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
  * Sends a message to the HGCM host service.
  *
  * @returns VBox status code.
+ * @retval  VERR_VM_INVALID_VM_STATE if the VM is in a state where can't send message to the guest (anymore).
  * @param   uMessage            Message ID to send.
  * @param   uParms              Number of parameters in \a paParms to send.
  * @param   paParms             Array of HGCM parameters to send.
@@ -3373,18 +3395,10 @@ int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVC
     LogFlowThisFuncEnter();
 
 #ifndef VBOX_GUESTCTRL_TEST_CASE
-    AutoCaller autoCallerParent(mParent);
-    if (FAILED(autoCallerParent.hrc()))
-        return VERR_STATE_CHANGED;
-
-    ComObjPtr<Console> pConsole = mParent->i_getConsole();
-    Assert(!pConsole.isNull());
+    VMMDev *pVMMDev = mConsole->i_getVMMDev();
+    AssertPtrReturn(pVMMDev, VERR_VM_INVALID_VM_STATE);
 
     /* Forward the information to the VMM device. */
-    VMMDev *pVMMDev = pConsole->i_getVMMDev();
-    if (!pVMMDev)
-        return VERR_STATE_CHANGED;
-
     LogFlowThisFunc(("uMessage=%RU32 (%s), uParms=%RU32\n", uMessage, GstCtrlHostMsgtoStr((guestControl::eHostMsg)uMessage), uParms));
 
     /* HACK ALERT! We extend the first parameter to 64-bit and use the
@@ -3492,7 +3506,6 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *pvrcGuest)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertPtrReturn(mParent, VERR_INVALID_POINTER);
     if (!(mParent->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_SHUTDOWN))
         return VERR_NOT_SUPPORTED;
 
@@ -3860,10 +3873,22 @@ HRESULT GuestSession::close()
 
     LogFlowThisFuncEnter();
 
+    HRESULT hrc = i_isStartedExternal();
+    if (FAILED(hrc))
+        return hrc;
+
+    int vrc = VINF_SUCCESS; /* Shut up MSVC. */
+
+    /* If the guest session is not in an unsable state (anymore), do the cleanup stuff ourselves. */
+    if (!i_isReady())
+    {
+        i_onRemove();
+        return S_OK;
+    }
+
     /* Note: Don't check if the session is ready via i_isStartedExternal() here;
      *       the session (already) could be in a stopped / aborted state. */
 
-    int vrc      = VINF_SUCCESS; /* Shut up MSVC. */
     int vrcGuest = VINF_SUCCESS;
 
     uint32_t msTimeout = RT_MS_10SEC; /* 10s timeout by default */
@@ -3888,22 +3913,15 @@ HRESULT GuestSession::close()
 
     /* We have to make sure that our parent (IGuest) still is alive and in a working shapee.
      * If not, skip removing the session from it. */
-    AutoCaller autoCallerParent(mParent);
-    if (SUCCEEDED(autoCallerParent.hrc()))
-    {
-        LogFlowThisFunc(("Removing session '%s' from parent ...", mData.mSession.mName.c_str()));
+    LogFlowThisFunc(("Removing session '%s' from parent ...", mData.mSession.mName.c_str()));
 
-        /* Remove ourselves from the session list. */
-        AssertPtr(mParent);
-        int vrc2 = mParent->i_sessionRemove(mData.mSession.mID);
-        if (vrc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
-            vrc2 = VINF_SUCCESS;
+    /* Remove ourselves from the session list. */
+    int vrc2 = mParent->i_sessionRemove(mData.mSession.mID);
+    if (vrc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
+        vrc2 = VINF_SUCCESS;
 
-        if (RT_SUCCESS(vrc))
-            vrc = vrc2;
-    }
-    else /* Do the session remove stuff ourselves. */
-        vrc = i_onRemove();
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
 

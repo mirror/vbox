@@ -325,6 +325,7 @@ public:
     ULONG                   i_getId(void) { return mData.mSession.mID; }
     bool                    i_isStarted(void) const;
     HRESULT                 i_isStartedExternal(void);
+    bool                    i_isReady(void);
     bool                    i_isTerminated(void) const;
     int                     i_onRemove(void);
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
@@ -380,8 +381,10 @@ public:
 
 private:
 
-    /** Pointer to the parent (Guest). */
-    Guest                          *mParent;
+    /* Console object. */
+    ComObjPtr<Console>              mConsole;
+    /* Guest object. */
+    ComObjPtr<Guest>                mParent;
     /**
      * The session's event source. This source is used for
      * serving the internal listener as well as all other
