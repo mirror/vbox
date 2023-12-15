@@ -403,7 +403,6 @@ typedef struct VMSVGA3DBACKEND
 
 /* Static function prototypes. */
 static int dxDeviceFlush(DXDEVICE *pDevice);
-static int dxDefineShaderResourceView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId shaderResourceViewId, SVGACOTableDXSRViewEntry const *pEntry);
 static int dxDefineUnorderedAccessView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dUAViewId uaViewId, SVGACOTableDXUAViewEntry const *pEntry);
 static int dxDefineRenderTargetView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dRenderTargetViewId renderTargetViewId, SVGACOTableDXRTViewEntry const *pEntry);
 static int dxDefineDepthStencilView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dDepthStencilViewId depthStencilViewId, SVGACOTableDXDSViewEntry const *pEntry);
@@ -5917,17 +5916,17 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
 
 static int dxSetShaderResources(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderType type)
 {
-    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-//DEBUG_BREAKPOINT_TEST();
     AssertReturn(type >= SVGA3D_SHADERTYPE_MIN && type < SVGA3D_SHADERTYPE_MAX, VERR_INVALID_PARAMETER);
+
     uint32_t const idxShaderState = type - SVGA3D_SHADERTYPE_MIN;
     uint32_t const *pSRIds = &pDXContext->svgaDXContext.shaderState[idxShaderState].shaderResources[0];
     ID3D11ShaderResourceView *papShaderResourceView[SVGA3D_DX_MAX_SRVIEWS];
     for (uint32_t i = 0; i < SVGA3D_DX_MAX_SRVIEWS; ++i)
     {
-        SVGA3dShaderResourceViewId shaderResourceViewId = pSRIds[i];
+        SVGA3dShaderResourceViewId const shaderResourceViewId = pSRIds[i];
         if (shaderResourceViewId != SVGA3D_INVALID_ID)
         {
             ASSERT_GUEST_RETURN(shaderResourceViewId < pDXContext->pBackendDXContext->cShaderResourceView, VERR_INVALID_PARAMETER);
@@ -5940,21 +5939,15 @@ static int dxSetShaderResources(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
             papShaderResourceView[i] = NULL;
     }
 
-    dxShaderResourceViewSet(pDevice, type, 0, SVGA3D_DX_MAX_SRVIEWS, papShaderResourceView);
+    dxShaderResourceViewSet(pDXDevice, type, 0, SVGA3D_DX_MAX_SRVIEWS, papShaderResourceView);
     return VINF_SUCCESS;
 }
 
 
 static DECLCALLBACK(int) vmsvga3dBackDXSetShaderResources(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startView, SVGA3dShaderType type, uint32_t cShaderResourceViewId, SVGA3dShaderResourceViewId const *paShaderResourceViewId)
 {
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    RT_NOREF(pBackend);
-
-    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
-
-    RT_NOREF(startView, type, cShaderResourceViewId, paShaderResourceViewId);
-
+    /* Shader resources will be set in setupPipeline. */
+    RT_NOREF(pThisCC, pDXContext, startView, type, cShaderResourceViewId, paShaderResourceViewId);
     return VINF_SUCCESS;
 }
 
@@ -6415,6 +6408,21 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
                  FLOAT_FMT_ARGS(pValues[0]), FLOAT_FMT_ARGS(pValues[1])));
             break;
         }
+        case DXGI_FORMAT_R32_FLOAT:
+        {
+            float const *pValues = (float const *)pvElementData;
+            Log8(("{ " FLOAT_FMT_STR " },",
+                 FLOAT_FMT_ARGS(pValues[0])));
+            break;
+        }
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        {
+            uint16_t const *pValues = (uint16_t const *)pvElementData;
+            Log8(("{ /*f16*/ " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR " },",
+                 FLOAT_FMT_ARGS(float16ToFloat(pValues[0])), FLOAT_FMT_ARGS(float16ToFloat(pValues[1])),
+                 FLOAT_FMT_ARGS(float16ToFloat(pValues[2])), FLOAT_FMT_ARGS(float16ToFloat(pValues[3]))));
+            break;
+        }
         case DXGI_FORMAT_R16G16_FLOAT:
         {
             uint16_t const *pValues = (uint16_t const *)pvElementData;
@@ -6448,6 +6456,13 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
             uint32_t const *pValues = (uint32_t const *)pvElementData;
             Log8(("{ %u },",
                  pValues[0]));
+            break;
+        }
+        case DXGI_FORMAT_R16G16B16A16_SINT:
+        {
+            int16_t const *pValues = (int16_t const *)pvElementData;
+            Log8(("{ /*s16*/ %d, %d, %d, %d },",
+                 pValues[0], pValues[1], pValues[2], pValues[3]));
             break;
         }
         case DXGI_FORMAT_R16G16_SINT:
@@ -6766,6 +6781,39 @@ static void dxDbgDumpVertices_DrawIndexedInstanced(PVGASTATECC pThisCC, PVMSVGA3
 #endif
 
 
+static int dxCreateShaderResourceView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId shaderResourceViewId, SVGACOTableDXSRViewEntry const *pEntry)
+{
+    PVMSVGA3DSURFACE pSurface;
+    ID3D11Resource *pResource;
+    int rc = dxEnsureResource(pThisCC, pDXContext, pEntry->sid, &pSurface, &pResource);
+    AssertRCReturn(rc, rc);
+
+    DXVIEW *pView = &pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId];
+    Assert(pView->u.pView == NULL);
+
+    ID3D11ShaderResourceView *pShaderResourceView;
+    HRESULT hr = dxShaderResourceViewCreate(pThisCC, pDXContext, pEntry, pSurface, &pShaderResourceView);
+    AssertReturn(SUCCEEDED(hr), VERR_INVALID_STATE);
+
+    return dxViewInit(pView, pSurface, pDXContext, shaderResourceViewId, VMSVGA3D_VIEWTYPE_SHADERRESOURCE, pShaderResourceView);
+}
+
+
+static int dxEnsureShaderResourceView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId viewId, DXVIEW **ppResult)
+{
+    ASSERT_GUEST_RETURN(viewId < pDXContext->cot.cSRView, VERR_INVALID_PARAMETER);
+
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paShaderResourceView[viewId];
+    if (!pDXView->u.pView)
+    {
+        SVGACOTableDXSRViewEntry const *pEntry = &pDXContext->cot.paSRView[viewId];
+        int rc = dxCreateShaderResourceView(pThisCC, pDXContext, viewId, pEntry);
+        AssertRCReturn(rc, rc);
+    }
+    *ppResult = pDXView;
+    return VINF_SUCCESS;
+}
+
 static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     /* Make sure that any draw operations on shader resource views have finished. */
@@ -6799,45 +6847,22 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
             SVGA3dShaderResourceViewId const shaderResourceViewId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderResources[idxSR];
             if (shaderResourceViewId != SVGA3D_INVALID_ID)
             {
-                ASSERT_GUEST_RETURN_VOID(shaderResourceViewId < pDXContext->pBackendDXContext->cShaderResourceView);
+                DXVIEW *pDXView;
+                rc = dxEnsureShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, &pDXView);
+                AssertContinue(RT_SUCCESS(rc));
 
+#ifdef LOG_ENABLED
                 SVGACOTableDXSRViewEntry const *pSRViewEntry = dxGetShaderResourceViewEntry(pDXContext, shaderResourceViewId);
-                AssertContinue(pSRViewEntry != NULL);
-
-                uint32_t const sid = pSRViewEntry->sid;
-
-                PVMSVGA3DSURFACE pSurface;
-                rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
-                if (RT_FAILURE(rc))
-                {
-                    AssertMsgFailed(("sid = %u, rc = %Rrc\n", sid, rc));
-                    continue;
-                }
-
-                /* The guest might have invalidated the surface in which case pSurface->pBackendSurface is NULL. */
-                /** @todo This is not needed for "single DX device" mode. */
-                if (pSurface->pBackendSurface)
-                {
-                    /* Wait for the surface to finish drawing. */
-                    dxSurfaceWait(pThisCC->svga.p3dState, pSurface, pDXContext->cid);
-                }
-
-                /* If a view has not been created yet, do it now. */
-                if (!pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId].u.pView)
-                {
-//DEBUG_BREAKPOINT_TEST();
-                    LogFunc(("Re-creating SRV: sid=%u srvid = %u\n", sid, shaderResourceViewId));
-                    rc = dxDefineShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, pSRViewEntry);
-                    AssertContinue(RT_SUCCESS(rc));
-                }
-
+                PVMSVGA3DSURFACE pSurface = NULL;
+                vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pDXView->sid, &pSurface);
                 LogFunc(("srv[%d][%d] sid = %u, srvid = %u, format = %s(%d), %dx%d\n",
-                         idxShaderState, idxSR, sid, shaderResourceViewId, vmsvgaLookupEnum((int)pSRViewEntry->format, &g_SVGA3dSurfaceFormat2String), pSRViewEntry->format,
+                         idxShaderState, idxSR, pDXView->sid, shaderResourceViewId, vmsvgaLookupEnum((int)pSRViewEntry->format, &g_SVGA3dSurfaceFormat2String), pSRViewEntry->format,
                          pSurface->paMipmapLevels[0].cBlocksX * pSurface->cxBlock, pSurface->paMipmapLevels[0].cBlocksY * pSurface->cyBlock));
+#endif
 
 #ifdef DUMP_BITMAPS
                 SVGA3dSurfaceImageId image;
-                image.sid = sid;
+                image.sid = pDXView->sid;
                 image.face = 0;
                 image.mipmap = 0;
                 VMSVGA3D_MAPPED_SURFACE map;
@@ -6848,14 +6873,12 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     vmsvga3dSurfaceUnmap(pThisCC, &image, &map, /* fWritten =  */ false);
                 }
                 else
-                    Log(("Map failed %Rrc\n", rc));
+                    LogFunc(("Map failed %Rrc\n", rc));
 #endif
             }
         }
 
-        /* Set shader resources. */
-        rc = dxSetShaderResources(pThisCC, pDXContext, (SVGA3dShaderType)(idxShaderState + SVGA3D_SHADERTYPE_MIN));
-        AssertRC(rc);
+        dxSetShaderResources(pThisCC, pDXContext, (SVGA3dShaderType)(idxShaderState + SVGA3D_SHADERTYPE_MIN));
     }
 
     /*
@@ -8890,72 +8913,23 @@ static DECLCALLBACK(int) vmsvga3dBackDXPresentBlt(PVGASTATECC pThisCC, PVMSVGA3D
 
 static DECLCALLBACK(int) vmsvga3dBackDXGenMips(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId shaderResourceViewId)
 {
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    RT_NOREF(pBackend);
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
-
-    ID3D11ShaderResourceView *pShaderResourceView = pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId].u.pShaderResourceView;
-    AssertReturn(pShaderResourceView, VERR_INVALID_STATE);
-
-    SVGACOTableDXSRViewEntry const *pSRViewEntry = dxGetShaderResourceViewEntry(pDXContext, shaderResourceViewId);
-    AssertReturn(pSRViewEntry, VERR_INVALID_STATE);
-
-    uint32_t const sid = pSRViewEntry->sid;
-
-    PVMSVGA3DSURFACE pSurface;
-    int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
+    DXVIEW *pDXView;
+    int rc = dxEnsureShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, &pDXView);
     AssertRCReturn(rc, rc);
-    AssertReturn(pSurface->pBackendSurface, VERR_INVALID_STATE);
 
-    pDevice->pImmediateContext->GenerateMips(pShaderResourceView);
-
-    pSurface->pBackendSurface->cidDrawing = pDXContext->cid;
+    pDXDevice->pImmediateContext->GenerateMips(pDXView->u.pShaderResourceView);
     return VINF_SUCCESS;
-}
-
-
-static int dxDefineShaderResourceView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId shaderResourceViewId, SVGACOTableDXSRViewEntry const *pEntry)
-{
-    /* Get corresponding resource for pEntry->sid. Create the surface if does not yet exist. */
-    PVMSVGA3DSURFACE pSurface;
-    int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pEntry->sid, &pSurface);
-    AssertRCReturn(rc, rc);
-
-    ID3D11ShaderResourceView *pShaderResourceView;
-    DXVIEW *pView = &pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId];
-    Assert(pView->u.pView == NULL);
-
-    if (pSurface->pBackendSurface == NULL)
-    {
-        /* Create the actual texture or buffer. */
-        /** @todo One function to create all resources from surfaces. */
-        if (pSurface->format != SVGA3D_BUFFER)
-            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSurface);
-        else
-            rc = vmsvga3dBackSurfaceCreateResource(pThisCC, pDXContext, pSurface);
-
-        AssertRCReturn(rc, rc);
-    }
-
-    HRESULT hr = dxShaderResourceViewCreate(pThisCC, pDXContext, pEntry, pSurface, &pShaderResourceView);
-    AssertReturn(SUCCEEDED(hr), VERR_INVALID_STATE);
-
-    return dxViewInit(pView, pSurface, pDXContext, shaderResourceViewId, VMSVGA3D_VIEWTYPE_SHADERRESOURCE, pShaderResourceView);
 }
 
 
 static DECLCALLBACK(int) vmsvga3dBackDXDefineShaderResourceView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderResourceViewId shaderResourceViewId, SVGACOTableDXSRViewEntry const *pEntry)
 {
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    RT_NOREF(pBackend);
-
-    DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
-
-    /** @todo Probably not necessary because SRVs are defined in setupPipeline. */
-    return dxDefineShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, pEntry);
+    /* The view is created when it is used in setupPipeline. */
+    RT_NOREF(pThisCC, pDXContext, shaderResourceViewId, pEntry);
+    return VINF_SUCCESS;
 }
 
 
@@ -8964,7 +8938,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyShaderResourceView(PVGASTATECC pTh
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     RT_NOREF(pBackend);
 
-    return dxViewDestroy(&pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId]);
+    DXVIEW *pDXView = &pDXContext->pBackendDXContext->paShaderResourceView[shaderResourceViewId];
+    return dxViewDestroy(pDXView);
 }
 
 
@@ -9462,6 +9437,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
             {
                 for (uint32_t i = 0; i < pBackendDXContext->cShaderResourceView; ++i)
                 {
+                    /* Destroy the no longer used entries. */
                     DXVIEW *pDXView = &pBackendDXContext->paShaderResourceView[i];
                     if (i < cValidEntries)
                         dxViewRemoveFromList(pDXView); /* Remove from list because DXVIEW array will be reallocated. */
@@ -9480,13 +9456,10 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
                 if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
                     continue; /* Skip uninitialized entry. */
 
-                /* Define views which were not defined yet in backend. */
                 DXVIEW *pDXView = &pBackendDXContext->paShaderResourceView[i];
                 /** @todo Verify that the pEntry content still corresponds to the view. */
                 if (pDXView->u.pView)
                     dxViewAddToList(pThisCC, pDXView);
-                else if (pDXView->enmViewType == VMSVGA3D_VIEWTYPE_NONE)
-                    dxDefineShaderResourceView(pThisCC, pDXContext, i, pEntry);
             }
             break;
         case SVGA_COTABLE_ELEMENTLAYOUT:
