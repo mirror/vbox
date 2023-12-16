@@ -3243,6 +3243,31 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpReg(uint32_t iRegSrc1, uint32_t iR
 }
 
 
+/** ADD dst, reg1, reg2 [, LSL/LSR/ASR/ROR #xx] */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddReg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                                  bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
+                                                  ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
+{
+    return Armv8A64MkInstrAddSubReg(false /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, fSetFlags, cShift, enmShift);
+}
+
+
+/** SUB dst, reg1, reg2 [, LSL/LSR/ASR/ROR #xx] */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubReg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                                  bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
+                                                  ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
+{
+    return Armv8A64MkInstrAddSubReg(true /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, fSetFlags, cShift, enmShift);
+}
+
+
+/** NEG dst */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrNeg(uint32_t iRegResult, bool f64Bit = true, bool fSetFlags = false)
+{
+    return Armv8A64MkInstrAddSubReg(true /*fSub*/, iRegResult, ARMV8_A64_REG_XZR, iRegResult, f64Bit, fSetFlags);
+}
+
+
 /** Extension option for 'extended register' instructions. */
 typedef enum ARMV8A64INSTREXTEND
 {

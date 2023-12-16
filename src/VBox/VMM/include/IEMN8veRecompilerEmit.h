@@ -1668,6 +1668,32 @@ iemNativeEmitLoadGpr32ByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 *   Subtraction and Additions                                                                                                    *
 *********************************************************************************************************************************/
 
+/**
+ * Emits subtracting a 64-bit GPR from another, storing the result in the first.
+ * @note The AMD64 version sets flags.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSubTwoGprs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSubtrahend)
+{
+#if defined(RT_ARCH_AMD64)
+    /* sub Gv,Ev */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    pbCodeBuf[off++] = (iGprDst < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R)
+                     | (iGprSubtrahend < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x2b;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSubtrahend & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSubReg(iGprDst, iGprDst, iGprSubtrahend);
+
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 
 #ifdef RT_ARCH_AMD64
 /**
@@ -1704,7 +1730,7 @@ iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr
 
 
 /**
- * Emits adding a 64-bit GPR to another, storing the result in the frist.
+ * Emits adding a 64-bit GPR to another, storing the result in the first.
  * @note The AMD64 version sets flags.
  */
 DECL_INLINE_THROW(uint32_t)
@@ -1914,6 +1940,36 @@ iemNativeEmitAddGpr32Imm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
 
         iemNativeRegFreeTmpImm(pReNative, iTmpReg);
     }
+
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/*********************************************************************************************************************************
+*   Unary Operations                                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * Emits code for clearing bits 16 thru 63 in the GPR.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitNegGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst)
+{
+#if defined(RT_ARCH_AMD64)
+    /* neg Ev */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    pbCodeBuf[off++] = iGprDst < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_B;
+    pbCodeBuf[off++] = 0xf7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 3, iGprDst & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* sub dst, xzr, dst */
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrNeg(iGprDst);
 
 #else
 # error "Port me"
@@ -2807,6 +2863,36 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToNewLabel(PIEMRECOMPILERSTATE pReNat
     return iemNativeEmitJccToNewLabel(pReNative, off, enmLabelType, uData, kIemNativeInstrCond_nbe);
 #elif defined(RT_ARCH_ARM64)
     return iemNativeEmitJccToNewLabel(pReNative, off, enmLabelType, uData, kArmv8InstrCond_Hi);
+#else
+# error "Port me!"
+#endif
+}
+
+
+/**
+ * Emits a JL/JNGE rel32 / B.LT imm19 to the given label.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJlToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxLabel)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccToLabel(pReNative, off, idxLabel, kIemNativeInstrCond_l);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccToLabel(pReNative, off, idxLabel, kArmv8InstrCond_Lt);
+#else
+# error "Port me!"
+#endif
+}
+
+/**
+ * Emits a JA/JNGE rel32 / B.HI imm19 to a new label.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJlToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                      IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccToNewLabel(pReNative, off, enmLabelType, uData, kIemNativeInstrCond_l);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccToNewLabel(pReNative, off, enmLabelType, uData, kArmv8InstrCond_Lt);
 #else
 # error "Port me!"
 #endif

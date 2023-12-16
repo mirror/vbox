@@ -1595,7 +1595,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
 
 
 /**
- * Used by TB code when it wants to raise a \#GP(0).
+ * Used by TB code when detecting opcode changes.
  * @see iemThreadeFuncWorkerObsoleteTb
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu))
@@ -1605,6 +1605,20 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu))
        the executable memory till we've returned our way back to iemTbExec as
        that return path codes via the native code generated for the TB. */
     iemThreadedTbObsolete(pVCpu, pVCpu->iem.s.pCurTbR3, false /*fSafeToFree*/);
+    return VINF_IEM_REEXEC_BREAK;
+}
+
+
+/**
+ * Used by TB code when we need to switch to a TB with CS.LIM checking.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpNeedCsLimChecking,(PVMCPUCC pVCpu))
+{
+    Log7(("TB need CS.LIM: %p at %04x:%08RX64; offFromLim=%#RX64 CS.LIM=%#RX32 CS.BASE=%#RX64\n",
+          pVCpu->iem.s.pCurTbR3, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+          (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.rip,
+          pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckNeedCsLimChecking);
     return VINF_IEM_REEXEC_BREAK;
 }
 
@@ -2434,7 +2448,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 7);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 8);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2442,6 +2456,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[4]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[5]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[6]         = UINT32_MAX;
+    pReNative->aidxUniqueLabels[7]         = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -4829,6 +4844,27 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
      */
     off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
 
+    return off;
+}
+
+
+/**
+ * Emits the code at the NeedCsLimChecking label.
+ */
+static uint32_t iemNativeEmitNeedCsLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_NeedCsLimChecking);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        /* int iemNativeHlpNeedCsLimChecking(PVMCPUCC pVCpu) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpNeedCsLimChecking);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
     return off;
 }
 
@@ -11243,9 +11279,87 @@ iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
 
 /**
+ * Macro that considers whether we need CS.LIM checking after a branch or
+ * crossing over to a new page.
+ */
+#define BODY_CONSIDER_CS_LIM_CHECKING(a_pTb, a_cbInstr) \
+    RT_NOREF(cbInstr); \
+    off = iemNativeEmitBltInConsiderLimChecking(pReNative, off)
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    /*
+     * This check must match the ones in the iem in iemGetTbFlagsForCurrentPc
+     * exactly:
+     *
+     *  int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+     *  if (offFromLim >= X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+     *      return fRet;
+     *  return fRet | IEMTB_F_CS_LIM_CHECKS;
+     *
+     *
+     * We need EIP, CS.LIM and CS.BASE here.
+     */
+
+    /* Calculate the offFromLim first: */
+    uint8_t const  idxRegPc     = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                  kIemNativeGstRegUse_ReadOnly);
+    uint8_t const  idxRegCsLim  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_LIMIT(X86_SREG_CS),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+    uint8_t const  idxRegLeft   = iemNativeRegAllocTmp(pReNative, &off);
+
+#ifdef RT_ARCH_ARM64
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegLeft, idxRegCsLim, idxRegPc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+#else
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegLeft, idxRegCsLim);
+    off = iemNativeEmitSubTwoGprs(pReNative, off, idxRegLeft, idxRegPc);
+#endif
+
+    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
+    iemNativeRegFreeTmp(pReNative, idxRegPc);
+
+    /* Calculate the threshold level (right side). */
+    uint8_t const  idxRegCsBase = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_BASE(X86_SREG_CS),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+    uint8_t const  idxRegRight  = iemNativeRegAllocTmp(pReNative, &off);
+
+#ifdef RT_ARCH_ARM64
+    pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    Assert(Armv8A64ConvertImmRImmS2Mask32(11, 0) == GUEST_PAGE_OFFSET_MASK);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegRight, idxRegCsBase, 11, 0, false /*f64Bit*/);
+    pu32CodeBuf[off++] = Armv8A64MkInstrNeg(idxRegRight);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegRight, idxRegRight, (X86_PAGE_SIZE + 16) / 2);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegRight, idxRegRight, (X86_PAGE_SIZE + 16) / 2);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+    off = iemNativeEmitLoadGprImm32(pReNative, off, idxRegRight, GUEST_PAGE_OFFSET_MASK);
+    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegRight, idxRegCsBase);
+    off = iemNativeEmitNegGpr(pReNative, off, idxRegRight);
+    off = iemNativeEmitAddGprImm(pReNative, off, idxRegRight, X86_PAGE_SIZE + 16);
+#endif
+
+    iemNativeRegFreeTmp(pReNative, idxRegCsBase);
+
+    /* Compare the two and jump out if we're too close to the limit. */
+    off = iemNativeEmitCmpGprWithGpr(pReNative, off, idxRegLeft, idxRegRight);
+    off = iemNativeEmitJlToNewLabel(pReNative, off, kIemNativeLabelType_NeedCsLimChecking);
+
+    iemNativeRegFreeTmp(pReNative, idxRegRight);
+    iemNativeRegFreeTmp(pReNative, idxRegLeft);
+    return off;
+}
+
+
+
+/**
  * Macro that implements opcode (re-)checking.
  */
 #define BODY_CHECK_OPCODES(a_pTb, a_idxRange, a_offRange, a_cbInstr) \
+    RT_NOREF(cbInstr); \
     off = iemNativeEmitBltInCheckOpcodes(pReNative, off, (a_pTb), (a_idxRange), (a_offRange))
 
 DECL_FORCE_INLINE(uint32_t)
@@ -11774,7 +11888,7 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndO
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    //uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
@@ -12523,6 +12637,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_ObsoleteTb:
                                     pszName = "ObsoleteTb";
                                     break;
+                                case kIemNativeLabelType_NeedCsLimChecking:
+                                    pszName = "NeedCsLimChecking";
+                                    break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -12923,6 +13040,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ObsoleteTb))
             off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))
+            off = iemNativeEmitNeedCsLimChecking(pReNative, off, idxReturnLabel);
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
     {

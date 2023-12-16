@@ -310,6 +310,7 @@ typedef enum
     kIemNativeLabelType_NonZeroRetOrPassUp,
     kIemNativeLabelType_RaiseGp0,
     kIemNativeLabelType_ObsoleteTb,
+    kIemNativeLabelType_NeedCsLimChecking,
     /* Labels with data, potentially multiple instances per TB: */
     kIemNativeLabelType_FirstWithMultipleInstances,
     kIemNativeLabelType_If = kIemNativeLabelType_FirstWithMultipleInstances,

@@ -1967,7 +1967,7 @@ class IEMThreadedGenerator(object):
 
         ( 'CheckCsLimAndOpcodes',                               3, True  ),
         ( 'CheckOpcodes',                                       3, True  ),
-        ( 'CheckOpcodesConsiderCsLim',                          3, False ),
+        ( 'CheckOpcodesConsiderCsLim',                          3, True  ),
 
         ( 'CheckCsLimAndPcAndOpcodes',                          3, False ),
         ( 'CheckPcAndOpcodes',                                  3, False ),

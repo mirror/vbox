@@ -203,6 +203,25 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
     } while(0)
 
 /**
+ * Macro that considers whether we need CS.LIM checking after a branch or
+ * crossing over to a new page.
+ */
+#define BODY_CONSIDER_CS_LIM_CHECKING(a_pTb, a_cbInstr) do { \
+        int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip; \
+        if (offFromLim >= GUEST_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK)) \
+        { /* likely */ } \
+        else \
+        { \
+            Log7(("TB need CS.LIM: %p at %04x:%08RX64 LB %u; #%u offFromLim=%#RX64 CS.LIM=%#RX32 CS.BASE=%#RX64\n", \
+                  (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), offFromLim, \
+                  pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base, __LINE__)); \
+            RT_NOREF(a_pTb, a_cbInstr); \
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckNeedCsLimChecking); \
+            return VINF_IEM_REEXEC_BREAK; \
+        } \
+    } while(0)
+
+/**
  * Macro that implements opcode (re-)checking.
  */
 #define BODY_CHECK_OPCODES(a_pTb, a_idxRange, a_offRange, a_cbInstr) do { \
@@ -346,27 +365,6 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                   pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
             RT_NOREF(a_cbInstr); \
             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
-            return VINF_IEM_REEXEC_BREAK; \
-        } \
-    } while(0)
-
-/**
- * Macro that considers whether we need CS.LIM checking after a branch or
- * crossing over to a new page.
- *
- * This may long jump if we're raising a \#PF, \#GP or similar trouble.
- */
-#define BODY_CONSIDER_CS_LIM_CHECKING(a_pTb, a_cbInstr) do { \
-        int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip; \
-        if (offFromLim >= GUEST_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK)) \
-        { /* likely */ } \
-        else \
-        { \
-            Log7(("TB need CS.LIM: %p at %04x:%08RX64 LB %u; #%u offFromLim=%#RX64 CS.LIM=%#RX32 CS.BASE=%#RX64\n", \
-                  (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), offFromLim, \
-                  pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base, __LINE__)); \
-            RT_NOREF(a_pTb, a_cbInstr); \
-            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckNeedCsLimChecking); \
             return VINF_IEM_REEXEC_BREAK; \
         } \
     } while(0)
