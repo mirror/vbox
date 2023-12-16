@@ -1965,8 +1965,8 @@ class IEMThreadedGenerator(object):
         ( 'CheckHwInstrBps',                                    0, False ),
         ( 'CheckCsLim',                                         1, True  ),
 
-        ( 'CheckCsLimAndOpcodes',                               3, False ),
-        ( 'CheckOpcodes',                                       3, False ),
+        ( 'CheckCsLimAndOpcodes',                               3, True  ),
+        ( 'CheckOpcodes',                                       3, True  ),
         ( 'CheckOpcodesConsiderCsLim',                          3, False ),
 
         ( 'CheckCsLimAndPcAndOpcodes',                          3, False ),

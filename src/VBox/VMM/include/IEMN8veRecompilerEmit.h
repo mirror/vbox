@@ -166,49 +166,54 @@ iemNativeEmitGprZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
 
 
 /**
- * Emits loading a constant into a 64-bit GPR
+ * Variant of iemNativeEmitLoadGprImm64 where the caller ensures sufficent
+ * buffer space.
+ *
+ * Max buffer consumption:
+ *      - AMD64: 10 instruction bytes.
+ *      - ARM64: 4 instruction words (16 bytes).
  */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint64_t uImm64)
+DECLINLINE(uint32_t) iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint64_t uImm64)
 {
-    if (!uImm64)
-        return iemNativeEmitGprZero(pReNative, off, iGpr);
-
 #ifdef RT_ARCH_AMD64
-    if (uImm64 <= UINT32_MAX)
+    if (uImm64 == 0)
+    {
+        /* xor gpr, gpr */
+        if (iGpr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+        pCodeBuf[off++] = 0x33;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
+    }
+    else if (uImm64 <= UINT32_MAX)
     {
         /* mov gpr, imm32 */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
         if (iGpr >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
-        pbCodeBuf[off++] = RT_BYTE1(uImm64);
-        pbCodeBuf[off++] = RT_BYTE2(uImm64);
-        pbCodeBuf[off++] = RT_BYTE3(uImm64);
-        pbCodeBuf[off++] = RT_BYTE4(uImm64);
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0xb8 + (iGpr & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm64);
+        pCodeBuf[off++] = RT_BYTE2(uImm64);
+        pCodeBuf[off++] = RT_BYTE3(uImm64);
+        pCodeBuf[off++] = RT_BYTE4(uImm64);
     }
     else
     {
         /* mov gpr, imm64 */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
         if (iGpr < 8)
-            pbCodeBuf[off++] = X86_OP_REX_W;
+            pCodeBuf[off++] = X86_OP_REX_W;
         else
-            pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
-        pbCodeBuf[off++] = RT_BYTE1(uImm64);
-        pbCodeBuf[off++] = RT_BYTE2(uImm64);
-        pbCodeBuf[off++] = RT_BYTE3(uImm64);
-        pbCodeBuf[off++] = RT_BYTE4(uImm64);
-        pbCodeBuf[off++] = RT_BYTE5(uImm64);
-        pbCodeBuf[off++] = RT_BYTE6(uImm64);
-        pbCodeBuf[off++] = RT_BYTE7(uImm64);
-        pbCodeBuf[off++] = RT_BYTE8(uImm64);
+            pCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
+        pCodeBuf[off++] = 0xb8 + (iGpr & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm64);
+        pCodeBuf[off++] = RT_BYTE2(uImm64);
+        pCodeBuf[off++] = RT_BYTE3(uImm64);
+        pCodeBuf[off++] = RT_BYTE4(uImm64);
+        pCodeBuf[off++] = RT_BYTE5(uImm64);
+        pCodeBuf[off++] = RT_BYTE6(uImm64);
+        pCodeBuf[off++] = RT_BYTE7(uImm64);
+        pCodeBuf[off++] = RT_BYTE8(uImm64);
     }
 
 #elif defined(RT_ARCH_ARM64)
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
-
     /*
      * We need to start this sequence with a 'mov grp, imm16, lsl #x' and
      * supply remaining bits using 'movk grp, imm16, lsl #x'.
@@ -219,39 +224,187 @@ iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
      * after the first non-zero immediate component so we switch to movk for
      * the remainder.
      */
-    uint32_t fMovK = 0;
-    /* mov  gpr, imm16 */
-    uint32_t uImmPart = ((uint32_t)((uImm64 >>  0) & UINT32_C(0xffff)) << 5);
-    if (uImmPart)
+    unsigned cZeroHalfWords = !( uImm64        & UINT16_MAX)
+                            + !((uImm64 >> 16) & UINT16_MAX)
+                            + !((uImm64 >> 32) & UINT16_MAX)
+                            + !((uImm64 >> 48) & UINT16_MAX);
+    unsigned cFfffHalfWords = cZeroHalfWords >= 2 ? 0 /* skip */
+                            : ( (uImm64        & UINT16_MAX) == UINT16_MAX)
+                            + (((uImm64 >> 16) & UINT16_MAX) == UINT16_MAX)
+                            + (((uImm64 >> 32) & UINT16_MAX) == UINT16_MAX)
+                            + (((uImm64 >> 48) & UINT16_MAX) == UINT16_MAX);
+    if (cFfffHalfWords <= cZeroHalfWords)
     {
-        pu32CodeBuf[off++] = UINT32_C(0xd2800000) |         (UINT32_C(0) << 21) | uImmPart | iGpr;
-        fMovK |= RT_BIT_32(29);
-    }
-    /* mov[k] gpr, imm16, lsl #16 */
-    uImmPart = ((uint32_t)((uImm64 >> 16) & UINT32_C(0xffff)) << 5);
-    if (uImmPart)
-    {
-        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(1) << 21) | uImmPart | iGpr;
-        fMovK |= RT_BIT_32(29);
-    }
-    /* mov[k] gpr, imm16, lsl #32 */
-    uImmPart = ((uint32_t)((uImm64 >> 32) & UINT32_C(0xffff)) << 5);
-    if (uImmPart)
-    {
-        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(2) << 21) | uImmPart | iGpr;
-        fMovK |= RT_BIT_32(29);
-    }
-    /* mov[k] gpr, imm16, lsl #48 */
-    uImmPart = ((uint32_t)((uImm64 >> 48) & UINT32_C(0xffff)) << 5);
-    if (uImmPart)
-        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(3) << 21) | uImmPart | iGpr;
+        uint32_t fMovBase = UINT32_C(0xd2800000) | iGpr;
 
-    /** @todo there is an inverted mask variant we might want to explore if it
-     *        reduces the number of instructions... */
+        /* movz gpr, imm16 */
+        uint32_t uImmPart = (uint32_t)((uImm64 >>  0) & UINT32_C(0xffff));
+        if (uImmPart || cZeroHalfWords == 4)
+        {
+            pCodeBuf[off++] = fMovBase | (UINT32_C(0) << 21) | (uImmPart << 5);
+            fMovBase |= RT_BIT_32(29);
+        }
+        /* mov[z/k] gpr, imm16, lsl #16 */
+        uImmPart = (uint32_t)((uImm64 >> 16) & UINT32_C(0xffff));
+        if (uImmPart)
+        {
+            pCodeBuf[off++] = fMovBase | (UINT32_C(1) << 21) | (uImmPart << 5);
+            fMovBase |= RT_BIT_32(29);
+        }
+        /* mov[z/k] gpr, imm16, lsl #32 */
+        uImmPart = (uint32_t)((uImm64 >> 32) & UINT32_C(0xffff));
+        if (uImmPart)
+        {
+            pCodeBuf[off++] = fMovBase | (UINT32_C(2) << 21) | (uImmPart << 5);
+            fMovBase |= RT_BIT_32(29);
+        }
+        /* mov[z/k] gpr, imm16, lsl #48 */
+        uImmPart = (uint32_t)((uImm64 >> 48) & UINT32_C(0xffff));
+        if (uImmPart)
+            pCodeBuf[off++] = fMovBase | (UINT32_C(3) << 21) | (uImmPart << 5);
+    }
+    else
+    {
+        uint32_t fMovBase = UINT32_C(0x92800000) | iGpr;
+
+        /* find the first half-word that isn't UINT16_MAX. */
+        uint32_t const iHwNotFfff =  (uImm64        & UINT16_MAX) != UINT16_MAX ? 0
+                                  : ((uImm64 >> 16) & UINT16_MAX) != UINT16_MAX ? 1
+                                  : ((uImm64 >> 32) & UINT16_MAX) != UINT16_MAX ? 2 : 3;
+
+        /* movn gpr, imm16, lsl #iHwNotFfff*16 */
+        uint32_t uImmPart = (uint32_t)(~(uImm64 >> (iHwNotFfff * 16)) & UINT32_C(0xffff)) << 5;
+        pCodeBuf[off++] = fMovBase | (iHwNotFfff << 21) | uImmPart;
+        fMovBase |= RT_BIT_32(30) | RT_BIT_32(29); /* -> movk */
+        /* movk gpr, imm16 */
+        if (iHwNotFfff != 0)
+        {
+            uImmPart = (uint32_t)((uImm64 >>  0) & UINT32_C(0xffff));
+            if (uImmPart != UINT32_C(0xffff))
+                pCodeBuf[off++] = fMovBase | (UINT32_C(0) << 21) | (uImmPart << 5);
+        }
+        /* movk gpr, imm16, lsl #16 */
+        if (iHwNotFfff != 1)
+        {
+            uImmPart = (uint32_t)((uImm64 >> 16) & UINT32_C(0xffff));
+            if (uImmPart != UINT32_C(0xffff))
+                pCodeBuf[off++] = fMovBase | (UINT32_C(1) << 21) | (uImmPart << 5);
+        }
+        /* movk gpr, imm16, lsl #32 */
+        if (iHwNotFfff != 2)
+        {
+            uImmPart = (uint32_t)((uImm64 >> 32) & UINT32_C(0xffff));
+            if (uImmPart != UINT32_C(0xffff))
+                pCodeBuf[off++] = fMovBase | (UINT32_C(2) << 21) | (uImmPart << 5);
+        }
+        /* movk gpr, imm16, lsl #48 */
+        if (iHwNotFfff != 3)
+        {
+            uImmPart = (uint32_t)((uImm64 >> 48) & UINT32_C(0xffff));
+            if (uImmPart != UINT32_C(0xffff))
+                pCodeBuf[off++] = fMovBase | (UINT32_C(3) << 21) | (uImmPart << 5);
+        }
+    }
+
     /** @todo load into 'w' register instead of 'x' when imm64 <= UINT32_MAX?
      *        clang 12.x does that, only to use the 'x' version for the
      *        addressing in the following ldr). */
 
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits loading a constant into a 64-bit GPR
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint64_t uImm64)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadGprImmEx(iemNativeInstrBufEnsure(pReNative, off, 10), off, iGpr, uImm64);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitLoadGprImmEx(iemNativeInstrBufEnsure(pReNative, off, 4), off, iGpr, uImm64);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Variant of iemNativeEmitLoadGpr32Imm where the caller ensures sufficent
+ * buffer space.
+ *
+ * Max buffer consumption:
+ *      - AMD64: 6 instruction bytes.
+ *      - ARM64: 2 instruction words (8 bytes).
+ *
+ * @note The top 32 bits will be cleared.
+ */
+DECLINLINE(uint32_t) iemNativeEmitLoadGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint32_t uImm32)
+{
+#ifdef RT_ARCH_AMD64
+    if (uImm32 == 0)
+    {
+        /* xor gpr, gpr */
+        if (iGpr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+        pCodeBuf[off++] = 0x33;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
+    }
+    else
+    {
+        /* mov gpr, imm32 */
+        if (iGpr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0xb8 + (iGpr & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm32);
+        pCodeBuf[off++] = RT_BYTE2(uImm32);
+        pCodeBuf[off++] = RT_BYTE3(uImm32);
+        pCodeBuf[off++] = RT_BYTE4(uImm32);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    if ((uImm32 >> 16) == 0)
+        /* movz gpr, imm16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32,                    0, false /*f64Bit*/);
+    else if ((uImm32 & UINT32_C(0xffff)) == 0)
+        /* movz gpr, imm16, lsl #16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
+    else if ((uImm32 & UINT32_C(0xffff)) == UINT32_C(0xffff))
+        /* movn gpr, imm16, lsl #16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32 >> 16,             1, false /*f64Bit*/);
+    else if ((uImm32 >> 16) == UINT32_C(0xffff))
+        /* movn gpr, imm16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32,                   0, false /*f64Bit*/);
+    else
+    {
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 & UINT32_C(0xffff), 0, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrMovK(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
+    }
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits loading a constant into a 32-bit GPR.
+ * @note The top 32 bits will be cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprImm32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t uImm32)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadGpr32ImmEx(iemNativeInstrBufEnsure(pReNative, off, 6), off, iGpr, uImm32);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitLoadGpr32ImmEx(iemNativeInstrBufEnsure(pReNative, off, 2), off, iGpr, uImm32);
 #else
 # error "port me"
 #endif

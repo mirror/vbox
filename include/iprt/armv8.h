@@ -2282,45 +2282,45 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t u2Opc, 
 
 typedef enum                         /* Size VR Opc */
 {                                    /*     \ | /   */
-    kArmv8A64InstrLdStType_Mask_Size       = 0x300,
-    kArmv8A64InstrLdStType_Mask_VR         = 0x010,
-    kArmv8A64InstrLdStType_Mask_Opc        = 0x003,
-    kArmv8A64InstrLdStType_Shift_Size      =     8,
-    kArmv8A64InstrLdStType_Shift_VR        =     4,
-    kArmv8A64InstrLdStType_Shift_Opc       =     0,
+    kArmv8A64InstrLdStType_Mask_Size     = 0x300,
+    kArmv8A64InstrLdStType_Mask_VR       = 0x010,
+    kArmv8A64InstrLdStType_Mask_Opc      = 0x003,
+    kArmv8A64InstrLdStType_Shift_Size    =     8,
+    kArmv8A64InstrLdStType_Shift_VR      =     4,
+    kArmv8A64InstrLdStType_Shift_Opc     =     0,
 
-    kArmv8A64InstrLdStType_St_Byte         = 0x000,
-    kArmv8A64InstrLdStType_Ld_Byte         = 0x001,
-    kArmv8A64InstrLdStType_Ld_SignByte64   = 0x002,
-    kArmv8A64InstrLdStType_Ld_SignByte32   = 0x003,
+    kArmv8A64InstrLdStType_St_Byte       = 0x000,
+    kArmv8A64InstrLdStType_Ld_Byte       = 0x001,
+    kArmv8A64InstrLdStType_Ld_SignByte64 = 0x002,
+    kArmv8A64InstrLdStType_Ld_SignByte32 = 0x003,
 
-    kArmv8A64InstrLdStType_St_Half         = 0x100, /**< Half = 16-bit */
-    kArmv8A64InstrLdStType_Ld_Half         = 0x101, /**< Half = 16-bit */
-    kArmv8A64InstrLdStType_Ld_SignHalf64   = 0x102, /**< Half = 16-bit */
-    kArmv8A64InstrLdStType_Ld_SignHalf32   = 0x103, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_St_Half       = 0x100, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_Half       = 0x101, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_SignHalf64 = 0x102, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_SignHalf32 = 0x103, /**< Half = 16-bit */
 
-    kArmv8A64InstrLdStType_St_Word         = 0x200, /**< Word = 32-bit */
-    kArmv8A64InstrLdStType_Ld_Word         = 0x201, /**< Word = 32-bit */
-    kArmv8A64InstrLdStType_Ld_SignWord64   = 0x202, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_St_Word       = 0x200, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_Word       = 0x201, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_SignWord64 = 0x202, /**< Word = 32-bit */
 
-    kArmv8A64InstrLdStType_St_Dword        = 0x300, /**< Dword = 64-bit */
-    kArmv8A64InstrLdStType_Ld_Dword        = 0x301, /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_St_Dword      = 0x300, /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_Ld_Dword      = 0x301, /**< Dword = 64-bit */
 
-    kArmv8A64InstrLdStType_Prefetch        = 0x302, /**< Not valid in all variations, check docs. */
+    kArmv8A64InstrLdStType_Prefetch      = 0x302, /**< Not valid in all variations, check docs. */
 
-    kArmv8A64InstrLdStType_St_Vr_Byte      = 0x010,
-    kArmv8A64InstrLdStType_Ld_Vr_Byte      = 0x011,
-    kArmv8A64InstrLdStType_St_Vr_128       = 0x012,
-    kArmv8A64InstrLdStType_Ld_Vr_128       = 0x013,
+    kArmv8A64InstrLdStType_St_Vr_Byte    = 0x010,
+    kArmv8A64InstrLdStType_Ld_Vr_Byte    = 0x011,
+    kArmv8A64InstrLdStType_St_Vr_128     = 0x012,
+    kArmv8A64InstrLdStType_Ld_Vr_128     = 0x013,
 
-    kArmv8A64InstrLdStType_St_Vr_Half      = 0x110, /**< Half = 16-bit */
-    kArmv8A64InstrLdStType_Ld_Vr_Half      = 0x111, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_St_Vr_Half    = 0x110, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Half    = 0x111, /**< Half = 16-bit */
 
-    kArmv8A64InstrLdStType_St_Vr_Word      = 0x210, /**< Word = 32-bit */
-    kArmv8A64InstrLdStType_Ld_Vr_Word      = 0x211, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_St_Vr_Word    = 0x210, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Word    = 0x211, /**< Word = 32-bit */
 
-    kArmv8A64InstrLdStType_St_Vr_Dword     = 0x310, /**< Dword = 64-bit */
-    kArmv8A64InstrLdStType_Ld_Vr_Dword     = 0x311  /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_St_Vr_Dword   = 0x310, /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Dword   = 0x311  /**< Dword = 64-bit */
 
 } ARMV8A64INSTRLDSTTYPE;
 
@@ -3166,6 +3166,32 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubUImm12(bool fSub, uint32_t iReg
          | iRegResult;
 }
 
+
+/** Alias for sub zxr, reg, #uimm12.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpUImm12(uint32_t iRegSrc, uint32_t uImm12Comprahend,
+                                                     bool f64Bit = true, bool fShift12 = false)
+{
+    return Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iRegSrc, uImm12Comprahend,
+                                       f64Bit, true /*fSetFlags*/, fShift12);
+}
+
+
+/** ADD dst, src, #uimm12  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddUImm12(uint32_t iRegResult, uint32_t iRegSrc, uint32_t uImm12Addend,
+                                                     bool f64Bit = true, bool fSetFlags = false, bool fShift12 = false)
+{
+    return Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iRegResult, iRegSrc, uImm12Addend, f64Bit, fSetFlags, fShift12);
+}
+
+
+/** SUB dst, src, #uimm12  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubUImm12(uint32_t iRegResult, uint32_t iRegSrc, uint32_t uImm12Subtrahend,
+                                                     bool f64Bit = true, bool fSetFlags = false, bool fShift12 = false)
+{
+    return Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iRegResult, iRegSrc, uImm12Subtrahend, f64Bit, fSetFlags, fShift12);
+}
+
+
 /**
  * A64: Encodes either add, adds, sub or subs with shifted register.
  *
@@ -3205,6 +3231,15 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegRes
          | (cShift                 << 10)
          | (iRegSrc1               <<  5)
          | iRegResult;
+}
+
+
+/** Alias for sub zxr, reg1, reg2 [, LSL/LSR/ASR/ROR #xx].  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpReg(uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true, uint32_t cShift = 0,
+                                                  ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
+{
+    return Armv8A64MkInstrAddSubReg(true /*fSub*/, ARMV8_A64_REG_XZR, iRegSrc1, iRegSrc2,
+                                    f64Bit, true /*fSetFlags*/, cShift, enmShift);
 }
 
 
@@ -3424,6 +3459,109 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBrk(uint32_t uImm16)
          | (uImm16 << 5);
 }
 
+/** @name  RMA64_NZCV_F_XXX - readable NZCV mask for CCMP and friends.
+ * @{ */
+#define ARMA64_NZCV_F_N0_Z0_C0_V0     UINT32_C(0x0)
+#define ARMA64_NZCV_F_N0_Z0_C0_V1     UINT32_C(0x1)
+#define ARMA64_NZCV_F_N0_Z0_C1_V0     UINT32_C(0x2)
+#define ARMA64_NZCV_F_N0_Z0_C1_V1     UINT32_C(0x3)
+#define ARMA64_NZCV_F_N0_Z1_C0_V0     UINT32_C(0x4)
+#define ARMA64_NZCV_F_N0_Z1_C0_V1     UINT32_C(0x5)
+#define ARMA64_NZCV_F_N0_Z1_C1_V0     UINT32_C(0x6)
+#define ARMA64_NZCV_F_N0_Z1_C1_V1     UINT32_C(0x7)
+
+#define ARMA64_NZCV_F_N1_Z0_C0_V0     UINT32_C(0x8)
+#define ARMA64_NZCV_F_N1_Z0_C0_V1     UINT32_C(0x9)
+#define ARMA64_NZCV_F_N1_Z0_C1_V0     UINT32_C(0xa)
+#define ARMA64_NZCV_F_N1_Z0_C1_V1     UINT32_C(0xb)
+#define ARMA64_NZCV_F_N1_Z1_C0_V0     UINT32_C(0xc)
+#define ARMA64_NZCV_F_N1_Z1_C0_V1     UINT32_C(0xd)
+#define ARMA64_NZCV_F_N1_Z1_C1_V0     UINT32_C(0xe)
+#define ARMA64_NZCV_F_N1_Z1_C1_V1     UINT32_C(0xf)
+/** @} */
+
+/**
+ * A64: Encodes CCMP or CCMN with two register operands.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegSrc1    The 1st register. SP is NOT valid, but ZR is.
+ * @param   iRegSrc2    The 2nd register. SP is NOT valid, but ZR is.
+ * @param   fNzcv       The N, Z, C & V flags values to load if the condition
+ *                      does not match. See RMA64_NZCV_F_XXX.
+ * @param   enmCond     The condition guarding the compare.
+ * @param   fCCmp       Set for CCMP (default), clear for CCMN.
+ * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmpCmnReg(uint32_t iRegSrc1, uint32_t iRegSrc2, uint32_t fNzcv,
+                                                      ARMV8INSTRCOND enmCond, bool fCCmp = true, bool f64Bit = true)
+{
+    Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32); Assert(fNzcv < 16);
+
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fCCmp        << 30)
+         | UINT32_C(0x3a400000)
+         | (iRegSrc2               << 16)
+         | ((uint32_t)enmCond      << 12)
+         | (iRegSrc1               <<  5)
+         | fNzcv;
+}
+
+/** CCMP w/ reg. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmpReg(uint32_t iRegSrc1, uint32_t iRegSrc2, uint32_t fNzcv,
+                                                   ARMV8INSTRCOND enmCond, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCCmpCmnReg(iRegSrc1, iRegSrc2, fNzcv, enmCond, true /*fCCmp*/, f64Bit);
+}
+
+
+/** CCMN w/ reg. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmnReg(uint32_t iRegSrc1, uint32_t iRegSrc2, uint32_t fNzcv,
+                                                   ARMV8INSTRCOND enmCond, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCCmpCmnReg(iRegSrc1, iRegSrc2, fNzcv, enmCond, false /*fCCmp*/, f64Bit);
+}
+
+
+/**
+ * A64: Encodes CCMP or CCMN with register and 5-bit immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegSrc     The register. SP is NOT valid, but ZR is.
+ * @param   uImm5       The immediate, to compare iRegSrc with.
+ * @param   fNzcv       The N, Z, C & V flags values to load if the condition
+ *                      does not match. See RMA64_NZCV_F_XXX.
+ * @param   enmCond     The condition guarding the compare.
+ * @param   fCCmp       Set for CCMP (default), clear for CCMN.
+ * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmpCmnImm(uint32_t iRegSrc, uint32_t uImm5, uint32_t fNzcv, ARMV8INSTRCOND enmCond,
+                                                      bool fCCmp = true, bool f64Bit = true)
+{
+    Assert(iRegSrc < 32); Assert(uImm5 < 32); Assert(fNzcv < 16);
+
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fCCmp        << 30)
+         | UINT32_C(0x3a400800)
+         | (uImm5                  << 16)
+         | ((uint32_t)enmCond      << 12)
+         | (iRegSrc                <<  5)
+         | fNzcv;
+}
+
+/** CCMP w/ immediate. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmpImm(uint32_t iRegSrc, uint32_t uImm5, uint32_t fNzcv,
+                                                   ARMV8INSTRCOND enmCond, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCCmpCmnImm(iRegSrc, uImm5, fNzcv, enmCond, true /*fCCmp*/, f64Bit);
+}
+
+
+/** CCMN w/ immediate. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmnImm(uint32_t iRegSrc, uint32_t uImm5, uint32_t fNzcv,
+                                                   ARMV8INSTRCOND enmCond, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCCmpCmnImm(iRegSrc, uImm5, fNzcv, enmCond, false /*fCCmp*/, f64Bit);
+}
 
 /** @} */
 

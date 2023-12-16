@@ -10960,7 +10960,8 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #endif
 
     /* IEMNATIVE_CALL_ARG1_GREG = idxVarUnmapInfo (first!) */
-    off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarUnmapInfo);
+    off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarUnmapInfo,
+                                               0 /*offAddend*/, true /*fVarAllowInVolatileReg*/);
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
@@ -11244,7 +11245,7 @@ iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 /**
  * Macro that implements opcode (re-)checking.
  */
-#define BODY_CHECK_OPCODES_DISABLED(a_pTb, a_idxRange, a_offRange, a_cbInstr) \
+#define BODY_CHECK_OPCODES(a_pTb, a_idxRange, a_offRange, a_cbInstr) \
     off = iemNativeEmitBltInCheckOpcodes(pReNative, off, (a_pTb), (a_idxRange), (a_offRange))
 
 DECL_FORCE_INLINE(uint32_t)
@@ -11267,6 +11268,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
      */
     uint16_t            offPage     = pTb->aRanges[idxRange].offPhysPage + offRange;
     uint16_t            cbLeft      = pTb->aRanges[idxRange].cbOpcodes   - offRange;
+    Assert(cbLeft > 0);
     uint8_t const      *pbOpcodes   = &pTb->pabOpcodes[pTb->aRanges[idxRange].offOpcodes];
     uint32_t            offConsolidatedJump = UINT32_MAX;
 
@@ -11463,17 +11465,266 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
     }
 
 #elif defined(RT_ARCH_ARM64)
-    uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
-    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPU, iem.s.pbInstrBuf));
-# if 0
+    /* We need pbInstrBuf in a register, whatever we do. */
+    uint8_t const idxRegSrc1Ptr = iemNativeRegAllocTmp(pReNative, &off);
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegSrc1Ptr, RT_UOFFSETOF(VMCPU, iem.s.pbInstrBuf));
 
-    uint32_t * const    pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    /** @todo continue here */
-# else
-    AssertReleaseFailed();
-    RT_NOREF(pReNative, off, pTb, idxRange, offRange);
-# endif
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    /* We also need at least one more register for holding bytes & words we
+       load via pbInstrBuf. */
+    uint8_t const idxRegSrc1Val = iemNativeRegAllocTmp(pReNative, &off);
+
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
+
+    /* One byte compare can be done with the opcode byte as an immediate. We'll
+       do this to uint16_t align src1. */
+    bool fPendingJmp = RT_BOOL(offPage & 1);
+    if (fPendingJmp)
+    {
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Byte, idxRegSrc1Val, idxRegSrc1Ptr, offPage);
+        pu32CodeBuf[off++] = Armv8A64MkInstrCmpUImm12(idxRegSrc1Val, *pbOpcodes++, false /*f64Bit*/);
+        offPage += 1;
+        cbLeft  -= 1;
+    }
+
+    if (cbLeft > 0)
+    {
+        /* We need a register for holding the opcode bytes we're comparing with,
+           as CCMP only has a 5-bit immediate form and thus cannot hold bytes. */
+        uint8_t const idxRegSrc2Val = iemNativeRegAllocTmp(pReNative, &off);
+
+        /* Word (uint32_t) aligning the src1 pointer is best done using a 16-bit constant load. */
+        if ((offPage & 3) && cbLeft >= 2)
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Half, idxRegSrc1Val, idxRegSrc1Ptr, offPage / 2);
+            pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegSrc2Val, RT_MAKE_U16(pbOpcodes[0], pbOpcodes[1]));
+            if (fPendingJmp)
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, false /*f64Bit*/);
+            else
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val, false /*f64Bit*/);
+                fPendingJmp = true;
+            }
+            pbOpcodes += 2;
+            offPage   += 2;
+            cbLeft    -= 2;
+        }
+
+        /* DWord (uint64_t) aligning the src2 pointer. We use a 32-bit constant here for simplicitly. */
+        if ((offPage & 7) && cbLeft >= 4)
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxRegSrc1Val, idxRegSrc1Ptr, offPage / 4);
+            off = iemNativeEmitLoadGpr32ImmEx(pu32CodeBuf, off, idxRegSrc2Val,
+                                              RT_MAKE_U32_FROM_MSB_U8(pbOpcodes[3], pbOpcodes[2], pbOpcodes[1], pbOpcodes[0]));
+            if (fPendingJmp)
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, false /*f64Bit*/);
+            else
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val, false /*f64Bit*/);
+                fPendingJmp = true;
+            }
+            pbOpcodes += 4;
+            offPage   += 4;
+            cbLeft    -= 4;
+        }
+
+        /*
+         * If we've got 16 bytes or more left, switch to memcmp-style.
+         */
+        if (cbLeft >= 16)
+        {
+            /* We need a pointer to the copy of the original opcode bytes. */
+            uint8_t const idxRegSrc2Ptr = iemNativeRegAllocTmp(pReNative, &off);
+            off = iemNativeEmitLoadGprImmEx(pu32CodeBuf, off, idxRegSrc2Ptr, (uintptr_t)pbOpcodes);
+
+            /* If there are more than 32 bytes to compare we create a loop, for
+               which we'll need a loop register. */
+            if (cbLeft >= 64)
+            {
+                if (fPendingJmp)
+                {
+                    iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
+                    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
+                    fPendingJmp = false;
+                }
+
+                uint8_t const  idxRegLoop = iemNativeRegAllocTmp(pReNative, &off);
+                uint16_t const cLoops     = cbLeft / 32;
+                cbLeft                    = cbLeft % 32;
+                pbOpcodes                += cLoops * 32;
+                pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegLoop, cLoops);
+
+                if (offPage != 0) /** @todo optimize out this instruction. */
+                {
+                    pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc1Ptr, idxRegSrc1Ptr, offPage);
+                    offPage = 0;
+                }
+
+                uint32_t const offLoopStart = off;
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val, idxRegSrc1Ptr, 0);
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc2Val, idxRegSrc2Ptr, 0);
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val);
+
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val, idxRegSrc1Ptr, 1);
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc2Val, idxRegSrc2Ptr, 1);
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq);
+
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val, idxRegSrc1Ptr, 2);
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc2Val, idxRegSrc2Ptr, 2);
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq);
+
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val, idxRegSrc1Ptr, 3);
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc2Val, idxRegSrc2Ptr, 3);
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq);
+
+                iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
+                pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
+
+                /* Advance and loop. */
+                pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc1Ptr, idxRegSrc1Ptr, 0x20);
+                pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc2Ptr, idxRegSrc2Ptr, 0x20);
+                pu32CodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegLoop, idxRegLoop, 1, false /*f64Bit*/, true /*fSetFlags*/);
+                pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, (int32_t)offLoopStart - (int32_t)off);
+
+                iemNativeRegFreeTmp(pReNative, idxRegLoop);
+            }
+
+            /* Deal with any remaining dwords (uint64_t).  There can be up to
+               three if we looped and four if we didn't. */
+            uint32_t offSrc2 = 0;
+            while (cbLeft >= 8)
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val,
+                                                              idxRegSrc1Ptr, offPage / 8);
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc2Val,
+                                                              idxRegSrc2Ptr, offSrc2 / 8);
+                if (fPendingJmp)
+                    pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                                ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq);
+                else
+                {
+                    pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val);
+                    fPendingJmp = true;
+                }
+                pbOpcodes += 8;
+                offPage   += 8;
+                offSrc2   += 8;
+                cbLeft    -= 8;
+            }
+
+            iemNativeRegFreeTmp(pReNative, idxRegSrc2Ptr);
+            /* max cost thus far: memcmp-loop=43 vs memcmp-no-loop=30 */
+        }
+        /*
+         * Otherwise, we compare with constants and merge with the general mop-up.
+         */
+        else
+        {
+            while (cbLeft >= 8)
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxRegSrc1Val, idxRegSrc1Ptr,
+                                                              offPage / 8);
+                off = iemNativeEmitLoadGprImmEx(pu32CodeBuf, off, idxRegSrc2Val,
+                                                RT_MAKE_U64_FROM_MSB_U8(pbOpcodes[7], pbOpcodes[6], pbOpcodes[5], pbOpcodes[4],
+                                                                        pbOpcodes[3], pbOpcodes[2], pbOpcodes[1], pbOpcodes[0]));
+                if (fPendingJmp)
+                    pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                                ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, true /*f64Bit*/);
+                else
+                {
+                    pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val, true /*f64Bit*/);
+                    fPendingJmp = true;
+                }
+                pbOpcodes += 8;
+                offPage   += 8;
+                cbLeft    -= 8;
+            }
+            /* max cost thus far: 21 */
+        }
+
+        /* Deal with any remaining bytes (7 or less). */
+        Assert(cbLeft < 8);
+        if (cbLeft >= 4)
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxRegSrc1Val, idxRegSrc1Ptr,
+                                                          offPage / 4);
+            off = iemNativeEmitLoadGpr32ImmEx(pu32CodeBuf, off, idxRegSrc2Val,
+                                              RT_MAKE_U32_FROM_MSB_U8(pbOpcodes[3], pbOpcodes[2], pbOpcodes[1], pbOpcodes[0]));
+            if (fPendingJmp)
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, false /*f64Bit*/);
+            else
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val, false /*f64Bit*/);
+                fPendingJmp = true;
+            }
+            pbOpcodes += 4;
+            offPage   += 4;
+            cbLeft    -= 4;
+
+        }
+
+        if (cbLeft >= 2)
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Half, idxRegSrc1Val, idxRegSrc1Ptr,
+                                                          offPage / 2);
+            pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegSrc2Val, RT_MAKE_U16(pbOpcodes[0], pbOpcodes[1]));
+            if (fPendingJmp)
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, false /*f64Bit*/);
+            else
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpReg(idxRegSrc1Val, idxRegSrc2Val, false /*f64Bit*/);
+                fPendingJmp = true;
+            }
+            pbOpcodes += 2;
+            offPage   += 2;
+            cbLeft    -= 2;
+        }
+
+        if (cbLeft > 0)
+        {
+            Assert(cbLeft == 1);
+            pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Byte, idxRegSrc1Val, idxRegSrc1Ptr, offPage);
+            if (fPendingJmp)
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegSrc2Val, pbOpcodes[0]);
+                pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
+                                                            ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq, false /*f64Bit*/);
+            }
+            else
+            {
+                pu32CodeBuf[off++] = Armv8A64MkInstrCmpUImm12(idxRegSrc1Val, pbOpcodes[0], false /*f64Bit*/);
+                fPendingJmp = true;
+            }
+            pbOpcodes += 1;
+            offPage   += 1;
+            cbLeft    -= 1;
+        }
+
+        iemNativeRegFreeTmp(pReNative, idxRegSrc2Val);
+    }
+    Assert(cbLeft == 0);
+
+    /*
+     * Finally, the branch on difference.
+     */
+    if (fPendingJmp)
+    {
+        iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
+    }
+    RT_NOREF(pu32CodeBuf, cbLeft, offPage, pbOpcodes, offConsolidatedJump, idxLabelObsoleteTb);
+
+    /* max costs: memcmp-loop=54; memcmp-no-loop=41; only-src1-ptr=32 */
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    iemNativeRegFreeTmp(pReNative, idxRegSrc1Val);
+    iemNativeRegFreeTmp(pReNative, idxRegSrc1Ptr);
+
 #else
 # error "Port me"
 #endif
@@ -11523,7 +11774,7 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndO
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    //uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
