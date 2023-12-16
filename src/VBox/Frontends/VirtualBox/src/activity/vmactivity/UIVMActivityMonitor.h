@@ -334,11 +334,16 @@ private:
         virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) RT_OVERRIDE;
         virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) RT_OVERRIDE;
         virtual void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal) RT_OVERRIDE;
-        virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) RT_OVERRIDE;
+        virtual void updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate) RT_OVERRIDE;
     /** @} */
     virtual void resetCPUInfoLabel();
     virtual void resetNetworkInfoLabel();
     virtual void resetDiskIOInfoLabel();
+
+    /* Since we have a single UIMetric instance for disk IO we cache write and/or read until the other value arrives. Then update
+     * the corresponding chart. */
+    void cacheDiskWrite(const QString &strTimeStamp, int iValue);
+    void cacheDiskRead(const QString &strTimeStamp, int iValue);
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
@@ -348,5 +353,9 @@ private:
     QVector<KMetricType> m_availableMetricTypes;
     /** Mapping from API enums to internal metric names. Necessary also since we don't hace a 1-to-1 mapping. */
     QHash<KMetricType, QString> m_metricTypeNames;
+
+    /* Key is time stamp we get from our Main API, value is disk write or read values. */
+    QMap<QString, quint64> m_diskWriteCache;
+    QMap<QString, quint64> m_diskReadCache;
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

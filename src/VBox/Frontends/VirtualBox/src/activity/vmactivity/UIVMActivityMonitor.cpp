@@ -1195,7 +1195,6 @@ void UIVMActivityMonitor::prepareWidgets()
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
-        //pChart->installEventFilter(this);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
         connect(pChart, &UIChart::sigDataIndexUnderCursor,
@@ -1250,6 +1249,8 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
 
 void UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged(int iIndex)
 {
+    Q_UNUSED(iIndex);
+#if 0
     foreach (UIChart *chart, m_charts)
     {
         if (chart && chart != sender())
@@ -1258,6 +1259,7 @@ void UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged(int iIndex)
         }
 
     }
+#endif
 }
 
 void UIVMActivityMonitor::prepareActions()
@@ -1863,10 +1865,7 @@ void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> met
 {
     m_availableMetricTypes.clear();
     foreach (const QString &strName, metricNameList)
-    {
-        ///printf("%s\n", qPrintable(strName));
         m_availableMetricTypes << gpConverter->fromInternalString<KMetricType>(strName);
-    }
 
     if (!m_availableMetricTypes.isEmpty())
         start();
@@ -1891,11 +1890,12 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
         }
         else if (enmMetricType == KMetricType_DiskBytesRead)
         {
-            //printf("diskread %s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
+            cacheDiskRead(timeStamps[i], data[i].toULongLong());
         }
         else if (enmMetricType == KMetricType_DiskBytesWritten)
         {
-            //printf("diskwrite %s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
+            //printf("write %s %f\n", qPrintable(data[i]), data[i].toFloat());
+            cacheDiskWrite(timeStamps[i], (int)data[i].toFloat());
         }
 
     // KMetricType_DiskBytesWritten = 4,
@@ -1930,7 +1930,6 @@ void UIVMActivityMonitorCloud::obtainDataAndUpdate()
 {
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
     {
-        printf("enm %d\n", enmMetricType);
         UIMetric metric;
         int iDataSeriesIndex = 0;
         if (!findMetric(enmMetricType, metric, iDataSeriesIndex))
@@ -1988,7 +1987,39 @@ void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, U
 
 void UIVMActivityMonitorCloud::updateRAMGraphsAndMetric(quint64 /*iTotalRAM*/, quint64 /*iFreeRAM*/){}
 void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 /*iReceiveTotal*/, quint64 /*iTransmitTotal*/){}
-void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 /*uDiskIOTotalWritten*/, quint64 /*uDiskIOTotalRead*/){}
+
+void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate)
+{
+    //printf("%lld %lld\n", uWriteRate, uReadRate);
+    UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
+
+    // quint64 iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
+    // quint64 iReadRate = uDiskIOTotalRead - diskMetric.total(1);
+
+    // diskMetric.setTotal(0, uDiskIOTotalWritten);
+    // diskMetric.setTotal(1, uDiskIOTotalRead);
+
+    // /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
+    // if (!diskMetric.isInitialized()){
+    //     diskMetric.setIsInitialized(true);
+    //     return;
+    // }
+    diskMetric.addData(0, uWriteRate);
+    diskMetric.addData(1, uReadRate);
+
+    // if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    // {
+    //     QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+    //         .arg(m_strDiskIOInfoLabelTitle)
+    //         .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize((quint64)iWriteRate, g_iDecimalCount))
+    //         .arg(m_strDiskIOInfoLabelWrittenTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
+    //         .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize((quint64)iReadRate, g_iDecimalCount))
+    //         .arg(m_strDiskIOInfoLabelReadTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
+    //     m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    // }
+    if (m_charts.contains(m_strDiskIOMetricName))
+        m_charts[m_strDiskIOMetricName]->update();
+}
 
 bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const
 {
@@ -2081,5 +2112,34 @@ void UIVMActivityMonitorCloud::resetDiskIOInfoLabel()
         m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
 }
+
+void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, int iValue)
+{
+    /* Make sure this is the first time we receieve write for this time stap: */
+    AssertReturnVoid(!m_diskWriteCache.contains(strTimeStamp));
+    /* If we have read rate for this time stamp just update the chart and remove related data from the cache: */
+    if (m_diskReadCache.contains(strTimeStamp))
+    {
+        updateDiskIOGraphsAndMetric((quint64) iValue, (quint64) m_diskReadCache[strTimeStamp]);
+        m_diskReadCache[strTimeStamp];
+    }
+    else
+        m_diskWriteCache[strTimeStamp] = iValue;
+}
+
+void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, int iValue)
+{
+    /* Make sure this is the first time we receieve read for this time stap: */
+    AssertReturnVoid(!m_diskReadCache.contains(strTimeStamp));
+    /* If we have write rate for this time stamp just update the chart and remove related data from the cache: */
+    if (m_diskWriteCache.contains(strTimeStamp))
+    {
+        updateDiskIOGraphsAndMetric((quint64) m_diskWriteCache[strTimeStamp], (quint64) iValue);
+        m_diskWriteCache.remove(strTimeStamp);
+    }
+    else
+        m_diskReadCache[strTimeStamp] = iValue;
+}
+
 
 #include "UIVMActivityMonitor.moc"
