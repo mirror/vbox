@@ -579,6 +579,48 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @} */
 
 
+/** @name CPUID Thermal and Power Management information.
+ *  Generally Intel only unless noted otherwise.
+ * CPUID query with EAX=5. @{
+ */
+/** EAX Bit 0 - DTS - Supports Digital Temperature Sensor. */
+#define X86_CPUID_POWER_EAX_DTS            RT_BIT_32(0)
+/** EAX Bit 1 - TURBOBOOST - Intel Turbo Boost available. */
+#define X86_CPUID_POWER_EAX_TURBOBOOST     RT_BIT_32(1)
+/** EAX Bit 2 - ARAT - Always Running APIC Timer. Intel and AMD. */
+#define X86_CPUID_POWER_EAX_ARAT           RT_BIT_32(2)
+/** EAX Bit 4 - PLN - Power Limit Notifications supported. */
+#define X86_CPUID_POWER_EAX_PLN            RT_BIT_32(4)
+/** EAX Bit 5 - ECMD - Clock modulation duty cycle extension supported. */
+#define X86_CPUID_POWER_EAX_PLN            RT_BIT_32(5)
+/** EAX Bit 6 - PTM - Package Thermal Management supported. */
+#define X86_CPUID_POWER_EAX_PTM            RT_BIT_32(6)
+/** EAX Bit 7 - HWP - HWP base MSRs supported. */
+#define X86_CPUID_POWER_EAX_HWP            RT_BIT_32(7)
+/** EAX Bit 8 - HWP_NOTIFY - HWP notification MSR supported. */
+#define X86_CPUID_POWER_EAX_HWP_NOTIFY     RT_BIT_32(8)
+/** EAX Bit 9 - HWP_ACT_WIN - HWP activity window MSR bits supported. */
+#define X86_CPUID_POWER_EAX_HWP_ACT_WIN    RT_BIT_32(9)
+/** EAX Bit 10 - HWP_NRG_PP - HWP energy performae preference MSR bits supported. */
+#define X86_CPUID_POWER_EAX_HWP_NRG_PP     RT_BIT_32(10)
+/** EAX Bit 11 - HWP_PLR - HWP package level request MSR supported. */
+#define X86_CPUID_POWER_EAX_HWP_PLR        RT_BIT_32(11)
+/** EAX Bit 13 - HDC - HDC base MSRs supported. */
+#define X86_CPUID_POWER_EAX_HDC            RT_BIT_32(13)
+/** EAX Bit 14 - TBM30 - Turbo Boost Max Technology 3.0 supported. */
+#define X86_CPUID_POWER_EAX_TBM30          RT_BIT_32(14)
+/** EAX Bit 15 - HWP - HWP Highest Performance change supported. */
+#define X86_CPUID_POWER_EAX_HWP            RT_BIT_32(15)
+/** EAX Bit 16 - HWP_PECI - HWP PECI override supported. */
+#define X86_CPUID_POWER_EAX_HWP_PECI       RT_BIT_32(16)
+/** EAX Bit 17 - HWP_FLEX - Flexible HWP supported. */
+#define X86_CPUID_POWER_EAX_HWP_FLEX       RT_BIT_32(17)
+
+/** ECX Bit 1 - HCFC - Hardware Coordintion Feedback Capability supported. Intel and AMD. */
+#define X86_CPUID_POWER_ECX_HCFC           RT_BIT_32(0)
+/** @} */
+
+
 /** @name CPUID Structured Extended Feature information.
  * CPUID query with EAX=7.
  * @{
