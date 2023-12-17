@@ -592,7 +592,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** EAX Bit 4 - PLN - Power Limit Notifications supported. */
 #define X86_CPUID_POWER_EAX_PLN            RT_BIT_32(4)
 /** EAX Bit 5 - ECMD - Clock modulation duty cycle extension supported. */
-#define X86_CPUID_POWER_EAX_PLN            RT_BIT_32(5)
+#define X86_CPUID_POWER_EAX_ECMD           RT_BIT_32(5)
 /** EAX Bit 6 - PTM - Package Thermal Management supported. */
 #define X86_CPUID_POWER_EAX_PTM            RT_BIT_32(6)
 /** EAX Bit 7 - HWP - HWP base MSRs supported. */
@@ -609,8 +609,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_POWER_EAX_HDC            RT_BIT_32(13)
 /** EAX Bit 14 - TBM30 - Turbo Boost Max Technology 3.0 supported. */
 #define X86_CPUID_POWER_EAX_TBM30          RT_BIT_32(14)
-/** EAX Bit 15 - HWP - HWP Highest Performance change supported. */
-#define X86_CPUID_POWER_EAX_HWP            RT_BIT_32(15)
+/** EAX Bit 15 - HWP_HPC - HWP Highest Performance change supported. */
+#define X86_CPUID_POWER_EAX_HWP_HPC        RT_BIT_32(15)
 /** EAX Bit 16 - HWP_PECI - HWP PECI override supported. */
 #define X86_CPUID_POWER_EAX_HWP_PECI       RT_BIT_32(16)
 /** EAX Bit 17 - HWP_FLEX - Flexible HWP supported. */
