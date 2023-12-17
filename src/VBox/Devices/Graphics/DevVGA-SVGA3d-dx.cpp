@@ -1070,9 +1070,8 @@ static int dxEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3d
 {
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
-    int rc;
-    Assert(pEntry->state == SVGADX_QDSTATE_ACTIVE);
-    if (pEntry->state == SVGADX_QDSTATE_ACTIVE)
+    int rc = VINF_SUCCESS;
+    if (pEntry->state == SVGADX_QDSTATE_ACTIVE || pEntry->state == SVGADX_QDSTATE_IDLE)
     {
         pEntry->state = SVGADX_QDSTATE_PENDING;
 
@@ -1096,7 +1095,7 @@ static int dxEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3d
             pEntry->state = SVGADX_QDSTATE_FINISHED;
     }
     else
-        rc = VERR_INVALID_STATE;
+        AssertStmt(pEntry->state == SVGADX_QDSTATE_FINISHED, rc = VERR_INVALID_STATE);
 
     return rc;
 }
