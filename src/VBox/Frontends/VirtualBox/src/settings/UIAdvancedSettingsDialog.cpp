@@ -627,7 +627,7 @@ void UIVerticalScrollArea::requestVerticalScrollBarPosition(int iPosition)
     iShift = qMin(iShift, iScrollBarLength);
 
     /* Calculate walking ratio: */
-    const float dRatio = (double)iShift / iScrollBarLength;
+    const float dRatio = iScrollBarLength > 0 ? (double)iShift / iScrollBarLength : 0;
     m_pAnimation->setDuration(dRatio * 500 /* 500ms is the max */);
     m_pAnimation->setStartValue(iStartPosition);
     m_pAnimation->setEndValue(iFinalPosition);
