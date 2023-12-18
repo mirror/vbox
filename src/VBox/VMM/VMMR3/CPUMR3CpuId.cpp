@@ -1030,6 +1030,7 @@ typedef struct CPUMCPUIDCONFIG
 {
     bool            fNt4LeafLimit;
     bool            fInvariantTsc;
+    bool            fInvariantApic;
     bool            fForceVme;
     bool            fNestedHWVirt;
 
@@ -1798,15 +1799,34 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     }
 
     /* Cpuid 6: Digital Thermal Sensor and Power Management Paramenters.
-     * Intel: Various stuff.
-     * AMD: EAX, EBX, EDX - reserved.
+     * Intel: Various thermal and power management related stuff.
+     * AMD: EBX, EDX - reserved.
+     *      EAX - Bit two is ARAT, indicating that APIC timers run at a constant
+     *            rate regardless of processor P-states. Same as Intel.
      *      ECX - Bit zero is EffFreq, indicating MSR_0000_00e7 and MSR_0000_00e8
-     *            present.  Same as intel.
+     *            present.  Same as Intel.
      * VIA: ??
      *
-     * We clear everything here for now.
+     * We clear everything except for the ARAT bit which is important for Windows 11.
      */
-    cpumR3CpuIdZeroLeaf(pCpum, 6);
+    uSubLeaf = 0;
+    while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 6, uSubLeaf)) != NULL)
+    {
+        pCurLeaf->uEbx = pCurLeaf->uEcx = pCurLeaf->uEdx = 0;
+        pCurLeaf->uEax &= 0
+                       | X86_CPUID_POWER_EAX_ARAT
+                       ;
+
+        /* Since we emulate the APIC timers, we can normally set the ARAT bit
+         * regardless of whether the host CPU sets it or not. Intel sets the ARAT
+         * bit circa since the Westmere generation, AMD probably only since Zen.
+         * See @bugref{10567}.
+         */
+        if (pConfig->fInvariantApic)
+            pCurLeaf->uEax |= X86_CPUID_POWER_EAX_ARAT;
+
+        uSubLeaf++;
+    }
 
     /* Cpuid 7 + ECX: Structured Extended Feature Flags Enumeration
      * EAX: Number of sub leaves.
@@ -2709,6 +2729,14 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      * that we do not virtualize.
      */
     rc = CFGMR3QueryBoolDef(pCpumCfg, "InvariantTsc", &pConfig->fInvariantTsc, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/InvariantApic, boolean, true}
+     * Set the Always Running APIC Timer (ARAT) flag in lea if true; otherwise
+     * pass through the host setting. The Windows 10/11 HAL won't use APIC timers
+     * unless the ARAT bit is set. Note that both Intel and AMD set this bit.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "InvariantApic", &pConfig->fInvariantApic, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/ForceVme, boolean, false}
