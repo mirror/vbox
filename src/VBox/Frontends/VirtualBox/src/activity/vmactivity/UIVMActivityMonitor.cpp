@@ -1701,15 +1701,15 @@ void UIVMActivityMonitorLocal::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
+void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal)
 {
     UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
-    quint64 iReceiveRate = iReceiveTotal - NetMetric.total(0);
-    quint64 iTransmitRate = iTransmitTotal - NetMetric.total(1);
+    quint64 uReceiveRate = uReceiveTotal - NetMetric.total(0);
+    quint64 uTransmitRate = uTransmitTotal - NetMetric.total(1);
 
-    NetMetric.setTotal(0, iReceiveTotal);
-    NetMetric.setTotal(1, iTransmitTotal);
+    NetMetric.setTotal(0, uReceiveTotal);
+    NetMetric.setTotal(1, uTransmitTotal);
 
     if (!NetMetric.isInitialized())
     {
@@ -1717,18 +1717,18 @@ void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 iReceiveTota
         return;
     }
 
-    NetMetric.addData(0, iReceiveRate);
-    NetMetric.addData(1, iTransmitRate);
+    NetMetric.addData(0, uReceiveRate);
+    NetMetric.addData(1, uTransmitRate);
 
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
         QString strInfo;
         strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
             .arg(m_strNetworkInfoLabelTitle)
-            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize((quint64)iReceiveRate, g_iDecimalCount))
-            .arg(m_strNetworkInfoLabelReceivedTotal).arg(UITranslator::formatSize((quint64)iReceiveTotal, g_iDecimalCount))
-            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize((quint64)iTransmitRate, g_iDecimalCount))
-            .arg(m_strNetworkInfoLabelTransmittedTotal).arg(UITranslator::formatSize((quint64)iTransmitTotal, g_iDecimalCount));
+            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg(UITranslator::formatSize(uReceiveTotal, g_iDecimalCount))
+            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize(uTransmitRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg(UITranslator::formatSize(uTransmitTotal, g_iDecimalCount));
         m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strNetworkMetricName))
@@ -1739,8 +1739,8 @@ void UIVMActivityMonitorLocal::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalW
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
-    quint64 iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
-    quint64 iReadRate = uDiskIOTotalRead - diskMetric.total(1);
+    quint64 uWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
+    quint64 uReadRate = uDiskIOTotalRead - diskMetric.total(1);
 
     diskMetric.setTotal(0, uDiskIOTotalWritten);
     diskMetric.setTotal(1, uDiskIOTotalRead);
@@ -1750,16 +1750,16 @@ void UIVMActivityMonitorLocal::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalW
         diskMetric.setIsInitialized(true);
         return;
     }
-    diskMetric.addData(0, iWriteRate);
-    diskMetric.addData(1, iReadRate);
+    diskMetric.addData(0, uWriteRate);
+    diskMetric.addData(1, uReadRate);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
         QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
             .arg(m_strDiskIOInfoLabelTitle)
-            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize((quint64)iWriteRate, g_iDecimalCount))
+            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize(uWriteRate, g_iDecimalCount))
             .arg(m_strDiskIOInfoLabelWrittenTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
-            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize((quint64)iReadRate, g_iDecimalCount))
+            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize(uReadRate, g_iDecimalCount))
             .arg(m_strDiskIOInfoLabelReadTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
         m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
@@ -1884,22 +1884,14 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
             float fValue = data[i].toFloat();
             updateCPUGraphsAndMetric((ULONG) fValue, 0);
         }
+        else if (enmMetricType == KMetricType_NetworksBytesOut)
+            cacheNetworkTransmit(timeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_NetworksBytesIn)
-        {
-            //printf("%s %s\n", qPrintable(data[i]), qPrintable(timeStamps[i]));
-        }
+            cacheNetworkReceive(timeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_DiskBytesRead)
-        {
-            cacheDiskRead(timeStamps[i], data[i].toULongLong());
-        }
+            cacheDiskRead(timeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_DiskBytesWritten)
-        {
-            //printf("write %s %f\n", qPrintable(data[i]), data[i].toFloat());
             cacheDiskWrite(timeStamps[i], (int)data[i].toFloat());
-        }
-
-    // KMetricType_DiskBytesWritten = 4,
-
     }
     sender()->deleteLater();
 }
@@ -1986,37 +1978,43 @@ void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, U
 }
 
 void UIVMActivityMonitorCloud::updateRAMGraphsAndMetric(quint64 /*iTotalRAM*/, quint64 /*iFreeRAM*/){}
-void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 /*iReceiveTotal*/, quint64 /*iTransmitTotal*/){}
+void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 uReceiveRate, quint64 uTransmitRate)
+{
+    UIMetric &networkMetric = m_metrics[m_strNetworkMetricName];
+    networkMetric.addData(0, uReceiveRate);
+    networkMetric.addData(1, uTransmitRate);
+
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo;
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/><font color=\"%5\">%6: %7<br/></font>")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount))
+            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize(uTransmitRate, g_iDecimalCount));
+
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+}
 
 void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate)
 {
-    //printf("%lld %lld\n", uWriteRate, uReadRate);
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
-    // quint64 iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
-    // quint64 iReadRate = uDiskIOTotalRead - diskMetric.total(1);
 
-    // diskMetric.setTotal(0, uDiskIOTotalWritten);
-    // diskMetric.setTotal(1, uDiskIOTotalRead);
-
-    // /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
-    // if (!diskMetric.isInitialized()){
-    //     diskMetric.setIsInitialized(true);
-    //     return;
-    // }
     diskMetric.addData(0, uWriteRate);
     diskMetric.addData(1, uReadRate);
 
-    // if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
-    // {
-    //     QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
-    //         .arg(m_strDiskIOInfoLabelTitle)
-    //         .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize((quint64)iWriteRate, g_iDecimalCount))
-    //         .arg(m_strDiskIOInfoLabelWrittenTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
-    //         .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize((quint64)iReadRate, g_iDecimalCount))
-    //         .arg(m_strDiskIOInfoLabelReadTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
-    //     m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
-    // }
+
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize(uWriteRate, g_iDecimalCount))
+            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize(uReadRate, g_iDecimalCount));
+
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    }
+
     if (m_charts.contains(m_strDiskIOMetricName))
         m_charts[m_strDiskIOMetricName]->update();
 }
@@ -2140,6 +2138,34 @@ void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, int iV
     else
         m_diskReadCache[strTimeStamp] = iValue;
 }
+
+void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, int iValue)
+{
+    AssertReturnVoid(!m_networkReceiveCache.contains(strTimeStamp));
+
+    if (m_networkTransmitCache.contains(strTimeStamp))
+    {
+        updateNetworkGraphsAndMetric((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp]);
+        m_networkTransmitCache.remove(strTimeStamp);
+    }
+    else
+        m_networkReceiveCache[strTimeStamp] = iValue;
+}
+
+
+void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp, int iValue)
+{
+    AssertReturnVoid(!m_networkTransmitCache.contains(strTimeStamp));
+
+    if (m_networkReceiveCache.contains(strTimeStamp))
+    {
+        updateNetworkGraphsAndMetric((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue);
+        m_networkReceiveCache.remove(strTimeStamp);
+    }
+    else
+        m_networkTransmitCache[strTimeStamp] = iValue;
+}
+
 
 
 #include "UIVMActivityMonitor.moc"

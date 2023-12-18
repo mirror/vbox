@@ -156,7 +156,7 @@ protected:
       * @{ */
         virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) = 0;
         virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) = 0;
-        virtual void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal) = 0;
+        virtual void updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal) = 0;
         virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) = 0;
     /** @} */
 
@@ -284,7 +284,7 @@ private:
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
     void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
+    void updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal);
     void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
@@ -333,7 +333,7 @@ private:
       * @{ */
         virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) RT_OVERRIDE;
         virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) RT_OVERRIDE;
-        virtual void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal) RT_OVERRIDE;
+        virtual void updateNetworkGraphsAndMetric(quint64 uReceive, quint64 uTransmit) RT_OVERRIDE;
         virtual void updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate) RT_OVERRIDE;
     /** @} */
     virtual void resetCPUInfoLabel();
@@ -344,6 +344,10 @@ private:
      * the corresponding chart. */
     void cacheDiskWrite(const QString &strTimeStamp, int iValue);
     void cacheDiskRead(const QString &strTimeStamp, int iValue);
+
+    void cacheNetworkReceive(const QString &strTimeStamp, int iValue);
+    void cacheNetworkTransmit(const QString &strTimeStamp, int iValue);
+
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
@@ -357,5 +361,9 @@ private:
     /* Key is time stamp we get from our Main API, value is disk write or read values. */
     QMap<QString, quint64> m_diskWriteCache;
     QMap<QString, quint64> m_diskReadCache;
+
+    QMap<QString, quint64> m_networkReceiveCache;
+    QMap<QString, quint64> m_networkTransmitCache;
+
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */
