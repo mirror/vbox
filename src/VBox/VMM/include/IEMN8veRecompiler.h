@@ -833,6 +833,32 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILE
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                  uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+                                                   uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
+                                                   uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
+
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_DeferToCImpl0);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckIrq);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckMode);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodes);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpcodes);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesConsiderCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb);
+IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim);
 
 extern DECL_HIDDEN_DATA(const char * const) g_apszIemNativeHstRegNames[];
 

@@ -261,7 +261,8 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  	VMMAll/IEMAllThrdFuncsBltIn.cpp
  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
   VBoxVMM_SOURCES += \
-  	VMMAll/IEMAllN8veRecompiler.cpp
+  	VMMAll/IEMAllN8veRecompiler.cpp \
+  	VMMAll/IEMAllN8veRecompBltIn.cpp
   if "$(KBUILD_TARGET_ARCH)" == "arm64" && defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER) # temp hack
    VBoxVMM_DEFS        += VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
    VBoxVMM_LIBS.darwin += /opt/local/lib/libcapstone.dylib
