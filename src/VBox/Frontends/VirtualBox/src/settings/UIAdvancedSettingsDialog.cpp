@@ -456,7 +456,8 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
         colorFrame = qApp->palette().color(enmColorGroup, QPalette::Window).darker(120);
 
     /* Prepare base/frame painter path: */
-    const QRect widgetRect = m_pLineEdit->geometry();
+    const QRegion totalRegion = QRegion(m_pLineEdit->geometry()) + QRegion(m_pToolButton->geometry());
+    const QRect widgetRect = totalRegion.boundingRect();
     const QSizeF arcSize(2 * m_iRadius, 2 * m_iRadius);
     QPainterPath path;
     path.moveTo(widgetRect.x() + m_iRadius, widgetRect.y());
@@ -499,7 +500,7 @@ void UIFilterEditor::prepare()
         m_pLineEdit->setStyleSheet("QLineEdit {\
                                     background-color: rgba(255, 255, 255, 0%);\
                                     border: 0px none black;\
-                                    margin: 3px 10px 3px 10px;\
+                                    margin: 3px 0px 3px 10px;\
                                     }");
         m_pLineEdit->installEventFilter(this);
         connect(m_pLineEdit, &QILineEdit::textChanged,
@@ -510,9 +511,13 @@ void UIFilterEditor::prepare()
     m_pToolButton = new QToolButton(this);
     if (m_pToolButton)
     {
-#ifdef VBOX_WS_MAC
-        setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
-#endif
+        m_pToolButton->setStyleSheet("QToolButton {\
+                                      border: 0px none black;\
+                                      margin: 0px 5px 0px 5px;\
+                                      }\
+                                      QToolButton::menu-indicator {\
+                                      image: none;\
+                                      }");
         m_pToolButton->hide();
         m_pToolButton->setIconSize(QSize(10, 10));
         m_pToolButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
@@ -542,34 +547,37 @@ void UIFilterEditor::adjustEditorGeometry()
     /* Acquire maximum widget width: */
     const int iWidth = width();
 
-    /* Update filter editor geometry: */
+    /* Acquire filter editor size-hint: */
     const QSize esh = m_pLineEdit->minimumSizeHint();
     const int iMinimumEditorWidth = esh.width();
     const int iMinimumEditorHeight = esh.height();
-    /* Update minimum/maximum filter editor width: */
-    m_iUnfocusedEditorWidth = qMax(iWidth / 2, iMinimumEditorWidth);
-    m_iFocusedEditorWidth = qMax(iWidth, iMinimumEditorWidth);
-    m_pAnimation->update();
-    setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
-
-    /* Update filter button geometry: */
+    /* Acquire filter button size-hint: */
     const QSize bsh = m_pToolButton->minimumSizeHint();
     const int iMinimumButtonWidth = bsh.width();
     const int iMinimumButtonHeight = bsh.height();
+
+    /* Update filter button geo: */
+    const int iButtonX = iWidth - iMinimumButtonWidth;
     const int iButtonY = iMinimumEditorHeight > iMinimumButtonHeight
                        ? (iMinimumEditorHeight - iMinimumButtonHeight) / 2 + 1
                        : 0;
-    m_pToolButton->setGeometry(iWidth - iMinimumButtonWidth - 1, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
+    m_pToolButton->setGeometry(iButtonX, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
+
+    /* Update minimum/maximum filter editor width: */
+    m_iUnfocusedEditorWidth = qMax(iWidth / 2 - iMinimumButtonWidth, iMinimumEditorWidth);
+    m_iFocusedEditorWidth = qMax(iWidth - iMinimumButtonWidth, iMinimumEditorWidth);
+    m_pAnimation->update();
+    setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
 }
 
-void UIFilterEditor::setEditorWidth(int iWidth)
+void UIFilterEditor::setEditorWidth(int iEditorWidth)
 {
     /* Align filter editor right: */
-    const int iX = width() - iWidth;
+    const int iX = m_pToolButton->x() - iEditorWidth;
     const int iY = 0;
-    const int iHeight = m_pLineEdit->minimumSizeHint().height();
+    const int iEditorHeight = m_pLineEdit->minimumSizeHint().height();
     const QRect oldGeo = m_pLineEdit->geometry();
-    m_pLineEdit->setGeometry(iX, iY, iWidth, iHeight);
+    m_pLineEdit->setGeometry(iX, iY, iEditorWidth, iEditorHeight);
     const QRect newGeo = m_pLineEdit->geometry();
 
     /* Update rasterizer: */
