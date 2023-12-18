@@ -322,6 +322,22 @@ static void vboxDXEmitSetConstantBuffers(PVBOXDX_DEVICE pDevice)
             else
                 vgpu10SetSingleConstantBuffer(pDevice, i, enmShaderType, 0, 0, 0);
         }
+
+        /* Trim empty slots. */
+        while (pCBS->NumBuffers)
+        {
+            if (pCBS->apResource[pCBS->StartSlot + pCBS->NumBuffers - 1])
+                break;
+            --pCBS->NumBuffers;
+        }
+
+        while (pCBS->NumBuffers)
+        {
+            if (pCBS->apResource[pCBS->StartSlot])
+                break;
+            --pCBS->NumBuffers;
+            ++pCBS->StartSlot;
+        }
     }
 }
 
@@ -340,6 +356,22 @@ static void vboxDXEmitSetVertexBuffers(PVBOXDX_DEVICE pDevice)
 
     vgpu10SetVertexBuffers(pDevice, pVBS->StartSlot, pVBS->NumBuffers, aAllocations,
                            &pVBS->aStrides[pVBS->StartSlot], &pVBS->aOffsets[pVBS->StartSlot]);
+
+    /* Trim empty slots. */
+    while (pVBS->NumBuffers)
+    {
+        if (pVBS->apResource[pVBS->StartSlot + pVBS->NumBuffers - 1])
+            break;
+        --pVBS->NumBuffers;
+    }
+
+    while (pVBS->NumBuffers)
+    {
+        if (pVBS->apResource[pVBS->StartSlot])
+            break;
+        --pVBS->NumBuffers;
+        ++pVBS->StartSlot;
+    }
 }
 
 
@@ -2288,17 +2320,19 @@ void vboxDXSetVertexBuffers(PVBOXDX_DEVICE pDevice, UINT StartSlot, UINT NumBuff
                  StartSlot + i, pVBS->aStrides[StartSlot + i], pVBS->aOffsets[StartSlot + i]));
     }
 
-    UINT FirstSlot = pVBS->StartSlot;
-    UINT EndSlot = pVBS->StartSlot + pVBS->NumBuffers;
-
-    UINT const NewFirstSlot = StartSlot;
-    UINT const NewEndSlot = StartSlot + NumBuffers;
-
-    FirstSlot = RT_MIN(FirstSlot, NewFirstSlot);
-    EndSlot = RT_MAX(EndSlot, NewEndSlot);
-
-    pVBS->StartSlot = FirstSlot;
-    pVBS->NumBuffers = EndSlot - StartSlot;
+    /* Join the current range and the new range. */
+    if (pVBS->NumBuffers == 0)
+    {
+        pVBS->StartSlot = StartSlot;
+        pVBS->NumBuffers = NumBuffers;
+    }
+    else
+    {
+        UINT FirstSlot = RT_MIN(StartSlot, pVBS->StartSlot);
+        UINT EndSlot = RT_MAX(pVBS->StartSlot + pVBS->NumBuffers, StartSlot + NumBuffers);
+        pVBS->StartSlot = FirstSlot;
+        pVBS->NumBuffers = EndSlot - FirstSlot;
+    }
 }
 
 
@@ -3029,17 +3063,19 @@ void vboxDXSetConstantBuffers(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShader
                  pResource ? pResource->AllocationDesc.cbAllocation : -1));
     }
 
-    UINT FirstSlot = pCBS->StartSlot;
-    UINT EndSlot = pCBS->StartSlot + pCBS->NumBuffers;
-
-    UINT const NewFirstSlot = StartSlot;
-    UINT const NewEndSlot = StartSlot + NumBuffers;
-
-    FirstSlot = RT_MIN(FirstSlot, NewFirstSlot);
-    EndSlot = RT_MAX(EndSlot, NewEndSlot);
-
-    pCBS->StartSlot = FirstSlot;
-    pCBS->NumBuffers = EndSlot - StartSlot;
+    /* Join the current range and the new range. */
+    if (pCBS->NumBuffers == 0)
+    {
+        pCBS->StartSlot = StartSlot;
+        pCBS->NumBuffers = NumBuffers;
+    }
+    else
+    {
+        UINT FirstSlot = RT_MIN(StartSlot, pCBS->StartSlot);
+        UINT EndSlot = RT_MAX(pCBS->StartSlot + pCBS->NumBuffers, StartSlot + NumBuffers);
+        pCBS->StartSlot = FirstSlot;
+        pCBS->NumBuffers = EndSlot - FirstSlot;
+    }
 }
 
 
