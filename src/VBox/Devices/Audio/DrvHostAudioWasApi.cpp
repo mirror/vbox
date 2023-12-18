@@ -811,25 +811,6 @@ static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOS
     RTMemFree(pDevCfg);
 }
 
-/**
- * Invalidates device cache entry configurations.
- *
- * This is needed in order to not run into deadlocks when trying to release a stale device interface
- * via Release().
- *
- * @param   pThis       The WASAPI host audio driver instance data.
- * @param   pDevEntry   The device entry to invalidate.
- */
-static void drvHostAudioWasCacheInvalidateDevEntryConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
-{
-    RT_NOREF(pThis);
-
-    Log8Func(("Invalidating cache entry configurations: %p - '%ls'\n", pDevEntry, pDevEntry->wszDevId));
-
-    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg, pDevCfgNext;
-    RTListForEachSafe(&pDevEntry->ConfigList, pDevCfg, pDevCfgNext, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
-        pDevCfg->pIAudioClient = NULL;
-}
 
 /**
  * Destroys a device cache entry.
@@ -1254,24 +1235,17 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
                  * Cache hit -- here we now need to also check if the device interface we want to look up
                  * actually matches the one we have in the cache entry.
                  *
-                 * If it doesn't, invalidate + remove the cache entry from the cache and bail out.
-                 * Add a new device entry to the cache with the new interface below then.
+                 * If it doesn't, bail out and add a new device entry to the cache with the new interface below then.
                  *
                  * This is needed when switching audio interfaces and the device interface becomes invalid via
                  * AUDCLNT_E_DEVICE_INVALIDATED.  See @bugref{10503}
                  */
-                if (pIDevice != pDevEntry->pIDevice)
+                if (pDevEntry->pIDevice != pIDevice)
                 {
                     LogRel2(("WasAPI: Cache hit for device '%ls': Stale interface (new: %p, old: %p)\n",
                               pDevEntry->wszDevId, pIDevice, pDevEntry->pIDevice));
 
-                    LogRel(("WasAPI: Stale audio interface '%ls' detected! Invalidating audio interface ...\n",
-                            pDevEntry->wszDevId));
-
-                    drvHostAudioWasCacheInvalidateDevEntryConfig(pThis, pDevEntry);
-                    RTListNodeRemove(&pDevEntry->ListEntry);
-                    drvHostAudioWasCacheDestroyDevEntry(pThis, pDevEntry);
-                    pDevEntry = NULL;
+                    LogRel(("WasAPI: Stale audio interface '%ls' detected!\n", pDevEntry->wszDevId));
                     break;
                 }
 
