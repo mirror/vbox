@@ -1310,22 +1310,7 @@ static RTEXITCODE cloudInstanceMetricList(HandlerArg *a, int iFirst, PCLOUDCOMMO
             CHECK_ERROR2_RET(hrc, oCloudClient, GetMetricTypeByName(value.raw(), &aMetricType), RTEXITCODE_FAILURE);
 
             if (SUCCEEDED(hrc))
-            {
-                switch (aMetricType)
-                {
-                    case MetricType_CpuUtilization:
-                    case MetricType_MemoryUtilization:
-                    case MetricType_DiskBytesRead:
-                    case MetricType_DiskBytesWritten:
-                    case MetricType_NetworksBytesIn:
-                    case MetricType_NetworksBytesOut:
-                        RTPrintf(Cloud::tr(" - %ls\n"), value.raw());
-                        break;
-                    case MetricType_Invalid:
-                    default:
-                        break;
-                }
-            }
+                RTPrintf(Cloud::tr(" - %ls\n"), value.raw());
         }
     }
 
