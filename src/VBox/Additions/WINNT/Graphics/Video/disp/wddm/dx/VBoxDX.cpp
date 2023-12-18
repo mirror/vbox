@@ -1956,23 +1956,39 @@ static VMSVGAQUERYINFO const *getQueryInfo(D3D10DDI_QUERY Query)
     return &aQueryInfo[Query];
 }
 
-void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
+
+#ifdef DEBUG
+static bool isBeginDisabled(D3D10DDI_QUERY q)
 {
-    VMSVGAQUERYINFO const *pQueryInfo = getQueryInfo(pQuery->Query);
+    return q == D3D10DDI_QUERY_EVENT
+        || q == D3D10DDI_QUERY_TIMESTAMP;
+}
+#endif
+
+
+void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, D3D10DDI_QUERY Query, UINT MiscFlags)
+{
+    VMSVGAQUERYINFO const *pQueryInfo = getQueryInfo(Query);
     AssertReturnVoidStmt(pQueryInfo, vboxDXDeviceSetError(pDevice, E_INVALIDARG));
 
+    pQuery->Query = Query;
     pQuery->svga.queryType = pQueryInfo->queryTypeSvga;
+    pQuery->svga.flags = 0;
+    if (MiscFlags & D3D10DDI_QUERY_MISCFLAG_PREDICATEHINT)
+        pQuery->svga.flags |= SVGA3D_DXQUERY_FLAG_PREDICATEHINT;
     pQuery->enmQueryState = VBOXDXQUERYSTATE_CREATED;
+    pQuery->u64Value = 0;
 
     int rc = RTHandleTableAlloc(pDevice->hHTQuery, pQuery, &pQuery->uQueryId);
     AssertRCReturnVoidStmt(rc, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY));
 
     /* Allocate mob space for this query. */
     pQuery->pCOAllocation = NULL;
+    uint32_t const cbAlloc = (pQuery->Query != D3D10DDI_QUERY_EVENT ? sizeof(uint32_t) : 0) + pQueryInfo->cbDataSvga;
     PVBOXDXCOALLOCATION pIter;
     RTListForEach(&pDevice->listCOAQuery, pIter, VBOXDXCOALLOCATION, nodeAllocationsChain)
     {
-        if (vboxDXCOABlockAlloc(pIter, pQueryInfo->cbDataSvga, &pQuery->offQuery))
+        if (vboxDXCOABlockAlloc(pIter, cbAlloc, &pQuery->offQuery))
         {
             pQuery->pCOAllocation = pIter;
             break;
@@ -1986,17 +2002,43 @@ void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
             AssertFailedReturnVoidStmt(RTHandleTableFree(pDevice->hHTQuery, pQuery->uQueryId);
                                        vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY));
 
-        if (!vboxDXCOABlockAlloc(pQuery->pCOAllocation, pQueryInfo->cbDataSvga, &pQuery->offQuery))
+        if (!vboxDXCOABlockAlloc(pQuery->pCOAllocation, cbAlloc, &pQuery->offQuery))
             AssertFailedReturnVoidStmt(RTHandleTableFree(pDevice->hHTQuery, pQuery->uQueryId);
                                        vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY));
     }
 
     RTListAppend(&pDevice->listQueries, &pQuery->nodeQuery);
+
+    if (pQuery->Query != D3D10DDI_QUERY_EVENT)
+    {
+        D3DDDICB_LOCK ddiLock;
+        RT_ZERO(ddiLock);
+        ddiLock.hAllocation = pQuery->pCOAllocation->hCOAllocation;
+        ddiLock.Flags.WriteOnly = 1;
+        HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
+        if (SUCCEEDED(hr))
+        {
+            *(uint32_t *)((uint8_t *)ddiLock.pData + pQuery->offQuery) = SVGA3D_QUERYSTATE_PENDING;
+
+            D3DDDICB_UNLOCK ddiUnlock;
+            ddiUnlock.NumAllocations = 1;
+            ddiUnlock.phAllocations = &pQuery->pCOAllocation->hCOAllocation;
+            hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
+        }
+        AssertReturnVoidStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
+
+        vgpu10DefineQuery(pDevice, pQuery->uQueryId, pQuery->svga.queryType, pQuery->svga.flags);
+        vgpu10BindQuery(pDevice, pQuery->uQueryId, pQuery->pCOAllocation->hCOAllocation);
+        vgpu10SetQueryOffset(pDevice, pQuery->uQueryId, pQuery->offQuery);
+    }
 }
 
 
 void vboxDXDestroyQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 {
+    if (pQuery->Query != D3D10DDI_QUERY_EVENT)
+        vgpu10DestroyQuery(pDevice, pQuery->uQueryId);
+
     if (pQuery->pCOAllocation)
     {
         vboxDXCOABlockFree(pQuery->pCOAllocation, pQuery->offQuery);
@@ -2010,29 +2052,35 @@ void vboxDXDestroyQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 
 void vboxDXQueryBegin(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 {
-    if (pQuery->Query == D3D10DDI_QUERY_EVENT)
-    {
-        pQuery->enmQueryState = VBOXDXQUERYSTATE_BUILDING;
-        return;
-    }
+    Assert(pQuery->enmQueryState == VBOXDXQUERYSTATE_CREATED || pQuery->enmQueryState == VBOXDXQUERYSTATE_SIGNALED);
 
-    RT_NOREF(pDevice);
-    DEBUG_BREAKPOINT_TEST();
+    pQuery->enmQueryState = VBOXDXQUERYSTATE_BUILDING;
+    if (pQuery->Query == D3D10DDI_QUERY_EVENT)
+        return;
+
+    vgpu10BeginQuery(pDevice, pQuery->uQueryId);
 }
 
 
 void vboxDXQueryEnd(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 {
+    Assert(   pQuery->enmQueryState == VBOXDXQUERYSTATE_BUILDING
+           || (   isBeginDisabled(pQuery->Query)
+               && (   pQuery->enmQueryState == VBOXDXQUERYSTATE_CREATED
+                   || pQuery->enmQueryState == VBOXDXQUERYSTATE_SIGNALED)
+              )
+          );
+
+    pQuery->enmQueryState = VBOXDXQUERYSTATE_ISSUED;
+
     if (pQuery->Query == D3D10DDI_QUERY_EVENT)
     {
         pQuery->u64Value = ASMAtomicIncU64(&pDevice->u64MobFenceValue);
         vgpu10MobFence64(pDevice, pQuery->u64Value, pQuery->pCOAllocation->hCOAllocation, pQuery->offQuery);
-        pQuery->enmQueryState = VBOXDXQUERYSTATE_ISSUED;
         return;
     }
 
-    Assert(pQuery->enmQueryState == VBOXDXQUERYSTATE_BUILDING);
-    DEBUG_BREAKPOINT_TEST();
+    vgpu10EndQuery(pDevice, pQuery->uQueryId);
 }
 
 
@@ -2075,7 +2123,132 @@ void vboxDXQueryGetData(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, VOID* pData
         return;
     }
 
-    DEBUG_BREAKPOINT_TEST();
+    vgpu10ReadbackQuery(pDevice, pQuery->uQueryId);
+
+    VMSVGAQUERYINFO const *pQueryInfo = getQueryInfo(pQuery->Query);
+    AssertReturnVoidStmt(pQueryInfo, vboxDXDeviceSetError(pDevice, E_INVALIDARG));
+
+    void *pvResult = RTMemTmpAlloc(pQueryInfo->cbDataSvga);
+    AssertReturnVoidStmt(pvResult, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY));
+
+    uint32_t u32QueryStatus = SVGA3D_QUERYSTATE_PENDING;
+
+    D3DDDICB_LOCK ddiLock;
+    RT_ZERO(ddiLock);
+    ddiLock.hAllocation = pQuery->pCOAllocation->hCOAllocation;
+    ddiLock.Flags.ReadOnly = 1;
+    HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
+    if (SUCCEEDED(hr))
+    {
+        uint8_t *pu8 = (uint8_t *)ddiLock.pData + pQuery->offQuery;
+        u32QueryStatus = *(uint32_t *)pu8;
+
+        memcpy(pvResult, pu8 + sizeof(uint32_t), pQueryInfo->cbDataSvga);
+
+        D3DDDICB_UNLOCK ddiUnlock;
+        ddiUnlock.NumAllocations = 1;
+        ddiUnlock.phAllocations = &pQuery->pCOAllocation->hCOAllocation;
+        hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
+    }
+    AssertReturnVoidStmt(SUCCEEDED(hr), RTMemTmpFree(pvResult); vboxDXDeviceSetError(pDevice, hr));
+
+    if (u32QueryStatus != SVGA3D_QUERYSTATE_SUCCEEDED)
+        vboxDXDeviceSetError(pDevice, DXGI_DDI_ERR_WASSTILLDRAWING);
+    else
+    {
+        pQuery->enmQueryState = VBOXDXQUERYSTATE_SIGNALED;
+
+        if (pData && DataSize >= pQueryInfo->cbDataDDI)
+        {
+            typedef union DDIQUERYRESULT
+            {
+                UINT64                                   occlusion;            /* D3D10DDI_QUERY_OCCLUSION */
+                UINT64                                   timestamp;            /* D3D10DDI_QUERY_TIMESTAMP */
+                D3D10_DDI_QUERY_DATA_TIMESTAMP_DISJOINT  timestampDisjoint;    /* D3D10DDI_QUERY_TIMESTAMPDISJOINT */
+                D3D10_DDI_QUERY_DATA_PIPELINE_STATISTICS pipelineStatistics10; /* D3D10DDI_QUERY_PIPELINESTATS */
+                BOOL                                     occlusionPredicate;   /* D3D10DDI_QUERY_OCCLUSIONPREDICATE */
+                D3D10_DDI_QUERY_DATA_SO_STATISTICS       soStatistics;         /* D3D10DDI_QUERY_STREAMOUTPUTSTATS, D3D11DDI_QUERY_STREAMOUTPUTSTATS_STREAM[0-3] */
+                BOOL                                     soOverflowPredicate;  /* D3D10DDI_QUERY_STREAMOVERFLOWPREDICATE, D3D11DDI_QUERY_STREAMOVERFLOWPREDICATE_STREAM[0-3] */
+                D3D11_DDI_QUERY_DATA_PIPELINE_STATISTICS pipelineStatistics11; /* D3D11DDI_QUERY_PIPELINESTATS */
+            } DDIQUERYRESULT;
+            SVGADXQueryResultUnion const *pSvgaData = (SVGADXQueryResultUnion *)pvResult;
+            DDIQUERYRESULT *pDDIData = (DDIQUERYRESULT *)pData;
+            switch (pQuery->Query)
+            {
+                case D3D10DDI_QUERY_OCCLUSION:
+                {
+                    pDDIData->occlusion = pSvgaData->occ.samplesRendered;
+                    break;
+                }
+                case D3D10DDI_QUERY_TIMESTAMP:
+                {
+                    pDDIData->timestamp = pSvgaData->ts.timestamp;
+                    break;
+                }
+                case D3D10DDI_QUERY_TIMESTAMPDISJOINT:
+                {
+                    pDDIData->timestampDisjoint.Frequency = pSvgaData->tsDisjoint.realFrequency;
+                    pDDIData->timestampDisjoint.Disjoint = pSvgaData->tsDisjoint.disjoint;
+                    break;
+                }
+                case D3D10DDI_QUERY_PIPELINESTATS:
+                {
+                    pDDIData->pipelineStatistics10.IAVertices    = pSvgaData->pipelineStats.inputAssemblyVertices;
+                    pDDIData->pipelineStatistics10.IAPrimitives  = pSvgaData->pipelineStats.inputAssemblyPrimitives;
+                    pDDIData->pipelineStatistics10.VSInvocations = pSvgaData->pipelineStats.vertexShaderInvocations;
+                    pDDIData->pipelineStatistics10.GSInvocations = pSvgaData->pipelineStats.geometryShaderInvocations;
+                    pDDIData->pipelineStatistics10.GSPrimitives  = pSvgaData->pipelineStats.geometryShaderPrimitives;
+                    pDDIData->pipelineStatistics10.CInvocations  = pSvgaData->pipelineStats.clipperInvocations;
+                    pDDIData->pipelineStatistics10.CPrimitives   = pSvgaData->pipelineStats.clipperPrimitives;
+                    pDDIData->pipelineStatistics10.PSInvocations = pSvgaData->pipelineStats.pixelShaderInvocations;
+                    break;
+                }
+                case D3D10DDI_QUERY_OCCLUSIONPREDICATE:
+                {
+                    pDDIData->occlusionPredicate = pSvgaData->occPred.anySamplesRendered;
+                    break;
+                }
+                case D3D10DDI_QUERY_STREAMOUTPUTSTATS:
+                case D3D11DDI_QUERY_STREAMOUTPUTSTATS_STREAM0:
+                case D3D11DDI_QUERY_STREAMOUTPUTSTATS_STREAM1:
+                case D3D11DDI_QUERY_STREAMOUTPUTSTATS_STREAM2:
+                case D3D11DDI_QUERY_STREAMOUTPUTSTATS_STREAM3:
+                {
+                    pDDIData->soStatistics.NumPrimitivesWritten    = pSvgaData->soStats.numPrimitivesWritten;
+                    pDDIData->soStatistics.PrimitivesStorageNeeded = pSvgaData->soStats.numPrimitivesRequired;
+                    break;
+                }
+                case D3D11DDI_QUERY_STREAMOVERFLOWPREDICATE_STREAM0:
+                case D3D11DDI_QUERY_STREAMOVERFLOWPREDICATE_STREAM1:
+                case D3D11DDI_QUERY_STREAMOVERFLOWPREDICATE_STREAM2:
+                case D3D11DDI_QUERY_STREAMOVERFLOWPREDICATE_STREAM3:
+                case D3D10DDI_QUERY_STREAMOVERFLOWPREDICATE:
+                {
+                    pDDIData->soOverflowPredicate = pSvgaData->soPred.overflowed;
+                    break;
+                }
+                case D3D11DDI_QUERY_PIPELINESTATS:
+                {
+                    pDDIData->pipelineStatistics11.IAVertices    = pSvgaData->pipelineStats.inputAssemblyVertices;
+                    pDDIData->pipelineStatistics11.IAPrimitives  = pSvgaData->pipelineStats.inputAssemblyPrimitives;
+                    pDDIData->pipelineStatistics11.VSInvocations = pSvgaData->pipelineStats.vertexShaderInvocations;
+                    pDDIData->pipelineStatistics11.GSInvocations = pSvgaData->pipelineStats.geometryShaderInvocations;
+                    pDDIData->pipelineStatistics11.GSPrimitives  = pSvgaData->pipelineStats.geometryShaderPrimitives;
+                    pDDIData->pipelineStatistics11.CInvocations  = pSvgaData->pipelineStats.clipperInvocations;
+                    pDDIData->pipelineStatistics11.CPrimitives   = pSvgaData->pipelineStats.clipperPrimitives;
+                    pDDIData->pipelineStatistics11.PSInvocations = pSvgaData->pipelineStats.pixelShaderInvocations;
+                    pDDIData->pipelineStatistics11.HSInvocations = pSvgaData->pipelineStats.hullShaderInvocations;
+                    pDDIData->pipelineStatistics11.DSInvocations = pSvgaData->pipelineStats.domainShaderInvocations;
+                    pDDIData->pipelineStatistics11.CSInvocations = pSvgaData->pipelineStats.computeShaderInvocations;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    RTMemTmpFree(pvResult);
 }
 
 

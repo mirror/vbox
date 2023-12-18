@@ -265,6 +265,24 @@ int vgpu10MobFence64(PVBOXDX_DEVICE pDevice,
                      uint64 value,
                      D3DKMT_HANDLE hAllocation,
                      uint32 mobOffset);
+int vgpu10DefineQuery(PVBOXDX_DEVICE pDevice,
+                      SVGA3dQueryId queryId,
+                      SVGA3dQueryType type,
+                      SVGA3dDXQueryFlags flags);
+int vgpu10DestroyQuery(PVBOXDX_DEVICE pDevice,
+                       SVGA3dQueryId queryId);
+int vgpu10BindQuery(PVBOXDX_DEVICE pDevice,
+                    SVGA3dQueryId queryId,
+                    D3DKMT_HANDLE hAllocation);
+int vgpu10SetQueryOffset(PVBOXDX_DEVICE pDevice,
+                         SVGA3dQueryId queryId,
+                         uint32 mobOffset);
+int vgpu10BeginQuery(PVBOXDX_DEVICE pDevice,
+                     SVGA3dQueryId queryId);
+int vgpu10EndQuery(PVBOXDX_DEVICE pDevice,
+                   SVGA3dQueryId queryId);
+int vgpu10ReadbackQuery(PVBOXDX_DEVICE pDevice,
+                        SVGA3dQueryId queryId);
 int vgpu10SetPredication(PVBOXDX_DEVICE pDevice,
                          SVGA3dQueryId queryId,
                          uint32 predicateValue);

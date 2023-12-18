@@ -2564,10 +2564,7 @@ static void APIENTRY ddi10CreateQuery(
     LogFlowFunc(("pDevice 0x%p, pQuery 0x%p", pDevice, pQuery));
 
     pQuery->hRTQuery = hRTQuery;
-    pQuery->Query = pCreateQuery->Query;
-    pQuery->MiscFlags = pCreateQuery->MiscFlags;
-
-    vboxDXCreateQuery(pDevice, pQuery);
+    vboxDXCreateQuery(pDevice, pQuery, pCreateQuery->Query, pCreateQuery->MiscFlags);
 }
 
 static void APIENTRY ddi10DestroyQuery(

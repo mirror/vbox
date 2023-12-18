@@ -161,10 +161,10 @@ typedef struct VBOXDXQUERY
     RTLISTNODE                  nodeQuery;                  /* VBOXDX_DEVICE::listQueries */
     D3D10DDI_HRTQUERY           hRTQuery;
     D3D10DDI_QUERY              Query;
-    UINT                        MiscFlags;
     struct
     {
         SVGA3dQueryType         queryType;
+        SVGA3dDXQueryFlags      flags;
     } svga;
     VBOXDXQUERYSTATE            enmQueryState;
     uint32_t                    uQueryId;
@@ -685,7 +685,7 @@ void vboxDXCreateStreamOutput(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader,
                               const UINT  *BufferStridesInBytes, UINT NumStrides,
                               UINT RasterizedStream);
 void vboxDXDestroyShader(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader);
-void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery);
+void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, D3D10DDI_QUERY Query, UINT MiscFlags);
 void vboxDXDestroyQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery);
 void vboxDXQueryBegin(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery);
 void vboxDXQueryEnd(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery);
