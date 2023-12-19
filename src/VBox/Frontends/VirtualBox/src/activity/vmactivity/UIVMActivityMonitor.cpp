@@ -66,6 +66,8 @@ const ULONG g_iPeriod = 1;
 const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
 
+const int g_iBackgroundTint = 104;
+
 
 /*********************************************************************************************************************************
 *   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
@@ -245,6 +247,7 @@ private:
     /** The width of the right margin in characters. */
     int m_iRightMarginCharWidth;
     int m_iMaximumQueueSize;
+    QLabel *m_pMouseOverLabel;
 };
 
 
@@ -326,7 +329,13 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     , m_fDrawCurenValueIndicators(true)
     , m_iRightMarginCharWidth(10)
     , m_iMaximumQueueSize(iMaximumQueueSize)
+    , m_pMouseOverLabel(0)
 {
+    QPalette tempPal = palette();
+    tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
+    setPalette(tempPal);
+    setAutoFillBackground(true);
+
     setToolTipDuration(-1);
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
@@ -340,7 +349,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
 
     m_iMarginLeft = 3 * QFontMetricsF(m_axisFont).averageCharWidth();
     m_iMarginRight = m_iRightMarginCharWidth * QFontMetricsF(m_axisFont).averageCharWidth();
-    m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginTop = QFontMetrics(m_axisFont).height();
     m_iMarginBottom = QFontMetrics(m_axisFont).height();
 
     float fAppIconSize = qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
@@ -348,6 +357,12 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     m_iPieChartSpacing = 2;
     m_iPieChartRadius = m_size.height() - (m_iMarginTop + m_iMarginBottom + 2 * m_iPieChartSpacing);
 
+    m_pMouseOverLabel = new QLabel(this);
+    m_pMouseOverLabel->hide();
+    m_pMouseOverLabel->setFrameStyle(QFrame::Box);
+    m_pMouseOverLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_pMouseOverLabel->setAutoFillBackground(true);
+    m_pMouseOverLabel->setMargin(0.1 * QStyle::PM_HeaderMargin);
     retranslateUi();
 }
 
@@ -495,16 +510,32 @@ bool UIChart::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::Leave)
     {
+        if (m_pMouseOverLabel)
+            m_pMouseOverLabel->setVisible(false);
         m_iDataIndexUnderCursor = -1;
         emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
     }
     else if (pEvent->type() == QEvent::ToolTip)
     {
         QHelpEvent *pToolTipEvent = static_cast<QHelpEvent *>(pEvent);
-        if (m_iDataIndexUnderCursor == -1)
-            QToolTip::hideText();
-        else
-            QToolTip::showText(pToolTipEvent->globalPos(), toolTipText(), this, m_lineChartRect);
+        // if (m_iDataIndexUnderCursor == -1)
+        //     QToolTip::hideText();
+        // else
+        //     QToolTip::showText(pToolTipEvent->globalPos(), toolTipText(), this, m_lineChartRect);
+        if (m_pMouseOverLabel)
+        {
+            if (m_iDataIndexUnderCursor == -1)
+                m_pMouseOverLabel->setVisible(false);
+            else
+            {
+                m_pMouseOverLabel->setText(toolTipText());
+
+                //m_pMouseOverLabel->resize(m_pMouseOverLabel->fontMetrics().size(Qt::TextSingleLine, m_pMouseOverLabel->text()));
+                m_pMouseOverLabel->move(QPoint(pToolTipEvent->pos().x(), pToolTipEvent->pos().y() - m_pMouseOverLabel->height()));
+                m_pMouseOverLabel->setVisible(true);
+            }
+        }
+
 
     }
     return QIWithRetranslateUI<QWidget>::event(pEvent);
@@ -665,7 +696,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
             painter.setPen(mainAxisColor);
             float fX = (width() - m_iMarginRight) - ((data->size() - m_iDataIndexUnderCursor - 1) * fBarWidth);
-            painter.drawLine(fX, 0, fX, height() - m_iMarginBottom);
+            painter.drawLine(fX, m_iMarginTop, fX, height() - m_iMarginBottom);
         }
     }
 
@@ -789,14 +820,36 @@ QString UIChart::toolTipText() const
 {
     if (m_iDataIndexUnderCursor == -1)
         return QString();
-    QStringList toolTipStrings;
-    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+
+    if (!m_pMetric->data(0) ||  m_pMetric->data(0)->isEmpty())
+        return QString();
+    QString strToolTip;
+    if (m_pMetric->data(1) &&  !m_pMetric->data(1)->isEmpty())
     {
-        const QQueue<quint64> *data = m_pMetric->data(k);
-        if (data && data->size() > 0 && m_iDataIndexUnderCursor < data->size())
-            toolTipStrings << YAxisValueLabel(data->at(m_iDataIndexUnderCursor));
+        strToolTip = QString("<font color=\"%1\">%2</font> / <font color=\"%3\">%4</font>")
+            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(0)->at(m_iDataIndexUnderCursor)))
+            .arg(m_dataSeriesColor[1].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(1)->at(m_iDataIndexUnderCursor)));
     }
-    return toolTipStrings.join(" / ");
+    else
+    {
+        strToolTip = QString("<font color=\"%1\">%2</font>")
+            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(0)->at(m_iDataIndexUnderCursor)));
+    }
+    return strToolTip;
+    //m_dataSeriesColor[iDataIndex]);
+    // return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
+    // QColor dataSeriesColor(int iDataSeriesIndex, int iDark = 0);
+    //QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
+
+    // QStringList toolTipStrings;
+    // for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+    // {
+    //     const QQueue<quint64> *data = m_pMetric->data(k);
+    //     if (data && data->size() > 0 && m_iDataIndexUnderCursor < data->size())
+    //         toolTipStrings << YAxisValueLabel(data->at(m_iDataIndexUnderCursor));
+    // }
+    // return toolTipStrings.join(" / ");
+    //QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
@@ -1190,7 +1243,13 @@ void UIVMActivityMonitor::prepareWidgets()
         pChartLayout->setSpacing(0);
 
         QLabel *pLabel = new QLabel(this);
-        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+        QPalette tempPal = pLabel->palette();
+        tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
+        pLabel->setPalette(tempPal);
+        pLabel->setAutoFillBackground(true);
+
+        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(strMetricName, pLabel);
 
