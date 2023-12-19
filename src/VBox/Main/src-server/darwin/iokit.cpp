@@ -1155,8 +1155,9 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 darwinDictGetU8(PropsRef, CFSTR("PortNum"), &pCur->bPort); /* Not present in 10.11 beta 3, so ignore failure. (Is set to zero.) */
                 uint8_t bSpeed;
                 AssertBreak(darwinDictGetU8(PropsRef, CFSTR(kUSBDevicePropertySpeed), &bSpeed));
-                Assert(bSpeed <= 3);
-                pCur->enmSpeed = bSpeed == 3 ? USBDEVICESPEED_SUPER
+                Assert(bSpeed <= 4);
+                pCur->enmSpeed = bSpeed == 4 ? USBDEVICESPEED_SUPER
+                               : bSpeed == 3 ? USBDEVICESPEED_SUPER
                                : bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
                                : bSpeed == 0 ? USBDEVICESPEED_LOW
