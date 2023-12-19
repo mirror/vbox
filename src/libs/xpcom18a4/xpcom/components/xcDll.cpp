@@ -86,7 +86,11 @@ nsDll::~nsDll(void)
     // - callbacks
     // - static dtors
     // Hence turn it back on after all the above have been removed.
-    //Unload();
+#if defined(DEBUG) && defined(IPRT_WITH_GCC_SANITIZER)
+    /* Although this looks like it's what we should be doing here, we don't want to enable this for release builds (yet).
+     * Needs more testing and/or debugging first. See @bugref{10545c6}. */
+    Unload();
+#endif
     //#endif
 }
 
