@@ -702,7 +702,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
     /* Draw YAxis tick labels: */
     painter.setPen(mainAxisColor);
-    for (int i = iYSubAxisCount + 1; i >= 0; --i)
+    /* This skips 0 and starts at the 2nd Y axis tick to label: */
+    for (int i = iYSubAxisCount; i >= 0; --i)
     {
         /* Draw the bottom most label and skip others when data maximum is 0: */
         if (iMaximum == 0 && i <= iYSubAxisCount)
@@ -746,13 +747,9 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
         QString strAxisText;
         if (m_pMetric && m_pMetric->hasDataLabels())
         {
-            int iDataIndex = iTimeIndex - (m_iMaximumQueueSize - maxDataSize());
             const QQueue<QString> *labels = m_pMetric->labels();
-            if (iDataIndex < labels->size())
-            {
-                strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
-
-            }
+            int iDataIndex = qMin(labels->size() - 1, iTimeIndex - (m_iMaximumQueueSize - maxDataSize()));
+            strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
         }
         else
             strAxisText = QString::number(iTimeIndex);
@@ -764,7 +761,8 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
         int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
         if (i == 0)
         {
-            strAxisText += " " + m_strXAxisLabel;
+            if (!m_pMetric || !m_pMetric->hasDataLabels())
+                strAxisText += " " + m_strXAxisLabel;
             painter.drawText(iTextX, m_lineChartRect.bottom() + iFontHeight, strAxisText);
         }
         else

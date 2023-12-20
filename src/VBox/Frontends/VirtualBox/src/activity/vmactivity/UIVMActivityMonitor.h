@@ -318,7 +318,7 @@ public:
     UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
-    /** Accoring to OCI docs returned time stamp is in RFC3339 format. */
+    /** According to OCI docs returned time stamp is in RFC3339 format. */
     static QString formatCloudTimeStamp(const QString &strInput);
 
 private slots:
