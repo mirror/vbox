@@ -1801,6 +1801,9 @@ typedef const X86MTRRVAR *PCX86MTRRVAR;
 /** Variable-range MTRR physical mask valid. */
 #define MSR_IA32_MTRR_PHYSMASK_VALID        RT_BIT_64(11)
 
+/** Variable-range MTRR memory type mask. */
+#define MSR_IA32_MTRR_PHYSBASE_MT_MASK      UINT64_C(0xff)
+
 /** Global performance counter control facilities (Intel only). */
 #define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
 #define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
