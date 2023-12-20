@@ -177,10 +177,15 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
                 while (g_pfnFindNextVolumeMountPointW(hMp, wszMp, RT_ELEMENTS(wszMp)));
                 g_pfnFindVolumeMountPointClose(hMp);
             }
-            else if (   GetLastError() != ERROR_NO_MORE_FILES
-                     && GetLastError() != ERROR_PATH_NOT_FOUND
-                     && GetLastError() != ERROR_UNRECOGNIZED_VOLUME)
-                rc = RTErrConvertFromWin32(GetLastError());
+            else
+            {
+                DWORD const dwErr = GetLastError();
+                if (   dwErr != ERROR_NO_MORE_FILES
+                    && dwErr != ERROR_PATH_NOT_FOUND
+                    && dwErr != ERROR_UNRECOGNIZED_VOLUME
+                    && dwErr != ERROR_ACCESS_DENIED) /* Can happen for regular users, so just skip this stuff then. */
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
 
             if (RT_SUCCESS(rc))
             {
