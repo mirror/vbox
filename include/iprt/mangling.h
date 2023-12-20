@@ -1056,6 +1056,7 @@
 # define RTFileWriteAt                                  RT_MANGLER(RTFileWriteAt)
 # define RTFilesystemVfsFromFile                        RT_MANGLER(RTFilesystemVfsFromFile)
 # define RTFsIsCaseSensitive                            RT_MANGLER(RTFsIsCaseSensitive)
+# define RTFsMountpointsEnum                            RT_MANGLER(RTFsMountpointsEnum)
 # define RTFsQueryProperties                            RT_MANGLER(RTFsQueryProperties)
 # define RTFsQuerySerial                                RT_MANGLER(RTFsQuerySerial)
 # define RTFsQuerySizes                                 RT_MANGLER(RTFsQuerySizes)

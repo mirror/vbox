@@ -1062,6 +1062,7 @@ RuntimeBaseR3_SOURCES.win = \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTFileQuerySectorSize-win.cpp \
+	r3/win/RTFsMountpointsEnum-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTLocaleQueryNormalizedBaseLocaleName-win.cpp \
 	r3/win/RTLocaleQueryUserCountryCode-win.cpp \
@@ -1161,6 +1162,7 @@ RuntimeBaseR3_SOURCES.linux = \
 	r3/linux/RTSystemQueryDmiString-linux.cpp \
 	r3/linux/RTSystemShutdown-linux.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -2983,6 +2985,7 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
 endif
 VBoxRT_LIBS.win               += \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/wbemuuid.lib \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/mpr.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxRT_LDFLAGS.darwin          = \
 	-framework IOKit \

@@ -41,12 +41,39 @@
 #include <iprt/path.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+#include <iprt/test.h>
 #include <iprt/errcore.h>
 
 
+struct TSTCTX
+{
+    int var;
+    int rc;
+} TestCtx = { 42, VINF_SUCCESS };
+
+DECLCALLBACK(int) mountpointsEnumCallback(const char *pszMountpoint, void *pvUser)
+{
+    TSTCTX *pCtx = (TSTCTX *)pvUser;
+    RTTESTI_CHECK(pCtx->var == 42);
+
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Mountpoint: %s\n", pszMountpoint);
+
+    return pCtx->rc;
+}
+
+static void tstMountpointsEnum(RTTEST hTest)
+{
+    RTTEST_CHECK_RC_OK(hTest, RTFsMountpointsEnum(mountpointsEnumCallback, &TestCtx));
+}
+
+/** @todo r=andy Overhaul this code to make use of the RTTEST APIs. */
 int main(int argc, char **argv)
 {
-    RTR3InitExe(argc, &argv, 0);
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, 0 /* fFlags */, "tstRTFsQueries", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
     /*
      * Process all arguments (including the executable).
@@ -115,9 +142,13 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!cErrors)
-        RTPrintf("tstRTFsQueries: SUCCESS\n");
-    else
-        RTPrintf("tstRTFsQueries: FAIlURE - %u errors\n", cErrors);
-    return !!cErrors;
+    tstMountpointsEnum(hTest);
+
+    if (cErrors)
+        RTTestFailed(hTest, "tstRTFsQueries: FAIlURE - %u errors\n", cErrors);
+
+    /*
+     * Done.
+     */
+    return RTTestSummaryAndDestroy(hTest);
 }
