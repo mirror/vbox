@@ -139,6 +139,7 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
   %define A3        rcx
   %define A3_32     ecx
   %define A3_16     cx
+  %define A3_8      cl
  %endif
 
  %ifdef ASM_CALL64_MSC
@@ -160,6 +161,7 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
   %define A3        r9
   %define A3_32     r9d
   %define A3_16     r9w
+  %define A3_8      r9b
  %endif
 
  %define T0         rax
@@ -4019,6 +4021,7 @@ BEGINPROC_FASTCALL iemAImpl_pshufw_u64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_MMX_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movq    mm1, [A1]
         movq    mm0, mm0                ; paranoia!
         lea     T1, [.imm0 xWrtRIP]
@@ -4051,6 +4054,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm1, [A1]
         movdqu  xmm0, xmm1              ; paranoia!
         lea     T1, [.imm0 xWrtRIP]
@@ -4089,6 +4093,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         vmovdqu  ymm1, [A1]
         vmovdqu  ymm0, ymm1             ; paranoia!
         lea     T1, [.imm0 xWrtRIP]
@@ -4130,6 +4135,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u64, 16
         PROLOGUE_2_ARGS
         IEMIMPL_MMX_PROLOGUE
 
+        movzx   A1, A1_8                ; must clear top bits
         movq    mm0, [A0]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -4171,6 +4177,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
         PROLOGUE_2_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A1, A1_8                ; must clear top bits
         movdqu  xmm0, [A0]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5024,6 +5031,7 @@ BEGINPROC_FASTCALL iemAImpl_shufps_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
         lea     T1, [.imm0 xWrtRIP]
@@ -5063,6 +5071,7 @@ BEGINPROC_FASTCALL iemAImpl_shufpd_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
         lea     T1, [.imm0 xWrtRIP]
@@ -5105,6 +5114,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A1]
         movdqu  xmm1, [A2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5135,6 +5145,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         vmovdqu ymm0, [A1]
         vmovdqu ymm1, [A2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5250,6 +5261,7 @@ BEGINPROC_FASTCALL iemAImpl_palignr_u64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_MMX_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movq    mm0, [A0]
         movq    mm1, A1
         lea     T1, [.imm0 xWrtRIP]
@@ -5293,6 +5305,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
         lea     T1, [.imm0 xWrtRIP]
@@ -5350,6 +5363,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A1]
         movdqu  xmm1, [A2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5383,6 +5397,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         vmovdqu ymm0, [A1]
         vmovdqu ymm1, [A2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5449,6 +5464,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMPCMPISTRXSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
@@ -5491,6 +5507,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMPCMPESTRXSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
@@ -5537,6 +5554,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc1]
         movdqu  xmm2, [A2 + IEMPCMPISTRXSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5578,6 +5596,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc1]
         movdqu  xmm2, [A2 + IEMPCMPESTRXSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
@@ -5623,6 +5642,7 @@ BEGINPROC_FASTCALL iemAImpl_pinsrw_u64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movq    mm0,  [A0]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5652,6 +5672,7 @@ BEGINPROC_FASTCALL iemAImpl_pinsrw_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5689,6 +5710,7 @@ BEGINPROC_FASTCALL iemAImpl_vpinsrw_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A1]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5727,6 +5749,7 @@ BEGINPROC_FASTCALL iemAImpl_pextrw_u64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movq    mm0,  A1
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5756,6 +5779,7 @@ BEGINPROC_FASTCALL iemAImpl_pextrw_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A1]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -5792,6 +5816,7 @@ BEGINPROC_FASTCALL iemAImpl_vpextrw_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A1]
         lea     T1, [.imm0 xWrtRIP]
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -6374,6 +6399,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
@@ -6420,6 +6446,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
@@ -6471,6 +6498,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_LD_FXSTATE_MXCSR_ONLY A0
 
+        movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
@@ -6638,6 +6666,7 @@ BEGINPROC_FASTCALL iemAImpl_sha1rnds4_u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
 
+        movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
         lea     T1, [.imm0 xWrtRIP]
