@@ -455,7 +455,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     AssertLogRelMsgReturn(cbRamHole <= 4032U * _1M,
                           ("Configuration error: \"RamHoleSize\"=%#RX32 is too large.\n", cbRamHole), VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(cbRamHole > 16 * _1M,
-                          ("Configuration error: \"RamHoleSize\"=%#RX32 is too large.\n", cbRamHole), VERR_OUT_OF_RANGE);
+                          ("Configuration error: \"RamHoleSize\"=%#RX32 is too small.\n", cbRamHole), VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(!(cbRamHole & (_4M - 1)),
                           ("Configuration error: \"RamHoleSize\"=%#RX32 is misaligned.\n", cbRamHole), VERR_OUT_OF_RANGE);
     uint64_t const offRamHole = _4G - cbRamHole;
