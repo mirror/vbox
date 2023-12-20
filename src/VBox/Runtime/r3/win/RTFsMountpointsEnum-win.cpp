@@ -42,7 +42,7 @@
 #include <iprt/file.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/utf16.h>
