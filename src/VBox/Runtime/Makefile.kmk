@@ -1301,6 +1301,7 @@ RuntimeBaseR3_SOURCES.os2   = \
 	r3/os2/thread-os2.cpp \
 	r3/os2/time-os2.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -1377,6 +1378,7 @@ RuntimeBaseR3_SOURCES.darwin = \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -1477,6 +1479,7 @@ RuntimeBaseR3_SOURCES.freebsd = \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -1560,6 +1563,7 @@ RuntimeBaseR3_SOURCES.netbsd = \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTFileSetAllocationSize-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1635,6 +1639,7 @@ RuntimeBaseR3_SOURCES.solaris = \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTFileSetAllocationSize-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1747,6 +1752,7 @@ RuntimeBaseR3_SOURCES.haiku = \
 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -2756,6 +2762,7 @@ RuntimeBldProg_SOURCES.os2 += \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFsMountpointsEnum-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
@@ -2984,8 +2991,8 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  VBoxRT_LIBS.solaris += smbios
 endif
 VBoxRT_LIBS.win               += \
-	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/wbemuuid.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/mpr.lib \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/wbemuuid.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxRT_LDFLAGS.darwin          = \
 	-framework IOKit \
@@ -3141,6 +3148,7 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  VBoxRT-x86_LIBS.solaris += smbios
 endif
 VBoxRT-x86_LIBS.win               += \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/mpr.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/wbemuuid.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
 
