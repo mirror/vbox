@@ -39,11 +39,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
+#include <iprt/nt/nt-and-windows.h>
 #include "internal-r3-win.h"
-#include <iprt/file.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
+#include <iprt/file.h>
 #include <iprt/once.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
@@ -91,6 +93,8 @@ static RTONCE g_rtFsWinResolveOnce = RTONCE_INITIALIZER;
  */
 static DECLCALLBACK(int) rtFsWinResolveOnce(void *pvUser)
 {
+    RT_NOREF(pvUser);
+
     /*
      * kernel32.dll volume APIs introduced after NT4.
      */
