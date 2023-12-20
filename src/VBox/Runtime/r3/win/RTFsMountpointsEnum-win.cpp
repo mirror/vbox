@@ -50,6 +50,68 @@
 #include <iprt/win/windows.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/* kernel32.dll: */
+typedef HANDLE (WINAPI *PFNFINDFIRSTVOLUMEW(LPWSTR, DWORD);
+typedef HANDLE (WINAPI *PFNFINDNEXTVOLUMEW(HANDLE, LPWSTR, DWORD);
+typedef HANDLE (WINAPI *PFNFINDVOLUMECLOSE(HANDLE);
+typedef HANDLE (WINAPI *PFNGETVOLUMEPATHNAMESFORVOLUMENAMEW(LPCWSTR, LPWCH, DWORD, PDWORD);
+typedef HANDLE (WINAPI *PFNFINDFIRSTVOLUMEMOUNTPOINTW(LPCWSTR, LPWSTR, DWORD);
+typedef HANDLE (WINAPI *PFNFINDNEXTVOLUMEMOUNTPOINTW(HANDLE, LPWSTR, DWORD);
+typedef HANDLE (WINAPI *PFNFINDVOLUMEMOUNTPOINTCLOSE(HANDLE);
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+/* kernel32.dll: */
+static PFNFINDFIRSTVOLUMEW                 g_pfnFindFirstVolumeW                 = NULL;
+static PFNFINDNEXTVOLUMEW                  g_pfnFindNextVolumeW                  = NULL;
+static PFNFINDVOLUMECLOSE                  g_pfnFindVolumeClose                  = NULL;
+static PFNGETVOLUMEPATHNAMESFORVOLUMENAMEW g_pfnGetVolumePathNamesForVolumeNameW = NULL;
+static PFNFINDFIRSTVOLUMEMOUNTPOINTW       g_pfnFindFirstVolumeMountPointW       = NULL;
+static PFNFINDNEXTVOLUMEMOUNTPOINTW        g_pfnFindNextVolumeMountPointW        = NULL;
+static PFNFINDVOLUMEMOUNTPOINTCLOSE        g_pfnFindVolumeMountPointClose        = NULL;
+
+/** Init once structure we need. */
+static RTONCE g_rtFsWinResolveOnce = RTONCE_INITIALIZER;
+
+
+/**
+ * Initialize the import APIs.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ * @param   pvUser              Ignored.
+ */
+static DECLCALLBACK(int) rtFsWinResolveOnce(void *pvUser)
+{
+    /*
+     * kernel32.dll volume APIs introduced after NT4.
+     */
+    g_pfnFindFirstVolumeW                 = (PFNFINDFIRSTVOLUMEW                )GetProcAddress(g_hModKernel32, "FindFirstVolumeW");
+    g_pfnFindNextVolumeW                  = (PFNFINDNEXTVOLUMEW                 )GetProcAddress(g_hModKernel32, "FindNextVolumeW");
+    g_pfnFindVolumeClose                  = (PFNFINDVOLUMECLOSE                 )GetProcAddress(g_hModKernel32, "FindVolumeClose");
+    g_pfnGetVolumePathNamesForVolumeNameW = (PFNGETVOLUMEPATHNAMESFORVOLUMENAMEW)GetProcAddress(g_hModKernel32, "GetVolumePathNamesForVolumeNameW");
+    g_pfnFindFirstVolumeMountPointW       = (PFNFINDFIRSTVOLUMEMOUNTPOINTW      )GetProcAddress(g_hModKernel32, "FindFirstVolumeMountPointW");
+    g_pfnFindNextVolumeMountPointW        = (PFNFINDNEXTVOLUMEMOUNTPOINTW       )GetProcAddress(g_hModKernel32, "FindNextVolumeMountPointW");
+    g_pfnFindVolumeMountPointClose        = (PFNFINDVOLUMEMOUNTPOINTCLOSE       )GetProcAddress(g_hModKernel32, "FindVolumeMountPointClose");
+
+    if (   !g_pfnFindFirstVolumeW
+        || !g_pfnFindNextVolumeW
+        || !g_pfnFindVolumeClose
+        || !g_pfnGetVolumePathNamesForVolumeNameW
+        || !g_pfnFindFirstVolumeMountPointW
+        || !g_pfnFindNextVolumeMountPointW
+        || !g_pfnFindVolumeMountPointClose)
+        return VERR_NOT_SUPPORTED;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Handles a mountpoint callback with WCHAR (as UTF-16) strings.
  *
@@ -89,14 +151,14 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
     SetLastError(0);
 
     WCHAR wszVol[RTPATH_MAX];
-    HANDLE hVol = FindFirstVolumeW(wszVol, RT_ELEMENTS(wszVol));
+    HANDLE hVol = g_pfnFindFirstVolumeW(wszVol, RT_ELEMENTS(wszVol));
     if (   hVol
         && hVol != INVALID_HANDLE_VALUE)
     {
         do
         {
             WCHAR wszMp[RTPATH_MAX];
-            HANDLE hMp = FindFirstVolumeMountPointW(wszVol, wszMp, RT_ELEMENTS(wszMp));
+            HANDLE hMp = g_pfnFindFirstVolumeMountPointW(wszVol, wszMp, RT_ELEMENTS(wszMp));
             if (   hMp
                 && hMp != INVALID_HANDLE_VALUE)
             {
@@ -106,8 +168,8 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
                     if (RT_FAILURE(rc))
                         break;
                 }
-                while (FindNextVolumeMountPointW(hMp, wszMp, RT_ELEMENTS(wszMp)));
-                FindVolumeMountPointClose(hMp);
+                while (g_pfnFindNextVolumeMountPointW(hMp, wszMp, RT_ELEMENTS(wszMp)));
+                g_pfnFindVolumeMountPointClose(hMp);
             }
             else if (   GetLastError() != ERROR_NO_MORE_FILES
                      && GetLastError() != ERROR_PATH_NOT_FOUND
@@ -117,7 +179,7 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
             if (RT_SUCCESS(rc))
             {
                 DWORD cwch = 0;
-                if (GetVolumePathNamesForVolumeNameW(wszVol, wszMp, RT_ELEMENTS(wszMp), &cwch))
+                if (g_pfnGetVolumePathNamesForVolumeNameW(wszVol, wszMp, RT_ELEMENTS(wszMp), &cwch))
                 {
                     size_t off = 0;
                     while (off < cwch)
@@ -136,8 +198,8 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
                     rc = RTErrConvertFromWin32(GetLastError());
             }
 
-        } while (RT_SUCCESS(rc) && FindNextVolumeW(hVol, wszVol, RT_ELEMENTS(wszVol)));
-        FindVolumeClose(hVol);
+        } while (RT_SUCCESS(rc) && g_pfnFindNextVolumeW(hVol, wszVol, RT_ELEMENTS(wszVol)));
+        g_pfnFindVolumeClose(hVol);
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
@@ -183,6 +245,10 @@ static int rtFsWinMountpointsEnumWorker(bool fRemote, PFNRTFSMOUNTPOINTENUM pfnC
 
 RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUser)
 {
+    int rc = RTOnce(&g_rtFsWinResolveOnce, rtFsWinResolveOnce, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
     return rtFsWinMountpointsEnumWorker(true /* fRemote */, pfnCallback, pvUser);
 }
 
