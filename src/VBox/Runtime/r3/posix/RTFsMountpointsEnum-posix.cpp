@@ -48,6 +48,9 @@
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 # include <sys/mount.h>
 #endif
+#if defined(RT_OS_SOLARIS)
+# include <sys/mnttab.h>
+#endif
 
 #include <iprt/fs.h>
 #include "internal/iprt.h"
@@ -84,7 +87,7 @@ RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUse
     else
         rc = VERR_ACCESS_DENIED;
 #elif defined(RT_OS_SOLARIS)
-    FILE *pFile = fopen(_PATH_MOUNTED, "r");
+    FILE *pFile = fopen("/etc/mnttab", "r");
     if (pFile)
     {
         struct mnttab Entry;
