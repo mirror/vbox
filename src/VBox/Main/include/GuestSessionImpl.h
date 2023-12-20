@@ -86,6 +86,7 @@ private:
     HRESULT setCurrentDirectory(const com::Utf8Str &aCurrentDirectory);
     HRESULT getUserDocuments(com::Utf8Str &aUserDocuments);
     HRESULT getUserHome(com::Utf8Str &aUserHome);
+    HRESULT getMountPoints(std::vector<com::Utf8Str> &aMountPoints);
     HRESULT getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories);
     HRESULT getFiles(std::vector<ComPtr<IGuestFile> > &aFiles);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
@@ -344,6 +345,7 @@ public:
     int                     i_objectsNotifyAboutStatusChange(GuestSessionStatus_T enmSessionStatus);
     int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pvrcGuest);
     int                     i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest);
+    int                     i_getMountPoints(std::vector<com::Utf8Str> &vecMountPoints, int *pvrcGuest);
     int                     i_pathUserHome(Utf8Str &strPath, int *pvrcGuest);
     int                     i_processUnregister(GuestProcess *pProcess);
     int                     i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);

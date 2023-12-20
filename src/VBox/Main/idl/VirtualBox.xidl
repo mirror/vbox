@@ -15265,7 +15265,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="5e54f60b-6dcd-4594-a6c9-cf968f004341"
+    uuid="8b2b6773-8b5a-4cd2-95f8-38faf73913e1"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -15401,6 +15401,15 @@
     <attribute name="userDocuments" type="wstring" readonly="yes">
       <desc>
         Returns the user's documents directory.  Guest path style.
+      </desc>
+    </attribute>
+    <attribute name="mountPoints" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Returns all currently accessible (disk-based) mount points.
+        On Windows guests, this returns the currently mapped the disk drives.
+
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
+          support this feature.</result>
       </desc>
     </attribute>
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">

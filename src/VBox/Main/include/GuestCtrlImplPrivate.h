@@ -1210,6 +1210,41 @@ public:
         return Utf8Str(pszStr, cbStr);
     }
 
+    /**
+     * Returns the payload as a vector of strings, validated.
+     *
+     * @returns VBox status code.
+     * @param   vecStrings      Where to return the vector of strings on success.
+     */
+    int ToStringVector(std::vector<Utf8Str> &vecStrings)
+    {
+        int vrc = VINF_SUCCESS;
+
+        vecStrings.clear();
+
+        const char *psz = (const char *)pvData;
+        AssertPtrReturn(psz, vrc = VERR_INVALID_PARAMETER);
+        size_t      cb  = cbData;
+        while (cb)
+        {
+            size_t const cch = strlen(psz);
+            if (!cch)
+                break;
+            size_t const cbStr = cch + 1 /* String terminator */;
+            vrc = RTStrValidateEncodingEx(psz, cbStr,
+                                          RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+            if (RT_FAILURE(vrc))
+                break;
+            AssertBreakStmt(cb >= cbStr, vrc = VERR_INVALID_PARAMETER);
+            cb  -= cbStr;
+            psz += cbStr;
+        }
+
+        if (RT_SUCCESS(vrc))
+            AssertStmt(cb <= 1 /* Ending terminator */, vrc = VERR_INVALID_PARAMETER);
+        return vrc;
+    }
+
 protected:
 
     int copyFrom(uint32_t uTypePayload, const void *pvPayload, uint32_t cbPayload)

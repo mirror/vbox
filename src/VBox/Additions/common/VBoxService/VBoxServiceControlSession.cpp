@@ -1706,6 +1706,101 @@ static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSessio
 }
 
 /**
+ * Structure for keeping a mount point enumeration context.
+ */
+typedef struct VGSVCMOUNTPOINTENUMCTX
+{
+    /** Mount points as strings, delimited with a string terminator ('\0').
+     *  List ends with an additional string terminator. Might get re-allocated, so don't rely on this pointer! */
+    char  *psz;
+    /** Current size of \a psz in bytes. Includes ending terminator. */
+    size_t cb;
+    /** Total allocation Size of \a psz in bytes. */
+    size_t cbAlloc;
+} VGSVCMOUNTPOINTENUMCTX;
+/** Pointer to a structure for keeping a mount point enumeration context. */
+typedef VGSVCMOUNTPOINTENUMCTX *PVGSVCMOUNTPOINTENUMCTX;
+
+/**
+ * Enumeration callback for storing the mount points.
+ *
+ * @returns VBox status code.
+ * @param   pszMountpoint       Mount point to handle.
+ * @param   pvUser              Pointer of type PVGSVCMOUNTPOINTENUMCTX.
+ */
+DECLCALLBACK(int) vgsvcGstCtrlSessionHandleMountPointsEnumCallback(const char *pszMountpoint, void *pvUser)
+{
+    PVGSVCMOUNTPOINTENUMCTX pCtx = (PVGSVCMOUNTPOINTENUMCTX)pvUser;
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    size_t const cch = strlen(pszMountpoint) + 1 /* Entry terminator */;
+    AssertReturn(cch < RTPATH_MAX, VERR_INVALID_PARAMETER); /* Paranoia. */
+    if (cch > pCtx->cbAlloc - pCtx->cb - 1 /* Ending terminator */)
+    {
+        char *pszNew;
+        int rc2 = RTStrRealloc(&pszNew, pCtx->cbAlloc + RT_MAX(_4K, cch));
+        AssertRCReturn(rc2, rc2);
+        pCtx->psz = pszNew;
+    }
+
+    memcpy(&pCtx->psz[pCtx->cb], pszMountpoint, cch);
+    pCtx->cb += cch;
+    AssertReturn(pCtx->cb <= pCtx->cbAlloc, VERR_BUFFER_OVERFLOW); /* Paranoia. */
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Handles getting the current mount points.
+ *
+ * @returns VBox status code.
+ * @param   pSession        Guest session.
+ * @param   pHostCtx        Host context.
+ */
+static int vgsvcGstCtrlSessionHandleMountPoints(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    /*
+     * Retrieve the request.
+     */
+    int rc = VbglR3GuestCtrlGetMountPoints(pHostCtx);
+    if (RT_SUCCESS(rc))
+    {
+        VGSVCMOUNTPOINTENUMCTX Ctx;
+        Ctx.cb      = 0;
+        Ctx.cbAlloc = _4K; /* Start with something sensible. */
+        Ctx.psz     = RTStrAlloc(Ctx.cbAlloc);
+        if (!Ctx.psz)
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+            rc = RTFsMountpointsEnum(vgsvcGstCtrlSessionHandleMountPointsEnumCallback, &Ctx);
+
+        /* Report back in any case. */
+        int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */, Ctx.psz,
+                                            RT_SUCCESS(rc) ? (uint32_t)Ctx.cb : 0);
+        if (RT_FAILURE(rc2))
+        {
+            VGSvcError("Failed to report mount points, rc=%Rrc\n", rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+
+        RTStrFree(Ctx.psz);
+        Ctx.psz = NULL;
+    }
+    else
+    {
+        VGSvcError("Error fetching parameters for getting mount points request: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
+    return rc;
+}
+
+
+/**
  * Handles starting a guest processes.
  *
  * @returns VBox status code.
@@ -2449,6 +2544,11 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_MSG_PATH_USER_HOME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserHome(pSession, pHostCtx);
+            break;
+
+        case HOST_MSG_MOUNT_POINTS:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandleMountPoints(pSession, pHostCtx);
             break;
 
         case HOST_MSG_SHUTDOWN:

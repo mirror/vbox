@@ -1174,6 +1174,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetList(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
 
 /**
  * Retrieves a HOST_PATH_RENAME message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   pszSource           Where to return the source path.
+ * @param   cbSource            Size (in bytes) of \a pszSource.
+ * @param   pszDest             Where to return the destination path.
+ * @param   cbDest              Size (in bytes) of \a pszDest.
+ * @param   pfFlags             Where to return the rename flags.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                              char     *pszSource,       uint32_t cbSource,
@@ -1213,6 +1221,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
 
 /**
  * Retrieves a HOST_PATH_USER_DOCUMENTS message.
+ *
+ * @param   pCtx                Guest control command context to use.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx)
 {
@@ -1236,6 +1246,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx)
 
 /**
  * Retrieves a HOST_PATH_USER_HOME message.
+ *
+ * @param   pCtx                Guest control command context to use.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
 {
@@ -1248,6 +1260,31 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
         HGCMMsgPathUserHome Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_PATH_USER_HOME);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            Msg.context.GetUInt32(&pCtx->uContextID);
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
+
+
+/**
+ * Retrieves a HOST_MSG_MOUNT_POINTS message.
+ *
+ * @param   pCtx                Guest control command context to use.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlGetMountPoints(PVBGLR3GUESTCTRLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    int rc;
+    do
+    {
+        HGCMMsgPathUserHome Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_MOUNT_POINTS);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))

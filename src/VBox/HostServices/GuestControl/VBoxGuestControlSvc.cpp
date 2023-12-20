@@ -1679,6 +1679,8 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                     case HOST_MSG_DIR_CREATE:
                         RT_FALL_THROUGH();
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+                    case HOST_MSG_MOUNT_POINTS:
+                        RT_FALL_THROUGH();
                     case HOST_MSG_EXEC_GET_OUTPUT: /** @todo BUGBUG This can't be right/work. */
                     case HOST_MSG_EXEC_TERMINATE:  /** @todo BUGBUG This can't be right/work. */
                     case HOST_MSG_EXEC_WAIT_FOR:   /** @todo BUGBUG This can't be right/work. */

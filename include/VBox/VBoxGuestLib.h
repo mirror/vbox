@@ -1090,6 +1090,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX pCtx, char *
                                              uint32_t cbDest, uint32_t *pfFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx);
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx);
+VBGLR3DECL(int) VbglR3GuestCtrlGetMountPoints(PVBGLR3GUESTCTRLCMDCTX pCtx);
 #  ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /** @name Guest Control file system functions.
  * @{
