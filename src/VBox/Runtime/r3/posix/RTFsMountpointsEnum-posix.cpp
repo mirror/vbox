@@ -93,7 +93,7 @@ RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUse
         struct mnttab Entry;
         while (getmntent(pFile, &Entry) == 0)
         {
-            rc = pfnCallback(Entry.mnt_dir, pvUser);
+            rc = pfnCallback(Entry.mnt_mountp, pvUser);
             if (RT_FAILURE(rc))
                 break;
         }
