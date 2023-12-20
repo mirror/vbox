@@ -87,7 +87,10 @@ public:
 
     void addData(int iDataSeriesIndex, quint64 fData);
     void addData(int iDataSeriesIndex, quint64 fData, const QString &strLabel);
+
     const QQueue<quint64> *data(int iDataSeriesIndex) const;
+    const QQueue<QString> *labels() const;
+    bool hasDataLabels() const;
 
     /** # of the data point of the data series with index iDataSeriesIndex. */
     int dataSize(int iDataSeriesIndex) const;
@@ -117,7 +120,8 @@ private:
     QString m_strDataSeriesName[DATA_SERIES_SIZE];
     quint64 m_iMaximum;
     QQueue<quint64> m_data[DATA_SERIES_SIZE];
-    QQueue<QString> m_labels[DATA_SERIES_SIZE];
+    /** We assume m_data[0] and m_data[1] have a common label array. */
+    QQueue<QString> m_labels;
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
       * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
     quint64 m_iTotal[DATA_SERIES_SIZE];
@@ -314,6 +318,8 @@ public:
     UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
+    /** Accoring to OCI docs returned time stamp is in RFC3339 format. */
+    static QString formatCloudTimeStamp(const QString &strInput);
 
 private slots:
 
@@ -347,9 +353,9 @@ private:
     void cacheNetworkReceive(const QString &strTimeStamp, int iValue);
     void cacheNetworkTransmit(const QString &strTimeStamp, int iValue);
 
-
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
+
     CCloudMachine m_comMachine;
     UIProgressTaskReadCloudMachineMetricList *m_ReadListProgressTask;
 

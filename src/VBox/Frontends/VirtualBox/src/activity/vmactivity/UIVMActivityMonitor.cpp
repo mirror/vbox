@@ -742,20 +742,33 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     int iTotalSeconds = g_iPeriod * m_iMaximumQueueSize;
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
-        int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
-        QString strCurrentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        int iTextWidth = fontMetrics.horizontalAdvance(strCurrentSec);
-#else
-        int iTextWidth = fontMetrics.width(strCurrentSec);
-#endif
-        if (i == 0)
+        int iTimeIndex = iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1);
+        QString strAxisText;
+        if (m_pMetric && m_pMetric->hasDataLabels())
         {
-            strCurrentSec += " " + m_strXAxisLabel;
-            painter.drawText(iTextX, m_lineChartRect.bottom() + iFontHeight, strCurrentSec);
+            int iDataIndex = iTimeIndex - (m_iMaximumQueueSize - maxDataSize());
+            const QQueue<QString> *labels = m_pMetric->labels();
+            if (iDataIndex < labels->size())
+            {
+                strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
+
+            }
         }
         else
-            painter.drawText(iTextX - 0.5 * iTextWidth, m_lineChartRect.bottom() + iFontHeight, strCurrentSec);
+            strAxisText = QString::number(iTimeIndex);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+        int iTextWidth = fontMetrics.horizontalAdvance(strAxisText);
+#else
+        int iTextWidth = fontMetrics.width(strAxisText);
+#endif
+        int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
+        if (i == 0)
+        {
+            strAxisText += " " + m_strXAxisLabel;
+            painter.drawText(iTextX, m_lineChartRect.bottom() + iFontHeight, strAxisText);
+        }
+        else
+            painter.drawText(iTextX - 0.5 * iTextWidth, m_lineChartRect.bottom() + iFontHeight, strAxisText);
     }
 }
 
@@ -1033,9 +1046,12 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData, const QString &strLa
 
     addData(iDataSeriesIndex, iData);
 
-    m_labels[iDataSeriesIndex].enqueue(strLabel);
-    if (m_data[iDataSeriesIndex].size() > m_iMaximumQueueSize)
-        m_labels[iDataSeriesIndex].dequeue();
+    if (iDataSeriesIndex == 0)
+    {
+        m_labels.enqueue(strLabel);
+        if (m_labels.size() > m_iMaximumQueueSize)
+            m_labels.dequeue();
+    }
 }
 
 const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
@@ -1043,6 +1059,16 @@ const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return &m_data[iDataSeriesIndex];
+}
+
+const QQueue<QString> *UIMetric::labels() const
+{
+    return &m_labels;
+}
+
+bool UIMetric::hasDataLabels() const
+{
+    return !m_labels.isEmpty();
 }
 
 int UIMetric::dataSize(int iDataSeriesIndex) const
@@ -2052,7 +2078,7 @@ void UIVMActivityMonitorCloud::updateNetworkChart(quint64 uReceiveRate, quint64 
 {
     UIMetric &networkMetric = m_metrics[m_strNetworkMetricName];
     networkMetric.addData(0, uReceiveRate, strLabel);
-    networkMetric.addData(1, uTransmitRate, strLabel);
+    networkMetric.addData(1, uTransmitRate);
 
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
@@ -2071,7 +2097,7 @@ void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uRe
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
     diskMetric.addData(0, uWriteRate, strLabel);
-    diskMetric.addData(1, uReadRate, strLabel);
+    diskMetric.addData(1, uReadRate);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
@@ -2234,6 +2260,15 @@ void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp,
         m_networkTransmitCache[strTimeStamp] = iValue;
 }
 
+/* static */
+QString UIVMActivityMonitorCloud::formatCloudTimeStamp(const QString &strInput)
+{
+    QDateTime dateTime = QDateTime::fromString(strInput, Qt::RFC2822Date);
 
+    if (!dateTime.isValid())
+        return QString();
+
+    return dateTime.time().toString("HH:mm");
+}
 
 #include "UIVMActivityMonitor.moc"
