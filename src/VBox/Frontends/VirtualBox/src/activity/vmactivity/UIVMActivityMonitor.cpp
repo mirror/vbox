@@ -1026,6 +1026,18 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData)
     }
 }
 
+void UIMetric::addData(int iDataSeriesIndex, quint64 iData, const QString &strLabel)
+{
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
+        return;
+
+    addData(iDataSeriesIndex, iData);
+
+    m_labels[iDataSeriesIndex].enqueue(strLabel);
+    if (m_data[iDataSeriesIndex].size() > m_iMaximumQueueSize)
+        m_labels[iDataSeriesIndex].dequeue();
+}
+
 const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
@@ -1494,7 +1506,7 @@ void UIVMActivityMonitorLocal::obtainDataAndUpdate()
         ULONG aPctHalted;
         ULONG aPctOther;
         m_comMachineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
-        updateCPUGraphsAndMetric(aPctExecuting, aPctOther);
+        updateCPUChart(aPctExecuting, aPctOther);
     }
 
     /* Update the network load chart with values we find under /Public/NetAdapter/: */
@@ -1502,7 +1514,7 @@ void UIVMActivityMonitorLocal::obtainDataAndUpdate()
         quint64 cbNetworkTotalReceived = 0;
         quint64 cbNetworkTotalTransmitted = 0;
         UIMonitorCommon::getNetworkLoad(m_comMachineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
-        updateNetworkGraphsAndMetric(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
+        updateNetworkChart(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
     }
 
     /* Update the Disk I/O chart with values we find under /Public/Storage/?/Port?/Bytes*: */
@@ -1510,7 +1522,7 @@ void UIVMActivityMonitorLocal::obtainDataAndUpdate()
         quint64 cbDiskIOTotalWritten = 0;
         quint64 cbDiskIOTotalRead = 0;
         UIMonitorCommon::getDiskLoad(m_comMachineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
-        updateDiskIOGraphsAndMetric(cbDiskIOTotalWritten, cbDiskIOTotalRead);
+        updateDiskIOChart(cbDiskIOTotalWritten, cbDiskIOTotalRead);
     }
 
     /* Update the VM exit chart with values we find as /PROF/CPU?/EM/RecordedExits: */
@@ -1720,7 +1732,7 @@ void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
         m_charts[m_strVMExitMetricName]->update();
 }
 
-void UIVMActivityMonitorLocal::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
+void UIVMActivityMonitorLocal::updateCPUChart(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
@@ -1760,7 +1772,7 @@ void UIVMActivityMonitorLocal::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal)
+void UIVMActivityMonitorLocal::updateNetworkChart(quint64 uReceiveTotal, quint64 uTransmitTotal)
 {
     UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
@@ -1794,7 +1806,7 @@ void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 uReceiveTota
         m_charts[m_strNetworkMetricName]->update();
 }
 
-void UIVMActivityMonitorLocal::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
+void UIVMActivityMonitorLocal::updateDiskIOChart(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
@@ -1941,7 +1953,7 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
         if (enmMetricType == KMetricType_CpuUtilization)
         {
             float fValue = data[i].toFloat();
-            updateCPUGraphsAndMetric((ULONG) fValue, 0);
+            updateCPUChart((ULONG) fValue, timeStamps[i]);
         }
         else if (enmMetricType == KMetricType_NetworksBytesOut)
             cacheNetworkTransmit(timeStamps[i], (int)data[i].toFloat());
@@ -2015,10 +2027,10 @@ void UIVMActivityMonitorCloud::start()
 
 }
 
-void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG /*iOtherPercentage*/)
+void UIVMActivityMonitorCloud::updateCPUChart(ULONG iLoadPercentage, const QString &strLabel)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
-    CPUMetric.addData(0, iLoadPercentage);
+    CPUMetric.addData(0, iLoadPercentage, strLabel);
     CPUMetric.setMaximum(100);
     if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
@@ -2036,12 +2048,11 @@ void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, U
         m_charts[m_strCPUMetricName]->update();
 }
 
-void UIVMActivityMonitorCloud::updateRAMGraphsAndMetric(quint64 /*iTotalRAM*/, quint64 /*iFreeRAM*/){}
-void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 uReceiveRate, quint64 uTransmitRate)
+void UIVMActivityMonitorCloud::updateNetworkChart(quint64 uReceiveRate, quint64 uTransmitRate, const QString &strLabel)
 {
     UIMetric &networkMetric = m_metrics[m_strNetworkMetricName];
-    networkMetric.addData(0, uReceiveRate);
-    networkMetric.addData(1, uTransmitRate);
+    networkMetric.addData(0, uReceiveRate, strLabel);
+    networkMetric.addData(1, uTransmitRate, strLabel);
 
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
@@ -2055,14 +2066,12 @@ void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 uReceiveRate
     }
 }
 
-void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate)
+void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel)
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
-
-    diskMetric.addData(0, uWriteRate);
-    diskMetric.addData(1, uReadRate);
-
+    diskMetric.addData(0, uWriteRate, strLabel);
+    diskMetric.addData(1, uReadRate, strLabel);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
@@ -2177,7 +2186,7 @@ void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, int i
     /* If we have read rate for this time stamp just update the chart and remove related data from the cache: */
     if (m_diskReadCache.contains(strTimeStamp))
     {
-        updateDiskIOGraphsAndMetric((quint64) iValue, (quint64) m_diskReadCache[strTimeStamp]);
+        updateDiskIOChart((quint64) iValue, (quint64) m_diskReadCache[strTimeStamp], strTimeStamp);
         m_diskReadCache[strTimeStamp];
     }
     else
@@ -2191,7 +2200,7 @@ void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, int iV
     /* If we have write rate for this time stamp just update the chart and remove related data from the cache: */
     if (m_diskWriteCache.contains(strTimeStamp))
     {
-        updateDiskIOGraphsAndMetric((quint64) m_diskWriteCache[strTimeStamp], (quint64) iValue);
+        updateDiskIOChart((quint64) m_diskWriteCache[strTimeStamp], (quint64) iValue, strTimeStamp);
         m_diskWriteCache.remove(strTimeStamp);
     }
     else
@@ -2204,7 +2213,7 @@ void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, 
 
     if (m_networkTransmitCache.contains(strTimeStamp))
     {
-        updateNetworkGraphsAndMetric((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp]);
+        updateNetworkChart((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp], strTimeStamp);
         m_networkTransmitCache.remove(strTimeStamp);
     }
     else
@@ -2218,7 +2227,7 @@ void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp,
 
     if (m_networkReceiveCache.contains(strTimeStamp))
     {
-        updateNetworkGraphsAndMetric((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue);
+        updateNetworkChart((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue, strTimeStamp);
         m_networkReceiveCache.remove(strTimeStamp);
     }
     else

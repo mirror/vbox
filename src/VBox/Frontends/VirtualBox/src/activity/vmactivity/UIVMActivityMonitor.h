@@ -63,6 +63,12 @@ class UIProgressTaskReadCloudMachineMetricList;
 
 #define DATA_SERIES_SIZE 2
 
+struct UIMetricData
+{
+    quint64 m_value;
+    QString m_strLabel;
+};
+
 /** UIMetric represents a performance metric and is used to store data related to the corresponding metric. */
 class UIMetric
 {
@@ -80,6 +86,7 @@ public:
     const QString &unit() const;
 
     void addData(int iDataSeriesIndex, quint64 fData);
+    void addData(int iDataSeriesIndex, quint64 fData, const QString &strLabel);
     const QQueue<quint64> *data(int iDataSeriesIndex) const;
 
     /** # of the data point of the data series with index iDataSeriesIndex. */
@@ -110,6 +117,7 @@ private:
     QString m_strDataSeriesName[DATA_SERIES_SIZE];
     quint64 m_iMaximum;
     QQueue<quint64> m_data[DATA_SERIES_SIZE];
+    QQueue<QString> m_labels[DATA_SERIES_SIZE];
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
       * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
     quint64 m_iTotal[DATA_SERIES_SIZE];
@@ -151,14 +159,6 @@ protected:
     virtual QString defaultMachineFolder() const = 0;
     virtual void reset() = 0;
     virtual void start() = 0;
-
-    /** @name The following functions update corresponding metric charts and labels with new values
-      * @{ */
-        virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) = 0;
-        virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) = 0;
-        virtual void updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal) = 0;
-        virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) = 0;
-    /** @} */
 
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
@@ -282,10 +282,10 @@ private:
     void prepareMetrics();
     bool guestAdditionsAvailable(const char *pszMinimumVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
-    void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
+    void updateCPUChart(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNetworkGraphsAndMetric(quint64 uReceiveTotal, quint64 uTransmitTotal);
-    void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
+    void updateNetworkChart(quint64 uReceiveTotal, quint64 uTransmitTotal);
+    void updateDiskIOChart(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
     virtual void resetCPUInfoLabel();
@@ -331,10 +331,9 @@ private:
     virtual void prepareWidgets();
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
-        virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) RT_OVERRIDE;
-        virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) RT_OVERRIDE;
-        virtual void updateNetworkGraphsAndMetric(quint64 uReceive, quint64 uTransmit) RT_OVERRIDE;
-        virtual void updateDiskIOGraphsAndMetric(quint64 uWriteRate, quint64 uReadRate) RT_OVERRIDE;
+        virtual void updateCPUChart(ULONG iLoadPercentage, const QString &strLabel);
+        virtual void updateNetworkChart(quint64 uReceive, quint64 uTransmit, const QString &strLabel);
+        virtual void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
     /** @} */
     virtual void resetCPUInfoLabel();
     virtual void resetNetworkInfoLabel();
