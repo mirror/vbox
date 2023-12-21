@@ -1741,7 +1741,7 @@ iemNativeEmitAddTwoGprs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGp
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
     pbCodeBuf[off++] = (iGprDst < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R)
                      | (iGprAddend < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x04;
+    pbCodeBuf[off++] = 0x03;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprAddend & 7);
 
 #elif defined(RT_ARCH_ARM64)
@@ -2524,7 +2524,7 @@ iemNativeEmitCmpGprWithImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     else if (uImm < RT_BIT_32(12+12) && (uImm & (_4K - 1)) == 0)
     {
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm,
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm >> 12,
                                                          true /*64Bit*/, true /*fSetFlags*/, true /*fShift12*/);
     }
     else
