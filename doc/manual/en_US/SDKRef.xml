@@ -4205,8 +4205,8 @@ AuthResult AUTHCALL AuthEntry(
           and <link linkend="IProcess__waitForArray">IProcess::waitForArray</link> instead.</para>
         </listitem>
 
-        <listitem><para>The API <link linkend="IGuestSession__getMountPoints">IGuestSession::getMountPoints</link> has been
-          implemented. This requires 7.1 (or newer) Guest Additions to be installed on the guest.</para>
+        <listitem><para>The attribute <link linkend="IGuestSession__mountPoints">IGuestSession::mountPoints</link> has been
+          added. This requires 7.1 (or newer) Guest Additions to be installed on the guest.</para>
         </listitem>
 
       </itemizedlist>
