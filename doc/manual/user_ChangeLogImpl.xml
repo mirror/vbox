@@ -98,6 +98,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>Guest Control: Added the ability to query the guest's mount points (drive letters on Windows)
+         via IGuestSession::mountPoints. Requires 7.1 Guest Additions.</para>
+      </listitem>
+
+      <listitem>
        <para>Unattended Installation: Added support for subiquity- / cloud-init-based installers;
          this enables installing more modern Linux-based guest OSes in Unattended mode</para>
       </listitem>
