@@ -194,6 +194,37 @@ static struct
 };
 
 /**
+ * Tests payload data to string vector parsing.
+ */
+static struct
+{
+    /** Payload data to test. */
+    const char *pbData;
+    /** Size (in bytes) of \b pbData. */
+    size_t      cbData;
+    /** Number of extracted strings. */
+    size_t      cStrings;
+    /** Expected result (IPRT-style). */
+    int         iResult;
+} g_aTestPayloadToStringVector[] =
+{
+    /** Empty payload. */
+    NULL, 0, 0, VINF_SUCCESS,
+    RT_STR_TUPLE("\0"), 0, VINF_SUCCESS,
+    RT_STR_TUPLE(""), 0, VINF_SUCCESS,
+    ///** Invalid data. */
+    RT_STR_TUPLE("two\0\0terminators"), 1, VERR_INVALID_PARAMETER,
+    RT_STR_TUPLE("no\0\ending\0terminator"), 2, VERR_BUFFER_OVERFLOW,
+    RT_STR_TUPLE("foo"), 0, VERR_BUFFER_OVERFLOW,
+    /** Valid data. */
+    RT_STR_TUPLE("foo\0"), 1, VINF_SUCCESS,
+    RT_STR_TUPLE("foo\0bar\0"), 2, VINF_SUCCESS,
+    RT_STR_TUPLE("twoendterminators\0\0"), 1, VINF_SUCCESS,
+    RT_STR_TUPLE("이것은 테스트입니다\0bar\0"), 2, VINF_SUCCESS
+};
+
+
+/**
  * Reads and parses the stream from a given file.
  *
  * @returns RTEXITCODE
@@ -396,6 +427,18 @@ int main(int argc, char **argv)
 
         if (RTTestIErrorCount())
             break;
+    }
+
+    /*
+     * Payload to string vector testing.
+     */
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestPayloadToStringVector); iTest++)
+    {
+        GuestWaitEventPayload Payload(0 /* Type */,
+                                      g_aTestPayloadToStringVector[iTest].pbData, g_aTestPayloadToStringVector[iTest].cbData);
+        std::vector<Utf8Str> vecStr;
+        RTTEST_CHECK_RC(hTest, Payload.ToStringVector(vecStr), g_aTestPayloadToStringVector[iTest].iResult);
+        RTTEST_CHECK(hTest, vecStr.size() == g_aTestPayloadToStringVector[iTest].cStrings);
     }
 
     RTTestRestoreAssertions(hTest);

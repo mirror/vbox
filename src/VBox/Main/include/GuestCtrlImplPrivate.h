@@ -1213,6 +1213,11 @@ public:
     /**
      * Returns the payload as a vector of strings, validated.
      *
+     * The payload data must contain the strings separated by a string zero terminator each,
+     * ending with a separate zero terminator. Incomplete data will considered as invalid data.
+     *
+     * Example: 'foo\0bar\0baz\0\0'.
+     *
      * @returns VBox status code.
      * @param   vecStrings      Where to return the vector of strings on success.
      */
@@ -1223,25 +1228,35 @@ public:
         vecStrings.clear();
 
         const char *psz = (const char *)pvData;
-        AssertPtrReturn(psz, vrc = VERR_INVALID_PARAMETER);
-        size_t      cb  = cbData;
-        while (cb)
+        if (psz)
         {
-            size_t const cch = strlen(psz);
-            if (!cch)
-                break;
-            size_t const cbStr = cch + 1 /* String terminator */;
-            vrc = RTStrValidateEncodingEx(psz, cbStr,
-                                          RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
-            if (RT_FAILURE(vrc))
-                break;
-            AssertBreakStmt(cb >= cbStr, vrc = VERR_INVALID_PARAMETER);
-            cb  -= cbStr;
-            psz += cbStr;
-        }
+            size_t cb  = cbData;
+            while (cb)
+            {
+                size_t const cch = strnlen(psz, cb);
+                if (!cch)
+                    break;
+                size_t const cbStr = RT_MIN(cb, cch + 1 /* String terminator */);
+                vrc = RTStrValidateEncodingEx(psz, cbStr,
+                                              RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+                if (RT_FAILURE(vrc))
+                    break;
+                try
+                {
+                    vecStrings.push_back(Utf8Str(psz, cch));
+                }
+                catch (std::bad_alloc &)
+                {
+                    AssertFailedBreakStmt(vrc = VERR_NO_MEMORY);
+                }
+                AssertBreakStmt(cb >= cbStr, vrc = VERR_INVALID_PARAMETER);
+                cb  -= cbStr;
+                psz += cbStr;
+            }
 
-        if (RT_SUCCESS(vrc))
-            AssertStmt(cb <= 1 /* Ending terminator */, vrc = VERR_INVALID_PARAMETER);
+            if (RT_SUCCESS(vrc))
+                AssertStmt(cb <= 1 /* Ending terminator */, vrc = VERR_INVALID_PARAMETER);
+        }
         return vrc;
     }
 
