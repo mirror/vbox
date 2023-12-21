@@ -99,7 +99,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
        <para>Guest Control: Added the ability to query the guest's mount points (drive letters on Windows)
-         via IGuestSession::mountPoints. Requires 7.1 Guest Additions.</para>
+         via IGuestSession::mountPoints. Requires 7.1 Guest Additions</para>
       </listitem>
 
       <listitem>
