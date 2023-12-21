@@ -776,7 +776,7 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCa
         uint64_t       uTlbPhysRevNew  = uTlbPhysRevPrev + IEMTLB_PHYS_REV_INCR;
         if (RT_LIKELY(uTlbPhysRevNew > IEMTLB_PHYS_REV_INCR * 2))
         { /* likely */}
-        else if (pVCpuCaller == pVCpu)
+        else if (pVCpuCaller != pVCpu)
             uTlbPhysRevNew = IEMTLB_PHYS_REV_INCR;
         else
         {
