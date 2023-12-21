@@ -15360,13 +15360,13 @@
         The base environment of the session.  They are on the "VAR=VALUE" form,
         one array entry per variable.
         <!-- @todo/TODO/FIXME: This doesn't end up in the PDF.
-        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions do not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXX.</result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
           yet to report the session base environment.</result> -->
 
-        Access fails with VBOX_E_NOT_SUPPORTED if the Guest Additions does not
+        Access fails with VBOX_E_NOT_SUPPORTED if the Guest Additions do not
         support the session base environment feature.  Support for this was
         introduced with protocol version XXXX.
 
@@ -15406,10 +15406,13 @@
     <attribute name="mountPoints" type="wstring" readonly="yes" safearray="yes">
       <desc>
         Returns all currently accessible (disk-based) mount points.
-        On Windows guests, this returns the currently mapped the disk drives.
+        On Windows guests, this returns the currently mapped disk drives.
 
-        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions do not
           support this feature.</result>
+
+        Access fails with VBOX_E_NOT_SUPPORTED if the Guest Additions do not
+        support this feature.
       </desc>
     </attribute>
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
@@ -15812,7 +15815,7 @@
         Gets an environment variable from the session's base environment
         (<link to="IGuestSession::environmentBase"/>).
 
-        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions do not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXXX.</result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
@@ -15836,7 +15839,7 @@
         Checks if the given environment variable exists in the session's base
         environment (<link to="IGuestSession::environmentBase"/>).
 
-        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions do not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXXX.</result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
@@ -16551,7 +16554,7 @@
           guest CPU numbers the process is allowed to run on.
           <note>
             This is silently ignored if the guest does not support setting the
-            affinity of processes, or if the Guest Additions does not implemet
+            affinity of processes, or if the Guest Additions do not implemet
             this feature.
           </note>
         </desc>
