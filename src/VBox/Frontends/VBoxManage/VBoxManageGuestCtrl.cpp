@@ -900,7 +900,15 @@ static void gctlCtxTerm(PGCTLCMDCTX pCtx)
             if (pCtx->cVerbose)
                 RTPrintf(GuestCtrl::tr("Closing guest session ...\n"));
 
-            CHECK_ERROR(pCtx->pGuestSession, Close());
+            if (pCtx->pGuestSession.isNotNull())
+                CHECK_ERROR(pCtx->pGuestSession, Close());
+
+            if (pCtx->cVerbose > 4)
+            {
+                SafeIfaceArray <IGuestSession> collSessions;
+                CHECK_ERROR(pCtx->pGuest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+                RTPrintf(GuestCtrl::tr("Now %zu guest sessions registered\n"), collSessions.size());
+            }
         }
         else if (   pCtx->fDetachGuestSession
                  && pCtx->cVerbose)
