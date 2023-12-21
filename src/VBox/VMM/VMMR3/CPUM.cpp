@@ -3369,7 +3369,7 @@ static int cpumR3MtrrMapAddRegion(PVM pVM, PCPUMMTRRMAP pMtrrMap, RTGCPHYS GCPhy
     {
         pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysBase = GCPhysFirst | fType;
         pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysMask = cpumR3GetVarMtrrMask(pVM, GCPhysFirst, GCPhysLast)
-                                                          | MSR_IA32_MTRR_PHYSMASK_VALID;
+                                                         | MSR_IA32_MTRR_PHYSMASK_VALID;
         ++pMtrrMap->idxMtrr;
 
         uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
@@ -3462,13 +3462,12 @@ static int cpumR3MapMtrrsAdditive(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t 
 
     uint64_t cbLeft    = cb;
     uint64_t offRegion = GCPhysRegionFirst;
-    int      rc        = VINF_SUCCESS;
     while (cbLeft > 0)
     {
         uint64_t const cbRegion = !RT_IS_POWER_OF_TWO(cbLeft) ? cpumR3GetPrevPowerOfTwo(cbLeft) : cbLeft;
 
         Log3(("CPUM: MTRR: Add[%u]: %' Rhcb (%RU64 bytes)\n", pMtrrMap->idxMtrr, cbRegion, cbRegion));
-        rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, offRegion, offRegion + cbRegion - 1, X86_MTRR_MT_WB);
+        int const rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, offRegion, offRegion + cbRegion - 1, X86_MTRR_MT_WB);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -3633,7 +3632,7 @@ static int cpumR3MapMtrrsOptimal(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t c
     int const rc = cpumR3MtrrMapAddMap(pVM, pMtrrMap, pMtrrMapOptimal);
     if (   RT_SUCCESS(rc)
         && pMtrrMapOptimal->cbMapped == pMtrrMapOptimal->cbToMap)
-        return rc;
+        return VINF_SUCCESS;
     return VERR_OUT_OF_RESOURCES;
 }
 
@@ -3819,7 +3818,6 @@ static int cpumR3MapMtrrs(PVM pVM)
         uint64_t const cbLost = cbRam - MtrrMap.cbMapped;
         LogRel(("CPUM: WARNING! Could not map %' Rhcb (%RU64 bytes) of RAM using %u variable-range MTRRs\n", cbLost, cbLost,
                 MtrrMap.cMtrrs));
-        rc = VINF_SUCCESS;
     }
 
     /*
@@ -3832,7 +3830,7 @@ static int cpumR3MapMtrrs(PVM pVM)
         memcpy(&pCtxMsrs->msr.aMtrrVarMsrs[0], &MtrrMap.aMtrrs[0], sizeof(MtrrMap.aMtrrs));
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
