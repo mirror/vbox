@@ -1042,7 +1042,6 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
 # else
-off = iemNativeEmitBrk(pReNative, off, 0x1234);
 
     /* Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_F_MODE_X86_IS_FLAT(pReNative->fExec)); */
     if (IEM_F_MODE_X86_IS_FLAT(pReNative->fExec))
@@ -1050,7 +1049,7 @@ off = iemNativeEmitBrk(pReNative, off, 0x1234);
         off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.cs.u64Base));
 # ifdef RT_ARCH_ARM64
         uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-        pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 1, idxRegTmp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, idxRegTmp);
         pu32CodeBuf[off++] = Armv8A64MkInstrBrk(0x2004);
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 # else
@@ -1107,11 +1106,11 @@ off = iemNativeEmitBrk(pReNative, off, 0x1234);
 
     off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp2, RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf));
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegTmp, idxRegTmp, idxRegTmp2);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddReg(idxRegTmp, idxRegTmp, idxRegTmp2);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 # ifdef VBOX_STRICT /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); */
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
     off = iemNativeEmitJzToFixed(pReNative, off, 1);
     off = iemNativeEmitBrk(pReNative, off, 0x2005);
 # endif
