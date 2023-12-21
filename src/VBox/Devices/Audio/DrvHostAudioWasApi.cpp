@@ -1290,6 +1290,9 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
             RTListForEach(&pThis->CacheHead, pDevEntry2, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
             {
                 if (   pDevEntry2->cwcDevId == cwcDevId
+                    /* Note: We have to compare the device interface here as well, as a cached device entry might
+                     * have a stale audio interface for the same device. In such a case a new device entry will be created below. */
+                    && pDevEntry2->pIDevice == pIDevice
                     && pDevEntry2->enmDir   == pCfgReq->enmDir
                     && RTUtf16Cmp(pDevEntry2->wszDevId, pDevEntry->wszDevId) == 0)
                 {
@@ -1297,13 +1300,13 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
                     RTMemFree(pDevEntry);
                     pDevEntry = NULL;
 
-                    Log8Func(("Lost race adding device '%ls': %p\n", pDevEntry2->wszDevId, pDevEntry2));
+                    LogRel2(("WasAPI: Lost race adding device '%ls': %p\n", pDevEntry2->wszDevId, pDevEntry2));
                     return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry2, pCfgReq, fOnWorker, ppDevCfg);
                 }
             }
             RTListPrepend(&pThis->CacheHead, &pDevEntry->ListEntry);
 
-            Log8Func(("Added device '%ls' to cache: %p\n", pDevEntry->wszDevId, pDevEntry));
+            LogRel2(("WasAPI: Added device '%ls' to cache: %p\n", pDevEntry->wszDevId, pDevEntry));
             return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry, pCfgReq, fOnWorker, ppDevCfg);
         }
         CoTaskMemFree(pwszDevId);
