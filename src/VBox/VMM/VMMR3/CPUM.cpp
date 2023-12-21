@@ -204,6 +204,7 @@ typedef CPUMMTRRMAP *PCPUMMTRRMAP;
 /** Pointer to a const CPUM variable-range MTRR structure. */
 typedef CPUMMTRRMAP const *PCCPUMMTRRMAP;
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
