@@ -826,10 +826,14 @@ DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
+                                                                  uint32_t fKeepVars = 0);
+DECLHIDDEN(void)            iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstRegs) RT_NOEXCEPT;
 
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
                                                                    IEMNATIVEGSTREG enmGstReg, uint32_t *poff);
+
 
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                  uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg);
@@ -837,6 +841,8 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTA
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
                                                    uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
                                                    uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                      PCIEMTHRDEDCALLENTRY pCallEntry);
 
 IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_Nop);
 IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_LogCpuState);

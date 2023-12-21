@@ -4022,7 +4022,7 @@ DECLHIDDEN(void) iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxH
  *                          assignments.  Caller must take care to handle these.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint32_t fKeepVars = 0)
+iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint32_t fKeepVars /*= 0*/)
 {
     Assert(cArgs <= IEMNATIVE_CALL_MAX_ARG_COUNT);
 
@@ -4785,7 +4785,8 @@ iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxI
 /**
  * Emits a call to a threaded worker function.
  */
-static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
     iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4);
@@ -8229,7 +8230,6 @@ iemNativeEmitStoreGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     /* Otherwise it's to ah, ch, dh or bh from al, cl, dl or bl: use mov r8, r8 if we can, otherwise, we rotate. */
     else if (idxGstTmpReg < 4 && idxVarReg < 4)
     {
-        /** @todo test this.   */
         uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2+1);
         pbCodeBuf[off++] = 0x8a;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg + 4, idxVarReg);
@@ -8247,7 +8247,7 @@ iemNativeEmitStoreGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
         /* mov reg8, reg8(r/m)  */
         if (idxGstTmpReg >= 8 || idxVarReg >= 8)
             pbCodeBuf[off++] = (idxGstTmpReg >= 8 ? X86_OP_REX_R : 0) | (idxVarReg >= 8 ? X86_OP_REX_B : 0);
-        else if (idxGstTmpReg >= 4)
+        else if (idxGstTmpReg >= 4 || idxVarReg >= 4)
             pbCodeBuf[off++] = X86_OP_REX;
         pbCodeBuf[off++] = 0x8a;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg & 7, idxVarReg & 7);

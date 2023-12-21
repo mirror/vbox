@@ -2363,7 +2363,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
                 break;
 
 #if defined(LOG_ENABLED) && 0 /* for debugging */
-            iemThreadedCompileEmitNop(pTb);
+            //iemThreadedCompileEmitNop(pTb);
             iemThreadedCompileEmitLogCpuState(pTb);
 #endif
         }
