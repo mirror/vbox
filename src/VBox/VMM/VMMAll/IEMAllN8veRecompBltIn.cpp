@@ -448,6 +448,13 @@ iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t of
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltInCheckOpcodes(pReNative, off, (a_pTb), (a_idxRange), (a_offRange))
 
+#if 0 /* debugging aid */
+bool g_fBpOnObsoletion = false;
+# define BP_ON_OBSOLETION g_fBpOnObsoletion
+#else
+# define BP_ON_OBSOLETION 0
+#endif
+
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange, uint16_t offRange)
 {
@@ -472,7 +479,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
     uint16_t            offPage     = pTb->aRanges[idxRange].offPhysPage + offRange;
     uint16_t            cbLeft      = pTb->aRanges[idxRange].cbOpcodes   - offRange;
     Assert(cbLeft > 0);
-    uint8_t const      *pbOpcodes   = &pTb->pabOpcodes[pTb->aRanges[idxRange].offOpcodes];
+    uint8_t const      *pbOpcodes   = &pTb->pabOpcodes[pTb->aRanges[idxRange].offOpcodes + offRange];
     uint32_t            offConsolidatedJump = UINT32_MAX;
 
 #ifdef RT_ARCH_AMD64
@@ -496,9 +503,9 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             else \
             { \
                 pbCodeBuf[off++] = 0x74; /* jz near +5 */ \
-                pbCodeBuf[off++] = 0x05 /*+ 1*/; \
+                pbCodeBuf[off++] = 0x05 + BP_ON_OBSOLETION; \
                 offConsolidatedJump = off; \
-                /*pbCodeBuf[off++] = 0xcc; */ \
+                if (BP_ON_OBSOLETION) pbCodeBuf[off++] = 0xcc; \
                 pbCodeBuf[off++] = 0xe9; /* jmp rel32 */ \
                 iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_Rel32, -4); \
                 pbCodeBuf[off++] = 0x00; \
@@ -570,7 +577,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             offPage &= 3;
         }
 
-        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 14 + 54 + 8 + 6 /* = 87 */);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 14 + 54 + 8 + 6 + BP_ON_OBSOLETION /* = 87 */);
 
         if (cbLeft > 8)
             switch (offPage & 3)
@@ -614,7 +621,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
         /* RCX = counts. */
         uint8_t const idxRegCx = iemNativeRegAllocTmpEx(pReNative, &off, RT_BIT_32(X86_GREG_xCX));
 
-        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 10 + 5 + 5 + 3 + 4 + 3 /*= 35*/);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 10 + 5 + 5 + 3 + 4 + 3 + BP_ON_OBSOLETION /*= 35*/);
 
         /** @todo profile and optimize this further.  Maybe an idea to align by
          *        offPage if the two cannot be reconsidled. */
