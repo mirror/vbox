@@ -82,6 +82,56 @@ static VBOXSTRICTRC iemThreadeFuncWorkerObsoleteTb(PVMCPUCC pVCpu)
 
 
 /**
+ * Built-in function that does absolutely nothing - for debugging.
+ *
+ * This can be used for artifically increasing the number of calls generated, or
+ * for triggering flushes associated with threaded calls.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_Nop)
+{
+    RT_NOREF(pVCpu, uParam0, uParam1, uParam2);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * This is also called from iemNativeHlpAsmSafeWrapLogCpuState.
+ */
+DECLASM(void) iemThreadedFunc_BltIn_LogCpuStateWorker(PVMCPU pVCpu)
+{
+#ifdef LOG_ENABLED
+    PCIEMTB const      pTb     = pVCpu->iem.s.pCurTbR3;
+    PCX86FXSTATE const pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
+    Log2(("**** LG%c fExec=%x pTb=%p cUsed=%u\n"
+          " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+          " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
+          " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
+          " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
+          , pTb && (pTb->fFlags & IEMTB_F_TYPE_NATIVE) ? 'n' : 't', pVCpu->iem.s.fExec, pTb, pTb ? pTb->cUsed : 0,
+          pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ebx, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi,
+          pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, pVCpu->cpum.GstCtx.tr.Sel,
+          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.es.Sel,
+          pVCpu->cpum.GstCtx.fs.Sel, pVCpu->cpum.GstCtx.gs.Sel, pVCpu->cpum.GstCtx.eflags.u,
+          pFpuCtx->FSW, pFpuCtx->FCW, pFpuCtx->FTW, pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK ));
+#else
+    RT_NOREF(pVCpu);
+#endif
+}
+
+
+/**
+ * Built-in function that logs the current CPU state - for debugging.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_LogCpuState)
+{
+    iemThreadedFunc_BltIn_LogCpuStateWorker(pVCpu);
+    RT_NOREF(uParam0, uParam1, uParam2);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Built-in function that calls a C-implemention function taking zero arguments.
  */
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
@@ -347,16 +397,17 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
 /**
  * Macro that implements PC check after a conditional branch.
  */
-#define BODY_CHECK_PC_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) do { \
+#define BODY_CHECK_PC_AFTER_BRANCH(a_pTb, a_idxRange, a_offRange, a_cbInstr) do { \
         /* Is RIP within the current code page? */ \
         Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu)); \
         uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base; \
         uint64_t const off = uPc - pVCpu->iem.s.uInstrBufPc; \
         Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK)); \
-        RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
-                                                 | pTb->aRanges[(a_idxRange)].offPhysPage; \
+        RTGCPHYS const GCPhysRangePageWithOffset = (  iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                    | (a_pTb)->aRanges[(a_idxRange)].offPhysPage) \
+                                                 + (a_offRange); \
         if (   GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off \
-            && off < pVCpu->iem.s.cbInstrBufTotal) \
+            && off < /*pVCpu->iem.s.cbInstrBufTotal - ignore flushes and CS.LIM is check elsewhere*/ X86_PAGE_SIZE) \
         { /* we're good */ } \
         else \
         { \
@@ -449,7 +500,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes)
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_CHECK_CS_LIM(cbInstr);
-    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return VINF_SUCCESS;
@@ -469,7 +520,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodes)
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
-    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return VINF_SUCCESS;
@@ -491,7 +542,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodesConsiderCsLi
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
-    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return VINF_SUCCESS;

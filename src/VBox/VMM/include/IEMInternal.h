@@ -699,6 +699,10 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** X86 Mode: 64-bit (includes protected, but not the flat bit). */
 #define IEM_F_MODE_X86_64BIT                UINT32_C(0x0000000a)
 
+/** X86 Mode: Checks if @a a_fExec represent a FLAT mode. */
+#define IEM_F_MODE_X86_IS_FLAT(a_fExec)     (   ((a_fExec) & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT \
+                                             || ((a_fExec) & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT \
+                                             || ((a_fExec) & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
 
 /** Bypass access handlers when set. */
 #define IEM_F_BYPASS_HANDLERS               UINT32_C(0x00010000)
@@ -1390,7 +1394,8 @@ typedef struct IEMCPU
     /** The guest physical address corresponding to pbInstrBuf. */
     RTGCPHYS                GCPhysInstrBuf;                                                                 /* 0x20 */
     /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
-     * This takes the CS segment limit into account. */
+     * This takes the CS segment limit into account.
+     * @note Set to zero when the code TLB is flushed to trigger TLB reload. */
     uint16_t                cbInstrBufTotal;                                                                /* 0x28 */
 # ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** Offset into pbInstrBuf of the first byte of the current instruction.
@@ -5625,6 +5630,9 @@ typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;
     VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2) IEM_NOEXCEPT_MAY_LONGJMP
 #endif
 
+
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_Nop);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_LogCpuState);
 
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_DeferToCImpl0);
 

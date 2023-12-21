@@ -639,7 +639,6 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     int            cLeft   = IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]);
 #endif
-    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p L %d\n", fFlags, GCPhysPc, idxHash, pTb, cLeft));
     while (pTb)
     {
         if (pTb->GCPhysPc == GCPhysPc)
@@ -655,9 +654,20 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                     pTb->cUsed++;
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
                     if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != 16)
+                    {
+                        Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p (@ %d / %d)\n",
+                               fFlags, GCPhysPc, idxHash, pTb, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - cLeft,
+                               IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) ));
                         return pTb;
+                    }
+                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p (@ %d / %d) - recompiling\n",
+                           fFlags, GCPhysPc, idxHash, pTb, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - cLeft,
+                           IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) ));
                     return iemNativeRecompile(pVCpu, pTb);
 #else
+                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p (@ %d / %d)\n",
+                           fFlags, GCPhysPc, idxHash, pTb, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - cLeft,
+                           IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) ));
                     return pTb;
 #endif
                 }
@@ -676,6 +686,8 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
     }
     AssertMsg(cLeft == 0, ("%d\n", cLeft));
     STAM_REL_COUNTER_INC(&pTbCache->cLookupMisses);
+    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: NULL - (%p L %d)\n", fFlags, GCPhysPc, idxHash,
+           IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]), IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) ));
     return pTb;
 }
 
@@ -1482,8 +1494,8 @@ static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction, uint
               pFpuCtx->FSW, pFpuCtx->FCW, pFpuCtx->FTW, pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK,
               szInstr));
 
-        if (LogIs3Enabled())
-            DBGFR3InfoEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, "cpumguest", "verbose", NULL);
+        /*if (LogIs3Enabled()) - this outputs an insane amount of stuff, so disabled.
+            DBGFR3InfoEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, "cpumguest", "verbose", NULL); */
     }
     else
 # endif
@@ -1659,6 +1671,62 @@ DECL_FORCE_INLINE(void) iemThreadedCompileReInitOpcodeFetching(PVMCPUCC pVCpu)
 #endif
 }
 
+#ifdef LOG_ENABLED
+
+/**
+ * Inserts a NOP call.
+ *
+ * This is for debugging.
+ *
+ * @returns true on success, false if we're out of call entries.
+ * @param   pTb         The translation block being compiled.
+ */
+bool iemThreadedCompileEmitNop(PIEMTB pTb)
+{
+    /* Emit the call. */
+    uint32_t const idxCall = pTb->Thrd.cCalls;
+    AssertReturn(idxCall < pTb->Thrd.cAllocated, false);
+    PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[idxCall];
+    pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
+    pCall->enmFunction = kIemThreadedFunc_BltIn_Nop;
+    pCall->idxInstr    = pTb->cInstructions - 1;
+    pCall->uUnused0    = 0;
+    pCall->offOpcode   = 0;
+    pCall->cbOpcode    = 0;
+    pCall->idxRange    = 0;
+    pCall->auParams[0] = 0;
+    pCall->auParams[1] = 0;
+    pCall->auParams[2] = 0;
+    return true;
+}
+
+
+/**
+ * Called by iemThreadedCompile if cpu state logging is desired.
+ *
+ * @returns true on success, false if we're out of call entries.
+ * @param   pTb         The translation block being compiled.
+ */
+bool iemThreadedCompileEmitLogCpuState(PIEMTB pTb)
+{
+    /* Emit the call. */
+    uint32_t const idxCall = pTb->Thrd.cCalls;
+    AssertReturn(idxCall < pTb->Thrd.cAllocated, false);
+    PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[idxCall];
+    pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
+    pCall->enmFunction = kIemThreadedFunc_BltIn_LogCpuState;
+    pCall->idxInstr    = pTb->cInstructions - 1;
+    pCall->uUnused0    = 0;
+    pCall->offOpcode   = 0;
+    pCall->cbOpcode    = 0;
+    pCall->idxRange    = 0;
+    pCall->auParams[0] = RT_MAKE_U16(pCall->idxInstr, idxCall); /* currently not used, but whatever */
+    pCall->auParams[1] = 0;
+    pCall->auParams[2] = 0;
+    return true;
+}
+
+#endif /* LOG_ENABLED */
 
 DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDst, uint8_t cbInstr)
 {
@@ -2293,6 +2361,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             { /* extremely likely */ }
             else
                 break;
+
+#if defined(LOG_ENABLED) && 0 /* for debugging */
+            iemThreadedCompileEmitNop(pTb);
+            iemThreadedCompileEmitLogCpuState(pTb);
+#endif
         }
         else
         {

@@ -1604,6 +1604,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu))
        of a TB callback function, which for native TBs means we cannot release
        the executable memory till we've returned our way back to iemTbExec as
        that return path codes via the native code generated for the TB. */
+    Log7(("TB obsolete: %p at %04x:%08RX64\n", pVCpu->iem.s.pCurTbR3, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     iemThreadedTbObsolete(pVCpu, pVCpu->iem.s.pCurTbR3, false /*fSafeToFree*/);
     return VINF_IEM_REEXEC_BREAK;
 }
@@ -1621,6 +1622,21 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpNeedCsLimChecking,(PVMCPUCC pVCpu))
     STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckNeedCsLimChecking);
     return VINF_IEM_REEXEC_BREAK;
 }
+
+
+/**
+ * Used by TB code when we missed a PC check after a branch.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpCheckBranchMiss,(PVMCPUCC pVCpu))
+{
+    Log7(("TB jmp miss: %p at %04x:%08RX64; GCPhysWithOffset=%RGp, pbInstrBuf=%p\n",
+          pVCpu->iem.s.pCurTbR3, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+          pVCpu->iem.s.GCPhysInstrBuf + pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base - pVCpu->iem.s.uInstrBufPc,
+          pVCpu->iem.s.pbInstrBuf));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses);
+    return VINF_IEM_REEXEC_BREAK;
+}
+
 
 
 /*********************************************************************************************************************************
@@ -2448,7 +2464,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 8);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 9);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2457,6 +2473,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[5]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[6]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[7]         = UINT32_MAX;
+    pReNative->aidxUniqueLabels[8]         = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -4844,6 +4861,27 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
      */
     off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
 
+    return off;
+}
+
+
+/**
+ * Emits the code at the CheckBranchMiss label.
+ */
+static uint32_t iemNativeEmitCheckBranchMiss(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_CheckBranchMiss);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        /* int iemNativeHlpCheckBranchMiss(PVMCPUCC pVCpu) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpCheckBranchMiss);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
     return off;
 }
 
@@ -8183,7 +8221,7 @@ iemNativeEmitStoreGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
         uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
         if (idxGstTmpReg >= 8 || idxVarReg >= 8)
             pbCodeBuf[off++] = (idxGstTmpReg >= 8 ? X86_OP_REX_R : 0) | (idxVarReg >= 8 ? X86_OP_REX_B : 0);
-        else if (idxGstTmpReg >= 4)
+        else if (idxGstTmpReg >= 4 || idxVarReg >= 4)
             pbCodeBuf[off++] = X86_OP_REX;
         pbCodeBuf[off++] = 0x8a;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxGstTmpReg & 7, idxVarReg & 7);
@@ -11168,6 +11206,12 @@ DECLHIDDEN(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_
 DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT
 {
     AssertReturnVoid((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
+#if defined(RT_ARCH_AMD64)
+    static const char * const a_apszMarkers[] =
+    {
+        "unknown0", "CheckCsLim", "ConsiderLimChecking", "CheckOpcodes", "PcAfterBranch",
+    };
+#endif
 
     char                    szDisBuf[512];
     DISSTATE                Dis;
@@ -11374,6 +11418,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_NeedCsLimChecking:
                                     pszName = "NeedCsLimChecking";
                                     break;
+                                case kIemNativeLabelType_CheckBranchMiss:
+                                    pszName = "CheckBranchMiss";
+                                    break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -11441,6 +11488,8 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                         pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
                                         uInfo & 0x8000 ? "recompiled" : "todo");
+                    else if ((uInfo & ~RT_BIT_32(31)) < RT_ELEMENTS(a_apszMarkers))
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: %s\n", pNativeCur, a_apszMarkers[uInfo & ~RT_BIT_32(31)]);
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
@@ -11571,6 +11620,8 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                         pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
                                         uInfo & 0x8000 ? "recompiled" : "todo");
+                    else if ((uInfo & ~RT_BIT_32(31)) < RT_ELEMENTS(a_apszMarkers))
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: %s\n", pNativeCur, a_apszMarkers[uInfo & ~RT_BIT_32(31)]);
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
@@ -11776,6 +11827,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))
             off = iemNativeEmitNeedCsLimChecking(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_CheckBranchMiss))
+            off = iemNativeEmitCheckBranchMiss(pReNative, off, idxReturnLabel);
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
     {

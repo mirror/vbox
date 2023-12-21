@@ -963,7 +963,13 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys = GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
 
     void const *pvSharedPage = NULL;
-    if (PGM_PAGE_IS_SHARED(pPage))
+    if (!PGM_PAGE_IS_SHARED(pPage))
+    {
+        Log2(("PGM: Replaced zero page %RGp with %#x / %RHp\n", GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatRZPageReplaceZero);
+        pVM->pgm.s.cZeroPages--;
+    }
+    else
     {
         /* Mark this shared page for freeing/dereferencing. */
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
@@ -978,12 +984,6 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhys, &pvSharedPage);
         AssertRC(rc);
     }
-    else
-    {
-        Log2(("PGM: Replaced zero page %RGp with %#x / %RHp\n", GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
-        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatRZPageReplaceZero);
-        pVM->pgm.s.cZeroPages--;
-    }
 
     /*
      * Do the PGMPAGE modifications.
@@ -994,10 +994,14 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
     PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PT);
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
-    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_ALLOCATED);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID,
+                                       !pvSharedPage
+                                       ? IEMTLBPHYSFLUSHREASON_ALLOCATED : IEMTLBPHYSFLUSHREASON_ALLOCATED_FROM_SHARED);
 
     /* Copy the shared page contents to the replacement page. */
-    if (pvSharedPage)
+    if (!pvSharedPage)
+    { /* likely */ }
+    else
     {
         /* Get the virtual address of the new page. */
         PGMPAGEMAPLOCK  PgMpLck;

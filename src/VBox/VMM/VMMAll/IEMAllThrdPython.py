@@ -1959,6 +1959,9 @@ class IEMThreadedGenerator(object):
     ## List of built-in threaded functions with user argument counts and
     ## whether it has a native recompiler implementation.
     katBltIns = (
+        ( 'Nop',                                                0, True  ),
+        ( 'LogCpuState',                                        0, True  ),
+
         ( 'DeferToCImpl0',                                      2, True  ),
         ( 'CheckIrq',                                           0, True  ),
         ( 'CheckMode',                                          1, True  ),
@@ -1969,9 +1972,9 @@ class IEMThreadedGenerator(object):
         ( 'CheckOpcodes',                                       3, True  ),
         ( 'CheckOpcodesConsiderCsLim',                          3, True  ),
 
-        ( 'CheckCsLimAndPcAndOpcodes',                          3, False ),
-        ( 'CheckPcAndOpcodes',                                  3, False ),
-        ( 'CheckPcAndOpcodesConsiderCsLim',                     3, False ),
+        ( 'CheckCsLimAndPcAndOpcodes',                          3, True  ),
+        ( 'CheckPcAndOpcodes',                                  3, True  ),
+        ( 'CheckPcAndOpcodesConsiderCsLim',                     3, True  ),
 
         ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3, False ),
         ( 'CheckOpcodesAcrossPageLoadingTlb',                   3, False ),
