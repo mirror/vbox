@@ -435,7 +435,7 @@ int main(int argc, char **argv)
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestPayloadToStringVector); iTest++)
     {
         GuestWaitEventPayload Payload(0 /* Type */,
-                                      g_aTestPayloadToStringVector[iTest].pbData, g_aTestPayloadToStringVector[iTest].cbData);
+                                      g_aTestPayloadToStringVector[iTest].pbData, (uint32_t)g_aTestPayloadToStringVector[iTest].cbData);
         std::vector<Utf8Str> vecStr;
         RTTEST_CHECK_RC(hTest, Payload.ToStringVector(vecStr), g_aTestPayloadToStringVector[iTest].iResult);
         RTTEST_CHECK(hTest, vecStr.size() == g_aTestPayloadToStringVector[iTest].cStrings);
