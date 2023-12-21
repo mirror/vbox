@@ -3167,7 +3167,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubUImm12(bool fSub, uint32_t iReg
 }
 
 
-/** Alias for sub zxr, reg, #uimm12.  */
+/** Alias for sub zxr, reg, \#uimm12.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpUImm12(uint32_t iRegSrc, uint32_t uImm12Comprahend,
                                                      bool f64Bit = true, bool fShift12 = false)
 {
@@ -3176,7 +3176,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpUImm12(uint32_t iRegSrc, uint32_t 
 }
 
 
-/** ADD dst, src, #uimm12  */
+/** ADD dst, src, \#uimm12  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddUImm12(uint32_t iRegResult, uint32_t iRegSrc, uint32_t uImm12Addend,
                                                      bool f64Bit = true, bool fSetFlags = false, bool fShift12 = false)
 {
@@ -3184,7 +3184,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddUImm12(uint32_t iRegResult, uint32
 }
 
 
-/** SUB dst, src, #uimm12  */
+/** SUB dst, src, \#uimm12  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubUImm12(uint32_t iRegResult, uint32_t iRegSrc, uint32_t uImm12Subtrahend,
                                                      bool f64Bit = true, bool fSetFlags = false, bool fShift12 = false)
 {
@@ -3234,7 +3234,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegRes
 }
 
 
-/** Alias for sub zxr, reg1, reg2 [, LSL/LSR/ASR/ROR #xx].  */
+/** Alias for sub zxr, reg1, reg2 [, LSL/LSR/ASR/ROR \#xx].  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpReg(uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true, uint32_t cShift = 0,
                                                   ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
@@ -3243,7 +3243,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCmpReg(uint32_t iRegSrc1, uint32_t iR
 }
 
 
-/** ADD dst, reg1, reg2 [, LSL/LSR/ASR/ROR #xx] */
+/** ADD dst, reg1, reg2 [, LSL/LSR/ASR/ROR \#xx] */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddReg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
                                                   bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
                                                   ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
@@ -3252,7 +3252,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddReg(uint32_t iRegResult, uint32_t 
 }
 
 
-/** SUB dst, reg1, reg2 [, LSL/LSR/ASR/ROR #xx] */
+/** SUB dst, reg1, reg2 [, LSL/LSR/ASR/ROR \#xx] */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubReg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
                                                   bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
                                                   ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
