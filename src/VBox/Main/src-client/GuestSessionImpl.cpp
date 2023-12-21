@@ -3959,39 +3959,46 @@ HRESULT GuestSession::close()
 
     LogFlowThisFuncEnter();
 
-    HRESULT hrc = i_isStartedExternal();
-    if (FAILED(hrc))
-        return hrc;
-
     int vrc = VINF_SUCCESS; /* Shut up MSVC. */
 
-    /* If the guest session is not in an unsable state (anymore), do the cleanup stuff ourselves. */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* If the guest session is not in an usable state (anymore), do the cleanup stuff ourselves. */
     if (!i_isReady())
     {
         i_onRemove();
         return S_OK;
     }
 
-    /* Note: Don't check if the session is ready via i_isStartedExternal() here;
-     *       the session (already) could be in a stopped / aborted state. */
+    alock.release(); /* Leave lock before calling i_closeSession() below. */
 
     int vrcGuest = VINF_SUCCESS;
 
-    uint32_t msTimeout = RT_MS_10SEC; /* 10s timeout by default */
-    for (int i = 0; i < 3; i++)
+    /* If the session is in a started state, tell the guest to close it.
+     *
+     * Note: Don't check if the session is ready via i_isStartedExternal() here;
+     *       the session (already) could be in a stopped / aborted state.
+     */
+    AutoCaller autoCallerParent(mParent);
+    if (   SUCCEEDED(autoCallerParent.hrc())
+        && i_isStarted())
     {
-        if (i)
+        uint32_t msTimeout = RT_MS_10SEC; /* 10s timeout by default */
+        for (int i = 0; i < 3; i++)
         {
-            LogRel(("Guest Control: Closing session '%s' timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
-                    mData.mSession.mName.c_str(), msTimeout / RT_MS_1SEC, i + 1));
-            msTimeout += RT_MS_5SEC; /* Slightly increase the timeout. */
-        }
+            if (i)
+            {
+                LogRel(("Guest Control: Closing session '%s' timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
+                        mData.mSession.mName.c_str(), msTimeout / RT_MS_1SEC, i + 1));
+                msTimeout += RT_MS_5SEC; /* Slightly increase the timeout. */
+            }
 
-        /* Close session on guest. */
-        vrc = i_closeSession(0 /* Flags */, msTimeout, &vrcGuest);
-        if (   RT_SUCCESS(vrc)
-            || vrc != VERR_TIMEOUT) /* If something else happened there is no point in retrying further. */
-            break;
+            /* Close session on guest. */
+            vrc = i_closeSession(0 /* Flags */, msTimeout, &vrcGuest);
+            if (   RT_SUCCESS(vrc)
+                || vrc != VERR_TIMEOUT) /* If something else happened there is no point in retrying further. */
+                break;
+        }
     }
 
     /* On failure don't return here, instead do all the cleanup
