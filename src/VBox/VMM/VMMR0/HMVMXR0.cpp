@@ -5009,7 +5009,7 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
         pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs           = fInNestedGuestMode;
         pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsCopyForRing3 = fInNestedGuestMode;
         pVCpu->hmr0.s.fLeaveDone = false;
-        Log4Func(("Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
+        Log4Func(("Loaded %s Vmcs. HostCpuId=%u\n", fInNestedGuestMode ? "nested-guest" : "guest", RTMpCpuId()));
     }
     return rc;
 }
