@@ -288,6 +288,7 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstFile': '',
         'testcase/tstFileLock': '',
         'testcase/tstClipboardMockHGCM': '',            # Requires X on Linux OSes. Execute on remote targets only (guests).
+        'testcase/tstRTFsQueries': '',
         'testcase/tstRTLocalIpc': '',
         'testcase/tstRTPathQueryInfo': '',
         'testcase/tstRTPipe': '',
