@@ -212,7 +212,7 @@ static struct
     NULL, 0, 0, VINF_SUCCESS,
     RT_STR_TUPLE("\0"), 0, VINF_SUCCESS,
     RT_STR_TUPLE(""), 0, VINF_SUCCESS,
-    ///** Invalid data. */
+    /** Invalid data. */
     RT_STR_TUPLE("two\0\0terminators"), 1, VERR_INVALID_PARAMETER,
     RT_STR_TUPLE("no\0\ending\0terminator"), 2, VERR_BUFFER_OVERFLOW,
     RT_STR_TUPLE("foo"), 0, VERR_BUFFER_OVERFLOW,
