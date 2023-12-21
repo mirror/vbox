@@ -181,6 +181,28 @@ typedef enum CPUMDUMPTYPE
 /** Pointer to a cpu info dump type. */
 typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 
+/**
+ * Map of variable-range MTRRs.
+ */
+typedef struct CPUMMTRRMAP
+{
+    /** The index of the next available MTRR. */
+    uint8_t     idxMtrr;
+    /** The number of usable MTRRs. */
+    uint8_t     cMtrrs;
+    /** Alignment padding. */
+    uint16_t    uAlign;
+    /** The number of bytes to map via these MTRRs. */
+    uint64_t    cbToMap;
+    /** The number of bytes mapped via these MTRRs. */
+    uint64_t    cbMapped;
+    /** The variable-range MTRRs. */
+    X86MTRRVAR  aMtrrs[CPUMCTX_MAX_MTRRVAR_COUNT];
+} CPUMMTRRMAP;
+/** Pointer to a CPUM variable-range MTRR structure. */
+typedef CPUMMTRRMAP *PCPUMMTRRMAP;
+/** Pointer to a const CPUM variable-range MTRR structure. */
+typedef CPUMMTRRMAP const *PCCPUMMTRRMAP;
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -3216,6 +3238,605 @@ VMMDECL(bool) CPUMR3IsStateRestorePending(PVM pVM)
 
 
 /**
+ * Gets the variable-range MTRR physical address mask given an address range.
+ *
+ * @returns The MTRR physical address mask.
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhysFirst     The first guest-physical address of the memory range
+ *                          (inclusive).
+ * @param   GCPhysLast      The last guest-physical address of the memory range
+ *                          (inclusive).
+ */
+static uint64_t cpumR3GetVarMtrrMask(PVM pVM, RTGCPHYS GCPhysFirst, RTGCPHYS GCPhysLast)
+{
+    RTGCPHYS const GCPhysLength  = GCPhysLast - GCPhysFirst;
+    uint64_t const fInvPhysMask  = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+    RTGCPHYS const GCPhysMask    = (~(GCPhysLength - 1) & ~fInvPhysMask) & X86_PAGE_BASE_MASK;
+#ifdef VBOX_STRICT
+    AssertMsg(GCPhysLast == ((GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask),
+              ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp\n", GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask));
+    AssertMsg(((GCPhysLast & GCPhysMask) == (GCPhysFirst & GCPhysMask)),
+              ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp\n", GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask));
+    AssertMsg(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask),
+              ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp\n", GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask));
+
+    uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
+    AssertMsg(cbRange >= _4K, ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp cb=%RU64\n",
+                               GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask, cbRange));
+    AssertMsg(RT_IS_POWER_OF_TWO(cbRange), ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp cb=%RU64\n",
+                                            GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask, cbRange));
+    AssertMsg(GCPhysFirst == 0 || cbRange <= GCPhysFirst, ("last=%RGp first=%RGp mask=%RGp inv_mask=%RGp cb=%RU64\n",
+                                                           GCPhysLast, GCPhysFirst, GCPhysMask, fInvPhysMask, cbRange));
+#endif
+    return GCPhysMask;
+}
+
+
+/**
+ * Gets the first and last guest-physical address for the given variable-range
+ * MTRR.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pMtrrVar        The variable-range MTRR.
+ * @param   pGCPhysFirst    Where to store the first guest-physical address of the
+ *                          memory range (inclusive).
+ * @param   pGCPhysLast     Where to store the last guest-physical address of the
+ *                          memory range (inclusive).
+ */
+static void cpumR3GetVarMtrrAddrs(PVM pVM, PCX86MTRRVAR pMtrrVar, PRTGCPHYS pGCPhysFirst, PRTGCPHYS pGCPhysLast)
+{
+    Assert(pMtrrVar);
+    Assert(pGCPhysFirst);
+    Assert(pGCPhysLast);
+    uint64_t const fInvPhysMask = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+    RTGCPHYS const GCPhysMask   = pMtrrVar->MtrrPhysMask & X86_PAGE_BASE_MASK;
+    RTGCPHYS const GCPhysFirst  = pMtrrVar->MtrrPhysBase & X86_PAGE_BASE_MASK;
+    RTGCPHYS const GCPhysLast   = (GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask;
+    Assert((GCPhysLast & GCPhysMask)       == (GCPhysFirst & GCPhysMask));
+    Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
+    *pGCPhysFirst = GCPhysFirst;
+    *pGCPhysLast  = GCPhysLast;
+}
+
+
+/**
+ * Gets the previous power of two for a given value.
+ *
+ * @returns Previous power of two.
+ * @param   uVal  The value (must not be zero).
+ */
+static uint64_t cpumR3GetPrevPowerOfTwo(uint64_t uVal)
+{
+    Assert(uVal > 1);
+    uint8_t const cBits = sizeof(uVal) << 3;
+    return RT_BIT_64(cBits - 1 - ASMCountLeadingZerosU64(uVal));
+}
+
+
+/**
+ * Gets the next power of two for a given value.
+ *
+ * @returns Next power of two.
+ * @param   uVal  The value (must not be zero).
+ */
+static uint64_t cpumR3GetNextPowerOfTwo(uint64_t uVal)
+{
+    Assert(uVal > 1);
+    uint8_t const cBits = sizeof(uVal) << 3;
+    return RT_BIT_64(cBits - ASMCountLeadingZerosU64(uVal));
+}
+
+
+/**
+ * Gets the MTRR memory type description.
+ *
+ * @returns The MTRR memory type description.
+ * @param   fType   The MTRR memory type.
+ */
+static const char *cpumR3GetVarMtrrMemType(uint8_t fType)
+{
+    switch (fType)
+    {
+        case X86_MTRR_MT_UC: return "UC";
+        case X86_MTRR_MT_WC: return "WC";
+        case X86_MTRR_MT_WT: return "WT";
+        case X86_MTRR_MT_WP: return "WP";
+        case X86_MTRR_MT_WB: return "WB";
+        default:             return "--";
+    }
+}
+
+
+/**
+ * Adds a memory region to the given MTRR map.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the map could accommodate a memory region being
+ *          added.
+ * @retval  VERR_OUT_OF_RESOURCES when the map ran out of room while adding the
+ *          memory region.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pMtrrMap        The variable-range MTRR map to add to.
+ * @param   GCPhysFirst     The first guest-physical address in the memory region.
+ * @param   GCPhysLast      The last guest-physical address in the memory region.
+ * @param   fType           The MTRR memory type of the memory region being added.
+ */
+static int cpumR3MtrrMapAddRegion(PVM pVM, PCPUMMTRRMAP pMtrrMap, RTGCPHYS GCPhysFirst, RTGCPHYS GCPhysLast, uint8_t fType)
+{
+    Assert(fType < 7 && fType != 2 && fType != 3);
+    if (pMtrrMap->idxMtrr < pMtrrMap->cMtrrs)
+    {
+        pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysBase = GCPhysFirst | fType;
+        pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysMask = cpumR3GetVarMtrrMask(pVM, GCPhysFirst, GCPhysLast)
+                                                          | MSR_IA32_MTRR_PHYSMASK_VALID;
+        ++pMtrrMap->idxMtrr;
+
+        uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
+        if (fType != X86_MTRR_MT_UC)
+            pMtrrMap->cbMapped += cbRange;
+        else
+        {
+            Assert(pMtrrMap->cbMapped >= cbRange);
+            pMtrrMap->cbMapped -= cbRange;
+        }
+        return VINF_SUCCESS;
+    }
+    return VERR_OUT_OF_RESOURCES;
+}
+
+
+/**
+ * Adds an MTRR to the given MTRR map.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the map could accommodate the MTRR being added.
+ * @retval  VERR_OUT_OF_RESOURCES when the map ran out of room while adding the
+ *          MTRR.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pMtrrMap    The variable-range MTRR map to add to.
+ * @param   pVarMtrr    The variable-range MTRR to add from.
+ */
+static int cpumR3MtrrMapAddMtrr(PVM pVM, PCPUMMTRRMAP pMtrrMap, PCX86MTRRVAR pVarMtrr)
+{
+    RTGCPHYS GCPhysFirst;
+    RTGCPHYS GCPhysLast;
+    cpumR3GetVarMtrrAddrs(pVM, pVarMtrr, &GCPhysFirst, &GCPhysLast);
+    uint8_t const fType = pVarMtrr->MtrrPhysBase & MSR_IA32_MTRR_PHYSBASE_MT_MASK;
+    return cpumR3MtrrMapAddRegion(pVM, pMtrrMap, GCPhysFirst, GCPhysLast, fType);
+}
+
+
+/**
+ * Adds a source MTRR map to the given destination MTRR map.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the map could fully accommodate the map being added.
+ * @retval  VERR_OUT_OF_RESOURCES when the map ran out of room while adding the
+ *          specified map.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pMtrrMapDst     The variable-range MTRR map to add to (destination).
+ * @param   pMtrrMapSrc     The variable-range MTRR map to add from (source).
+ */
+static int cpumR3MtrrMapAddMap(PVM pVM, PCPUMMTRRMAP pMtrrMapDst, PCCPUMMTRRMAP pMtrrMapSrc)
+{
+    Assert(pMtrrMapDst);
+    Assert(pMtrrMapSrc);
+    for (uint8_t i = 0 ; i < pMtrrMapSrc->idxMtrr; i++)
+    {
+        int const rc = cpumR3MtrrMapAddMtrr(pVM, pMtrrMapDst, &pMtrrMapSrc->aMtrrs[i]);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Maps memory using an additive method using variable-range MTRRs.
+ *
+ * The additive method fits as many valid MTRR WB (write-back) sub-regions to map
+ * the specified memory size. For instance, 3584 MB is mapped as 2048 MB, 1024 MB
+ * and 512 MB of WB memory, requiring 3 MTRRs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the requested memory could be fully mapped within the
+ *          given number of MTRRs.
+ * @retval  VERR_OUT_OF_RESOURCES when the requested memory could not be fully
+ *          mapped within the given number of MTRRs.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   GCPhysRegionFirst   The guest-physical address in the region being
+ *                              mapped.
+ * @param   cb                  The number of bytes being mapped.
+ * @param   pMtrrMap            The variable-range MTRR map to populate.
+ */
+static int cpumR3MapMtrrsAdditive(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
+{
+    Assert(pMtrrMap);
+    Assert(pMtrrMap->cMtrrs > 1);
+    Assert(cb >= _4K);
+    Assert(!(GCPhysRegionFirst & X86_PAGE_4K_OFFSET_MASK));
+
+    uint64_t cbLeft    = cb;
+    uint64_t offRegion = GCPhysRegionFirst;
+    int      rc        = VINF_SUCCESS;
+    while (cbLeft > 0)
+    {
+        uint64_t const cbRegion = !RT_IS_POWER_OF_TWO(cbLeft) ? cpumR3GetPrevPowerOfTwo(cbLeft) : cbLeft;
+
+        Log3(("CPUM: MTRR: Add[%u]: %' Rhcb (%RU64 bytes)\n", pMtrrMap->idxMtrr, cbRegion, cbRegion));
+        rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, offRegion, offRegion + cbRegion - 1, X86_MTRR_MT_WB);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        cbLeft -= RT_MIN(cbRegion, cbLeft);
+        offRegion += cbRegion;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Maps memory using a subtractive method using variable-range MTRRs.
+ *
+ * The subtractive method rounds up the memory region using WB (write-back) memory
+ * type and then "subtracts" sub-regions using UC (uncacheable) memory type. For
+ * instance, 3584 MB is mapped as 4096 MB of WB minus 512 MB of UC, requiring 2
+ * MTRRs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the requested memory could be fully mapped within the
+ *          given number of MTRRs.
+ * @retval  VERR_OUT_OF_RESOURCES when the requested memory could not be fully
+ *          mapped within the given number of MTRRs.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   GCPhysRegionFirst   The guest-physical address in the region being
+ *                              mapped.
+ * @param   cb                  The number of bytes being mapped.
+ * @param   pMtrrMap            The variable-range MTRR map to populate.
+ */
+static int cpumR3MapMtrrsSubtractive(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
+{
+    Assert(pMtrrMap);
+    Assert(pMtrrMap->cMtrrs > 1);
+    Assert(cb >= _4K);
+    Assert(!(GCPhysRegionFirst & X86_PAGE_4K_OFFSET_MASK));
+
+    uint64_t const cbRegion = !RT_IS_POWER_OF_TWO(cb) ? cpumR3GetNextPowerOfTwo(cb) : cb;
+    Assert(cbRegion >= cb);
+
+    Log3(("CPUM: MTRR: Sub[%u]: %' Rhcb (%RU64 bytes) [WB]\n", pMtrrMap->idxMtrr, cbRegion, cbRegion));
+    int rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, GCPhysRegionFirst, GCPhysRegionFirst + cbRegion - 1, X86_MTRR_MT_WB);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t cbLeft = cbRegion - cb;
+    RTGCPHYS offRegion = GCPhysRegionFirst + cbRegion;
+    while (cbLeft > 0)
+    {
+        uint64_t const cbSubRegion = cpumR3GetPrevPowerOfTwo(cbLeft);
+
+        Log3(("CPUM: MTRR: Sub[%u]: %' Rhcb (%RU64 bytes) [UC]\n", pMtrrMap->idxMtrr, cbSubRegion, cbSubRegion));
+        rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, offRegion - cbSubRegion, offRegion - 1, X86_MTRR_MT_UC);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        cbLeft -= RT_MIN(cbSubRegion, cbLeft);
+        offRegion -= cbSubRegion;
+    }
+    return rc;
+}
+
+
+/**
+ * Optimally maps RAM when it's not necessarily aligned to a power of two using
+ * variable-range MTRRs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the requested memory could be fully mapped within the
+ *          given number of MTRRs.
+ * @retval  VERR_OUT_OF_RESOURCES when the requested memory could not be fully
+ *          mapped within the given number of MTRRs.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   GCPhysRegionFirst   The guest-physical address in the region being
+ *                              mapped.
+ * @param   cb                  The number of bytes being mapped.
+ * @param   pMtrrMap            The variable-range MTRR map to populate.
+ */
+static int cpumR3MapMtrrsOptimal(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
+{
+    Assert(pMtrrMap);
+    Assert(pMtrrMap->cMtrrs > 1);
+    Assert(cb >= _4K);
+    Assert(!(GCPhysRegionFirst & X86_PAGE_4K_OFFSET_MASK));
+
+    /*
+     * Additive method.
+     */
+    CPUMMTRRMAP MtrrMapAdd;
+    RT_ZERO(MtrrMapAdd);
+    MtrrMapAdd.cMtrrs  = pMtrrMap->cMtrrs;
+    MtrrMapAdd.cbToMap = cb;
+    int rcAdd;
+    {
+        rcAdd = cpumR3MapMtrrsAdditive(pVM, GCPhysRegionFirst, cb, &MtrrMapAdd);
+        if (RT_SUCCESS(rcAdd))
+        {
+            Assert(MtrrMapAdd.idxMtrr > 0);
+            Assert(MtrrMapAdd.idxMtrr <= MtrrMapAdd.cMtrrs);
+            Assert(MtrrMapAdd.cbMapped == cb);
+            Log3(("CPUM: MTRR: Mapped %u regions using additive method\n", MtrrMapAdd.idxMtrr));
+
+            /*
+             * If we were able to map memory using 2 or fewer MTRRs, don't bother with trying
+             * to map using the subtractive method as that requires at least 2 MTRRs anyway.
+             */
+            if (MtrrMapAdd.idxMtrr <= 2)
+                return cpumR3MtrrMapAddMap(pVM, pMtrrMap, &MtrrMapAdd);
+        }
+        else
+            Log3(("CPUM: MTRR: Partially mapped %u regions using additive method\n", MtrrMapAdd.idxMtrr));
+    }
+
+    /*
+     * Subtractive method.
+     */
+    CPUMMTRRMAP MtrrMapSub;
+    RT_ZERO(MtrrMapSub);
+    MtrrMapSub.cMtrrs  = pMtrrMap->cMtrrs;
+    MtrrMapSub.cbToMap = cb;
+    int rcSub;
+    {
+        rcSub = cpumR3MapMtrrsSubtractive(pVM, GCPhysRegionFirst, cb, &MtrrMapSub);
+        if (RT_SUCCESS(rcSub))
+        {
+            Assert(MtrrMapSub.idxMtrr > 0);
+            Assert(MtrrMapSub.idxMtrr <= MtrrMapSub.cMtrrs);
+            Assert(MtrrMapSub.cbMapped == cb);
+            Log3(("CPUM: MTRR: Mapped %u regions using subtractive method\n", MtrrMapSub.idxMtrr));
+        }
+        else
+            Log3(("CPUM: MTRR: Partially mapped %u regions using subtractive method\n", MtrrMapAdd.idxMtrr));
+    }
+
+    /*
+     * Pick whichever method requires fewer MTRRs to map the memory.
+     */
+    PCCPUMMTRRMAP pMtrrMapOptimal;
+    if (   RT_SUCCESS(rcAdd)
+        && RT_SUCCESS(rcSub))
+    {
+        Assert(MtrrMapAdd.cbMapped == MtrrMapSub.cbMapped);
+        if (MtrrMapSub.idxMtrr < MtrrMapAdd.idxMtrr)
+            pMtrrMapOptimal = &MtrrMapSub;
+        else
+            pMtrrMapOptimal = &MtrrMapAdd;
+    }
+    else if (RT_SUCCESS(rcAdd))
+        pMtrrMapOptimal = &MtrrMapAdd;
+    else if (RT_SUCCESS(rcSub))
+        pMtrrMapOptimal = &MtrrMapSub;
+    else
+    {
+        /*
+         * If both methods fail, use the additive method as it gives partially mapped
+         * memory as opposed to memory that isn't present.
+         */
+        pMtrrMapOptimal = &MtrrMapAdd;
+    }
+
+    int const rc = cpumR3MtrrMapAddMap(pVM, pMtrrMap, pMtrrMapOptimal);
+    if (   RT_SUCCESS(rc)
+        && pMtrrMapOptimal->cbMapped == pMtrrMapOptimal->cbToMap)
+        return rc;
+    return VERR_OUT_OF_RESOURCES;
+}
+
+
+/**
+ * Maps RAM above 4GB using variable-range MTRRs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when the requested memory could be fully mapped within the
+ *          given number of MTRRs.
+ * @retval  VERR_OUT_OF_RESOURCES when the requested memory could not be fully
+ *          mapped within the given number of MTRRs.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   cb          The number of bytes above 4GB to map.
+ * @param   pMtrrMap    The variable-range MTRR map to populate.
+ */
+static int cpumR3MapMtrrsAbove4GB(PVM pVM, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
+{
+    Assert(pMtrrMap);
+    Assert(pMtrrMap->cMtrrs > 1);
+    Assert(cb >= _4K);
+
+    /*
+     * Until the remainder of the memory fits within 4GB, map regions at
+     * incremental powers of two offsets and sizes.
+     */
+    uint64_t cbLeft    = cb;
+    uint64_t offRegion = _4G;
+    while (cbLeft > offRegion)
+    {
+        uint64_t const cbRegion = offRegion;
+
+        Log3(("CPUM: MTRR: [%u]: %' Rhcb (%RU64 bytes)\n", pMtrrMap->idxMtrr, cbRegion, cbRegion));
+        int const rc = cpumR3MtrrMapAddRegion(pVM, pMtrrMap, offRegion, offRegion + cbRegion - 1, X86_MTRR_MT_WB);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        offRegion <<= 1;
+        cbLeft    -= RT_MIN(cbRegion, cbLeft);
+    }
+
+    /*
+     * Optimally try and map any remaining memory smaller than 4GB.
+     */
+    Assert(pMtrrMap->cMtrrs - pMtrrMap->idxMtrr > 0);
+    Assert(cbLeft < _4G);
+    return cpumR3MapMtrrsOptimal(pVM, offRegion, cbLeft, pMtrrMap);
+}
+
+
+/**
+ * Maps guest RAM via MTRRs.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int cpumR3MapMtrrs(PVM pVM)
+{
+    /*
+     * The RAM size configured for the VM does NOT include the RAM hole!
+     * We cannot make ANY assumptions about the RAM size or the RAM hole size
+     * of the VM since it is configurable by the user. Hence, we must check for
+     * atypical sizes.
+     */
+    uint64_t cbRam;
+    int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("CPUM: Cannot map RAM via MTRRs since the RAM size is not configured for the VM\n"));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Map the RAM below 1MB.
+     */
+    if (cbRam >= _1M)
+    {
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PCPUMCTXMSRS pCtxMsrs = &pVM->apCpusR3[idCpu]->cpum.s.GuestMsrs;
+            pCtxMsrs->msr.MtrrFix64K_00000 = 0x0606060606060606;
+            pCtxMsrs->msr.MtrrFix16K_80000 = 0x0606060606060606;
+            pCtxMsrs->msr.MtrrFix16K_A0000 = 0;
+            pCtxMsrs->msr.MtrrFix4K_C0000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_C8000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_D0000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_D8000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_E0000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_E8000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_F0000  = 0x0505050505050505;
+            pCtxMsrs->msr.MtrrFix4K_F8000  = 0x0505050505050505;
+        }
+        LogRel(("CPUM: Mapped %' Rhcb (%RU64 bytes) of RAM using fixed-range MTRRs\n", _1M, _1M));
+    }
+    else
+    {
+        LogRel(("CPUM: WARNING! Cannot map RAM via MTRRs since the RAM size is below 1 MiB\n"));
+        return VINF_SUCCESS;
+    }
+
+    if (cbRam > _1M + _4K)
+    { /* likely */ }
+    else
+    {
+        LogRel(("CPUM: WARNING! Cannot map RAM above 1M via MTRRs since the RAM size above 1M is below 4K\n"));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Check if there is at least 1 MTRR available in addition to MTRRs reserved
+     * for use by software for mapping guest memory, see @bugref{10498#c34}.
+     *
+     * Intel Pentium Pro Processor's BIOS Writers Guide and our EFI code reserves
+     * 2 MTRRs for use by software and thus we reserve the same here.
+     */
+    uint8_t const cMtrrsMax  = pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr.MtrrCap & MSR_IA32_MTRR_CAP_VCNT_MASK;
+    uint8_t const cMtrrsRsvd = 2;
+    if (cMtrrsMax < cMtrrsRsvd + 1)
+    {
+        LogRel(("CPUM: WARNING! Variable-range MTRRs (%u) insufficient to map RAM since %u of them are reserved for software\n",
+                cMtrrsMax, cMtrrsRsvd));
+        return VINF_SUCCESS;
+    }
+
+    CPUMMTRRMAP MtrrMap;
+    RT_ZERO(MtrrMap);
+    uint8_t const cMtrrsMappable = cMtrrsMax - cMtrrsRsvd;
+    Assert(cMtrrsMappable > 0);  /* Paranoia. */
+    AssertLogRelMsgReturn(cMtrrsMappable <= RT_ELEMENTS(MtrrMap.aMtrrs),
+                          ("Mappable variable-range MTRRs (%u) exceed MTRRs available (%u)\n", cMtrrsMappable,
+                           RT_ELEMENTS(MtrrMap.aMtrrs)),
+                          VERR_CPUM_IPE_1);
+    MtrrMap.cMtrrs  = cMtrrsMappable;
+    MtrrMap.cbToMap = cbRam;
+
+    /*
+     * Get the RAM hole size configured for the VM.
+     * Since MM has already validated it, we only debug assert the same constraints here.
+     *
+     * Although it is not required by the MTRR mapping code that the RAM hole size be a
+     * power of 2, it is highly recommended to keep it this way in order to drastically
+     * reduce the number of MTRRs used.
+     */
+    uint32_t const cbRamHole = MMR3PhysGet4GBRamHoleSize(pVM);
+    AssertMsg(cbRamHole <= 4032U * _1M, ("RAM hole size (%u bytes) is too large\n", cbRamHole));
+    AssertMsg(cbRamHole > 16 * _1M,     ("RAM hole size (%u byets) is too small\n", cbRamHole));
+    AssertMsg(!(cbRamHole & (_4M - 1)), ("RAM hole size (%u bytes) must be 4MB aligned\n", cbRamHole));
+
+    /*
+     * Map the RAM (and RAM hole) below 4GB.
+     */
+    uint64_t const cbBelow4GB = RT_MIN(cbRam, (uint64_t)_4G - cbRamHole);
+    rc = cpumR3MapMtrrsOptimal(pVM, 0 /* GCPhysFirst */, cbBelow4GB, &MtrrMap);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(MtrrMap.idxMtrr > 0);
+        Assert(MtrrMap.idxMtrr <= MtrrMap.cMtrrs);
+        Assert(MtrrMap.cbMapped == cbBelow4GB);
+
+        /*
+         * Map the RAM above 4GB.
+         */
+        uint64_t const cbAbove4GB = cbRam + cbRamHole > _4G ? cbRam + cbRamHole - _4G : 0;
+        if (cbAbove4GB)
+        {
+            rc = cpumR3MapMtrrsAbove4GB(pVM, cbAbove4GB, &MtrrMap);
+            if (RT_SUCCESS(rc))
+                Assert(MtrrMap.cbMapped == MtrrMap.cbToMap);
+        }
+        LogRel(("CPUM: Mapped %' Rhcb (%RU64 bytes) of RAM using %u variable-range MTRRs\n", MtrrMap.cbMapped, MtrrMap.cbMapped,
+                MtrrMap.idxMtrr));
+    }
+
+    /*
+     * Check if we ran out of MTRRs while mapping the memory.
+     */
+    if (MtrrMap.cbMapped < cbRam)
+    {
+        Assert(rc == VERR_OUT_OF_RESOURCES);
+        Assert(MtrrMap.idxMtrr == cMtrrsMappable);
+        Assert(MtrrMap.idxMtrr == MtrrMap.cMtrrs);
+        uint64_t const cbLost = cbRam - MtrrMap.cbMapped;
+        LogRel(("CPUM: WARNING! Could not map %' Rhcb (%RU64 bytes) of RAM using %u variable-range MTRRs\n", cbLost, cbLost,
+                MtrrMap.cMtrrs));
+        rc = VINF_SUCCESS;
+    }
+
+    /*
+     * Copy mapped MTRRs to all VCPUs.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PCPUMCTXMSRS pCtxMsrs = &pVM->apCpusR3[idCpu]->cpum.s.GuestMsrs;
+        Assert(sizeof(pCtxMsrs->msr.aMtrrVarMsrs) == sizeof(MtrrMap.aMtrrs));
+        memcpy(&pCtxMsrs->msr.aMtrrVarMsrs[0], &MtrrMap.aMtrrs[0], sizeof(MtrrMap.aMtrrs));
+    }
+
+    return rc;
+}
+
+
+/**
  * Formats the EFLAGS value into mnemonics.
  *
  * @param   pszEFlags   Where to write the mnemonics. (Assumes sufficient buffer space.)
@@ -3626,17 +4247,17 @@ static void cpumR3InfoOne(PVM pVM, PCVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTY
                     bool const   fIsValid = RT_BOOL(pMtrrVar->MtrrPhysMask & MSR_IA32_MTRR_PHYSMASK_VALID);
                     if (fIsValid)
                     {
-                        uint64_t const fInvPhysMask = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
-                        RTGCPHYS const GCPhysMask   = pMtrrVar->MtrrPhysMask & X86_PAGE_BASE_MASK;
-                        RTGCPHYS const GCPhysFirst  = pMtrrVar->MtrrPhysBase & X86_PAGE_BASE_MASK;
-                        RTGCPHYS const GCPhysLast   = (GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask;
-                        Assert((GCPhysLast & GCPhysMask)       == (GCPhysFirst & GCPhysMask));
-                        Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
+                        RTGCPHYS GCPhysFirst;
+                        RTGCPHYS GCPhysLast;
+                        cpumR3GetVarMtrrAddrs(pVM, pMtrrVar, &GCPhysFirst, &GCPhysLast);
+                        uint8_t const fType    = pMtrrVar->MtrrPhysBase & MSR_IA32_MTRR_PHYSBASE_MT_MASK;
+                        const char *pszType    = cpumR3GetVarMtrrMemType(fType);
+                        uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
                         pHlp->pfnPrintf(pHlp,
-                                        "%sMTRR_PHYSBASE[%2u] =%016RX64 First=%016RX64\n"
-                                        "%sMTRR_PHYSMASK[%2u] =%016RX64 Last =%016RX64\n",
-                                        pszPrefix, iRange, pMtrrVar->MtrrPhysBase, GCPhysFirst,
-                                        pszPrefix, iRange, pMtrrVar->MtrrPhysMask, GCPhysLast);
+                                        "%sMTRR_PHYSBASE[%2u] =%016RX64 First=%016RX64 %6RU64 MB [%s]\n"
+                                        "%sMTRR_PHYSMASK[%2u] =%016RX64 Last =%016RX64 %6RU64 MB [%RU64 MB]\n",
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysBase, GCPhysFirst, GCPhysFirst / _1M, pszType,
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysMask, GCPhysLast,  GCPhysLast  / _1M, cbRange / (uint64_t)_1M);
                     }
                     else
                         pHlp->pfnPrintf(pHlp,
@@ -4609,31 +5230,6 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
 
 
 /**
- * Computes the variable-range MTRR physical address mask given an address range.
- *
- * @returns The MTRR physical address mask.
- * @param   pVM             The cross context VM structure.
- * @param   GCPhysFirst     The first guest-physical address of the memory range
- *                          (inclusive).
- * @param   GCPhysLast      The last guest-physical address of the memory range
- *                          (inclusive).
- */
-static uint64_t cpumR3GetVarRangeMtrrMask(PVM pVM, RTGCPHYS GCPhysFirst, RTGCPHYS GCPhysLast)
-{
-    RTGCPHYS const GCPhysLength  = GCPhysLast - GCPhysFirst;
-    uint64_t const fInvPhysMask  = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
-    RTGCPHYS const GCPhysMask    = (~(GCPhysLength - 1) & ~fInvPhysMask) & X86_PAGE_BASE_MASK;
-#ifdef VBOX_STRICT
-    /* Paranoia. */
-    Assert(GCPhysLast == ((GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask));
-    Assert((GCPhysLast & GCPhysMask) == (GCPhysFirst & GCPhysMask));
-    Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
-#endif
-    return GCPhysMask;
-}
-
-
-/**
  * Called when the ring-3 init phase completes.
  *
  * @returns VBox status code.
@@ -4683,34 +5279,15 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             }
 
             /*
-             * Initialize MTRRs.
+             * Map guest RAM via MTRRs.
              */
             if (pVM->cpum.s.fMtrrRead)
             {
-                uint64_t cbRam;
-                CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
-                AssertReturn(cbRam > _1M, VERR_CPUM_IPE_1);
-                RTGCPHYS const GCPhysFirst    = 0;
-                RTGCPHYS const GCPhysLast     = cbRam - 1;
-                uint64_t const fMtrrPhysMask = cpumR3GetVarRangeMtrrMask(pVM, GCPhysFirst, GCPhysLast);
-                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-                {
-                    PCPUMCTXMSRS pCtxMsrs = &pVM->apCpusR3[idCpu]->cpum.s.GuestMsrs;
-                    pCtxMsrs->msr.MtrrFix64K_00000 = 0x0606060606060606;
-                    pCtxMsrs->msr.MtrrFix16K_80000 = 0x0606060606060606;
-                    pCtxMsrs->msr.MtrrFix16K_A0000 = 0;
-                    pCtxMsrs->msr.MtrrFix4K_C0000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_C8000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_D0000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_D8000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_E0000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_E8000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_F0000  = 0x0505050505050505;
-                    pCtxMsrs->msr.MtrrFix4K_F8000  = 0x0505050505050505;
-                    //pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst   | X86_MTRR_MT_WB;
-                    //pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = fMtrrPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
-                }
-                LogRel(("CPUM: Initialized MTRRs (fMtrrPhysMask=%RGp GCPhysLast=%RGp)\n", fMtrrPhysMask, GCPhysLast));
+                int const rc = cpumR3MapMtrrs(pVM);
+                if (RT_SUCCESS(rc))
+                { /* likely */ }
+                else
+                    return rc;
             }
             break;
         }
