@@ -30,7 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_IEM_RE_NATIVE
-#define IEM_WITH_OPAQUE_DECODER_STATE
+//#define IEM_WITH_OPAQUE_DECODER_STATE - need offCurInstrStart access for iemNativeHlpMemCodeNewPageTlbMiss and friends.
 #define VMCPU_INCL_CPUM_GST_CTX
 #define VMM_INCLUDED_SRC_include_IEMMc_h /* block IEMMc.h inclusion. */
 #include <VBox/vmm/iem.h>
@@ -64,6 +64,18 @@
 DECLASM(void) iemNativeHlpAsmSafeWrapLogCpuState(void);
 #endif
 
+
+/**
+ * Used by TB code to deal with a TLB miss for a new page.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu, uint8_t offInstr))
+{
+    pVCpu->iem.s.pbInstrBuf       = NULL;
+    pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE - offInstr;
+    pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;
+    iemOpcodeFetchBytesJmp(pVCpu, 0, NULL);
+    return pVCpu->iem.s.pbInstrBuf ? pVCpu->iem.s.GCPhysInstrBuf : NIL_RTGCPHYS;
+}
 
 
 /*********************************************************************************************************************************
@@ -246,7 +258,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 
 
 /**
- * Sets idxTbCurInstr in preparation of raising an exception.
+ * Sets idxTbCurInstr in preparation of raising an exception or aborting the TB.
  */
 /** @todo Optimize this, so we don't set the same value more than once.  Just
  *        needs some tracking. */
@@ -256,6 +268,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 #else
 # define BODY_SET_CUR_INSTR() ((void)0)
 #endif
+
+/**
+ * Flushes pending writes in preparation of raising an exception or aborting the TB.
+ */
+#define BODY_FLUSH_PENDING_WRITES() \
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 
 /**
@@ -1130,6 +1148,76 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
 }
 
 
+/**
+ * Macro that implements TLB loading and updating pbInstrBuf updating for an
+ * instruction crossing into a new page.
+ *
+ * This may long jump if we're raising a \#PF, \#GP or similar trouble.
+ */
+#define BODY_LOAD_TLB_FOR_NEW_PAGE(a_pTb, a_offInstr, a_idxRange, a_cbInstr) \
+    RT_NOREF(a_cbInstr); \
+    off = iemNativeEmitBltLoadTlbForNewPage(pReNative, off, pTb, a_idxRange, a_offInstr)
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange, uint8_t offInstr)
+{
+#ifdef VBOX_STRICT
+    off = iemNativeEmitMarker(pReNative, off, 0x80000005);
+#endif
+
+    /*
+     * Move/spill/flush stuff out of call-volatile registers.
+     * This is the easy way out. We could contain this to the tlb-miss branch
+     * by saving and restoring active stuff here.
+     */
+    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
+
+    /*
+     * Define labels and allocate the register for holding the GCPhys of the new page.
+     */
+    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxRegGCPhys     = iemNativeRegAllocTmp(pReNative, &off);
+
+    /*
+     * First we try to go via the TLB.
+     */
+    /** @todo  */
+
+    /*
+     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMiss to do the work.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+    /* IEMNATIVE_CALL_ARG1_GREG = offInstr */
+    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, offInstr);
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpMemCodeNewPageTlbMiss);
+
+    /* Move the result to the right register. */
+    if (idxRegGCPhys != IEMNATIVE_CALL_RET_GREG)
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegGCPhys, IEMNATIVE_CALL_RET_GREG);
+
+    iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+
+    /*
+     * Now check the physical address of the page matches the expected one.
+     */
+    RTGCPHYS const GCPhysNewPage = iemTbGetRangePhysPageAddr(pTb, idxRange);
+    off = iemNativeEmitTestIfGprNotEqualImmAndJmpToNewLabel(pReNative, off, idxRegGCPhys, GCPhysNewPage,
+                                                            kIemNativeLabelType_ObsoleteTb);
+
+    iemNativeRegFreeTmp(pReNative, idxRegGCPhys);
+    return off;
+}
+
+
 #ifdef BODY_CHECK_CS_LIM
 /**
  * Built-in function that checks the EIP/IP + uParam0 is within CS.LIM,
@@ -1139,6 +1227,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLim)
 {
     uint32_t const cbInstr = (uint32_t)pCallEntry->auParams[0];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     return off;
 }
@@ -1157,6 +1246,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes)
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
@@ -1176,6 +1266,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
 }
@@ -1194,6 +1285,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderC
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
@@ -1220,6 +1312,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpc
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
@@ -1244,6 +1337,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes)
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
@@ -1268,6 +1362,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesCons
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, offRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
@@ -1295,6 +1390,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesL
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
@@ -1322,6 +1418,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
@@ -1348,6 +1445,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
@@ -1382,6 +1480,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesA
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
@@ -1411,6 +1510,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
@@ -1440,6 +1540,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
@@ -1467,6 +1568,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
     //uint32_t const offRange1   = (uint32_t)uParam2;
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
@@ -1493,6 +1595,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
     //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
@@ -1518,6 +1621,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
     //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
     uint32_t const idxRange2   = idxRange1 + 1;
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
@@ -1539,6 +1643,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
     uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);
@@ -1561,6 +1666,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPage
     uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
@@ -1583,6 +1689,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPage
     uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
+    BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);

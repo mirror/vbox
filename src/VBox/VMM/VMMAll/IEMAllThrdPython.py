@@ -1976,21 +1976,21 @@ class IEMThreadedGenerator(object):
         ( 'CheckPcAndOpcodes',                                  3, True  ),
         ( 'CheckPcAndOpcodesConsiderCsLim',                     3, True  ),
 
-        ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3, False ),
-        ( 'CheckOpcodesAcrossPageLoadingTlb',                   3, False ),
-        ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2, False ),
+        ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3, True  ),
+        ( 'CheckOpcodesAcrossPageLoadingTlb',                   3, True  ),
+        ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2, True  ),
 
         ( 'CheckCsLimAndOpcodesLoadingTlb',                     3, False ),
         ( 'CheckOpcodesLoadingTlb',                             3, False ),
         ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3, False ),
 
-        ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2, False ),
-        ( 'CheckOpcodesOnNextPageLoadingTlb',                   2, False ),
-        ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2, False ),
+        ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2, True  ),
+        ( 'CheckOpcodesOnNextPageLoadingTlb',                   2, True  ),
+        ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2, True  ),
 
-        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2, False ),
-        ( 'CheckOpcodesOnNewPageLoadingTlb',                    2, False ),
-        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2, False ),
+        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2, True  ),
+        ( 'CheckOpcodesOnNewPageLoadingTlb',                    2, True  ),
+        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2, True  ),
     );
 
     def generateThreadedFunctionsHeader(self, oOut):
