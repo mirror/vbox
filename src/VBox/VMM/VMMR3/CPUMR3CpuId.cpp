@@ -3167,13 +3167,13 @@ static int cpumR3FixVarMtrrPhysAddrWidths(PVM pVM, uint8_t const cVarMtrrs)
 /**
  * Inserts variable-range MTRR MSR ranges based on the given count.
  *  
- * Since we need to insert the MSRs beyond what the CPU profile has inserted, we 
+ * Since we need to insert the MSRs beyond what the CPU profile has inserted, we
  * reinsert the whole range here since the variable-range MTRR MSR read+write
  * functions handle ranges as well as the \#GP checking.
- *  
+ *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   cVarMtrrs   The number of variable-range MTRRs to insert. This must be 
+ * @param   cVarMtrrs   The number of variable-range MTRRs to insert. This must be
  *                      less than or equal to CPUMCTX_MAX_MTRRVAR_COUNT.
  */
 static int cpumR3VarMtrrMsrRangeInsert(PVM pVM, uint8_t const cVarMtrrs)
@@ -3556,9 +3556,9 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             {
                 /** @cfgm{/CPUM/MtrrRead, boolean, false}
                  * Whether to enable MTRR read support and to initialize mapping of guest memory via
-                 * MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and ignores 
+                 * MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and ignores
                  * writes. Some guests like GNU/Linux recognize a virtual system when MTRRs are left
-                 * blank but some guests may expect their RAM to be mapped via MTRRs similar to 
+                 * blank but some guests may expect their RAM to be mapped via MTRRs similar to
                  * real hardware. */ 
                 rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrRead", &pVM->cpum.s.fMtrrRead, false);
                 AssertRCReturn(rc, rc);
@@ -3570,11 +3570,11 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             if (pVM->cpum.s.fMtrrRead)
             {
                 /** @cfgm{/CPUM/MtrrVarCountIsVirtual, boolean, true}
-                 * When enabled, the number of variable-range MTRRs are virtualized. When disabled, 
+                 * When enabled, the number of variable-range MTRRs are virtualized. When disabled,
                  * the number of variable-range MTRRs are derived from the CPU profile. Unless
                  * guests have problems with the virtualized variable-range MTRR count, it is
-                 * recommended to keep this enabled so that there are sufficient MTRRs to fully 
-                 * describe all regions of the guest RAM. */ 
+                 * recommended to keep this enabled so that there are sufficient MTRRs to fully
+                 * describe all regions of the guest RAM. */
                 bool fMtrrVarCountIsVirt;
                 rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrVarCountIsVirtual", &fMtrrVarCountIsVirt, true);
                 AssertRCReturn(rc, rc);
