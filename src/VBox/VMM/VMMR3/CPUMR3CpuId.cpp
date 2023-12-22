@@ -3165,13 +3165,97 @@ static int cpumR3FixVarMtrrPhysAddrWidths(PVM pVM, uint8_t const cVarMtrrs)
 
 
 /**
+ * Inserts variable-range MTRR MSR ranges based on the given count.
+ *  
+ * Since we need to insert the MSRs beyond what the CPU profile has inserted, we 
+ * reinsert the whole range here since the variable-range MTRR MSR read+write
+ * functions handle ranges as well as the \#GP checking.
+ *  
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   cVarMtrrs   The number of variable-range MTRRs to insert. This must be 
+ *                      less than or equal to CPUMCTX_MAX_MTRRVAR_COUNT.
+ */
+static int cpumR3VarMtrrMsrRangeInsert(PVM pVM, uint8_t const cVarMtrrs)
+{
+#ifdef VBOX_WITH_STATISTICS
+# define CPUM_MTRR_PHYSBASE_MSRRANGE(a_uMsr, a_uValue, a_szName) \
+    { (a_uMsr), (a_uMsr), kCpumMsrRdFn_Ia32MtrrPhysBaseN, kCpumMsrWrFn_Ia32MtrrPhysBaseN, 0, 0, a_uValue, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
+# define CPUM_MTRR_PHYSMASK_MSRRANGE(a_uMsr, a_uValue, a_szName) \
+    { (a_uMsr), (a_uMsr), kCpumMsrRdFn_Ia32MtrrPhysMaskN, kCpumMsrWrFn_Ia32MtrrPhysMaskN, 0, 0, a_uValue, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
+#else
+# define CPUM_MTRR_PHYSBASE_MSRRANGE(a_uMsr, a_uValue, a_szName) \
+    { (a_uMsr), (a_uMsr), kCpumMsrRdFn_Ia32MtrrPhysBaseN, kCpumMsrWrFn_Ia32MtrrPhysBaseN, 0, 0, a_uValue, 0, 0, a_szName }
+# define CPUM_MTRR_PHYSMASK_MSRRANGE(a_uMsr, a_uValue, a_szName) \
+    { (a_uMsr), (a_uMsr), kCpumMsrRdFn_Ia32MtrrPhysMaskN, kCpumMsrWrFn_Ia32MtrrPhysMaskN, 0, 0, a_uValue, 0, 0, a_szName }
+#endif
+    static CPUMMSRRANGE const s_aMsrRanges_MtrrPhysBase[CPUMCTX_MAX_MTRRVAR_COUNT] =
+    {
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE0,       0, "MSR_IA32_MTRR_PHYSBASE0"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE1,       1, "MSR_IA32_MTRR_PHYSBASE1"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE2,       2, "MSR_IA32_MTRR_PHYSBASE2"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE3,       3, "MSR_IA32_MTRR_PHYSBASE3"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE4,       4, "MSR_IA32_MTRR_PHYSBASE4"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE5,       5, "MSR_IA32_MTRR_PHYSBASE5"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE6,       6, "MSR_IA32_MTRR_PHYSBASE6"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE7,       7, "MSR_IA32_MTRR_PHYSBASE7"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE8,       8, "MSR_IA32_MTRR_PHYSBASE8"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9,       9, "MSR_IA32_MTRR_PHYSBASE9"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 +  2, 10, "MSR_IA32_MTRR_PHYSBASE10"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 +  4, 11, "MSR_IA32_MTRR_PHYSBASE11"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 +  6, 12, "MSR_IA32_MTRR_PHYSBASE12"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 +  8, 13, "MSR_IA32_MTRR_PHYSBASE13"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 + 10, 14, "MSR_IA32_MTRR_PHYSBASE14"),
+        CPUM_MTRR_PHYSBASE_MSRRANGE(MSR_IA32_MTRR_PHYSBASE9 + 12, 15, "MSR_IA32_MTRR_PHYSBASE15"),
+    };
+    static CPUMMSRRANGE const s_aMsrRanges_MtrrPhysMask[CPUMCTX_MAX_MTRRVAR_COUNT] =
+    {
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK0,       0, "MSR_IA32_MTRR_PHYSMASK0"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK1,       1, "MSR_IA32_MTRR_PHYSMASK1"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK2,       2, "MSR_IA32_MTRR_PHYSMASK2"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK3,       3, "MSR_IA32_MTRR_PHYSMASK3"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK4,       4, "MSR_IA32_MTRR_PHYSMASK4"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK5,       5, "MSR_IA32_MTRR_PHYSMASK5"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK6,       6, "MSR_IA32_MTRR_PHYSMASK6"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK7,       7, "MSR_IA32_MTRR_PHYSMASK7"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK8,       8, "MSR_IA32_MTRR_PHYSMASK8"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9,       9, "MSR_IA32_MTRR_PHYSMASK9"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 +  2, 10, "MSR_IA32_MTRR_PHYSMASK10"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 +  4, 11, "MSR_IA32_MTRR_PHYSMASK11"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 +  6, 12, "MSR_IA32_MTRR_PHYSMASK12"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 +  8, 13, "MSR_IA32_MTRR_PHYSMASK13"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 + 10, 14, "MSR_IA32_MTRR_PHYSMASK14"),
+        CPUM_MTRR_PHYSMASK_MSRRANGE(MSR_IA32_MTRR_PHYSMASK9 + 12, 15, "MSR_IA32_MTRR_PHYSMASK15"),
+    };
+    AssertCompile(RT_ELEMENTS(s_aMsrRanges_MtrrPhysBase) == RT_ELEMENTS(pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr.aMtrrVarMsrs));
+    AssertCompile(RT_ELEMENTS(s_aMsrRanges_MtrrPhysMask) == RT_ELEMENTS(pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr.aMtrrVarMsrs));
+
+    Assert(cVarMtrrs <= RT_ELEMENTS(pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr.aMtrrVarMsrs));
+    for (unsigned i = 0; i < cVarMtrrs; i++)
+    {
+        int rc = CPUMR3MsrRangesInsert(pVM, &s_aMsrRanges_MtrrPhysBase[i]);
+        AssertLogRelRCReturn(rc, rc);
+        rc     = CPUMR3MsrRangesInsert(pVM, &s_aMsrRanges_MtrrPhysMask[i]);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    return VINF_SUCCESS;
+
+#undef CPUM_MTRR_PHYSBASE_MSRRANGE
+#undef CPUM_MTRR_PHYSMASK_MSRRANGE
+}
+
+
+/**
  * Initialize MTRR capability based on what the guest CPU profile (typically host)
  * supports.
  *
  * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
+ * @param   pVM                     The cross context VM structure.
+ * @param   fMtrrVarCountIsVirt     Whether the variable-range MTRR count is fully
+ *                                  virtualized (@c true) or derived from the CPU
+ *                                  profile (@c false).
  */
-static int cpumR3InitMtrrCap(PVM pVM)
+static int cpumR3InitMtrrCap(PVM pVM, bool fMtrrVarCountIsVirt)
 {
 #ifdef RT_ARCH_AMD64
     Assert(pVM->cpum.s.HostFeatures.fMtrr);
@@ -3183,7 +3267,8 @@ static int cpumR3InitMtrrCap(PVM pVM)
     uint8_t const cProfileVarRangeRegs = pMtrrCapRange->uValue & MSR_IA32_MTRR_CAP_VCNT_MASK;
 
     /* Construct guest MTRR support capabilities. */
-    uint8_t const  cGuestVarRangeRegs = RT_MIN(cProfileVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
+    uint8_t const  cGuestVarRangeRegs = fMtrrVarCountIsVirt ? CPUMCTX_MAX_MTRRVAR_COUNT
+                                                            : RT_MIN(cProfileVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
     uint64_t const uGstMtrrCap        = cGuestVarRangeRegs
                                       | MSR_IA32_MTRR_CAP_FIX
                                       | MSR_IA32_MTRR_CAP_WC;
@@ -3196,12 +3281,21 @@ static int cpumR3InitMtrrCap(PVM pVM)
                                                 | X86_MTRR_MT_UC;
     }
 
-    LogRel(("CPUM: Enabled fixed-range MTRRs and %u variable-range MTRRs\n", cGuestVarRangeRegs));
+    if (fMtrrVarCountIsVirt)
+    {
+        /*
+         * Insert the full variable-range MTRR MSR range ourselves so it extends beyond what is
+         * typically reported by the hardware CPU profile.
+         */
+        LogRel(("CPUM: Enabled fixed-range MTRRs and %u (virtualized) variable-range MTRRs\n", cGuestVarRangeRegs));
+        return cpumR3VarMtrrMsrRangeInsert(pVM, cGuestVarRangeRegs);
+    }
 
     /*
      * Ensure that the maximum physical address width supported by the variable-range MTRRs
      * are consistent with what is reported to the guest via CPUID.
      */
+    LogRel(("CPUM: Enabled fixed-range MTRRs and %u (CPU profile derived) variable-range MTRRs\n", cGuestVarRangeRegs));
     return cpumR3FixVarMtrrPhysAddrWidths(pVM, cGuestVarRangeRegs);
 }
 
@@ -3439,14 +3533,17 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         /*
          * MTRR support.
          * We've always reported the MTRR feature bit in CPUID.
-         * Here we allow exposing MTRRs with reasonable default values just to get Nested Hyper-V
-         * going. MTRR support isn't feature complete, see @bugref{10318} and bugref{10498}.
+         * Here we allow exposing MTRRs with reasonable default values (especially required
+         * by Windows 10 guests with Hyper-V enabled). The MTRR support isn't feature
+         * complete, see @bugref{10318} and bugref{10498}.
          */
         if (pVM->cpum.s.GuestFeatures.fMtrr)
         {
-            /* Check if MTRR read+write support is enabled. */
+            /** @cfgm{/CPUM/MtrrWrite, boolean, true}
+             * Whether to enable MTRR read+write support. When enabled, this automatically
+             * enables MTRR read support as well. */ 
             bool fEnableMtrrWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRRWrite", &fEnableMtrrWrite,
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrWrite", &fEnableMtrrWrite,
                                     false /** @todo true - 2023-12-12 bird: does not work yet, so disabled it */);
             AssertRCReturn(rc, rc);
             if (fEnableMtrrWrite)
@@ -3457,8 +3554,13 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             }
             else
             {
-                /* Check if MTRR read-only reporting is enabled. */
-                rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRR", &pVM->cpum.s.fMtrrRead, false);
+                /** @cfgm{/CPUM/MtrrRead, boolean, false}
+                 * Whether to enable MTRR read support and to initialize mapping of guest memory via
+                 * MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and ignores 
+                 * writes. Some guests like GNU/Linux recognize a virtual system when MTRRs are left
+                 * blank but some guests may expect their RAM to be mapped via MTRRs similar to 
+                 * real hardware. */ 
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrRead", &pVM->cpum.s.fMtrrRead, false);
                 AssertRCReturn(rc, rc);
                 LogRel(("CPUM: Enabled MTRR read-only support\n"));
             }
@@ -3467,7 +3569,17 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             Assert(!pVM->cpum.s.fMtrrWrite || pVM->cpum.s.fMtrrRead);
             if (pVM->cpum.s.fMtrrRead)
             {
-                rc = cpumR3InitMtrrCap(pVM);
+                /** @cfgm{/CPUM/MtrrVarCountIsVirtual, boolean, true}
+                 * When enabled, the number of variable-range MTRRs are virtualized. When disabled, 
+                 * the number of variable-range MTRRs are derived from the CPU profile. Unless
+                 * guests have problems with the virtualized variable-range MTRR count, it is
+                 * recommended to keep this enabled so that there are sufficient MTRRs to fully 
+                 * describe all regions of the guest RAM. */ 
+                bool fMtrrVarCountIsVirt;
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrVarCountIsVirtual", &fMtrrVarCountIsVirt, true);
+                AssertRCReturn(rc, rc);
+
+                rc = cpumR3InitMtrrCap(pVM, fMtrrVarCountIsVirt);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
                 else
