@@ -4634,7 +4634,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
 
     off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
     off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
-    off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, idxAddrReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
+    off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, iTmpReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
     off = iemNativeEmitJnzToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
 
     iemNativeRegFreeTmp(pReNative, iTmpReg);
