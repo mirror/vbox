@@ -3541,7 +3541,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         {
             /** @cfgm{/CPUM/MtrrWrite, boolean, true}
              * Whether to enable MTRR read+write support. When enabled, this automatically
-             * enables MTRR read support as well. */ 
+             * enables MTRR read support as well. */
             bool fEnableMtrrWrite;
             rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrWrite", &fEnableMtrrWrite,
                                     false /** @todo true - 2023-12-12 bird: does not work yet, so disabled it */);
