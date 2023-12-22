@@ -3706,6 +3706,13 @@ static int cpumR3MapMtrrs(PVM pVM)
         LogRel(("CPUM: Cannot map RAM via MTRRs since the RAM size is not configured for the VM\n"));
         return VINF_SUCCESS;
     }
+    if (!(cbRam & ~X86_PAGE_4K_BASE_MASK))
+    { /* likely */ }
+    else
+    {
+        LogRel(("CPUM: WARNING! RAM size %u bytes is not 4K aligned, using %u bytes\n", cbRam, cbRam & X86_PAGE_4K_BASE_MASK));
+        cbRam &= X86_PAGE_4K_BASE_MASK;
+    }
 
     /*
      * Map the RAM below 1MB.
