@@ -177,6 +177,8 @@ private:
 
     /** Adjusts editor geometry. */
     void adjustEditorGeometry();
+    /** Adjusts editor button icon. */
+    void adjustEditorButtonIcon();
 
     /** Defines internal widget @a iWidth. */
     void setEditorWidth(int iWidth);
@@ -477,7 +479,7 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
 
 void UIFilterEditor::sltHandleEditorTextChanged(const QString &strText)
 {
-    m_pToolButton->setHidden(m_pLineEdit->text().isEmpty());
+    adjustEditorButtonIcon();
     emit sigTextChanged(strText);
 }
 
@@ -518,9 +520,7 @@ void UIFilterEditor::prepare()
                                       QToolButton::menu-indicator {\
                                       image: none;\
                                       }");
-        m_pToolButton->hide();
         m_pToolButton->setIconSize(QSize(10, 10));
-        m_pToolButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
         connect(m_pToolButton, &QToolButton::clicked,
                 this, &UIFilterEditor::sltHandleButtonClicked);
     }
@@ -531,8 +531,9 @@ void UIFilterEditor::prepare()
                                                          "unfocusedEditorWidth", "focusedEditorWidth",
                                                          SIGNAL(sigFocused()), SIGNAL(sigUnfocused()));
 
-    /* Adjust filter editor geometry initially: */
+    /* Adjust stuff initially: */
     adjustEditorGeometry();
+    adjustEditorButtonIcon();
 }
 
 void UIFilterEditor::cleanup()
@@ -568,6 +569,15 @@ void UIFilterEditor::adjustEditorGeometry()
     m_iFocusedEditorWidth = qMax(iWidth - iMinimumButtonWidth, iMinimumEditorWidth);
     m_pAnimation->update();
     setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
+}
+
+void UIFilterEditor::adjustEditorButtonIcon()
+{
+    AssertPtrReturnVoid(m_pLineEdit);
+    AssertPtrReturnVoid(m_pToolButton);
+    m_pToolButton->setIcon(  m_pLineEdit->text().isEmpty()
+                           ? UIIconPool::iconSet(":/search_16px.png")
+                           : UIIconPool::iconSet(":/close_16px.png"));
 }
 
 void UIFilterEditor::setEditorWidth(int iEditorWidth)
