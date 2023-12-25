@@ -389,7 +389,10 @@ UIFilterEditor::~UIFilterEditor()
 void UIFilterEditor::setPlaceholderText(const QString &strText)
 {
     if (m_pLineEdit)
+    {
         m_pLineEdit->setPlaceholderText(strText);
+        adjustEditorGeometry();
+    }
 }
 
 QString UIFilterEditor::text() const
@@ -548,9 +551,14 @@ void UIFilterEditor::adjustEditorGeometry()
     /* Acquire maximum widget width: */
     const int iWidth = width();
 
+    /* Acquire filter editor placeholder width: */
+    QFontMetrics fm(m_pLineEdit->font());
+    const int iPlaceholderWidth = fm.horizontalAdvance(m_pLineEdit->placeholderText())
+                                + 2 * 2 /* left/right panel/frame width, no pixelMetric */
+                                + 10 /* left margin, assigned via setStyleSheet */;
     /* Acquire filter editor size-hint: */
     const QSize esh = m_pLineEdit->minimumSizeHint();
-    const int iMinimumEditorWidth = esh.width();
+    const int iMinimumEditorWidth = qMax(esh.width(), iPlaceholderWidth);
     const int iMinimumEditorHeight = esh.height();
     /* Acquire filter button size-hint: */
     const QSize bsh = m_pToolButton->minimumSizeHint();
@@ -565,7 +573,7 @@ void UIFilterEditor::adjustEditorGeometry()
     m_pToolButton->setGeometry(iButtonX, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
 
     /* Update minimum/maximum filter editor width: */
-    m_iUnfocusedEditorWidth = qMax(iWidth / 2 - iMinimumButtonWidth, iMinimumEditorWidth);
+    m_iUnfocusedEditorWidth = qMin(iWidth / 2 - iMinimumButtonWidth, iMinimumEditorWidth);
     m_iFocusedEditorWidth = qMax(iWidth - iMinimumButtonWidth, iMinimumEditorWidth);
     m_pAnimation->update();
     setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
