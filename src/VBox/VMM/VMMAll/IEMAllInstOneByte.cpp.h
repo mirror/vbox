@@ -8299,11 +8299,14 @@ FNIEMOP_DEF(iemOp_retn_Iw)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_16, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_16, u16Imm);
         case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_32, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_32, u16Imm);
         case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_64, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_64, u16Imm);
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
@@ -8320,11 +8323,14 @@ FNIEMOP_DEF(iemOp_retn)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_16);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_16);
         case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_32);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_32);
         case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_64);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
+                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_64);
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
@@ -8616,7 +8622,8 @@ FNIEMOP_DEF(iemOp_retf_Iw)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK
                                 | IEM_CIMPL_F_MODE,
-                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst      + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
@@ -8641,7 +8648,8 @@ FNIEMOP_DEF(iemOp_retf)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK
                                 | IEM_CIMPL_F_MODE,
-                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst      + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
@@ -8709,7 +8717,8 @@ FNIEMOP_DEF(iemOp_iret)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
                                 | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_VMEXIT,
-                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst      + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
                                 | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_DS)
                                 | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_DS)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
