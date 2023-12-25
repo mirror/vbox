@@ -68,7 +68,25 @@ DECLASM(void) iemNativeHlpAsmSafeWrapLogCpuState(void);
 /**
  * Used by TB code to deal with a TLB miss for a new page.
  */
-IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu, uint8_t offInstr))
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu))
+{
+    pVCpu->iem.s.pbInstrBuf       = NULL;
+    pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE;
+    pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;
+    iemOpcodeFetchBytesJmp(pVCpu, 0, NULL);
+    if (pVCpu->iem.s.pbInstrBuf)
+    { /* likely */ }
+    else
+    {
+        IEM_DO_LONGJMP(pVCpu, VINF_IEM_REEXEC_BREAK);
+    }
+}
+
+
+/**
+ * Used by TB code to deal with a TLB miss for a new page.
+ */
+IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMissWithOff,(PVMCPUCC pVCpu, uint8_t offInstr))
 {
     pVCpu->iem.s.pbInstrBuf       = NULL;
     pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE - offInstr;
@@ -195,7 +213,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
                                    true /*fSetFlags*/);
     /* If we end up with ZERO in idxTmpReg there is nothing to do.*/
     uint32_t const offFixupJumpToVmCheck1 = off;
-    off = iemNativeEmitJzToFixed(pReNative, off, 0);
+    off = iemNativeEmitJzToFixed(pReNative, off, off /* ASSUME jz rel8 suffices */);
 
     /* Some relevant FFs are set, but if's only APIC or/and PIC being set,
        these may be supressed by EFLAGS.IF or CPUMIsInInterruptShadow. */
@@ -1129,7 +1147,7 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 # ifdef VBOX_STRICT /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); */
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJzToFixed(pReNative, off, 1);
+    off = iemNativeEmitJzToFixed(pReNative, off, off + 1 /* correct for ARM64 */);
     off = iemNativeEmitBrk(pReNative, off, 0x2005);
 # endif
     iemNativeRegFreeTmp(pReNative, idxRegTmp2);
@@ -1187,7 +1205,7 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
     /** @todo  */
 
     /*
-     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMiss to do the work.
+     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMissWithOff to do the work.
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
@@ -1198,7 +1216,7 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
 
     /* Done setting up parameters, make the call. */
-    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpMemCodeNewPageTlbMiss);
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpMemCodeNewPageTlbMissWithOff);
 
     /* Move the result to the right register. */
     if (idxRegGCPhys != IEMNATIVE_CALL_RET_GREG)
@@ -1214,6 +1232,296 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
                                                             kIemNativeLabelType_ObsoleteTb);
 
     iemNativeRegFreeTmp(pReNative, idxRegGCPhys);
+    return off;
+}
+
+
+/**
+ * Macro that implements TLB loading and updating pbInstrBuf updating when
+ * branching or when crossing a page on an instruction boundrary.
+ *
+ * This differs from BODY_LOAD_TLB_FOR_NEW_PAGE in that it will first check if
+ * it is an inter-page branch and also check the page offset.
+ *
+ * This may long jump if we're raising a \#PF, \#GP or similar trouble.
+ */
+#define BODY_LOAD_TLB_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) \
+    RT_NOREF(a_cbInstr); \
+    off = iemNativeEmitBltLoadTlbAfterBranch(pReNative, off, pTb, a_idxRange)
+
+#if 0
+do { \
+        /* Is RIP within the current code page? */ \
+        Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu)); \
+        uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base; \
+        uint64_t const off = uPc - pVCpu->iem.s.uInstrBufPc; \
+        if (off < pVCpu->iem.s.cbInstrBufTotal) \
+        { \
+            Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK)); \
+            Assert(pVCpu->iem.s.pbInstrBuf); \
+            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
+            if (GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off) \
+            { /* we're good */ } \
+            else \
+            { \
+                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/1; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                      pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                RT_NOREF(a_cbInstr); \
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
+                return VINF_IEM_REEXEC_BREAK; \
+            } \
+        } \
+        else \
+        { \
+            /* Must translate new RIP. */ \
+            pVCpu->iem.s.pbInstrBuf       = NULL; \
+            pVCpu->iem.s.offCurInstrStart = 0; \
+            pVCpu->iem.s.offInstrNextByte = 0; \
+            iemOpcodeFetchBytesJmp(pVCpu, 0, NULL); \
+            Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) || !pVCpu->iem.s.pbInstrBuf); \
+            \
+            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
+            uint64_t const offNew                    = uPc - pVCpu->iem.s.uInstrBufPc; \
+            if (   GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + offNew \
+                && pVCpu->iem.s.pbInstrBuf) \
+            { /* likely */ } \
+            else \
+            { \
+                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/2; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                      pVCpu->iem.s.GCPhysInstrBuf + offNew, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                RT_NOREF(a_cbInstr); \
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
+                return VINF_IEM_REEXEC_BREAK; \
+            } \
+        } \
+    } while(0)
+#endif
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange)
+{
+//    off = iemNativeEmitBrk(pReNative, off, 0x1010);
+#ifdef VBOX_STRICT
+    off = iemNativeEmitMarker(pReNative, off, 0x80000006);
+#endif
+
+    /*
+     * Define labels and allocate the register for holding the GCPhys of the new page.
+     */
+    uint32_t const idxLabelCheckBranchMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckBranchMiss);
+    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    //
+
+    RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(pTb, idxRange)
+                                             | pTb->aRanges[idxRange].offPhysPage;
+
+    /*
+     *
+     * First check if RIP is within the current code.
+     *
+     * This is very similar to iemNativeEmitBltInCheckPcAfterBranch, the only
+     * difference is what we do when stuff doesn't match up.
+     *
+     * What we to do is.
+     *      1. Calculate the FLAT PC (RIP + CS.BASE).
+     *      2. Subtract iem.s.uInstrBufPc from it and getting 'off'.
+     *      3. The 'off' must be less than X86_PAGE_SIZE/cbInstrBufTotal or
+     *         we need to retranslate RIP via the TLB.
+     *      4. Add 'off' to iem.s.GCPhysInstrBuf and compare with the
+     *         GCPhysRangePageWithOffset constant mentioned above.
+     *
+     * The adding of CS.BASE to RIP can be skipped in the first step if we're
+     * in 64-bit code or flat 32-bit.
+     *
+     */
+
+    /* Allocate registers for step 1. Get the shadowed stuff before allocating
+       the temp register, so we don't accidentally clobber something we'll be
+       needing again immediately.  This is why we get idxRegCsBase here. */
+    /** @todo save+restore active registers and guest shadows in tlb-miss! */
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
+    uint8_t const  idxRegPc     = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                  kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
+    uint8_t const  idxRegCsBase = IEM_F_MODE_X86_IS_FLAT(pReNative->fExec) ? UINT8_MAX
+                                : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_BASE(X86_SREG_CS),
+                                                                 kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
+
+    uint8_t const  idxRegTmp    = iemNativeRegAllocTmp(pReNative, &off); /* volatile reg is okay for these two */
+    uint8_t const  idxRegTmp2   = iemNativeRegAllocTmp(pReNative, &off);
+
+#ifdef VBOX_STRICT
+    /* Do assertions before idxRegTmp contains anything. */
+    Assert(RT_SIZEOFMEMB(VMCPUCC, iem.s.cbInstrBufTotal) == sizeof(uint16_t));
+# ifdef RT_ARCH_AMD64
+    {
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8+2+1 + 11+2+1);
+        /* Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_F_MODE_X86_IS_FLAT(pReNative->fExec)); */
+        if (IEM_F_MODE_X86_IS_FLAT(pReNative->fExec))
+        {
+            /* cmp r/m64, imm8 */
+            pbCodeBuf[off++] = X86_OP_REX_W;
+            pbCodeBuf[off++] = 0x83;
+            off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, 7, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.cs.u64Base));
+            pbCodeBuf[off++] = 0;
+            /* je rel8 */
+            pbCodeBuf[off++] = 0x74;
+            pbCodeBuf[off++] = 1;
+            /* int3 */
+            pbCodeBuf[off++] = 0xcc;
+
+        }
+
+        /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); - done later by the non-x86 code */
+        /* test r/m64, imm32 */
+        pbCodeBuf[off++] = X86_OP_REX_W;
+        pbCodeBuf[off++] = 0xf7;
+        off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, 0, RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf));
+        pbCodeBuf[off++] = RT_BYTE1(X86_PAGE_OFFSET_MASK);
+        pbCodeBuf[off++] = RT_BYTE2(X86_PAGE_OFFSET_MASK);
+        pbCodeBuf[off++] = RT_BYTE3(X86_PAGE_OFFSET_MASK);
+        pbCodeBuf[off++] = RT_BYTE4(X86_PAGE_OFFSET_MASK);
+        /* jz rel8 */
+        pbCodeBuf[off++] = 0x74;
+        pbCodeBuf[off++] = 1;
+        /* int3 */
+        pbCodeBuf[off++] = 0xcc;
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+# else
+
+    /* Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_F_MODE_X86_IS_FLAT(pReNative->fExec)); */
+    if (IEM_F_MODE_X86_IS_FLAT(pReNative->fExec))
+    {
+        off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.cs.u64Base));
+# ifdef RT_ARCH_ARM64
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, idxRegTmp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBrk(0x2006);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+# else
+#  error "Port me!"
+# endif
+    }
+# endif
+
+#endif /* VBOX_STRICT */
+
+    /* Because we're lazy, we'll jump back here to recalc 'off' and share the
+       GCPhysRangePageWithOffset check.  This is a little risky, so we use the
+       2nd register to check if we've looped more than once already.*/
+    off = iemNativeEmitGprZero(pReNative, off, idxRegTmp2);
+
+    uint32_t const offLabelRedoChecks = off;
+
+    /* 1+2. Calculate 'off' first (into idxRegTmp). */
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPUCC, iem.s.uInstrBufPc));
+    if (IEM_F_MODE_X86_IS_FLAT(pReNative->fExec))
+    {
+#ifdef RT_ARCH_ARM64
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegTmp, idxRegPc, idxRegTmp);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+#else
+        off = iemNativeEmitNegGpr(pReNative, off, idxRegTmp);
+        off = iemNativeEmitAddTwoGprs(pReNative, off, idxRegTmp, idxRegPc);
+#endif
+    }
+    else
+    {
+#ifdef RT_ARCH_ARM64
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        pu32CodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegTmp, idxRegCsBase, idxRegTmp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddReg(idxRegTmp, idxRegTmp, idxRegPc);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+#else
+        off = iemNativeEmitNegGpr(pReNative, off, idxRegTmp);
+        off = iemNativeEmitAddTwoGprs(pReNative, off, idxRegTmp, idxRegCsBase);
+        off = iemNativeEmitAddTwoGprs(pReNative, off, idxRegTmp, idxRegPc);
+#endif
+    }
+
+    /* 3. Check that off is less than X86_PAGE_SIZE/cbInstrBufTotal.
+          Unlike iemNativeEmitBltInCheckPcAfterBranch we'll jump to the TLB loading if this fails. */
+    off = iemNativeEmitCmpGprWithImm(pReNative, off, idxRegTmp, X86_PAGE_SIZE - 1);
+    uint32_t const offFixedJumpToTlbLoad = off;
+    off = iemNativeEmitJaToFixed(pReNative, off, off /* (ASSUME ja rel8 suffices) */);
+
+    /* 4a. Add iem.s.GCPhysInstrBuf to off ... */
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    pbCodeBuf[off++] = idxRegTmp < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x03; /* add r64, r/m64 */
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxRegTmp, RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf));
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxRegTmp2, RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf));
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddReg(idxRegTmp, idxRegTmp, idxRegTmp2);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+# ifdef VBOX_STRICT /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); */
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
+    off = iemNativeEmitJzToFixed(pReNative, off, off + 1 /* correct for ARM64 */);
+    off = iemNativeEmitBrk(pReNative, off, 0x2005);
+# endif
+#else
+# error "Port me"
+#endif
+
+    /* 4b. ... and compare with GCPhysRangePageWithOffset.
+
+       Unlike iemNativeEmitBltInCheckPcAfterBranch we'll have to be more
+       careful and avoid implicit temporary register usage here.
+
+       Unlike the threaded version of this code, we do not obsolete TBs here to
+       reduce the code size and because indirect calls may legally end at the
+       same offset in two different pages depending on the program state. */
+    /** @todo synch the threaded BODY_LOAD_TLB_AFTER_BRANCH version with this. */
+    off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegTmp2, GCPhysRangePageWithOffset);
+    off = iemNativeEmitCmpGprWithGpr(pReNative, off, idxRegTmp, idxRegTmp2);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelCheckBranchMiss);
+    uint32_t const offFixedJumpToEnd = off;
+    off = iemNativeEmitJmpToFixed(pReNative, off, off + 512 /* force rel32 */);
+
+    /*
+     * First we try to go via the TLB.
+     */
+    iemNativeFixupFixedJump(pReNative, offFixedJumpToTlbLoad, off);
+//off = iemNativeEmitBrk(pReNative, off, 0x1111);
+
+    /* Check that we haven't been here before. */
+    off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, idxRegTmp2,  false /*f64Bit*/, idxLabelCheckBranchMiss);
+
+    /*
+     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMiss to do the work.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpMemCodeNewPageTlbMiss);
+
+    /* Jmp back to the start and redo the checks. */
+    off = iemNativeEmitLoadGpr8Imm(pReNative, off, idxRegTmp2, 1); /* indicate that we've looped once already */
+    off = iemNativeEmitJmpToFixed(pReNative, off, offLabelRedoChecks);
+
+    /* The end. */
+    iemNativeFixupFixedJump(pReNative, offFixedJumpToEnd, off);
+
+    iemNativeRegFreeTmp(pReNative, idxRegTmp2);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    iemNativeRegFreeTmp(pReNative, idxRegPc);
+    if (idxRegCsBase != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxRegCsBase);
     return off;
 }
 
@@ -1392,6 +1700,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesL
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
+    Assert(offRange == 0);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
@@ -1419,6 +1728,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
+    Assert(offRange == 0);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
@@ -1447,6 +1757,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    Assert(offRange == 0);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));

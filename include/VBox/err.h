@@ -2615,6 +2615,8 @@
 #define VERR_IEM_EMIT_BAD_MEM_SIZE                  (-5381)
 /** Recompiler: Bad segment register number for memory access. */
 #define VERR_IEM_EMIT_BAD_SEG_REG_NO                (-5382)
+/** Recompiler: Fixed jump is out of range. */
+#define VERR_IEM_EMIT_FIXED_JUMP_OUT_OF_RANGE       (-5383)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)

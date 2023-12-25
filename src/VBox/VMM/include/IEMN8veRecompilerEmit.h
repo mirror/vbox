@@ -2902,33 +2902,42 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJlToNewLabel(PIEMRECOMPILERSTATE pReNat
 /**
  * Emits a Jcc rel32 / B.cc imm19 with a fixed displacement.
  *
- * The @a offTarget is applied x86-style, so zero means the next instruction.
- * The unit is IEMNATIVEINSTR.
+ * @note The @a offTarget is the absolute jump target (unit is IEMNATIVEINSTR).
+ *
+ *       Only use hardcoded jumps forward when emitting for exactly one
+ *       platform, otherwise apply iemNativeFixupFixedJump() to ensure hitting
+ *       the right target address on all platforms!
+ *
+ *       Please also note that on x86 it is necessary pass off + 256 or higher
+ *       for @a offTarget one believe the intervening code is more than 127
+ *       bytes long.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget, IEMNATIVEINSTRCOND enmCond)
+iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget, IEMNATIVEINSTRCOND enmCond)
 {
 #ifdef RT_ARCH_AMD64
-    /* jcc rel32 */
+    /* jcc rel8 / rel32 */
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
-    if (offTarget < 128 && offTarget >= -128)
+    int32_t         offDisp   = (int32_t)(offTarget - (off + 2));
+    if (offDisp < 128 && offDisp >= -128)
     {
         pbCodeBuf[off++] = (uint8_t)enmCond | 0x70;
-        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offTarget);
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
     }
     else
     {
+        offDisp -= 4;
         pbCodeBuf[off++] = 0x0f;
         pbCodeBuf[off++] = (uint8_t)enmCond | 0x80;
-        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offTarget);
-        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offTarget);
-        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offTarget);
-        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offTarget);
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
     }
 
 #elif defined(RT_ARCH_ARM64)
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offTarget + 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, (int32_t)(offTarget - off));
 
 #else
 # error "Port me!"
@@ -2941,10 +2950,9 @@ iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t off
 /**
  * Emits a JZ/JE rel32 / B.EQ imm19 with a fixed displacement.
  *
- * The @a offTarget is applied x86-style, so zero means the next instruction.
- * The unit is IEMNATIVEINSTR.
+ * See notes on @a offTarget in the iemNativeEmitJccToFixed() documentation.
  */
-DECL_INLINE_THROW(uint32_t) iemNativeEmitJzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget)
 {
 #ifdef RT_ARCH_AMD64
     return iemNativeEmitJccToFixed(pReNative, off, offTarget, kIemNativeInstrCond_e);
@@ -2959,10 +2967,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJzToFixed(PIEMRECOMPILERSTATE pReNative
 /**
  * Emits a JNZ/JNE rel32 / B.NE imm19 with a fixed displacement.
  *
- * The @a offTarget is applied x86-style, so zero means the next instruction.
- * The unit is IEMNATIVEINSTR.
+ * See notes on @a offTarget in the iemNativeEmitJccToFixed() documentation.
  */
-DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget)
 {
 #ifdef RT_ARCH_AMD64
     return iemNativeEmitJccToFixed(pReNative, off, offTarget, kIemNativeInstrCond_ne);
@@ -2977,10 +2984,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzToFixed(PIEMRECOMPILERSTATE pReNativ
 /**
  * Emits a JBE/JNA rel32 / B.LS imm19 with a fixed displacement.
  *
- * The @a offTarget is applied x86-style, so zero means the next instruction.
- * The unit is IEMNATIVEINSTR.
+ * See notes on @a offTarget in the iemNativeEmitJccToFixed() documentation.
  */
-DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget)
 {
 #ifdef RT_ARCH_AMD64
     return iemNativeEmitJccToFixed(pReNative, off, offTarget, kIemNativeInstrCond_be);
@@ -2995,10 +3001,9 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJbeToFixed(PIEMRECOMPILERSTATE pReNativ
 /**
  * Emits a JA/JNBE rel32 / B.HI imm19 with a fixed displacement.
  *
- * The @a offTarget is applied x86-style, so zero means the next instruction.
- * The unit is IEMNATIVEINSTR.
+ * See notes on @a offTarget in the iemNativeEmitJccToFixed() documentation.
  */
-DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offTarget)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget)
 {
 #ifdef RT_ARCH_AMD64
     return iemNativeEmitJccToFixed(pReNative, off, offTarget, kIemNativeInstrCond_nbe);
@@ -3011,40 +3016,98 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJaToFixed(PIEMRECOMPILERSTATE pReNative
 
 
 /**
- * Fixes up a conditional jump to a fixed label.
- * @see  iemNativeEmitJnzToFixed, iemNativeEmitJzToFixed, ...
+ * Emits a JMP rel32/rel8 / B imm26 with a fixed displacement.
+ *
+ * See notes on @a offTarget in the iemNativeEmitJccToFixed() documentation.
  */
-DECLINLINE(void) iemNativeFixupFixedJump(PIEMRECOMPILERSTATE pReNative, uint32_t offFixup, uint32_t offTarget)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpToFixed(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t offTarget)
 {
-# if defined(RT_ARCH_AMD64)
-    uint8_t * const pbCodeBuf = pReNative->pInstrBuf;
-    if (pbCodeBuf[offFixup] != 0x0f)
+#ifdef RT_ARCH_AMD64
+    /* jmp rel8 or rel32 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    int32_t         offDisp   = offTarget - (off + 2);
+    if (offDisp < 128 && offDisp >= -128)
     {
-        Assert((uint8_t)(pbCodeBuf[offFixup] - 0x70) <= 0x10);
-        pbCodeBuf[offFixup + 1] = (uint8_t)(offTarget - (offFixup + 2));
-        Assert(pbCodeBuf[offFixup + 1] == offTarget - (offFixup + 2));
+        pbCodeBuf[off++] = 0xeb;
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
     }
     else
     {
-        Assert((uint8_t)(pbCodeBuf[offFixup + 1] - 0x80) <= 0x10);
-        uint32_t const offRel32 = offTarget - (offFixup + 6);
-        pbCodeBuf[offFixup + 2] = RT_BYTE1(offRel32);
-        pbCodeBuf[offFixup + 3] = RT_BYTE2(offRel32);
-        pbCodeBuf[offFixup + 4] = RT_BYTE3(offRel32);
-        pbCodeBuf[offFixup + 5] = RT_BYTE4(offRel32);
+        offDisp -= 3;
+        pbCodeBuf[off++] = 0xe9;
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
     }
 
-# elif defined(RT_ARCH_ARM64)
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrB(enmCond, (int32_t)(offTarget - off));
+
+#else
+# error "Port me!"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Fixes up a conditional jump to a fixed label.
+ * @see  iemNativeEmitJmpToFixed, iemNativeEmitJnzToFixed,
+ *       iemNativeEmitJzToFixed, ...
+ */
+DECL_INLINE_THROW(void) iemNativeFixupFixedJump(PIEMRECOMPILERSTATE pReNative, uint32_t offFixup, uint32_t offTarget)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pbCodeBuf = pReNative->pInstrBuf;
+    uint8_t const   bOpcode   = pbCodeBuf[offFixup];
+    if ((uint8_t)(bOpcode - 0x70) < (uint8_t)0x10 || bOpcode == 0xeb)
+    {
+        pbCodeBuf[offFixup + 1] = (uint8_t)(offTarget - (offFixup + 2));
+        AssertStmt(pbCodeBuf[offFixup + 1] == offTarget - (offFixup + 2),
+                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_FIXED_JUMP_OUT_OF_RANGE));
+    }
+    else
+    {
+        if (bOpcode != 0x0f)
+            Assert(bOpcode == 0xe9);
+        else
+        {
+            offFixup += 1;
+            Assert((uint8_t)(pbCodeBuf[offFixup] - 0x80) <= 0x10);
+        }
+        uint32_t const offRel32 = offTarget - (offFixup + 5);
+        pbCodeBuf[offFixup + 1] = RT_BYTE1(offRel32);
+        pbCodeBuf[offFixup + 2] = RT_BYTE2(offRel32);
+        pbCodeBuf[offFixup + 3] = RT_BYTE3(offRel32);
+        pbCodeBuf[offFixup + 4] = RT_BYTE4(offRel32);
+    }
+
+#elif defined(RT_ARCH_ARM64)
     uint32_t * const pu32CodeBuf = pReNative->pInstrBuf;
+    if ((pu32CodeBuf[offFixup] & UINT32_C(0xff000000)) == UINT32_C(0x54000000))
+    {
+        /* B.COND + BC.COND */
+        int32_t const offDisp = offTarget - offFixup;
+        Assert(offDisp >= -262144 && offDisp < 262144);
+        pu32CodeBuf[offFixup] = (pu32CodeBuf[offFixup] & UINT32_C(0xff00001f))
+                              | (((uint32_t)offDisp    & UINT32_C(0x0007ffff)) << 5);
+    }
+    else
+    {
+        /* B imm26 */
+        Assert((pu32CodeBuf[offFixup] & UINT32_C(0xfc000000)) == UINT32_C(0x14000000));
+        int32_t const offDisp = offTarget - offFixup;
+        Assert(offDisp >= -33554432 && offDisp < 33554432);
+        pu32CodeBuf[offFixup] = (pu32CodeBuf[offFixup] & UINT32_C(0xfc000000))
+                              | ((uint32_t)offDisp     & UINT32_C(0x03ffffff));
+    }
 
-    int32_t const offDisp = offTarget - offFixup;
-    Assert(offDisp >= -262144 && offDisp < 262144);
-    Assert((pu32CodeBuf[offFixup] & UINT32_C(0xff000000)) == UINT32_C(0x54000000)); /* B.COND + BC.COND */
-
-    pu32CodeBuf[offFixup] = (pu32CodeBuf[offFixup] & UINT32_C(0xff00001f))
-                          | (((uint32_t)offDisp    & UINT32_C(0x0007ffff)) << 5);
-
-# endif
+#else
+# error "Port me!"
+#endif
 }
 
 
@@ -3322,6 +3385,57 @@ iemNativeEmitTestIfGprIsZeroAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint
 {
     uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
     return iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, iGprSrc, f64Bit, idxLabel);
+}
+
+
+/**
+ * Emits code that jumps to @a idxLabel if @a iGprSrc is not zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t iGprSrc, bool f64Bit, uint32_t idxLabel)
+{
+    Assert(idxLabel < pReNative->cLabels);
+
+#ifdef RT_ARCH_AMD64
+    /* test reg32,reg32  / test reg64,reg64 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    if (f64Bit)
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprSrc < 8 ? 0 : X86_OP_REX_R | X86_OP_REX_B);
+    else if (iGprSrc >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x85;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprSrc & 7, iGprSrc & 7);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    /* jnz idxLabel  */
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabel);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, 0, iGprSrc, f64Bit);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me!"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to a new label if @a iGprSrc is not zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTestIfGprIsNotZeroAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprSrc, bool f64Bit,
+                                               IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    return iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, iGprSrc, f64Bit, idxLabel);
 }
 
 

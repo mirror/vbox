@@ -340,6 +340,11 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                                                      | pTb->aRanges[(a_idxRange)].offPhysPage; \
             if (GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off) \
             { /* we're good */ } \
+            /** @todo r=bird: Not sure if we need the TB obsolete complication here. \
+             * If we're preceeded by an indirect jump, there is no reason why the TB \
+             * would be 'obsolete' just because this time around the indirect jump ends \
+             * up at the same offset in a different page.  This would be real bad for \
+             * indirect trampolines/validators. */ \
             else if (pTb->aRanges[(a_idxRange)].offPhysPage != off) \
             { \
                 Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/1; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \

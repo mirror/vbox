@@ -3630,16 +3630,24 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
  *                          the request.
  * @param   enmGstReg       The guest register that will is to be updated.
  * @param   enmIntendedUse  How the caller will be using the host register.
+ * @param   fNoVolatileRegs Set if no volatile register allowed, clear if any
+ *                          register is okay (default).  The ASSUMPTION here is
+ *                          that the caller has already flushed all volatile
+ *                          registers, so this is only applied if we allocate a
+ *                          new register.
  * @sa      iemNativeRegAllocTmpForGuestRegIfAlreadyPresent
  */
 DECL_HIDDEN_THROW(uint8_t)
-iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
-                                IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse)
+iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, IEMNATIVEGSTREG enmGstReg,
+                                IEMNATIVEGSTREGUSE enmIntendedUse, bool fNoVolatileRegs /*=false*/)
 {
     Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
     static const char * const s_pszIntendedUse[] = { "fetch", "update", "full write", "destructive calc" };
 #endif
+    uint32_t const fRegMask = !fNoVolatileRegs
+                            ? IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK
+                            : IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK;
 
     /*
      * First check if the guest register value is already in a host register.
@@ -3664,7 +3672,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                     & ~pReNative->Core.bmHstRegsWithGstShadow
                     & (~IEMNATIVE_REG_FIXED_MASK & IEMNATIVE_HST_GREG_MASK)))
             {
-                uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff);
+                uint8_t const idxRegNew = iemNativeRegAllocTmpEx(pReNative, poff, fRegMask);
 
                 *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxRegNew, idxReg);
 
@@ -3701,7 +3709,8 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
              * guest shadow copy assignment to the new register.
              */
             /** @todo share register for readonly access. */
-            uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff, enmIntendedUse == kIemNativeGstRegUse_Calculation);
+            uint8_t const idxRegNew = iemNativeRegAllocTmpEx(pReNative, poff, fRegMask,
+                                                             enmIntendedUse == kIemNativeGstRegUse_Calculation);
 
             if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
                 *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxRegNew, idxReg);
@@ -3720,6 +3729,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
             }
             idxReg = idxRegNew;
         }
+        Assert(RT_BIT_32(idxReg) & fRegMask); /* See assumption in fNoVolatileRegs docs. */
 
 #ifdef VBOX_STRICT
         /* Strict builds: Check that the value is correct. */
@@ -3732,7 +3742,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
     /*
      * Allocate a new register, load it with the guest value and designate it as a copy of the
      */
-    uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff, enmIntendedUse == kIemNativeGstRegUse_Calculation);
+    uint8_t const idxRegNew = iemNativeRegAllocTmpEx(pReNative, poff, fRegMask, enmIntendedUse == kIemNativeGstRegUse_Calculation);
 
     if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
         *poff = iemNativeEmitLoadGprWithGstShadowReg(pReNative, *poff, idxRegNew, enmGstReg);
@@ -8763,12 +8773,16 @@ iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
 #ifdef VBOX_STRICT
     off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxReg, X86_EFL_RA1_MASK);
-    off = iemNativeEmitJnzToFixed(pReNative, off, 1);
+    uint32_t offFixup = off;
+    off = iemNativeEmitJnzToFixed(pReNative, off, off);
     off = iemNativeEmitBrk(pReNative, off, UINT32_C(0x2001));
+    iemNativeFixupFixedJump(pReNative, offFixup, off);
 
     off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxReg, X86_EFL_RAZ_MASK & CPUMX86EFLAGS_HW_MASK_32);
-    off = iemNativeEmitJzToFixed(pReNative, off, 1);
+    offFixup = off;
+    off = iemNativeEmitJzToFixed(pReNative, off, off);
     off = iemNativeEmitBrk(pReNative, off, UINT32_C(0x2002));
+    iemNativeFixupFixedJump(pReNative, offFixup, off);
 #endif
 
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxReg, kIemNativeGstReg_EFlags, off);
@@ -11022,7 +11036,7 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
         iemNativeVarRegisterRelease(pReNative, idxVarUnmapInfo);
     }
     uint32_t const offJmpFixup = off;
-    off = iemNativeEmitJzToFixed(pReNative, off, 0);
+    off = iemNativeEmitJzToFixed(pReNative, off, off /* ASSUME jz rel8 suffices*/);
 
     /*
      * Call the unmap helper function.
@@ -11209,7 +11223,8 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 #if defined(RT_ARCH_AMD64)
     static const char * const a_apszMarkers[] =
     {
-        "unknown0", "CheckCsLim", "ConsiderLimChecking", "CheckOpcodes", "PcAfterBranch", "LoadTlbForNewPage"
+        /*[0]=*/ "unknown0",        "CheckCsLim",           "ConsiderLimChecking",  "CheckOpcodes",
+        /*[4]=*/ "PcAfterBranch",   "LoadTlbForNewPage",    "LoadTlbAfterBranch"
     };
 #endif
 

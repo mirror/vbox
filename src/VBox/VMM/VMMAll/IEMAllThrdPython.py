@@ -1980,9 +1980,9 @@ class IEMThreadedGenerator(object):
         ( 'CheckOpcodesAcrossPageLoadingTlb',                   3, True  ),
         ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2, True  ),
 
-        ( 'CheckCsLimAndOpcodesLoadingTlb',                     3, False ),
-        ( 'CheckOpcodesLoadingTlb',                             3, False ),
-        ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3, False ),
+        ( 'CheckCsLimAndOpcodesLoadingTlb',                     3, True  ),
+        ( 'CheckOpcodesLoadingTlb',                             3, True  ),
+        ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3, True  ),
 
         ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2, True  ),
         ( 'CheckOpcodesOnNextPageLoadingTlb',                   2, True  ),
