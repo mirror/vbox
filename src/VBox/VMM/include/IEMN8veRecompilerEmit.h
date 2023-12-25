@@ -3043,7 +3043,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpToFixed(PIEMRECOMPILERSTATE pReNativ
 
 #elif defined(RT_ARCH_ARM64)
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrB(enmCond, (int32_t)(offTarget - off));
+    pu32CodeBuf[off++] = Armv8A64MkInstrB((int32_t)(offTarget - off));
 
 #else
 # error "Port me!"
