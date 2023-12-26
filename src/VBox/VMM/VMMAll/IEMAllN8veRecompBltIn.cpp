@@ -1147,7 +1147,7 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 # ifdef VBOX_STRICT /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); */
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJzToFixed(pReNative, off, off + 1 /* correct for ARM64 */);
+    off = iemNativeEmitJzToFixed(pReNative, off, off + 2 /* correct for ARM64 */);
     off = iemNativeEmitBrk(pReNative, off, 0x2005);
 # endif
     iemNativeRegFreeTmp(pReNative, idxRegTmp2);
@@ -1468,7 +1468,7 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
 # ifdef VBOX_STRICT /* Assert(!(pVCpu->iem.s.GCPhysInstrBuf & X86_PAGE_OFFSET_MASK)); */
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_PAGE_OFFSET_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJzToFixed(pReNative, off, off + 1 /* correct for ARM64 */);
+    off = iemNativeEmitJzToFixed(pReNative, off, off + 2 /* correct for ARM64 */);
     off = iemNativeEmitBrk(pReNative, off, 0x2005);
 # endif
 #else

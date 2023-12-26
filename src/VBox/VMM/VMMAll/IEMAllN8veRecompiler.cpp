@@ -11342,7 +11342,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 
                             /* Disassemble the instruction. */
                             //uint8_t const cbInstrMax = RT_MIN(pTb->aRanges[idxRange].cbOpcodes - offRange, 15);
-                            uint8_t const cbInstrMax = RT_MIN(cbOpcodes - offRange, 15);
+                            uint8_t const cbInstrMax = RT_MIN(cbOpcodes - offOpcodes, 15);
                             uint32_t      cbInstr    = 1;
                             int rc = DISInstrWithPrefetchedBytes(GCPhysPc, enmGstCpuMode, DISOPTYPE_ALL,
                                                                  &pTb->pabOpcodes[offOpcodes], cbInstrMax,
