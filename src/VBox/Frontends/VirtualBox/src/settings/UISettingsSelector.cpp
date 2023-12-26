@@ -490,8 +490,9 @@ void UISelectorDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &o
         /* Paint fancy shape: */
         pPainter->save();
         pPainter->setClipPath(painterPath);
-        pPainter->setPen(backColor);
-        pPainter->fillRect(itemRectangle, grad);
+        pPainter->setRenderHint(QPainter::Antialiasing);
+        pPainter->fillPath(painterPath, grad);
+        pPainter->strokePath(painterPath, backColor.darker(110));
         pPainter->restore();
     }
     else
