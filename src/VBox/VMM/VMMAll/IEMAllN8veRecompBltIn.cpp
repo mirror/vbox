@@ -1304,7 +1304,6 @@ do { \
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange)
 {
-//    off = iemNativeEmitBrk(pReNative, off, 0x1010);
 #ifdef VBOX_STRICT
     off = iemNativeEmitMarker(pReNative, off, 0x80000006);
 #endif
@@ -1494,7 +1493,6 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
      * First we try to go via the TLB.
      */
     iemNativeFixupFixedJump(pReNative, offFixedJumpToTlbLoad, off);
-//off = iemNativeEmitBrk(pReNative, off, 0x1111);
 
     /* Check that we haven't been here before. */
     off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, idxRegTmp2,  false /*f64Bit*/, idxLabelCheckBranchMiss);
