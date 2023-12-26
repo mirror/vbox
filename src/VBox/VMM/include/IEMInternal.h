@@ -789,13 +789,18 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEMTB_F_CS_LIM_CHECKS           UINT32_C(0x10000000)
 
 /** Mask of the IEMTB_F_XXX flags that are part of the TB lookup key.
- * @note We skip the CPL as we don't currently generate ring-specific code,
- *       that's all handled in CIMPL functions.
  *
- *       For the same reasons, we skip all of IEM_F_X86_CTX_MASK, with the
- *       exception of SMM (which we don't implement). */
-#define IEMTB_F_KEY_MASK                (  (UINT32_MAX & ~(IEM_F_X86_CTX_MASK | IEM_F_X86_CPL_MASK | IEMTB_F_TYPE_MASK)) \
-                                         | IEM_F_X86_CTX_SMM)
+ * @note We skip all of IEM_F_X86_CTX_MASK, with the exception of SMM (which we
+ *       don't implement), because we don't currently generate any context
+ *       specific code - that's all handled in CIMPL functions.
+ *
+ *       For the threaded recompiler we don't generate any CPL specific code
+ *       either, but the native recompiler does for memory access (saves getting
+ *       the CPL from fExec and turning it into IEMTLBE_F_PT_NO_USER).
+ *       Since most OSes will not share code between rings, this shouldn't
+ *       have any real effect on TB/memory/recompiling load.
+ */
+#define IEMTB_F_KEY_MASK                ((UINT32_MAX & ~(IEM_F_X86_CTX_MASK | IEMTB_F_TYPE_MASK)) | IEM_F_X86_CTX_SMM)
 /** @} */
 
 AssertCompile( (IEM_F_MODE_X86_16BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
