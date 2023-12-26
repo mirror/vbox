@@ -292,28 +292,33 @@ bool UIModeCheckBox::event(QEvent *pEvent)
 
 void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
 {
+    /* Prepare painter: */
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    /* Avoid painting more than necessary: */
+    painter.setClipRect(pEvent->rect());
+
     /* Acquire useful properties: */
-    const QPalette pal = QGuiApplication::palette();
-    QRect contentRect = pEvent->rect();
+    const QPalette pal = qApp->palette();
+    QRect contentRect = rect();
 #ifdef VBOX_WS_MAC
     contentRect.setLeft(contentRect.left() + 2); /// @todo justify!
     contentRect.setWidth(contentRect.width() - 10); /// @todo justify!
 #endif
 
-    /* Prepare painter: */
-    QPainter painter(this);
-
     /* Prepare left painter paths: */
     QPainterPath painterPath1;
-    painterPath1.lineTo(contentRect.width() / 2 - 1,                    0);
+    painterPath1.moveTo(contentRect.x(),                                contentRect.y());
+    painterPath1.lineTo(contentRect.width() / 2,                        contentRect.y());
     painterPath1.lineTo(contentRect.width() / 2 - contentRect.height(), contentRect.height());
-    painterPath1.lineTo(0,                                              contentRect.height());
+    painterPath1.lineTo(contentRect.x(),                                contentRect.height());
     painterPath1.closeSubpath();
 
     /* Prepare right painter paths: */
     QPainterPath painterPath2;
-    painterPath2.moveTo(contentRect.width() / 2 + 1,                        0);
-    painterPath2.lineTo(contentRect.width(),                                0);
+    painterPath2.moveTo(contentRect.width() / 2 + 1,                        contentRect.y());
+    painterPath2.lineTo(contentRect.width(),                                contentRect.y());
     painterPath2.lineTo(contentRect.width() - contentRect.height(),         contentRect.height());
     painterPath2.lineTo(contentRect.width() / 2 + 1 - contentRect.height(), contentRect.height());
     painterPath2.closeSubpath();
@@ -336,10 +341,10 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
 
     /* Paint fancy shape: */
     painter.save();
-    painter.setClipPath(painterPath1);
-    painter.fillRect(contentRect, grad1);
-    painter.setClipPath(painterPath2);
-    painter.fillRect(contentRect, grad2);
+    painter.fillPath(painterPath1, grad1);
+    painter.strokePath(painterPath1, backColor1.darker(110));
+    painter.fillPath(painterPath2, grad2);
+    painter.strokePath(painterPath2, backColor2.darker(110));
     painter.restore();
 
     /* Prepare text1/text2: */
@@ -554,7 +559,7 @@ void UIFilterEditor::adjustEditorGeometry()
     /* Acquire filter editor placeholder width: */
     QFontMetrics fm(m_pLineEdit->font());
     const int iPlaceholderWidth = fm.horizontalAdvance(m_pLineEdit->placeholderText())
-                                + 2 * 2 /* left/right panel/frame width, no pixelMetric */
+                                + 2 * 5 /* left/right panel/frame width, no pixelMetric */
                                 + 10 /* left margin, assigned via setStyleSheet */;
     /* Acquire filter editor size-hint: */
     const QSize esh = m_pLineEdit->minimumSizeHint();
