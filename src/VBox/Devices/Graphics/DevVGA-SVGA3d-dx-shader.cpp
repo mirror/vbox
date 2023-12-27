@@ -2952,14 +2952,18 @@ int DXShaderUpdateResources(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION
         uint32_t *paToken = (uint32_t *)((uintptr_t)pInfo->pvBytecode + offToken);
 
         VGPU10OpcodeToken0 *pOpcode = (VGPU10OpcodeToken0 *)&paToken[0];
-        pOpcode->resourceDimension = resourceDimension;
+        if (resourceDimension != VGPU10_RESOURCE_DIMENSION_UNKNOWN)
+            pOpcode->resourceDimension = resourceDimension;
         // paToken[1] unmodified
         // paToken[2] unmodified
         VGPU10ResourceReturnTypeToken *pReturnTypeToken = (VGPU10ResourceReturnTypeToken *)&paToken[3];
-        pReturnTypeToken->component0 = (uint8_t)resourceReturnType;
-        pReturnTypeToken->component1 = (uint8_t)resourceReturnType;
-        pReturnTypeToken->component2 = (uint8_t)resourceReturnType;
-        pReturnTypeToken->component3 = (uint8_t)resourceReturnType;
+        if ((uint8_t)resourceReturnType != 0)
+        {
+            pReturnTypeToken->component0 = (uint8_t)resourceReturnType;
+            pReturnTypeToken->component1 = (uint8_t)resourceReturnType;
+            pReturnTypeToken->component2 = (uint8_t)resourceReturnType;
+            pReturnTypeToken->component3 = (uint8_t)resourceReturnType;
+        }
     }
 
     return VINF_SUCCESS;
