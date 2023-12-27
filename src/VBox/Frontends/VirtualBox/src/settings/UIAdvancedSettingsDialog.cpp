@@ -427,11 +427,13 @@ bool UIFilterEditor::eventFilter(QObject *pObject, QEvent *pEvent)
         case QEvent::FocusIn:
             m_fFocused = true;
             emit sigFocused();
+            update();
             break;
         /* Backward animation on focus-out: */
         case QEvent::FocusOut:
             m_fFocused = false;
             emit sigUnfocused();
+            update();
             break;
         default:
             break;
@@ -462,6 +464,11 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
     /* Prepare colors: */
     const bool fActive = window() && window()->isActiveWindow();
     const QPalette::ColorGroup enmColorGroup = fActive ? QPalette::Active : QPalette::Inactive;
+#ifdef VBOX_WS_MAC
+    const QColor colorHighlight = uiCommon().isInDarkMode()
+                                ? qApp->palette().color(enmColorGroup, QPalette::Highlight).lighter(110)
+                                : qApp->palette().color(enmColorGroup, QPalette::Highlight).darker(110);
+#endif
     const QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
     const QColor colorFrame = uiCommon().isInDarkMode()
                             ? qApp->palette().color(enmColorGroup, QPalette::Window).lighter(120)
@@ -470,9 +477,18 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
     /* Prepare base/frame painter path: */
     const QRegion totalRegion = QRegion(m_pLineEdit->geometry()) + QRegion(m_pToolButton->geometry());
     QRect widgetRect = totalRegion.boundingRect();
+#ifdef VBOX_WS_MAC
+    const QRect focusRect = widgetRect;
+    widgetRect.adjust(3, 3, -3, -3);
+    const QPainterPath focusPath = cookPainterPath(focusRect, m_iRadius + 2);
+#endif
     const QPainterPath widgetPath = cookPainterPath(widgetRect, m_iRadius);
 
     /* Draw base/frame: */
+#ifdef VBOX_WS_MAC
+    if (m_pLineEdit->hasFocus())
+        painter.fillPath(focusPath, colorHighlight);
+#endif
     painter.fillPath(widgetPath, colorBase);
     painter.strokePath(widgetPath, colorFrame);
 }
@@ -497,6 +513,16 @@ void UIFilterEditor::prepare()
     m_pLineEdit = new QILineEdit(this);
     if (m_pLineEdit)
     {
+#ifdef VBOX_WS_MAC
+        /* A bit of magic to be able to replace the frame.
+         * Disable border, adjust margins and make background transparent.
+		 * Left and right margins also take focus ring into account. */
+        m_pLineEdit->setStyleSheet("QLineEdit {\
+                                    background-color: rgba(255, 255, 255, 0%);\
+                                    border: 0px none black;\
+                                    margin: 6px 0px 6px 10px;\
+                                    }");
+#else
         /* A bit of magic to be able to replace the frame.
          * Disable border, adjust margins and make background transparent. */
         m_pLineEdit->setStyleSheet("QLineEdit {\
@@ -504,6 +530,7 @@ void UIFilterEditor::prepare()
                                     border: 0px none black;\
                                     margin: 3px 0px 3px 10px;\
                                     }");
+#endif
         m_pLineEdit->installEventFilter(this);
         connect(m_pLineEdit, &QILineEdit::textChanged,
                 this, &UIFilterEditor::sltHandleEditorTextChanged);
