@@ -176,7 +176,7 @@ private:
     void cleanup();
 
     /** Returns painter path for the passed @a pathRect. */
-    QPainterPath cookPainterPath(const QRect &pathRect);
+    static QPainterPath cookPainterPath(const QRect &pathRect, int iRadius);
 
     /** Adjusts editor geometry. */
     void adjustEditorGeometry();
@@ -472,7 +472,7 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
     /* Prepare base/frame painter path: */
     const QRegion totalRegion = QRegion(m_pLineEdit->geometry()) + QRegion(m_pToolButton->geometry());
     QRect widgetRect = totalRegion.boundingRect();
-    const QPainterPath widgetPath = cookPainterPath(widgetRect);
+    const QPainterPath widgetPath = cookPainterPath(widgetRect, m_iRadius);
 
     /* Draw base/frame: */
     painter.fillPath(widgetPath, colorBase);
@@ -545,18 +545,19 @@ void UIFilterEditor::cleanup()
     m_pAnimation = 0;
 }
 
-QPainterPath UIFilterEditor::cookPainterPath(const QRect &pathRect)
+/* static */
+QPainterPath UIFilterEditor::cookPainterPath(const QRect &pathRect, int iRadius)
 {
     QPainterPath path;
-    const QSizeF arcSize(2 * m_iRadius, 2 * m_iRadius);
-    path.moveTo(pathRect.x() + m_iRadius, pathRect.y());
-    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, 0), 90, 90);
-    path.lineTo(path.currentPosition().x(), path.currentPosition().y() + pathRect.height() - 2 * m_iRadius);
-    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -m_iRadius), 180, 90);
-    path.lineTo(path.currentPosition().x() + pathRect.width() - 2 * m_iRadius, path.currentPosition().y());
-    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-m_iRadius, -2 * m_iRadius), 270, 90);
-    path.lineTo(path.currentPosition().x(), path.currentPosition().y() - pathRect.height() + 2 * m_iRadius);
-    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * m_iRadius, -m_iRadius), 0, 90);
+    const QSizeF arcSize(2 * iRadius, 2 * iRadius);
+    path.moveTo(pathRect.x() + iRadius, pathRect.y());
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iRadius, 0), 90, 90);
+    path.lineTo(path.currentPosition().x(), path.currentPosition().y() + pathRect.height() - 2 * iRadius);
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -iRadius), 180, 90);
+    path.lineTo(path.currentPosition().x() + pathRect.width() - 2 * iRadius, path.currentPosition().y());
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iRadius, -2 * iRadius), 270, 90);
+    path.lineTo(path.currentPosition().x(), path.currentPosition().y() - pathRect.height() + 2 * iRadius);
+    path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * iRadius, -iRadius), 0, 90);
     path.closeSubpath();
     return path;
 }
