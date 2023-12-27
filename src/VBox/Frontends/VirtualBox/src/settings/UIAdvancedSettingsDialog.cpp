@@ -462,12 +462,10 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
     /* Prepare colors: */
     const bool fActive = window() && window()->isActiveWindow();
     const QPalette::ColorGroup enmColorGroup = fActive ? QPalette::Active : QPalette::Inactive;
-    QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
-    QColor colorFrame;
-    if (uiCommon().isInDarkMode())
-        colorFrame = qApp->palette().color(enmColorGroup, QPalette::Window).lighter(120);
-    else
-        colorFrame = qApp->palette().color(enmColorGroup, QPalette::Window).darker(120);
+    const QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
+    const QColor colorFrame = uiCommon().isInDarkMode()
+                            ? qApp->palette().color(enmColorGroup, QPalette::Window).lighter(120)
+                            : qApp->palette().color(enmColorGroup, QPalette::Window).darker(120);
 
     /* Prepare base/frame painter path: */
     const QRegion totalRegion = QRegion(m_pLineEdit->geometry()) + QRegion(m_pToolButton->geometry());
