@@ -42,6 +42,7 @@
 #include "QITabWidget.h"
 #include "QITreeView.h"
 #include "QITreeWidget.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
@@ -492,7 +493,7 @@ void UISelectorDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &o
         pPainter->setClipPath(painterPath);
         pPainter->setRenderHint(QPainter::Antialiasing);
         pPainter->fillPath(painterPath, grad);
-        pPainter->strokePath(painterPath, backColor.darker(110));
+        pPainter->strokePath(painterPath, uiCommon().isInDarkMode() ? backColor.lighter(120) : backColor.darker(110));
         pPainter->restore();
     }
     else

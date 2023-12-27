@@ -342,9 +342,9 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
     /* Paint fancy shape: */
     painter.save();
     painter.fillPath(painterPath1, grad1);
-    painter.strokePath(painterPath1, backColor1.darker(110));
+    painter.strokePath(painterPath1, uiCommon().isInDarkMode() ? backColor1.lighter(120) : backColor1.darker(110));
     painter.fillPath(painterPath2, grad2);
-    painter.strokePath(painterPath2, backColor2.darker(110));
+    painter.strokePath(painterPath2, uiCommon().isInDarkMode() ? backColor2.lighter(120) : backColor2.darker(110));
     painter.restore();
 
     /* Prepare text1/text2: */
