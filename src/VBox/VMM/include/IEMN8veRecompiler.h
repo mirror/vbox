@@ -387,15 +387,18 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_SegBaseLast   = kIemNativeGstReg_SegBaseFirst + 5,
     kIemNativeGstReg_SegLimitFirst,
     kIemNativeGstReg_SegLimitLast  = kIemNativeGstReg_SegLimitFirst + 5,
+    kIemNativeGstReg_SegAttribFirst,
+    kIemNativeGstReg_SegAttribLast = kIemNativeGstReg_SegAttribFirst + 5,
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;
 
 /** @name Helpers for converting register numbers to IEMNATIVEGSTREG values.
  * @{  */
-#define IEMNATIVEGSTREG_GPR(a_iGpr)             ((IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst      + (a_iGpr)    ))
-#define IEMNATIVEGSTREG_SEG_SEL(a_iSegReg)      ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegSelFirst   + (a_iSegReg) ))
-#define IEMNATIVEGSTREG_SEG_BASE(a_iSegReg)     ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegBaseFirst  + (a_iSegReg) ))
-#define IEMNATIVEGSTREG_SEG_LIMIT(a_iSegReg)    ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_GPR(a_iGpr)             ((IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst       + (a_iGpr)    ))
+#define IEMNATIVEGSTREG_SEG_SEL(a_iSegReg)      ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegSelFirst    + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_SEG_BASE(a_iSegReg)     ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegBaseFirst   + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_SEG_LIMIT(a_iSegReg)    ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst  + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_SEG_ATTRIB(a_iSegReg)   ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegAttribFirst + (a_iSegReg) ))
 /** @} */
 
 /**
@@ -813,7 +816,8 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpEx(PIEMRECOMPILERSTATE pReNative
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint64_t uImm,
                                                     bool fPreferVolatile = true);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
-                                                            IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse,
+                                                            IEMNATIVEGSTREG enmGstReg,
+                                                            IEMNATIVEGSTREGUSE enmIntendedUse = kIemNativeGstRegUse_ReadOnly,
                                                             bool fNoVoltileRegs = false);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                                                             IEMNATIVEGSTREG enmGstReg);

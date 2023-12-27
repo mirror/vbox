@@ -3131,6 +3131,41 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUxth(uint32_t iRegResult, uint32_t iR
 
 
 /**
+ * A64: Encodes an EXTR instruction with an immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegResult  The register to store the result in. ZR is valid.
+ * @param   iRegLow     The register holding the least significant bits in the
+ *                      extraction. ZR is valid.
+ * @param   iRegHigh    The register holding the most significant bits in the
+ *                      extraction. ZR is valid.
+ * @param   uLsb        The bit number of the least significant bit, or where in
+ *                      @a iRegLow to start the
+ *                      extraction.
+ * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrExtrImm(uint32_t iRegResult, uint32_t iRegLow, uint32_t iRegHigh, uint32_t uLsb,
+                                                   bool f64Bit = true)
+{
+    Assert(uLsb < (uint32_t)(f64Bit ? 64 : 32)); Assert(iRegHigh < 32); Assert(iRegLow < 32); Assert(iRegResult < 32);
+    return ((uint32_t)f64Bit       << 31)
+         | UINT32_C(0x13800000)
+         | ((uint32_t)f64Bit       << 22) /*N*/
+         | (iRegHigh               << 16)
+         | (uLsb                   << 10)
+         | (iRegLow                <<  5)
+         | iRegResult;
+}
+
+
+/** A64: Rotates the value of a register (alias for EXTR). */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRorImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cShift, bool f64Bit = true)
+{
+    return Armv8A64MkInstrExtrImm(iRegResult, iRegSrc, iRegSrc, cShift, f64Bit);
+}
+
+
+/**
  * A64: Encodes either add, adds, sub or subs with unsigned 12-bit immediate.
  *
  * @returns The encoded instruction.
