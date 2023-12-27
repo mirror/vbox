@@ -1367,6 +1367,8 @@ DECLINLINE(int) vmsvga3dDXContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PV
     LogRelMax(64, ("VMSVGA: unknown DX cid=%u (%s cid=%u)\n", cid, pDXContext ? "expected" : "null", pDXContext ? pDXContext->cid : -1));
     return VERR_INVALID_PARAMETER;
 }
+
+void vmsvga3dDXInitContextMobData(SVGADXContextMobFormat *p);
 #endif
 
 DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMSVGA3DSURFACE *ppSurface)

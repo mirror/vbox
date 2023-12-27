@@ -61,6 +61,78 @@ static int dxMobWrite(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid, uint32_t off
     return vmsvgaR3MobWrite(pSvgaR3State, pMob, off, pvData, cbData);
 }
 
+void vmsvga3dDXInitContextMobData(SVGADXContextMobFormat *p)
+{
+    /* 0xFFFFFFFF (SVGA_ID_INVALID) is a better initial value than 0 for most of svgaDXContext fields. */
+    memset(p, 0xFF, sizeof(*p));
+
+    p->inputAssembly.layoutId = SVGA3D_INVALID_ID;
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->inputAssembly.vertexBuffers); ++i)
+    {
+        p->inputAssembly.vertexBuffers[i].bufferId = SVGA3D_INVALID_ID;
+        p->inputAssembly.vertexBuffers[i].stride = 0;
+        p->inputAssembly.vertexBuffers[i].offset = 0;
+    }
+    p->inputAssembly.indexBufferSid = SVGA3D_INVALID_ID;
+    p->inputAssembly.indexBufferOffset = 0;
+    p->inputAssembly.indexBufferFormat = SVGA3D_FORMAT_INVALID;
+    p->inputAssembly.topology = SVGA3D_PRIMITIVE_INVALID;
+
+    p->renderState.blendStateId = SVGA3D_INVALID_ID;
+    RT_ZERO(p->renderState.blendFactor);
+    p->renderState.sampleMask = 0;
+    p->renderState.depthStencilStateId = SVGA3D_INVALID_ID;
+    p->renderState.stencilRef = 0;
+    p->renderState.rasterizerStateId = SVGA3D_INVALID_ID;
+    p->renderState.depthStencilViewId = SVGA3D_INVALID_ID;
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->renderState.renderTargetViewIds); ++i)
+        p->renderState.renderTargetViewIds[i] = SVGA3D_INVALID_ID;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->streamOut.targets); ++i)
+        p->streamOut.targets[i] = SVGA3D_INVALID_ID;
+    p->streamOut.soid = SVGA3D_INVALID_ID;
+
+    p->uavSpliceIndex = 0;
+    p->numViewports = 0;
+    p->numScissorRects = 0;
+
+    RT_ZERO(p->viewports);
+    RT_ZERO(p->scissorRects);
+
+    p->predication.queryID = SVGA3D_INVALID_ID;
+    p->predication.value = 0;
+
+    p->shaderIfaceMobid = SVGA3D_INVALID_ID;
+    p->shaderIfaceOffset = 0;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->shaderState); ++i)
+    {
+        p->shaderState[i].shaderId = SVGA3D_INVALID_ID;
+        for (uint32_t j = 0; j < RT_ELEMENTS(p->shaderState[0].constantBuffers); ++j)
+        {
+            SVGA3dConstantBufferBinding *cbb = &p->shaderState[i].constantBuffers[j];
+            cbb->sid = SVGA3D_INVALID_ID;
+            cbb->offsetInBytes = 0;
+            cbb->sizeInBytes = 0;
+        }
+        for (uint32_t j = 0; j < RT_ELEMENTS(p->shaderState[0].shaderResources); ++j)
+            p->shaderState[i].shaderResources[j] = SVGA3D_INVALID_ID;
+        for (uint32_t j = 0; j < RT_ELEMENTS(p->shaderState[0].samplers); ++j)
+            p->shaderState[i].samplers[j] = SVGA3D_INVALID_ID;
+    }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->queryID); ++i)
+        p->queryID[i] = SVGA3D_INVALID_ID;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->cotables); ++i)
+        p->cotables[i].mobid = SVGA3D_INVALID_ID;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->uaViewIds); ++i)
+        p->uaViewIds[i] = SVGA3D_INVALID_ID;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(p->csuaViewIds); ++i)
+        p->csuaViewIds[i] = SVGA3D_INVALID_ID;
+}
 
 /*
  *
@@ -301,11 +373,7 @@ int vmsvga3dDXDefineContext(PVGASTATECC pThisCC, uint32_t cid)
     pDXContext = p3dState->papDXContexts[cid];
     memset(pDXContext, 0, sizeof(*pDXContext));
 
-    /* 0xFFFFFFFF (SVGA_ID_INVALID) is a better initial value than 0 for most of svgaDXContext fields. */
-    memset(&pDXContext->svgaDXContext, 0xFF, sizeof(pDXContext->svgaDXContext));
-    pDXContext->svgaDXContext.inputAssembly.topology = SVGA3D_PRIMITIVE_INVALID;
-    pDXContext->svgaDXContext.numViewports = 0;
-    pDXContext->svgaDXContext.numScissorRects = 0;
+    vmsvga3dDXInitContextMobData(&pDXContext->svgaDXContext);
     pDXContext->cid = cid;
 
     /* Init the backend specific data. */
@@ -1103,6 +1171,9 @@ int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
     ASSERT_GUEST_RETURN(   queryId == SVGA3D_INVALID_ID
                         || queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
+
+    pDXContext->svgaDXContext.predication.queryID = queryId;
+    pDXContext->svgaDXContext.predication.value = pCmd->predicateValue;
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetPredication(pThisCC, pDXContext, queryId, pCmd->predicateValue);
     return rc;
