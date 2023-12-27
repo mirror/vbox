@@ -808,7 +808,7 @@ iemNativeEmitLoadGprFromGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iG
 
 #elif defined(RT_ARCH_ARM64)
     /* mov dst, src;   alias for: orr dst, xzr, src */
-    p32CodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, ARMV8_A64_REG_XZR, iGprSrc);
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, ARMV8_A64_REG_XZR, iGprSrc);
 
 #else
 # error "port me"
@@ -2132,7 +2132,7 @@ iemNativeEmitAddGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprD
     pCodeBuf[off++] = RT_BYTE4((uint32_t)iAddend);
 
 #elif defined(RT_ARCH_ARM64)
-    uint32_t const uAbsAddend = (uint32_t)RT_ABS(iAddened);
+    uint32_t const uAbsAddend = (uint32_t)RT_ABS(iAddend);
     if (uAbsAddend <= 0xfff)
     {
         if (iAddend >= 0)
@@ -3932,7 +3932,7 @@ iemNativeEmitTestAnyBitsInGpr8Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t
     uint32_t uImmR     = 0;
     uint32_t uImmNandS = 0;
     if (Armv8A64ConvertMask32ToImmRImmS(fBits, &uImmNandS, &uImmR))
-        pu32CodeBuf[off++] = Armv8A64MkInstrAndsImm(ARMV8_A64_REG_XZR, iGprSrc, uImmNandS, uImmR, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrAndsImm(ARMV8_A64_REG_XZR, iGprSrc, uImmNandS, uImmR, false /*f64Bit*/);
     else
 # ifdef IEM_WITH_THROW_CATCH
         AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
