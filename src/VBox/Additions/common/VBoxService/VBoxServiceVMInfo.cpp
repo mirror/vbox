@@ -437,6 +437,23 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
 
     int rc = VINF_SUCCESS;
 
+    /** @todo r=bird: This is just asking for trouble with long names, esp. when
+     * domain names are included.  The max property name limit is 64 characters,
+     * so it is really easy to run into the limit here. E.g.
+     *      "/VirtualBox/GuestInfo/User/Administrator@DGV-W10X64-TEST/UsageState"
+     * is too long and will be rejected by the host servce (assert in strict builds)
+     * as Dmitrii just observed.
+     *
+     * A slightly more managable design here would've been to use the user ID rather
+     * than the user name. Not sure how this would work for domains, though, these
+     * can probably be pretty long as well. Any numeric/fixed-sized IDs for domains?
+     * Since these mistakes have been made already, perhaps use the UID as a
+     * fallback?
+     *
+     * Also, since we're working a max length limit here, WTF do we use
+     * RTStrAPrintf?  We could use a fixed buffer size and RTStrPrintf2 and detect
+     * the problem here before we even get to the host side.
+     */
     char *pszName;
     if (pszDomain)
     {
