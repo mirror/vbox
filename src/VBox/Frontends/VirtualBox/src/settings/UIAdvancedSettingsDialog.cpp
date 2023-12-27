@@ -516,7 +516,7 @@ void UIFilterEditor::prepare()
 #ifdef VBOX_WS_MAC
         /* A bit of magic to be able to replace the frame.
          * Disable border, adjust margins and make background transparent.
-		 * Left and right margins also take focus ring into account. */
+         * Left and right margins also take focus ring into account. */
         m_pLineEdit->setStyleSheet("QLineEdit {\
                                     background-color: rgba(255, 255, 255, 0%);\
                                     border: 0px none black;\
