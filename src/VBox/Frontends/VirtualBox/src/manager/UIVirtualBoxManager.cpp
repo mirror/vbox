@@ -2206,17 +2206,39 @@ void UIVirtualBoxManager::sltHandlePoweredOffMachine(bool fSuccess, bool fInclud
 
 void UIVirtualBoxManager::sltPerformShowGlobalTool(QAction *pAction)
 {
+    /* Sanity checks: */
     AssertPtrReturnVoid(pAction);
     AssertPtrReturnVoid(m_pWidget);
+
+    /* Acquire tool type: */
+    const UIToolType enmType = pAction->property("UIToolType").value<UIToolType>();
+    AssertReturnVoid(enmType != UIToolType_Invalid);
+
+    /* Make sure global item is selected: */
     m_pWidget->switchToGlobalItem();
-    m_pWidget->setToolsTypeGlobal(pAction->property("UIToolType").value<UIToolType>());
+
+    /* Make sure corresponding manager window is closed (if any): */
+    sltCloseManagerWindow(enmType);
+
+    /* Open the tool finally: */
+    m_pWidget->setToolsTypeGlobal(enmType);
 }
 
 void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
 {
+    /* Sanity checks: */
     AssertPtrReturnVoid(pAction);
     AssertPtrReturnVoid(m_pWidget);
-    m_pWidget->setToolsTypeMachine(pAction->property("UIToolType").value<UIToolType>());
+
+    /* Acquire tool type: */
+    const UIToolType enmType = pAction->property("UIToolType").value<UIToolType>();
+    AssertReturnVoid(enmType != UIToolType_Invalid);
+
+    /* Make sure corresponding manager window is closed (if any): */
+    sltCloseManagerWindow(enmType);
+
+    /* Open the tool finally: */
+    m_pWidget->setToolsTypeMachine(enmType);
 }
 
 void UIVirtualBoxManager::sltPerformRefreshMachine()
