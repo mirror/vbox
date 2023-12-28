@@ -8930,9 +8930,10 @@ FNIEMOP_DEF(iemOp_pop_fs)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(0,
                                   RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
-                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
-                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_FS)
-                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_FS),
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst    + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst   + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst  + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegAttribFirst + X86_SREG_FS),
                                 iemCImpl_pop_Sreg, X86_SREG_FS, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -9731,9 +9732,10 @@ FNIEMOP_DEF(iemOp_pop_gs)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(0,
                                   RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
-                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
-                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_GS)
-                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_GS),
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst    + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst   + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst  + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegAttribFirst + X86_SREG_GS),
                                 iemCImpl_pop_Sreg, X86_SREG_GS, pVCpu->iem.s.enmEffOpSize);
 }
 
