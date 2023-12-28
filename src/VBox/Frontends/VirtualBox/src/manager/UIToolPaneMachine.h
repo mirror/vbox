@@ -75,6 +75,9 @@ signals:
     /** Notifies listeners about request to switch to Activity Overview pane. */
     void sigSwitchToActivityOverviewPane();
 
+    /** Notifies listeners about request to detach Log Viewer pane. */
+    void sigDetachLogViewer();
+
 public:
 
     /** Constructs tools pane passing @a pParent to the base-class. */

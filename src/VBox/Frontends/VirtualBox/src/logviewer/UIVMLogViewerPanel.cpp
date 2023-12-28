@@ -100,6 +100,8 @@ void UIVMLogViewerPaneContainer::prepare()
             this, &UIVMLogViewerPaneContainer::sigChangeFont);
     connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigResetToDefaults,
             this, &UIVMLogViewerPaneContainer::sigResetToDefaults);
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigDetach,
+            this, &UIVMLogViewerPaneContainer::sigDetach);
 
     retranslateUi();
 }

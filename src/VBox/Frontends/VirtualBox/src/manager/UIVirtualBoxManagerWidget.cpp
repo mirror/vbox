@@ -729,6 +729,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                                     this, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange);
                             connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigSwitchToActivityOverviewPane,
                                     this, &UIVirtualBoxManagerWidget::sltSwitchToActivityOverviewPane);
+                            connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigDetachLogViewer,
+                                    this, &UIVirtualBoxManagerWidget::sigDetachLogViewer);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsMachine);

@@ -970,6 +970,11 @@ void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
     updateActionsAppearance();
 }
 
+void UIVirtualBoxManager::sltDetachLogViewer()
+{
+    sltOpenManagerWindow(UIToolType_Logs);
+}
+
 void UIVirtualBoxManager::sltHandleCloudMachineStateChange(const QUuid & /* uId */)
 {
     updateActionsAppearance();
@@ -2488,6 +2493,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
             this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigDetachLogViewer,
+            this, &UIVirtualBoxManager::sltDetachLogViewer);
 
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
             m_pWidget, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);

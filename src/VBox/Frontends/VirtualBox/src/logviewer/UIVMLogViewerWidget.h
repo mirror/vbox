@@ -70,6 +70,7 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerWidget  : public QIWithRetranslateUI<QWi
 signals:
 
     void sigSetCloseButtonShortCut(QKeySequence);
+    void sigDetach();
 
 public:
 
@@ -81,6 +82,10 @@ public:
     UIVMLogViewerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                         bool fShowToolbar = true, const QList<QUuid> &machineIDs = QList<QUuid>(), QWidget *pParent = 0);
     ~UIVMLogViewerWidget();
+
+    /** Returns the widget's embedding type. */
+    EmbedTo embeddingType() const { return m_enmEmbedding; }
+
     /** Returns the width of the current log page. return 0 if there is no current log page: */
     int defaultLogPageWidth() const;
 

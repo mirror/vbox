@@ -123,6 +123,12 @@ signals:
         void sigCurrentSnapshotItemChange();
     /** @} */
 
+    /** @name Tools / Log Viewer pane stuff.
+      * @{ */
+        /** Notifies listeners about request to detach Log Viewer pane. */
+        void sigDetachLogViewer();
+    /** @} */
+
 public:
 
     /** Constructs VirtualBox Manager widget. */

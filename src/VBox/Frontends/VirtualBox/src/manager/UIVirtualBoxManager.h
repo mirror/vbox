@@ -167,6 +167,9 @@ private slots:
         /** Handles current snapshot item change. */
         void sltCurrentSnapshotItemChange();
 
+        /** Handles request to detach Log Viewer pane. */
+        void sltDetachLogViewer();
+
         /** Handles state change for cloud machine with certain @a uId. */
         void sltHandleCloudMachineStateChange(const QUuid &uId);
     /** @} */

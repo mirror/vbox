@@ -795,6 +795,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             this, &UIVMLogViewerWidget::sltChangeFont);
     connect(m_pPanel, &UIVMLogViewerPaneContainer::sigResetToDefaults,
             this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigDetach,
+            this, &UIVMLogViewerWidget::sigDetach);
     connect(m_pPanel, &UIVMLogViewerPaneContainer::sigCurrentTabChanged,
             this, &UIVMLogViewerWidget::sltPanelCurrentTabChanged);
     connect(m_pPanel, &UIVMLogViewerPaneContainer::sigShowSearchPane,
