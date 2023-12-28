@@ -989,7 +989,7 @@ void UIVirtualBoxManager::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
 
 void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
 {
-    /* Determine actual tool type if possible: */
+    /* Determine actual tool type on the basis of sender action if possible: */
     if (enmType == UIToolType_Invalid)
     {
         if (   sender()
@@ -1000,7 +1000,6 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
             enmType = pAction->property("UIToolType").value<UIToolType>();
         }
     }
-
     /* Make sure type is valid: */
     AssertReturnVoid(enmType != UIToolType_Invalid);
 
@@ -1009,6 +1008,11 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
     {
         m_pWidget->setToolsTypeGlobal(UIToolType_Welcome);
         m_pWidget->closeGlobalTool(enmType);
+    }
+    if (m_pWidget->isMachineToolOpened(enmType))
+    {
+        m_pWidget->setToolsTypeMachine(UIToolType_Details);
+        m_pWidget->closeMachineTool(enmType);
     }
 
     /* Create instance if not yet created: */
@@ -1045,10 +1049,8 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
                 this, &UIVirtualBoxManager::sltCloseManagerWindowDefault);
     }
 
-    /* Show instance: */
-    m_managers.value(enmType)->show();
-    m_managers.value(enmType)->setWindowState(m_managers.value(enmType)->windowState() & ~Qt::WindowMinimized);
-    m_managers.value(enmType)->activateWindow();
+    /* Expose instance: */
+    UIDesktopWidgetWatchdog::restoreWidget(m_managers.value(enmType));
 }
 
 void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
