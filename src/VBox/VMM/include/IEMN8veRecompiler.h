@@ -318,6 +318,7 @@ typedef enum
     kIemNativeLabelType_Else,
     kIemNativeLabelType_Endif,
     kIemNativeLabelType_CheckIrq,
+    kIemNativeLabelType_TlbLookup,
     kIemNativeLabelType_TlbMiss,
     kIemNativeLabelType_TlbDone,
     kIemNativeLabelType_End

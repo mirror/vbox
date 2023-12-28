@@ -81,17 +81,31 @@ iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t uInfo)
 /**
  * Emit a breakpoint instruction.
  */
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitBrkEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint32_t uInfo)
+{
+#ifdef RT_ARCH_AMD64
+    pCodeBuf[off++] = 0xcc;
+    RT_NOREF(uInfo);   /** @todo use multibyte nop for info? */
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrBrk(uInfo & UINT32_C(0xffff));
+
+#else
+# error "error"
+#endif
+    return off;
+}
+
+
+/**
+ * Emit a breakpoint instruction.
+ */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitBrk(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t uInfo)
 {
 #ifdef RT_ARCH_AMD64
-    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pbCodeBuf[off++] = 0xcc;
-    RT_NOREF(uInfo);
-
+    off = iemNativeEmitBrkEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, uInfo);
 #elif defined(RT_ARCH_ARM64)
-    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrBrk(uInfo & UINT32_C(0xffff));
-
+    off = iemNativeEmitBrkEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, uInfo);
 #else
 # error "error"
 #endif
@@ -3320,19 +3334,52 @@ iemNativeEmitJccToLabelEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBu
 {
     Assert(idxLabel < pReNative->cLabels);
 
+    uint32_t const offLabel = pReNative->paLabels[idxLabel].off;
 #ifdef RT_ARCH_AMD64
-    /* jcc rel32 */
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = (uint8_t)enmCond | 0x80;
-    iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_Rel32, -4);
-    pCodeBuf[off++] = 0x00;
-    pCodeBuf[off++] = 0x00;
-    pCodeBuf[off++] = 0x00;
-    pCodeBuf[off++] = 0x00;
+    if (offLabel >= off)
+    {
+        /* jcc rel32 */
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = (uint8_t)enmCond | 0x80;
+        iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_Rel32, -4);
+        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x00;
+    }
+    else
+    {
+        int32_t offDisp = offLabel - (off + 2);
+        if ((int8_t)offDisp == offDisp)
+        {
+            /* jcc rel8 */
+            pCodeBuf[off++] = (uint8_t)enmCond | 0x70;
+            pCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+        }
+        else
+        {
+            /* jcc rel32 */
+            offDisp -= 4;
+            pCodeBuf[off++] = 0x0f;
+            pCodeBuf[off++] = (uint8_t)enmCond | 0x80;
+            pCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+            pCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+            pCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+            pCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
+        }
+    }
 
 #elif defined(RT_ARCH_ARM64)
-    iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
-    pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, -1);
+    if (offLabel >= off)
+    {
+        iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
+        pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, -1);
+    }
+    else
+    {
+        Assert(offLabel - off <= -0x3ffff);
+        pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offLabel - off);
+    }
 
 #else
 # error "Port me!"
