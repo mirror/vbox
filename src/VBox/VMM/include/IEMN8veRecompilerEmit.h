@@ -173,7 +173,8 @@ iemNativeEmitGprZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
  *      - AMD64: 10 instruction bytes.
  *      - ARM64: 4 instruction words (16 bytes).
  */
-DECLINLINE(uint32_t) iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint64_t uImm64)
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint64_t uImm64)
 {
 #ifdef RT_ARCH_AMD64
     if (uImm64 == 0)
@@ -190,6 +191,20 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_
         if (iGpr >= 8)
             pCodeBuf[off++] = X86_OP_REX_B;
         pCodeBuf[off++] = 0xb8 + (iGpr & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm64);
+        pCodeBuf[off++] = RT_BYTE2(uImm64);
+        pCodeBuf[off++] = RT_BYTE3(uImm64);
+        pCodeBuf[off++] = RT_BYTE4(uImm64);
+    }
+    else if (uImm64 == (uint64_t)(int32_t)uImm64)
+    {
+        /* mov gpr, sx(imm32) */
+        if (iGpr < 8)
+            pCodeBuf[off++] = X86_OP_REX_W;
+        else
+            pCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
+        pCodeBuf[off++] = 0xc7;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGpr & 7);
         pCodeBuf[off++] = RT_BYTE1(uImm64);
         pCodeBuf[off++] = RT_BYTE2(uImm64);
         pCodeBuf[off++] = RT_BYTE3(uImm64);
@@ -3100,7 +3115,7 @@ iemNativeEmitCmpGpr32WithImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t i
 #ifdef RT_ARCH_AMD64
     if (iGprLeft >= 8)
         pCodeBuf[off++] = X86_OP_REX_B;
-    if (uImm <= UINT32_C(0xff))
+    if (uImm <= UINT32_C(0x7f))
     {
         /* cmp Ev, Ib */
         pCodeBuf[off++] = 0x83;

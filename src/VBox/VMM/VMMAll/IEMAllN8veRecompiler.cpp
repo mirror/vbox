@@ -6795,6 +6795,7 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNa
     uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
     if (idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS)
     {
+        Assert(fInitialized);
         int32_t const offDispBp = iemNativeStackCalcBpDisp(idxStackSlot);
         switch (pReNative->Core.aVars[idxVar].cbVar)
         {
@@ -10893,6 +10894,11 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
 
+    /* The bUnmapInfo variable will get a register in the tlb-hit code path,
+       while the tlb-miss codepath will temporarily put it on the stack.
+       Set the the type to stack here so we don't need to do it twice below. */
+    iemNativeVarSetKindToStack(pReNative, idxVarUnmapInfo);
+
     /*
      * Define labels and allocate the result register (trying for the return
      * register if we can - which we of course can, given the above call).
@@ -10907,337 +10913,403 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     /*
      * First we try to go via the TLB.
      */
-#if defined(RT_ARCH_AMD64) && 0 /* untested code sketch */
-    uint8_t const   idxRegPtr       = iemNativeVarRegisterAcquire(pReNative, idxVarGCPtrMem, &off,
-                                                                  true /*fInitialized*/, IEMNATIVE_CALL_ARG2_GREG);
-    uint8_t const   idxRegSegBase   = iSegReg == UINT8_MAX ? UINT8_MAX
-                                    : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_BASE(iSegReg));
-    uint8_t const   idxRegSegLimit  = iSegReg == UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT
-                                    ? UINT8_MAX
-                                    : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_LIMIT(iSegReg));
-    uint8_t const   idxRegSegAttrib = iSegReg == UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT
-                                    ? UINT8_MAX
-                                    : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(iSegReg));
-    uint8_t const   idxReg1         = iemNativeRegAllocTmp(pReNative, &off);
-    uint8_t const   idxReg2         = iemNativeRegAllocTmp(pReNative, &off);
-    uint8_t * const pbCodeBuf       = iemNativeInstrBufEnsure(pReNative, off, 256);
-    pbCodeBuf[off++] = 0xcc;
-
-    /*
-     * 1. Segmentation.
-     *
-     * 1a. Check segment limit and attributes if non-flat 32-bit code.  This is complicated.
-     */
-    if (iSegReg != UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT)
+#if defined(RT_ARCH_AMD64) && 1
+    /* Immediate addresses are a pain if they wrap around the 32-bit space, so
+       always fall back for those.  In 64-bit mode this is less like. */
+    if (   pReNative->Core.aVars[idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate
+        || (uint64_t)((uint64_t)UINT32_MAX - pReNative->Core.aVars[idxVarGCPtrMem].u.uValue) <= (uint32_t)UINT32_MAX)
     {
-        /* If we're accessing more than one byte, put the last address we'll be
-           accessing in idxReg2 (64-bit). */
-        if (cbMem > 1)
+        uint8_t const   idxRegPtr       = pReNative->Core.aVars[idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate
+                                        ? iemNativeVarRegisterAcquire(pReNative, idxVarGCPtrMem, &off,
+                                                                      true /*fInitialized*/, IEMNATIVE_CALL_ARG2_GREG)
+                                        : UINT8_MAX;
+        uint64_t const  uAbsPtr         = pReNative->Core.aVars[idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate
+                                        ? UINT32_MAX
+                                        : pReNative->Core.aVars[idxVarGCPtrMem].u.uValue;
+        uint8_t const   idxRegSegBase   = iSegReg == UINT8_MAX ? UINT8_MAX
+                                        : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_BASE(iSegReg));
+        uint8_t const   idxRegSegLimit  = iSegReg == UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT
+                                        ? UINT8_MAX
+                                        : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_LIMIT(iSegReg));
+        uint8_t const   idxRegSegAttrib = iSegReg == UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT
+                                        ? UINT8_MAX
+                                        : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(iSegReg));
+        uint8_t const   idxReg1         = iemNativeRegAllocTmp(pReNative, &off);
+        uint8_t const   idxReg2         = iemNativeRegAllocTmp(pReNative, &off);
+        uint8_t * const pbCodeBuf       = iemNativeInstrBufEnsure(pReNative, off, 256);
+
+        /*
+         * 1. Segmentation.
+         *
+         * 1a. Check segment limit and attributes if non-flat 32-bit code.  This is complicated.
+         */
+        if (iSegReg != UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT)
         {
-            /* mov reg2, cbMem-1 */
-            off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg2, cbMem - 1);
-            /* add reg2, regptr */
-            off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxReg2, idxRegPtr);
+            /* If we're accessing more than one byte, put the last address we'll be
+               accessing in idxReg2 (64-bit). */
+            if (cbMem > 1 && idxRegPtr != UINT8_MAX)
+            {
+# if 1
+                Assert(cbMem - 1 <= 127);
+                /* mov reg2, regptr */
+                off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxReg2, idxRegPtr);
+                /* add reg2, cbMem-1 */
+                off = iemNativeEmitAddGpr32Imm8Ex(pbCodeBuf, off, idxReg2, cbMem - 1);
+# else
+                /* mov reg2, cbMem-1 */
+                off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg2, cbMem - 1);
+                /* add reg2, regptr */
+                off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxReg2, idxRegPtr);
+# endif
+            }
+
+            /* Check that we've got a segment loaded and that it allows the access.
+               For write access this means a writable data segment.
+               For read-only accesses this means a readable code segment or any data segment. */
+            if (fAccess & IEM_ACCESS_TYPE_WRITE)
+            {
+                uint32_t const fMustBe1 = X86DESCATTR_P        | X86DESCATTR_DT    | X86_SEL_TYPE_WRITE;
+                uint32_t const fMustBe0 = X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE;
+                /* mov reg1, must1|must0 */
+                off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg1, fMustBe1 | fMustBe0);
+                /* and reg1, segattrs */
+                off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
+                /* cmp reg1, must1 */
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, fMustBe1);
+                /* jne tlbmiss */
+                off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+            }
+            else
+            {
+                /*  U  | !P |!DT |!CD | RW |
+                    16 |  8 |  4 |  3 |  1 |
+                  -------------------------------
+                    0  |  0 |  0 |  0 |  0 | execute-only code segment. - must be excluded
+                    0  |  0 |  0 |  0 |  1 | execute-read code segment.
+                    0  |  0 |  0 |  1 |  0 | read-only data segment.
+                    0  |  0 |  0 |  1 |  1 | read-write data segment.   - last valid combination
+                */
+                /* mov reg1, relevant attributes  */
+                off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg1,
+                                                    X86DESCATTR_UNUSABLE | X86DESCATTR_P | X86DESCATTR_DT
+                                                  | X86_SEL_TYPE_CODE    | X86_SEL_TYPE_WRITE);
+                /* and reg1, segattrs */
+                off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
+                /* xor reg1, X86DESCATTR_P | X86DESCATTR_DT | X86_SEL_TYPE_CODE ; place C=1 RW=0 at the bottom & limit the range.
+                                                ; EO-code=0,  ER-code=2, RO-data=8, RW-data=10 */
+                off = iemNativeEmitXorGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_P | X86DESCATTR_DT | X86_SEL_TYPE_CODE);
+                /* sub reg1, X86_SEL_TYPE_WRITE ; EO-code=-2, ER-code=0, RO-data=6, RW-data=8 */
+                off = iemNativeEmitSubGpr32ImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_WRITE /* ER-code */);
+                /* cmp reg1, X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE */
+                AssertCompile(X86_SEL_TYPE_CODE == 8);
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_CODE);
+                /* ja  tlbmiss */
+                off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+            }
+
+            /*
+             * Check the limit.  If this is a write access, we know that it's a
+             * data segment and includes the expand_down bit.  For read-only accesses
+             * we need to check that code/data=0 and expanddown=1 before continuing.
+             */
+            uint32_t offFixupCheckExpandDown;
+            if (fAccess & IEM_ACCESS_TYPE_WRITE)
+            {
+                /* test segattrs, X86_SEL_TYPE_DOWN */
+                AssertCompile(X86_SEL_TYPE_DOWN < 128);
+                off = iemNativeEmitTestAnyBitsInGpr8Ex(pbCodeBuf, off, idxRegSegAttrib, X86_SEL_TYPE_DOWN);
+                /* jnz  check_expand_down */
+                offFixupCheckExpandDown = off;
+                off = iemNativeEmitJccToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/, kIemNativeInstrCond_ne);
+            }
+            else
+            {
+                /* mov reg1, segattrs */
+                off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
+                /* and reg1, code | down */
+                off = iemNativeEmitAndGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN);
+                /* cmp reg1, down */
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_DOWN);
+                /* je check_expand_down */
+                offFixupCheckExpandDown = off;
+                off = iemNativeEmitJccToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/, kIemNativeInstrCond_e);
+            }
+
+            /* expand_up:
+               cmp  seglim, regptr/reg2/imm */
+            if (idxRegPtr != UINT8_MAX)
+                off = iemNativeEmitCmpGprWithGprEx(pbCodeBuf, off, idxRegSegLimit, cbMem > 1 ? idxReg2 : idxRegPtr);
+            else
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxRegSegLimit, (uint32_t)uAbsPtr);
+            /* jbe  tlbmiss */
+            off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_be);
+            /* jmp  limitdone */
+            uint32_t const offFixupLimitDone = off;
+            off = iemNativeEmitJmpToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/);
+
+            /* check_expand_down: ; complicted! */
+            iemNativeFixupFixedJump(pReNative, offFixupCheckExpandDown, off);
+    pbCodeBuf[off++] = 0xcc;
+            /* cmp  seglim, regptr */
+            if (idxRegPtr != UINT8_MAX)
+                off = iemNativeEmitCmpGprWithGprEx(pbCodeBuf, off, idxRegSegLimit, idxRegPtr);
+            else
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxRegSegLimit, (uint32_t)uAbsPtr);
+            /* ja  tlbmiss */
+            off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+            /* mov  reg1, X86DESCATTR_D (0x4000) */
+            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_D);
+            /* and  reg1, segattr */
+            off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
+            /* xor  reg1, X86DESCATTR_D */
+            off = iemNativeEmitXorGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_D);
+            /* shl  reg1, 2 (16 - 14) */
+            AssertCompile((X86DESCATTR_D << 2) == UINT32_C(0x10000));
+            off = iemNativeEmitShiftGpr32LeftEx(pbCodeBuf, off, idxReg1, 2);
+            /* dec  reg1 (=> 0xffff if D=0; 0xffffffff if D=1) */
+            off = iemNativeEmitSubGpr32ImmEx(pbCodeBuf, off, idxReg1, 1);
+            /* cmp  reg1, reg2 (64-bit) / imm (32-bit) */
+            if (idxRegPtr != UINT8_MAX)
+                off = iemNativeEmitCmpGprWithGprEx(pbCodeBuf, off, idxReg1, idxReg2);
+            else
+                off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, (uint32_t)(uAbsPtr + cbMem - 1));
+            /* jbe  tlbmiss */
+            off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_be);
+
+            /* limitdone: */
+            iemNativeFixupFixedJump(pReNative, offFixupLimitDone, off);
         }
 
-        /* Check that we've got a segment loaded and that it allows the access.
-           For write access this means a writable data segment.
-           For read-only accesses this means a readable code segment or any data segment. */
-        if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        /* 1b. Add the segment base. We use idxRegMemResult for the ptr register if this step is
+               required or if the address is a constant (simplicity). */
+        uint8_t const idxRegFlatPtr = iSegReg != UINT8_MAX || idxRegPtr == UINT8_MAX ? idxRegMemResult : idxRegPtr;
+        if (iSegReg != UINT8_MAX)
         {
-            uint32_t const fMustBe1 = X86DESCATTR_P        | X86DESCATTR_DT    | X86_SEL_TYPE_WRITE;
-            uint32_t const fMustBe0 = X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE;
-            /* mov reg1, must1|must0 */
-            off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg1, fMustBe1 | fMustBe0);
-            /* and reg1, segattrs */
-            off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
-            /* cmp reg1, must1 */
-            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, fMustBe1);
-            /* jne tlbmiss */
+            /** @todo this can be done using LEA as well. */
+            if ((pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT)
+            {
+                Assert(iSegReg >= X86_SREG_FS);
+                /* mov regflat, regptr/imm */
+                if (idxRegPtr != UINT8_MAX)
+                    off = iemNativeEmitLoadGprFromGprEx(pbCodeBuf, off, idxRegFlatPtr, idxRegPtr);
+                else
+                    off = iemNativeEmitLoadGprImmEx(pbCodeBuf, off, idxRegFlatPtr, uAbsPtr);
+                /* add regflat, seg.base */
+                off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxRegFlatPtr, idxRegSegBase);
+            }
+            else
+            {
+                /* mov regflat, regptr/imm */
+                if (idxRegPtr != UINT8_MAX)
+                    off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxRegFlatPtr, idxRegPtr);
+                else
+                    off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxRegFlatPtr, uAbsPtr);
+                /* add regflat, seg.base */
+                off = iemNativeEmitAddTwoGprs32Ex(pbCodeBuf, off, idxRegFlatPtr, idxRegSegBase);
+            }
+        }
+        else if (idxRegPtr == UINT8_MAX)
+            off = iemNativeEmitLoadGprImmEx(pbCodeBuf, off, idxRegFlatPtr, uAbsPtr);
+
+        /*
+         * 2. Check that the address doesn't cross a page boundrary and doesn't have alignment issues.
+         *
+         * 2a. Alignment check using fAlignMask.
+         */
+        if (fAlignMask)
+        {
+            Assert(RT_IS_POWER_OF_TWO(fAlignMask + 1));
+            Assert(fAlignMask < 128);
+            /* test regflat, fAlignMask */
+            off = iemNativeEmitTestAnyBitsInGpr8Ex(pbCodeBuf, off, idxRegFlatPtr, fAlignMask);
+            /* jnz tlbmiss */
             off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
         }
-        else
+
+        /*
+         * 2b. Check that it's not crossing page a boundrary. This is implicit in
+         *     the previous test if the alignment is same or larger than the type.
+         */
+        if (cbMem > fAlignMask + 1)
         {
-            /*  U  | !P |!DT |!CD | RW |
-                16 |  8 |  4 |  3 |  1 |
-              -------------------------------
-                0  |  0 |  0 |  0 |  0 | execute-only code segment. - must be excluded
-                0  |  0 |  0 |  0 |  1 | execute-read code segment.
-                0  |  0 |  0 |  1 |  0 | read-only data segment.
-                0  |  0 |  0 |  1 |  1 | read-write data segment.   - last valid combination
-            */
-            /* mov reg1, relevant attributes  */
-            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1,
-                                                   X86DESCATTR_UNUSABLE | X86DESCATTR_P | X86DESCATTR_DT
-                                                 | X86_SEL_TYPE_CODE    | X86_SEL_TYPE_WRITE);
-            /* and reg1, segattrs */
-            off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
-            /* xor reg1, X86DESCATTR_P | X86DESCATTR_DT | X86_SEL_TYPE_CODE ; place C=1 RW=0 at the bottom & limit the range. */
-            off = iemNativeEmitXorGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_P | X86DESCATTR_DT | X86_SEL_TYPE_CODE);
-            /* sub reg1, X86_SEL_TYPE_WRITE ; ER-code=0, EO-code=0xffffffff, R0-data=7, RW-data=9 */
-            off = iemNativeEmitSubGpr32ImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_WRITE);
-            /* cmp reg1, X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE */
-            AssertCompile((X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE) - 1 == 9);
-            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, (X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE) - 1);
+            /* mov reg1, 0xfff */
+            off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_OFFSET_MASK);
+            /* and reg1, regflat */
+            off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
+            /* neg reg1 */
+            off = iemNativeEmitNegGpr32Ex(pbCodeBuf, off, idxReg1);
+            /* add reg1, 0x1000 */
+            off = iemNativeEmitAddGpr32ImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SIZE);
+            /* cmp reg1, cbMem */
+            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SIZE);
             /* ja  tlbmiss */
             off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
         }
 
         /*
-         * Check the limit.  If this is a write access, we know that it's a
-         * data segment and includes the expand_down bit.  For read-only accesses
-         * we need to check that code/data=0 and expanddown=1 before continuing.
+         * 3. TLB lookup.
+         *
+         * 3a. Calculate the TLB tag value (IEMTLB_CALC_TAG).
+         *     In 64-bit mode we will also check for non-canonical addresses here.
          */
-        uint32_t offFixupCheckExpandDown;
-        if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        {
-            /* test segattrs, X86_SEL_TYPE_DOWN */
-            AssertCompile(X86_SEL_TYPE_DOWN < 128);
-            off = iemNativeEmitTestAnyBitsInGpr8Ex(pbCodeBuf, off, idxRegSegAttrib, X86_SEL_TYPE_DOWN);
-            /* jnz  check_expand_down */
-            offFixupCheckExpandDown = off;
-            off = iemNativeEmitJccToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/, kIemNativeInstrCond_ne);
-        }
-        else
-        {
-            /* mov reg1, segattrs */
-            off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
-            /* and reg1, code | down */
-            off = iemNativeEmitAndGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN);
-            /* cmp reg1, down */
-            off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, X86_SEL_TYPE_DOWN);
-            /* je check_expand_down */
-            offFixupCheckExpandDown = off;
-            off = iemNativeEmitJccToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/, kIemNativeInstrCond_e);
-        }
-
-        /* expand_up:
-           cmp  regptr/reg2, seglim */
-        off = iemNativeEmitCmpGprWithGprEx(pbCodeBuf, off, cbMem > 1 ? idxReg2 : idxRegPtr, idxRegSegLimit);
-        /* ja   tlbmiss */
-        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
-        /* jmp  limitdone */
-        uint32_t const offFixupLimitDone = off;
-        off = iemNativeEmitJmpToFixedEx(pbCodeBuf, off, off /*ASSUMES rel8 suffices*/);
-
-        /* check_expand_down: ; complicted! */
-        iemNativeFixupFixedJump(pReNative, offFixupCheckExpandDown, off);
-        /* cmp  regptr, seglim */
-        off = iemNativeEmitCmpGprWithGprEx(pbCodeBuf, off, idxRegPtr, idxRegSegLimit);
-        /* jbe  tlbmiss */
-        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_be);
-        /* mov  reg1, X86DESCATTR_D (0x4000) */
-        off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_D);
-        /* and  reg1, segattr */
-        off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegSegAttrib);
-        /* xor  reg1, X86DESCATTR_D */
-        off = iemNativeEmitXorGpr32ByImmEx(pbCodeBuf, off, idxReg1, X86DESCATTR_D);
-        /* shl  reg1, 2 (16 - 14) */
-        AssertCompile((X86DESCATTR_D << 2) == UINT32_C(0x10000));
-        off = iemNativeEmitShiftGpr32LeftEx(pbCodeBuf, off, idxReg1, 2);
-        /* dec  reg1 (=> 0xffff if D=0; 0xffffffff if D=1) */
-        off = iemNativeEmitSubGpr32ImmEx(pbCodeBuf, off, idxReg1, 1);
-        /* cmp  reg2, reg1 (64-bit) */
-        off = iemNativeEmitCmpGpr32WithGprEx(pbCodeBuf, off, idxReg2, idxReg1);
-        /* ja   tlbmiss */
-        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
-
-        /* limitdone: */
-        iemNativeFixupFixedJump(pReNative, offFixupLimitDone, off);
-    }
-
-    /* 1b. Add the segment base. We use idxRegMemResult for the ptr register if this step is required. */
-    uint8_t const idxRegFlatPtr = iSegReg != UINT8_MAX ? idxRegMemResult : idxRegPtr;
-    if (iSegReg != UINT8_MAX)
-    {
         if ((pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT)
         {
-            Assert(iSegReg >= X86_SREG_FS);
-            /* mov regflat, regptr */
-            off = iemNativeEmitLoadGprFromGprEx(pbCodeBuf, off, idxRegFlatPtr, idxRegPtr);
-            /* add regflat, seg.base */
-            off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxRegFlatPtr, idxRegSegBase);
+            /* mov reg1, regflat */
+            off = iemNativeEmitLoadGprFromGprEx(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
+            /* rol reg1, 16 */
+            off = iemNativeEmitRotateGprLeftEx(pbCodeBuf, off, idxReg1, 16);
+            /** @todo Would 'movsx reg2, word reg1' and working on reg2 in dwords be faster? */
+            /* inc word reg1 */
+            pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+            if (idxReg1 >= 8)
+                pbCodeBuf[off++] = X86_OP_REX_B;
+            pbCodeBuf[off++] = 0xff;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg1 & 7);
+            /* cmp word reg1, 1 */
+            pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+            if (idxReg1 >= 8)
+                pbCodeBuf[off++] = X86_OP_REX_B;
+            pbCodeBuf[off++] = 0x83;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, idxReg1 & 7);
+            pbCodeBuf[off++] = 1;
+            /* ja  tlbmiss */
+            off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+            /* shr reg1, 16 + GUEST_PAGE_SHIFT */
+            off = iemNativeEmitShiftGprRightEx(pbCodeBuf, off, idxReg1, 16 + GUEST_PAGE_SHIFT);
         }
         else
         {
-            /* mov regflat, regptr */
-            off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxRegFlatPtr, idxRegPtr);
-            /* add regflat, seg.base */
-            off = iemNativeEmitAddTwoGprs32Ex(pbCodeBuf, off, idxRegFlatPtr, idxRegSegBase);
+            /* mov reg1, regflat */
+            off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
+            /* shr reg1, GUEST_PAGE_SHIFT */
+            off = iemNativeEmitShiftGpr32RightEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SHIFT);
         }
-    }
+        /* or  reg1, [qword pVCpu->iem.s.DataTlb.uTlbRevision] */
+        pbCodeBuf[off++] = idxReg1 < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R;
+        pbCodeBuf[off++] = 0x0b; /* OR r64,r/m64 */
+        off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxReg1, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbRevision));
 
-    /*
-     * 2. Check that the address doesn't cross a page boundrary and doesn't have alignment issues.
-     *
-     * 2a. Alignment check using fAlignMask.
-     */
-    Assert(RT_IS_POWER_OF_TWO(fAlignMask + 1));
-    Assert(fAlignMask < 128);
-    /* test regflat, fAlignMask */
-    off = iemNativeEmitTestAnyBitsInGpr8Ex(pbCodeBuf, off, idxRegFlatPtr, fAlignMask);
-    /* jnz tlbmiss */
-    off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+        /*
+         * 3b. Calc pTlbe.
+         */
+        /* movzx reg2, byte reg1 */
+        off = iemNativeEmitLoadGprFromGpr8Ex(pbCodeBuf, off, idxReg2, idxReg1);
+        /* shl   reg2, 5 ; reg2 *= sizeof(IEMTLBENTRY) */
+        AssertCompileSize(IEMTLBENTRY, 32);
+        off = iemNativeEmitShiftGprLeftEx(pbCodeBuf, off, idxReg2, 5);
+        /* lea   reg2, [pVCpu->iem.s.DataTlb.aEntries + reg2] */
+        AssertCompile(IEMNATIVE_REG_FIXED_PVMCPU < 8);
+        pbCodeBuf[off++] = idxReg2 < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_X | X86_OP_REX_R;
+        pbCodeBuf[off++] = 0x8d;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, idxReg2 & 7, 4 /*SIB*/);
+        pbCodeBuf[off++] = X86_SIB_MAKE(IEMNATIVE_REG_FIXED_PVMCPU & 7, idxReg2 & 7, 0);
+        pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
+        pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
+        pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
+        pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
 
-    /*
-     * 2b. Check that it's not crossing page a boundrary. This is implicit in
-     *     the previous test if the alignment is same or larger than the type.
-     */
-    if (cbMem > fAlignMask + 1)
-    {
-        /* mov reg1, 0xfff */
-        off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_OFFSET_MASK);
-        /* and reg1, regflat */
-        off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
-        /* neg reg1 */
-        off = iemNativeEmitNegGpr32Ex(pbCodeBuf, off, idxReg1);
-        /* add reg1, 0x1000 */
-        off = iemNativeEmitAddGpr32ImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SIZE);
-        /* cmp reg1, cbMem */
-        off = iemNativeEmitCmpGpr32WithImmEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SIZE);
-        /* ja  tlbmiss */
-        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
-    }
+        /*
+         * 3c. Compare the TLBE.uTag with the one from 2a (reg1).
+         */
+        /* cmp reg1, [reg2] */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x3b;
+        off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
+        /* jne tlbmiss */
+        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
 
-    /*
-     * 3. TLB lookup.
-     *
-     * 3a. Calculate the TLB tag value (IEMTLB_CALC_TAG).
-     *     In 64-bit mode we will also check for non-canonical addresses here.
-     */
-    if ((pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT)
-    {
-        /* mov reg1, regflat */
-        off = iemNativeEmitLoadGprFromGprEx(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
-        /* rol reg1, 16 */
-        off = iemNativeEmitRotateGprLeftEx(pbCodeBuf, off, idxReg1, 16);
-        /** @todo Would 'movsx reg2, word reg1' and working on reg2 in dwords be faster? */
-        /* inc word reg1 */
-        pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (idxReg1 >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg1 & 7);
-        /* cmp word reg1, 1 */
-        pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (idxReg1 >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
-        pbCodeBuf[off++] = 0x83;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, idxReg1 & 7);
-        pbCodeBuf[off++] = 1;
-        /* ja  tlbmiss */
-        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
-        /* shr reg1, 16 + GUEST_PAGE_SHIFT */
-        off = iemNativeEmitShiftGprRightEx(pbCodeBuf, off, idxReg1, 16 + GUEST_PAGE_SHIFT);
+        /*
+         * 4. Check TLB page table level access flags and physical page revision #.
+         */
+        /* mov reg1, mask */
+        AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+        uint64_t const fNoUser = (((pReNative->fExec >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK) + 1) & IEMTLBE_F_PT_NO_USER;
+        off = iemNativeEmitLoadGprImmEx(pbCodeBuf, off, idxReg1,
+                                          IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                        | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                        | IEMTLBE_F_PT_NO_ACCESSED | fNoUser);
+        /* and reg1, [reg2->fFlagsAndPhysRev] */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x23;
+        off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
+
+        /* cmp reg1, [pVCpu->iem.s.DataTlb.uTlbPhysRev] */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R);
+        pbCodeBuf[off++] = 0x3b;
+        off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, IEMNATIVE_REG_FIXED_PVMCPU,
+                                        RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
+        /* jne tlbmiss */
+        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+
+        /*
+         * 5. Check that pbMappingR3 isn't NULL (paranoia) and calculate the
+         *    resulting pointer.
+         */
+        /* mov  reg1, [reg2->pbMappingR3] */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x8b;
+        off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
+
+        /** @todo eliminate the need for this test? */
+        /* test reg1, reg1 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R | X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x85;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxReg1 & 7, idxReg1 & 7);
+
+        /* jz   tlbmiss */
+        off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbDone, kIemNativeInstrCond_e);
+
+        if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
+        {
+            /* and result, 0xfff */
+            off = iemNativeEmitAndGpr32ByImmEx(pbCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+        }
+        else
+        {
+            Assert(idxRegFlatPtr == idxRegPtr);
+            /* mov result, 0xfff */
+            off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+            /* and result, regflat */
+            off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxRegMemResult, idxRegFlatPtr);
+        }
+        /* add result, reg1 */
+        off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxRegMemResult, idxReg1);
+
+        if (idxRegPtr != UINT8_MAX)
+            iemNativeVarRegisterRelease(pReNative, idxVarGCPtrMem);
+        if (idxRegSegBase != UINT8_MAX)
+            iemNativeRegFreeTmp(pReNative, idxRegSegBase);
+        if (idxRegSegLimit != UINT8_MAX)
+        {
+            iemNativeRegFreeTmp(pReNative, idxRegSegLimit);
+            iemNativeRegFreeTmp(pReNative, idxRegSegAttrib);
+        }
+        else
+            Assert(idxRegSegAttrib == UINT8_MAX);
+        iemNativeRegFreeTmp(pReNative, idxReg2);
+        iemNativeRegFreeTmp(pReNative, idxReg1);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
+    /* Problematic absolute address, jmp to tlbmiss.  Caller will be generate
+       some unused tail code, but whatever. */
     else
-    {
-        /* mov reg1, regflat */
-        off = iemNativeEmitLoadGprFromGpr32Ex(pbCodeBuf, off, idxReg1, idxRegFlatPtr);
-        /* shr reg1, GUEST_PAGE_SHIFT */
-        off = iemNativeEmitShiftGpr32RightEx(pbCodeBuf, off, idxReg1, GUEST_PAGE_SHIFT);
-    }
-    /* or  reg1, [qword pVCpu->iem.s.DataTlb.uTlbRevision] */
-    pbCodeBuf[off++] = idxReg1 < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x0b; /* OR r64,r/m64 */
-    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxReg1, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbRevision));
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbMiss);
 
     /*
-     * 3b. Calc pTlbe.
+     * Tail code, specific to the MC when the above is moved into a separate function.
      */
-    /* movzx reg2, byte reg1 */
-    off = iemNativeEmitLoadGprFromGpr8Ex(pbCodeBuf, off, idxReg2, idxReg1);
-    /* shl   reg2, 5 ; reg2 *= sizeof(IEMTLBENTRY) */
-    AssertCompileSize(IEMTLBENTRY, 32);
-    off = iemNativeEmitShiftGprLeftEx(pbCodeBuf, off, idxReg2, 5);
-    /* lea   reg2, [pVCpu->iem.s.DataTlb.aEntries + reg2] */
-    AssertCompile(IEMNATIVE_REG_FIXED_PVMCPU < 8);
-    pbCodeBuf[off++] = idxReg2 < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_X | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8d;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, idxReg2 & 7, 4 /*SIB*/);
-    pbCodeBuf[off++] = X86_SIB_MAKE(IEMNATIVE_REG_FIXED_PVMCPU & 7, idxReg2 & 7, 0);
-    pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
 
-    /*
-     * 3c. Compare the TLBE.uTag with the one from 2a (reg1).
-     */
-    /* cmp reg1, [reg2] */
-    pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x3b;
-    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
-    /* jne tlbmiss */
-    off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
-
-    /*
-     * 4. Check TLB page table level access flags and physical page revision #.
-     */
-    /* mov reg1, mask */
-    AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
-    uint64_t const fNoUser = (((pReNative->fExec >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK) + 1) & IEMTLBE_F_PT_NO_USER;
-    off = iemNativeEmitLoadGprImmEx(pbCodeBuf, off, idxReg1,
-                                      IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
-                                    | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
-                                    | IEMTLBE_F_PT_NO_ACCESSED | fNoUser);
-    /* and reg1, [reg2->fFlagsAndPhysRev] */
-    pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x23;
-    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
-
-    /* cmp reg1, [pVCpu->iem.s.DataTlb.uTlbPhysRev] */
-    pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R);
-    pbCodeBuf[off++] = 0x3b;
-    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxReg1, IEMNATIVE_REG_FIXED_PVMCPU,
-                                    RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
-    /* jne tlbmiss */
-    off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
-
-    /*
-     * 5. Check that pbMappingR3 isn't NULL (paranoia) and calculate the
-     *    resulting pointer.
-     */
-    /* mov  reg1, [reg2->pbMappingR3] */
-    pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R) | (idxReg2 < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x8b;
-    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, idxRegMemResult, idxReg2, RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
-
-    /** @todo eliminate the need for this test? */
-    /* test reg1, reg1 */
-    pbCodeBuf[off++] = X86_OP_REX_W | (idxReg1 < 8 ? 0 : X86_OP_REX_R | X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x85;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxReg1 & 7, idxReg1 & 7);
-
-    /* jz   tlbmiss */
-    off = iemNativeEmitJccToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbDone, kIemNativeInstrCond_e);
-
-    if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
-    {
-        /* and result, 0xfff */
-        off = iemNativeEmitAndGpr32ByImmEx(pbCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
-    }
-    else
-    {
-        Assert(idxRegFlatPtr == idxRegPtr);
-        /* mov result, 0xfff */
-        off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
-        /* and result, regflat */
-        off = iemNativeEmitAndGpr32ByGpr32Ex(pbCodeBuf, off, idxRegMemResult, idxRegFlatPtr);
-    }
-    /* add result, reg1 */
-    off = iemNativeEmitAddTwoGprsEx(pbCodeBuf, off, idxRegMemResult, idxReg1);
+    /* [idxVarUnmapInfo] = 0 - allocate register for it. There must be free ones now, so no spilling required. */
+    uint32_t const offSaved = off;
+    uint8_t const idxRegUnmapInfo = iemNativeVarRegisterAcquire(pReNative, idxVarUnmapInfo, &off);
+    AssertStmt(off == offSaved, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_9));
+    off = iemNativeEmitLoadGpr32ImmEx(pbCodeBuf, off, idxRegUnmapInfo, 0);
 
     /* jmp tlbdone */
     off = iemNativeEmitJmpToLabelEx(pReNative, pbCodeBuf, off, idxLabelTlbDone);
 
-    iemNativeVarRegisterRelease(pReNative, idxRegPtr);
-    iemNativeRegFree(pReNative, idxRegSegBase);
-    iemNativeRegFree(pReNative, idxRegSegLimit);
-    iemNativeRegFree(pReNative, idxRegSegAttrib);
-    iemNativeRegFree(pReNative, idxReg2);
-    iemNativeRegFree(pReNative, idxReg1);
-
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 #else
     /** @todo arm64 TLB code   */
     RT_NOREF(fAccess, fAlignMask, cbMem);
@@ -11265,9 +11337,13 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     /* IEMNATIVE_CALL_ARG2_GREG = GCPtrMem */
     off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, idxVarGCPtrMem);
 
-    /* IEMNATIVE_CALL_ARG1_GREG = &idxVarUnmapInfo */
-    iemNativeVarSetKindToStack(pReNative, idxVarUnmapInfo);
+    /* IEMNATIVE_CALL_ARG1_GREG = &idxVarUnmapInfo; stackslot address, load any register with result after the call. */
+#if 0
     off = iemNativeEmitLoadArgGregWithVarAddr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarUnmapInfo, true /*fFlushShadows*/);
+#else
+    int32_t const offBpDispVarUnmapInfo = iemNativeStackCalcBpDisp(iemNativeVarGetStackSlot(pReNative, idxVarUnmapInfo));
+    off = iemNativeEmitLeaGprByBp(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, offBpDispVarUnmapInfo);
+#endif
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
@@ -11276,12 +11352,18 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
 
     /*
-     * Put the result in the right register .
+     * Put the output in the right registers.
      */
     Assert(idxRegMemResult == pReNative->Core.aVars[idxVarMem].idxReg);
     if (idxRegMemResult != IEMNATIVE_CALL_RET_GREG)
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegMemResult, IEMNATIVE_CALL_RET_GREG);
     iemNativeVarRegisterRelease(pReNative, idxVarMem);
+
+#if defined(RT_ARCH_AMD64)
+    Assert(pReNative->Core.aVars[idxVarUnmapInfo].idxReg == idxRegUnmapInfo);
+    off = iemNativeEmitLoadGprByBpU8(pReNative, off, idxRegUnmapInfo, offBpDispVarUnmapInfo);
+    iemNativeVarRegisterRelease(pReNative, idxVarUnmapInfo);
+#endif
 
     iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
 
