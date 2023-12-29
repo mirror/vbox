@@ -40,6 +40,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QAbstractButton;
 class QHBoxLayout;
 class QIDialogButtonBox;
 
@@ -70,6 +71,8 @@ protected:
 private slots:
 
     void sltHide();
+
+    void sltHandleButtonBoxClick(QAbstractButton *pButton);
 
 private:
 

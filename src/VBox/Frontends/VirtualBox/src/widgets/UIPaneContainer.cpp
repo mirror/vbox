@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QAbstractButton>
 #include <QComboBox>
 #include <QLabel>
 #include <QPlainTextEdit>
@@ -77,29 +78,44 @@ void UIPaneContainer::prepare()
     connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
     pLayout->addWidget(m_pTabWidget);
 
-    /* Add the button-box: */
-    QWidget *pContainer = new QWidget;
-    AssertReturnVoid(pContainer);
-    pContainer->setVisible(m_enmEmbedTo == EmbedTo_Stack && m_fDetachAllowed);
-    QHBoxLayout *pSubLayout = new QHBoxLayout(pContainer);
-    AssertReturnVoid(pSubLayout);
-    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-    const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin);
-    pSubLayout->setContentsMargins(iL, 0, iR, iB);
-    m_pButtonBox = new QIDialogButtonBox;
-    AssertReturnVoid(m_pButtonBox);
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel);
-    connect(m_pButtonBox->button(QIDialogButtonBox::Cancel), &QPushButton::pressed,
-            this, &UIPaneContainer::sigDetach);
-    pSubLayout->addWidget(m_pButtonBox);
-    pLayout->addWidget(pContainer);
+    /* If parent embedded into stack: */
+    if (m_enmEmbedTo == EmbedTo_Stack && m_fDetachAllowed)
+    {
+        /* Add the button-box: */
+        QWidget *pContainer = new QWidget;
+        AssertReturnVoid(pContainer);
+        QHBoxLayout *pSubLayout = new QHBoxLayout(pContainer);
+        AssertReturnVoid(pSubLayout);
+        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+        const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+        const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin);
+        pSubLayout->setContentsMargins(iL, 0, iR, iB);
+        m_pButtonBox = new QIDialogButtonBox;
+        AssertReturnVoid(m_pButtonBox);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel);
+        connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIPaneContainer::sltHandleButtonBoxClick);
+        pSubLayout->addWidget(m_pButtonBox);
+        pLayout->addWidget(pContainer);
+    }
 }
 
 void UIPaneContainer::sltHide()
 {
     hide();
     emit sigHidden();
+}
+
+void UIPaneContainer::sltHandleButtonBoxClick(QAbstractButton *pButton)
+{
+    /* Make sure button-box exists: */
+    AssertPtrReturnVoid(m_pButtonBox);
+
+    /* Disable buttons first of all: */
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(false);
+
+    /* Compare with known buttons: */
+    if (pButton == m_pButtonBox->button(QDialogButtonBox::Cancel))
+        emit sigDetach();
 }
 
 void UIPaneContainer::insertTab(int iIndex, QWidget *pPage, const QString &strLabel /* = QString() */)
