@@ -44,8 +44,10 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
-UIVMLogViewerPaneContainer::UIVMLogViewerPaneContainer(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIPaneContainer(pParent)
+UIVMLogViewerPaneContainer::UIVMLogViewerPaneContainer(QWidget *pParent,
+                                                       UIVMLogViewerWidget *pViewer,
+                                                       EmbedTo enmEmbedTo /* = EmbedTo_Stack */)
+    : UIPaneContainer(pParent, enmEmbedTo)
     , m_pViewer(pViewer)
     , m_pSearchWidget(0)
     , m_pFilterWidget(0)

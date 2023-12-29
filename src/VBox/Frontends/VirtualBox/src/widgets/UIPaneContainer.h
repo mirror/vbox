@@ -34,7 +34,9 @@
 /* Qt includes: */
 #include <QWidget>
 #include <QKeySequence>
+
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
@@ -52,7 +54,7 @@ signals:
 
 public:
 
-    UIPaneContainer(QWidget *pParent = 0);
+    UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack);
     void setCurrentIndex(int iIndex);
     int currentIndex() const;
 
@@ -69,7 +71,9 @@ private slots:
 
 private:
 
-    QTabWidget    *m_pTabWidget;
+    EmbedTo  m_enmEmbedTo;
+
+    QTabWidget *m_pTabWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h */

@@ -68,7 +68,9 @@ signals:
 
 public:
 
-    UIVMLogViewerPaneContainer(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerPaneContainer(QWidget *pParent,
+                               UIVMLogViewerWidget *pViewer,
+                               EmbedTo enmEmbedTo = EmbedTo_Stack);
 
     /** @name Search page pass through functions
       * @{ */

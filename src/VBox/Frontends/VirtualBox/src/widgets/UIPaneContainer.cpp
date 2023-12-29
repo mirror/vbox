@@ -27,11 +27,11 @@
 
 /* Qt includes: */
 #include <QComboBox>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QTextCursor>
 #include <QToolButton>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -43,8 +43,9 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
-UIPaneContainer::UIPaneContainer(QWidget *pParent /* = 0 */)
+UIPaneContainer::UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo /* = EmbedTo_Stack */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_enmEmbedTo(enmEmbedTo)
     , m_pTabWidget(0)
 {
     prepare();
@@ -57,14 +58,14 @@ void UIPaneContainer::retranslateUi()
 
 void UIPaneContainer::prepare()
 {
-    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
     AssertReturnVoid(pLayout);
     pLayout->setContentsMargins(0, 0, 0, 0);
 
     /* Add the tab widget: */
-    m_pTabWidget = new QTabWidget();
-    connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
+    m_pTabWidget = new QTabWidget;
     AssertReturnVoid(m_pTabWidget);
+    connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
     pLayout->addWidget(m_pTabWidget);
 }
 
