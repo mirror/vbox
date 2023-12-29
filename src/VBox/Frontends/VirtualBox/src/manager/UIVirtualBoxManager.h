@@ -192,8 +192,12 @@ private slots:
         void sltOpenManagerWindow(UIToolType enmType = UIToolType_Invalid);
         /** Handles call to open Manager window by default. */
         void sltOpenManagerWindowDefault() { sltOpenManagerWindow(); }
+        /** Handles call to embed Manager window of certain @a enmType. */
+        void sltEmbedManagerWindow(UIToolType enmType = UIToolType_Invalid);
         /** Handles call to close Manager window of certain @a enmType. */
         void sltCloseManagerWindow(UIToolType enmType = UIToolType_Invalid);
+        /** Handles call to embed Manager window by default. */
+        void sltEmbedManagerWindowDefault() { sltEmbedManagerWindow(); }
         /** Handles call to close Manager window by default. */
         void sltCloseManagerWindowDefault() { sltCloseManagerWindow(); }
 

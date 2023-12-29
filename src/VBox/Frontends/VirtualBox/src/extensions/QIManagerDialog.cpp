@@ -179,6 +179,7 @@ void QIManagerDialog::prepareButtonBox()
 #else
                                          | QDialogButtonBox::Apply
 #endif
+                                         | QDialogButtonBox::Cancel
                                          | QDialogButtonBox::Close
                                          | QDialogButtonBox::Help);
         m_buttons[ButtonType_Reset] = m_pButtonBox->button(QDialogButtonBox::Reset);
@@ -187,6 +188,7 @@ void QIManagerDialog::prepareButtonBox()
 #else
         m_buttons[ButtonType_Apply] = m_pButtonBox->button(QDialogButtonBox::Apply);
 #endif
+        m_buttons[ButtonType_Embed] = m_pButtonBox->button(QDialogButtonBox::Cancel);
         m_buttons[ButtonType_Close] = m_pButtonBox->button(QDialogButtonBox::Close);
         m_buttons[ButtonType_Help] = m_pButtonBox->button(QDialogButtonBox::Help);
 
@@ -197,9 +199,11 @@ void QIManagerDialog::prepareButtonBox()
         /* Hide some of buttons initially: */
         button(ButtonType_Reset)->hide();
         button(ButtonType_Apply)->hide();
+        button(ButtonType_Embed)->hide();
         /* Disable some of buttons initially: */
         button(ButtonType_Reset)->setEnabled(false);
         button(ButtonType_Apply)->setEnabled(false);
+        button(ButtonType_Embed)->setEnabled(false);
 
         /* Configure connections: */
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);

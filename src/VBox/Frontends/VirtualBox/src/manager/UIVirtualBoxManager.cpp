@@ -1050,12 +1050,37 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
             default: break;
         }
 
+        connect(m_managers[enmType], &QIManagerDialog::sigEmbed,
+                this, &UIVirtualBoxManager::sltEmbedManagerWindowDefault);
         connect(m_managers[enmType], &QIManagerDialog::sigClose,
                 this, &UIVirtualBoxManager::sltCloseManagerWindowDefault);
     }
 
     /* Expose instance: */
     UIDesktopWidgetWatchdog::restoreWidget(m_managers.value(enmType));
+}
+
+void UIVirtualBoxManager::sltEmbedManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
+{
+    /* Determine actual tool type if possible: */
+    if (enmType == UIToolType_Invalid)
+    {
+        if (   sender()
+            && sender()->inherits("QIManagerDialog"))
+        {
+            QIManagerDialog *pManager = qobject_cast<QIManagerDialog*>(sender());
+            AssertPtrReturnVoid(pManager);
+            enmType = m_managers.key(pManager);
+        }
+    }
+
+    /* Make sure type is valid: */
+    AssertReturnVoid(enmType != UIToolType_Invalid);
+
+    /* Make sure corresponding manager window is closed (if any): */
+    sltCloseManagerWindow(enmType);
+
+    /// @todo add tools which can be embedded ..
 }
 
 void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
