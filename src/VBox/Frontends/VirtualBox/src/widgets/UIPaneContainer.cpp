@@ -63,6 +63,7 @@ void UIPaneContainer::retranslateUi()
     {
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Detach"));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Open the tool in separate window"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Open in Separate Window"));
     }
 }
 
