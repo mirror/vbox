@@ -29,10 +29,12 @@
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
+#include <QAbstractButton>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -101,12 +103,15 @@ void UIVMLogViewerDialog::retranslateUi()
     /* Translate buttons: */
     button(ButtonType_Close)->setText(UIVMLogViewerWidget::tr("Close"));
     button(ButtonType_Help)->setText(UIVMLogViewerWidget::tr("Help"));
+    button(ButtonType_Embed)->setText(UIVMLogViewerWidget::tr("Embed"));
     button(ButtonType_Close)->setStatusTip(UIVMLogViewerWidget::tr("Close dialog"));
     button(ButtonType_Help)->setStatusTip(UIVMLogViewerWidget::tr("Show dialog help"));
+    button(ButtonType_Embed)->setStatusTip(UIVMLogViewerWidget::tr("Embed to manager window"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
     button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
     button(ButtonType_Close)->setToolTip(UIVMLogViewerWidget::tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
     button(ButtonType_Help)->setToolTip(UIVMLogViewerWidget::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
+    button(ButtonType_Embed)->setToolTip(UIVMLogViewerWidget::tr("Embed to Manager Window"));
 }
 
 bool UIVMLogViewerDialog::event(QEvent *pEvent)
@@ -166,6 +171,17 @@ void UIVMLogViewerDialog::configureCentralWidget()
     }
 }
 
+void UIVMLogViewerDialog::configureButtonBox()
+{
+    /* General handler for the button being clicked: */
+    connect(buttonBox(), &QIDialogButtonBox::clicked,
+            this, &UIVMLogViewerDialog::sltHandleButtonBoxClick);
+
+    /* Show/Enable Embed button depending for Manager, not for Runtime: */
+    button(ButtonType_Embed)->setVisible(m_strMachineName.isEmpty());
+    button(ButtonType_Embed)->setEnabled(m_strMachineName.isEmpty());
+}
+
 void UIVMLogViewerDialog::finalize()
 {
     /* Apply language settings: */
@@ -214,4 +230,14 @@ void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (!closeEmitted() &&  button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
+}
+
+void UIVMLogViewerDialog::sltHandleButtonBoxClick(QAbstractButton *pButton)
+{
+    /* Disable all buttons first of all: */
+    button(ButtonType_Embed)->setEnabled(false);
+
+    /* Compare with known buttons: */
+    if (pButton == button(ButtonType_Embed))
+        emit sigEmbed();
 }

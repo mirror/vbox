@@ -1080,7 +1080,12 @@ void UIVirtualBoxManager::sltEmbedManagerWindow(UIToolType enmType /* = UIToolTy
     /* Make sure corresponding manager window is closed (if any): */
     sltCloseManagerWindow(enmType);
 
-    /// @todo add tools which can be embedded ..
+    /* Open known tool finally: */
+    switch (enmType)
+    {
+        case UIToolType_Logs: m_pWidget->setToolsTypeMachine(enmType); break;
+        default: break;
+    }
 }
 
 void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)

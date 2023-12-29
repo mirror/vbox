@@ -40,6 +40,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QAbstractButton;
 class UIActionPool;
 class UIVirtualMachineItem;
 
@@ -102,6 +103,8 @@ protected:
         virtual void configure() RT_OVERRIDE;
         /** Configures central-widget. */
         virtual void configureCentralWidget() RT_OVERRIDE;
+        /** Configures button-box. */
+        virtual void configureButtonBox() RT_OVERRIDE;
         /** Perform final preparations. */
         virtual void finalize() RT_OVERRIDE;
         /** Loads dialog geometry from extradata. */
@@ -121,6 +124,9 @@ private slots:
 
     /** Must be handles soemthing related to close @a shortcut. */
     void sltSetCloseButtonShortCut(QKeySequence shortcut);
+
+    /** Handles button-box button click. */
+    void sltHandleButtonBoxClick(QAbstractButton *pButton);
 
 private:
 
