@@ -173,11 +173,14 @@ void QIManagerDialog::prepareButtonBox()
     AssertPtrReturnVoid(m_pButtonBox);
     {
         /* Configure button-box: */
+        m_pButtonBox->setStandardButtons(  QDialogButtonBox::Reset
 #ifdef VBOX_WS_WIN
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Save |  QDialogButtonBox::Close | QDialogButtonBox::Help);
+                                         | QDialogButtonBox::Save
 #else
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Apply |  QDialogButtonBox::Close | QDialogButtonBox::Help);
+                                         | QDialogButtonBox::Apply
 #endif
+                                         | QDialogButtonBox::Close
+                                         | QDialogButtonBox::Help);
         m_buttons[ButtonType_Reset] = m_pButtonBox->button(QDialogButtonBox::Reset);
 #ifdef VBOX_WS_WIN
         m_buttons[ButtonType_Apply] = m_pButtonBox->button(QDialogButtonBox::Save);
@@ -191,15 +194,16 @@ void QIManagerDialog::prepareButtonBox()
         button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
         button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
 
-        /* Hide 'Reset' and 'Apply' initially: */
+        /* Hide some of buttons initially: */
         button(ButtonType_Reset)->hide();
         button(ButtonType_Apply)->hide();
-        /* Disable 'Reset' and 'Apply' initially: */
+        /* Disable some of buttons initially: */
         button(ButtonType_Reset)->setEnabled(false);
         button(ButtonType_Apply)->setEnabled(false);
+
+        /* Configure connections: */
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);
-        /* Connections to enable the context sensitive help: */
-        connect(m_pButtonBox, &QDialogButtonBox::helpRequested, this, &QIManagerDialog::sltHandleHelpRequested);
+        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, this, &QIManagerDialog::sltHandleHelpRequested);
 
         /* Configure button-box: */
         configureButtonBox();
