@@ -11705,7 +11705,7 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 # endif
     }
 #else
-    RT_NOREF(fAccess, fAlignMask);
+    RT_NOREF(fAccess, fAlignMask, idxLabelTlbMiss);
 #endif
 
     iemNativeVarRegisterRelease(pReNative, idxVarUnmapInfo);

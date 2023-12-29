@@ -3377,7 +3377,7 @@ iemNativeEmitJccToLabelEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBu
     }
     else
     {
-        Assert(offLabel - off <= -0x3ffff);
+        Assert((int64_t)(offLabel - off) <= -0x3ffff);
         pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offLabel - off);
     }
 
