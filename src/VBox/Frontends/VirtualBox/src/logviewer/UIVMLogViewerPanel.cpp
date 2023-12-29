@@ -164,10 +164,10 @@ void UIVMLogViewerPaneContainer::setFontSizeInPoints(int fontSizeInPoints)
 
 void UIVMLogViewerPaneContainer::retranslateUi()
 {
-    setTabText(Page_Search, "Find");
-    setTabText(Page_Filter, "Filter");
-    setTabText(Page_Bookmark, "Bookmarks");
-    setTabText(Page_Preferences, "Preferences");
+    setTabText(Page_Search, UIVMLogViewerWidget::tr("Find"));
+    setTabText(Page_Filter, UIVMLogViewerWidget::tr("Filter"));
+    setTabText(Page_Bookmark, UIVMLogViewerWidget::tr("Bookmarks"));
+    setTabText(Page_Preferences, UIVMLogViewerWidget::tr("Preferences"));
 }
 
 bool UIVMLogViewerPaneContainer::eventFilter(QObject *pObject, QEvent *pEvent)
