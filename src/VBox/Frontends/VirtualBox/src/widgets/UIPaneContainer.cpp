@@ -29,11 +29,13 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QTextCursor>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
 #include "UIPaneContainer.h"
 #ifdef VBOX_WS_MAC
@@ -43,10 +45,12 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
-UIPaneContainer::UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo /* = EmbedTo_Stack */)
+UIPaneContainer::UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo /* = EmbedTo_Stack */, bool fDetachAllowed /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedTo(enmEmbedTo)
+    , m_fDetachAllowed(fDetachAllowed)
     , m_pTabWidget(0)
+    , m_pButtonBox(0)
 {
     prepare();
     retranslateUi();
@@ -54,6 +58,11 @@ UIPaneContainer::UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo /* = Embed
 
 void UIPaneContainer::retranslateUi()
 {
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Detach"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Open the tool in separate window"));
+    }
 }
 
 void UIPaneContainer::prepare()
@@ -67,6 +76,24 @@ void UIPaneContainer::prepare()
     AssertReturnVoid(m_pTabWidget);
     connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
     pLayout->addWidget(m_pTabWidget);
+
+    /* Add the button-box: */
+    QWidget *pContainer = new QWidget;
+    AssertReturnVoid(pContainer);
+    pContainer->setVisible(m_enmEmbedTo == EmbedTo_Stack && m_fDetachAllowed);
+    QHBoxLayout *pSubLayout = new QHBoxLayout(pContainer);
+    AssertReturnVoid(pSubLayout);
+    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+    const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin);
+    pSubLayout->setContentsMargins(iL, 0, iR, iB);
+    m_pButtonBox = new QIDialogButtonBox;
+    AssertReturnVoid(m_pButtonBox);
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel);
+    connect(m_pButtonBox->button(QIDialogButtonBox::Cancel), &QPushButton::pressed,
+            this, &UIPaneContainer::sigDetach);
+    pSubLayout->addWidget(m_pButtonBox);
+    pLayout->addWidget(pContainer);
 }
 
 void UIPaneContainer::sltHide()

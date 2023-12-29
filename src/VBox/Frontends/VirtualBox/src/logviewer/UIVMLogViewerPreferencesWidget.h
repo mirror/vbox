@@ -38,7 +38,6 @@
 class QCheckBox;
 class QSpinBox;
 class QLabel;
-class QIDialogButtonBox;
 class QIToolButton;
 class UIVMLogViewerWidget;
 
@@ -54,7 +53,6 @@ signals:
     void sigChangeFontSizeInPoints(int size);
     void sigChangeFont(QFont font);
     void sigResetToDefaults();
-    void sigDetach();
 
 public:
 
@@ -87,8 +85,6 @@ private:
     QLabel       *m_pFontSizeLabel;
     QIToolButton *m_pOpenFontDialogButton;
     QIToolButton *m_pResetToDefaultsButton;
-
-    QIDialogButtonBox *m_pButtonBox;
 
     /** Default font size in points. */
     const int    m_iDefaultFontSize;

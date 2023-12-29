@@ -47,7 +47,7 @@
 UIVMLogViewerPaneContainer::UIVMLogViewerPaneContainer(QWidget *pParent,
                                                        UIVMLogViewerWidget *pViewer,
                                                        EmbedTo enmEmbedTo /* = EmbedTo_Stack */)
-    : UIPaneContainer(pParent, enmEmbedTo)
+    : UIPaneContainer(pParent, enmEmbedTo, true /* detach allowed */)
     , m_pViewer(pViewer)
     , m_pSearchWidget(0)
     , m_pFilterWidget(0)
@@ -102,8 +102,6 @@ void UIVMLogViewerPaneContainer::prepare()
             this, &UIVMLogViewerPaneContainer::sigChangeFont);
     connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigResetToDefaults,
             this, &UIVMLogViewerPaneContainer::sigResetToDefaults);
-    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigDetach,
-            this, &UIVMLogViewerPaneContainer::sigDetach);
 
     retranslateUi();
 }

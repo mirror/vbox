@@ -35,7 +35,6 @@
 #include <QSpinBox>
 
 /* GUI includes: */
-#include "QIDialogButtonBox.h"
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIVMLogViewerPreferencesWidget.h"
@@ -53,7 +52,6 @@ UIVMLogViewerPreferencesWidget::UIVMLogViewerPreferencesWidget(QWidget *pParent,
     , m_pFontSizeLabel(0)
     , m_pOpenFontDialogButton(0)
     , m_pResetToDefaultsButton(0)
-    , m_pButtonBox(0)
     , m_iDefaultFontSize(9)
 {
     prepareWidgets();
@@ -155,20 +153,6 @@ void UIVMLogViewerPreferencesWidget::prepareWidgets()
     pContainerLayout->addStretch(1);
     pMainLayout->addLayout(pContainerLayout);
     pMainLayout->addStretch(1);
-
-    /* Create button-box: */
-    m_pButtonBox = new QIDialogButtonBox;
-    if (m_pButtonBox)
-    {
-        /* Configure button-box: */
-        m_pButtonBox->setVisible(viewer()->embeddingType() == EmbedTo_Stack);
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close);
-        connect(m_pButtonBox->button(QIDialogButtonBox::Close), &QPushButton::pressed,
-                this, &UIVMLogViewerPreferencesWidget::sigDetach);
-
-        /* Add into layout: */
-        pMainLayout->addWidget(m_pButtonBox);
-    }
 }
 
 void UIVMLogViewerPreferencesWidget::prepareConnections()
@@ -200,12 +184,6 @@ void UIVMLogViewerPreferencesWidget::retranslateUi()
 
     m_pOpenFontDialogButton->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
     m_pResetToDefaultsButton->setToolTip(UIVMLogViewerWidget::tr("Reset options to application defaults"));
-
-    if (m_pButtonBox)
-    {
-        m_pButtonBox->button(QDialogButtonBox::Close)->setText(tr("Detach"));
-        m_pButtonBox->button(QDialogButtonBox::Close)->setStatusTip(tr("Open the tool in separate window"));
-    }
 }
 
 void UIVMLogViewerPreferencesWidget::sltOpenFontDialog()

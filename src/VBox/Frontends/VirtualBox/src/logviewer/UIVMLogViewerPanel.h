@@ -62,7 +62,6 @@ signals:
     void sigChangeFontSizeInPoints(int size);
     void sigChangeFont(QFont font);
     void sigResetToDefaults();
-    void sigDetach();
 
     void sigShowSearchPane();
 

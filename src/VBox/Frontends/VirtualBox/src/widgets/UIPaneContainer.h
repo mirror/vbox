@@ -41,6 +41,7 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
+class QIDialogButtonBox;
 
 /** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */
 class SHARED_LIBRARY_STUFF UIPaneContainer : public QIWithRetranslateUI<QWidget>
@@ -51,10 +52,11 @@ signals:
 
     void sigCurrentTabChanged(int iIndex);
     void sigHidden();
+    void sigDetach();
 
 public:
 
-    UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack);
+    UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack, bool fDetachAllowed = false);
     void setCurrentIndex(int iIndex);
     int currentIndex() const;
 
@@ -72,8 +74,11 @@ private slots:
 private:
 
     EmbedTo  m_enmEmbedTo;
+    bool     m_fDetachAllowed;
 
     QTabWidget *m_pTabWidget;
+
+    QIDialogButtonBox *m_pButtonBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h */
