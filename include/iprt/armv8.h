@@ -2323,6 +2323,9 @@ typedef enum                         /* Size VR Opc */
     kArmv8A64InstrLdStType_Ld_Vr_Dword   = 0x311  /**< Dword = 64-bit */
 
 } ARMV8A64INSTRLDSTTYPE;
+/** Checks if a ARMV8A64INSTRLDSTTYPE value is a store operation or not. */
+#define ARMV8A64INSTRLDSTTYPE_IS_STORE(a_enmLdStType) (((unsigned)a_enmLdStType & (unsigned)kArmv8A64InstrLdStType_Mask_Opc) == 0)
+
 
 /**
  * A64: Encodes load/store with unscaled 9-bit signed immediate.
@@ -2991,6 +2994,15 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndsImm(uint32_t iRegResult, uint32_t
 }
 
 
+/** A64: Encodes an TST instruction w/ complicated immediate mask.
+ * @see Armv8A64MkInstrLogicalImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrTstImm(uint32_t iRegSrc,
+                                                  uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrAndsImm(ARMV8_A64_REG_XZR, iRegSrc, uImm7SizeLen, uImm6Rotations, f64Bit);
+}
+
+
 /**
  * A64: Encodes a bitfield instruction.
  *
@@ -3090,6 +3102,17 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfx(uint32_t iRegResult, uint32_t iR
                                                 uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
 {
     return Armv8A64MkInstrUbfm(iRegResult, iRegSrc, offFirstBit, offFirstBit + cBitsWidth - 1, f64Bit);
+}
+
+
+/** A64: Encodes an UBFIZ instruction (zero extending extract from bit zero,
+ *  shifted into destination).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfiz(uint32_t iRegResult, uint32_t iRegSrc,
+                                                 uint32_t offFirstBitDst, uint32_t cBitsWidth, bool f64Bit = true)
+{
+    uint32_t fMask = f64Bit ? 0x3f : 0x1f;
+    return Armv8A64MkInstrUbfm(iRegResult, iRegSrc, -(int32_t)offFirstBitDst & fMask, cBitsWidth - 1, f64Bit);
 }
 
 
