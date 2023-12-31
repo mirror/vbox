@@ -10154,6 +10154,7 @@ DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64
             uint8_t const * const pbAddr = &pTlbe->pbMappingR3[GCPtrFlat & GUEST_PAGE_OFFSET_MASK];
             if ((uintptr_t)pbAddr == uResult)
                 return;
+            RT_NOREF(cbMem);
             AssertFailed();
         }
         else
