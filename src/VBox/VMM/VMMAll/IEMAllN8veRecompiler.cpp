@@ -10162,7 +10162,7 @@ DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64
     }
     else
         AssertFailed();
-    __debugbreak();
+    RT_BREAKPOINT();
 }
 DECLASM(void) iemNativeHlpAsmSafeWrapCheckTlbLookup(void);
 
