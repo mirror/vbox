@@ -9967,7 +9967,7 @@ iemNativeEmitCalcRmEffAddrThreadedAddr64(PIEMRECOMPILERSTATE pReNative, uint32_t
 *   TLB Lookup.                                                                                                                  *
 *********************************************************************************************************************************/
 
-#if (defined(RT_ARCH_AMD64) && 1) || (defined(RT_ARCH_ARM64) && 0)
+#if (defined(RT_ARCH_AMD64) && 1) || (defined(RT_ARCH_ARM64) && 1)
 # define IEMNATIVE_WITH_TLB_LOOKUP
 #endif
 
@@ -10117,7 +10117,7 @@ iemNativeEmitTlbLookup(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEEMI
     if (iSegReg != UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT)
     {
 off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
-        /* cmp  seglim, regptr */
+        /* cmp  seglim, regptr */   /** @todo r=bird: why 64-bit compare again? */
         if (pTlbState->idxRegPtr != UINT8_MAX)
             off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxRegSegLimit, pTlbState->idxRegPtr);
         else
@@ -10135,7 +10135,8 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, pTlbState->idxReg1, 1);
         /* cmp  reg1, reg2 (64-bit) / imm (32-bit) */
         if (pTlbState->idxRegPtr != UINT8_MAX)
-            off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2);
+            off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1,
+                                               cbMem > 1 ? pTlbState->idxReg2 : pTlbState->idxRegPtr);
         else
             off = iemNativeEmitCmpGpr32WithImmEx(pCodeBuf, off, pTlbState->idxReg1, (uint32_t)(pTlbState->uAbsPtr + cbMem - 1));
         /* jbe  tlbmiss */
@@ -10149,8 +10150,8 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      * tlblookup:
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbLookup, off);
-# if defined(RT_ARCH_ARM64)
-    off = iemNativeEmitBrkEx(pCodeBuf, off, 0); /** @todo debug on arm */
+# if defined(RT_ARCH_ARM64) && 0
+    off = iemNativeEmitBrkEx(pCodeBuf, off, 0);
 # endif
 
     /*
@@ -10396,7 +10397,8 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     /* reg2 += offsetof(VMCPUCC, iem.s.DataTlb.aEntries) */
     off = iemNativeEmitAddGprImmEx(pCodeBuf, off, pTlbState->idxReg2, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.aEntries),
                                    pTlbState->idxReg3 /*iGprTmp*/);
-
+    /* reg2 += pVCpu */
+    off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, pTlbState->idxReg2, IEMNATIVE_REG_FIXED_PVMCPU);
 # else
 #  error "Port me"
 # endif
@@ -10410,8 +10412,7 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = 0x3b;
     off = iemNativeEmitGprByGprDisp(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
 # elif defined(RT_ARCH_ARM64)
-    pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, pTlbState->idxReg3,
-                                               pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
+    off = iemNativeEmitLoadGprByGprEx(pCodeBuf, off, pTlbState->idxReg3, pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
     off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # else
 #  error "Port me"
@@ -10442,10 +10443,10 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     off = iemNativeEmitGprByGprDisp(pCodeBuf, off, pTlbState->idxReg1, IEMNATIVE_REG_FIXED_PVMCPU,
                                     RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
 # elif defined(RT_ARCH_ARM64)
-    pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, pTlbState->idxReg3,
-                                               pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
+    off = iemNativeEmitLoadGprByGprEx(pCodeBuf, off, pTlbState->idxReg3, pTlbState->idxReg2,
+                                      RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
     pCodeBuf[off++] = Armv8A64MkInstrAnd(pTlbState->idxReg1, pTlbState->idxReg1, pTlbState->idxReg3);
-    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3,  RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
+    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
     off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # else
 #  error "Port me"
