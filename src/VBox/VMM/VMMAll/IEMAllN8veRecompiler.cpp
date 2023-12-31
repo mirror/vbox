@@ -7142,6 +7142,20 @@ iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t o
                 }
                 AssertFailed();
             }
+            else
+            {
+                /*
+                 * Allocate a temporary stack slot and spill the register to it.
+                 */
+                unsigned const idxStackSlot = ASMBitLastSetU32(~pReNative->Core.bmStack) - 1;
+                AssertStmt(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS,
+                           IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
+                pReNative->Core.bmStack |= RT_BIT_32(idxStackSlot);
+                pReNative->Core.aHstRegs[idxHstReg].idxStackSlot = (uint8_t)idxStackSlot;
+                Log12(("iemNativeVarSaveVolatileRegsPreHlpCall: spilling idxReg=%d onto the stack (slot %#x bp+%d, off=%#x)\n",
+                       idxHstReg, idxStackSlot, iemNativeStackCalcBpDisp(idxStackSlot), off));
+                off = iemNativeEmitStoreGprByBp(pReNative, off, iemNativeStackCalcBpDisp(idxStackSlot), idxHstReg);
+            }
         } while (fHstRegs);
     }
     return off;
@@ -7200,6 +7214,18 @@ iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32
                         break;
                 }
                 AssertFailed();
+            }
+            else
+            {
+                /*
+                 * Restore from temporary stack slot.
+                 */
+                uint8_t const idxStackSlot = pReNative->Core.aHstRegs[idxHstReg].idxStackSlot;
+                AssertContinue(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS && (pReNative->Core.bmStack & RT_BIT_32(idxStackSlot)));
+                pReNative->Core.bmStack &= ~RT_BIT_32(idxStackSlot);
+                pReNative->Core.aHstRegs[idxHstReg].idxStackSlot = UINT8_MAX;
+
+                off = iemNativeEmitLoadGprByBp(pReNative, off, idxHstReg, iemNativeStackCalcBpDisp(idxStackSlot));
             }
         } while (fHstRegs);
     }
@@ -10092,6 +10118,55 @@ typedef struct IEMNATIVEEMITTLBSTATE
 } IEMNATIVEEMITTLBSTATE;
 
 
+/**
+ * This is called via iemNativeHlpAsmSafeWrapCheckTlbLookup.
+ */
+DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64_t GCPtr, uint32_t uSegAndSizeAndAccess)
+{
+    uint8_t const  iSegReg = RT_BYTE1(uSegAndSizeAndAccess);
+    uint8_t const  cbMem   = RT_BYTE2(uSegAndSizeAndAccess);
+    uint32_t const fAccess = uSegAndSizeAndAccess >> 16;
+    Log(("iemNativeHlpCheckTlbLookup: %x:%#RX64 LB %#x fAccess=%#x -> %#RX64\n", iSegReg, GCPtr, cbMem, fAccess, uResult));
+
+    /* Do the lookup manually. */
+    RTGCPTR const      GCPtrFlat = iSegReg == UINT8_MAX ? GCPtr : GCPtr + pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base;
+    uint64_t const     uTag      = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrFlat);
+    PIEMTLBENTRY const pTlbe     = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+    if (RT_LIKELY(pTlbe->uTag == uTag))
+    {
+        /*
+         * Check TLB page table level access flags.
+         */
+        AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+        uint64_t const fNoUser          = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+        uint64_t const fNoWriteNoDirty  = !(fAccess & IEM_ACCESS_TYPE_WRITE) ? 0
+                                        : IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_DIRTY | IEMTLBE_F_PG_NO_WRITE;
+        uint64_t const fFlagsAndPhysRev = pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                                     | IEMTLBE_F_PG_UNASSIGNED
+                                                                     | IEMTLBE_F_PT_NO_ACCESSED
+                                                                     | fNoWriteNoDirty          | fNoUser);
+        uint64_t const uTlbPhysRev      = pVCpu->iem.s.DataTlb.uTlbPhysRev;
+        if (RT_LIKELY(fFlagsAndPhysRev == uTlbPhysRev))
+        {
+            /*
+             * Return the address.
+             */
+            uint8_t const * const pbAddr = &pTlbe->pbMappingR3[GCPtrFlat & GUEST_PAGE_OFFSET_MASK];
+            if ((uintptr_t)pbAddr == uResult)
+                return;
+            AssertFailed();
+        }
+        else
+            AssertMsgFailed(("fFlagsAndPhysRev=%#RX64 vs uTlbPhysRev=%#RX64: %#RX64\n",
+                             fFlagsAndPhysRev, uTlbPhysRev, fFlagsAndPhysRev ^ uTlbPhysRev));
+    }
+    else
+        AssertFailed();
+    __debugbreak();
+}
+DECLASM(void) iemNativeHlpAsmSafeWrapCheckTlbLookup(void);
+
+
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitTlbLookup(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEEMITTLBSTATE const * const pTlbState,
@@ -10426,10 +10501,13 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     /* mov reg1, mask */
     AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
     uint64_t const fNoUser = (((pReNative->fExec >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK) + 1) & IEMTLBE_F_PT_NO_USER;
-    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1,
-                                      IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
-                                    | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
-                                    | IEMTLBE_F_PT_NO_ACCESSED | fNoUser);
+    uint64_t       fTlbe   = IEMTLBE_F_PHYS_REV | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PT_NO_ACCESSED
+                           | fNoUser;
+    if (fAccess & IEM_ACCESS_TYPE_READ)
+        fTlbe |= IEMTLBE_F_PG_NO_READ;
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        fTlbe |= IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PT_NO_DIRTY;
+    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, fTlbe);
 # if defined(RT_ARCH_AMD64)
     /* and reg1, [reg2->fFlagsAndPhysRev] */
     pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_R) | (pTlbState->idxReg2 < 8 ? 0 : X86_OP_REX_B);
@@ -10461,7 +10539,7 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     /* mov  reg1, [reg2->pbMappingR3] */
     off = iemNativeEmitLoadGprByGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
                                       RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
-    /* if (!reg1) jmp tlbmiss */
+    /* if (!reg1) goto tlbmiss; */
     /** @todo eliminate the need for this test? */
     off = iemNativeEmitTestIfGprIsZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, pTlbState->idxReg1,
                                                       true /*f64Bit*/, idxLabelTlbMiss);
@@ -10479,6 +10557,53 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     }
     /* add result, reg1 */
     off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
+
+# if 0
+    /*
+     * To verify the result we call a helper function.
+     *
+     * It's like the state logging, so parameters are passed on the stack.
+     * iemNativeHlpAsmSafeWrapCheckTlbLookup(pVCpu, result, addr, seg | (cbMem << 8) | (fAccess << 16))
+     */
+#  ifdef RT_ARCH_AMD64
+    /* push     seg | (cbMem << 8) | (fAccess << 16) */
+    pCodeBuf[off++] = 0x68;
+    pCodeBuf[off++] = iSegReg;
+    pCodeBuf[off++] = cbMem;
+    pCodeBuf[off++] = RT_BYTE1(fAccess);
+    pCodeBuf[off++] = RT_BYTE2(fAccess);
+    /* push     pTlbState->idxRegPtr / immediate address. */
+    if (pTlbState->idxRegPtr != UINT8_MAX)
+    {
+        if (pTlbState->idxRegPtr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0x50 + (pTlbState->idxRegPtr & 7);
+    }
+    else
+    {
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->uAbsPtr);
+        if (pTlbState->idxReg1 >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0x50 + (pTlbState->idxReg1 & 7);
+    }
+    /* push     idxRegMemResult */
+    if (idxRegMemResult >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0x50 + (idxRegMemResult & 7);
+    /* push     pVCpu */
+    pCodeBuf[off++] = 0x50 + IEMNATIVE_REG_FIXED_PVMCPU;
+    /* mov      reg1, helper */
+    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup);
+    /* call     [reg1] */
+    pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0xff;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, pTlbState->idxReg1 & 7);
+    /* The stack is cleaned up by helper function. */
+
+#  else
+#   error "Port me"
+#  endif
+# endif
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
@@ -11745,7 +11870,6 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
          */
         off = iemNativeEmitTlbLookup(pReNative, off, &TlbState, iSegReg, cbMem, fAlignMask, fAccess,
                                      idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
-        TlbState.freeRegsAndReleaseVars(pReNative, idxVarGCPtrMem);
 
         /*
          * Lookup tail code, specific to the MC when the above is moved into a separate function.
@@ -11757,6 +11881,8 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
          * tlbdone:
          */
         iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+
+        TlbState.freeRegsAndReleaseVars(pReNative, idxVarGCPtrMem);
 
 # ifndef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
         /* Temp Hack: Flush all guest shadows in volatile registers in case of TLB miss. */

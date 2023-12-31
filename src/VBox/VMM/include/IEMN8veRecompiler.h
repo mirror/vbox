@@ -562,8 +562,12 @@ typedef struct IEMNATIVEHSTREG
     IEMNATIVEWHAT   enmWhat;
     /** Variable index if holding a variable, otherwise UINT8_MAX. */
     uint8_t         idxVar;
+    /** Stack slot assigned by iemNativeVarSaveVolatileRegsPreHlpCall and freed
+     * by iemNativeVarRestoreVolatileRegsPostHlpCall.  This is not valid outside
+     * that scope. */
+    uint8_t         idxStackSlot;
     /** Alignment padding. */
-    uint8_t         abAlign[6];
+    uint8_t         abAlign[5];
 } IEMNATIVEHSTREG;
 
 

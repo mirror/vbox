@@ -35,6 +35,7 @@
 BEGINCODE
 
 extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
+extern NAME(iemNativeHlpCheckTlbLookup)
 
 
 ;;
@@ -98,4 +99,67 @@ SEH64_END_PROLOGUE
         leave
         ret
 ENDPROC     iemNativeHlpAsmSafeWrapLogCpuState
+
+
+;;
+; This is wrapper function that saves and restores all volatile registers
+; so the impact of inserting CheckTlbLookup is minimal to the other TB code.
+;
+BEGINPROC   iemNativeHlpAsmSafeWrapCheckTlbLookup
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+        ;
+        ; Save all volatile registers.
+        ;
+        push    xAX
+        push    xCX
+        push    xDX
+%ifdef RT_OS_WINDOWS
+        push    xSI
+        push    xDI
+%endif
+        push    r8
+        push    r9
+        push    r10
+        push    r11
+        sub     rsp, 8+20h
+
+        ;
+        ; Call C function to do the actual work.
+        ;
+%ifdef RT_OS_WINDOWS
+        mov     rcx, [rbp + 10h]
+        mov     rdx, [rbp + 18h]
+        mov     r8,  [rbp + 20h]
+        mov     r9,  [rbp + 28h]
+%else
+        mov     rdi, [rbp + 10h]
+        mov     rsi, [rbp + 18h]
+        mov     ecx, [rbp + 20h]
+        mov     edx, [rbp + 28h]
+%endif
+        call    NAME(iemNativeHlpCheckTlbLookup)
+
+        ;
+        ; Restore volatile registers and return to the TB code.
+        ;
+        add     rsp, 8+20h
+        pop     r11
+        pop     r10
+        pop     r9
+        pop     r8
+%ifdef RT_OS_WINDOWS
+        pop     xDI
+        pop     xSI
+%endif
+        pop     xDX
+        pop     xCX
+        pop     xAX
+        leave
+        ret     20h
+ENDPROC     iemNativeHlpAsmSafeWrapCheckTlbLookup
 
