@@ -33,11 +33,13 @@
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
 #include <iprt/errcore.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
@@ -572,6 +574,505 @@ static void iemLogSyscallWinVxDCall(PVMCPUCC pVCpu, uint8_t cbInstr)
 }
 
 
+static void iemLogSyscallLinuxX86Int80(PVMCPUCC pVCpu)
+{
+    uint32_t       fStrArgs = 0;
+    const char    *pszName;
+    int            cArgs;
+    uint32_t const uSysCall = pVCpu->cpum.GstCtx.eax;
+    switch (uSysCall)
+    {
+        case   0: cArgs = -1; pszName = "restart_syscall"; break;
+        case   1: cArgs =  1; pszName = "exit"; break;
+        case   2: cArgs = -1; pszName = "fork"; break;
+        case   3: cArgs =  3; pszName = "read"; break;
+        case   4: cArgs =  3; pszName = "write"; break;
+        case   5: cArgs =  3; pszName = "open"; fStrArgs = 1; break;
+        case   6: cArgs =  1; pszName = "close"; break;
+        case   7: cArgs =  3; pszName = "waitpid"; break;
+        case   8: cArgs =  2; pszName = "creat"; break;
+        case   9: cArgs =  2; pszName = "link"; fStrArgs = 1|2; break;
+        case  10: cArgs =  1; pszName = "unlink"; fStrArgs = 1; break;
+        case  11: cArgs =  3; pszName = "execve"; fStrArgs = 1; break;
+        case  12: cArgs =  1; pszName = "chdir"; fStrArgs = 1; break;
+        case  13: cArgs =  1; pszName = "time"; break;
+        case  14: cArgs =  3; pszName = "mknod"; fStrArgs = 1; break;
+        case  15: cArgs =  2; pszName = "chmod"; fStrArgs = 1; break;
+        case  16: cArgs =  3; pszName = "lchown"; fStrArgs = 1; break;
+        case  17: cArgs = -1; pszName = "break;"; break;
+        case  18: cArgs =  2; pszName = "oldstat"; fStrArgs = 1; break;
+        case  19: cArgs =  3; pszName = "lseek"; break;
+        case  20: cArgs = -1; pszName = "getpid"; break;
+        case  21: cArgs =  5; pszName = "mount"; fStrArgs = 1|2|4; break;
+        case  22: cArgs =  1; pszName = "umount"; fStrArgs = 1; break;
+        case  23: cArgs =  1; pszName = "setuid"; break;
+        case  24: cArgs = -1; pszName = "getuid"; break;
+        case  25: cArgs =  1; pszName = "stime"; break;
+        case  26: cArgs =  4; pszName = "ptrace"; break;
+        case  27: cArgs =  1; pszName = "alarm"; break;
+        case  28: cArgs =  2; pszName = "oldfstat"; break;
+        case  29: cArgs = -1; pszName = "pause"; break;
+        case  30: cArgs =  2; pszName = "utime"; fStrArgs = 1; break;
+        case  31: cArgs = -1; pszName = "stty"; break;
+        case  32: cArgs = -1; pszName = "gtty"; break;
+        case  33: cArgs =  2; pszName = "access"; fStrArgs = 1; break;
+        case  34: cArgs =  1; pszName = "nice"; break;
+        case  35: cArgs = -1; pszName = "ftime"; break;
+        case  36: cArgs = -1; pszName = "sync"; break;
+        case  37: cArgs =  2; pszName = "kill"; break;
+        case  38: cArgs =  2; pszName = "rename"; fStrArgs = 1|2; break;
+        case  39: cArgs =  2; pszName = "mkdir"; fStrArgs = 1; break;
+        case  40: cArgs =  1; pszName = "rmdir"; fStrArgs = 1; break;
+        case  41: cArgs =  1; pszName = "dup"; break;
+        case  42: cArgs =  1; pszName = "pipe"; break;
+        case  43: cArgs =  1; pszName = "times"; fStrArgs = 1; break;
+        case  44: cArgs = -1; pszName = "prof"; break;
+        case  45: cArgs =  1; pszName = "brk"; break;
+        case  46: cArgs =  1; pszName = "setgid"; break;
+        case  47: cArgs = -1; pszName = "getgid"; break;
+        case  48: cArgs =  2; pszName = "signal"; break;
+        case  49: cArgs = -1; pszName = "geteuid"; break;
+        case  50: cArgs = -1; pszName = "getegid"; break;
+        case  51: cArgs =  1; pszName = "acct"; break;
+        case  52: cArgs =  2; pszName = "umount2"; fStrArgs = 1; break;
+        case  53: cArgs = -1; pszName = "lock"; break;
+        case  54: cArgs =  3; pszName = "ioctl"; break;
+        case  55: cArgs =  3; pszName = "fcntl"; break;
+        case  56: cArgs = -1; pszName = "mpx"; break;
+        case  57: cArgs =  2; pszName = "setpgid"; break;
+        case  58: cArgs = -1; pszName = "ulimit"; break;
+        case  59: cArgs =  1; pszName = "oldolduname"; break;
+        case  60: cArgs =  1; pszName = "umask"; break;
+        case  61: cArgs =  1; pszName = "chroot"; fStrArgs = 1; break;
+        case  62: cArgs =  2; pszName = "ustat"; break;
+        case  63: cArgs =  2; pszName = "dup2"; break;
+        case  64: cArgs = -1; pszName = "getppid"; break;
+        case  65: cArgs = -1; pszName = "getpgrp"; break;
+        case  66: cArgs = -1; pszName = "setsid"; break;
+        case  67: cArgs =  3; pszName = "sigaction"; break;
+        case  68: cArgs = -1; pszName = "sgetmask"; break;
+        case  69: cArgs =  1; pszName = "ssetmask"; break;
+        case  70: cArgs =  2; pszName = "setreuid"; break;
+        case  71: cArgs =  2; pszName = "setregid"; break;
+        case  72: cArgs =  1; pszName = "sigsuspend"; break;
+        case  73: cArgs =  1; pszName = "sigpending"; break;
+        case  74: cArgs =  2; pszName = "sethostname"; fStrArgs = 1; break;
+        case  75: cArgs =  2; pszName = "setrlimit"; break;
+        case  76: cArgs =  2; pszName = "getrlimit"; break;
+        case  77: cArgs =  2; pszName = "getrusage"; break;
+        case  78: cArgs =  2; pszName = "gettimeofday"; break;
+        case  79: cArgs =  2; pszName = "settimeofday"; break;
+        case  80: cArgs =  2; pszName = "getgroups"; break;
+        case  81: cArgs =  2; pszName = "setgroups"; break;
+        case  82: cArgs =  1; pszName = "select"; break;
+        case  83: cArgs =  2; pszName = "symlink"; fStrArgs = 1|2; break;
+        case  84: cArgs =  2; pszName = "oldlstat"; fStrArgs = 1; break;
+        case  85: cArgs =  3; pszName = "readlink"; fStrArgs = 1; break;
+        case  86: cArgs =  1; pszName = "uselib"; break;
+        case  87: cArgs =  2; pszName = "swapon"; fStrArgs = 1; break;
+        case  88: cArgs =  4; pszName = "reboot"; break;
+        case  89: cArgs =  3; pszName = "readdir"; break;
+        case  90: cArgs =  1; pszName = "mmap"; break;
+        case  91: cArgs =  2; pszName = "munmap"; break;
+        case  92: cArgs =  2; pszName = "truncate"; fStrArgs = 1; break;
+        case  93: cArgs =  2; pszName = "ftruncate"; break;
+        case  94: cArgs =  2; pszName = "fchmod"; break;
+        case  95: cArgs =  3; pszName = "fchown"; break;
+        case  96: cArgs =  2; pszName = "getpriority"; break;
+        case  97: cArgs =  3; pszName = "setpriority"; break;
+        case  98: cArgs = -1; pszName = "profil"; break;
+        case  99: cArgs =  2; pszName = "statfs"; fStrArgs = 1; break;
+        case 100: cArgs =  2; pszName = "fstatfs"; break;
+        case 101: cArgs =  3; pszName = "ioperm"; break;
+        case 102: cArgs =  2; pszName = "socketcall"; break;
+        case 103: cArgs =  3; pszName = "syslog"; break;
+        case 104: cArgs =  3; pszName = "setitimer"; break;
+        case 105: cArgs =  2; pszName = "getitimer"; break;
+        case 106: cArgs =  2; pszName = "stat"; fStrArgs = 1; break;
+        case 107: cArgs =  2; pszName = "lstat"; fStrArgs = 1; break;
+        case 108: cArgs =  2; pszName = "fstat"; break;
+        case 109: cArgs =  1; pszName = "olduname"; break;
+        case 110: cArgs =  1; pszName = "iopl"; break;
+        case 111: cArgs = -1; pszName = "vhangup"; break;
+        case 112: cArgs = -1; pszName = "idle"; break;
+        case 113: cArgs =  1; pszName = "vm86old"; break;
+        case 114: cArgs =  4; pszName = "wait4"; break;
+        case 115: cArgs =  1; pszName = "swapoff"; fStrArgs = 1; break;
+        case 116: cArgs =  1; pszName = "sysinfo"; break;
+        case 117: cArgs =  6; pszName = "ipc"; break;
+        case 118: cArgs =  1; pszName = "fsync"; break;
+        case 119: cArgs = -1; pszName = "sigreturn"; break;
+        case 120: cArgs =  5; pszName = "clone"; break;
+        case 121: cArgs =  2; pszName = "setdomainname"; fStrArgs = 1; break;
+        case 122: cArgs =  1; pszName = "uname"; break;
+        case 123: cArgs =  3; pszName = "modify_ldt"; break;
+        case 124: cArgs =  1; pszName = "adjtimex"; break;
+        case 125: cArgs =  3; pszName = "mprotect"; break;
+        case 126: cArgs =  3; pszName = "sigprocmask"; break;
+        case 127: cArgs = -1; pszName = "create_module"; fStrArgs = 1; break;
+        case 128: cArgs =  3; pszName = "init_module"; break;
+        case 129: cArgs =  2; pszName = "delete_module"; fStrArgs = 1; break;
+        case 130: cArgs = -1; pszName = "get_kernel_syms"; break;
+        case 131: cArgs =  4; pszName = "quotactl"; break;
+        case 132: cArgs =  1; pszName = "getpgid"; break;
+        case 133: cArgs =  1; pszName = "fchdir"; break;
+        case 134: cArgs = -1; pszName = "bdflush"; break;
+        case 135: cArgs =  3; pszName = "sysfs"; break;
+        case 136: cArgs =  1; pszName = "personality"; break;
+        case 137: cArgs = -1; pszName = "afs_syscall"; break;
+        case 138: cArgs =  1; pszName = "setfsuid"; break;
+        case 139: cArgs =  1; pszName = "setfsgid"; break;
+        case 140: cArgs =  5; pszName = "_llseek"; break;
+        case 141: cArgs =  3; pszName = "getdents"; break;
+        case 142: cArgs =  5; pszName = "_newselect"; break;
+        case 143: cArgs =  2; pszName = "flock"; break;
+        case 144: cArgs =  3; pszName = "msync"; break;
+        case 145: cArgs =  3; pszName = "readv"; break;
+        case 146: cArgs =  3; pszName = "writev"; break;
+        case 147: cArgs =  1; pszName = "getsid"; break;
+        case 148: cArgs =  1; pszName = "fdatasync"; break;
+        case 149: cArgs = -1; pszName = "_sysctl"; break;
+        case 150: cArgs =  2; pszName = "mlock"; break;
+        case 151: cArgs =  2; pszName = "munlock"; break;
+        case 152: cArgs =  1; pszName = "mlockall"; break;
+        case 153: cArgs = -1; pszName = "munlockall"; break;
+        case 154: cArgs =  2; pszName = "sched_setparam"; break;
+        case 155: cArgs =  2; pszName = "sched_getparam"; break;
+        case 156: cArgs =  3; pszName = "sched_setscheduler"; break;
+        case 157: cArgs =  1; pszName = "sched_getscheduler"; break;
+        case 158: cArgs = -1; pszName = "sched_yield"; break;
+        case 159: cArgs =  1; pszName = "sched_get_priority_max"; break;
+        case 160: cArgs =  1; pszName = "sched_get_priority_min"; break;
+        case 161: cArgs =  2; pszName = "sched_rr_get_interval"; break;
+        case 162: cArgs =  2; pszName = "nanosleep"; break;
+        case 163: cArgs =  5; pszName = "mremap"; break;
+        case 164: cArgs =  3; pszName = "setresuid"; break;
+        case 165: cArgs =  3; pszName = "getresuid"; break;
+        case 166: cArgs =  2; pszName = "vm86"; break;
+        case 167: cArgs = -1; pszName = "query_module"; break;
+        case 168: cArgs =  3; pszName = "poll"; break;
+        case 169: cArgs = -1; pszName = "nfsservctl"; break;
+        case 170: cArgs =  3; pszName = "setresgid"; break;
+        case 171: cArgs =  3; pszName = "getresgid"; break;
+        case 172: cArgs =  5; pszName = "prctl"; break;
+        case 173: cArgs = -1; pszName = "rt_sigreturn"; break;
+        case 174: cArgs =  4; pszName = "rt_sigaction"; break;
+        case 175: cArgs =  4; pszName = "rt_sigprocmask"; break;
+        case 176: cArgs =  2; pszName = "rt_sigpending"; break;
+        case 177: cArgs =  4; pszName = "rt_sigtimedwait"; break;
+        case 178: cArgs =  3; pszName = "rt_sigqueueinfo"; break;
+        case 179: cArgs =  2; pszName = "rt_sigsuspend"; break;
+        case 180: cArgs =  5; pszName = "pread64"; break;
+        case 181: cArgs =  5; pszName = "pwrite64"; break;
+        case 182: cArgs =  3; pszName = "chown"; break;
+        case 183: cArgs =  2; pszName = "getcwd"; break;
+        case 184: cArgs =  2; pszName = "capget"; break;
+        case 185: cArgs =  2; pszName = "capset"; break;
+        case 186: cArgs =  2; pszName = "sigaltstack"; break;
+        case 187: cArgs =  4; pszName = "sendfile"; break;
+        case 188: cArgs = -1; pszName = "getpmsg"; break;
+        case 189: cArgs = -1; pszName = "putpmsg"; break;
+        case 190: cArgs = -1; pszName = "vfork"; break;
+        case 191: cArgs =  2; pszName = "ugetrlimit"; break;
+        case 192: cArgs =  6; pszName = "mmap2"; break;
+        case 193: cArgs =  3; pszName = "truncate64"; break;
+        case 194: cArgs =  3; pszName = "ftruncate64"; break;
+        case 195: cArgs =  2; pszName = "stat64"; break;
+        case 196: cArgs =  2; pszName = "lstat64"; break;
+        case 197: cArgs =  2; pszName = "fstat64"; break;
+        case 198: cArgs =  3; pszName = "lchown32"; break;
+        case 199: cArgs = -1; pszName = "getuid32"; break;
+        case 200: cArgs = -1; pszName = "getgid32"; break;
+        case 201: cArgs = -1; pszName = "geteuid32"; break;
+        case 202: cArgs = -1; pszName = "getegid32"; break;
+        case 203: cArgs =  2; pszName = "setreuid32"; break;
+        case 204: cArgs =  2; pszName = "setregid32"; break;
+        case 205: cArgs =  2; pszName = "getgroups32"; break;
+        case 206: cArgs =  2; pszName = "setgroups32"; break;
+        case 207: cArgs =  3; pszName = "fchown32"; break;
+        case 208: cArgs =  3; pszName = "setresuid32"; break;
+        case 209: cArgs =  3; pszName = "getresuid32"; break;
+        case 210: cArgs =  3; pszName = "setresgid32"; break;
+        case 211: cArgs =  3; pszName = "getresgid32"; break;
+        case 212: cArgs =  3; pszName = "chown32"; break;
+        case 213: cArgs =  1; pszName = "setuid32"; break;
+        case 214: cArgs =  1; pszName = "setgid32"; break;
+        case 215: cArgs =  1; pszName = "setfsuid32"; break;
+        case 216: cArgs =  1; pszName = "setfsgid32"; break;
+        case 217: cArgs =  2; pszName = "pivot_root"; break;
+        case 218: cArgs =  3; pszName = "mincore"; break;
+        case 219: cArgs =  3; pszName = "madvise"; break;
+        case 220: cArgs =  3; pszName = "getdents64"; break;
+        case 221: cArgs =  3; pszName = "fcntl64"; break;
+        case 224: cArgs = -1; pszName = "gettid"; break;
+        case 225: cArgs =  4; pszName = "readahead"; break;
+        case 226: cArgs =  5; pszName = "setxattr"; break;
+        case 227: cArgs =  5; pszName = "lsetxattr"; break;
+        case 228: cArgs =  5; pszName = "fsetxattr"; break;
+        case 229: cArgs =  4; pszName = "getxattr"; break;
+        case 230: cArgs =  4; pszName = "lgetxattr"; break;
+        case 231: cArgs =  4; pszName = "fgetxattr"; break;
+        case 232: cArgs =  3; pszName = "listxattr"; break;
+        case 233: cArgs =  3; pszName = "llistxattr"; break;
+        case 234: cArgs =  3; pszName = "flistxattr"; break;
+        case 235: cArgs =  2; pszName = "removexattr"; break;
+        case 236: cArgs =  2; pszName = "lremovexattr"; break;
+        case 237: cArgs =  2; pszName = "fremovexattr"; break;
+        case 238: cArgs =  2; pszName = "tkill"; break;
+        case 239: cArgs =  4; pszName = "sendfile64"; break;
+        case 240: cArgs =  6; pszName = "futex"; break;
+        case 241: cArgs =  3; pszName = "sched_setaffinity"; break;
+        case 242: cArgs =  3; pszName = "sched_getaffinity"; break;
+        case 243: cArgs =  1; pszName = "set_thread_area"; break;
+        case 244: cArgs =  1; pszName = "get_thread_area"; break;
+        case 245: cArgs =  2; pszName = "io_setup"; break;
+        case 246: cArgs =  1; pszName = "io_destroy"; break;
+        case 247: cArgs =  5; pszName = "io_getevents"; break;
+        case 248: cArgs =  3; pszName = "io_submit"; break;
+        case 249: cArgs =  3; pszName = "io_cancel"; break;
+        case 250: cArgs =  5; pszName = "fadvise64"; break;
+        case 252: cArgs =  1; pszName = "exit_group"; break;
+        case 253: cArgs = -1; pszName = "lookup_dcookie"; break;
+        case 254: cArgs =  1; pszName = "epoll_create"; break;
+        case 255: cArgs =  4; pszName = "epoll_ctl"; break;
+        case 256: cArgs =  4; pszName = "epoll_wait"; break;
+        case 257: cArgs =  5; pszName = "remap_file_pages"; break;
+        case 258: cArgs =  1; pszName = "set_tid_address"; break;
+        case 259: cArgs =  3; pszName = "timer_create"; break;
+        case 260: cArgs =  4; pszName = "timer_settime"; break;
+        case 261: cArgs =  2; pszName = "timer_gettime"; break;
+        case 262: cArgs =  1; pszName = "timer_getoverrun"; break;
+        case 263: cArgs =  1; pszName = "timer_delete"; break;
+        case 264: cArgs =  2; pszName = "clock_settime"; break;
+        case 265: cArgs =  2; pszName = "clock_gettime"; break;
+        case 266: cArgs =  2; pszName = "clock_getres"; break;
+        case 267: cArgs =  4; pszName = "clock_nanosleep"; break;
+        case 268: cArgs =  3; pszName = "statfs64"; break;
+        case 269: cArgs =  3; pszName = "fstatfs64"; break;
+        case 270: cArgs =  3; pszName = "tgkill"; break;
+        case 271: cArgs =  2; pszName = "utimes"; break;
+        case 272: cArgs =  6; pszName = "fadvise64_64"; break;
+        case 273: cArgs = -1; pszName = "vserver"; break;
+        case 274: cArgs =  6; pszName = "mbind"; break;
+        case 275: cArgs =  5; pszName = "get_mempolicy"; break;
+        case 276: cArgs =  3; pszName = "set_mempolicy"; break;
+        case 277: cArgs =  4; pszName = "mq_open"; break;
+        case 278: cArgs =  1; pszName = "mq_unlink"; break;
+        case 279: cArgs =  5; pszName = "mq_timedsend"; break;
+        case 280: cArgs =  5; pszName = "mq_timedreceive"; break;
+        case 281: cArgs =  2; pszName = "mq_notify"; break;
+        case 282: cArgs =  3; pszName = "mq_getsetattr"; break;
+        case 283: cArgs =  4; pszName = "kexec_load"; break;
+        case 284: cArgs =  5; pszName = "waitid"; break;
+        case 286: cArgs =  5; pszName = "add_key"; break;
+        case 287: cArgs =  4; pszName = "request_key"; break;
+        case 288: cArgs =  5; pszName = "keyctl"; break;
+        case 289: cArgs =  3; pszName = "ioprio_set"; break;
+        case 290: cArgs =  2; pszName = "ioprio_get"; break;
+        case 291: cArgs = -1; pszName = "inotify_init"; break;
+        case 292: cArgs =  3; pszName = "inotify_add_watch"; break;
+        case 293: cArgs =  2; pszName = "inotify_rm_watch"; break;
+        case 294: cArgs =  4; pszName = "migrate_pages"; break;
+        case 295: cArgs =  4; pszName = "openat"; break;
+        case 296: cArgs =  3; pszName = "mkdirat"; break;
+        case 297: cArgs =  4; pszName = "mknodat"; break;
+        case 298: cArgs =  5; pszName = "fchownat"; break;
+        case 299: cArgs =  3; pszName = "futimesat"; break;
+        case 300: cArgs =  4; pszName = "fstatat64"; break;
+        case 301: cArgs =  3; pszName = "unlinkat"; break;
+        case 302: cArgs =  4; pszName = "renameat"; break;
+        case 303: cArgs =  5; pszName = "linkat"; break;
+        case 304: cArgs =  3; pszName = "symlinkat"; break;
+        case 305: cArgs =  4; pszName = "readlinkat"; break;
+        case 306: cArgs =  3; pszName = "fchmodat"; break;
+        case 307: cArgs =  3; pszName = "faccessat"; break;
+        case 308: cArgs =  6; pszName = "pselect6"; break;
+        case 309: cArgs =  5; pszName = "ppoll"; break;
+        case 310: cArgs =  1; pszName = "unshare"; break;
+        case 311: cArgs =  2; pszName = "set_robust_list"; break;
+        case 312: cArgs =  3; pszName = "get_robust_list"; break;
+        case 313: cArgs =  6; pszName = "splice"; break;
+        case 314: cArgs =  6; pszName = "sync_file_range"; break;
+        case 315: cArgs =  4; pszName = "tee"; break;
+        case 316: cArgs =  4; pszName = "vmsplice"; break;
+        case 317: cArgs =  6; pszName = "move_pages"; break;
+        case 318: cArgs =  3; pszName = "getcpu"; break;
+        case 319: cArgs =  6; pszName = "epoll_pwait"; break;
+        case 320: cArgs =  4; pszName = "utimensat"; break;
+        case 321: cArgs =  3; pszName = "signalfd"; break;
+        case 322: cArgs =  2; pszName = "timerfd_create"; break;
+        case 323: cArgs =  1; pszName = "eventfd"; break;
+        case 324: cArgs =  6; pszName = "fallocate"; break;
+        case 325: cArgs =  4; pszName = "timerfd_settime"; break;
+        case 326: cArgs =  2; pszName = "timerfd_gettime"; break;
+        case 327: cArgs =  4; pszName = "signalfd4"; break;
+        case 328: cArgs =  2; pszName = "eventfd2"; break;
+        case 329: cArgs =  1; pszName = "epoll_create1"; break;
+        case 330: cArgs =  3; pszName = "dup3"; break;
+        case 331: cArgs =  2; pszName = "pipe2"; break;
+        case 332: cArgs =  1; pszName = "inotify_init1"; break;
+        case 333: cArgs =  5; pszName = "preadv"; break;
+        case 334: cArgs =  5; pszName = "pwritev"; break;
+        case 335: cArgs =  4; pszName = "rt_tgsigqueueinfo"; break;
+        case 336: cArgs =  5; pszName = "perf_event_open"; break;
+        case 337: cArgs =  5; pszName = "recvmmsg"; break;
+        case 338: cArgs =  2; pszName = "fanotify_init"; break;
+        case 339: cArgs =  5; pszName = "fanotify_mark"; break;
+        case 340: cArgs =  4; pszName = "prlimit64"; break;
+        case 341: cArgs =  5; pszName = "name_to_handle_at"; break;
+        case 342: cArgs =  3; pszName = "open_by_handle_at"; break;
+        case 343: cArgs =  2; pszName = "clock_adjtime"; break;
+        case 344: cArgs =  1; pszName = "syncfs"; break;
+        case 345: cArgs =  4; pszName = "sendmmsg"; break;
+        case 346: cArgs =  2; pszName = "setns"; break;
+        case 347: cArgs =  6; pszName = "process_vm_readv"; break;
+        case 348: cArgs =  6; pszName = "process_vm_writev"; break;
+        case 349: cArgs =  5; pszName = "kcmp"; break;
+        case 350: cArgs =  3; pszName = "finit_module"; break;
+        case 351: cArgs =  3; pszName = "sched_setattr"; break;
+        case 352: cArgs =  4; pszName = "sched_getattr"; break;
+        case 353: cArgs =  5; pszName = "renameat2"; break;
+        case 354: cArgs =  3; pszName = "seccomp"; break;
+        case 355: cArgs =  3; pszName = "getrandom"; break;
+        case 356: cArgs =  2; pszName = "memfd_create"; break;
+        case 357: cArgs =  3; pszName = "bpf"; break;
+        case 358: cArgs =  5; pszName = "execveat"; break;
+        case 359: cArgs =  3; pszName = "socket"; break;
+        case 360: cArgs =  4; pszName = "socketpair"; break;
+        case 361: cArgs =  3; pszName = "bind"; break;
+        case 362: cArgs =  3; pszName = "connect"; break;
+        case 363: cArgs =  2; pszName = "listen"; break;
+        case 364: cArgs =  4; pszName = "accept4"; break;
+        case 365: cArgs =  5; pszName = "getsockopt"; break;
+        case 366: cArgs =  5; pszName = "setsockopt"; break;
+        case 367: cArgs =  3; pszName = "getsockname"; break;
+        case 368: cArgs =  3; pszName = "getpeername"; break;
+        case 369: cArgs =  6; pszName = "sendto"; break;
+        case 370: cArgs =  3; pszName = "sendmsg"; break;
+        case 371: cArgs =  6; pszName = "recvfrom"; break;
+        case 372: cArgs =  3; pszName = "recvmsg"; break;
+        case 373: cArgs =  2; pszName = "shutdown"; break;
+        case 374: cArgs =  1; pszName = "userfaultfd"; break;
+        case 375: cArgs =  3; pszName = "membarrier"; break;
+        case 376: cArgs =  3; pszName = "mlock2"; break;
+        case 377: cArgs =  6; pszName = "copy_file_range"; break;
+        case 378: cArgs =  6; pszName = "preadv2"; break;
+        case 379: cArgs =  6; pszName = "pwritev2"; break;
+        case 380: cArgs =  4; pszName = "pkey_mprotect"; break;
+        case 381: cArgs =  2; pszName = "pkey_alloc"; break;
+        case 382: cArgs =  1; pszName = "pkey_free"; break;
+        case 383: cArgs =  5; pszName = "statx"; break;
+        case 384: cArgs =  2; pszName = "arch_prctl"; break;
+        case 385: cArgs =  6; pszName = "io_pgetevents"; break;
+        case 386: cArgs =  4; pszName = "rseq"; break;
+        case 393: cArgs =  3; pszName = "semget"; break;
+        case 394: cArgs =  4; pszName = "semctl"; break;
+        case 395: cArgs =  3; pszName = "shmget"; break;
+        case 396: cArgs =  3; pszName = "shmctl"; break;
+        case 397: cArgs =  3; pszName = "shmat"; break;
+        case 398: cArgs =  1; pszName = "shmdt"; break;
+        case 399: cArgs =  2; pszName = "msgget"; break;
+        case 400: cArgs =  4; pszName = "msgsnd"; break;
+        case 401: cArgs =  5; pszName = "msgrcv"; break;
+        case 402: cArgs =  3; pszName = "msgctl"; break;
+        case 403: cArgs =  2; pszName = "clock_gettime64"; break;
+        case 404: cArgs =  2; pszName = "clock_settime64"; break;
+        case 405: cArgs =  2; pszName = "clock_adjtime64"; break;
+        case 406: cArgs =  2; pszName = "clock_getres_time64"; break;
+        case 407: cArgs =  4; pszName = "clock_nanosleep_time64"; break;
+        case 408: cArgs =  2; pszName = "timer_gettime64"; break;
+        case 409: cArgs =  4; pszName = "timer_settime64"; break;
+        case 410: cArgs =  2; pszName = "timerfd_gettime64"; break;
+        case 411: cArgs =  4; pszName = "timerfd_settime64"; break;
+        case 412: cArgs =  4; pszName = "utimensat_time64"; break;
+        case 413: cArgs =  6; pszName = "pselect6_time64"; break;
+        case 414: cArgs =  5; pszName = "ppoll_time64"; break;
+        case 416: cArgs =  6; pszName = "io_pgetevents_time64"; break;
+        case 417: cArgs =  5; pszName = "recvmmsg_time64"; break;
+        case 418: cArgs =  5; pszName = "mq_timedsend_time64"; break;
+        case 419: cArgs =  5; pszName = "mq_timedreceive_time64"; break;
+        case 420: cArgs =  4; pszName = "semtimedop_time64"; break;
+        case 421: cArgs =  4; pszName = "rt_sigtimedwait_time64"; break;
+        case 422: cArgs =  6; pszName = "futex_time64"; break;
+        case 423: cArgs =  2; pszName = "sched_rr_get_interval_time64"; break;
+        case 424: cArgs =  4; pszName = "pidfd_send_signal"; break;
+        case 425: cArgs =  2; pszName = "io_uring_setup"; break;
+        case 426: cArgs =  6; pszName = "io_uring_enter"; break;
+        case 427: cArgs =  4; pszName = "io_uring_register"; break;
+        case 428: cArgs =  3; pszName = "open_tree"; break;
+        case 429: cArgs =  5; pszName = "move_mount"; break;
+        case 430: cArgs =  2; pszName = "fsopen"; break;
+        case 431: cArgs =  5; pszName = "fsconfig"; break;
+        case 432: cArgs =  3; pszName = "fsmount"; break;
+        case 433: cArgs =  3; pszName = "fspick"; break;
+        case 434: cArgs =  2; pszName = "pidfd_open"; break;
+        case 435: cArgs =  2; pszName = "clone3"; break;
+        case 436: cArgs =  3; pszName = "close_range"; break;
+        case 437: cArgs =  4; pszName = "openat2"; break;
+        case 438: cArgs =  3; pszName = "pidfd_getfd"; break;
+        case 439: cArgs =  4; pszName = "faccessat2"; break;
+        case 440: cArgs =  5; pszName = "process_madvise"; break;
+        case 441: cArgs =  6; pszName = "epoll_pwait2"; break;
+        case 442: cArgs =  5; pszName = "mount_setattr"; break;
+        case 443: cArgs =  4; pszName = "quotactl_fd"; break;
+        case 444: cArgs =  3; pszName = "landlock_create_ruleset"; break;
+        case 445: cArgs =  4; pszName = "landlock_add_rule"; break;
+        case 446: cArgs =  2; pszName = "landlock_restrict_self"; break;
+        case 447: cArgs =  1; pszName = "memfd_secret"; break;
+        case 448: cArgs =  2; pszName = "process_mrelease"; break;
+        case 449: cArgs =  5; pszName = "futex_waitv"; break;
+        case 450: cArgs =  4; pszName = "set_mempolicy_home_node"; break;
+        case 451: cArgs =  4; pszName = "cachestat"; break;
+        case 452: cArgs =  4; pszName = "fchmodat2"; break;
+
+        default:
+            pszName = "unknown!";
+            cArgs   = -1;
+            break;;
+    }
+    Log3(("Linux syscall: %s (%#x) at %04x:%08x - cArgs=%d: ebx=%#x ecx=%#x edx=%#x esi=%#x edi=%#x ebp=%#x (esp=%#x eax=%#x efl=%#x)\n",
+          pszName, uSysCall, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, cArgs, pVCpu->cpum.GstCtx.ebx,
+          pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi, pVCpu->cpum.GstCtx.ebp,
+          pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.eflags.uBoth));
+
+#ifdef IN_RING3
+    /*
+     * Log string arguments.
+     */
+    static const uint8_t s_aidxArgToGReg[] =
+    { X86_GREG_xBX, X86_GREG_xCX, X86_GREG_xDX, X86_GREG_xSI, X86_GREG_xDI, X86_GREG_xBP };
+    if (fStrArgs)
+    {
+        PUVM pUVM = pVCpu->pVMR3->pUVM;
+        do
+        {
+            unsigned const iStrArg = ASMBitFirstSetU32(fStrArgs) - 1;
+            fStrArgs &= ~RT_BIT_32(iStrArg);
+            if (iStrArg < RT_ELEMENTS(s_aidxArgToGReg))
+            {
+                char           szStr[1024];
+                uint32_t const uAddr = pVCpu->cpum.GstCtx.aGRegs[s_aidxArgToGReg[iStrArg]].u32;
+                DBGFADDRESS    DbgAddr;
+                int rc = DBGFR3MemReadString(pUVM, pVCpu->idCpu, DBGFR3AddrFromFlat(pUVM, &DbgAddr, uAddr), szStr, sizeof(szStr));
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTStrValidateEncoding(szStr);
+                    if (RT_SUCCESS(rc))
+                        Log3(("Linux syscall %x/arg #%u: %#x '%s'\n", uSysCall, iStrArg, uAddr, szStr));
+                    else
+                        Log3(("Linux syscall %x/arg #%u: %#x %.*Rhxs\n", uSysCall, iStrArg, uAddr, strlen(szStr), szStr));
+                }
+            }
+
+
+        } while (fStrArgs);
+    }
+#else
+    RT_NOREF(fStrArgs);
+#endif
+}
+
+
 void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
 {
     /* DOS & BIOS (V86 mode) */
@@ -585,14 +1086,12 @@ void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
         {
             case 0x20: /* VxD call. */
                 iemLogSyscallWinVxDCall(pVCpu, cbInstr);
-                break;
+                break;;
         }
 
     /* Linux */
-    if (LogIs3Enabled())
-    {
-
-    }
+    if (LogIs3Enabled() && u8Vector == 0x80)
+        iemLogSyscallLinuxX86Int80(pVCpu);
 }
 
 #endif /* LOG_ENABLED */
