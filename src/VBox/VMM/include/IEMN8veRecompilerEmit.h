@@ -1218,6 +1218,8 @@ iemNativeEmitLoadGpr32SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
     if (iGprDst >= 8 || iGprSrc >= 8)
         pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    else if (iGprSrc >= 4)
+        pbCodeBuf[off++] = X86_OP_REX;
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xbe;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
@@ -1248,6 +1250,8 @@ iemNativeEmitLoadGpr16SignExtendedFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (iGprDst >= 8 || iGprSrc >= 8)
         pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    else if (iGprSrc >= 4)
+        pbCodeBuf[off++] = X86_OP_REX;
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xbe;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
