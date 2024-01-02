@@ -323,8 +323,10 @@ private slots:
         /** Handles tool popup-menu request. */
         void sltHandleToolMenuRequested(const QPoint &position, UIVirtualMachineItem *pItem);
 
-        /** Handles signal about Tools-pane index change. */
-        void sltHandleToolsPaneIndexChange();
+        /** Handles signal about global Tools-pane index change. */
+        void sltHandleGlobalToolsPaneIndexChange();
+        /** Handles signal about machine Tools-pane index change. */
+        void sltHandleMachineToolsPaneIndexChange();
 
         /** Handles signal requesting switch to Activity pane of machine with @a uMachineId. */
         void sltSwitchToMachineActivityPane(const QUuid &uMachineId);

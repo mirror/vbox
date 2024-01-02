@@ -518,7 +518,7 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uI
         {
             /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
             if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-                sltHandleToolsPaneIndexChange();
+                sltHandleMachineToolsPaneIndexChange();
 
             /* If we still have same item selected: */
             if (pItem && pItem->id() == uId)
@@ -573,39 +573,14 @@ void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(const QPoint &positio
     pMenu->resize(ourGeo.size());
 }
 
-void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
+void UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange()
 {
-    /* Determine sender: */
-    UITools *pMenu = qobject_cast<UITools*>(sender());
-    if (!pMenu)
-        pMenu = m_pMenuToolsMachine;
+    switchToGlobalTool(m_pMenuToolsGlobal->toolsType());
+}
 
-    /* Acquire current class/type: */
-    UIToolClass enmCurrentClass = UIToolClass_Invalid;
-    if (pMenu == m_pMenuToolsGlobal)
-        enmCurrentClass = UIToolClass_Global;
-    else if (pMenu == m_pMenuToolsMachine)
-        enmCurrentClass = UIToolClass_Machine;
-    AssertReturnVoid(enmCurrentClass != UIToolClass_Invalid);
-    const UIToolType enmCurrentType = pMenu->toolsType();
-
-    /* Invent default for fallback case: */
-    const UIToolType enmDefaultType = enmCurrentClass == UIToolClass_Global ? UIToolType_Welcome
-                                    : enmCurrentClass == UIToolClass_Machine ? UIToolType_Details
-                                    : UIToolType_Invalid;
-    AssertReturnVoid(enmDefaultType != UIToolType_Invalid);
-
-    /* Calculate new type to choose: */
-    const UIToolType enmNewType = UIToolStuff::isTypeOfClass(enmCurrentType, enmCurrentClass)
-                                ? enmCurrentType : enmDefaultType;
-
-    /* Choose new type: */
-    switch (enmCurrentClass)
-    {
-        case UIToolClass_Global: switchToGlobalTool(enmNewType); break;
-        case UIToolClass_Machine: switchToMachineTool(enmNewType); break;
-        default: break;
-    }
+void UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange()
+{
+    switchToMachineTool(m_pMenuToolsMachine->toolsType());
 }
 
 void UIVirtualBoxManagerWidget::sltSwitchToMachineActivityPane(const QUuid &uMachineId)
@@ -844,9 +819,9 @@ void UIVirtualBoxManagerWidget::prepareConnections()
 
     /* Tools-pane connections: */
     connect(m_pMenuToolsGlobal, &UITools::sigSelectionChanged,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
+            this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange);
     connect(m_pMenuToolsMachine, &UITools::sigSelectionChanged,
-            this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
+            this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange);
 }
 
 void UIVirtualBoxManagerWidget::loadSettings()
@@ -1098,9 +1073,9 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
 
     /* Tools-pane connections: */
     disconnect(m_pMenuToolsGlobal, &UITools::sigSelectionChanged,
-               this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
+               this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange);
     disconnect(m_pMenuToolsMachine, &UITools::sigSelectionChanged,
-               this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
+               this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange);
 }
 
 void UIVirtualBoxManagerWidget::cleanupWidgets()
@@ -1176,7 +1151,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentMachineItemInformation(bool fDontR
     {
         /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
         if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-            sltHandleToolsPaneIndexChange();
+            sltHandleMachineToolsPaneIndexChange();
 
         /* Propagate current items to the Tools pane: */
         m_pPaneToolsMachine->setItems(currentItems());
