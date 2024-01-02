@@ -337,9 +337,10 @@ private:
     virtual void prepareWidgets();
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
-        virtual void updateCPUChart(ULONG iLoadPercentage, const QString &strLabel);
-        virtual void updateNetworkChart(quint64 uReceive, quint64 uTransmit, const QString &strLabel);
-        virtual void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
+        void updateCPUChart(ULONG iLoadPercentage, const QString &strLabel);
+        void updateNetworkChart(quint64 uReceive, quint64 uTransmit, const QString &strLabel);
+        void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
+        void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
     /** @} */
     virtual void resetCPUInfoLabel();
     virtual void resetNetworkInfoLabel();
@@ -355,6 +356,7 @@ private:
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
+    void determineTotalRAMAmount();
 
     CCloudMachine m_comMachine;
     UIProgressTaskReadCloudMachineMetricList *m_ReadListProgressTask;
@@ -369,6 +371,7 @@ private:
 
     QMap<QString, quint64> m_networkReceiveCache;
     QMap<QString, quint64> m_networkTransmitCache;
-
+    /** Total amount of RAM in kb. */
+    quint64 m_iTotalRAM;
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

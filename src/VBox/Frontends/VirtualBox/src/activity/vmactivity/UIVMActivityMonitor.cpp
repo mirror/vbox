@@ -50,11 +50,15 @@
 
 /* COM includes: */
 #include "CConsole.h"
+#include "CForm.h"
+#include "CFormValue.h"
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
 #include "CStringArray.h"
+#include "CRangedIntegerFormValue.h"
 #include <iprt/string.h>
+#include <VBox/com/VirtualBox.h>
 
 /* External includes: */
 #include <math.h>
@@ -724,12 +728,14 @@ QString UIChart::YAxisValueLabel(quint64 iValue) const
     if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
         return QString::number(iValue).append("%");
     if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-        return UITranslator::formatSize(_1K * (quint64)iValue, g_iDecimalCount);
+        return UITranslator::formatSize(_1K * iValue, g_iDecimalCount);
     if (   m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0
         || m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
         return UITranslator::formatSize(iValue, g_iDecimalCount);
     if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
         return UITranslator::addMetricSuffixToNumber(iValue);
+    if (m_pMetric->unit().compare("gb", Qt::CaseInsensitive) == 0)
+        return QString::number(iValue).append(" GB");
     return QString();
 }
 
@@ -1043,7 +1049,6 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData, const QString &strLa
         return;
 
     addData(iDataSeriesIndex, iData);
-
     if (iDataSeriesIndex == 0)
     {
         m_labels.enqueue(strLabel);
@@ -1930,16 +1935,54 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkMetricName;
     m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkMetricName;
 
+    setMachine(machine);
+    determineTotalRAMAmount();
+
     prepareMetrics();
     prepareWidgets();
     retranslateUi();
     prepareActions();
-    setMachine(machine);
     resetCPUInfoLabel();
     resetNetworkInfoLabel();
     resetDiskIOInfoLabel();
 }
 
+void UIVMActivityMonitorCloud::determineTotalRAMAmount()
+{
+    CForm comForm = m_comMachine.GetDetailsForm();
+    /* Ignore cloud machine errors: */
+    if (m_comMachine.isOk())
+    {
+        /* Common anchor for all fields: */
+        const QString strAnchorType = "cloud";
+
+        /* For each form value: */
+        const QVector<CFormValue> values = comForm.GetValues();
+        foreach (const CFormValue &comIteratedValue, values)
+        {
+            /* Ignore invisible values: */
+            if (!comIteratedValue.GetVisible())
+                continue;
+
+            /* Acquire label: */
+            const QString strLabel = comIteratedValue.GetLabel();
+            if (strLabel != "RAM")
+                continue;
+
+            AssertReturnVoid((comIteratedValue.GetType() == KFormValueType_RangedInteger));
+
+            CRangedIntegerFormValue comValue(comIteratedValue);
+            m_iTotalRAM = comValue.GetInteger();
+            QString strRAMUnit = comValue.GetSuffix();
+            if (strRAMUnit.compare("gb", Qt::CaseInsensitive) == 0)
+                m_iTotalRAM *= _1G / _1K;
+            else if (strRAMUnit.compare("mb", Qt::CaseInsensitive) == 0)
+                m_iTotalRAM *= _1M / _1K;
+            if (!comValue.isOk())
+                m_iTotalRAM = 0;
+        }
+    }
+}
 
 void UIVMActivityMonitorCloud::setMachine(const CCloudMachine &comMachine)
 {
@@ -1987,6 +2030,15 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
             cacheDiskRead(timeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_DiskBytesWritten)
             cacheDiskWrite(timeStamps[i], (int)data[i].toFloat());
+        else if (enmMetricType == KMetricType_MemoryUtilization)
+        {
+            if (m_iTotalRAM != 0)
+            {
+                /* calculate used RAM amount in kb: */
+                quint64 iUsedRAM = data[i].toFloat() * (m_iTotalRAM / 100.f);
+                updateRAMChart(iUsedRAM, timeStamps[i]);
+            }
+        }
     }
     sender()->deleteLater();
 }
@@ -2088,6 +2140,8 @@ void UIVMActivityMonitorCloud::updateNetworkChart(quint64 uReceiveRate, quint64 
 
         m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
     }
+    if (m_charts.contains(m_strNetworkMetricName))
+        m_charts[m_strNetworkMetricName]->update();
 }
 
 void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel)
@@ -2111,6 +2165,26 @@ void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uRe
         m_charts[m_strDiskIOMetricName]->update();
 }
 
+void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &strLabel)
+{
+    UIMetric &RAMMetric = m_metrics[m_strRAMMetricName];
+    RAMMetric.setMaximum(m_iTotalRAM);
+    RAMMetric.addData(0, iUsedRAM, strLabel);
+
+    if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
+    {
+        QString strInfo;
+        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle)
+            .arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * m_iTotalRAM, g_iDecimalCount))
+            .arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (m_iTotalRAM - iUsedRAM), g_iDecimalCount))
+            .arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * iUsedRAM, g_iDecimalCount));
+        m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+    }
+
+    if (m_charts.contains(m_strRAMMetricName))
+        m_charts[m_strRAMMetricName]->update();
+}
+
 bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const
 {
     if (m_metricTypeNames[enmMetricType].isEmpty())
@@ -2131,11 +2205,13 @@ bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &m
 
 void UIVMActivityMonitorCloud::prepareMetrics()
 {
-    // UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), m_iMaximumQueueSize);
-    // ramMetric.setDataSeriesName(0, "Free");
-    // ramMetric.setDataSeriesName(1, "Used");
-    // ramMetric.setRequiresGuestAdditions(true);
-    // m_metrics.insert(m_strRAMMetricName, ramMetric);
+    /* RAM Metric: */
+    if (m_iTotalRAM != 0)
+    {
+        UIMetric ramMetric(m_strRAMMetricName, "kb", m_iMaximumQueueSize);
+        ramMetric.setDataSeriesName(0, "Used");
+        m_metrics.insert(m_strRAMMetricName, ramMetric);
+    }
 
     /* CPU Metric: */
     UIMetric cpuMetric(m_strCPUMetricName, "%", m_iMaximumQueueSize);
