@@ -948,6 +948,16 @@ void UIVirtualBoxManager::sltHandleMachineToolTypeChange()
     /* Update actions stuff: */
     updateActionsVisibility();
     updateActionsAppearance();
+
+    /* Make sure separate dialog closed when corresponding tool opened: */
+    switch (m_pWidget->toolsTypeMachine())
+    {
+        case UIToolType_Logs:
+            sltCloseManagerWindow(m_pWidget->toolsTypeMachine());
+            break;
+        default:
+            break;
+    }
 }
 
 void UIVirtualBoxManager::sltCreateMedium()
