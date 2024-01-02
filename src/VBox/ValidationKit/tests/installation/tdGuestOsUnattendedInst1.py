@@ -222,7 +222,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
                       'extraInstallKernelParameters', 'detectedOSTypeId', 'detectedOSVersion', 'detectedOSLanguages',
                       'detectedOSFlavor', 'detectedOSHints' ];
         if oTestDrv.fpApiVer >= 7.1: # Since 7.1 we offer different passwords for user and admin/root accounts.
-            asAttribs.append( [ 'userPassword', 'adminPassword' ] );
+            asAttribs.extend( [ 'userPassword', 'adminPassword' ] );
         else:
             asAttribs.append( [ 'password' ] );
         for sAttrib in asAttribs:
@@ -547,12 +547,11 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #             UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-9.3-64',     'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',      # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-9.4-64',     'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',      # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-10.0-64',     'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',      # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork),
+            UnattendedVm(oSet, 'tst-ubuntu-22.04-64', 'Ubuntu_64', '7.0/uaisos/ubuntu-22.04.3-desktop-amd64.iso',    # >=6GiB ?
+                         UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-ubuntu-23.10-64', 'Ubuntu_64', '7.0/uaisos/ubuntu-23.10.1-desktop-amd64.iso',    # >=6GiB ?
+                         UnattendedVm.kfNoGAs),
+
             #
             # OS/2.
             #
@@ -565,12 +564,18 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             # ARM VMs
             #
             #
+            UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',   # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork, "ARM"),
 
             #
             # Debian
             #
-            UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork, "ARM"),
+            UnattendedVm(oSet, 'tst-debian-9.3-64', 'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-9.4-64', 'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-10.0-64', 'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork),
 
             #
             # OracleLinux
