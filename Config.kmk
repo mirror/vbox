@@ -9306,6 +9306,12 @@ build-release-amd64:
 build-debug-amd64:
 	+$(MAKE) KBUILD_TYPE=debug KBUILD_TARGET_ARCH=amd64
 
+build-release-arm64:
+	+$(MAKE) KBUILD_TYPE=release KBUILD_TARGET_ARCH=arm64
+
+build-debug-arm64:
+	+$(MAKE) KBUILD_TYPE=debug KBUILD_TARGET_ARCH=arm64
+
 
 #
 # Some extra goals.
