@@ -2875,16 +2875,17 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Handle application palette change event: */
     if (   pEvent->type() == QEvent::ApplicationPaletteChange
         && pObject == windowManager().mainWindowShown())
     {
-# if defined(VBOX_WS_MAC)
+#if defined(VBOX_WS_MAC)
         const bool fDarkMode = UICocoaApplication::instance()->isDarkMode();
-# elif defined(VBOX_WS_WIN)
+#elif defined(VBOX_WS_WIN)
         const bool fDarkMode = isWindowsInDarkMode();
-# endif
+#else /* Linux, BSD, Solaris */
+        const bool fDarkMode = isPaletteInDarkMode();
+#endif /* Linux, BSD, Solaris */
         if (m_fDarkMode != fDarkMode)
         {
             m_fDarkMode = fDarkMode;
@@ -2892,7 +2893,6 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
             emit sigThemeChange();
         }
     }
-#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
 
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
