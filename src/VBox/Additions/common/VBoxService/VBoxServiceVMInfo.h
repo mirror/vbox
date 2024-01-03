@@ -34,7 +34,11 @@
 
 extern int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
                             const char *pszKey, const char *pszValueFormat, ...);
+extern int VGSvcUserUpdateV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                            const char *pszKey, const char *pszFormat, va_list va);
 
+extern int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                     const char *pszKey, const char *pszValueFormat, ...);
 
 extern uint32_t g_uVMInfoUserIdleThresholdMS;
 

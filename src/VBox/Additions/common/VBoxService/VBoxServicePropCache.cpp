@@ -35,6 +35,7 @@
 #include <iprt/string.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/HostServices/GuestPropertySvc.h> /* For GUEST_PROP_MAX_VALUE_LEN */
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 #include "VBoxServicePropCache.h"
@@ -213,7 +214,7 @@ int VGSvcPropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNam
  * Updates the local guest property cache and writes it to HGCM if outdated.
  *
  * @returns VBox status code.
- *
+ * @retval  VERR_BUFFER_OVERFLOW if the property name or value exceeds the limit.
  * @param   pCache          The property cache.
  * @param   pszName         The property name.
  * @param   pszValueFormat  The property format string.  If this is NULL then
@@ -227,6 +228,9 @@ int VGSvcPropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, co
 
     Assert(pCache->uClientID);
 
+    if (RTStrNLen(pszName, GUEST_PROP_MAX_NAME_LEN) > GUEST_PROP_MAX_NAME_LEN - 1 /* Terminator */)
+        return VERR_BUFFER_OVERFLOW;
+
     /*
      * Format the value first.
      */
@@ -239,6 +243,11 @@ int VGSvcPropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, co
         va_end(va);
         if (!pszValue)
             return VERR_NO_STR_MEMORY;
+        if (RTStrNLen(pszValue, GUEST_PROP_MAX_VALUE_LEN) > GUEST_PROP_MAX_VALUE_LEN - 1 /* Terminator */)
+        {
+            RTStrFree(pszValue);
+            return VERR_BUFFER_OVERFLOW;
+        }
     }
 
     PVBOXSERVICEVEPROPCACHEENTRY pNode = vgsvcPropCacheFindInternal(pCache, pszName, 0);

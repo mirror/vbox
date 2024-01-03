@@ -107,6 +107,7 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/HostServices/GuestPropertySvc.h> /* For GUEST_PROP_MAX_VALUE_LEN */
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 #include "VBoxServicePropCache.h"
@@ -144,7 +145,7 @@ static const char              *g_pszPropCacheValLoggedInUsers = "/VirtualBox/Gu
 static const char              *g_pszPropCacheValNoLoggedInUsers = "/VirtualBox/GuestInfo/OS/NoLoggedInUsers";
 static const char              *g_pszPropCacheValNetCount = "/VirtualBox/GuestInfo/Net/Count";
 /** A guest user's guest property root key. */
-static const char              *g_pszPropCacheValUser = "/VirtualBox/GuestInfo/User/";
+static const char              *g_pszPropCacheKeyUser = "/VirtualBox/GuestInfo/User";
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t                 g_idVMInfoSession;
 /** The last attached locartion awareness (LA) client timestamp. */
@@ -418,7 +419,8 @@ static void vgsvcFreeLAClientInfo(PVBOXSERVICELACLIENTINFO pClient)
 /**
  * Updates a per-guest user guest property inside the given property cache.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the final property name length exceeds the maximum supported length.
  * @param   pCache                  Pointer to guest property cache to update user in.
  * @param   pszUser                 Name of guest user to update.
  * @param   pszDomain               Domain of guest user to update. Optional.
@@ -435,40 +437,24 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     /* pszValueFormat is optional. */
 
+    /** Historically we limit guest property names to 64 characters (see GUEST_PROP_MAX_NAME_LEN, including terminator).
+     *  So we need to make sure the stuff we want to write as a value fits into that space. See bugref{10575}. */
+
+    /* Try to write things the legacy way first. */
+    char szName[GUEST_PROP_MAX_NAME_LEN];
+    AssertCompile(GUEST_PROP_MAX_NAME_LEN == 64); /* Can we improve stuff once we (ever) raise this limit? */
+    ssize_t const cchVal = pszDomain
+                         ? RTStrPrintf2(szName, sizeof(szName), "%s/%s@%s/%s", g_pszPropCacheKeyUser, pszUser, pszDomain, pszKey)
+                         : RTStrPrintf2(szName, sizeof(szName), "%s/%s/%s",    g_pszPropCacheKeyUser, pszUser, pszKey);
+
+    /* Did we exceed the length limit? Tell the caller to try again with some more sane values. */
+    if (cchVal < 0)
+        return VERR_BUFFER_OVERFLOW;
+
     int rc = VINF_SUCCESS;
 
-    /** @todo r=bird: This is just asking for trouble with long names, esp. when
-     * domain names are included.  The max property name limit is 64 characters,
-     * so it is really easy to run into the limit here. E.g.
-     *      "/VirtualBox/GuestInfo/User/Administrator@DGV-W10X64-TEST/UsageState"
-     * is too long and will be rejected by the host servce (assert in strict builds)
-     * as Dmitrii just observed.
-     *
-     * A slightly more managable design here would've been to use the user ID rather
-     * than the user name. Not sure how this would work for domains, though, these
-     * can probably be pretty long as well. Any numeric/fixed-sized IDs for domains?
-     * Since these mistakes have been made already, perhaps use the UID as a
-     * fallback?
-     *
-     * Also, since we're working a max length limit here, WTF do we use
-     * RTStrAPrintf?  We could use a fixed buffer size and RTStrPrintf2 and detect
-     * the problem here before we even get to the host side.
-     */
-    char *pszName;
-    if (pszDomain)
-    {
-        if (RTStrAPrintf(&pszName, "%s%s@%s/%s", g_pszPropCacheValUser, pszUser, pszDomain, pszKey) < 0)
-            rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        if (RTStrAPrintf(&pszName, "%s%s/%s", g_pszPropCacheValUser, pszUser, pszKey) < 0)
-            rc = VERR_NO_MEMORY;
-    }
-
     char *pszValue = NULL;
-    if (   RT_SUCCESS(rc)
-        && pszValueFormat)
+    if (pszValueFormat)
     {
         va_list va;
         va_start(va, pszValueFormat);
@@ -481,17 +467,43 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
     }
 
     if (RT_SUCCESS(rc))
-        rc = VGSvcPropCacheUpdate(pCache, pszName, pszValue);
+        rc = VGSvcPropCacheUpdate(pCache, szName, pszValue);
     if (rc == VINF_SUCCESS) /* VGSvcPropCacheUpdate will also return VINF_NO_CHANGE. */
     {
         /** @todo Combine updating flags w/ updating the actual value. */
-        rc = VGSvcPropCacheUpdateEntry(pCache, pszName,
+        rc = VGSvcPropCacheUpdateEntry(pCache, szName,
                                        VGSVCPROPCACHE_FLAGS_TEMPORARY | VGSVCPROPCACHE_FLAGS_TRANSIENT,
                                        NULL /* Delete on exit */);
     }
 
     RTStrFree(pszValue);
-    RTStrFree(pszName);
+    return rc;
+}
+
+
+/**
+ * Updates a per-guest user guest property inside the given property cache.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the final property name length exceeds the maximum supported length.
+ * @param   pCache                  Pointer to guest property cache to update user in.
+ * @param   pszUser                 Name of guest user to update.
+ * @param   pszDomain               Domain of guest user to update. Optional.
+ * @param   pszKey                  Key name of guest property to update.
+ * @param   pszFormat               Format string to set. Pass NULL for deleting the property.
+ * @param   va                      Format arguments.
+ */
+int VGSvcUserUpdateV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                     const char *pszKey, const char *pszFormat, va_list va)
+{
+    char *psz = NULL;
+    if (pszFormat) /* Might be NULL to delete a property. */
+    {
+        if (RTStrAPrintfV(&psz, pszFormat, va) < 0)
+            return VERR_NO_MEMORY;
+    }
+    int const rc = VGSvcUserUpdateF(pCache, pszUser, pszDomain, pszKey, psz);
+    RTStrFree(psz);
     return rc;
 }
 

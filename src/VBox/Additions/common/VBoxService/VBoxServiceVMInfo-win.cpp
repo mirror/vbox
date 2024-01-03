@@ -36,6 +36,7 @@
 #include <iprt/win/windows.h>
 #include <wtsapi32.h>        /* For WTS* calls. */
 #include <psapi.h>           /* EnumProcesses. */
+#include <sddl.h>            /* For ConvertSidToStringSidW. */
 #include <Ntsecapi.h>        /* Needed for process security information. */
 
 #include <iprt/assert.h>
@@ -940,6 +941,187 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
 }
 
 
+/**
+ * Destroys an allocated SID.
+ *
+ * @param   pSid                SID to dsetroy. The pointer will be invalid on return.
+ */
+static void vgsvcVMInfoWinUserSidDestroy(PSID pSid)
+{
+    RTMemFree(pSid);
+    pSid = NULL;
+}
+
+
+/**
+ * Looks up and returns a SID for a given user.
+ *
+ * @returns VBox status code.
+ * @param   pszUser             User to look up a SID for.
+ * @param   ppSid               Where to return the allocated SID.
+ *                              Must be destroyed with vgsvcVMInfoWinUserSidDestroy().
+ */
+static int vgsvcVMInfoWinUserSidLookup(const char *pszUser, PSID *ppSid)
+{
+    RTUTF16 *pwszUser = NULL;
+    size_t cwUser = 0;
+    int rc = RTStrToUtf16Ex(pszUser, RTSTR_MAX, &pwszUser, 0, &cwUser);
+    AssertRCReturn(rc, rc);
+
+    PSID pSid = NULL;
+    DWORD cbSid = 0;
+    DWORD cbDomain = 0;
+    SID_NAME_USE enmSidUse = SidTypeUser;
+    if (!LookupAccountNameW(NULL, pwszUser, pSid, &cbSid, NULL, &cbDomain, &enmSidUse))
+    {
+        DWORD const dwErr = GetLastError();
+        if (dwErr == ERROR_INSUFFICIENT_BUFFER)
+        {
+            pSid = (PSID)RTMemAllocZ(cbSid);
+            if (pSid)
+            {
+                PRTUTF16 pwszDomain = (PRTUTF16)RTMemAllocZ(cbDomain * sizeof(RTUTF16));
+                if (pwszDomain)
+                {
+                    if (LookupAccountNameW(NULL, pwszUser, pSid, &cbSid, pwszDomain, &cbDomain, &enmSidUse))
+                    {
+                        if (IsValidSid(pSid))
+                            *ppSid = pSid;
+                        else
+                            rc = VERR_INVALID_PARAMETER;
+                    }
+                    else
+                        rc = RTErrConvertFromWin32(GetLastError());
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = RTErrConvertFromWin32(dwErr);
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    if (RT_FAILURE(rc))
+        vgsvcVMInfoWinUserSidDestroy(pSid);
+
+    return rc;
+}
+
+
+/**
+ * Fallback function in case writing the user name failed within vgsvcVMInfoWinUserUpdateF().
+ *
+ * This uses the following approach:
+ *   - only use the user name as part of the property name from now on
+ *   - write the domain name into a separate "Domain" property
+ *   - write the (full) SID into a  separate "SID" property
+ *
+ * @returns VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the final property name length exceeds the maximum supported length.
+ * @param   pCache                  Pointer to guest property cache to update user in.
+ * @param   pszUser                 Name of guest user to update.
+ * @param   pszDomain               Domain of guest user to update. Optional.
+ * @param   pszKey                  Key name of guest property to update.
+ * @param   pszValueFormat          Guest property value to set. Pass NULL for deleting
+ *                                  the property.
+ * @param   va                      Variable arguments.
+ */
+int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                      WCHAR *pwszSid, const char *pszKey, const char *pszValueFormat, va_list va)
+{
+    int rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "Domain", pszDomain);
+    if (RT_SUCCESS(rc))
+        rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "SID", "%ls", pwszSid);
+
+    /* Last but no least, write the actual guest property value we initially were called for.
+     * We always do this, no matter of what the outcome from above was. */
+    int rc2 = VGSvcUserUpdateV(pCache, pszUser, NULL /* pszDomain */, pszKey, pszValueFormat, va);
+    if (RT_SUCCESS(rc))
+        rc2 = rc;
+
+    return rc;
+}
+
+
+/**
+ * Wrapper function for VGSvcUserUpdateF() that deals with too long guest property names.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the final property name length exceeds the maximum supported length.
+ * @param   pCache                  Pointer to guest property cache to update user in.
+ * @param   pszUser                 Name of guest user to update.
+ * @param   pszDomain               Domain of guest user to update. Optional.
+ * @param   pszKey                  Key name of guest property to update.
+ * @param   pszValueFormat          Guest property value to set. Pass NULL for deleting
+ *                                  the property.
+ * @param   ...                     Variable arguments.
+ */
+int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                              const char *pszKey, const char *pszValueFormat, ...)
+{
+    va_list va;
+    va_start(va, pszValueFormat);
+
+    /* First, try to write stuff as we always did, to not break older VBox versions. */
+    int rc = VGSvcUserUpdateV(pCache, pszUser, pszDomain, pszKey, pszValueFormat, va);
+    if (rc == VERR_BUFFER_OVERFLOW)
+    {
+        /**
+         * If the constructed property name was too long, we have to be a little more creative here:
+         *
+         *   - only use the user name as part of the property name from now on
+         *   - write the domain name into a separate "Domain" property
+         *   - write the (full) SID into a  separate "SID" property
+         */
+        PSID pSid;
+        rc = vgsvcVMInfoWinUserSidLookup(pszUser, &pSid); /** @todo Shall we cache this? */
+        if (RT_SUCCESS(rc))
+        {
+            WCHAR *pwszSid;
+            if (ConvertSidToStringSidW(pSid, &pwszSid)) /** @todo Ditto. */
+            {
+                rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, pszUser, pszDomain, pwszSid, pszKey, pszValueFormat, va);
+                if (RT_FAILURE(rc))
+                {
+                    /**
+                     * If using the sole user name as a property name still is too long or something else failed,
+                     * at least try to look up the user's RID (relative identifier). Note that the RID always is bound to the
+                     * to the authority that issued the SID.
+                     */
+                    int const cSubAuth = *GetSidSubAuthorityCount(pSid);
+                    if (cSubAuth > 1)
+                    {
+                        DWORD const dwUserRid = *GetSidSubAuthority(pSid, cSubAuth - 1);
+                        char  szUserRid[16 + 1];
+                        if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%ld", dwUserRid) > 0)
+                            rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey,
+                                                                   pszValueFormat, va);
+                        else
+                            rc = VERR_BUFFER_OVERFLOW;
+                    }
+                    /* else not much else we can do then. */
+                }
+
+                LocalFree(pwszSid);
+                pwszSid = NULL;
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+
+            vgsvcVMInfoWinUserSidDestroy(pSid);
+        }
+        else
+            VGSvcError("Looking up SID for user '%s' (domain '%s') failed with %Rrc\n", pszUser, pszDomain, rc);
+    }
+    va_end(va);
+    return rc;
+}
+
+
 static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
@@ -980,9 +1162,8 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
                               ? VBoxGuestUserState_InUse
                               : VBoxGuestUserState_Idle;
 
-                    rc = VGSvcUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
-                                          userState == VBoxGuestUserState_InUse ? "InUse" : "Idle");
-
+                    rc = vgsvcVMInfoWinUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
+                                                   userState == VBoxGuestUserState_InUse ? "InUse" : "Idle");
                     /*
                      * Note: vboxServiceUserUpdateF can return VINF_NO_CHANGE in case there wasn't anything
                      *       to update. So only report the user's status to host when we really got something
@@ -995,10 +1176,11 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
 #if 0 /* Do we want to write the idle time as well? */
                         /* Also write the user's current idle time, if there is any. */
                         if (userState == VBoxGuestUserState_Idle)
-                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32", ipcReply.cSecSinceLastInput);
+                            rc = vgsvcVMInfoWinUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32",
+                                                           ipcReply.cSecSinceLastInput);
                         else
-                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", NULL /* Delete property */);
-
+                            rc = vgsvcVMInfoWinUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs",
+                                                           NULL /* Delete property */);
                         if (RT_SUCCESS(rc))
 #endif
                 }
@@ -1025,7 +1207,7 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
                     VGSvcVerbose(4, "VBoxTray for user '%s' not running (anymore), no last input available\n", pszUser);
 
                     /* Overwrite rc from above. */
-                    rc = VGSvcUserUpdateF(pCache, pszUser, pszDomain, "UsageState", "Idle");
+                    rc = vgsvcVMInfoWinUserUpdateF(pCache, pszUser, pszDomain, "UsageState", "Idle");
 
                     fReportToHost = rc == VINF_SUCCESS;
                     if (fReportToHost)
