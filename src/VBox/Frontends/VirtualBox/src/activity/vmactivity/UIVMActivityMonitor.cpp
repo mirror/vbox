@@ -749,7 +749,8 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     int iTotalSeconds = g_iPeriod * m_iMaximumQueueSize;
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
-        int iTimeIndex = iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1);
+        int iTimeIndex = i * iTotalSeconds / (float)(iXSubAxisCount + 1);
+
         QString strAxisText;
         if (m_pMetric && m_pMetric->hasDataLabels())
         {
@@ -758,7 +759,7 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
             strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
         }
         else
-            strAxisText = QString::number(iTimeIndex);
+            strAxisText = QString::number(iTotalSeconds - iTimeIndex);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         int iTextWidth = fontMetrics.horizontalAdvance(strAxisText);
 #else
