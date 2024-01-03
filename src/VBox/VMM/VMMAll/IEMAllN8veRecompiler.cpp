@@ -10805,13 +10805,14 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
      * not, though. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
+#ifdef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
     /*
      * Move/spill/flush stuff out of call-volatile registers.
      * This is the easy way out. We could contain this to the tlb-miss branch
      * by saving and restoring active stuff here.
      */
-    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
+#endif
 
     /*
      * Define labels and allocate the result register (trying for the return
@@ -10853,54 +10854,35 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     RT_NOREF(idxInstr);
 #endif
 
+#ifndef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
+    /* Save variables in volatile registers. */
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave()
+                                     | (idxRegMemResult  != UINT8_MAX ? RT_BIT_32(idxRegMemResult)  : 0)
+                                     | (idxRegValueFetch != UINT8_MAX ? RT_BIT_32(idxRegValueFetch) : 0);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+#endif
+
     /* IEMNATIVE_CALL_ARG2/3_GREG = uValue (idxVarValue) - if store */
+    uint32_t fVolGregMask = IEMNATIVE_CALL_VOLATILE_GREG_MASK;
     if (enmOp == kIemNativeEmitMemOp_Store)
     {
         uint8_t const idxRegArgValue = iSegReg == UINT8_MAX ? IEMNATIVE_CALL_ARG2_GREG : IEMNATIVE_CALL_ARG3_GREG;
-        if (pReNative->Core.aVars[idxVarValue].enmKind == kIemNativeVarKind_Immediate)
-            off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArgValue, pReNative->Core.aVars[idxVarValue].u.uValue);
-        else
-        {
-            uint8_t const idxRegVarValue = pReNative->Core.aVars[idxVarValue].idxReg;
-            if (idxRegVarValue < RT_ELEMENTS(pReNative->Core.aHstRegs))
-            {
-                Assert(!(RT_BIT_32(idxRegVarValue) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
-                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArgValue, idxRegVarValue);
-            }
-            else
-            {
-                uint8_t const idxStackSlot = pReNative->Core.aVars[idxVarValue].idxStackSlot;
-                AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
-                off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgValue, iemNativeStackCalcBpDisp(idxStackSlot));
-            }
-        }
+        off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, idxRegArgValue, idxVarValue, 0 /*cbAppend*/,
+#ifdef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
+                                                        IEMNATIVE_CALL_VOLATILE_GREG_MASK);
+#else
+                                                        IEMNATIVE_CALL_VOLATILE_GREG_MASK, true /*fSpilledVarsInvolatileRegs*/);
+        fVolGregMask &= ~RT_BIT_32(idxRegArgValue);
+#endif
     }
 
     /* IEMNATIVE_CALL_ARG1_GREG = GCPtrMem */
-    if (pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate)
-        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG1_GREG,
-                                        pReNative->Core.aVars[idxVarGCPtrMem].u.uValue + offDisp);
-    else
-    {
-        uint8_t const idxRegVarGCPtrMem = pReNative->Core.aVars[idxVarGCPtrMem].idxReg;
-        if (idxRegVarGCPtrMem < RT_ELEMENTS(pReNative->Core.aHstRegs))
-        {
-            Assert(!(RT_BIT_32(idxRegVarGCPtrMem) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
-            if (!offDisp)
-                off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegVarGCPtrMem);
-            else
-                off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegVarGCPtrMem, offDisp);
-        }
-        else
-        {
-            uint8_t const idxStackSlot = pReNative->Core.aVars[idxVarGCPtrMem].idxStackSlot;
-            AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
-            AssertFailed(); /** @todo This was probably caused by iemNativeRegMoveAndFreeAndFlushAtCall above. Improve... */
-            off = iemNativeEmitLoadGprByBp(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, iemNativeStackCalcBpDisp(idxStackSlot));
-            if (offDisp)
-                off = iemNativeEmitAddGprImm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, offDisp);
-        }
-    }
+    off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarGCPtrMem, offDisp /*cbAppend*/,
+#ifdef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
+                                                    fVolGregMask);
+#else
+                                                    fVolGregMask, true /*fSpilledVarsInvolatileRegs*/);
+#endif
 
     if (iSegReg != UINT8_MAX)
     {
@@ -10924,6 +10906,12 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
         if (idxRegValueFetch != IEMNATIVE_CALL_RET_GREG)
             off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegValueFetch, IEMNATIVE_CALL_RET_GREG);
     }
+
+#ifndef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows());
+#endif
 
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
     if (!TlbState.fSkip)
