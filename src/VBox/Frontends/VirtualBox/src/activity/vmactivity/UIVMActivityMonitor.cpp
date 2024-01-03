@@ -1751,9 +1751,9 @@ void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
+        strInfo = QString("<b>%1</b><br/><font color=\"%2\">%3: %4 %5</font><br/>%6: %7 %8")
             .arg(m_strVMExitInfoLabelTitle)
-            .arg(m_strVMExitLabelCurrent).arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
+            .arg(dataColorString(m_strCPUMetricName, 0)).arg(m_strVMExitLabelCurrent).arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
             .arg(m_strVMExitLabelTotal).arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
          m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
     }
@@ -1792,9 +1792,11 @@ void UIVMActivityMonitorLocal::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * iTotalRAM, g_iDecimalCount))
-            .arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (iFreeRAM), g_iDecimalCount))
-            .arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
+        strInfo = QString("<b>%1</b><br/>%2: %3<br/><font color=\"%4\">%5: %6</font><br/><font color=\"%7\">%8: %9</font>")
+            .arg(m_strRAMInfoLabelTitle)
+            .arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * iTotalRAM, g_iDecimalCount))
+            .arg(dataColorString(m_strCPUMetricName, 1)).arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (iFreeRAM), g_iDecimalCount))
+            .arg(dataColorString(m_strCPUMetricName, 0)).arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strRAMMetricName))
@@ -1945,6 +1947,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetCPUInfoLabel();
     resetNetworkInfoLabel();
     resetDiskIOInfoLabel();
+    resetRAMInfoLabel();
 }
 
 void UIVMActivityMonitorCloud::determineTotalRAMAmount()
@@ -2174,10 +2177,11 @@ void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &s
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle)
+        strInfo = QString("<b>%1</b><br/>%2: %3<br/><font color=\"%4\">%5: %6</font><br/><font color=\"%7\">%8: %9</font>")
+            .arg(m_strRAMInfoLabelTitle)
             .arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * m_iTotalRAM, g_iDecimalCount))
-            .arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (m_iTotalRAM - iUsedRAM), g_iDecimalCount))
-            .arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * iUsedRAM, g_iDecimalCount));
+            .arg(dataColorString(m_strCPUMetricName, 1)).arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (m_iTotalRAM - iUsedRAM), g_iDecimalCount))
+            .arg(dataColorString(m_strCPUMetricName, 0)).arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * iUsedRAM, g_iDecimalCount));
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
 
@@ -2245,9 +2249,8 @@ void UIVMActivityMonitorCloud::resetCPUInfoLabel()
     {
         QString strInfo;
 
-        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font>")
+        strInfo = QString("<b>%1</b></b><br/><font>%2: %3</font>")
             .arg(m_strCPUInfoLabelTitle)
-            .arg(dataColorString(m_strCPUMetricName, 0))
             .arg(m_strCPUInfoLabelGuest).arg("---");
 
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
