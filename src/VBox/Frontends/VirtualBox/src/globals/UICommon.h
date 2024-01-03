@@ -232,10 +232,15 @@ public:
         /** Returns the name of the host OS by using IHost::getOperatingSystem. */
         QString hostOperatingSystem() const;
 
-#ifdef VBOX_WS_WIN
+#if defined(VBOX_WS_MAC)
+        // Provided by UICocoaApplication ..
+#elif defined(VBOX_WS_WIN)
         /** Returns whether Windows host is in Dark mode. */
         bool isWindowsInDarkMode() const;
-#endif
+#else /* Linux, BSD, Solaris */
+        /** Returns whether palette is in Dark mode. */
+        bool isPaletteInDarkMode() const;
+#endif /* Linux, BSD, Solaris */
 
         /** Returns whether host OS is in Dark mode. */
         bool isInDarkMode() const { return m_fDarkMode; }
