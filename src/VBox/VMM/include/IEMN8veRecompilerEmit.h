@@ -1799,8 +1799,8 @@ iemNativeEmitGprByGprLdSt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
  *       does not heed this.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitLoadGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
-                            int32_t offDisp, uint8_t iGprTmp = UINT8_MAX)
+iemNativeEmitLoadGprByGprU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
 {
 #ifdef RT_ARCH_AMD64
     /* mov reg64, mem64 */
@@ -1824,10 +1824,10 @@ iemNativeEmitLoadGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr
  * Emits a 64-bit GPR load via a GPR base address with a displacement.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitLoadGprByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprBase, int32_t offDisp)
+iemNativeEmitLoadGprByGprU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprBase, int32_t offDisp)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitLoadGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 8), off, iGprDst, iGprBase, offDisp);
+    off = iemNativeEmitLoadGprByGprU64Ex(iemNativeInstrBufEnsure(pReNative, off, 8), off, iGprDst, iGprBase, offDisp);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif defined(RT_ARCH_ARM64)
@@ -1842,18 +1842,46 @@ iemNativeEmitLoadGprByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
 /**
  * Emits a 32-bit GPR load via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x3ffc...0x3ffc range will require a temporary register (@a iGprTmp)
+ *       if @a iGprReg and @a iGprBase are the same. Will assert / throw if
+ *       caller does not heed this.
+ *
  * @note Bits 63 thru 32 in @a iGprDst will be cleared.
  */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitLoadGpr32ByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprBase, int32_t offDisp)
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
 {
 #ifdef RT_ARCH_AMD64
     /* mov reg32, mem32 */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     if (iGprDst >= 8 || iGprBase >= 8)
-        pbCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x8b;
-    off = iemNativeEmitGprByGprDisp(pbCodeBuf, off, iGprDst, iGprBase, offDisp);
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x8b;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_Word, sizeof(uint32_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 32-bit GPR load via a GPR base address with a displacement.
+ * @note Bits 63 thru 32 in @a iGprDst will be cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprBase, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadGprByGprU32Ex(iemNativeInstrBufEnsure(pReNative, off, 8), off, iGprDst, iGprBase, offDisp);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif defined(RT_ARCH_ARM64)
@@ -1864,6 +1892,604 @@ iemNativeEmitLoadGpr32ByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 #endif
     return off;
 }
+
+
+/**
+ * Emits a 32-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 64 bits.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x3ffc...0x3ffc range will require a temporary register (@a iGprTmp)
+ *       if @a iGprReg and @a iGprBase are the same. Will assert / throw if
+ *       caller does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU64SignExtendedFromS32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                  int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsxd reg64, mem32 */
+    pCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x63;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignWord64, sizeof(uint32_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR load via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x1ffe...0x1ffe range will require a temporary register (@a iGprTmp)
+ *       if @a iGprReg and @a iGprBase are the same. Will assert / throw if
+ *       caller does not heed this.
+ *
+ * @note Bits 63 thru 16 in @a iGprDst will be cleared.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx reg32, mem16 */
+    if (iGprDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xb7;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_Half, sizeof(uint16_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 64 bits.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x1ffe...0x1ffe range will require a temporary register (@a iGprTmp)
+ *       if @a iGprReg and @a iGprBase are the same. Will assert / throw if
+ *       caller does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU64SignExtendedFromS16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                  int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx reg64, mem16 */
+    pCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xbf;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignHalf64, sizeof(uint16_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 32 bits.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x1ffe...0x1ffe range will require a temporary register (@a iGprTmp)
+ *       if @a iGprReg and @a iGprBase are the same. Will assert / throw if
+ *       caller does not heed this.
+ *
+ * @note Bits 63 thru 32 in @a iGprDst will be cleared.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU32SignExtendedFromS16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                  int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx reg32, mem16 */
+    if (iGprDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xbf;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignHalf32, sizeof(uint16_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR load via a GPR base address with a displacement.
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ *
+ * @note Bits 63 thru 8 in @a iGprDst will be cleared.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU8Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                              int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx reg32, mem8 */
+    if (iGprDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xb6;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_Byte, sizeof(uint8_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 64 bits.
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU64SignExtendedFromS8Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                 int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx reg64, mem8 */
+    pCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xbe;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignByte64, sizeof(uint8_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 32 bits.
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ *
+ * @note Bits 63 thru 32 in @a iGprDst will be cleared.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU32SignExtendedFromS8Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                 int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx reg32, mem8 */
+    if (iGprDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xbe;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignByte32, sizeof(uint8_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR load via a GPR base address with a displacement,
+ * sign-extending the value to 16 bits.
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ *
+ * @note Bits 63 thru 16 in @a iGprDst will be cleared.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByGprU16SignExtendedFromS8Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprBase,
+                                                 int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movsx reg32, mem8 */
+    if (iGprDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xbe;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprDst, iGprBase, offDisp);
+# if 1 /** @todo use 'movzx reg32, reg16' instead of 'and reg32, 0ffffh' ? */
+    /* and reg32, 0xffffh */
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0x81;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprDst & 7);
+    pCodeBuf[off++] = 0xff;
+    pCodeBuf[off++] = 0xff;
+    pCodeBuf[off++] = 0;
+    pCodeBuf[off++] = 0;
+# else
+    /* movzx reg32, reg16 */
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B | X86_OP_REX_R;
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xb7;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprDst & 7);
+# endif
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_SignByte32, sizeof(uint8_t), iGprTmp);
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprDst, 15, 0, false /*64Bit*/);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 64-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x7ff8...0x7ff8 range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGpr64ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprSrc, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem64, reg64 */
+    pCodeBuf[off++] = X86_OP_REX_W | (iGprSrc < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprSrc, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprSrc, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 32-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x3ffc...0x3ffc range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGpr32ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprSrc, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem32, reg32 */
+    if (iGprSrc >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprSrc < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprSrc, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprSrc, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x1ffe...0x1ffe range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGpr16ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprSrc, uint8_t iGprBase,
+                               int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem16, reg16 */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprSrc >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprSrc < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprSrc, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprSrc, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Half, sizeof(uint16_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGpr8ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprSrc, uint8_t iGprBase,
+                              int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem8, reg8 */
+    if (iGprSrc >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iGprSrc < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    else if (iGprSrc >= 4)
+        pCodeBuf[off++] = X86_OP_REX;
+    pCodeBuf[off++] = 0x88;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iGprSrc, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprSrc, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 64-bit immediate store via a GPR base address with a displacement.
+ *
+ * @note This will always require @a iGprTmpImm on ARM (except for uImm=0), on
+ *       AMD64 it depends on the immediate value.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x7ff8...0x7ff8 range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImm64ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint64_t uImm, uint8_t iGprBase,
+                               uint8_t iGprImmTmp = UINT8_MAX, int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    if ((int32_t)uImm == (int64_t)uImm)
+    {
+        /* mov mem64, imm32 (sign-extended) */
+        pCodeBuf[off++] = X86_OP_REX_W | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0xc7;
+        off = iemNativeEmitGprByGprDisp(pCodeBuf, off, 0, iGprBase, offDisp);
+        pCodeBuf[off++] = RT_BYTE1(uImm);
+        pCodeBuf[off++] = RT_BYTE2(uImm);
+        pCodeBuf[off++] = RT_BYTE3(uImm);
+        pCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+    else if (iGprImmTmp != UINT8_MAX || iGprTmp != UINT8_MAX)
+    {
+        /* require temporary register. */
+        if (iGprImmTmp == UINT8_MAX)
+            iGprImmTmp = iGprTmp;
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, iGprImmTmp, uImm);
+        off = iemNativeEmitStoreGpr64ByGprEx(pCodeBuf, off, iGprImmTmp, iGprBase, offDisp);
+    }
+    else
+# ifdef IEM_WITH_THROW_CATCH
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+        AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
+
+#elif defined(RT_ARCH_ARM64)
+    if (uImm == 0)
+        iGprImmTmp = ARMV8_A64_REG_XZR;
+    else
+    {
+        Assert(iGprImmTmp < 31);
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, iGprImmTmp, uImm);
+    }
+    off = iemNativeEmitStoreGpr64ByGprEx(pCodeBuf, off, iGprImmTmp, iGprBase, offDisp, iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 32-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note This will always require @a iGprTmpImm on ARM64 (except for uImm=0).
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x3ffc...0x3ffc range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImm32ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint32_t uImm, uint8_t iGprBase,
+                               uint8_t iGprImmTmp = UINT8_MAX, int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem32, imm32 */
+    if (iGprBase >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0xc7;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, 0, iGprBase, offDisp);
+    pCodeBuf[off++] = RT_BYTE1(uImm);
+    pCodeBuf[off++] = RT_BYTE2(uImm);
+    pCodeBuf[off++] = RT_BYTE3(uImm);
+    pCodeBuf[off++] = RT_BYTE4(uImm);
+    RT_NOREF(iGprImmTmp, iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    Assert(iGprImmTmp < 31);
+    if (uImm == 0)
+        iGprImmTmp = ARMV8_A64_REG_XZR;
+    else
+    {
+        Assert(iGprImmTmp < 31);
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, iGprImmTmp, uImm);
+    }
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprImmTmp, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note This will always require @a iGprTmpImm on ARM64 (except for uImm=0).
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       0x1ffe...0x1ffe range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImm16ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint16_t uImm, uint8_t iGprBase,
+                               uint8_t iGprImmTmp = UINT8_MAX, int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem16, imm16 */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprBase >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0xc7;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, 0, iGprBase, offDisp);
+    pCodeBuf[off++] = RT_BYTE1(uImm);
+    pCodeBuf[off++] = RT_BYTE2(uImm);
+    RT_NOREF(iGprImmTmp, iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    if (uImm == 0)
+        iGprImmTmp = ARMV8_A64_REG_XZR;
+    else
+    {
+        Assert(iGprImmTmp < 31);
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGprImmTmp, uImm);
+    }
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprImmTmp, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Half, sizeof(uint16_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR store via a GPR base address with a displacement.
+ *
+ * @note This will always require @a iGprTmpImm on ARM64 (except for uImm=0).
+ *
+ * @note ARM64: @a offDisp values not in the 0xfff...0xfff range will require a
+ *       temporary register (@a iGprTmp) if @a iGprReg and @a iGprBase are the
+ *       same. Will assert / throw if caller does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImm8ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t uImm, uint8_t iGprBase,
+                              uint8_t iGprImmTmp = UINT8_MAX, int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem8, imm8 */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprBase >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0xc6;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, 0, iGprBase, offDisp);
+    pCodeBuf[off++] = uImm;
+    RT_NOREF(iGprImmTmp, iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    if (uImm == 0)
+        iGprImmTmp = ARMV8_A64_REG_XZR;
+    else
+    {
+        Assert(iGprImmTmp < 31);
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGprImmTmp, uImm);
+    }
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iGprImmTmp, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
 
 
 /*********************************************************************************************************************************
