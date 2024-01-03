@@ -62,6 +62,12 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/* advapi32.dll: */
+typedef BOOL (WINAPI *PFNCONVERTSIDTOSTRINGSIDW)(PSID, LPWSTR *);
+
+/* advapi32.dll: */
+static PFNCONVERTSIDTOSTRINGSIDW g_pfnConvertSidToStringSidW = NULL;
+
 /** Structure for storing the looked up user information. */
 typedef struct VBOXSERVICEVMINFOUSER
 {
@@ -220,6 +226,11 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
         g_pfnQueryFullProcessImageNameW = NULL;
     }
     RTLdrClose(hLdrMod);
+
+    /* advapi32: */
+    rc = RTLdrLoadSystem("advapi32.dll", true /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+        RTLdrGetSymbol(hLdrMod, "ConvertSidToStringSidW", (void **)&g_pfnConvertSidToStringSidW);
 
     return VINF_SUCCESS;
 }
@@ -1025,6 +1036,7 @@ static int vgsvcVMInfoWinUserSidLookup(const char *pszUser, PSID *ppSid)
  * @param   pCache                  Pointer to guest property cache to update user in.
  * @param   pszUser                 Name of guest user to update.
  * @param   pszDomain               Domain of guest user to update. Optional.
+ * @param   pwszSid                 The user's SID as a string. Might be NULL if not supported (NT4).
  * @param   pszKey                  Key name of guest property to update.
  * @param   pszValueFormat          Guest property value to set. Pass NULL for deleting
  *                                  the property.
@@ -1034,7 +1046,7 @@ int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char
                                       WCHAR *pwszSid, const char *pszKey, const char *pszValueFormat, va_list va)
 {
     int rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "Domain", pszDomain);
-    if (RT_SUCCESS(rc))
+    if (pwszSid && RT_SUCCESS(rc))
         rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "SID", "%ls", pwszSid);
 
     /* Last but no least, write the actual guest property value we initially were called for.
@@ -1081,36 +1093,37 @@ int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUse
         rc = vgsvcVMInfoWinUserSidLookup(pszUser, &pSid); /** @todo Shall we cache this? */
         if (RT_SUCCESS(rc))
         {
-            WCHAR *pwszSid;
-            if (ConvertSidToStringSidW(pSid, &pwszSid)) /** @todo Ditto. */
-            {
-                rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, pszUser, pszDomain, pwszSid, pszKey, pszValueFormat, va);
-                if (RT_FAILURE(rc))
-                {
-                    /**
-                     * If using the sole user name as a property name still is too long or something else failed,
-                     * at least try to look up the user's RID (relative identifier). Note that the RID always is bound to the
-                     * to the authority that issued the SID.
-                     */
-                    int const cSubAuth = *GetSidSubAuthorityCount(pSid);
-                    if (cSubAuth > 1)
-                    {
-                        DWORD const dwUserRid = *GetSidSubAuthority(pSid, cSubAuth - 1);
-                        char  szUserRid[16 + 1];
-                        if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%ld", dwUserRid) > 0)
-                            rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey,
-                                                                   pszValueFormat, va);
-                        else
-                            rc = VERR_BUFFER_OVERFLOW;
-                    }
-                    /* else not much else we can do then. */
-                }
+            WCHAR *pwszSid = NULL;
+            if (g_pfnConvertSidToStringSidW)
+                g_pfnConvertSidToStringSidW(pSid, &pwszSid); /** @todo Ditto. */
 
+            rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, pszUser, pszDomain, pwszSid, pszKey, pszValueFormat, va);
+            if (RT_FAILURE(rc))
+            {
+                /**
+                 * If using the sole user name as a property name still is too long or something else failed,
+                 * at least try to look up the user's RID (relative identifier). Note that the RID always is bound to the
+                 * to the authority that issued the SID.
+                 */
+                int const cSubAuth = *GetSidSubAuthorityCount(pSid);
+                if (cSubAuth > 1)
+                {
+                    DWORD const dwUserRid = *GetSidSubAuthority(pSid, cSubAuth - 1);
+                    char  szUserRid[16 + 1];
+                    if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%ld", dwUserRid) > 0)
+                        rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey,
+                                                               pszValueFormat, va);
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
+                /* else not much else we can do then. */
+            }
+
+            if (pwszSid)
+            {
                 LocalFree(pwszSid);
                 pwszSid = NULL;
             }
-            else
-                rc = RTErrConvertFromWin32(GetLastError());
 
             vgsvcVMInfoWinUserSidDestroy(pSid);
         }
