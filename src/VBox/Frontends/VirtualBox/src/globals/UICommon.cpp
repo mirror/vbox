@@ -1140,7 +1140,47 @@ void UICommon::loadColorTheme()
         qApp->setPalette(darkPalette);
         qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2b2b2b; border: 1px solid #737373; }");
     }
-#endif /* VBOX_WS_WIN */
+
+#else /* Linux, BSD, Solaris */
+
+    /* For the Dark mode! */
+    if (isInDarkMode())
+    {
+        // WORKAROUND:
+        // Have seen it on Linux with Qt5 but still see it with Qt6.
+        // In Dark themes on KDE (at least) PlaceholderText foreground
+        // is indistinguishable on Base background.
+
+        /* Acquire global palette: */
+        QPalette darkPalette = qApp->palette();
+
+        /* Get text base color: */
+        const QColor base = darkPalette.color(QPalette::Active, QPalette::Base);
+
+        /* Get possible foreground colors: */
+        const QColor simpleText = darkPalette.color(QPalette::Active, QPalette::Text);
+        const QColor placeholderText = darkPalette.color(QPalette::Active, QPalette::PlaceholderText);
+        QColor lightText = simpleText.black() < placeholderText.black() ? simpleText : placeholderText;
+        QColor darkText = simpleText.black() > placeholderText.black() ? simpleText : placeholderText;
+        if (lightText.black() > 128)
+            lightText = QColor(Qt::white);
+        lightText = lightText.darker(150);
+        if (darkText.black() < 128)
+            darkText = QColor(Qt::black);
+        darkText = darkText.lighter(150);
+
+        /* Measure base luminance: */
+        double dLuminance = (0.299 * base.red() + 0.587 * base.green() + 0.114 * base.blue()) / 255;
+
+        /* Adjust color accordingly: */
+        darkPalette.setColor(QPalette::Active, QPalette::PlaceholderText,
+                             dLuminance > 0.5 ? darkText : lightText);
+
+        /* Put palette back: */
+        qApp->setPalette(darkPalette);
+    }
+
+#endif /* Linux, BSD, Solaris */
 }
 
 bool UICommon::processArgs()
