@@ -112,6 +112,11 @@ Rules for adding a changelog entry to make them look more uniform:
          the user and admin / root accounts</para>
       </listitem>
 
+      <listitem>
+       <para>VBoxManage: Added the ability to query the guest's mount points via a new "mount"
+         Guest Control sub command. Requires at least 7.1 Guest Additions</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 

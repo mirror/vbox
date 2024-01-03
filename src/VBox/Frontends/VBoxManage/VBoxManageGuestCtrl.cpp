@@ -2416,6 +2416,50 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
     return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
+static DECLCALLBACK(RTEXITCODE) gctlHandleMount(PGCTLCMDCTX pCtx, int argc, char **argv)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
+
+            default:
+                return errorGetOpt(ch, &ValueUnion);
+        }
+    }
+
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    HRESULT hrc = S_OK;
+
+    com::SafeArray<BSTR> mountPoints;
+    CHECK_ERROR(pCtx->pGuestSession, COMGETTER(MountPoints)(ComSafeArrayAsOutParam(mountPoints)));
+
+    for (size_t i = 0; i < mountPoints.size(); ++i)
+        RTPrintf("%ls\n", mountPoints[i]);
+
+    if (pCtx->cVerbose)
+        RTPrintf("Found %zu mount points\n", mountPoints.size());
+
+    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+}
+
 static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
@@ -3800,6 +3844,8 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
         { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
         { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
         { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
+
+        { "mount",              gctlHandleMount,            HELP_SCOPE_GUESTCONTROL_MOUNT,     0 },
 
         { "df",                 gctlHandleFsInfo,           HELP_SCOPE_GUESTCONTROL_FSINFO,    0 },
         { "fsinfo",             gctlHandleFsInfo,           HELP_SCOPE_GUESTCONTROL_FSINFO,    0 },
