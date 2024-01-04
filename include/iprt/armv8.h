@@ -2945,8 +2945,8 @@ DECLINLINE(bool) Armv8A64ConvertMask64ToImmRImmS(uint64_t fMask, uint32_t *puImm
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalImm(uint32_t u2Opc, uint32_t iRegResult, uint32_t iRegSrc,
                                                       uint32_t uImm7SizeLen, uint32_t uImm6Rotations, bool f64Bit)
 {
-    Assert(u2Opc < 4); Assert(uImm7SizeLen < (f64Bit ? UINT32_C(0x7f) : UINT32_C(0x3f)));
-    Assert(uImm6Rotations < UINT32_C(0x3f)); Assert(iRegResult < 32); Assert(iRegSrc < 32);
+    Assert(u2Opc < 4); Assert(uImm7SizeLen < (f64Bit ? UINT32_C(0x7f) : UINT32_C(0x1f)));
+    Assert(uImm6Rotations <= UINT32_C(0x3f)); Assert(iRegResult < 32); Assert(iRegSrc < 32);
     return ((uint32_t)f64Bit                << 31)
          | (u2Opc                           << 29)
          | UINT32_C(0x12000000)

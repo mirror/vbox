@@ -11507,8 +11507,8 @@ iemNativeEmitStackPushUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t id
     /* and regeff, regeff, #0xffff */
     Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
     pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
-    /* bfi regrsp, regeff, 0, 16 - moves bits 7:16 from idxVarReg to idxGstTmpReg bits 16:0. */
-    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 15, 0, false /*f64Bit*/);
+    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 0, 16, false /*f64Bit*/);
 #endif
     return off;
 }
