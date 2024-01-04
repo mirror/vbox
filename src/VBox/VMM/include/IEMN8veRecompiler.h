@@ -823,7 +823,7 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNativ
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                                             IEMNATIVEGSTREG enmGstReg,
                                                             IEMNATIVEGSTREGUSE enmIntendedUse = kIemNativeGstRegUse_ReadOnly,
-                                                            bool fNoVoltileRegs = false);
+                                                            bool fNoVolatileRegs = false);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                                                             IEMNATIVEGSTREG enmGstReg);
 

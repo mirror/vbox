@@ -3666,6 +3666,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
         Assert(pReNative->Core.aHstRegs[idxReg].fGstRegShadows & RT_BIT_64(enmGstReg));
         Assert(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg));
 
+        /* It's not supposed to be allocated... */
         if (!(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg)))
         {
             /*
@@ -3674,6 +3675,8 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
              * we need to disassociate the host reg from the guest reg.
              */
             /** @todo would be nice to know if preserving the register is in any way helpful. */
+            /* If the purpose is calculations, try duplicate the register value as
+               we'll be clobbering the shadow. */
             if (   enmIntendedUse == kIemNativeGstRegUse_Calculation
                 && (  ~pReNative->Core.bmHstRegs
                     & ~pReNative->Core.bmHstRegsWithGstShadow
@@ -3688,7 +3691,9 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
                        g_apszIemNativeHstRegNames[idxRegNew]));
                 idxReg = idxRegNew;
             }
-            else
+            /* If the current register matches the restrictions, go ahead and allocate
+               it for the caller. */
+            else if (fRegMask & RT_BIT_32(idxReg))
             {
                 pReNative->Core.bmHstRegs |= RT_BIT_32(idxReg);
                 pReNative->Core.aHstRegs[idxReg].enmWhat = kIemNativeWhat_Tmp;
@@ -3703,18 +3708,43 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
                            g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName));
                 }
             }
+            /* Otherwise, allocate a register that satisfies the caller and transfer
+               the shadowing if compatible with the intended use.  (This basically
+               means the call wants a non-volatile register (RSP push/pop scenario).) */
+            else
+            {
+                Assert(fNoVolatileRegs);
+                uint8_t const idxRegNew = iemNativeRegAllocTmpEx(pReNative, poff, fRegMask,
+                                                                    !fNoVolatileRegs
+                                                                 && enmIntendedUse == kIemNativeGstRegUse_Calculation);
+                *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxRegNew, idxReg);
+                if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
+                {
+                    iemNativeRegTransferGstRegShadowing(pReNative, idxReg, idxRegNew, enmGstReg, *poff);
+                    Log12(("iemNativeRegAllocTmpForGuestReg: Transfering %s to %s for guest %s %s\n",
+                           g_apszIemNativeHstRegNames[idxReg], g_apszIemNativeHstRegNames[idxRegNew],
+                           g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
+                }
+                else
+                    Log12(("iemNativeRegAllocTmpForGuestReg: Duplicated %s for guest %s into %s for destructive calc\n",
+                           g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName,
+                           g_apszIemNativeHstRegNames[idxRegNew]));
+                idxReg = idxRegNew;
+            }
         }
         else
         {
+            /*
+             * Oops. Shadowed guest register already allocated!
+             *
+             * Allocate a new register, copy the value and, if updating, the
+             * guest shadow copy assignment to the new register.
+             */
             AssertMsg(   enmIntendedUse != kIemNativeGstRegUse_ForUpdate
                       && enmIntendedUse != kIemNativeGstRegUse_ForFullWrite,
                       ("This shouldn't happen: idxReg=%d enmGstReg=%d enmIntendedUse=%s\n",
                        idxReg, enmGstReg, s_pszIntendedUse[enmIntendedUse]));
 
-            /*
-             * Allocate a new register, copy the value and, if updating, the
-             * guest shadow copy assignment to the new register.
-             */
             /** @todo share register for readonly access. */
             uint8_t const idxRegNew = iemNativeRegAllocTmpEx(pReNative, poff, fRegMask,
                                                              enmIntendedUse == kIemNativeGstRegUse_Calculation);
@@ -11416,7 +11446,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
                == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU16
                    : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU32
                    : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 1, 0) ? (uintptr_t)iemNativeHlpStackFlat32PushU32SReg
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 16, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PushU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PushU16
                    : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PushU64
                    : UINT64_C(0xc000b000a0009000) ));
     }
@@ -11446,19 +11476,6 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /*
-     * Move/spill/flush stuff out of call-volatile registers, keeping whatever
-     * idxVarValue might be occupying.
-     *
-     * This is the easy way out. We could contain this to the tlb-miss branch
-     * by saving and restoring active stuff here.
-     */
-    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */, RT_BIT_32(idxVarValue));
-
-    /* For now, flush any shadow copy of the xSP register. */
-    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_GPR(X86_GREG_xSP)));
-
-    /*
      * Define labels and allocate the result register (trying for the return
      * register if we can).
      */
@@ -11467,14 +11484,69 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
 
     /*
-     * First we try to go via the TLB.
+     * First we calculate the new RSP and the effective stack pointer value.
+     * For 64-bit mode and flat 32-bit these two are the same.
      */
-//pReNative->pInstrBuf[off++] = 0xcc;
-    /** @todo later. */
-    RT_NOREF(cBitsVarAndFlat);
+    uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
+    uint8_t const cBitsFlat   = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
+    bool const    fSeg        = RT_BYTE3(cBitsVarAndFlat) != 0; RT_NOREF(fSeg);
+    uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
+                                                                kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    if (cBitsFlat != 0)
+    {
+        Assert(idxRegEffSp == idxRegRsp);
+        Assert(cBitsFlat == 32 || cBitsFlat == 64);
+        Assert(IEM_F_MODE_X86_IS_FLAT(pReNative->fExec));
+        if (cBitsFlat == 64)
+            off = iemNativeEmitSubGprImm(pReNative, off, idxRegRsp, cbMem);
+        else
+            off = iemNativeEmitSubGpr32Imm(pReNative, off, idxRegRsp, cbMem);
+    }
+    else /** @todo We can skip the test if we're targeting pre-386 CPUs. */
+    {
+        Assert(idxRegEffSp != idxRegRsp);
+        uint8_t const idxRegSsAttr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(X86_SREG_SS),
+                                                                     kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 48);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
+#endif
+        off = iemNativeEmitTestAnyBitsInGpr32Ex(pCodeBuf, off, idxRegSsAttr, X86DESCATTR_D);
+        iemNativeRegFreeTmp(pReNative, idxRegSsAttr);
+        uint32_t const offFixupJumpTo16BitSp = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
+        /* have_32bit_sp: */
+        off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
+        off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+        uint32_t const offFixupJumpToEnd = off;
+        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, off /*8-bit suffices*/);
+
+        /** @todo Put snippet before TlbMiss. */
+        /* have_16bit_sp: */
+        iemNativeFixupFixedJump(pReNative, offFixupJumpTo16BitSp, off);
+#ifdef RT_ARCH_AMD64
+        off = iemNativeEmitSubGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+        off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+#else
+        /* sub regeff, regrsp, #cbMem */
+        pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
+        /* and regeff, regeff, #0xffff */
+        Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+        pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
+        /* bfi regrsp, regeff, 0, 16 - moves bits 7:16 from idxVarReg to idxGstTmpReg bits 16:0. */
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 15, 0, false /*f64Bit*/);
+#endif
+        /* sp_update_end: */
+        iemNativeFixupFixedJump(pReNative, offFixupJumpToEnd, off);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
 
     /*
-     * Call helper to do the popping.
+     * TlbMiss:
+     *
+     * Call helper to do the pushing.
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
@@ -11483,6 +11555,14 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 #else
     RT_NOREF(idxInstr);
 #endif
+
+    /* Save variables in volatile registers. */
+    uint32_t const fHstRegsNotToSave = 0/*TlbState.getRegsNotToSave()*/
+                                     | (idxRegEffSp != idxRegRsp ? RT_BIT_32(idxRegEffSp) : 0)
+                                     | (  pReNative->Core.aVars[idxVarValue].idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs)
+                                        ? RT_BIT_32(pReNative->Core.aVars[idxVarValue].idxReg) : 0);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
 
     /* IEMNATIVE_CALL_ARG1_GREG = idxVarValue (first) */
     off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxVarValue,
@@ -11494,10 +11574,24 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
 
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, 0/*TlbState.getActiveRegsWithShadows()*/);
+
     /* The value variable is implictly flushed. */
     iemNativeVarFreeLocal(pReNative, idxVarValue);
 
+    /*
+     * TlbDone:
+     *
+     * Commit the new RSP value.
+     */
     iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.rsp));
+    iemNativeRegFreeTmp(pReNative, idxRegRsp);
+    if (idxRegEffSp != idxRegRsp)
+        iemNativeRegFreeTmp(pReNative, idxRegEffSp);
 
     return off;
 }
