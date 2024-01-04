@@ -216,6 +216,9 @@ private slots:
         /** Handles call to close Preferences dialog. */
         void sltClosePreferencesDialog();
 
+        /** Handles call to show global tool corresponding to passed @a pAction. */
+        void sltPerformShowGlobalTool(QAction *pAction);
+
         /** Handles call to exit application. */
         void sltPerformExit();
     /** @} */
@@ -321,8 +324,6 @@ private slots:
           * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
         void sltHandlePoweredOffMachine(bool fSuccess, bool fIncludingDiscard);
 
-        /** Handles call to show global tool corresponding to passed @a pAction. */
-        void sltPerformShowGlobalTool(QAction *pAction);
         /** Handles call to show machine tool corresponding to passed @a pAction. */
         void sltPerformShowMachineTool(QAction *pAction);
 
