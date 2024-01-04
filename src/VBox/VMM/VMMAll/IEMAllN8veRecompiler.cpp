@@ -11449,6 +11449,37 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), \
                                  (uintptr_t)iemNativeHlpStackFlatStoreU64, pCallEntry->idxInstr)
 
+
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStackPushUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use16BitSp: */
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSubGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+    off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+#else
+    /* sub regeff, regrsp, #cbMem */
+    pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
+    /* and regeff, regeff, #0xffff */
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
+    /* bfi regrsp, regeff, 0, 16 - moves bits 7:16 from idxVarReg to idxGstTmpReg bits 16:0. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 15, 0, false /*f64Bit*/);
+#endif
+    return off;
+}
+
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitStackPushUse32Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use32BitSp: */
+    off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
+    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    return off;
+}
+
+
 /** IEM_MC[|_FLAT32|_FLAT64]_PUSH_U16/32/32_SREG/64 */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarValue,
@@ -11498,14 +11529,6 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /*
-     * Define labels and allocate the result register (trying for the return
-     * register if we can).
-     */
-    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
-    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
-    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
-
-    /*
      * First we calculate the new RSP and the effective stack pointer value.
      * For 64-bit mode and flat 32-bit these two are the same.
      */
@@ -11515,6 +11538,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
                                                                 kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
     uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t      offFixupJumpToUseOtherBitSp = UINT32_MAX;
     if (cBitsFlat != 0)
     {
         Assert(idxRegEffSp == idxRegRsp);
@@ -11531,37 +11555,61 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
         uint8_t const idxRegSsAttr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(X86_SREG_SS),
                                                                      kIemNativeGstRegUse_ReadOnly);
 #ifdef RT_ARCH_AMD64
-        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 48);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
 #else
-        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
 #endif
         off = iemNativeEmitTestAnyBitsInGpr32Ex(pCodeBuf, off, idxRegSsAttr, X86DESCATTR_D);
         iemNativeRegFreeTmp(pReNative, idxRegSsAttr);
-        uint32_t const offFixupJumpTo16BitSp = off;
-        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
-        /* have_32bit_sp: */
-        off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
-        off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
-        uint32_t const offFixupJumpToEnd = off;
-        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, off /*8-bit suffices*/);
+        offFixupJumpToUseOtherBitSp = off;
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
+            off = iemNativeEmitStackPushUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        else
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_ne); /* jump if not zero */
+            off = iemNativeEmitStackPushUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+    /* SpUpdateEnd: */
+    uint32_t const offLabelSpUpdateEnd = off;
 
-        /** @todo Put snippet before TlbMiss. */
-        /* have_16bit_sp: */
-        iemNativeFixupFixedJump(pReNative, offFixupJumpTo16BitSp, off);
+    /*
+     * Okay, now prepare for TLB lookup and jump to code (or the TlbMiss if
+     * we're skipping lookup).
+     */
+    //IEMNATIVEEMITTLBSTATE const TlbState(pReNative, &off, idxVarGCPtrMem, iSegReg, cbMem);
+    uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbDone   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbLookup = !true//!TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+
+    if (!true)//TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
+    else
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbMiss); /** @todo short jump */
+
+    /*
+     * Use16BitSp:
+     */
+    if (cBitsFlat == 0)
+    {
 #ifdef RT_ARCH_AMD64
-        off = iemNativeEmitSubGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
-        off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
 #else
-        /* sub regeff, regrsp, #cbMem */
-        pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
-        /* and regeff, regeff, #0xffff */
-        Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
-        pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
-        /* bfi regrsp, regeff, 0, 16 - moves bits 7:16 from idxVarReg to idxGstTmpReg bits 16:0. */
-        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 15, 0, false /*f64Bit*/);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
 #endif
-        /* sp_update_end: */
-        iemNativeFixupFixedJump(pReNative, offFixupJumpToEnd, off);
+        iemNativeFixupFixedJump(pReNative, offFixupJumpToUseOtherBitSp, off);
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+            off = iemNativeEmitStackPushUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        else
+            off = iemNativeEmitStackPushUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, offLabelSpUpdateEnd);
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
 
