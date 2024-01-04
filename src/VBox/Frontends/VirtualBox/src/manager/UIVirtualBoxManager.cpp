@@ -1187,7 +1187,7 @@ void UIVirtualBoxManager::sltClosePreferencesDialog()
     delete m_settings.take(UIAdvancedSettingsDialog::Type_Global);
 }
 
-void UIVirtualBoxManager::sltPerformShowGlobalTool(QAction *pAction)
+void UIVirtualBoxManager::sltPerformSwitchToGlobalTool(QAction *pAction)
 {
     /* Sanity checks: */
     AssertPtrReturnVoid(pAction);
@@ -1199,9 +1199,6 @@ void UIVirtualBoxManager::sltPerformShowGlobalTool(QAction *pAction)
 
     /* Make sure global item is selected: */
     m_pWidget->switchToGlobalItem();
-
-    /* Make sure corresponding manager window is closed (if any): */
-    sltCloseManagerWindow(enmType);
 
     /* Open the tool finally: */
     m_pWidget->setToolsTypeGlobal(enmType);
@@ -2269,7 +2266,7 @@ void UIVirtualBoxManager::sltHandlePoweredOffMachine(bool fSuccess, bool fInclud
     }
 }
 
-void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
+void UIVirtualBoxManager::sltPerformSwitchToMachineTool(QAction *pAction)
 {
     /* Sanity checks: */
     AssertPtrReturnVoid(pAction);
@@ -2278,9 +2275,6 @@ void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
     /* Acquire tool type: */
     const UIToolType enmType = pAction->property("UIToolType").value<UIToolType>();
     AssertReturnVoid(enmType != UIToolType_Invalid);
-
-    /* Make sure corresponding manager window is closed (if any): */
-    sltCloseManagerWindow(enmType);
 
     /* Open the tool finally: */
     m_pWidget->setToolsTypeMachine(enmType);
@@ -2564,7 +2558,7 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'File/Tools' menu connections: */
     connect(actionPool()->actionGroup(UIActionIndexMN_M_File_M_Tools), &QActionGroup::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowGlobalTool);
+            this, &UIVirtualBoxManager::sltPerformSwitchToGlobalTool);
 
     /* 'Welcome' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Welcome_S_New), &UIAction::triggered,
@@ -2710,11 +2704,11 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'Group/Tools' menu connections: */
     connect(actionPool()->actionGroup(UIActionIndexMN_M_Group_M_Tools), &QActionGroup::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineTool);
+            this, &UIVirtualBoxManager::sltPerformSwitchToMachineTool);
 
     /* 'Machine/Tools' menu connections: */
     connect(actionPool()->actionGroup(UIActionIndexMN_M_Machine_M_Tools), &QActionGroup::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineTool);
+            this, &UIVirtualBoxManager::sltPerformSwitchToMachineTool);
 
     /* 'Help' menu contents action connection. It is done here since we need different behaviour in
      * the manager and runtime UIs: */
