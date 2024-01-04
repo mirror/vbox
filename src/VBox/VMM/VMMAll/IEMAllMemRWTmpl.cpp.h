@@ -458,6 +458,58 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Ex)(PVMCPUCC pVCpu, TMPL_MEM_TYPE *pu
 # ifdef IEM_WITH_SETJMP
 
 /**
+ * Safe/fallback stack store function that longjmps on error.
+ */
+void RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
+                                                           TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
+#  endif
+
+    uint8_t        bUnmapInfo;
+    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS, GCPtrMem,
+                                                         IEM_ACCESS_STACK_W, TMPL_MEM_TYPE_ALIGN);
+    *puDst = uValue;
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+
+    Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
+}
+
+
+#  ifdef TMPL_WITH_PUSH_SREG
+/**
+ * Safe/fallback stack SREG store function that longjmps on error.
+ */
+void RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegSafeJmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
+                                                               TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
+# endif
+
+    /* The intel docs talks about zero extending the selector register
+       value.  My actual intel CPU here might be zero extending the value
+       but it still only writes the lower word... */
+    /** @todo Test this on new HW and on AMD and in 64-bit mode.  Also test what
+     * happens when crossing an electric page boundrary, is the high word checked
+     * for write accessibility or not? Probably it is.  What about segment limits?
+     * It appears this behavior is also shared with trap error codes.
+     *
+     * Docs indicate the behavior changed maybe in Pentium or Pentium Pro. Check
+     * ancient hardware when it actually did change. */
+    uint8_t   bUnmapInfo;
+    uint16_t *puDst = (uint16_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint16_t), X86_SREG_SS, GCPtrMem,
+                                               IEM_ACCESS_STACK_W, sizeof(uint16_t) - 1); /** @todo 2 or 4 alignment check for PUSH SS? */
+    *puDst = (uint16_t)uValue;
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+
+    Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE " [sreg]\n", GCPtrMem, uValue));
+}
+#  endif /* TMPL_WITH_PUSH_SREG */
+
+
+/**
  * Safe/fallback stack push function that longjmps on error.
  */
 void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
@@ -513,7 +565,6 @@ void RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uin
     else
         pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
 }
-
 
 #  ifdef TMPL_WITH_PUSH_SREG
 /**
