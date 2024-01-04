@@ -224,7 +224,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         if oTestDrv.fpApiVer >= 7.1: # Since 7.1 we offer different passwords for user and admin/root accounts.
             asAttribs.extend( [ 'userPassword', 'adminPassword' ] );
         else:
-            asAttribs.append( [ 'password' ] );
+            asAttribs.append('password')
         for sAttrib in asAttribs:
             try:
                 oValue = getattr(oIUnattended, sAttrib);
