@@ -1069,9 +1069,6 @@ void UIVirtualBoxManager::sltEmbedManagerWindow(UIToolType enmType /* = UIToolTy
     /* Make sure type is valid: */
     AssertReturnVoid(enmType != UIToolType_Invalid);
 
-    /* Make sure corresponding manager window is closed (if any): */
-    sltCloseManagerWindow(enmType);
-
     /* Open known tool finally: */
     switch (enmType)
     {
