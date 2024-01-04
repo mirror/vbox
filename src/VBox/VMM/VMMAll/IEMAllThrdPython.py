@@ -375,6 +375,24 @@ class ThreadedFunctionVariation(object):
         ksVariation_64: True,
         ksVariation_64f: True,
     };
+    kdVariationsWithFlatStackAddress = {
+        ksVariation_32_Flat: True,
+        ksVariation_32f_Flat: True,
+        ksVariation_64: True,
+        ksVariation_64f: True,
+        ksVariation_64_FsGs: True,
+        ksVariation_64f_FsGs: True,
+        ksVariation_64_Addr32: True,
+        ksVariation_64f_Addr32: True,
+    };
+    kdVariationsWithFlat64StackAddress = {
+        ksVariation_64: True,
+        ksVariation_64f: True,
+        ksVariation_64_FsGs: True,
+        ksVariation_64f_FsGs: True,
+        ksVariation_64_Addr32: True,
+        ksVariation_64f_Addr32: True,
+    };
     kdVariationsWithFlatAddr16 = {
         ksVariation_16: True,
         ksVariation_16f: True,
@@ -882,11 +900,11 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.sName = self.kdMemMcToFlatInfo[oNewStmt.sName][1];
 
                 # ... PUSH and POP also needs flat variants, but these differ a little.
-                elif (    self.sVariation in self.kdVariationsWithFlatAddress
+                elif (    self.sVariation in self.kdVariationsWithFlatStackAddress
                       and (   (oNewStmt.sName.startswith('IEM_MC_PUSH') and oNewStmt.sName.find('_FPU') < 0)
                            or oNewStmt.sName.startswith('IEM_MC_POP'))):
-                    oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation in (self.ksVariation_64,
-                                                                                                         self.ksVariation_64f,))];
+                    oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation in
+                                                                                     self.kdVariationsWithFlat64StackAddress)];
 
 
                 # Process branches of conditionals recursively.
