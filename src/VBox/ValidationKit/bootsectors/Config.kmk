@@ -828,6 +828,7 @@ TEMPLATE_VBoxBS3KitImgBig_DEFS        = $(TEMPLATE_VBoxBS3KitImg_DEFS) BS3_BIG_I
 # BS3Kit template for a high image.
 TEMPLATE_VBoxBS3KitHighImg = Template for building BS3Kit test images, the high DLL.
 TEMPLATE_VBoxBS3KitHighImg_EXTENDS   := VBoxBS3KitImg
+TEMPLATE_VBoxBS3KitHighImg_INSTTYPE  := none
 TEMPLATE_VBoxBS3KitHighImg_DEFS       = $(TEMPLATE_VBoxBS3KitImg_DEFS) BS3_IS_HIGH_IMAGE
 TEMPLATE_VBoxBS3KitHighImg_ASFLAGS    = $(filter-out -g,$(TEMPLATE_VBoxBS3KitImg_ASFLAGS)) # trouble with bs3-cpu-basic-3, nasm produce garbage comment/something.
 TEMPLATE_VBoxBS3KitHighImg_BINSUFF   := .high-dll
