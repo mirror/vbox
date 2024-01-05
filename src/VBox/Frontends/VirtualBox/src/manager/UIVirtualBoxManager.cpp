@@ -964,6 +964,15 @@ void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
 
 void UIVirtualBoxManager::sltDetachLogViewer()
 {
+    /* Add tool to detached: */
+    QList<UIToolType> tools = gEDataManager->detachedTools();
+    if (!tools.contains(UIToolType_Logs))
+    {
+        tools << UIToolType_Logs;
+        gEDataManager->setDetachedTools(tools);
+    }
+
+    /* Detach Log Viewer: */
     sltOpenManagerWindow(UIToolType_Logs);
 }
 
@@ -1068,6 +1077,14 @@ void UIVirtualBoxManager::sltEmbedManagerWindow(UIToolType enmType /* = UIToolTy
 
     /* Make sure type is valid: */
     AssertReturnVoid(enmType != UIToolType_Invalid);
+
+    /* Remove tool from detached: */
+    QList<UIToolType> tools = gEDataManager->detachedTools();
+    if (tools.contains(UIToolType_Logs))
+    {
+        tools.removeAll(UIToolType_Logs);
+        gEDataManager->setDetachedTools(tools);
+    }
 
     /* Open known tool finally: */
     switch (enmType)
@@ -2254,6 +2271,10 @@ void UIVirtualBoxManager::sltPerformSwitchToMachineTool(QAction *pAction)
     /* Acquire tool type: */
     const UIToolType enmType = pAction->property("UIToolType").value<UIToolType>();
     AssertReturnVoid(enmType != UIToolType_Invalid);
+
+    /* Check if this tool should be opened detached way: */
+    if (gEDataManager->detachedTools().contains(enmType))
+        return sltOpenManagerWindow(enmType);
 
     /* Open the tool finally: */
     m_pWidget->setToolsTypeMachine(enmType);

@@ -405,6 +405,10 @@ public:
         QList<UIToolType> toolsPaneLastItemsChosen();
         /** Defines last selected tool @a set of VirtualBox Manager. */
         void setToolsPaneLastItemsChosen(const QList<UIToolType> &set);
+        /** Returns the list of detached tools of VirtualBox Manager. */
+        QList<UIToolType> detachedTools();
+        /** Defines the list of detached @a tools of VirtualBox Manager. */
+        void setDetachedTools(const QList<UIToolType> &tools);
 
         /** Returns whether selector-window status-bar visible. */
         bool selectorWindowStatusBarVisible();

@@ -1936,7 +1936,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
            << GUI_Toolbar_MachineTools_Order << GUI_Toolbar_GlobalTools_Order
-           << GUI_Tools_LastItemsSelected
+           << GUI_Tools_LastItemsSelected << GUI_Tools_Detached
            << GUI_Statusbar
            << GUI_GroupDefinitions << GUI_LastItemSelected
            << GUI_Details_Elements
@@ -2914,6 +2914,32 @@ void UIExtraDataManager::setToolsPaneLastItemsChosen(const QList<UIToolType> &se
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_Tools_LastItemsSelected, data);
+}
+
+QList<UIToolType> UIExtraDataManager::detachedTools()
+{
+    /* Parse loaded data: */
+    QList<UIToolType> result;
+    foreach (const QString &strValue, extraDataStringList(GUI_Tools_Detached))
+    {
+        const UIToolType enmType = gpConverter->fromInternalString<UIToolType>(strValue);
+        if (enmType != UIToolType_Invalid)
+            result << enmType;
+    }
+
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setDetachedTools(const QList<UIToolType> &tools)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    foreach (const UIToolType &enmType, tools)
+        data << gpConverter->toInternalString(enmType);
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_Tools_Detached, data);
 }
 
 bool UIExtraDataManager::selectorWindowStatusBarVisible()
