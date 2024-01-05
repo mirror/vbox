@@ -1111,8 +1111,14 @@ int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUse
                     DWORD const dwUserRid = *GetSidSubAuthority(pSid, cSubAuth - 1);
                     char  szUserRid[16 + 1];
                     if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%ld", dwUserRid) > 0)
+                    {
                         rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey,
                                                                pszValueFormat, va);
+                        /* Also write the resolved user name into a dedicated key,
+                         * so that it's easier to look it up for the host. */
+                        if (RT_SUCCESS(rc))
+                            rc = VGSvcUserUpdateV(pCache, szUserRid, NULL /* pszDomain */, "User", pszUser);
+                    }
                     else
                         rc = VERR_BUFFER_OVERFLOW;
                 }
