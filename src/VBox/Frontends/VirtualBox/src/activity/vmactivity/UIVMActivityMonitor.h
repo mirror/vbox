@@ -325,6 +325,7 @@ private slots:
 
     void sltMetricNameListingComplete(QVector<QString> metricNameList);
     void sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps);
+    void sltMachineStateUpdateTimeout();
 
 private:
     void setMachine(const CCloudMachine &comMachine);
@@ -359,7 +360,7 @@ private:
     void determineTotalRAMAmount();
 
     CCloudMachine m_comMachine;
-    UIProgressTaskReadCloudMachineMetricList *m_ReadListProgressTask;
+    QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
 
     QVector<KMetricType> m_availableMetricTypes;
     /** Mapping from API enums to internal metric names. Necessary also since we don't hace a 1-to-1 mapping. */
@@ -373,5 +374,7 @@ private:
     QMap<QString, quint64> m_networkTransmitCache;
     /** Total amount of RAM in kb. */
     quint64 m_iTotalRAM;
+    QTimer *m_pMachineStateUpdateTimer;
+    KCloudMachineState m_enmMachineState;
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

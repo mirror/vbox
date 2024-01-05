@@ -1931,6 +1931,8 @@ void UIVMActivityMonitorLocal::resetDiskIOInfoLabel()
 
 UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
+    , m_pMachineStateUpdateTimer(0)
+    , m_enmMachineState(KCloudMachineState_Invalid)
 {
     m_metricTypeNames[KMetricType_CpuUtilization] = m_strCPUMetricName;
     m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
@@ -1942,6 +1944,10 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     setMachine(machine);
     determineTotalRAMAmount();
 
+    m_pMachineStateUpdateTimer = new QTimer(this);
+    if (m_pMachineStateUpdateTimer)
+        connect(m_pMachineStateUpdateTimer, &QTimer::timeout, this, &UIVMActivityMonitorCloud::sltMachineStateUpdateTimeout);
+
     prepareMetrics();
     prepareWidgets();
     retranslateUi();
@@ -1951,13 +1957,6 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetDiskIOInfoLabel();
     resetRAMInfoLabel();
 
-    if (m_comMachine.isOk())
-    {
-        m_ReadListProgressTask = new UIProgressTaskReadCloudMachineMetricList(this, m_comMachine);
-        if (m_ReadListProgressTask)
-            connect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
-                    this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
-    }
     /* Start the timer: */
     start();
 }
@@ -2007,6 +2006,46 @@ void UIVMActivityMonitorCloud::setMachine(const CCloudMachine &comMachine)
     setEnabled(m_comMachine.GetState() == KCloudMachineState_Running);
 }
 
+void UIVMActivityMonitorCloud::sltMachineStateUpdateTimeout()
+{
+    if (!m_comMachine.isOk())
+        return;
+
+    KCloudMachineState enmNewState = m_comMachine.GetState();
+    /* No changes. Noting to do: */
+    if (m_enmMachineState == enmNewState)
+        return;
+
+    if (m_ReadListProgressTask)
+    {
+        disconnect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
+                   this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
+        delete m_ReadListProgressTask;
+    }
+
+    if (enmNewState == KCloudMachineState_Running)
+    {
+        m_ReadListProgressTask = new UIProgressTaskReadCloudMachineMetricList(this, m_comMachine);
+        if (m_ReadListProgressTask)
+        {
+            connect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
+                    this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
+            m_ReadListProgressTask->start();
+        }
+        setEnabled(true);
+        /* Every minute: */
+        if (m_pTimer)
+            m_pTimer->start(1000 * 60);
+    }
+    else
+    {
+        reset();
+        if (m_pTimer)
+            m_pTimer->stop();
+    }
+    m_enmMachineState = enmNewState;
+}
+
 void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
 {
     m_availableMetricTypes.clear();
@@ -2017,6 +2056,7 @@ void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> met
         start();
 
     sender()->deleteLater();
+    obtainDataAndUpdate();
 }
 
 void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps)
@@ -2075,17 +2115,6 @@ void UIVMActivityMonitorCloud::retranslateUi()
 
 void UIVMActivityMonitorCloud::obtainDataAndUpdate()
 {
-    /* No need to refresh cached values of the ICloudMachine since it has been already done
-     * by the VM list related class. Just fetch the machine attribute here:  */
-    if (!m_comMachine.isOk() || m_comMachine.GetState() != KCloudMachineState_Running)
-    {
-        setEnabled(false);
-        return;
-    }
-    if (!isEnabled())
-        setEnabled(true);
-    if (m_ReadListProgressTask && !m_ReadListProgressTask->isRunning())
-        m_ReadListProgressTask->start();
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
     {
         UIMetric metric;
@@ -2112,14 +2141,41 @@ QString UIVMActivityMonitorCloud::defaultMachineFolder() const
     /** @todo */
     return QString();
 }
-void UIVMActivityMonitorCloud::reset(){}
+void UIVMActivityMonitorCloud::reset()
+{
+    setEnabled(false);
+
+    if (m_pTimer)
+        m_pTimer->stop();
+    /* reset the metrics. this will delete their data cache: */
+    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
+        iterator.value().reset();
+    /* force update on the charts to draw now emptied metrics' data: */
+    for (QMap<QString, UIChart*>::iterator iterator =  m_charts.begin();
+         iterator != m_charts.end(); ++iterator)
+        iterator.value()->update();
+    /* Reset the info labels: */
+    resetCPUInfoLabel();
+    resetRAMInfoLabel();
+    resetNetworkInfoLabel();
+    resetDiskIOInfoLabel();
+
+    m_diskWriteCache.clear();
+    m_diskReadCache.clear();
+
+    m_networkReceiveCache.clear();
+    m_networkTransmitCache.clear();
+
+    update();
+    //sltClearCOMData();
+}
+
 void UIVMActivityMonitorCloud::start()
 {
-    obtainDataAndUpdate();
-    /* Every minute: */
-    if (m_pTimer)
-        m_pTimer->start(1000 * 60);
-
+    sltMachineStateUpdateTimeout();
+    if (m_pMachineStateUpdateTimer)
+        m_pMachineStateUpdateTimer->start(1000 * 10);
 }
 
 void UIVMActivityMonitorCloud::updateCPUChart(ULONG iLoadPercentage, const QString &strLabel)
