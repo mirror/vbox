@@ -2141,7 +2141,7 @@ class TestVmManager(object):
         TestVm('tst-win11-64-efi',           kfGrpStdSmoke,       sHd = '7.0/win11/t-win11-64-efi-2.vdi',
                sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                sHddControllerType = 'SATA Controller', sDvdControllerType = 'SATA Controller',
-               sGraphicsControllerType = 'VBoxSVGA'),
+               sGraphicsControllerType = 'VBoxSVGA', asVirtModesSup = ['hwvirt-np',] ),
 
         # Nested hardware-virtualization
         TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
