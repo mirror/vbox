@@ -1117,7 +1117,7 @@ int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUse
                         /* Also write the resolved user name into a dedicated key,
                          * so that it's easier to look it up for the host. */
                         if (RT_SUCCESS(rc))
-                            rc = VGSvcUserUpdateV(pCache, szUserRid, NULL /* pszDomain */, "User", pszUser);
+                            rc = VGSvcUserUpdateF(pCache, szUserRid, NULL /* pszDomain */, "User", pszUser);
                     }
                     else
                         rc = VERR_BUFFER_OVERFLOW;
