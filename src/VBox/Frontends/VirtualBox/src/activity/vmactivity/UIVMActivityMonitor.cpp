@@ -756,7 +756,8 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
         {
             const QQueue<QString> *labels = m_pMetric->labels();
             int iDataIndex = qMin(labels->size() - 1, iTimeIndex - (m_iMaximumQueueSize - maxDataSize()));
-            strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
+            if (iDataIndex >= 0)
+                strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
         }
         else
             strAxisText = QString::number(iTotalSeconds - iTimeIndex);
@@ -1949,6 +1950,16 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetNetworkInfoLabel();
     resetDiskIOInfoLabel();
     resetRAMInfoLabel();
+
+    if (m_comMachine.isOk())
+    {
+        m_ReadListProgressTask = new UIProgressTaskReadCloudMachineMetricList(this, m_comMachine);
+        if (m_ReadListProgressTask)
+            connect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
+                    this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
+    }
+    /* Start the timer: */
+    start();
 }
 
 void UIVMActivityMonitorCloud::determineTotalRAMAmount()
@@ -1993,14 +2004,7 @@ void UIVMActivityMonitorCloud::setMachine(const CCloudMachine &comMachine)
     m_comMachine = comMachine;
     if (!m_comMachine.isOk())
         return;
-
-    m_ReadListProgressTask = new UIProgressTaskReadCloudMachineMetricList(this, comMachine);
-    if (m_ReadListProgressTask)
-    {
-        connect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
-                this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
-        m_ReadListProgressTask->start();
-    }
+    setEnabled(m_comMachine.GetState() == KCloudMachineState_Running);
 }
 
 void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
@@ -2071,6 +2075,17 @@ void UIVMActivityMonitorCloud::retranslateUi()
 
 void UIVMActivityMonitorCloud::obtainDataAndUpdate()
 {
+    /* No need to refresh cached values of the ICloudMachine since it has been already done
+     * by the VM list related class. Just fetch the machine attribute here:  */
+    if (!m_comMachine.isOk() || m_comMachine.GetState() != KCloudMachineState_Running)
+    {
+        setEnabled(false);
+        return;
+    }
+    if (!isEnabled())
+        setEnabled(true);
+    if (m_ReadListProgressTask && !m_ReadListProgressTask->isRunning())
+        m_ReadListProgressTask->start();
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
     {
         UIMetric metric;
@@ -2341,6 +2356,8 @@ void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp,
 /* static */
 QString UIVMActivityMonitorCloud::formatCloudTimeStamp(const QString &strInput)
 {
+    if (strInput.isEmpty())
+        return QString();
     QDateTime dateTime = QDateTime::fromString(strInput, Qt::RFC2822Date);
 
     if (!dateTime.isValid())
