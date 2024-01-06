@@ -161,6 +161,65 @@ BS3_PROC_BEGIN_CMN bs3CpuWeird1_PcWrapWrDr0, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuWeird1_PcWrapWrDr0
 
 
+;
+; PUSH / POP.
+;
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_xSP_Ud2, BS3_PBC_NEAR
+        push    xSP
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_xSP_Ud2) == 1)
+BS3_PROC_END_CMN   bs3CpuWeird1_Push_xSP_Ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_xSP_Ud2, BS3_PBC_NEAR
+        pop     xSP
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_xSP_Ud2) == 1)
+BS3_PROC_END_CMN   bs3CpuWeird1_Pop_xSP_Ud2
+
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_opsize_xSP_Ud2, BS3_PBC_NEAR
+        db      066h
+        push    xSP
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_opsize_xSP_Ud2) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Push_opsize_xSP_Ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_opsize_xSP_Ud2, BS3_PBC_NEAR
+        db      066h
+        pop     xSP
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_opsize_xSP_Ud2) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Pop_opsize_xSP_Ud2
+
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_opsize_xBX_Ud2, BS3_PBC_NEAR
+        db      066h
+        push    xBX
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_opsize_xBX_Ud2) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Push_opsize_xBX_Ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_opsize_xBX_Ud2, BS3_PBC_NEAR
+        db      066h
+        pop     xBX
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_opsize_xBX_Ud2) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Pop_opsize_xBX_Ud2
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

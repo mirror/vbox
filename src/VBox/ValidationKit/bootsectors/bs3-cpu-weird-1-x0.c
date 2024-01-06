@@ -1084,3 +1084,299 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
     return bRet;
 }
 
+
+/*********************************************************************************************************************************
+*   PUSH / POP                                                                                                                   *
+*********************************************************************************************************************************/
+#define PROTO_ALL(a_Template) \
+    FNBS3FAR a_Template ## _c16, \
+             a_Template ## _c32, \
+             a_Template ## _c64
+PROTO_ALL(bs3CpuWeird1_Push_xSP_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_xSP_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_xBX_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_xSP_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_xSP_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_xBX_Ud2);
+#undef PROTO_ALL
+
+
+/**
+ * Compares push/pop result.
+ */
+static uint8_t bs3CpuWeird1_ComparePushPop(PCBS3TRAPFRAME pTrapCtx, PCBS3TRAPFRAME pTrapExpect)
+{
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    CHECK_MEMBER("bXcpt",       "%#04x",    pTrapCtx->bXcpt,        pTrapExpect->bXcpt);
+    CHECK_MEMBER("bErrCd",      "%#06RX64", pTrapCtx->uErrCd,       pTrapExpect->uErrCd);
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, &pTrapExpect->Ctx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/,
+                         g_pszTestMode, g_usBs3TestStep);
+    if (Bs3TestSubErrorCount() != cErrorsBefore)
+    {
+        Bs3TrapPrintFrame(pTrapCtx);
+        Bs3TestPrintf("CS=%04RX16 SS:ESP=%04RX16:%08RX64 EFL=%RX64 cbIret=%#x\n",
+                      pTrapCtx->uHandlerCs, pTrapCtx->uHandlerSs, pTrapCtx->uHandlerRsp,
+                      pTrapCtx->fHandlerRfl, pTrapCtx->cbIretFrame);
+#if 0
+        Bs3TestPrintf("Halting in ComparePushPop: bXcpt=%#x\n", pTrapCtx->bXcpt);
+        ASMHalt();
+#endif
+        return 1;
+    }
+    return 0;
+}
+
+
+/** Initialize the stack around the CS:RSP with fixed values. */
+static void bs3CpuWeird1_PushPopInitStack(BS3PTRUNION PtrStack)
+{
+    PtrStack.pu16[-8] = UINT16_C(0x1e0f);
+    PtrStack.pu16[-7] = UINT16_C(0x3c2d);
+    PtrStack.pu16[-6] = UINT16_C(0x5a4b);
+    PtrStack.pu16[-5] = UINT16_C(0x7869);
+    PtrStack.pu16[-4] = UINT16_C(0x9687);
+    PtrStack.pu16[-3] = UINT16_C(0xb4a5);
+    PtrStack.pu16[-2] = UINT16_C(0xd2c3);
+    PtrStack.pu16[-1] = UINT16_C(0xf0e1);
+    PtrStack.pu16[0]  = UINT16_C(0xfdec);
+    PtrStack.pu16[1]  = UINT16_C(0xdbca);
+    PtrStack.pu16[2]  = UINT16_C(0xb9a8);
+    PtrStack.pu16[3]  = UINT16_C(0x9786);
+    PtrStack.pu16[4]  = UINT16_C(0x7564);
+    PtrStack.pu16[5]  = UINT16_C(0x5342);
+    PtrStack.pu16[6]  = UINT16_C(0x3120);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop)(uint8_t bTestMode)
+{
+    static struct
+    {
+        FPFNBS3FAR  pfnStart;
+        uint8_t     cBits;
+        bool        fPush;      /**< true if push, false if pop. */
+        int8_t      cbAdjSp;    /**< The SP adjustment value. */
+        uint8_t     idxReg;     /**< The X86_GREG_xXX value of the register in question. */
+        uint8_t     offUd2;     /**< The UD2 offset into the code. */
+    } s_aTests[] =
+    {
+        { bs3CpuWeird1_Push_opsize_xBX_Ud2_c16, 16, true,  -4, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Pop_opsize_xBX_Ud2_c16,  16, false, +4, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Push_xSP_Ud2_c16,        16, true,  -2, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Push_opsize_xSP_Ud2_c16, 16, true,  -4, X86_GREG_xSP, 2 },
+        { bs3CpuWeird1_Pop_xSP_Ud2_c16,         16, false, +2, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Pop_opsize_xSP_Ud2_c16,  16, false, +4, X86_GREG_xSP, 2 },
+
+        { bs3CpuWeird1_Push_opsize_xBX_Ud2_c32, 32, true,  -2, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Pop_opsize_xBX_Ud2_c32,  32, false, +2, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Push_xSP_Ud2_c32,        32, true,  -4, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Push_opsize_xSP_Ud2_c32, 32, true,  -2, X86_GREG_xSP, 2 },
+        { bs3CpuWeird1_Pop_xSP_Ud2_c32,         32, false, +4, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Pop_opsize_xSP_Ud2_c32,  32, false, +2, X86_GREG_xSP, 2 },
+
+        { bs3CpuWeird1_Push_opsize_xBX_Ud2_c64, 64, true,  -2, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Pop_opsize_xBX_Ud2_c64,  64, false, +2, X86_GREG_xBX, 2 },
+        { bs3CpuWeird1_Push_xSP_Ud2_c64,        64, true,  -8, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Push_opsize_xSP_Ud2_c64, 64, true,  -2, X86_GREG_xSP, 2 },
+        { bs3CpuWeird1_Pop_xSP_Ud2_c64,         64, false, +8, X86_GREG_xSP, 1 },
+        { bs3CpuWeird1_Pop_opsize_xSP_Ud2_c64,  64, false, +2, X86_GREG_xSP, 2 },
+    };
+    BS3TRAPFRAME            TrapCtx;
+    BS3TRAPFRAME            TrapExpect;
+    BS3REGCTX               Ctx;
+    uint8_t const           cTestBits    = BS3_MODE_IS_16BIT_CODE(bTestMode) ? 16
+                                         : BS3_MODE_IS_32BIT_CODE(bTestMode) ? 32 : 64;
+    uint8_t BS3_FAR        *pbAltStack   = NULL;
+    BS3PTRUNION             PtrStack;
+    unsigned                i;
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+    Bs3MemZero(&TrapExpect, sizeof(TrapExpect));
+
+    bs3CpuWeird1_SetGlobals(bTestMode);
+
+    /* Construct a basic context. */
+    Bs3RegCtxSaveEx(&Ctx, bTestMode, 1024);
+    Ctx.rflags.u32 &= ~X86_EFL_RF;
+    if (BS3_MODE_IS_64BIT_CODE(bTestMode))
+    {
+        Ctx.rbx.au32[1] ^= UINT32_C(0x12305c78);
+        Ctx.rcx.au32[1] ^= UINT32_C(0x33447799);
+        Ctx.rax.au32[1] ^= UINT32_C(0x9983658a);
+        Ctx.r11.au32[1] ^= UINT32_C(0xbbeeffdd);
+        Ctx.r12.au32[1] ^= UINT32_C(0x87272728);
+    }
+
+    /* ring-3 if possible, since that'll enable automatic stack switching. */
+    if (!BS3_MODE_IS_RM_OR_V86(bTestMode))
+        Bs3RegCtxConvertToRingX(&Ctx, 3);
+
+    /* Make PtrStack == SS:xSP from Ctx. */
+    PtrStack.pv = Bs3RegCtxGetRspSsAsCurPtr(&Ctx);
+
+#if 1
+    /* Use our own stack so we can observe the effect of ESP/RSP rolling across
+       a 64KB boundrary when just popping SP. */
+    if (!BS3_MODE_IS_16BIT_CODE(bTestMode)) /** @todo extend this to 16-bit code as well (except RM ofc). */
+    {
+        uint32_t uFlatNextSeg;
+        pbAltStack = (uint8_t BS3_FAR *)Bs3SlabAllocEx(&g_Bs3Mem4KUpperTiled.Core, 17 /*cPages*/, 0 /*fFlags*/);
+        if (!pbAltStack)
+        {
+            Bs3TestFailed("Failed to allocate 68K for alternative stack!");
+            return 1;
+        }
+
+        /* Modify RSP to be one byte under the 64KB boundrary. */
+        uFlatNextSeg = (Bs3SelPtrToFlat(pbAltStack) + _64K) & ~UINT32_C(0xffff);
+        Ctx.rsp.u = uFlatNextSeg - 1;
+        //Bs3TestPrintf("uFlatNextSeg=%RX32 rsp=%RX64 ss=%RX16\n", uFlatNextSeg, Ctx.rsp.u, Ctx.ss);
+
+        /* Modify the PtrStack accordingly, using a spare selector for addressing it. */
+        Bs3SelSetup16BitData(&Bs3GdteSpare00, uFlatNextSeg - _4K);
+        PtrStack.pv = BS3_FP_MAKE(BS3_SEL_SPARE_00 | 3, _4K - 1);
+    }
+#endif
+
+    /*
+     * Iterate the test snippets and run those relevant to the test context.
+     */
+    for (i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        if (s_aTests[i].cBits == cTestBits)
+        {
+            PBS3REG  const  pReg = &(&Ctx.rax)[s_aTests[i].idxReg];
+            unsigned        iRep;          /**< This is to trigger native recompilation. */
+            BS3REG          SavedReg;
+            BS3REG          SavedRsp;
+
+            /* Save context stuff we may change: */
+            SavedReg.u = pReg->u;
+            SavedRsp.u = Ctx.rsp.u;
+
+            /* Setup the test context. */
+            Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, s_aTests[i].pfnStart);
+            if (BS3_MODE_IS_16BIT_SYS(bTestMode))
+                g_uBs3TrapEipHint = Ctx.rip.u32;
+
+            if (BS3_MODE_IS_16BIT_CODE(bTestMode))
+                Ctx.rsp.u32 |= UINT32_C(0x34560000); /* This part should be ignored, as the stack is also 16-bit. */
+
+            /* The basic expected trap context. */
+            TrapExpect.bXcpt  = X86_XCPT_UD;
+            Bs3MemCpy(&TrapExpect.Ctx, &Ctx, sizeof(TrapExpect.Ctx));
+            TrapExpect.Ctx.rsp.u += s_aTests[i].cbAdjSp;
+            TrapExpect.Ctx.rip.u += s_aTests[i].offUd2;
+            if (!BS3_MODE_IS_16BIT_SYS(bTestMode))
+                TrapExpect.Ctx.rflags.u32 |= X86_EFL_RF;
+
+            g_usBs3TestStep = i;
+
+            if (s_aTests[i].cbAdjSp < 0)
+            {
+                /*
+                 * PUSH
+                 */
+                RTUINT64U    u64ExpectPushed;
+                BS3PTRUNION  PtrStack2;
+                PtrStack2.pb = PtrStack.pb + s_aTests[i].cbAdjSp;
+
+                bs3CpuWeird1_PushPopInitStack(PtrStack);
+                u64ExpectPushed.u = *PtrStack2.pu64;
+                switch (s_aTests[i].cbAdjSp)
+                {
+                    case -2: u64ExpectPushed.au16[0] = pReg->au16[0]; break;
+                    case -4: u64ExpectPushed.au32[0] = pReg->au32[0]; break;
+                    case -8: u64ExpectPushed.au64[0] = pReg->u; break;
+                }
+
+                for (iRep = 0; iRep < 256; iRep++)
+                {
+                    bs3CpuWeird1_PushPopInitStack(PtrStack);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
+                        break;
+                    if (*PtrStack2.pu64 != u64ExpectPushed.u)
+                    {
+                        Bs3TestFailedF("%u - Unexpected stack value after push: %RX64, expected %RX64",
+                                       g_usBs3TestStep, *PtrStack2.pu64, u64ExpectPushed);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                /*
+                 * POP.
+                 *
+                 * This is where it gets interesting.  When popping a partial
+                 * SP and the upper part also changes, this is preserved. I.e.
+                 * the CPU first writes the updated RSP then the register or
+                 * register part that it popped.
+                 */
+                PBS3REG  const  pExpectReg = &(&TrapExpect.Ctx.rax)[s_aTests[i].idxReg];
+                RTUINT64U       u64PopValue;
+
+                bs3CpuWeird1_PushPopInitStack(PtrStack);
+                u64PopValue.u = *PtrStack.pu64;
+                if (bTestMode != BS3_MODE_RM)
+                {
+                    /* When in ring-3 we can put whatever we want on the stack, as the UD2 will cause a stack switch. */
+                    switch (s_aTests[i].cbAdjSp)
+                    {
+                        case 2: u64PopValue.au16[0] = ~pReg->au16[0] ^ UINT16_C(0xf394); break;
+                        case 4: u64PopValue.au32[0] = ~pReg->au32[0] ^ UINT32_C(0x9e501ab3); break;
+                        case 8: u64PopValue.au64[0] = ~pReg->u       ^ UINT64_C(0xbf5fedd520fe9a45); break;
+                    }
+                }
+                else
+                {
+                    /* In real mode we have to be a little more careful. */
+                    if (s_aTests[i].cbAdjSp == 2)
+                        u64PopValue.au16[0] = pReg->au16[0] - 382;
+                    else
+                    {
+                        u64PopValue.au16[0] = pReg->au16[0] - 258;
+                        u64PopValue.au16[1] = ~pReg->au16[1];
+                    }
+                }
+
+                switch (s_aTests[i].cbAdjSp)
+                {
+                    case 2:
+                        pExpectReg->au16[0] = u64PopValue.au16[0];
+                        break;
+                    case 4:
+                        pExpectReg->au32[0] = u64PopValue.au32[0];
+                        pExpectReg->au32[1] = 0;
+                        break;
+                    case 8:
+                        pExpectReg->u = u64PopValue.u;
+                        break;
+                }
+                //Bs3TestPrintf("iTest=%u/%d: %RX64 -> %RX64\n", i, s_aTests[i].cbAdjSp, pReg->u, pExpectReg->u);
+
+                for (iRep = 0; iRep < 256; iRep++)
+                {
+                    bs3CpuWeird1_PushPopInitStack(PtrStack);
+                    *PtrStack.pu64 = u64PopValue.u;
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
+                        break;
+                }
+            }
+
+            /* Restore context (except cs:rsp): */
+            pReg->u   = SavedReg.u;
+            Ctx.rsp.u = SavedRsp.u;
+        }
+    }
+
+    if (pbAltStack)
+        Bs3SlabFree(&g_Bs3Mem4KUpperTiled.Core, Bs3SelPtrToFlat(pbAltStack), 17);
+
+    return 0;
+}
+
