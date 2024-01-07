@@ -1011,8 +1011,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
             /*
              * For 64-bit we have to alias the two buffer pages to the first and
              * last page in the address space. To test that the 32-bit 4G rollover
-             * isn't incorrectly applied to LM64, we repeat this mappingfor the 4G
-             * and 8G boundaries too.
+             * isn't incorrectly applied to LM64, we repeat this mapping for the
+             * 4G  and 8G boundaries too.
              *
              * This ASSUMES there is nothing important in page 0 when in LM64.
              */
@@ -1376,6 +1376,337 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop)(uint8_t bTestMode)
 
     if (pbAltStack)
         Bs3SlabFree(&g_Bs3Mem4KUpperTiled.Core, Bs3SelPtrToFlat(pbAltStack), 17);
+
+    return 0;
+}
+
+
+
+/*********************************************************************************************************************************
+*   PUSH SREG / POP SREG                                                                                                         *
+*********************************************************************************************************************************/
+#define PROTO_ALL(a_Template) \
+    FNBS3FAR a_Template ## _c16, \
+             a_Template ## _c32, \
+             a_Template ## _c64
+PROTO_ALL(bs3CpuWeird1_Push_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_fs_Ud2);
+#undef PROTO_ALL
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode)
+{
+    static struct
+    {
+        FPFNBS3FAR  pfnStart;
+        uint8_t     cBits;
+        bool        fPush;      /**< true if push, false if pop. */
+        int8_t      cbAdjSp;    /**< The SP adjustment value. */
+        uint8_t     offReg;     /**< The offset of the register in BS3REGCTX. */
+        uint8_t     offUd2;     /**< The UD2 offset into the code. */
+    } s_aTests[] =
+    {
+        { bs3CpuWeird1_Push_fs_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_fs_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_opsize_fs_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_fs_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+
+        { bs3CpuWeird1_Push_fs_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_fs_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_opsize_fs_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_fs_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+
+        { bs3CpuWeird1_Push_fs_Ud2_c64,         64, true,  -8, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_fs_Ud2_c64,          64, false, +8, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_opsize_fs_Ud2_c64,  64, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_fs_Ud2_c64,   64, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+    };
+    BS3TRAPFRAME            TrapCtx;
+    BS3TRAPFRAME            TrapExpect;
+    BS3REGCTX               Ctx;
+    uint16_t const          uInitialSel  = bTestMode != BS3_MODE_RM ? BS3_SEL_R3_DS16 : 0x8080;
+    uint16_t const          uPopSel      = BS3_SEL_R3_SS16;
+    bool const              fFullWrite   = BS3_MODE_IS_64BIT_CODE(bTestMode);   /* 64-bit mode writes are full (10980XE). */
+    bool const              fFullRead    = false; /* But, 64-bit mode reads are word sized (10980XE). */
+    bool const              fInRmWrHiEfl = true; /* 10890XE writes EFLAGS[31:16] in the high word of a 'o32 PUSH FS'. */
+    uint8_t const           cTestBits    = BS3_MODE_IS_16BIT_CODE(bTestMode) ? 16
+                                         : BS3_MODE_IS_32BIT_CODE(bTestMode) ? 32 : 64;
+    unsigned const          cbAltStack   = 2 * X86_PAGE_SIZE;
+    uint8_t BS3_FAR        *pbAltStack   = NULL;
+    uint32_t                uFlatAltStack;
+    uint32_t                uFlatAltStackAlias;
+    BS3PTRUNION             PtrStack;
+    unsigned                iVariation;
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+    Bs3MemZero(&TrapExpect, sizeof(TrapExpect));
+
+    bs3CpuWeird1_SetGlobals(bTestMode);
+
+    /* Construct a basic context. */
+    Bs3RegCtxSaveEx(&Ctx, bTestMode, 1024);
+    Ctx.rflags.u32 &= ~X86_EFL_RF;
+    if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        Ctx.rflags.u32 |= X86_EFL_ID; /* Make sure it's set as it bleeds in in real-mode on my intel 10890XE. */
+
+    if (BS3_MODE_IS_64BIT_CODE(bTestMode))
+    {
+        Ctx.rbx.au32[1] ^= UINT32_C(0x12305c78);
+        Ctx.rcx.au32[1] ^= UINT32_C(0x33447799);
+        Ctx.rax.au32[1] ^= UINT32_C(0x9983658a);
+        Ctx.r11.au32[1] ^= UINT32_C(0xbbeeffdd);
+        Ctx.r12.au32[1] ^= UINT32_C(0x87272728);
+    }
+
+    /* ring-3 if possible, since that'll enable automatic stack switching. */
+    if (!BS3_MODE_IS_RM_OR_V86(bTestMode))
+        Bs3RegCtxConvertToRingX(&Ctx, 3);
+
+    /* Make PtrStack == SS:xSP from Ctx. */
+    PtrStack.pv = Bs3RegCtxGetRspSsAsCurPtr(&Ctx);
+
+    /* Use our own stack so we can analyze the PUSH/POP FS behaviour using
+       both the SS limit (except 64-bit code) and paging (when enabled).
+       Two pages suffices here, but we allocate two more for aliasing the
+       first to onto. */
+    if (!BS3_MODE_IS_RM_OR_V86(bTestMode)) /** @todo test V86 mode w/ paging */
+    {
+        pbAltStack = (uint8_t BS3_FAR *)Bs3MemAlloc(BS3MEMKIND_TILED, cbAltStack * 2);
+        if (!pbAltStack)
+            return !Bs3TestFailed("Failed to allocate 2*2 pages for an alternative stack!");
+        uFlatAltStack = Bs3SelPtrToFlat(pbAltStack);
+        if (uFlatAltStack & X86_PAGE_OFFSET_MASK)
+            return !Bs3TestFailedF("Misaligned allocation: %p / %RX32!", pbAltStack, uFlatAltStack);
+    }
+
+    /*
+     * The outer loop does setup variations:
+     *      - 0: Standard push and pop w/o off default stack w/o any restrictions.
+     *      - 1: Apply segment limit as tightly as possible w/o #SS.
+     *      - 2: Apply the segment limit too tight and field #SS.
+     *      - 3: Put the segment number right next to a page that's not present.
+     *           No segment trickery.
+     *      - 4: Make the segment number word straddle a page boundrary where
+     *           the 2nd page is not present.
+     */
+    for (iVariation = 0; iVariation <= 4; iVariation++)
+    {
+        uint16_t const uSavedSs   = Ctx.ss;
+        uint64_t const uSavedRsp  = Ctx.rsp.u;
+        uint32_t       uNominalEsp;
+        unsigned iTest;
+
+        /* Skip variation if not supported by the test mode. */
+        if (iVariation >= 1 && BS3_MODE_IS_RM_OR_V86(bTestMode)) /** @todo test V86 mode w/ paging */
+            break;
+
+        if ((iVariation == 1 || iVariation == 2) && BS3_MODE_IS_64BIT_CODE(bTestMode))
+            continue;
+        if ((iVariation == 3 || iVariation == 4) && !BS3_MODE_IS_PAGED(bTestMode))
+            continue;
+
+        uFlatAltStackAlias = uFlatAltStack;
+        if (iVariation != 0)
+        {
+            /* Alias the two stack pages for variation #3 and #4 so we can keep
+               accessing them via pbAltStack while testing. */
+            if (iVariation == 3 || iVariation == 4)
+            {
+                int rc = Bs3PagingAlias(uFlatAltStackAlias = uFlatAltStack + X86_PAGE_SIZE * 2, uFlatAltStack, X86_PAGE_SIZE,
+                                        X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D | X86_PTE_US);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = Bs3PagingAlias(uFlatAltStackAlias + X86_PAGE_SIZE, uFlatAltStack + X86_PAGE_SIZE, X86_PAGE_SIZE, 0);
+                    if (RT_FAILURE(rc))
+                    {
+                        Bs3TestFailedF("Alias of 2nd stack page failed: %d", rc);
+                        Bs3PagingUnalias(uFlatAltStackAlias, X86_PAGE_SIZE);
+                    }
+                }
+                else
+                    Bs3TestFailedF("Alias of 2nd stack page failed: %d", rc);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+
+            if (iVariation == 1 || iVariation == 2 || BS3_MODE_IS_16BIT_CODE(bTestMode))
+            {
+                /* Setup a 16-bit stack with two pages and ESP pointing at the last
+                   word in the first page.  The SS limit is at 4KB for variation #1
+                   (shouldn't fault unless the CPU does full dword writes), one byte
+                   lower for variation #2 (must always fault), and max limit for
+                   variations #3 and #4. */
+                Bs3SelSetup16BitData(&Bs3GdteSpare00, uFlatAltStackAlias);
+                if (iVariation <= 2)
+                {
+                    Bs3GdteSpare00.Gen.u16LimitLow = _4K - 1;
+                    if (iVariation == 2)
+                        Bs3GdteSpare00.Gen.u16LimitLow -= 1;
+                    Bs3GdteSpare00.Gen.u4LimitHigh = 0;
+                }
+                Ctx.ss     = BS3_SEL_SPARE_00 | 3;
+                Ctx.rsp.u  = _4K - sizeof(uint16_t);
+            }
+            else
+            {
+                /* Setup flat stack similar to above for variation #3 and #4. */
+                Ctx.rsp.u = uFlatAltStackAlias + _4K - sizeof(uint16_t);
+            }
+
+            /* Update the stack pointer to match the new ESP. */
+            PtrStack.pv = &pbAltStack[_4K - sizeof(uint16_t)];
+
+            /* For variation #4 we move the stack position up by one byte so we'll
+               always cross the page boundrary and hit the non-existing page. */
+            if (iVariation == 4)
+            {
+                Ctx.rsp.u   += 1;
+                PtrStack.pb += 1;
+            }
+        }
+        uNominalEsp = Ctx.rsp.u32;
+
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            if (s_aTests[iTest].cBits == cTestBits)
+            {
+                uint16_t BS3_FAR   *pRegCtx    = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&Ctx            + s_aTests[iTest].offReg);
+                uint16_t BS3_FAR   *pRegExpect = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&TrapExpect.Ctx + s_aTests[iTest].offReg);
+                uint16_t const      uSavedSel  = *pRegCtx;
+                uint8_t const       cbItem     = RT_ABS(s_aTests[iTest].cbAdjSp);
+                unsigned            iRep;          /**< This is to trigger native recompilation. */
+                BS3PTRUNION         PtrStack2;
+
+                *pRegCtx = uInitialSel;
+
+                /* Calculate the stack read/write location for this test. PtrStack
+                   ASSUMES word writes, so we have to adjust it and RSP if the CPU
+                   does full read+writes. */
+                PtrStack2.pv = PtrStack.pv;
+                if (cbItem != 2 && (s_aTests[iTest].cbAdjSp < 0 ? fFullWrite : fFullRead))
+                {
+                    PtrStack2.pb -= cbItem - 2;
+                    Ctx.rsp.u32  -= cbItem - 2;
+                }
+
+                /* Setup the test context. */
+                Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, s_aTests[iTest].pfnStart);
+                if (BS3_MODE_IS_16BIT_SYS(bTestMode))
+                    g_uBs3TrapEipHint = Ctx.rip.u32;
+
+                /* Use the same access location for both PUSH and POP instructions (PtrStack). */
+                if (s_aTests[iTest].cbAdjSp < 0)
+                    Ctx.rsp.u16 += -s_aTests[iTest].cbAdjSp;
+
+                /* The basic expected trap context. */
+                TrapExpect.bXcpt  = iVariation == 2 ? X86_XCPT_SS : iVariation == 4 ? X86_XCPT_PF : X86_XCPT_UD;
+                TrapExpect.uErrCd = 0;
+                Bs3MemCpy(&TrapExpect.Ctx, &Ctx, sizeof(TrapExpect.Ctx));
+                if (TrapExpect.bXcpt == X86_XCPT_UD)
+                {
+                    TrapExpect.Ctx.rsp.u += s_aTests[iTest].cbAdjSp;
+                    TrapExpect.Ctx.rip.u += s_aTests[iTest].offUd2;
+                }
+                else if (iVariation == 4)
+                {
+                    TrapExpect.uErrCd    = s_aTests[iTest].cbAdjSp < 0 ? X86_TRAP_PF_RW | X86_TRAP_PF_US : X86_TRAP_PF_US;
+                    TrapExpect.Ctx.cr2.u = uFlatAltStackAlias + X86_PAGE_SIZE;
+                }
+                if (!BS3_MODE_IS_16BIT_SYS(bTestMode))
+                    TrapExpect.Ctx.rflags.u32 |= X86_EFL_RF;
+
+                g_usBs3TestStep = iVariation * 1000 + iTest;
+
+                if (s_aTests[iTest].cbAdjSp < 0)
+                {
+#if 1
+                    /*
+                     * PUSH
+                     */
+                    RTUINT64U u64ExpectPushed;
+
+                    bs3CpuWeird1_PushPopInitStack(PtrStack2);
+                    u64ExpectPushed.u = *PtrStack2.pu64;
+                    if (TrapExpect.bXcpt == X86_XCPT_UD)
+                    {
+                        u64ExpectPushed.au16[0] = *pRegCtx;
+                        if (s_aTests[iTest].cbAdjSp < -2)
+                        {
+                            if (fFullWrite) /* enable for CPUs that writes more than a word */
+                            {
+                                u64ExpectPushed.au16[1] = 0;
+                                if (s_aTests[iTest].cbAdjSp == -8)
+                                    u64ExpectPushed.au32[1] = 0;
+                            }
+                            /* Intel 10980XE real mode: high word appears to be from EFLAGS. Weird! */
+                            else if (bTestMode == BS3_MODE_RM && fInRmWrHiEfl)
+                                u64ExpectPushed.au16[1] = Ctx.rflags.au16[1];
+                        }
+                    }
+
+                    for (iRep = 0; iRep < 256; iRep++)
+                    {
+                        if (iVariation < 3)
+                            bs3CpuWeird1_PushPopInitStack(PtrStack2);
+                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                        if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
+                            break;
+
+                        //if (iVariation < 3)
+                        {
+                            if (*PtrStack2.pu64 != u64ExpectPushed.u)
+                            {
+                                Bs3TestFailedF("%u - Unexpected stack value after push: %RX64, expected %RX64",
+                                               g_usBs3TestStep, *PtrStack2.pu64, u64ExpectPushed);
+                                break;
+                            }
+                        }
+                        //else if (*PtrStack2.pu16 != u64ExpectPushed.au16[0])
+                        //{
+                        //    Bs3TestFailedF("%u - Unexpected stack value after push: %RX16, expected %RX16",
+                        //                   g_usBs3TestStep, *PtrStack2.pu16, u64ExpectPushed.au16[0]);
+                        //    break;
+                        //}
+                    }
+#endif
+                }
+                else
+                {
+#if 1
+                    /*
+                     * POP.
+                     */
+                    if (TrapExpect.bXcpt == X86_XCPT_UD)
+                        *pRegExpect = uPopSel;
+
+                    for (iRep = 0; iRep < 256; iRep++)
+                    {
+                        bs3CpuWeird1_PushPopInitStack(PtrStack2);
+                        *PtrStack2.pu16 = uPopSel;
+                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                        if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
+                            break;
+                    }
+#endif
+                }
+
+                /* Restore context (except cs:rip): */
+                *pRegCtx    = uSavedSel;
+                Ctx.rsp.u32 = uNominalEsp;
+            }
+        }
+
+        /* Restore original SS:RSP value. */
+        Ctx.rsp.u = uSavedRsp;
+        Ctx.ss    = uSavedSs;
+    }
+
+    if (pbAltStack)
+        Bs3MemFree(pbAltStack, cbAltStack);
 
     return 0;
 }
