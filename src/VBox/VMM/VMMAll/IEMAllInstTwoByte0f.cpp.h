@@ -8928,6 +8928,7 @@ FNIEMOP_DEF(iemOp_pop_fs)
     IEMOP_MNEMONIC(pop_fs, "pop fs");
     IEMOP_HLP_MIN_386();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     IEM_MC_DEFER_TO_CIMPL_2_RET(0,
                                   RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst    + X86_SREG_FS)
@@ -9730,6 +9731,7 @@ FNIEMOP_DEF(iemOp_pop_gs)
     IEMOP_MNEMONIC(pop_gs, "pop gs");
     IEMOP_HLP_MIN_386();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     IEM_MC_DEFER_TO_CIMPL_2_RET(0,
                                   RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
                                 | RT_BIT_64(kIemNativeGstReg_SegSelFirst    + X86_SREG_GS)
