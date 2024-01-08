@@ -1389,10 +1389,28 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop)(uint8_t bTestMode)
     FNBS3FAR a_Template ## _c16, \
              a_Template ## _c32, \
              a_Template ## _c64
+PROTO_ALL(bs3CpuWeird1_Push_cs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_ss_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_ds_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_es_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_gs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_ss_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_ds_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_es_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_gs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_cs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_ss_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_ds_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_es_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_opsize_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Push_opsize_gs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_ss_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_ds_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_es_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_fs_Ud2);
+PROTO_ALL(bs3CpuWeird1_Pop_opsize_gs_Ud2);
 #undef PROTO_ALL
 
 
@@ -1408,20 +1426,60 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
         uint8_t     offUd2;     /**< The UD2 offset into the code. */
     } s_aTests[] =
     {
+        { bs3CpuWeird1_Push_cs_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, cs), 1 },
+        { bs3CpuWeird1_Push_ss_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, ss), 1 },
+        { bs3CpuWeird1_Push_ds_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, ds), 1 },
+        { bs3CpuWeird1_Push_es_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, es), 1 },
         { bs3CpuWeird1_Push_fs_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_gs_Ud2_c16,         16, true,  -2, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
+        { bs3CpuWeird1_Pop_ss_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, ss), 1 },
+        { bs3CpuWeird1_Pop_ds_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, ds), 1 },
+        { bs3CpuWeird1_Pop_es_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, es), 1 },
         { bs3CpuWeird1_Pop_fs_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_gs_Ud2_c16,          16, false, +2, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
+        { bs3CpuWeird1_Push_opsize_cs_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, cs), 2 },
+        { bs3CpuWeird1_Push_opsize_ss_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, ss), 2 },
+        { bs3CpuWeird1_Push_opsize_ds_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, ds), 2 },
+        { bs3CpuWeird1_Push_opsize_es_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, es), 2 },
         { bs3CpuWeird1_Push_opsize_fs_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Push_opsize_gs_Ud2_c16,  16, true,  -4, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
+        { bs3CpuWeird1_Pop_opsize_ss_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, ss), 2 },
+        { bs3CpuWeird1_Pop_opsize_ds_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, ds), 2 },
+        { bs3CpuWeird1_Pop_opsize_es_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, es), 2 },
         { bs3CpuWeird1_Pop_opsize_fs_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_gs_Ud2_c16,   16, false, +4, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
 
+        { bs3CpuWeird1_Push_cs_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, cs), 1 },
+        { bs3CpuWeird1_Push_ss_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, ss), 1 },
+        { bs3CpuWeird1_Push_ds_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, ds), 1 },
+        { bs3CpuWeird1_Push_es_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, es), 1 },
         { bs3CpuWeird1_Push_fs_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_gs_Ud2_c32,         32, true,  -4, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
+        { bs3CpuWeird1_Pop_ss_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, ss), 1 },
+        { bs3CpuWeird1_Pop_ds_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, ds), 1 },
+        { bs3CpuWeird1_Pop_es_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, es), 1 },
         { bs3CpuWeird1_Pop_fs_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_gs_Ud2_c32,          32, false, +4, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
+        { bs3CpuWeird1_Push_opsize_cs_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, cs), 2 },
+        { bs3CpuWeird1_Push_opsize_ss_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, ss), 2 },
+        { bs3CpuWeird1_Push_opsize_ds_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, ds), 2 },
+        { bs3CpuWeird1_Push_opsize_es_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, es), 2 },
         { bs3CpuWeird1_Push_opsize_fs_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Push_opsize_gs_Ud2_c32,  32, true,  -2, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
+        { bs3CpuWeird1_Pop_opsize_ss_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, ss), 2 },
+        { bs3CpuWeird1_Pop_opsize_ds_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, ds), 2 },
+        { bs3CpuWeird1_Pop_opsize_es_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, es), 2 },
         { bs3CpuWeird1_Pop_opsize_fs_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_gs_Ud2_c32,   32, false, +2, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
 
         { bs3CpuWeird1_Push_fs_Ud2_c64,         64, true,  -8, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Push_gs_Ud2_c64,         64, true,  -8, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
         { bs3CpuWeird1_Pop_fs_Ud2_c64,          64, false, +8, RT_UOFFSETOF(BS3REGCTX, fs), 2 },
+        { bs3CpuWeird1_Pop_gs_Ud2_c64,          64, false, +8, RT_UOFFSETOF(BS3REGCTX, gs), 2 },
         { bs3CpuWeird1_Push_opsize_fs_Ud2_c64,  64, true,  -2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Push_opsize_gs_Ud2_c64,  64, true,  -2, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
         { bs3CpuWeird1_Pop_opsize_fs_Ud2_c64,   64, false, +2, RT_UOFFSETOF(BS3REGCTX, fs), 3 },
+        { bs3CpuWeird1_Pop_opsize_gs_Ud2_c64,   64, false, +2, RT_UOFFSETOF(BS3REGCTX, gs), 3 },
     };
     BS3TRAPFRAME            TrapCtx;
     BS3TRAPFRAME            TrapExpect;
@@ -1429,11 +1487,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
     uint16_t const          uInitialSel  = bTestMode != BS3_MODE_RM ? BS3_SEL_R3_DS16 : 0x8080;
     uint16_t const          uPopSel      = BS3_SEL_R3_SS16;
     bool const              fFullWrite   = BS3_MODE_IS_64BIT_CODE(bTestMode) /* 64-bit mode writes are full (10980XE). */
-                                        || (g_enmCpuVendor = Bs3GetCpuVendor()) == BS3CPUVENDOR_AMD
-                                        || g_enmCpuVendor == BS3CPUVENDOR_HYGON;
+                                        || (g_enmCpuVendor = Bs3GetCpuVendor()) != BS3CPUVENDOR_INTEL;
     bool const              fFullRead    = false /* But, 64-bit mode reads are word sized (10980XE). */
-                                        || (g_enmCpuVendor = Bs3GetCpuVendor()) == BS3CPUVENDOR_AMD
-                                        || g_enmCpuVendor == BS3CPUVENDOR_HYGON;
+                                        || g_enmCpuVendor != BS3CPUVENDOR_INTEL;
     bool const              fInRmWrHiEfl = true /* 10890XE writes EFLAGS[31:16] in the high word of a 'o32 PUSH FS'. */
                                         && !fFullWrite;
     uint8_t const           cTestBits    = BS3_MODE_IS_16BIT_CODE(bTestMode) ? 16
@@ -1574,19 +1630,21 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
             }
         }
         uNominalEsp = Ctx.rsp.u32;
-
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
         {
             if (s_aTests[iTest].cBits == cTestBits)
             {
-                uint16_t BS3_FAR   *pRegCtx    = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&Ctx            + s_aTests[iTest].offReg);
-                uint16_t BS3_FAR   *pRegExpect = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&TrapExpect.Ctx + s_aTests[iTest].offReg);
-                uint16_t const      uSavedSel  = *pRegCtx;
-                uint8_t const       cbItem     = RT_ABS(s_aTests[iTest].cbAdjSp);
+                uint16_t BS3_FAR   *pRegCtx     = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&Ctx            + s_aTests[iTest].offReg);
+                uint16_t BS3_FAR   *pRegExpect  = (uint16_t BS3_FAR *)((uint8_t BS3_FAR *)&TrapExpect.Ctx + s_aTests[iTest].offReg);
+                uint16_t const      uSavedSel   = *pRegCtx;
+                uint8_t const       cbItem      = RT_ABS(s_aTests[iTest].cbAdjSp);
+                bool const          fDefaultSel = s_aTests[iTest].offReg == RT_UOFFSETOF(BS3REGCTX, ss)
+                                               || s_aTests[iTest].offReg == RT_UOFFSETOF(BS3REGCTX, cs);
                 unsigned            iRep;          /**< This is to trigger native recompilation. */
                 BS3PTRUNION         PtrStack2;
 
-                *pRegCtx = uInitialSel;
+                if (!fDefaultSel)
+                    *pRegCtx = uInitialSel;
 
                 /* Calculate the stack read/write location for this test. PtrStack
                    ASSUMES word writes, so we have to adjust it and RSP if the CPU
@@ -1659,23 +1717,17 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
                             bs3CpuWeird1_PushPopInitStack(PtrStack2);
                         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                         if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
-                            break;
-
-                        //if (iVariation < 3)
                         {
-                            if (*PtrStack2.pu64 != u64ExpectPushed.u)
-                            {
-                                Bs3TestFailedF("%u - Unexpected stack value after push: %RX64, expected %RX64",
-                                               g_usBs3TestStep, *PtrStack2.pu64, u64ExpectPushed);
-                                break;
-                            }
+                            ASMHalt();
+                            break;
                         }
-                        //else if (*PtrStack2.pu16 != u64ExpectPushed.au16[0])
-                        //{
-                        //    Bs3TestFailedF("%u - Unexpected stack value after push: %RX16, expected %RX16",
-                        //                   g_usBs3TestStep, *PtrStack2.pu16, u64ExpectPushed.au16[0]);
-                        //    break;
-                        //}
+
+                        if (*PtrStack2.pu64 != u64ExpectPushed.u)
+                        {
+                            Bs3TestFailedF("%u - Unexpected stack value after push: %RX64, expected %RX64",
+                                           g_usBs3TestStep, *PtrStack2.pu64, u64ExpectPushed);
+                            break;
+                        }
                     }
 #endif
                 }
@@ -1686,15 +1738,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
                      * POP.
                      */
                     if (TrapExpect.bXcpt == X86_XCPT_UD)
-                        *pRegExpect = uPopSel;
+                        *pRegExpect = !fDefaultSel ? uPopSel : *pRegCtx;
 
                     for (iRep = 0; iRep < 256; iRep++)
                     {
                         bs3CpuWeird1_PushPopInitStack(PtrStack2);
-                        *PtrStack2.pu16 = uPopSel;
+                        *PtrStack2.pu16 = !fDefaultSel ? uPopSel : *pRegCtx;
                         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                         if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
+                        {
+                            ASMHalt();
                             break;
+                        }
                     }
 #endif
                 }

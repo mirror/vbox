@@ -224,43 +224,64 @@ BS3_PROC_END_CMN   bs3CpuWeird1_Pop_opsize_xBX_Ud2
 ; PUSH / POP SREG.
 ;
 
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_fs_Ud2, BS3_PBC_NEAR
-        push    fs
+ %ifndef DEFINED_DO_PUSH_POP_MACROS
+  %define DEFINED_DO_PUSH_POP_MACROS
+  %macro DoPushSeg 2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_ %+ %1 %+ _Ud2, BS3_PBC_NEAR
+        push    %1
 .ud2_again:
         ud2
         jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_fs_Ud2) == 2)
-BS3_PROC_END_CMN   bs3CpuWeird1_Push_fs_Ud2
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_ %+ %1 %+ _Ud2) == %2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Push_ %+ %1 %+ _Ud2
 
-
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_fs_Ud2, BS3_PBC_NEAR
-        pop     fs
-.ud2_again:
-        ud2
-        jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_fs_Ud2) == 2)
-BS3_PROC_END_CMN   bs3CpuWeird1_Pop_fs_Ud2
-
-
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_opsize_fs_Ud2, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Push_opsize_ %+ %1 %+ _Ud2, BS3_PBC_NEAR
         db      066h
-        push    fs
+        push    %1
 .ud2_again:
         ud2
         jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_opsize_fs_Ud2) == 3)
-BS3_PROC_END_CMN   bs3CpuWeird1_Push_opsize_fs_Ud2
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Push_opsize_ %+ %1 %+ _Ud2) == (%2 + 1))
+BS3_PROC_END_CMN   bs3CpuWeird1_Push_opsize_ %+ %1 %+ _Ud2
 
+  %endmacro ; DoPushSeg
 
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_opsize_fs_Ud2, BS3_PBC_NEAR
+  %macro DoPopSeg 2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_ %+ %1 %+ _Ud2, BS3_PBC_NEAR
+        pop      %1
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_ %+ %1 %+ _Ud2) == %2)
+BS3_PROC_END_CMN   bs3CpuWeird1_Pop_ %+ %1 %+ _Ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_Pop_opsize_ %+ %1 %+ _Ud2, BS3_PBC_NEAR
         db      066h
-        pop     fs
+        pop     %1
 .ud2_again:
         ud2
         jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_opsize_fs_Ud2) == 3)
-BS3_PROC_END_CMN   bs3CpuWeird1_Pop_opsize_fs_Ud2
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_Pop_opsize_ %+ %1 %+ _Ud2) == (%2 + 1))
+BS3_PROC_END_CMN   bs3CpuWeird1_Pop_opsize_ %+ %1 %+ _Ud2
 
+  %endmacro ; DoPopSeg
+ %endif ; !DEFINED_DO_PUSH_POP_MACROS
+
+DoPushSeg fs, 2
+DoPopSeg  fs, 2
+DoPushSeg gs, 2
+DoPopSeg  gs, 2
+ %if TMPL_BITS == 32 || TMPL_BITS == 16
+DoPushSeg es, 1
+DoPopSeg  es, 1
+DoPushSeg ds, 1
+DoPopSeg  ds, 1
+DoPushSeg ss, 1
+DoPopSeg  ss, 1
+DoPushSeg cs, 1
+ %endif
 
 %endif ; BS3_INSTANTIATING_CMN
 

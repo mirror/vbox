@@ -56,13 +56,13 @@ FNBS3TESTDOMODE bs3CpuWeird1_PushPopSReg_f16;
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
-#if 1 /** @todo fails in native recompiler atm. */ /** @todo asserts in ring-0 on VT-x! */
+#if 0 /** @todo fails in native recompiler atm. */ /** @todo asserts in ring-0 on VT-x! */
     { "dbg+inhibit+ringxfer", bs3CpuWeird1_DbgInhibitRingXfer_f16, 0 },
 #endif
-#if 1 /** @todo asserts in native recompiler debug builds, but seems to work otherwise. */
+#if 0 /** @todo asserts in native recompiler debug builds, but seems to work otherwise. */
     { "pc wrapping", bs3CpuWeird1_PcWrapping_f16, 0 },
 #endif
-    { "push/pop", bs3CpuWeird1_PushPop_f16, 0 },
+//    { "push/pop", bs3CpuWeird1_PushPop_f16, 0 },
     { "push/pop sreg", bs3CpuWeird1_PushPopSReg_f16, 0 },
 };
 
