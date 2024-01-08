@@ -168,7 +168,7 @@ private slots:
         void sltCurrentSnapshotItemChange();
 
         /** Handles request to detach Log Viewer pane. */
-        void sltDetachLogViewer();
+        void sltDetachToolPane(UIToolType enmToolType);
 
         /** Handles state change for cloud machine with certain @a uId. */
         void sltHandleCloudMachineStateChange(const QUuid &uId);

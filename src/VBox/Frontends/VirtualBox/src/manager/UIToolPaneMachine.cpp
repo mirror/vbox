@@ -195,7 +195,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                     /* Configure pane: */
                     m_pPaneLogViewer->setProperty("ToolType", QVariant::fromValue(UIToolType_Logs));
                     connect(m_pPaneLogViewer, &UIVMLogViewerWidget::sigDetach,
-                            this, &UIToolPaneMachine::sigDetachLogViewer);
+                            this, &UIToolPaneMachine::sltDetachToolPane);
                     m_pPaneLogViewer->setSelectedVMListItems(m_items);
 
                     /* Add into layout: */
@@ -390,4 +390,15 @@ void UIToolPaneMachine::cleanup()
 void UIToolPaneMachine::handleTokenChange()
 {
     // printf("UIToolPaneMachine::handleTokenChange: Active = %d, current tool = %d\n", m_fActive, currentTool());
+}
+
+void UIToolPaneMachine::sltDetachToolPane()
+{
+    AssertPtrReturnVoid(sender());
+    UIToolType enmToolType = UIToolType_Invalid;
+    if (sender() == m_pPaneLogViewer)
+        enmToolType = UIToolType_Logs;
+
+    if (enmToolType != UIToolType_Invalid)
+        emit sigDetachToolPane(enmToolType);
 }

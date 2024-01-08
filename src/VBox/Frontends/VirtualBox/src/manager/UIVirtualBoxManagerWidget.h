@@ -123,10 +123,10 @@ signals:
         void sigCurrentSnapshotItemChange();
     /** @} */
 
-    /** @name Tools / Log Viewer pane stuff.
+    /** @name Tools / Generic pane stuff.
       * @{ */
-        /** Notifies listeners about request to detach Log Viewer pane. */
-        void sigDetachLogViewer();
+        /** Notifies listeners about request to detach pane with tool type @p enmToolType. */
+        void sigDetachToolPane(UIToolType enmToolType);
     /** @} */
 
 public:

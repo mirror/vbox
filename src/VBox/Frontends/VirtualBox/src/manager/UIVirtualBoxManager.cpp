@@ -962,18 +962,19 @@ void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
     updateActionsAppearance();
 }
 
-void UIVirtualBoxManager::sltDetachLogViewer()
+void UIVirtualBoxManager::sltDetachToolPane(UIToolType enmToolType)
 {
+    AssertReturnVoid(enmToolType != UIToolType_Invalid);
     /* Add tool to detached: */
     QList<UIToolType> tools = gEDataManager->detachedTools();
-    if (!tools.contains(UIToolType_Logs))
+    if (!tools.contains(enmToolType))
     {
-        tools << UIToolType_Logs;
+        tools << enmToolType;
         gEDataManager->setDetachedTools(tools);
     }
 
     /* Detach Log Viewer: */
-    sltOpenManagerWindow(UIToolType_Logs);
+    sltOpenManagerWindow(enmToolType);
 }
 
 void UIVirtualBoxManager::sltHandleCloudMachineStateChange(const QUuid & /* uId */)
@@ -2527,8 +2528,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
             this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
-    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigDetachLogViewer,
-            this, &UIVirtualBoxManager::sltDetachLogViewer);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigDetachToolPane,
+            this, &UIVirtualBoxManager::sltDetachToolPane);
 
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
             m_pWidget, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
