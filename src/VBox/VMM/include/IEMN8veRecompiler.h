@@ -682,6 +682,8 @@ typedef struct IEMRECOMPILERSTATE
 
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
+    /** The VMCPU structure of the EMT. */
+    PVMCPUCC                    pVCpu;
 
     /** Condition sequence number (for generating unique labels). */
     uint16_t                    uCondSeqNo;

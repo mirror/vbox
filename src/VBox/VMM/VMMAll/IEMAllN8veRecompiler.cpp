@@ -2589,6 +2589,9 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
         pReNative->cDbgInfoAlloc  = _16K;
 #endif
 
+        /* Other constant stuff: */
+        pReNative->pVCpu          = pVCpu;
+
         /*
          * Done, just need to save it and reinit it.
          */
@@ -11577,8 +11580,11 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
      * For 64-bit mode and flat 32-bit these two are the same.
      */
     uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
+    bool const    fIsSegReg   = RT_BYTE3(cBitsVarAndFlat) != 0;
+    bool const    fIsIntelSeg = fIsSegReg && IEM_IS_GUEST_CPU_INTEL(pReNative->pVCpu);
+    uint8_t const cbMemAccess = !fIsIntelSeg || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_16BIT
+                              ? cbMem : sizeof(uint16_t);
     uint8_t const cBitsFlat   = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
-    bool const    fIsSegReg   = RT_BYTE3(cBitsVarAndFlat) != 0; RT_NOREF(fIsSegReg);
     uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
                                                                 kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
     uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
@@ -11626,7 +11632,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
      * we're skipping lookup).
      */
     uint8_t const  iSegReg           = cBitsFlat != 0 ? UINT8_MAX : X86_SREG_SS;
-    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, idxRegEffSp, &off, iSegReg, cbMem);
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, idxRegEffSp, &off, iSegReg, cbMemAccess);
     uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
     uint32_t const idxLabelTlbMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
     uint32_t const idxLabelTlbLookup = !TlbState.fSkip
@@ -11732,7 +11738,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
         /*
          * TlbLookup:
          */
-        off = iemNativeEmitTlbLookup(pReNative, off, &TlbState, iSegReg, cbMem, cbMem - 1, IEM_ACCESS_TYPE_WRITE,
+        off = iemNativeEmitTlbLookup(pReNative, off, &TlbState, iSegReg, cbMemAccess, cbMemAccess - 1, IEM_ACCESS_TYPE_WRITE,
                                      idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
 
         /*
@@ -11741,16 +11747,45 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
         PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
         if (idxRegValue != UINT8_MAX)
         {
-            switch (cbMem)
+            switch (cbMemAccess)
             {
                 case 2:
                     off = iemNativeEmitStoreGpr16ByGprEx(pCodeBuf, off, idxRegValue, idxRegMemResult);
                     break;
                 case 4:
-                    if (!fIsSegReg)
+                    if (!fIsIntelSeg)
                         off = iemNativeEmitStoreGpr32ByGprEx(pCodeBuf, off, idxRegValue, idxRegMemResult);
                     else
-                        off = iemNativeEmitStoreGpr16ByGprEx(pCodeBuf, off, idxRegValue, idxRegMemResult);
+                    {
+                        /* intel real mode segment push. 10890XE adds the 2nd of half EFLAGS to a
+                           PUSH FS in real mode, so we have to try emulate that here.
+                           We borrow the now unused idxReg1 from the TLB lookup code here. */
+                        uint8_t idxRegEfl = iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(pReNative, &off,
+                                                                                            kIemNativeGstReg_EFlags);
+                        if (idxRegEfl != UINT8_MAX)
+                        {
+#ifdef ARCH_AMD64
+                            off = iemNativeEmitLoadGprFromGpr32(pReNative, off, TlbState.idxReg1, idxRegEfl);
+                            off = iemNativeEmitAndGpr32ByImm(pReNative, off, TlbState.idxReg1,
+                                                             UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+#else
+                            off = iemNativeEmitGpr32EqGprAndImmEx(iemNativeInstrBufEnsure(pReNative, off, 3),
+                                                                  off, TlbState.idxReg1, idxRegEfl,
+                                                                  UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+#endif
+                            iemNativeRegFreeTmp(pReNative, idxRegEfl);
+                        }
+                        else
+                        {
+                            off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, TlbState.idxReg1,
+                                                                  RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.eflags));
+                            off = iemNativeEmitAndGpr32ByImm(pReNative, off, TlbState.idxReg1,
+                                                             UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+                        }
+                        /* ASSUMES the upper half of idxRegValue is ZERO. */
+                        off = iemNativeEmitOrGpr32ByGpr(pReNative, off, TlbState.idxReg1, idxRegValue);
+                        off = iemNativeEmitStoreGpr32ByGprEx(pCodeBuf, off, TlbState.idxReg1, idxRegMemResult);
+                    }
                     break;
                 case 8:
                     off = iemNativeEmitStoreGpr64ByGprEx(pCodeBuf, off, idxRegValue, idxRegMemResult);
@@ -11761,7 +11796,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
         }
         else
         {
-            switch (cbMem)
+            switch (cbMemAccess)
             {
                 case 2:
                     off = iemNativeEmitStoreImm16ByGprEx(pCodeBuf, off,
@@ -11853,7 +11888,7 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
         Assert(   pfnFunction
                == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU16
                    : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU32
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 16, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU16
                    : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU64
                    : UINT64_C(0xc000b000a0009000) ));
     }

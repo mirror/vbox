@@ -4984,19 +4984,51 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
 
         case IEMMODE_32BIT:
         {
-            uint32_t u32Value;
-            rcStrict = iemMemStackPopU32Ex(pVCpu, &u32Value, &TmpRsp);
-            if (rcStrict == VINF_SUCCESS)
-                rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u32Value);
+            /* Modern Intel CPU only does a WORD sized access here, both as
+               segmentation and paging is concerned.  So, we have to emulate
+               this to make bs3-cpu-weird-1 happy. */
+            if (IEM_IS_GUEST_CPU_INTEL(pVCpu))
+            {
+                /* We don't have flexible enough stack primitives here, so just
+                   do a word pop and add two bytes to SP/RSP on success. */
+                uint16_t uSel;
+                rcStrict = iemMemStackPopU16Ex(pVCpu, &uSel, &TmpRsp);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    iemRegAddToRspEx(pVCpu, &TmpRsp, sizeof(uint32_t) - sizeof(uint16_t));
+                    rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, uSel);
+                }
+            }
+            else
+            {
+                uint32_t u32Value;
+                rcStrict = iemMemStackPopU32Ex(pVCpu, &u32Value, &TmpRsp);
+                if (rcStrict == VINF_SUCCESS)
+                    rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u32Value);
+            }
             break;
         }
 
         case IEMMODE_64BIT:
         {
-            uint64_t u64Value;
-            rcStrict = iemMemStackPopU64Ex(pVCpu, &u64Value, &TmpRsp);
-            if (rcStrict == VINF_SUCCESS)
-                rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u64Value);
+            /* Like for the 32-bit case above, intel only does a WORD access. */
+            if (IEM_IS_GUEST_CPU_INTEL(pVCpu))
+            {
+                uint16_t uSel;
+                rcStrict = iemMemStackPopU16Ex(pVCpu, &uSel, &TmpRsp);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    iemRegAddToRspEx(pVCpu, &TmpRsp, sizeof(uint64_t) - sizeof(uint16_t));
+                    rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, uSel);
+                }
+            }
+            else
+            {
+                uint64_t u64Value;
+                rcStrict = iemMemStackPopU64Ex(pVCpu, &u64Value, &TmpRsp);
+                if (rcStrict == VINF_SUCCESS)
+                    rcStrict = iemCImpl_LoadSRegWorker(pVCpu, iSegReg, (uint16_t)u64Value);
+            }
             break;
         }
         IEM_NOT_REACHED_DEFAULT_CASE_RET();

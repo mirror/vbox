@@ -3911,7 +3911,7 @@ iemNativeEmitGpr32EqGprAndImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t 
 /**
  * Emits code for OR'ing two 64-bit GPRs.
  */
-DECL_INLINE_THROW(uint32_t)
+DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitOrGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
 {
 #if defined(RT_ARCH_AMD64)
@@ -3926,6 +3926,49 @@ iemNativeEmitOrGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDs
 #else
 # error "Port me"
 #endif
+    return off;
+}
+
+
+/**
+ * Emits code for OR'ing two 32-bit GPRs.
+ * @note Bits 63:32 of the destination GPR will be cleared.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitOrGpr32ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#if defined(RT_ARCH_AMD64)
+    /* or Gv, Ev */
+    if (iGprDst >= 8 || iGprSrc >= 8)
+        pCodeBuf[off++] = (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0b;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, iGprDst, iGprSrc, false /*f64Bit*/);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for OR'ing two 32-bit GPRs.
+ * @note Bits 63:32 of the destination GPR will be cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrGpr32ByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitOrGpr32ByGprEx(iemNativeInstrBufEnsure(pReNative, off, 3), off, iGprDst, iGprSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitOrGpr32ByGprEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iGprSrc);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 

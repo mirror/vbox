@@ -1096,16 +1096,22 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /* See fallback for details on this weirdness: */
+    bool const    fIsIntel = IEM_IS_GUEST_CPU_INTEL(pVCpu);
+    uint8_t const cbAccess = fIsIntel && !IEM_IS_REAL_MODE(pVCpu) ? sizeof(uint16_t) : sizeof(TMPL_MEM_TYPE);
+
     /*
      * Decrement the stack pointer (prep), apply segmentation and check that
      * the item doesn't cross a page boundrary.
      */
     uint64_t      uNewRsp;
     RTGCPTR const GCPtrTop = iemRegGetRspForPush(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
-    RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, sizeof(TMPL_MEM_TYPE), GCPtrTop);
+    RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, cbAccess, GCPtrTop);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY(   !(GCPtrEff & (sizeof(uint16_t) - 1U))
-                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, uint16_t) ))
+    if (RT_LIKELY(   !(GCPtrEff & (cbAccess - 1U))
+                  || (   cbAccess == sizeof(uint16_t)
+                      ? TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, uint16_t)
+                      : TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ) ))
 #  endif
     {
         /*
@@ -1132,9 +1138,27 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
-                                           GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
-                *(uint16_t *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
+                if (cbAccess == sizeof(uint16_t))
+                {
+                    Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR 'word' SS|%RGv (%RX64->%RX64): %#06x [sreg/i]\n",
+                                               GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, (uint16_t)uValue));
+                    *(uint16_t *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
+                }
+                else
+                {
+                    TMPL_MEM_TYPE * const puSlot = (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                    if (fIsIntel)
+                    {
+                        Assert(IEM_IS_REAL_MODE(pVCpu));
+                        uValue = (uint16_t)uValue | (pVCpu->cpum.GstCtx.eflags.u & (UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK));
+                        Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg/ir]\n",
+                                                   GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
+                    }
+                    else
+                        Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
+                                                   GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
+                    *puSlot = uValue;
+                }
                 pVCpu->cpum.GstCtx.rsp = uNewRsp;
                 return;
             }
@@ -1286,12 +1310,18 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /* See fallback for details on this weirdness: */
+    bool const    fIsIntel = IEM_IS_GUEST_CPU_INTEL(pVCpu);
+    uint8_t const cbAccess = fIsIntel && !IEM_IS_REAL_MODE(pVCpu) ? sizeof(uint16_t) : sizeof(TMPL_MEM_TYPE);
+
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint32_t const uNewEsp = pVCpu->cpum.GstCtx.esp - sizeof(TMPL_MEM_TYPE);
-    if (RT_LIKELY(   !(uNewEsp & (sizeof(uint16_t) - 1))
-                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, uNewEsp, uint16_t) ))
+    if (RT_LIKELY(   !(uNewEsp & (cbAccess - 1))
+                  || (cbAccess == sizeof(uint16_t)
+                      ? TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, uNewEsp, uint16_t)
+                      : TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, uNewEsp, TMPL_MEM_TYPE))  ))
     {
         /*
          * TLB lookup.
@@ -1317,9 +1347,27 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE " [sreg]\n",
-                                           uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
-                *(uint16_t *)&pTlbe->pbMappingR3[uNewEsp & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
+                if (cbAccess == sizeof(uint16_t))
+                {
+                    Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR 'word' SS|%RX32 (<-%RX32): %#06x [sreg/i]\n",
+                                               uNewEsp, pVCpu->cpum.GstCtx.esp, (uint16_t)uValue));
+                    *(uint16_t *)&pTlbe->pbMappingR3[uNewEsp & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
+                }
+                else
+                {
+                    TMPL_MEM_TYPE * const puSlot = (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[uNewEsp & GUEST_PAGE_OFFSET_MASK];
+                    if (fIsIntel)
+                    {
+                        Assert(IEM_IS_REAL_MODE(pVCpu));
+                        uValue = (uint16_t)uValue | (pVCpu->cpum.GstCtx.eflags.u & (UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK));
+                        Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-RX32): " TMPL_MEM_FMT_TYPE " [sreg/ir]\n",
+                                                   uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
+                    }
+                    else
+                        Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-RX32): " TMPL_MEM_FMT_TYPE " [sreg]\n",
+                                                   uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
+                    *puSlot = uValue;
+                }
                 pVCpu->cpum.GstCtx.rsp = uNewEsp;
                 return;
             }

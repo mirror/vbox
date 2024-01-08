@@ -488,23 +488,47 @@ void RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegSafeJmp)(PVMCPUCC pVCpu, R
     pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
 # endif
 
-    /* The intel docs talks about zero extending the selector register
-       value.  My actual intel CPU here might be zero extending the value
-       but it still only writes the lower word... */
-    /** @todo Test this on new HW and on AMD and in 64-bit mode.  Also test what
-     * happens when crossing an electric page boundrary, is the high word checked
-     * for write accessibility or not? Probably it is.  What about segment limits?
-     * It appears this behavior is also shared with trap error codes.
-     *
-     * Docs indicate the behavior changed maybe in Pentium or Pentium Pro. Check
-     * ancient hardware when it actually did change. */
-    uint8_t   bUnmapInfo;
-    uint16_t *puDst = (uint16_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint16_t), X86_SREG_SS, GCPtrMem,
-                                               IEM_ACCESS_STACK_W, sizeof(uint16_t) - 1); /** @todo 2 or 4 alignment check for PUSH SS? */
-    *puDst = (uint16_t)uValue;
-    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+    /* bs3-cpu-weird-1 explores this instruction. AMD 3990X does it by the book,
+      with a zero extended DWORD write.  While my Intel 10890XE goes all weird
+      in real mode where it will write a DWORD with the top word of EFLAGS in
+      the top half.  In all other modes it does a WORD access. */
 
-    Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE " [sreg]\n", GCPtrMem, uValue));
+   /** @todo Docs indicate the behavior changed maybe in Pentium or Pentium Pro.
+    *  Check ancient hardware when it actually did change. */
+    uint8_t bUnmapInfo;
+    if (IEM_IS_GUEST_CPU_INTEL(pVCpu))
+    {
+        if (!IEM_IS_REAL_MODE(pVCpu))
+        {
+            /* WORD per intel specs. */
+            uint16_t *puDst = (uint16_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint16_t), X86_SREG_SS, GCPtrMem,
+                                                       IEM_ACCESS_STACK_W, sizeof(uint16_t) - 1); /** @todo 2 or 4 alignment check for PUSH SS? */
+            *puDst = (uint16_t)uValue;
+            iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+            Log12(("IEM WR 'word' SS|%RGv: %#06x [sreg/i]\n", GCPtrMem, (uint16_t)uValue));
+        }
+        else
+        {
+            /* DWORD real mode weirness observed on 10980XE. */
+            /** @todo Check this on other intel CPUs and when pushing registers other
+             *        than FS (which all that bs3-cpu-weird-1 does atm).  (Maybe this is
+             *        something for the CPU profile... Hope not.) */
+            uint32_t *puDst = (uint32_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint32_t), X86_SREG_SS, GCPtrMem,
+                                                       IEM_ACCESS_STACK_W, sizeof(uint32_t) - 1);
+            *puDst = (uint16_t)uValue | (pVCpu->cpum.GstCtx.eflags.u & (UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK));
+            iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+             Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE " [sreg/ir]\n", GCPtrMem, uValue));
+        }
+    }
+    else
+    {
+        /* DWORD per spec. */
+        uint32_t *puDst = (uint32_t *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(uint32_t), X86_SREG_SS, GCPtrMem,
+                                                   IEM_ACCESS_STACK_W, sizeof(uint32_t) - 1);
+        *puDst = uValue;
+        iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+        Log12(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE " [sreg]\n", GCPtrMem, uValue));
+    }
 }
 #  endif /* TMPL_WITH_PUSH_SREG */
 
