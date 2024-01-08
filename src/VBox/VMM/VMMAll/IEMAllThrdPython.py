@@ -374,6 +374,8 @@ class ThreadedFunctionVariation(object):
         ksVariation_32f_Flat: True,
         ksVariation_64: True,
         ksVariation_64f: True,
+        ksVariation_64_Addr32: True,
+        ksVariation_64f_Addr32: True,
     };
     kdVariationsWithFlatStackAddress = {
         ksVariation_32_Flat: True,
