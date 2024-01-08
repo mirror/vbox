@@ -890,7 +890,7 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
  */
 FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
 {
-    Assert(iReg < X86_SREG_FS || !IEM_IS_64BIT_CODE(pVCpu));
+    Assert(iReg >= X86_SREG_FS || !IEM_IS_64BIT_CODE(pVCpu));
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffOpSize)
@@ -910,7 +910,7 @@ FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Value);
             IEM_MC_FETCH_SREG_ZX_U32(u32Value, iReg);
-            IEM_MC_PUSH_U32_SREG(u32Value);
+            IEM_MC_PUSH_U32_SREG(u32Value); /* Intel CPUs do funny things with this instruction. */
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
