@@ -11893,20 +11893,24 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 
 
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitStackPopUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+iemNativeEmitStackPopUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem,
+                             uint8_t idxRegTmp)
 {
     /* Use16BitSp: */
 #ifdef RT_ARCH_AMD64
     off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
     off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+    RT_NOREF(idxRegTmp);
 #else
-    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
-    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 0, 16, false /*f64Bit*/);
-    /* add regeff, regrsp, #cbMem */
-    pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
-    /* and regeff, regeff, #0xffff */
+    /* ubfiz regeff, regrsp, #0, #16 - copies bits 15:0 from RSP to EffSp bits 15:0, zeroing bits 63:16. */
+    pCodeBuf[off++] = Armv8A64MkInstrUbfiz(idxRegEffSp, idxRegRsp, 0, 16, false /*f64Bit*/);
+    /* add tmp, regrsp, #cbMem */
+    pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegTmp, idxRegRsp, cbMem, false /*f64Bit*/);
+    /* and tmp, tmp, #0xffff */
     Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
-    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegTmp, idxRegTmp, 15, 0,  false /*f64Bit*/);
+    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from tmp to RSP bits 15:0, keeping the other RSP bits as is. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegTmp, 0, 16, false /*f64Bit*/);
 #endif
     return off;
 }
@@ -11971,11 +11975,15 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
      * directly as the effective stack pointer.
      * (Code structure is very similar to that of PUSH)
      */
-    uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
-    uint8_t const cBitsFlat   = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
-    uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
-                                                                kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
-    uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const cbMem           = RT_BYTE1(cBitsVarAndFlat) / 8;
+    uint8_t const cBitsFlat       = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
+    uint8_t const idxRegRsp       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
+                                                                    kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    uint8_t const idxRegEffSp     = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    /** @todo can do a better job picking the register here. For cbMem >= 4 this
+     *        will be the resulting register value. */
+    uint8_t const idxRegMemResult = iemNativeRegAllocTmp(pReNative, &off); /* pointer then value; arm64 SP += 2/4 helper too.  */
+
     uint32_t      offFixupJumpToUseOtherBitSp = UINT32_MAX;
     if (cBitsFlat != 0)
     {
@@ -12005,7 +12013,7 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
         else
         {
             off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_ne); /* jump if not zero */
-            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, idxRegMemResult);
         }
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
@@ -12023,9 +12031,6 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     uint32_t const idxLabelTlbLookup = !TlbState.fSkip
                                      ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
                                      : UINT32_MAX;
-    /** @todo can do a better job picking the register here. For cbMem >= 4 this
-     *        will be the resulting register value. */
-    uint8_t const  idxRegMemResult   = iemNativeRegAllocTmp(pReNative, &off); /* pointer then value */
 
     if (!TlbState.fSkip)
         off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
@@ -12044,7 +12049,7 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 #endif
         iemNativeFixupFixedJump(pReNative, offFixupJumpToUseOtherBitSp, off);
         if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
-            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, idxRegMemResult);
         else
             off = iemNativeEmitStackPopUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
         off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, offLabelSpUpdateEnd);
