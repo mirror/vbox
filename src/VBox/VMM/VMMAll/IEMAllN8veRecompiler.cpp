@@ -115,7 +115,7 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 # define IEMNATIVE_WITH_TLB_LOOKUP_STORE
 #endif
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
-# define IEMNATIVE_WITH_TLB_LOOKUP_MAPPING
+# define IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
 #endif
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
 # define IEMNATIVE_WITH_TLB_LOOKUP_PUSH
@@ -2254,7 +2254,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpStackFlatFetchU64,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemMapDataU8Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU8RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU8RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8RwSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU8RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2264,7 +2268,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemMapDataU8Rw,(PVMCPUCC pVCpu, u
 IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemMapDataU8Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU8WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU8WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU8WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2274,7 +2282,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemMapDataU8Wo,(PVMCPUCC pVCpu, u
 IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemMapDataU8Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                      RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU8RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU8RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8RoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU8RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2284,7 +2296,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemMapDataU8Ro,(PVMCPUCC pV
 IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU16RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16RwSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU16RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2294,7 +2310,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Rw,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU16WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU16WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2304,7 +2324,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemMapDataU16Wo,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                        RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU16RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU16RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16RoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU16RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2314,7 +2338,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemMapDataU16Ro,(PVMCPUCC 
 IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU32RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32RwSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU32RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2324,7 +2352,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Rw,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU32WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU32WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2334,7 +2366,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemMapDataU32Wo,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                        RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU32RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU32RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32RoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU32RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2344,7 +2380,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemMapDataU32Ro,(PVMCPUCC 
 IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU64RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64RwSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU64RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2354,7 +2394,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Rw,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                  RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU64WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU64WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2364,7 +2408,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemMapDataU64Wo,(PVMCPUCC pVCpu,
 IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                        RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU64RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU64RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64RoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU64RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2374,7 +2422,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemMapDataU64Ro,(PVMCPUCC 
 IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                    RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataR80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataR80WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataR80WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataR80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2384,7 +2436,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemMapDataR80Wo,(PVMCPUCC pVCp
 IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                   RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataD80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataD80WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataD80WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataD80WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2394,7 +2450,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemMapDataD80Wo,(PVMCPUCC pVCpu
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                     RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU128RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128RwSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU128RwJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2404,7 +2464,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Rw,(PVMCPUCC pVC
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                     RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU128WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128WoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU128WoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2414,7 +2478,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemMapDataU128Wo,(PVMCPUCC pVC
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U const *, iemNativeHlpMemMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                                           RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    return iemMemMapDataU128RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem); /** @todo use iemMemMapDataU128RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128RoSafeJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#else
+    return iemMemMapDataU128RoJmp(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+#endif
 }
 
 
@@ -2427,7 +2495,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTUINT128U const *, iemNativeHlpMemMapDataU128Ro,(PVMCPU
  */
 IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU8RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8RwSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU8RwJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2436,7 +2508,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Rw,(PVMCPUCC pVCp
  */
 IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU8WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU8WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2445,7 +2521,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t *, iemNativeHlpMemFlatMapDataU8Wo,(PVMCPUCC pVCp
  */
 IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemFlatMapDataU8Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU8RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU8RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU8RoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU8RoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2454,7 +2534,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t const *, iemNativeHlpMemFlatMapDataU8Ro,(PVMCPUC
  */
 IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU16RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16RwSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU16RwJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2463,7 +2547,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Rw,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU16WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU16WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2472,7 +2560,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t *, iemNativeHlpMemFlatMapDataU16Wo,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemFlatMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU16RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU16RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU16RoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU16RoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2481,7 +2573,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t const *, iemNativeHlpMemFlatMapDataU16Ro,(PVMCP
  */
 IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU32RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32RwSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU32RwJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2490,7 +2586,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Rw,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU32WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU32WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2499,7 +2599,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t *, iemNativeHlpMemFlatMapDataU32Wo,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemFlatMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU32RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU32RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU32RoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU32RoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2508,7 +2612,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t const *, iemNativeHlpMemFlatMapDataU32Ro,(PVMCP
  */
 IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU64RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64RwSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU64RwJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2517,7 +2625,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Rw,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU64WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU64WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2526,7 +2638,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t *, iemNativeHlpMemFlatMapDataU64Wo,(PVMCPUCC pV
  */
 IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemFlatMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU64RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU64RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU64RoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU64RoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2535,7 +2651,11 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t const *, iemNativeHlpMemFlatMapDataU64Ro,(PVMCP
  */
 IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemFlatMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataR80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataR80WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataR80WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataR80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2544,7 +2664,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTFLOAT80U *, iemNativeHlpMemFlatMapDataR80Wo,(PVMCPUCC 
  */
 IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemFlatMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataD80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataD80WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataD80WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataD80WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2553,7 +2677,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTPBCD80U *, iemNativeHlpMemFlatMapDataD80Wo,(PVMCPUCC p
  */
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU128RwJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128RwSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128RwSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU128RwJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2562,7 +2690,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Rw,(PVMCPUCC
  */
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU128WoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128WoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128WoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU128WoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
@@ -2571,7 +2703,11 @@ IEM_DECL_NATIVE_HLP_DEF(RTUINT128U *, iemNativeHlpMemFlatMapDataU128Wo,(PVMCPUCC
  */
 IEM_DECL_NATIVE_HLP_DEF(RTUINT128U const *, iemNativeHlpMemFlatMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem))
 {
-    return iemMemFlatMapDataU128RoJmp(pVCpu, pbUnmapInfo, GCPtrMem); /** @todo use iemMemFlatMapDataU128RoSafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_MAPPED
+    return iemMemMapDataU128RoSafeJmp(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatMapDataU128RoJmp(pVCpu, pbUnmapInfo, GCPtrMem);
+#endif
 }
 
 
