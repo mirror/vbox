@@ -1426,6 +1426,50 @@ iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(PIEMRECOMPILERSTATE pReNative, 
 }
 
 
+/**
+ * Emits a gprdst[15:0] = gprsrc[15:0], preserving all other bits in the
+ * destination.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitGprMergeInGpr16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxDst, uint8_t idxSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov reg16, r/m16 */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (idxDst >= 8 || idxSrc >= 8)
+        pCodeBuf[off++] = (idxDst < 8 ? 0 : X86_OP_REX_R) | (idxSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x8b;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxDst & 7, idxSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* bfi w1, w2, 0, 16 - moves bits 15:0 from idxSrc to idxDst bits 15:0. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxDst, idxSrc, 0, 16);
+
+#else
+# error "Port me!"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a gprdst[15:0] = gprsrc[15:0], preserving all other bits in the
+ * destination.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitGprMergeInGpr16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDst, uint8_t idxSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitGprMergeInGpr16Ex(iemNativeInstrBufEnsure(pReNative, off, 4), off, idxDst, idxSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprMergeInGpr16Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, idxDst, idxSrc);
+#else
+# error "Port me!"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 
 #ifdef RT_ARCH_AMD64
 /**
@@ -2813,8 +2857,8 @@ iemNativeEmitSubGpr32Imm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
  * This will optimize using DEC/INC/whatever and ARM64 will not set flags,
  * so not suitable as a base for conditional jumps.
  *
+ * @note AMD64: Will only update the lower 16 bits of the register.
  * @note ARM64: Will update the entire register.
- * @note AMD64: May perhaps only update the lower 16 bits of the register.
  * @note ARM64: Larger constants will require a temporary register.  Failing to
  *       specify one when needed will trigger fatal assertion / throw.
  */
@@ -3325,6 +3369,94 @@ iemNativeEmitAddGpr32Imm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
+
+
+/**
+ * Emits a 16-bit GPR add with a signed immediate addend.
+ *
+ * This will optimize using INC/DEC/whatever and ARM64 will not set flags,
+ * so not suitable as a base for conditional jumps.
+ *
+ * @note AMD64: Will only update the lower 16 bits of the register.
+ * @note ARM64: Will update the entire register.
+ * @note ARM64: Larger constants will require a temporary register.  Failing to
+ *       specify one when needed will trigger fatal assertion / throw.
+ * @sa   iemNativeEmitSubGpr16ImmEx
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitAddGpr16ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, int16_t iAddend,
+                           uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    if (iAddend == 1)
+    {
+        /* inc r/m16 */
+        pCodeBuf[off++] = 0xff;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+    }
+    else if (iAddend == -1)
+    {
+        /* dec r/m16 */
+        pCodeBuf[off++] = 0xff;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, iGprDst & 7);
+    }
+    else if ((int8_t)iAddend == iAddend)
+    {
+        /* add r/m16, imm8 */
+        pCodeBuf[off++] = 0x83;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+        pCodeBuf[off++] = (uint8_t)iAddend;
+    }
+    else
+    {
+        /* add r/m16, imm16 */
+        pCodeBuf[off++] = 0x81;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+        pCodeBuf[off++] = RT_BYTE1((uint16_t)iAddend);
+        pCodeBuf[off++] = RT_BYTE2((uint16_t)iAddend);
+    }
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uAbsAddend = RT_ABS(iAddend);
+    if (uAbsAddend < 4096)
+    {
+        if (iAddend >= 0)
+            pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(iGprDst, iGprDst, uAbsAddend, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(iGprDst, iGprDst, uAbsAddend, false /*f64Bit*/);
+    }
+    else if (uAbsAddend <= 0xfff000 && !(uAbsAddend & 0xfff))
+    {
+        if (iAddend >= 0)
+            pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(iGprDst, iGprDst, uAbsAddend >> 12,
+                                                       false /*f64Bit*/, false /*fSetFlags*/, true /*fShift*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(iGprDst, iGprDst, uAbsAddend >> 12,
+                                                       false /*f64Bit*/, false /*fSetFlags*/, true /*fShift*/);
+    }
+    else if (iGprTmp != UINT8_MAX)
+    {
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, iGprTmp, (uint32_t)iAddend);
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(iGprDst, iGprDst, iGprTmp, false /*f64Bit*/);
+    }
+    else
+# ifdef IEM_WITH_THROW_CATCH
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+        AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprDst, 15, 0, false /*f64Bit*/);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
 
 
 /**

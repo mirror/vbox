@@ -111,6 +111,9 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
 # define IEMNATIVE_WITH_TLB_LOOKUP_PUSH
 #endif
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+# define IEMNATIVE_WITH_TLB_LOOKUP_POP
+#endif
 
 
 /*
@@ -1753,7 +1756,6 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFetchDataU64,(PVMCPUCC pVCpu, R
 /**
  * Used by TB code to store unsigned 8-bit data w/ segmentation.
  */
-IEMNATIVE_WITH_TLB_LOOKUP_PUSH
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint8_t u8Value))
 {
     iemMemStoreDataU8Jmp(pVCpu, iSegReg, GCPtrMem, u8Value); /** @todo use iemMemStoreDataU8SafeJmp */
@@ -1843,29 +1845,41 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackStoreU64,(PVMCPUCC pVCpu, RTGCPTR
 
 
 /**
- * Used by TB code to pop a 16-bit general purpose register off a generic stack.
+ * Used by TB code to fetch an unsigned 16-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpStackFetchU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemStackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU16SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU16SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFetchStackU16Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
 /**
- * Used by TB code to pop a 32-bit general purpose register off a generic stack.
+ * Used by TB code to fetch an unsigned 32-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU32,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpStackFetchU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemStackPopGRegU32Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU32SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU32SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFetchStackU32Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
 /**
- * Used by TB code to pop a 64-bit general purpose register off a generic stack.
+ * Used by TB code to fetch an unsigned 64-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackPopGRegU64,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpStackFetchU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemStackPopGRegU64Jmp(pVCpu, iGReg); /** @todo iemMemStackPopGRegU64SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU64SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFetchStackU64Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
@@ -2070,38 +2084,41 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlatStoreU64,(PVMCPUCC pVCpu, RTG
 
 
 /**
- * Used by TB code to pop a 16-bit general purpose register off a flat 32-bit stack.
+ * Used by TB code to fetch an unsigned 16-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpStackFlatFetchU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemFlat32StackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemFlat32StackPopGRegU16SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU16SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFlatFetchStackU16Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
 /**
- * Used by TB code to pop a 64-bit general purpose register off a flat 32-bit stack.
+ * Used by TB code to fetch an unsigned 32-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat32PopGRegU32,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpStackFlatFetchU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemFlat32StackPopGRegU32Jmp(pVCpu, iGReg); /** @todo iemMemFlat32StackPopGRegU32SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU32SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFlatFetchStackU32Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
 /**
- * Used by TB code to pop a 16-bit general purpose register off a flat 64-bit stack.
+ * Used by TB code to fetch an unsigned 64-bit item off a generic stack.
  */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PopGRegU16,(PVMCPUCC pVCpu, uint8_t iGReg))
+IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpStackFlatFetchU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    iemMemFlat64StackPopGRegU16Jmp(pVCpu, iGReg); /** @todo iemMemFlat64StackPopGRegU16SafeJmp */
-}
-
-
-/**
- * Used by TB code to pop a 64-bit general purpose register off a flat 64-bit stack.
- */
-IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpStackFlat64PopGRegU64,(PVMCPUCC pVCpu, uint8_t iGReg))
-{
-    iemMemFlat64StackPopGRegU64Jmp(pVCpu, iGReg); /** @todo iemMemFlat64StackPopGRegU64SafeJmp */
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_POP
+    return iemMemFetchStackU64SafeJmp(pVCpu, GCPtrMem);
+#else
+    return iemMemFlatFetchStackU64Jmp(pVCpu, GCPtrMem);
+#endif
 }
 
 
@@ -11578,6 +11595,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     /*
      * First we calculate the new RSP and the effective stack pointer value.
      * For 64-bit mode and flat 32-bit these two are the same.
+     * (Code structure is very similar to that of PUSH)
      */
     uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
     bool const    fIsSegReg   = RT_BYTE3(cBitsVarAndFlat) != 0;
@@ -11744,7 +11762,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
         /*
          * Emit code to do the actual storing / fetching.
          */
-        PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
         if (idxRegValue != UINT8_MAX)
         {
             switch (cbMemAccess)
@@ -11848,27 +11866,58 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 /*                                                     RT_MAKE_U32_FROM_U8(cBitsVar, cBitsFlat, 0, 0) */
 #define IEM_MC_POP_GREG_U16(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16,  0, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackPopGRegU16, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFetchU16, pCallEntry->idxInstr)
 #define IEM_MC_POP_GREG_U32(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(32,  0, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackPopGRegU32, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFetchU32, pCallEntry->idxInstr)
 #define IEM_MC_POP_GREG_U64(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(64,  0, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackPopGRegU64, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFetchU64, pCallEntry->idxInstr)
 
 #define IEM_MC_FLAT32_POP_GREG_U16(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16, 32, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackFlat32PopGRegU16, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFlatFetchU16, pCallEntry->idxInstr)
 #define IEM_MC_FLAT32_POP_GREG_U32(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(32, 32, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackFlat32PopGRegU32, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFlatFetchU32, pCallEntry->idxInstr)
 
 #define IEM_MC_FLAT64_POP_GREG_U16(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(16, 64, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackFlat64PopGRegU16, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFlatFetchU16, pCallEntry->idxInstr)
 #define IEM_MC_FLAT64_POP_GREG_U64(a_iGReg) \
     off = iemNativeEmitStackPopGReg(pReNative, off, a_iGReg, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), \
-                                    (uintptr_t)iemNativeHlpStackFlat64PopGRegU64, pCallEntry->idxInstr)
+                                    (uintptr_t)iemNativeHlpStackFlatFetchU64, pCallEntry->idxInstr)
+
+
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStackPopUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use16BitSp: */
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+#else
+    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 0, 16, false /*f64Bit*/);
+    /* add regeff, regrsp, #cbMem */
+    pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
+    /* and regeff, regeff, #0xffff */
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
+#endif
+    return off;
+}
+
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitStackPopUse32Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use32BitSp: */
+    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    off = iemNativeEmitAddGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
+    return off;
+}
+
 
 /** IEM_MC[|_FLAT32|_FLAT64]_POP_GREG_U16/32/64 */
 DECL_INLINE_THROW(uint32_t)
@@ -11886,17 +11935,17 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
                || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
                || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
         Assert(   pfnFunction
-               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU16
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat32PopGRegU32
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU16
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlat64PopGRegU64
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatFetchU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatFetchU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatFetchU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatFetchU64
                    : UINT64_C(0xc000b000a0009000) ));
     }
     else
         Assert(   pfnFunction
-               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU16
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU32
-                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackPopGRegU64
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackFetchU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackFetchU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackFetchU64
                    : UINT64_C(0xc000b000a0009000) ));
 #endif
 
@@ -11911,41 +11960,98 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
      * To keep things simple we have to commit any pending writes first as we
      * may end up making calls.
      */
-    /** @todo we could postpone this till we make the call and reload the
-     * registers after returning from the call. Not sure if that's sensible or
-     * not, though. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /*
-     * Move/spill/flush stuff out of call-volatile registers.
-     * This is the easy way out. We could contain this to the tlb-miss branch
-     * by saving and restoring active stuff here.
+     * Determine the effective stack pointer, for non-FLAT modes we also update RSP.
+     * For FLAT modes we'll do this in TlbDone as we'll be using the incoming RSP
+     * directly as the effective stack pointer.
+     * (Code structure is very similar to that of PUSH)
      */
-    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
-
-    /* For now, flush the any shadow copy of the guest register that is about
-       to be popped and the xSP register. */
-    iemNativeRegFlushGuestShadows(pReNative,
-                                  RT_BIT_64(IEMNATIVEGSTREG_GPR(idxGReg)) | RT_BIT_64(IEMNATIVEGSTREG_GPR(X86_GREG_xSP)));
+    uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
+    uint8_t const cBitsFlat   = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
+    uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
+                                                                kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t      offFixupJumpToUseOtherBitSp = UINT32_MAX;
+    if (cBitsFlat != 0)
+    {
+        Assert(idxRegEffSp == idxRegRsp);
+        Assert(cBitsFlat == 32 || cBitsFlat == 64);
+        Assert(IEM_F_MODE_X86_IS_FLAT(pReNative->fExec));
+    }
+    else /** @todo We can skip the test if we're targeting pre-386 CPUs. */
+    {
+        Assert(idxRegEffSp != idxRegRsp);
+        uint8_t const idxRegSsAttr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(X86_SREG_SS),
+                                                                     kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+#endif
+        off = iemNativeEmitTestAnyBitsInGpr32Ex(pCodeBuf, off, idxRegSsAttr, X86DESCATTR_D);
+        iemNativeRegFreeTmp(pReNative, idxRegSsAttr);
+        offFixupJumpToUseOtherBitSp = off;
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+        {
+/** @todo can skip idxRegRsp updating when popping ESP.   */
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
+            off = iemNativeEmitStackPopUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        else
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_ne); /* jump if not zero */
+            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+    /* SpUpdateEnd: */
+    uint32_t const offLabelSpUpdateEnd = off;
 
     /*
-     * Define labels and allocate the result register (trying for the return
-     * register if we can).
+     * Okay, now prepare for TLB lookup and jump to code (or the TlbMiss if
+     * we're skipping lookup).
      */
-    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
-    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
-    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+    uint8_t const  iSegReg           = cBitsFlat != 0 ? UINT8_MAX : X86_SREG_SS;
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, idxRegEffSp, &off, iSegReg, cbMem);
+    uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbLookup = !TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+    /** @todo can do a better job picking the register here. For cbMem >= 4 this
+     *        will be the resulting register value. */
+    uint8_t const  idxRegMemResult   = iemNativeRegAllocTmp(pReNative, &off); /* pointer then value */
+
+    if (!TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
+    else
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbMiss); /** @todo short jump */
 
     /*
-     * First we try to go via the TLB.
+     * Use16BitSp:
      */
-//pReNative->pInstrBuf[off++] = 0xcc;
-    /** @todo later. */
-    RT_NOREF(cBitsVarAndFlat);
+    if (cBitsFlat == 0)
+    {
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+#endif
+        iemNativeFixupFixedJump(pReNative, offFixupJumpToUseOtherBitSp, off);
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+            off = iemNativeEmitStackPopUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        else
+            off = iemNativeEmitStackPopUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, offLabelSpUpdateEnd);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
 
     /*
-     * Call helper to do the popping.
+     * TlbMiss:
+     *
+     * Call helper to do the pushing.
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
@@ -11955,8 +12061,15 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     RT_NOREF(idxInstr);
 #endif
 
-    /* IEMNATIVE_CALL_ARG1_GREG = iGReg */
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxGReg);
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave()
+                                     | (idxRegMemResult < RT_ELEMENTS(pReNative->Core.aHstRegs) ? RT_BIT_32(idxRegMemResult) : 0)
+                                     | (idxRegEffSp != idxRegRsp ? RT_BIT_32(idxRegEffSp) : 0);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
+
+    /* IEMNATIVE_CALL_ARG1_GREG = EffSp/RSP */
+    if (idxRegEffSp != IEMNATIVE_CALL_ARG1_GREG)
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegEffSp);
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
@@ -11964,7 +12077,111 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
 
-    iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+    /* Move the return register content to idxRegMemResult. */
+    if (idxRegMemResult != IEMNATIVE_CALL_RET_GREG)
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegMemResult, IEMNATIVE_CALL_RET_GREG);
+
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows());
+
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+    if (!TlbState.fSkip)
+    {
+        /* end of TlbMiss - Jump to the done label. */
+        uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbDone);
+
+        /*
+         * TlbLookup:
+         */
+        off = iemNativeEmitTlbLookup(pReNative, off, &TlbState, iSegReg, cbMem, cbMem - 1, IEM_ACCESS_TYPE_READ,
+                                     idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
+
+        /*
+         * Emit code to load the value (from idxRegMemResult into idxRegMemResult).
+         */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+        switch (cbMem)
+        {
+            case 2:
+                off = iemNativeEmitLoadGprByGprU16Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            case 4:
+                off = iemNativeEmitLoadGprByGprU32Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            case 8:
+                off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            default:
+                AssertFailed();
+        }
+
+        TlbState.freeRegsAndReleaseVars(pReNative);
+
+        /*
+         * TlbDone:
+         *
+         * Set the new RSP value (FLAT accesses needs to calculate it first) and
+         * commit the popped register value.
+         */
+        iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+    }
+#endif /* IEMNATIVE_WITH_TLB_LOOKUP */
+
+    if (idxGReg != X86_GREG_xSP)
+    {
+        /* Set the register. */
+        if (cbMem >= sizeof(uint32_t))
+        {
+            iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegMemResult,  IEMNATIVEGSTREG_GPR(idxGReg), off);
+            off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegMemResult,
+                                                 RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[idxGReg]));
+        }
+        else
+        {
+            Assert(cbMem == sizeof(uint16_t));
+            uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGReg),
+                                                                      kIemNativeGstRegUse_ForUpdate);
+            off = iemNativeEmitGprMergeInGpr16(pReNative, off, idxRegDst, idxRegMemResult);
+            off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegDst, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[idxGReg]));
+            iemNativeRegFreeTmp(pReNative, idxRegDst);
+        }
+
+        /* Complete RSP calculation for FLAT mode. */
+        if (idxRegEffSp == idxRegRsp)
+        {
+            if (cBitsFlat == 64)
+                off = iemNativeEmitAddGprImm8(pReNative, off, idxRegRsp, sizeof(uint64_t));
+            else
+                off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxRegRsp, sizeof(uint32_t));
+        }
+    }
+    else
+    {
+        /* We're popping RSP, ESP or SP. Only the is a bit extra work, of course. */
+        if (cbMem == sizeof(uint64_t))
+            off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegRsp, idxRegMemResult);
+        else if (cbMem == sizeof(uint32_t))
+            off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegRsp, idxRegMemResult);
+        else
+        {
+            if (idxRegEffSp == idxRegRsp)
+            {
+                if (cBitsFlat == 64)
+                    off = iemNativeEmitAddGprImm8(pReNative, off, idxRegRsp, sizeof(uint64_t));
+                else
+                    off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxRegRsp, sizeof(uint32_t));
+            }
+            off = iemNativeEmitGprMergeInGpr16(pReNative, off, idxRegRsp, idxRegMemResult);
+        }
+    }
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rsp));
+
+    iemNativeRegFreeTmp(pReNative, idxRegRsp);
+    if (idxRegEffSp != idxRegRsp)
+        iemNativeRegFreeTmp(pReNative, idxRegEffSp);
+    iemNativeRegFreeTmp(pReNative, idxRegMemResult);
 
     return off;
 }

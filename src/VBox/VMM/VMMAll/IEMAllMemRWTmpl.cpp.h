@@ -534,6 +534,28 @@ void RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegSafeJmp)(PVMCPUCC pVCpu, R
 
 
 /**
+ * Safe/fallback stack fetch function that longjmps on error.
+ */
+TMPL_MEM_TYPE RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
+# endif
+
+    /* Read the data. */
+    uint8_t              bUnmapInfo;
+    TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(TMPL_MEM_TYPE), X86_SREG_SS,
+                                                                     GCPtrMem, IEM_ACCESS_STACK_R, TMPL_MEM_TYPE_ALIGN);
+    TMPL_MEM_TYPE const  uValue = *puSrc;
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+
+    /* Commit the register and RSP values. */
+    Log10(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
+    return uValue;
+}
+
+
+/**
  * Safe/fallback stack push function that longjmps on error.
  */
 void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP

@@ -730,14 +730,14 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
 DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#   if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Apply segmentation and check that the item doesn't cross a page boundrary.
      */
     RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, sizeof(TMPL_MEM_TYPE), GCPtrMem);
-#  if TMPL_MEM_TYPE_SIZE > 1
+#    if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(GCPtrEff)))
-#  endif
+#    endif
     {
         /*
          * TLB lookup.
@@ -773,7 +773,7 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrM
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
-#  endif
+#   endif
     RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, GCPtrMem, uValue);
 }
 
@@ -789,16 +789,16 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                                                       TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
-     * Decrement the stack pointer (prep), apply segmentation and check that
-     * the item doesn't cross a page boundrary.
+     * Apply segmentation to the address and check that the item doesn't cross
+     * a page boundrary.
      */
     RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, sizeof(TMPL_MEM_TYPE), GCPtrMem);
-#  if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(   !(GCPtrEff & (sizeof(uint16_t) - 1U))
                   || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, uint16_t) ))
-#  endif
+#     endif
     {
         /*
          * TLB lookup.
@@ -834,7 +834,7 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPTR GC
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
-#  endif
+#     endif
     RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, GCPtrMem, uValue);
 }
 #   endif /* TMPL_WITH_PUSH_SREG */
@@ -853,13 +853,13 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
                 && pVCpu->cpum.GstCtx.ss.u32Limit == UINT32_MAX
                 && pVCpu->cpum.GstCtx.ss.u64Base == 0));
 
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#   if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Check that the item doesn't cross a page boundrary.
      */
-#  if TMPL_MEM_TYPE_SIZE > 1
+#    if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(GCPtrMem)))
-#  endif
+#    endif
     {
         /*
          * TLB lookup.
@@ -896,7 +896,7 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
-#  endif
+#   endif
     RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, GCPtrMem, uValue);
 }
 
@@ -911,9 +911,9 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                                                           TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
-     * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
+     * Check that the item doesn't cross a page boundrary.
      */
     if (RT_LIKELY(   !(GCPtrMem & (sizeof(uint16_t) - 1))
                   || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, uint16_t) ))
@@ -953,11 +953,116 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPT
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, GCPtrMem, uValue);
 }
 #   endif /* TMPL_WITH_PUSH_SREG */
 
+
+/**
+ * Stack fetch function that longjmps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
+RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#   if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Apply segmentation to the address and check that the item doesn't cross
+     * a page boundrary.
+     */
+    RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#    if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(GCPtrEff)))
+#    endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Do the pop.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrEff, uValue));
+                return uValue;
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
+#   endif
+    return RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, GCPtrMem);
+}
+
+
+/**
+ * Flat stack fetch function that longjmps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
+RT_CONCAT3(iemMemFlatFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#   if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Check that the item doesn't cross a page boundrary.
+     */
+#    if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(GCPtrMem)))
+#    endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Do the pop.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
+                return uValue;
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
+#   endif
+    return RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, GCPtrMem);
+}
 
 
 /**
