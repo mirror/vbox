@@ -98,7 +98,7 @@
 
 /** Starting from 6.4.0, iter_iov() macro should be used in order to access to iov field
  * of struct iov_iter. */
-#if RTLNX_VER_MIN(6,4,0)
+#if RTLNX_VER_MIN(6,4,0) || RTLNX_RHEL_MAJ_PREREQ(9,4)
 # define VBSF_GET_ITER_IOV(_iter) iter_iov(_iter)
 #else
 # define VBSF_GET_ITER_IOV(_iter) iter->iov
