@@ -182,6 +182,8 @@ static int intnetR3IfMapBufferPointers(PINTNETIFCTXINT pThis)
         xpc_dictionary_set_uint64(hObj, "req-id", VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS);
         xpc_dictionary_set_data(hObj, "req", &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
+        xpc_release(hObj);
+
         rc = (int)xpc_dictionary_get_int64(hObjReply, "rc");
         if (RT_SUCCESS(rc))
         {

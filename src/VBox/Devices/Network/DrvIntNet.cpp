@@ -322,6 +322,8 @@ static int drvR3IntNetMapBufferPointers(PDRVINTNET pThis)
         xpc_dictionary_set_uint64(hObj, "req-id", VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS);
         xpc_dictionary_set_data(hObj, "req", &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
+        xpc_release(hObj);
+
         uint64_t u64Rc = xpc_dictionary_get_uint64(hObjReply, "rc");
         if (INTNET_R3_SVC_IS_VALID_RC(u64Rc))
             rc = INTNET_R3_SVC_GET_RC(u64Rc);
