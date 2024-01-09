@@ -721,7 +721,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
                                          ;
         pBIOSInf->u8CharacteristicsByte2 = RT_BIT(2)   /* Enable targeted content distribution, needed by Windows to populate registry, see
                                                           https://download.microsoft.com/download/5/D/6/5D6EAF2B-7DDF-476B-93DC-7CF0072878E6/SMBIOS.doc */
-                                         | fUefi ? RT_BIT(3) : 0
+                                         | (fUefi ? RT_BIT(3) : 0)
                                          /* any more?? */
                                          ;
         DMI_TERM_STRUCT;
