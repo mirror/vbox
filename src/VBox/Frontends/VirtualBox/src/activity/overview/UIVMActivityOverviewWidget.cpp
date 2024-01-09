@@ -290,6 +290,7 @@ public:
     UIActivityOverviewProxyModel(QObject *parent = 0);
     void dataUpdate();
     void setNotRunningVMVisibility(bool fShow);
+    void setCloudVMVisibility(bool fShow);
 
 protected:
 
@@ -299,6 +300,7 @@ protected:
 private:
 
     bool m_fShowNotRunningVMs;
+    bool m_fShowCloudVMs;
 };
 
 
@@ -898,10 +900,19 @@ void UIActivityOverviewProxyModel::dataUpdate()
 
 void UIActivityOverviewProxyModel::setNotRunningVMVisibility(bool fShow)
 {
+    if (m_fShowNotRunningVMs == fShow)
+        return;
     m_fShowNotRunningVMs = fShow;
     invalidateFilter();
 }
 
+void UIActivityOverviewProxyModel::setCloudVMVisibility(bool fShow)
+{
+    if (m_fShowCloudVMs == fShow)
+        return;
+    m_fShowCloudVMs = fShow;
+    invalidateFilter();
+}
 
 bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
 {
@@ -1387,6 +1398,7 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_fIsCurrentTool(true)
     , m_iSortIndicatorWidth(0)
     , m_fShowNotRunningVMs(false)
+    , m_fShowCloudVMs(false)
 {
     prepare();
 }
@@ -1652,12 +1664,21 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     if (m_pVMActivityMonitorAction)
         menu.addAction(m_pVMActivityMonitorAction);
     menu.addSeparator();
+
     QAction *pHideNotRunningAction =
         menu.addAction(UIVMActivityOverviewWidget::tr("List all virtual machines"));
     pHideNotRunningAction->setCheckable(true);
     pHideNotRunningAction->setChecked(m_fShowNotRunningVMs);
     connect(pHideNotRunningAction, &QAction::triggered,
             this, &UIVMActivityOverviewWidget::sltNotRunningVMVisibility);
+
+    QAction *pShowCloudVMsAction =
+        menu.addAction(UIVMActivityOverviewWidget::tr("Show cloud virtual machines"));
+    pShowCloudVMsAction->setCheckable(true);
+    pShowCloudVMsAction->setChecked(m_fShowCloudVMs);
+    connect(pShowCloudVMsAction, &QAction::triggered,
+            this, &UIVMActivityOverviewWidget::sltCloudVMVisibility);
+
     menu.exec(m_pTableView->mapToGlobal(pos));
 }
 
@@ -1696,6 +1717,13 @@ void UIVMActivityOverviewWidget::sltNotRunningVMVisibility(bool fShow)
     m_fShowNotRunningVMs = fShow;
     if (m_pProxyModel)
         m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+}
+
+void UIVMActivityOverviewWidget::sltCloudVMVisibility(bool fShow)
+{
+    m_fShowCloudVMs = fShow;
+    if (m_pProxyModel)
+        m_pProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
 }
 
 void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)

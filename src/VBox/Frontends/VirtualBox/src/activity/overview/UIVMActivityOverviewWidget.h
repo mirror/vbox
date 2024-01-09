@@ -95,6 +95,7 @@ private slots:
     void sltHandleShowVMActivityMonitor();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltNotRunningVMVisibility(bool fShow);
+    void sltCloudVMVisibility(bool fShow);
     void sltSaveSettings();
     void sltClearCOMData();
 
@@ -141,6 +142,7 @@ private:
     bool    m_fIsCurrentTool;
     int     m_iSortIndicatorWidth;
     bool    m_fShowNotRunningVMs;
+    bool    m_fShowCloudVMs;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityOverviewWidget_h */
