@@ -3368,20 +3368,24 @@ static int cpumR3MtrrMapAddRegion(PVM pVM, PCPUMMTRRMAP pMtrrMap, RTGCPHYS GCPhy
     Assert(fType < 7 && fType != 2 && fType != 3);
     if (pMtrrMap->idxMtrr < pMtrrMap->cMtrrs)
     {
-        pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysBase = GCPhysFirst | fType;
-        pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysMask = cpumR3GetVarMtrrMask(pVM, GCPhysFirst, GCPhysLast)
-                                                         | MSR_IA32_MTRR_PHYSMASK_VALID;
-        ++pMtrrMap->idxMtrr;
-
-        uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
-        if (fType != X86_MTRR_MT_UC)
-            pMtrrMap->cbMapped += cbRange;
-        else
+        RTGCPHYS const GCPhysLastMax = RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U;
+        if (GCPhysLast <= GCPhysLastMax)
         {
-            Assert(pMtrrMap->cbMapped >= cbRange);
-            pMtrrMap->cbMapped -= cbRange;
+            pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysBase = GCPhysFirst | fType;
+            pMtrrMap->aMtrrs[pMtrrMap->idxMtrr].MtrrPhysMask = cpumR3GetVarMtrrMask(pVM, GCPhysFirst, GCPhysLast)
+                                                             | MSR_IA32_MTRR_PHYSMASK_VALID;
+            ++pMtrrMap->idxMtrr;
+
+            uint64_t const cbRange = GCPhysLast - GCPhysFirst + 1;
+            if (fType != X86_MTRR_MT_UC)
+                pMtrrMap->cbMapped += cbRange;
+            else
+            {
+                Assert(pMtrrMap->cbMapped >= cbRange);
+                pMtrrMap->cbMapped -= cbRange;
+            }
+            return VINF_SUCCESS;
         }
-        return VINF_SUCCESS;
     }
     return VERR_OUT_OF_RESOURCES;
 }
@@ -3786,9 +3790,23 @@ static int cpumR3MapMtrrs(PVM pVM)
      * reduce the number of MTRRs used.
      */
     uint32_t const cbRamHole = MMR3PhysGet4GBRamHoleSize(pVM);
-    AssertMsg(cbRamHole <= 4032U * _1M, ("RAM hole size (%u bytes) is too large\n", cbRamHole));
-    AssertMsg(cbRamHole > 16 * _1M,     ("RAM hole size (%u byets) is too small\n", cbRamHole));
-    AssertMsg(!(cbRamHole & (_4M - 1)), ("RAM hole size (%u bytes) must be 4MB aligned\n", cbRamHole));
+    AssertMsg(cbRamHole <= 4032U * _1M, ("RAM hole size (%RU32 bytes) is too large\n", cbRamHole));
+    AssertMsg(cbRamHole > 16 * _1M,     ("RAM hole size (%RU32 byets) is too small\n", cbRamHole));
+    AssertMsg(!(cbRamHole & (_4M - 1)), ("RAM hole size (%RU32 bytes) must be 4MB aligned\n", cbRamHole));
+
+    /*
+     * Paranoia.
+     * Ensure the maximum physical-address width can accomodate the specified RAM size.
+     */
+    RTGCPHYS const GCPhysEndMax = RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth);
+    RTGCPHYS const GCPhysEnd    = cbRam + cbRamHole;
+    if (GCPhysEnd <= GCPhysEndMax)
+    { /* likely */ }
+    else
+    {
+        LogRel(("CPUM: WARNING! Cannot fully map RAM of %' Rhcb (%RU64 bytes) as it exceeds maximum physical-address (%#RX64)\n",
+                cbRam, cbRam, cbRamHole, cbRamHole, GCPhysEndMax - 1));
+    }
 
     /*
      * Map the RAM (and RAM hole) below 4GB.
