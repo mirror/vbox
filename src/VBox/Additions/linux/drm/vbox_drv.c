@@ -387,13 +387,13 @@ static struct drm_driver driver = {
 #elif RTLNX_VER_MAX(5,12,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
 	.dumb_destroy = drm_gem_dumb_destroy,
 #endif
-#if RTLNX_VER_MAX(6,6,0)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_MAJ_PREREQ(9,4)
 	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
 	.prime_fd_to_handle = drm_gem_prime_fd_to_handle,
 #endif
 	.gem_prime_import = drm_gem_prime_import,
 	.gem_prime_import_sg_table = vbox_gem_prime_import_sg_table,
-#if RTLNX_VER_MAX(6,6,0)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_MAJ_PREREQ(9,4)
 	.gem_prime_mmap = vbox_gem_prime_mmap,
 #endif
 

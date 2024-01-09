@@ -196,7 +196,7 @@ static struct fb_ops vboxfb_ops = {
 	.owner = THIS_MODULE,
 	.fb_check_var = drm_fb_helper_check_var,
 	.fb_set_par = drm_fb_helper_set_par,
-#if RTLNX_VER_MIN(6,5,0)
+#if RTLNX_VER_MIN(6,5,0) || RTLNX_RHEL_MAJ_PREREQ(9,4)
 	.fb_read    = fb_sys_read,
 	.fb_write   = fb_sys_write,
 	.fb_fillrect = sys_fillrect,
