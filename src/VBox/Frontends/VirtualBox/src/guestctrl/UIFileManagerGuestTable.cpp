@@ -990,6 +990,7 @@ void UIFileManagerGuestTable::determineDriveLetters()
 {
     if (m_comGuestSession.isNull())
         return;
+
     KPathStyle pathStyle = m_comGuestSession.GetPathStyle();
     if (pathStyle != KPathStyle_DOS)
         return;
@@ -997,6 +998,7 @@ void UIFileManagerGuestTable::determineDriveLetters()
     /** @todo Currently API lacks a way to query windows drive letters.
      *  so we enumarate them by using CGuestSession::DirectoryExists() */
     m_driveLetterList.clear();
+#if 0
     for (int i = 'A'; i <= 'Z'; ++i)
     {
         QString path((char)i);
@@ -1005,6 +1007,11 @@ void UIFileManagerGuestTable::determineDriveLetters()
         if (exists)
             m_driveLetterList.push_back(path);
     }
+#endif
+
+    QVector<QString> mountPoints = m_comGuestSession.GetMountPoints();
+    foreach (const QString &strPoint, mountPoints)
+        m_driveLetterList.push_back(UIPathOperations::replaceDosDelimeter(strPoint));
 }
 
 void UIFileManagerGuestTable::determinePathSeparator()
