@@ -880,6 +880,100 @@ iemNativeEmitLeaGprByVCpu(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 }
 
 
+/** This is just as a typesafe alternative to RT_UOFFSETOF. */
+DECL_FORCE_INLINE(uint32_t) iemNativeVCpuOffsetFromStamCounterPtr(PVMCPU pVCpu, PSTAMCOUNTER pStamCounter)
+{
+    uintptr_t const off = (uintptr_t)pStamCounter - (uintptr_t)pVCpu;
+    Assert(off < sizeof(VMCPU));
+    return off;
+}
+
+
+/** This is just as a typesafe alternative to RT_UOFFSETOF. */
+DECL_FORCE_INLINE(uint32_t) iemNativeVCpuOffsetFromU64Ptr(PVMCPU pVCpu, uint64_t *pu64)
+{
+    uintptr_t const off = (uintptr_t)pu64 - (uintptr_t)pVCpu;
+    Assert(off < sizeof(VMCPU));
+    return off;
+}
+
+
+/**
+ * Emits code for incrementing a statistics counter (STAMCOUNTER/uint64_t) in VMCPU.
+ *
+ * @note The two temp registers are not required for AMD64.  ARM64 always
+ *       requires the first, and the 2nd is needed if the offset cannot be
+ *       encoded as an immediate.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitIncStamCounterInVCpuEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxTmp1, uint8_t idxTmp2, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* inc qword [pVCpu + off] */
+    pCodeBuf[off++] = X86_OP_REX_W;
+    pCodeBuf[off++] = 0xff;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, offVCpu);
+    RT_NOREF(idxTmp1, idxTmp2);
+
+#elif defined(RT_ARCH_ARM64)
+    /* Determine how we're to access pVCpu first. */
+    uint32_t const cbData = sizeof(STAMCOUNTER);
+    if (offVCpu < _4K * cbData && !(offVCpu & (cbData - 1)))
+    {
+        /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmp1,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+        pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxTmp1, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmp1,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+    }
+    else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData) && !(offVCpu & (cbData - 1)))
+    {
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+        pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxTmp1, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+    }
+    else
+    {
+        /* The offset is too large, so we must load it into a register and use
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>)]. */
+        off = iemNativeEmitLoadGprImmEx(pReNative, off, idxTmp2, offVCpu);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_Ld_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PVMCPU, idxTmp2);
+        pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxTmp1, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PVMCPU, idxTmp2);
+    }
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for incrementing a statistics counter (STAMCOUNTER/uint64_t) in VMCPU.
+ *
+ * @note The two temp registers are not required for AMD64.  ARM64 always
+ *       requires the first, and the 2nd is needed if the offset cannot be
+ *       encoded as an immediate.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitIncStamCounterInVCpu(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxTmp1, uint8_t idxTmp2, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitIncStamCounterInVCpuEx(iemNativeInstrBufEnsure(pReNative, off, 7), off, idxTmp1, idxTmp2, offVCpu);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitIncStamCounterInVCpuEx(iemNativeInstrBufEnsure(pReNative, off, 4+3), off, idxTmp1, idxTmp2, offVCpu);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
 /**
  * Emits a gprdst = gprsrc load.
  */

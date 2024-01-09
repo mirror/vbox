@@ -1709,8 +1709,7 @@ typedef struct IEMCPU
     R3PTRTYPE(struct IEMEXECMEMALLOCATOR *) pExecMemAllocatorR3;
     /** Pointer to the native recompiler state for ring-3. */
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
-    /** Alignment padding. */
-    uint64_t                auAlignment10[3];
+
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
@@ -1735,6 +1734,15 @@ typedef struct IEMCPU
     STAMPROFILE             StatNativeCallsRecompiled;
     /** Native TB statistics: Number of threaded calls per TB that weren't recompiled. */
     STAMPROFILE             StatNativeCallsThreaded;
+    /** Native recompiled execution: TLB hits for data fetches. */
+    STAMCOUNTER             StatNativeTlbHitsForFetch;
+    /** Native recompiled execution: TLB hits for data stores. */
+    STAMCOUNTER             StatNativeTlbHitsForStore;
+    /** Native recompiled execution: TLB hits for stack accesses. */
+    STAMCOUNTER             StatNativeTlbHitsForStack;
+    /** Native recompiled execution: TLB hits for mapped accesses. */
+    STAMCOUNTER             StatNativeTlbHitsForMapped;
+    uint64_t                au64Padding[7];
     /** @} */
 
     /** Data TLB.
