@@ -2806,6 +2806,12 @@ static int virtioNetR3TransmitPkts(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO
                     uint64_t srcSgLen   = (uint64_t)paSeg->cbSeg;
                     uint64_t srcSgCur   = (uint64_t)pSgPhysSend->GCPhysCur;
                     cbCopied = RT_MIN((uint64_t)cbRemain, srcSgLen - (srcSgCur - srcSgStart));
+                    /*
+                     * Guest sent a bogus S/G chain, there doesn't seem to be a way to report an error but
+                     * as this shouldn't happen anyway we just stop proccessing this chain.
+                     */
+                    if (RT_UNLIKELY(!cbCopied))
+                        break;
                     virtioCoreGCPhysRead(pVirtio, pDevIns,
                                          (RTGCPHYS)pSgPhysSend->GCPhysCur,
                                          ((uint8_t *)pSgBufToPdmLeafDevice->aSegs[0].pvSeg) + uOffset, cbCopied);
