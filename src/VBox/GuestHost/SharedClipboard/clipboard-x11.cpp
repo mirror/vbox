@@ -2037,7 +2037,7 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
- * Converts an X11 data blob to a string list.
+ * Converts X11 data to a string list usable for HTTP transfers.
  *
  * @returns VBox status code.
  * @param   pvData              Data to conver to a string list.
@@ -2047,7 +2047,7 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
  * @param   pcbList             Size (in  bytes) of the returned string list on success.
  *                              Includes terminator.
  */
-int ShClX11TransferConvertDataToStringList(const char *pvData, size_t cbData, char **ppszList, size_t *pcbList)
+int ShClX11TransferHttpConvertFromX11(const char *pvData, size_t cbData, char **ppszList, size_t *pcbList)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -2296,7 +2296,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                 RT_FALL_THROUGH();
             case SHCLX11FMT_URI_LIST_KDE_CUTSELECTION:
             {
-                rc = ShClX11TransferConvertDataToStringList((const char *)pvSrc, cbSrc, (char **)&pvDst, &cbDst);
+                rc = ShClX11TransferHttpConvertFromX11((const char *)pvSrc, cbSrc, (char **)&pvDst, &cbDst);
                 break;
             }
 
@@ -2669,4 +2669,3 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
