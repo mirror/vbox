@@ -504,6 +504,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define iemAImpl_sqrtps_u128            NULL
 #define iemAImpl_sqrtpd_u128            NULL
 #define iemAImpl_rsqrtps_u128           NULL
+#define iemAImpl_rcpps_u128             NULL
 #define iemAImpl_addsubps_u128          NULL
 #define iemAImpl_addsubpd_u128          NULL
 #define iemAImpl_cvtpd2ps_u128          NULL
@@ -537,6 +538,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define iemAImpl_roundss_u128_r32       NULL
 #define iemAImpl_roundsd_u128_r64       NULL
 #define iemAImpl_rsqrtss_u128_r32       NULL
+#define iemAImpl_rcpss_u128_r32         NULL
 
 #define iemAImpl_cvtss2sd_u128_r32      NULL
 #define iemAImpl_cvtsd2ss_u128_r64      NULL

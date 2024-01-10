@@ -16136,6 +16136,43 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rsqrtss_u128_r32,(PX86FXSTATE pFpuState, PIEMSS
 
 
 /**
+ * RCPPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+static uint32_t iemAImpl_rcp_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val)
+{
+    RT_NOREF(pr32Res); RT_NOREF(fMxcsr); RT_NOREF(pr32Val);
+    /** @todo implement using softfloat! */
+    Assert(0);
+    return 0;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_rcpps_u128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+
+    pResult->MXCSR  = iemAImpl_rcp_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, &puSrc2->ar32[0]);
+    pResult->MXCSR |= iemAImpl_rcp_worker(&pResult->uResult.ar32[1], pFpuState->MXCSR, &puSrc2->ar32[1]);
+    pResult->MXCSR |= iemAImpl_rcp_worker(&pResult->uResult.ar32[2], pFpuState->MXCSR, &puSrc2->ar32[2]);
+    pResult->MXCSR |= iemAImpl_rcp_worker(&pResult->uResult.ar32[3], pFpuState->MXCSR, &puSrc2->ar32[3]);
+}
+
+
+/**
+ * RCPSS
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_rcpss_u128_r32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->MXCSR = iemAImpl_rcp_worker(&pResult->uResult.ar32[0], pFpuState->MXCSR, pr32Src2);
+    pResult->uResult.ar32[1] = puSrc1->ar32[1];
+    pResult->uResult.ar32[2] = puSrc1->ar32[2];
+    pResult->uResult.ar32[3] = puSrc1->ar32[3];
+}
+#endif
+
+
+/**
  * ADDSUBPS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY

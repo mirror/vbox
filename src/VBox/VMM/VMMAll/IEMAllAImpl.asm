@@ -4841,6 +4841,7 @@ IEMIMPL_FP_F2 addsubpd, 3
 IEMIMPL_FP_F2 sqrtps,    2
 IEMIMPL_FP_F2 rsqrtps,   2
 IEMIMPL_FP_F2 sqrtpd,    2
+IEMIMPL_FP_F2 rcpps,     2
 IEMIMPL_FP_F2 cvtdq2ps,  2
 IEMIMPL_FP_F2 cvtps2dq,  2
 IEMIMPL_FP_F2 cvttps2dq, 2
@@ -4900,6 +4901,7 @@ IEMIMPL_FP_F2_R32 maxss
 IEMIMPL_FP_F2_R32 cvtss2sd
 IEMIMPL_FP_F2_R32 sqrtss
 IEMIMPL_FP_F2_R32 rsqrtss
+IEMIMPL_FP_F2_R32 rcpss
 
 
 ;;

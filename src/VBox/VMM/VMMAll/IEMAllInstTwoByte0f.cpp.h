@@ -5599,11 +5599,26 @@ FNIEMOP_DEF(iemOp_rsqrtss_Vss_Wss)
 
 /*  Opcode 0xf2 0x0f 0x52 - invalid */
 
+
 /** Opcode      0x0f 0x53 - rcpps Vps, Wps */
-FNIEMOP_STUB(iemOp_rcpps_Vps_Wps);
+FNIEMOP_DEF(iemOp_rcpps_Vps_Wps)
+{
+    IEMOP_MNEMONIC2(RM, RCPPS, rcpps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_rcpps_u128);
+}
+
+
 /*  Opcode 0x66 0x0f 0x53 - invalid */
+
+
 /** Opcode 0xf3 0x0f 0x53 - rcpss Vss, Wss */
-FNIEMOP_STUB(iemOp_rcpss_Vss_Wss);
+FNIEMOP_DEF(iemOp_rcpss_Vss_Wss)
+{
+    IEMOP_MNEMONIC2(RM, RCPSS, rcpss, Vss, Wss, DISOPTYPE_HARMLESS, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullR32_To_Full, iemAImpl_rcpss_u128_r32);
+}
+
+
 /*  Opcode 0xf2 0x0f 0x53 - invalid */
 
 
