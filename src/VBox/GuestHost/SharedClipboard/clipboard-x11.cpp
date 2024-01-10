@@ -450,7 +450,8 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
     RTStrFree(pszFmts);
 #endif
 
-    pCtx->Callbacks.pfnReportFormats(pCtx->pFrontend, vboxFmt, NULL /* pvUser */);
+    if (pCtx->Callbacks.pfnReportFormats)
+        pCtx->Callbacks.pfnReportFormats(pCtx->pFrontend, vboxFmt, NULL /* pvUser */);
 }
 
 /**
@@ -1498,8 +1499,6 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     AssertPtrReturn(ppv,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcb,  VERR_INVALID_POINTER);
 
-    AssertPtrReturn(pCtx->Callbacks.pfnOnRequestDataFromSource, VERR_INVALID_POINTER);
-
 #ifdef LOG_ENABLED
     char *pszFmts = ShClFormatsToStrA(uFmt);
     AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
@@ -1515,6 +1514,7 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     PSHCLCACHEENTRY pCacheEntry = ShClCacheGet(&pCtx->Cache, uFmt);
     if (!pCacheEntry) /* Cache miss */
     {
+        AssertPtrReturn(pCtx->Callbacks.pfnOnRequestDataFromSource, VERR_INVALID_POINTER);
         rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pv, &cb,
                                                         NULL /* pvUser */);
         if (RT_SUCCESS(rc))
