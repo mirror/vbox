@@ -115,7 +115,9 @@ typedef struct _SHCLX11CTX
     PSHCLCONTEXT     pFrontend;
     /** Our callback table to use. */
     SHCLCALLBACKS    Callbacks;
-    /** Is an X server actually available? */
+    /** Is an X server actually available?
+     *  Needed for non-interactive systems (i.e. servers) where X11 depedencies are installed,
+     *  but no X11 server is actually running. */
     bool             fHaveX11;
     /** The X Toolkit application context structure. */
     XtAppContext     pAppContext;

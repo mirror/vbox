@@ -2618,11 +2618,9 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 }
 
 /**
- * Reads the X11 clipboard (asynchronously).
+ * Reads from the X11 clipboard (asynchronously).
  *
  * @returns VBox status code.
- * @retval  VERR_NO_DATA if format is supported but no data is available currently.
- * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   uFmt                The format that the VBox would like to receive the data in.
  * @param   cbMax               Maximum data to read (in bytes).
@@ -2637,7 +2635,7 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
      * Immediately return if we are not connected to the X server.
      */
     if (!pCtx->fHaveX11)
-        return VERR_NO_DATA;
+        return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
 
@@ -2735,8 +2733,6 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
  * Writes to the X11 clipboard (asynchronously).
  *
  * @returns VBox status code.
- * @retval  VERR_NOT_AVAILABLE the the X11 clipboard is not available.
- * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   uFmts               The format(s) to write.
  *                              Conversions might be performed, if available.
@@ -2757,7 +2753,7 @@ int ShClX11WriteDataToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFmts, const void *
      * Immediately return if we are not connected to the X server.
      */
     if (!pCtx->fHaveX11)
-        return VERR_NOT_AVAILABLE;
+        return VINF_SUCCESS;
 
     int rc = ShClCacheSetMultiple(&pCtx->Cache, uFmts, pvBuf, cbBuf);
     if (RT_SUCCESS(rc))
