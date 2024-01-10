@@ -324,7 +324,8 @@ public:
 private slots:
 
     void sltMetricNameListingComplete(QVector<QString> metricNameList);
-    void sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps);
+    void sltMetricDataReceived(KMetricType enmMetricType,
+                               const QVector<QString> &data, const QVector<QString> &timeStamps);
     void sltMachineStateUpdateTimeout();
 
 private:

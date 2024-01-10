@@ -757,7 +757,7 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
             const QQueue<QString> *labels = m_pMetric->labels();
             int iDataIndex = qMin(labels->size() - 1, iTimeIndex - (m_iMaximumQueueSize - maxDataSize()));
             if (iDataIndex >= 0)
-                strAxisText = UIVMActivityMonitorCloud::formatCloudTimeStamp(labels->at(iDataIndex));
+                strAxisText = labels->at(iDataIndex);
         }
         else
             strAxisText = QString::number(iTotalSeconds - iTimeIndex);
@@ -2059,32 +2059,44 @@ void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> met
     obtainDataAndUpdate();
 }
 
-void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps)
+void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
+                                                     const QVector<QString> &data, const QVector<QString> &timeStamps)
 {
     if (data.size() != timeStamps.size())
         return;
+    QVector<QString> newTimeStamps;
+    foreach (const QString &strTimeStamp, timeStamps)
+    {
+        if (strTimeStamp.isEmpty())
+            continue;
+        QDateTime dateTime = QDateTime::fromString(strTimeStamp, Qt::RFC2822Date);
+        if (!dateTime.isValid())
+            continue;
+        newTimeStamps << dateTime.time().toString("hh:mm");
+    }
+
     for (int i = 0; i < data.size(); ++i)
     {
         if (enmMetricType == KMetricType_CpuUtilization)
         {
             float fValue = data[i].toFloat();
-            updateCPUChart((ULONG) fValue, timeStamps[i]);
+            updateCPUChart((ULONG) fValue, newTimeStamps[i]);
         }
         else if (enmMetricType == KMetricType_NetworksBytesOut)
-            cacheNetworkTransmit(timeStamps[i], (int)data[i].toFloat());
+            cacheNetworkTransmit(newTimeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_NetworksBytesIn)
-            cacheNetworkReceive(timeStamps[i], (int)data[i].toFloat());
+            cacheNetworkReceive(newTimeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_DiskBytesRead)
-            cacheDiskRead(timeStamps[i], (int)data[i].toFloat());
+            cacheDiskRead(newTimeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_DiskBytesWritten)
-            cacheDiskWrite(timeStamps[i], (int)data[i].toFloat());
+            cacheDiskWrite(newTimeStamps[i], (int)data[i].toFloat());
         else if (enmMetricType == KMetricType_MemoryUtilization)
         {
             if (m_iTotalRAM != 0)
             {
                 /* calculate used RAM amount in kb: */
                 quint64 iUsedRAM = data[i].toFloat() * (m_iTotalRAM / 100.f);
-                updateRAMChart(iUsedRAM, timeStamps[i]);
+                updateRAMChart(iUsedRAM, newTimeStamps[i]);
             }
         }
     }
