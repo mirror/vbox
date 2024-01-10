@@ -1244,6 +1244,76 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
 }
 
 /**
+ * Converts a HTTP transfer to a string list.
+ *
+ * @returns VBox status code.
+ * @param   pHttpSrv            HTTP server that contains the transfer.
+ * @param   pTransfer           Transfer to convert data from.
+ * @param   pszSep              Separator to use for the transfer entries.
+ * @param   ppszData            Where to store the string list on success.
+ * @param   pcbData             Where to return the bytes of \a ppszData on success.
+ *                              Includes terminator. Optional.
+ */
+static int shClTransferHttpConvertToStringListEx(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer, const char *pszSep,
+                                                 char **ppszData, size_t *pcbData)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszSep, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszData, VERR_INVALID_POINTER);
+    /* pcbData is optional. */
+
+    int   rc      = VINF_SUCCESS;
+    char *pszData = NULL;
+
+    uint64_t const cRoots = ShClTransferRootsCount(pTransfer);
+    for (uint32_t i = 0; i < cRoots; i++)
+    {
+        char *pszEntry = ShClTransferHttpServerGetUrlA(pSrv, ShClTransferGetID(pTransfer), i /* Entry index */);
+        AssertPtrBreakStmt(pszEntry, rc = VERR_NO_MEMORY);
+
+        if (i > 0)
+        {
+            rc = RTStrAAppend(&pszData, pszSep); /* Separate entries with a newline. */
+            AssertRCBreak(rc);
+        }
+
+        rc = RTStrAAppend(&pszData, pszEntry);
+        AssertRCBreak(rc);
+
+        RTStrFree(pszEntry);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        RTStrFree(pszData);
+        return rc;
+    }
+
+    *ppszData = pszData;
+    if (pcbData)
+        *pcbData = RTStrNLen(pszData, RTSTR_MAX) + 1 /* Terminator. */;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Converts a HTTP transfer to a string list.
+ *
+ * @returns VBox status code.
+ * @param   pHttpSrv            HTTP server that contains the transfer.
+ * @param   pTransfer           Transfer to convert data from.
+ * @param   ppszData            Where to store the string list on success.
+ * @param   pcbData             Where to return the bytes of \a ppszData on success.
+ *                              Includes terminator. Optional.
+ *
+ * @note    Uses '\n' as the separator. @sa ShClTransferHttpConvertToStringListEx().
+ */
+int ShClTransferHttpConvertToStringList(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer, char **ppszData, size_t *pcbData)
+{
+    return shClTransferHttpConvertToStringListEx(pSrv, pTransfer, "\n", ppszData, pcbData);
+}
+
+/**
  * Returns whether a given HTTP server instance is initialized or not.
  *
  * @returns \c true if running, or \c false if not.
