@@ -263,7 +263,9 @@ typedef enum SHCLSOURCE
  *  @{
  */
 /**
- * A single Shared CLipboard cache entry.
+ * A single Shared Clipboard cache entry.
+ *
+ * One entry marks exactly one clipboard format at a time.
  */
 typedef struct _SHCLCACHEENTRY
 {
@@ -296,6 +298,7 @@ void ShClCacheInvalidate(PSHCLCACHE pCache);
 void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt);
 PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt);
 int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData);
+int ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData);
 /** @}  */
 
 /** Opaque data structure for the X11/VBox frontend/glue code.

@@ -1453,6 +1453,23 @@ PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt)
 }
 
 /**
+ * Sets data to cache for a specific clipboard format, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pCache              Cache to set data for.
+ * @param   uFmt                Clipboard format to set data for.
+ * @param   pvData              Data to set.
+ * @param   cbData              Size (in bytes) of data to set.
+ */
+DECLINLINE(int) shClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData)
+{
+    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(shClCacheEntryIsValid(&pCache->aEntries[uFmt]) == false, VERR_ALREADY_EXISTS);
+
+    return shClCacheEntryInit(&pCache->aEntries[uFmt], pvData, cbData);
+}
+
+/**
  * Sets data to cache for a specific clipboard format.
  *
  * @returns VBox status code.
@@ -1469,9 +1486,74 @@ int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t 
         return VINF_SUCCESS;
 
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
-    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(shClCacheEntryIsValid(&pCache->aEntries[uFmt]) == false, VERR_ALREADY_EXISTS);
 
-    return shClCacheEntryInit(&pCache->aEntries[uFmt], pvData, cbData);
+    return shClCacheSet(pCache, uFmt, pvData, cbData);
+}
+
+/**
+ * Sets data to cache for multiple clipboard formats.
+ *
+ * Will bail out if a given format cannot be handled with the data given.
+ *
+ * @returns VBox status code.
+ * @param   pCache              Cache to set data for.
+ * @param   uFmt                Clipboard format to set data for.
+ * @param   pvData              Data to set.
+ * @param   cbData              Size (in bytes) of data to set.
+ */
+int ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData)
+{
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+
+    if (!pvData) /* Nothing to cache? */
+        return VINF_SUCCESS;
+
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    SHCLFORMATS uFmtsLeft = uFmts;
+    while (uFmtsLeft)
+    {
+        SHCLFORMAT  uFmt        = VBOX_SHCL_FMT_NONE;
+         void *pvConv = NULL;
+        size_t cbConv = 0;
+        if (uFmtsLeft & VBOX_SHCL_FMT_UNICODETEXT)
+        {
+            uFmt = VBOX_SHCL_FMT_UNICODETEXT;
+
+            rc = RTStrValidateEncoding((const char *)pvData);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTStrToUtf16((const char *)pvData, (PRTUTF16 *)&pvConv);
+                if (RT_SUCCESS(rc))
+                    cbConv = (RTUtf16Len((const PRTUTF16)pvConv) + 1) * sizeof(RTUTF16);
+            }
+            else if (!RTUtf16ValidateEncoding((const PRTUTF16)pvData))
+            {
+                AssertFailedBreakStmt(rc = VERR_INVALID_PARAMETER);
+            }
+        }
+        else if (uFmtsLeft & VBOX_SHCL_FMT_BITMAP)
+            uFmt = VBOX_SHCL_FMT_BITMAP;
+        else if (uFmtsLeft & VBOX_SHCL_FMT_HTML)
+            uFmt = VBOX_SHCL_FMT_HTML;
+        else if (uFmtsLeft & VBOX_SHCL_FMT_URI_LIST)
+            uFmt = VBOX_SHCL_FMT_URI_LIST;
+        else
+            AssertFailedBreakStmt(rc = VERR_NOT_SUPPORTED);
+
+        uFmtsLeft &= ~uFmt; /* Remove from list. */
+        Assert(RT_VALID_PTR(pvConv) || cbConv == 0); /* Sanity. */
+
+        if (RT_SUCCESS(rc))
+            rc = shClCacheSet(pCache, uFmt,
+                              pvConv ? pvConv : pvData,
+                              cbConv ? cbConv : cbData);
+        RTMemFree(pvConv);
+        AssertRCBreak(rc);
+    }
+
+    return rc;
 }
 
