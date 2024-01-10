@@ -248,6 +248,10 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
 int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMax, PSHCLEVENT pEvent);
 int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout, SHCLFORMAT uFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcbBuf);
 void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+int ShClX11TransferConvertToX11(const char *pszSrc, size_t cbSrc,  SHCLX11FMT enmFmtX11, void **ppvDst, size_t *pcbDst);
+int ShClX11TransferConvertFromX11(const char *pvData, size_t cbData, char **ppszList, size_t *pcbList);
+#endif
 /** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h */

@@ -1797,44 +1797,16 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
             rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_URI_LIST, &pv, &cb);
             if (RT_SUCCESS(rc))
             {
-                 if (   fmtX11 == SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES
-                     /** @todo BUGBUG Ditto, see above. */
-                     || fmtX11 == SHCLX11FMT_URI_LIST_MATE_COPIED_FILES
-                     || fmtX11 == SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD
-                     || fmtX11 == SHCLX11FMT_URI_LIST_KDE_CUTSELECTION)
-                 {
-                    /* Note: There must be *no* final new line ('\n') at the end, otherwise Nautilus will crash! */
-                    char *pszData = NULL;
-
-                    RTStrAPrintf(&pszData, "copy\n%s", (const char *)pv);
-
-                    cb = strlen(pszData);
-                    pv = pszData;
-                }
-                else /* SHCLX11FMT_URI_LIST -> String only, w/o any special formatting. */
+                void  *pvX11;
+                size_t cbX11;
+                rc = ShClX11TransferConvertToX11((const char *)pv, cb, fmtX11, &pvX11, &cbX11);
+                if (RT_SUCCESS(rc))
                 {
-                    char *pszData = NULL;
-                    RTStrAPrintf(&pszData, "%s\n", (const char *)pv);
-
-                    cb = strlen(pszData) + 1;
-                    pv = pszData;
-                }
-
-# ifdef DEBUG_andy
-                LogFlowFunc(("Data:\n%.*RhXd\n", cb, pv));
-# endif
-                void *pvDst = (void *)XtMalloc(cb);
-                if (pvDst)
-                {
-                    memcpy(pvDst, pv, cb);
-
                     *atomTypeReturn = *atomTarget;
-                    *pValReturn     = (XtPointer)pvDst;
-                    *pcLenReturn    = cb;
+                    *pValReturn     = (XtPointer)pvX11;
+                    *pcLenReturn    = cbX11;
                     *piFormatReturn = 8;
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
 
             RTMemFree(pv);
@@ -2037,7 +2009,89 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
- * Converts X11 data to a string list usable for HTTP transfers.
+ * Converts transfer data to a format returned back to X11.
+ *
+ * @returns VBox status code.
+ * @param   pszSrc              Transfer data to convert.
+ * @param   cbSrc               Size of transfer data (in bytes) to convert.
+ * @param   enmFmtX11           X11 format to convert data to.
+ * @param   ppvDst              Where to return converted data on success. Must be free'd with XtFree().
+ * @param   pcbDst              Where to return the bytes of the converted data on success. Optional.
+ */
+int ShClX11TransferConvertToX11(const char *pszSrc, size_t cbSrc,  SHCLX11FMT enmFmtX11, void **ppvDst, size_t *pcbDst)
+{
+    AssertPtrReturn(pszSrc, VERR_INVALID_POINTER);
+    AssertReturn(cbSrc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppvDst, VERR_INVALID_POINTER);
+    /* pcbDst is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    char *pszDst = NULL;
+
+# ifdef DEBUG_andy
+    LogFlowFunc(("Src:\n%.*RhXd\n", cbSrc, pszSrc));
+# endif
+
+    switch (enmFmtX11)
+    {
+        case SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES:
+            RT_FALL_THROUGH();
+        case SHCLX11FMT_URI_LIST_MATE_COPIED_FILES:
+            RT_FALL_THROUGH();
+        case SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD:
+            RT_FALL_THROUGH();
+        case SHCLX11FMT_URI_LIST_KDE_CUTSELECTION:
+        {
+            const char chSep = '\n'; /* Currently (?) all entries need to be separated by '\n'. */
+
+            /* Note: There must be *no* final new line ('\n') at the end, otherwise Nautilus will crash! */
+            pszDst = RTStrAPrintf2("copy%c%s", chSep, pszSrc);
+            if (!pszDst)
+                rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        case SHCLX11FMT_URI_LIST:
+        {
+            pszDst = RTStrDup(pszSrc);
+            AssertPtrBreakStmt(pszDst, rc = VERR_NO_MEMORY);
+            break;
+        }
+
+        default:
+            AssertFailed(); /* Most likely a bug in the code; let me know. */
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        size_t const cbDst = RTStrNLen(pszDst, RTSTR_MAX);
+        void        *pvDst = (void *)XtMalloc(cbDst);
+        if (pvDst)
+        {
+            memcpy(pvDst, pszDst, cbDst);
+# ifdef DEBUG_andy
+            LogFlowFunc(("Dst:\n%.*RhXd\n", cbDst, pvDst));
+# endif
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (pcbDst)
+            *pcbDst = cbDst;
+        *ppvDst = pvDst;
+
+        RTStrFree(pszDst);
+        pszDst = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Converts X11 data to a string list usable for transfers.
  *
  * @returns VBox status code.
  * @param   pvData              Data to conver to a string list.
@@ -2047,7 +2101,7 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
  * @param   pcbList             Size (in  bytes) of the returned string list on success.
  *                              Includes terminator.
  */
-int ShClX11TransferHttpConvertFromX11(const char *pvData, size_t cbData, char **ppszList, size_t *pcbList)
+int ShClX11TransferConvertFromX11(const char *pvData, size_t cbData, char **ppszList, size_t *pcbList)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -2296,7 +2350,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                 RT_FALL_THROUGH();
             case SHCLX11FMT_URI_LIST_KDE_CUTSELECTION:
             {
-                rc = ShClX11TransferHttpConvertFromX11((const char *)pvSrc, cbSrc, (char **)&pvDst, &cbDst);
+                rc = ShClX11TransferConvertFromX11((const char *)pvSrc, cbSrc, (char **)&pvDst, &cbDst);
                 break;
             }
 
