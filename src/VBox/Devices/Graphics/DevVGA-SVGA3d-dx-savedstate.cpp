@@ -70,10 +70,10 @@ static int vmsvga3dDXLoadSurface(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
     AssertRCReturn(rc, rc);
 
     /** @todo fAllocMipLevels=false and alloc miplevels if there is data to be loaded. */
-    rc = vmsvga3dSurfaceDefine(pThisCC, sid, entrySurface.surface1Flags, entrySurface.format,
-                               entrySurface.multisampleCount, entrySurface.autogenFilter,
+    rc = vmsvga3dSurfaceDefine(pThisCC, sid, RT_MAKE_U64(entrySurface.surface1Flags, entrySurface.surface2Flags), entrySurface.format,
+                               entrySurface.multisampleCount, (SVGA3dMSPattern)entrySurface.multisamplePattern, (SVGA3dMSQualityLevel)entrySurface.qualityLevel, entrySurface.autogenFilter,
                                entrySurface.numMipLevels, &entrySurface.size,
-                               entrySurface.arraySize,
+                               entrySurface.arraySize, entrySurface.bufferByteStride,
                                /* fAllocMipLevels = */ true);
     AssertRCReturn(rc, rc);
 
@@ -308,6 +308,15 @@ static int vmsvga3dDXSaveSurface(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
         {
             uint32_t idx = iMipmap + iArray * pSurface->cLevels;
             PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[idx];
+
+            /* Multisample surface content can't be accessed. */
+            if (pSurface->surfaceDesc.multisampleCount > 1)
+            {
+                /* No data follows */
+                rc = pHlp->pfnSSMPutBool(pSSM, false);
+                AssertRCReturn(rc, rc);
+                continue;
+            }
 
             if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
             {

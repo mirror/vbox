@@ -85,15 +85,18 @@ static void vmsvga3dSurfaceFreeMipLevels(PVMSVGA3DSURFACE pSurface)
  * @param   surfaceFlags        .
  * @param   format              .
  * @param   multisampleCount    .
+ * @param   multisamplePattern  .
+ * @param   qualityLevel        .
  * @param   autogenFilter       .
  * @param   numMipLevels        .
  * @param   pMipLevel0Size      .
  * @param   arraySize           Number of elements in a texture array.
+ * @param   bufferByteStride    .
  * @param   fAllocMipLevels     .
  */
 int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFlags surfaceFlags, SVGA3dSurfaceFormat format,
-                          uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
-                          uint32_t numMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, bool fAllocMipLevels)
+                          uint32_t multisampleCount, SVGA3dMSPattern multisamplePattern, SVGA3dMSQualityLevel qualityLevel, SVGA3dTextureFilter autogenFilter,
+                          uint32_t numMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, uint32_t bufferByteStride, bool fAllocMipLevels)
 {
     PVMSVGA3DSURFACE pSurface;
     PVMSVGA3DSTATE   pState = pThisCC->svga.p3dState;
@@ -139,6 +142,11 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
         pSurface->surfaceDesc.numArrayElements = SVGA3D_MAX_SURFACE_FACES;
     else
         pSurface->surfaceDesc.numArrayElements = 1;
+
+    pSurface->surfaceDesc.multisampleCount = RT_MAX(multisampleCount, 1);
+    pSurface->surfaceDesc.multisamplePattern = RT_CLAMP(multisamplePattern, SVGA3D_MS_PATTERN_MIN, SVGA3D_MS_PATTERN_MAX);
+    pSurface->surfaceDesc.qualityLevel = RT_CLAMP(qualityLevel, SVGA3D_MS_QUALITY_MIN, SVGA3D_MS_QUALITY_MAX);
+    pSurface->surfaceDesc.bufferByteStride = bufferByteStride;
 
     /** @todo This 'switch' and the surfaceFlags tweaks should not be necessary.
      * The actual surface type will be figured out when the surface is actually used later.
@@ -227,7 +235,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
     /* cFaces is 6 for a cubemaps and 1 otherwise. */
     pSurface->cFaces            = (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1);
     pSurface->cLevels           = numMipLevels;
-    pSurface->multiSampleCount  = multisampleCount;
+    pSurface->multiSampleCount  = pSurface->surfaceDesc.multisampleCount; /** @todo Remove the field. */
     pSurface->autogenFilter     = autogenFilter;
     Assert(autogenFilter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(autogenFilter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
@@ -256,7 +264,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
             uint32_t cbSurfacePitch;
             uint32_t cbSurfacePlane;
             uint32_t cbSurface;
-            vmsvga3dSurfaceMipBufferSize(format, mipmapSize,
+            vmsvga3dSurfaceMipBufferSize(format, mipmapSize, pSurface->surfaceDesc.multisampleCount,
                                          &cBlocksX, &cBlocksY, &cbSurfacePitch, &cbSurfacePlane, &cbSurface);
             AssertBreakStmt(cbMemRemaining >= cbSurface, rc = VERR_INVALID_PARAMETER);
 
@@ -1728,6 +1736,16 @@ uint32_t vmsvga3dGetSubresourceCount(PVGASTATECC pThisCC, SVGA3dSurfaceId sid)
     AssertRCReturn(rc, 0);
 
     return pSurface->surfaceDesc.numArrayElements * pSurface->cLevels;
+}
+
+
+bool vmsvga3dIsMultisampleSurface(PVGASTATECC pThisCC, SVGA3dSurfaceId sid)
+{
+    PVMSVGA3DSURFACE pSurface;
+    int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, sid, &pSurface);
+    AssertRCReturn(rc, 0);
+
+    return pSurface->surfaceDesc.multisampleCount > 1;
 }
 
 

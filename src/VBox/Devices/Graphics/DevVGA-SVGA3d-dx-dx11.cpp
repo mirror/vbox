@@ -106,6 +106,8 @@ typedef struct DXDEVICE
     IDXGIFactory               *pDxgiFactory;          /* DXGI Factory. */
     D3D_FEATURE_LEVEL           FeatureLevel;
 
+    uint32_t                    MultisampleCountMask;  /* 1 << (MSCount - 1) for MSCount = 2, 4, 8, 16, 32 */
+
     ID3D11VideoDevice          *pVideoDevice;
     ID3D11VideoContext         *pVideoContext;
 #ifdef DX_COMMON_STAGING_BUFFER
@@ -908,10 +910,13 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
             if (FormatSupport & D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER)
                 *pu32DevCap |= SVGA3D_DXFMT_DX_VERTEX_BUFFER;
 
-            UINT NumQualityLevels;
-            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 2, &NumQualityLevels);
-            if (SUCCEEDED(hr) && NumQualityLevels != 0)
-                *pu32DevCap |= SVGA3D_DXFMT_MULTISAMPLE;
+            if (pState->pBackend->dxDevice.MultisampleCountMask != 0)
+            {
+                UINT NumQualityLevels;
+                hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 2, &NumQualityLevels);
+                if (SUCCEEDED(hr) && NumQualityLevels != 0)
+                    *pu32DevCap |= SVGA3D_DXFMT_MULTISAMPLE;
+            }
         }
         else
         {
@@ -1356,6 +1361,19 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
     else
         rc = VERR_NOT_SUPPORTED;
 
+    if (SUCCEEDED(hr))
+    {
+        /* Query multisample support for a common format. */
+        DXGI_FORMAT const dxgiFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+        for (uint32_t i = 2; i <= D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT; i *= 2)
+        {
+            UINT NumQualityLevels = 0;
+            HRESULT hr2 = pDXDevice->pDevice->CheckMultisampleQualityLevels(dxgiFormat, i, &NumQualityLevels);
+            if (SUCCEEDED(hr2) && NumQualityLevels > 0)
+                pDXDevice->MultisampleCountMask |= UINT32_C(1) << (i - 1);
+        }
+    }
     return rc;
 }
 
@@ -2025,12 +2043,16 @@ static HRESULT dxRenderTargetViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
         case SVGA3D_RESOURCE_TEXTURE2D:
             if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
-                desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_RTV_DIMENSION_TEXTURE2DMS
+                                   : D3D11_RTV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MipSlice = pEntry->desc.tex.mipSlice;
             }
             else
             {
-                desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY
+                                   : D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
                 desc.Texture2DArray.MipSlice = pEntry->desc.tex.mipSlice;
                 desc.Texture2DArray.FirstArraySlice = pEntry->desc.tex.firstArraySlice;
                 desc.Texture2DArray.ArraySize = pEntry->desc.tex.arraySize;
@@ -2101,13 +2123,17 @@ static HRESULT dxShaderResourceViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
         case SVGA3D_RESOURCE_TEXTURE2D:
             if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
-                desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_SRV_DIMENSION_TEXTURE2DMS
+                                   : D3D11_SRV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
                 desc.Texture2D.MipLevels = pEntry->desc.tex.mipLevels;
             }
             else
             {
-                desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY
+                                   : D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
                 desc.Texture2DArray.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
                 desc.Texture2DArray.MipLevels = pEntry->desc.tex.mipLevels;
                 desc.Texture2DArray.FirstArraySlice = pEntry->desc.tex.firstArraySlice;
@@ -2244,12 +2270,16 @@ static HRESULT dxDepthStencilViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
         case SVGA3D_RESOURCE_TEXTURE2D:
             if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
-                desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_DSV_DIMENSION_TEXTURE2DMS
+                                   : D3D11_DSV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MipSlice = pEntry->mipSlice;
             }
             else
             {
-                desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+                desc.ViewDimension = pSurface->surfaceDesc.multisampleCount > 1
+                                   ? D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY
+                                   : D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
                 desc.Texture2DArray.MipSlice = pEntry->mipSlice;
                 desc.Texture2DArray.FirstArraySlice = pEntry->firstArraySlice;
                 desc.Texture2DArray.ArraySize = pEntry->arraySize;
@@ -2701,7 +2731,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
      * Create D3D11 texture object.
      */
     D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-    if (pSurface->paMipmapLevels[0].pSurfaceData)
+    if (pSurface->paMipmapLevels[0].pSurfaceData && pSurface->surfaceDesc.multisampleCount <= 1)
     {
         /* Can happen for a non GBO surface or if GBO texture was updated prior to creation of the hardware resource. */
         uint32_t const cSubresource = numMipLevels * pSurface->surfaceDesc.numArrayElements;
@@ -2911,7 +2941,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.MipLevels          = numMipLevels;
             td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
             td.Format             = dxgiFormat;
-            td.SampleDesc.Count   = 1;
+            td.SampleDesc.Count   = pSurface->surfaceDesc.multisampleCount;
             td.SampleDesc.Quality = 0;
             td.Usage              = D3D11_USAGE_DEFAULT;
             td.BindFlags          = dxBindFlags(pSurface->f.surfaceFlags);
@@ -2929,6 +2959,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 td.Format         = dxgiFormatDynamic;
                 td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
+                td.SampleDesc.Count   = 1;
+                td.SampleDesc.Quality = 0;
                 td.Usage          = D3D11_USAGE_DYNAMIC;
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -3482,7 +3514,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 
     LogRelMax(1, ("VMSVGA: Single DX device mode: %s\n", pBackend->fSingleDevice ? "enabled" : "disabled"));
 
-    vmsvga3dDXInitContextMobData(&pBackend->svgaDXContext); /** @todo */
+    vmsvga3dDXInitContextMobData(&pBackend->svgaDXContext);
 //DEBUG_BREAKPOINT_TEST();
     return rc;
 }
@@ -3523,6 +3555,9 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
 
         if (pBackend->dxDevice.pVideoDevice)
             dxLogRelVideoCaps(pBackend->dxDevice.pVideoDevice);
+
+        if (!pThis->svga.fVMSVGA3dMSAA)
+            pBackend->dxDevice.MultisampleCountMask = 0;
     }
     return rc;
 }
@@ -4768,11 +4803,11 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
         break;
 
     case SVGA3D_DEVCAP_MULTISAMPLE_2X:
-        *pu32Val = 0; /* boolean */
+        *pu32Val = RT_BOOL(pState->pBackend->dxDevice.MultisampleCountMask & (1 << (2 - 1))); /* boolean */
         break;
 
     case SVGA3D_DEVCAP_MULTISAMPLE_4X:
-        *pu32Val = 0; /* boolean */
+        *pu32Val = RT_BOOL(pState->pBackend->dxDevice.MultisampleCountMask & (1 << (4 - 1))); /* boolean */
         break;
 
     case SVGA3D_DEVCAP_MS_FULL_QUALITY:
@@ -4799,7 +4834,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
         break;
 
     case SVGA3D_DEVCAP_MULTISAMPLE_8X:
-        *pu32Val = 0; /* boolean */
+        *pu32Val = RT_BOOL(pState->pBackend->dxDevice.MultisampleCountMask & (1 << (8 - 1))); /* boolean */
         break;
 
     case SVGA3D_DEVCAP_MAX:
@@ -7130,9 +7165,13 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURE2D:
                                     if (pSurface->surfaceDesc.numArrayElements <= 1)
-                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                                        aResourceDimension[idxSR] = pSurface->surfaceDesc.multisampleCount > 1
+                                                                  ? VGPU10_RESOURCE_DIMENSION_TEXTURE2DMS
+                                                                  : VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
                                     else
-                                        aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY;
+                                        aResourceDimension[idxSR] = pSurface->surfaceDesc.multisampleCount > 1
+                                                                  ? VGPU10_RESOURCE_DIMENSION_TEXTURE2DMSARRAY
+                                                                  : VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY;
                                     break;
                                 case SVGA3D_RESOURCE_TEXTURE3D:
                                     aResourceDimension[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
@@ -8768,6 +8807,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXPresentBlt(PVGASTATECC pThisCC, PVMSVGA3D
         AssertRCReturn(rc, rc);
     }
 
+#ifdef DEBUG_sunlover
+    if (pSrcSurface->surfaceDesc.multisampleCount > 1 || pDstSurface->surfaceDesc.multisampleCount > 1)
+        DEBUG_BREAKPOINT_TEST();
+#endif
+
     LogFunc(("cid %d: src cid %d%s -> dst cid %d%s\n",
              pDXContext->cid, pSrcSurface->idAssociatedContext,
              (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "",
@@ -9857,13 +9901,30 @@ static DECLCALLBACK(int) vmsvga3dBackIntraSurfaceCopy(PVGASTATECC pThisCC, PVMSV
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXResolveCopy(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXResolveCopy(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                                   SVGA3dSurfaceId dstSid, uint32_t dstSubResource,
+                                                   SVGA3dSurfaceId srcSid, uint32_t srcSubResource, SVGA3dSurfaceFormat copyFormat)
 {
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    PVMSVGA3DSURFACE pSrcSurface;
+    ID3D11Resource *pSrcResource;
+    int rc = dxEnsureResource(pThisCC, pDXContext, srcSid, &pSrcSurface, &pSrcResource);
+    AssertRCReturn(rc, rc);
+
+    PVMSVGA3DSURFACE pDstSurface;
+    ID3D11Resource *pDstResource;
+    rc = dxEnsureResource(pThisCC, pDXContext, dstSid, &pDstSurface, &pDstResource);
+    AssertRCReturn(rc, rc);
+
+    LogFunc(("cid %d: src sid = %u -> dst sid = %u\n", pDXContext->cid, srcSid, dstSid));
+
+    DXGI_FORMAT const dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(copyFormat);
+    pDXDevice->pImmediateContext->ResolveSubresource(pDstResource, dstSubResource, pSrcResource, srcSubResource, dxgiFormat);
+
+    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
+    return VINF_SUCCESS;
 }
 
 

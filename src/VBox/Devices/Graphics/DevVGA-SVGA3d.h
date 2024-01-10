@@ -53,7 +53,6 @@
 #define SVGA3D_MAX_MIP_LEVELS                   16
 
 
-/** @todo Use this as a parameter for vmsvga3dSurfaceDefine and a field in VMSVGA3DSURFACE instead of a multiple values. */
 /* A surface description provided by the guest. Mostly mirrors SVGA3dCmdDefineGBSurface_v4 */
 typedef struct VMSVGA3D_SURFACE_DESC
 {
@@ -116,8 +115,8 @@ void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VM
 int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t *pu32Val);
 
 int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFlags surfaceFlags, SVGA3dSurfaceFormat format,
-                          uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
-                          uint32_t cMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, bool fAllocMipLevels);
+                          uint32_t multisampleCount, SVGA3dMSPattern multisamplePattern, SVGA3dMSQualityLevel qualityLevel, SVGA3dTextureFilter autogenFilter,
+                          uint32_t numMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, uint32_t bufferByteStride, bool fAllocMipLevels);
 int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid);
 int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
                         uint32_t cCopyBoxes, SVGA3dCopyBox *pBox);
@@ -196,6 +195,7 @@ DECLINLINE(void) vmsvga3dCalcMipmapSize(SVGA3dSize const *pSize0, uint32_t iMipm
 
 uint32_t vmsvga3dGetArrayElements(PVGASTATECC pThisCC, SVGA3dSurfaceId sid);
 uint32_t vmsvga3dGetSubresourceCount(PVGASTATECC pThisCC, SVGA3dSurfaceId sid);
+bool vmsvga3dIsMultisampleSurface(PVGASTATECC pThisCC, SVGA3dSurfaceId sid);
 
 DECLINLINE(uint32_t) vmsvga3dCalcSubresource(uint32_t iMipLevel, uint32_t iArray, uint32_t cMipLevels)
 {
@@ -344,7 +344,7 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
                                    uint32_t *pu32BlockWidth,
                                    uint32_t *pu32BlockHeight,
                                    uint32_t *pcbPitchBlock);
-void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapSize,
+void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapSize, uint32_t multisampleCount,
                                   uint32_t *pcBlocksX,
                                   uint32_t *pcBlocksY,
                                   uint32_t *pcbSurfacePitch,
@@ -531,7 +531,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXCondBindAllShader,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnScreenCopy,                  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnIntraSurfaceCopy,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceImageId const &surface, SVGA3dCopyBox const &box));
-    DECLCALLBACKMEMBER(int, pfnDXResolveCopy,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnDXResolveCopy,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceId dstSid, uint32_t dstSubResource, SVGA3dSurfaceId srcSid, uint32_t srcSubResource, SVGA3dSurfaceFormat copyFormat));
     DECLCALLBACKMEMBER(int, pfnDXPredResolveCopy,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXPredConvertRegion,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXPredConvert,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -707,7 +707,7 @@ int vmsvga3dDXCondBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCmd);
 int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdIntraSurfaceCopy const *pCmd);
-int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXResolveCopy const *pCmd);
 int vmsvga3dDXPredResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXPredConvertRegion(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXPredConvert(PVGASTATECC pThisCC, uint32_t idDXContext);

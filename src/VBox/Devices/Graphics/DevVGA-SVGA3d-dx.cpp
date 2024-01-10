@@ -2623,7 +2623,7 @@ int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
 }
 
 
-int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXResolveCopy const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2635,7 +2635,8 @@ int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXResolveCopy(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXResolveCopy(pThisCC, pDXContext, pCmd->dstSid, pCmd->dstSubResource,
+                                                  pCmd->srcSid, pCmd->srcSubResource, pCmd->copyFormat);
     return rc;
 }
 

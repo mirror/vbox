@@ -6477,6 +6477,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 # ifdef VBOX_WITH_VMSVGA3D
                                             "|VMSVGA3dEnabled"
                                             "|VMSVGA3dOverlayEnabled"
+                                            "|VMSVGA3dMSAA"
 # endif
                                             "|SuppressNewYearSplash"
                                             "|3DEnabled";
@@ -6548,6 +6549,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGA3dOverlayEnabled", &pThis->svga.f3DOverlayEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGA3dOverlayEnabled = %d\n", pThis->svga.f3DOverlayEnabled));
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGA3dMSAA", &pThis->svga.fVMSVGA3dMSAA, true);
+    AssertLogRelRCReturn(rc, rc);
+    Log(("VMSVGA: VMSVGA3dMSAA = %d\n", pThis->svga.fVMSVGA3dMSAA));
 # endif
 
 # ifdef VBOX_WITH_VMSVGA

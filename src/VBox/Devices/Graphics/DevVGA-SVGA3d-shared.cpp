@@ -312,7 +312,7 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
     return desc->bytes_per_block;
 }
 
-void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapSize,
+void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapSize, uint32_t multisampleCount,
                                   uint32_t *pcBlocksX,
                                   uint32_t *pcBlocksY,
                                   uint32_t *pcbSurfacePitch,
@@ -330,7 +330,9 @@ void vmsvga3dSurfaceMipBufferSize(SVGA3dSurfaceFormat format, SVGA3dSize mipmapS
     uint32_t cbSurfacePlane = clamped_umul32(cxBlocks, cyBlocks);
     cbSurfacePlane = clamped_umul32(cbSurfacePlane, desc->bytes_per_block);
 
-    uint32_t const cbSurface = clamped_umul32(cbSurfacePlane, czBlocks);
+    uint32_t const cbSurfaceResolved = clamped_umul32(cbSurfacePlane, czBlocks);
+
+    uint32_t const cbSurface = clamped_umul32(cbSurfaceResolved, RT_MAX(multisampleCount, 1));
 
     *pcBlocksX = cxBlocks;
     *pcBlocksY = cyBlocks;
