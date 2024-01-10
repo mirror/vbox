@@ -3578,7 +3578,7 @@ static int cpumR3MapMtrrsOptimal(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t c
         {
             Assert(MtrrMapAdd.idxMtrr > 0);
             Assert(MtrrMapAdd.idxMtrr <= MtrrMapAdd.cMtrrs);
-            Assert(MtrrMapAdd.cbMapped == cb);
+            Assert(MtrrMapAdd.cbMapped == MtrrMapAdd.cbToMap);
             Log3(("CPUM: MTRR: Mapped %u regions using additive method\n", MtrrMapAdd.idxMtrr));
 
             /*
@@ -3606,7 +3606,7 @@ static int cpumR3MapMtrrsOptimal(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t c
         {
             Assert(MtrrMapSub.idxMtrr > 0);
             Assert(MtrrMapSub.idxMtrr <= MtrrMapSub.cMtrrs);
-            Assert(MtrrMapSub.cbMapped == cb);
+            Assert(MtrrMapSub.cbMapped == MtrrMapSub.cbToMap);
             Log3(("CPUM: MTRR: Mapped %u regions using subtractive method\n", MtrrMapSub.idxMtrr));
         }
         else
@@ -3641,7 +3641,7 @@ static int cpumR3MapMtrrsOptimal(PVM pVM, RTGCPHYS GCPhysRegionFirst, uint64_t c
 
     int const rc = cpumR3MtrrMapAddMap(pVM, pMtrrMap, pMtrrMapOptimal);
     if (   RT_SUCCESS(rc)
-        && pMtrrMapOptimal->cbMapped == pMtrrMapOptimal->cbToMap)
+        && pMtrrMapOptimal->cbMapped == pMtrrMapOptimal->cbToMap) /* Required to distinguish full vs overflow state. */
         return VINF_SUCCESS;
     return VERR_OUT_OF_RESOURCES;
 }
