@@ -336,34 +336,14 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
                         rc = ShClTransferWaitForStatus(pTransfer, SHCL_TIMEOUT_DEFAULT_MS, SHCLTRANSFERSTATUS_INITIALIZED);
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszURL = NULL;
-
-                            uint64_t const cRoots = ShClTransferRootsCount(pTransfer);
-                            for (uint32_t i = 0; i < cRoots; i++)
-                            {
-                                char *pszEntry = ShClTransferHttpServerGetUrlA(pSrv, ShClTransferGetID(pTransfer), i /* Entry index */);
-                                AssertPtrBreakStmt(pszEntry, rc = VERR_NO_MEMORY);
-
-                                if (i > 0)
-                                {
-                                    rc = RTStrAAppend(&pszURL, "\n"); /* Separate entries with a newline. */
-                                    AssertRCBreak(rc);
-                                }
-
-                                rc = RTStrAAppend(&pszURL, pszEntry);
-                                AssertRCBreak(rc);
-
-                                RTStrFree(pszEntry);
-                            }
-
+                            char  *pszData;
+                            size_t cbData;
+                            rc = ShClTransferHttpConvertToStringList(pSrv, pTransfer, &pszData, &cbData);
                             if (RT_SUCCESS(rc))
                             {
-                                *ppv = pszURL;
-                                *pcb = strlen(pszURL) + 1 /* Include terminator */;
-
-                                LogFlowFunc(("URL is '%s'\n", pszURL));
-
-                                /* ppv has ownership of pszURL. */
+                                *ppv = pszData;
+                                *pcb = cbData;
+                                /* ppv has ownership of pszData now. */
                             }
                         }
                     }
