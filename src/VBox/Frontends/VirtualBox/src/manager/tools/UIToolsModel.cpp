@@ -448,8 +448,6 @@ void UIToolsModel::prepare()
     prepareItems();
     /* Prepare handlers: */
     prepareHandlers();
-    /* Prepare connections: */
-    prepareConnections();
     /* Apply language settings: */
     retranslateUi();
 }
@@ -540,20 +538,6 @@ void UIToolsModel::prepareHandlers()
     m_pKeyboardHandler = new UIToolsHandlerKeyboard(this);
 }
 
-void UIToolsModel::prepareConnections()
-{
-    AssertPtrReturnVoid(m_pTools);
-    {
-        /* Setup parent connections: */
-        connect(this, &UIToolsModel::sigSelectionChanged,
-                m_pTools, &UITools::sigSelectionChanged);
-        connect(this, &UIToolsModel::sigExpandingStarted,
-                m_pTools, &UITools::sigExpandingStarted);
-        connect(this, &UIToolsModel::sigExpandingFinished,
-                m_pTools, &UITools::sigExpandingFinished);
-    }
-}
-
 void UIToolsModel::loadSettings()
 {
     /* Load last tool types: */
@@ -603,13 +587,6 @@ void UIToolsModel::loadLastToolTypes(UIToolType &enmTypeGlobal, UIToolType &enmT
              (int)enmTypeGlobal, (int)enmTypeMachine));
 }
 
-void UIToolsModel::cleanupConnections()
-{
-    /* Disconnect selection-changed signal prematurelly: */
-    disconnect(this, &UIToolsModel::sigSelectionChanged,
-               m_pTools, &UITools::sigSelectionChanged);
-}
-
 void UIToolsModel::cleanupHandlers()
 {
     delete m_pKeyboardHandler;
@@ -633,8 +610,6 @@ void UIToolsModel::cleanupScene()
 
 void UIToolsModel::cleanup()
 {
-    /* Cleanup connections: */
-    cleanupConnections();
     /* Cleanup handlers: */
     cleanupHandlers();
     /* Cleanup items: */

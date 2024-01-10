@@ -227,17 +227,13 @@ private:
         void prepareItems();
         /** Prepares handlers. */
         void prepareHandlers();
-        /** Prepares connections. */
-        void prepareConnections();
         /** Loads settings. */
         void loadSettings();
 
         /** Loads last tool types. */
         static void loadLastToolTypes(UIToolType &enmTypeGlobal, UIToolType &enmTypeMachine);
 
-        /** Cleanups connections. */
-        void cleanupConnections();
-        /** Cleanups connections. */
+        /** Cleanups handlers. */
         void cleanupHandlers();
         /** Cleanups items. */
         void cleanupItems();
