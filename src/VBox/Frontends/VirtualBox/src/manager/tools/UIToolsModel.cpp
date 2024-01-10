@@ -168,10 +168,9 @@ QList<UIToolType> UIToolsModel::restrictedToolTypes() const
     return m_restrictedToolTypes;
 }
 
-void UIToolsModel::closeParent()
+void UIToolsModel::close()
 {
-    if (m_pTools)
-        m_pTools->close();
+    emit sigClose();
 }
 
 void UIToolsModel::setCurrentItem(UIToolsItem *pItem)

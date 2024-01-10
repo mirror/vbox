@@ -75,7 +75,7 @@ bool UIToolsHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) con
                 if (pClickedItem && pClickedItem->isEnabled())
                 {
                     model()->setCurrentItem(pClickedItem);
-                    model()->closeParent();
+                    model()->close();
                 }
                 break;
             }

@@ -143,6 +143,8 @@ void UITools::prepareView()
 void UITools::prepareConnections()
 {
     /* Model connections: */
+    connect(m_pToolsModel, &UIToolsModel::sigClose,
+            this, &UITools::close);
     connect(m_pToolsModel, &UIToolsModel::sigItemMinimumWidthHintChanged,
             m_pToolsView, &UIToolsView::sltMinimumWidthHintChanged);
     connect(m_pToolsModel, &UIToolsModel::sigItemMinimumHeightHintChanged,
