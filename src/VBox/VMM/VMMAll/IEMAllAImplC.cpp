@@ -2131,39 +2131,179 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u8,        (uint8_t  *pu8Dst,  uint8_t 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16,       (uint16_t *pu16Dst, uint16_t *puAx,  uint16_t uSrcReg, uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg_u16_locked(pu16Dst, puAx, uSrcReg, pEFlags);
+# if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu16Dst & 1))
+        iemAImpl_cmpxchg_u16_locked(pu16Dst, puAx, uSrcReg, pEFlags);
+    else
+# endif
+    {
+        /* Otherwise emulate it as best as we can. */
+        uint16_t const uOld = *puAx;
+        uint16_t const uDst = *pu16Dst;
+        if (uOld == uDst)
+        {
+            *pu16Dst = uSrcReg;
+            iemAImpl_cmp_u16(&uOld, uOld, pEFlags);
+        }
+        else
+        {
+            *puAx = uDst;
+            iemAImpl_cmp_u16(&uOld, uDst, pEFlags);
+        }
+    }
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32,       (uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg_u32_locked(pu32Dst, puEax, uSrcReg, pEFlags);
+# if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu32Dst & 3))
+        iemAImpl_cmpxchg_u32_locked(pu32Dst, puEax, uSrcReg, pEFlags);
+    else
+# endif
+    {
+        /* Otherwise emulate it as best as we can. */
+        uint32_t const uOld = *puEax;
+        uint32_t const uDst = *pu32Dst;
+        if (uOld == uDst)
+        {
+            *pu32Dst = uSrcReg;
+            iemAImpl_cmp_u32(&uOld, uOld, pEFlags);
+        }
+        else
+        {
+            *puEax = uDst;
+            iemAImpl_cmp_u32(&uOld, uDst, pEFlags);
+        }
+    }
 }
 
 
 # if ARCH_BITS == 32
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t *puRax, uint64_t *puSrcReg, uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, puSrcReg, pEFlags);
+#  if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu32Dst & 7))
+        iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, puSrcReg, pEFlags);
+    else
+#  endif
+    {
+        /* Otherwise emulate it as best as we can. */
+        uint64_t const uOld = *puRax;
+        uint64_t const uSrc = *puSrcReg;
+        uint64_t const uDst = *pu64Dst;
+        if (uOld == uDst)
+        {
+            *pu64Dst = uSrc;
+            iemAImpl_cmp_u64(&uOld, uOld, pEFlags);
+        }
+        else
+        {
+            *puRax = uDst;
+            iemAImpl_cmp_u64(&uOld, uDst, pEFlags);
+        }
+    }
 }
-# else
+# else  /* ARCH_BITS != 32 */
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t *puRax, uint64_t uSrcReg, uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, uSrcReg, pEFlags);
+#  if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu64Dst & 7))
+        iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, uSrcReg, pEFlags);
+    else
+#  endif
+    {
+        /* Otherwise emulate it as best as we can. */
+        uint64_t const uOld = *puRax;
+        uint64_t const uDst = *pu64Dst;
+        if (uOld == uDst)
+        {
+            *pu64Dst = uSrcReg;
+            iemAImpl_cmp_u64(&uOld, uOld, pEFlags);
+        }
+        else
+        {
+            *puRax = uDst;
+            iemAImpl_cmp_u64(&uOld, uDst, pEFlags);
+        }
+    }
 }
-# endif
+# endif /* ARCH_BITS != 32 */
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx, uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg8b_locked(pu64Dst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+# if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu64Dst & 7))
+        iemAImpl_cmpxchg8b_locked(pu64Dst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+    else
+# endif
+    {
+        /* Otherwise emulate it as best as we can. */
+        uint64_t const uNew = pu64EbxEcx->u;
+        uint64_t const uOld = pu64EaxEdx->u;
+        uint64_t const uDst = *pu64Dst;
+        if (uDst == uOld)
+        {
+            *pu64Dst = uNew;
+            *pEFlags |= X86_EFL_ZF;
+        }
+        else
+        {
+            pu64EaxEdx->u = uDst;
+            *pEFlags &= ~X86_EFL_ZF;
+        }
+    }
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx, PRTUINT128U pu128RbxRcx,
                                              uint32_t *pEFlags))
 {
-    iemAImpl_cmpxchg16b_locked(pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+# if 0
+    /* If correctly aligned, used the locked variation. */
+    if (!((uintptr_t)pu64Dst & 15))
+        iemAImpl_cmpxchg16b_locked(pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+    else
+# endif
+    {
+        /* Otherwise emulate it as best as we can. */
+# ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+        uint128_t const uNew = pu128RbxRcx->u;
+        uint128_t const uOld = pu128RaxRdx->u;
+        uint128_t const uDst = pu128Dst->u;
+        if (uDst == uOld)
+        {
+            pu128Dst->u = uNew;
+            *pEFlags |= X86_EFL_ZF;
+        }
+        else
+        {
+            pu128RaxRdx->u = uDst;
+            *pEFlags &= ~X86_EFL_ZF;
+        }
+# else
+        RTUINT128U const uNew = *pu128RbxRcx;
+        RTUINT128U const uOld = *pu128RaxRdx;
+        RTUINT128U const uDst = *pu128Dst;
+        if (   uDst.s.Lo == uOld.s.Lo
+            && uDst.s.Hi == uOld.s.Hi)
+        {
+            *pu128Dst = uNew;
+            *pEFlags |= X86_EFL_ZF;
+        }
+        else
+        {
+            *pu128RaxRdx = uDst;
+            *pEFlags &= ~X86_EFL_ZF;
+        }
+# endif
+    }
 }
 
 #endif /* defined(IEM_WITHOUT_ASSEMBLY) */
