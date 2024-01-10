@@ -54,8 +54,9 @@ signals:
 
     /** @name General stuff.
       * @{ */
-        /** Notifies listeners about selection changed. */
-        void sigSelectionChanged();
+        /** Notifies listeners about selection changed.
+          * @param  enmType  Brings current tool type. */
+        void sigSelectionChanged(UIToolType enmType);
 
         /** Notifies listeners about expanding started. */
         void sigExpandingStarted();

@@ -221,10 +221,10 @@ public:
         bool isGlobalToolOpened(UIToolType enmType) const;
         /** Returns whether Machine tool of passed @a enmType is opened. */
         bool isMachineToolOpened(UIToolType enmType) const;
-        /** Switches to Global tool of passed @a enmType. */
-        void switchToGlobalTool(UIToolType enmType);
-        /** Switches to Machine tool of passed @a enmType. */
-        void switchToMachineTool(UIToolType enmType);
+        /** Switches Global tool to passed @a enmType. */
+        void switchGlobalToolTo(UIToolType enmType);
+        /** Switches Machine tool to passed @a enmType. */
+        void switchMachineToolTo(UIToolType enmType);
         /** Closes Global tool of passed @a enmType. */
         void closeGlobalTool(UIToolType enmType);
         /** Closes Machine tool of passed @a enmType. */
@@ -323,10 +323,12 @@ private slots:
         /** Handles tool popup-menu request. */
         void sltHandleToolMenuRequested(const QPoint &position, UIVirtualMachineItem *pItem);
 
-        /** Handles signal about global Tools-pane index change. */
-        void sltHandleGlobalToolsPaneIndexChange();
-        /** Handles signal about machine Tools-pane index change. */
-        void sltHandleMachineToolsPaneIndexChange();
+        /** Handles signal about global Tools-menu index change.
+          * @param  enmType  Brings current tool type. */
+        void sltHandleGlobalToolsMenuIndexChange(UIToolType enmType) { switchGlobalToolTo(enmType); }
+        /** Handles signal about machine Tools-menu index change.
+          * @param  enmType  Brings current tool type. */
+        void sltHandleMachineToolsMenuIndexChange(UIToolType enmType) { switchMachineToolTo(enmType); }
 
         /** Handles signal requesting switch to Activity pane of machine with @a uMachineId. */
         void sltSwitchToMachineActivityPane(const QUuid &uMachineId);

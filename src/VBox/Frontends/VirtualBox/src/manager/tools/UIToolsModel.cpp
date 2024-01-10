@@ -218,7 +218,7 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
         m_pCurrentItem->update();
 
     /* Notify about selection change: */
-    emit sigSelectionChanged();
+    emit sigSelectionChanged(toolsType());
 
     /* Move focus to current-item: */
     setFocusItem(currentItem());

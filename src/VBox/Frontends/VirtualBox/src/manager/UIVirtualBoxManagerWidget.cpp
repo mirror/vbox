@@ -246,7 +246,7 @@ bool UIVirtualBoxManagerWidget::isMachineToolOpened(UIToolType enmType) const
     return m_pPaneToolsMachine ? m_pPaneToolsMachine->isToolOpened(enmType) : false;
 }
 
-void UIVirtualBoxManagerWidget::switchToGlobalTool(UIToolType enmType)
+void UIVirtualBoxManagerWidget::switchGlobalToolTo(UIToolType enmType)
 {
     /* Open corresponding tool: */
     m_pPaneToolsGlobal->openTool(enmType);
@@ -258,7 +258,7 @@ void UIVirtualBoxManagerWidget::switchToGlobalTool(UIToolType enmType)
     updateToolbar();
 }
 
-void UIVirtualBoxManagerWidget::switchToMachineTool(UIToolType enmType)
+void UIVirtualBoxManagerWidget::switchMachineToolTo(UIToolType enmType)
 {
     /* Open corresponding tool: */
     m_pPaneToolsMachine->openTool(enmType);
@@ -516,9 +516,9 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uI
         /* If current item is Ok: */
         if (fCurrentItemIsOk)
         {
-            /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
+            /* If Error-pane is chosen currently => switch to tool currently chosen in Tools-menu: */
             if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-                sltHandleMachineToolsPaneIndexChange();
+                switchMachineToolTo(m_pMenuToolsMachine->toolsType());
 
             /* If we still have same item selected: */
             if (pItem && pItem->id() == uId)
@@ -571,16 +571,6 @@ void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(const QPoint &positio
     // Don't want even to think why, but for Qt::Popup resize to
     // smaller size often being ignored until it is actually shown.
     pMenu->resize(ourGeo.size());
-}
-
-void UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange()
-{
-    switchToGlobalTool(m_pMenuToolsGlobal->toolsType());
-}
-
-void UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange()
-{
-    switchToMachineTool(m_pMenuToolsMachine->toolsType());
 }
 
 void UIVirtualBoxManagerWidget::sltSwitchToMachineActivityPane(const QUuid &uMachineId)
@@ -819,9 +809,9 @@ void UIVirtualBoxManagerWidget::prepareConnections()
 
     /* Tools-pane connections: */
     connect(m_pMenuToolsGlobal, &UITools::sigSelectionChanged,
-            this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange);
+            this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsMenuIndexChange);
     connect(m_pMenuToolsMachine, &UITools::sigSelectionChanged,
-            this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange);
+            this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsMenuIndexChange);
 }
 
 void UIVirtualBoxManagerWidget::loadSettings()
@@ -845,9 +835,9 @@ void UIVirtualBoxManagerWidget::loadSettings()
         m_pToolBar->setUseTextLabels(gEDataManager->selectorWindowToolBarTextVisible());
     }
 
-    /* Open tools last chosen in Tools-pane: */
-    switchToGlobalTool(m_pMenuToolsGlobal->toolsType());
-    switchToMachineTool(m_pMenuToolsMachine->toolsType());
+    /* Open tools last chosen in Tools-menu: */
+    switchGlobalToolTo(m_pMenuToolsGlobal->toolsType());
+    switchMachineToolTo(m_pMenuToolsMachine->toolsType());
 }
 
 void UIVirtualBoxManagerWidget::updateToolbar()
@@ -1073,9 +1063,9 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
 
     /* Tools-pane connections: */
     disconnect(m_pMenuToolsGlobal, &UITools::sigSelectionChanged,
-               this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsPaneIndexChange);
+               this, &UIVirtualBoxManagerWidget::sltHandleGlobalToolsMenuIndexChange);
     disconnect(m_pMenuToolsMachine, &UITools::sigSelectionChanged,
-               this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsPaneIndexChange);
+               this, &UIVirtualBoxManagerWidget::sltHandleMachineToolsMenuIndexChange);
 }
 
 void UIVirtualBoxManagerWidget::cleanupWidgets()
@@ -1149,9 +1139,9 @@ void UIVirtualBoxManagerWidget::recacheCurrentMachineItemInformation(bool fDontR
     /* If current item is Ok: */
     if (fCurrentItemIsOk)
     {
-        /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
+        /* If Error-pane is chosen currently => switch to tool currently chosen in Tools-menu: */
         if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-            sltHandleMachineToolsPaneIndexChange();
+            switchMachineToolTo(m_pMenuToolsMachine->toolsType());
 
         /* Propagate current items to the Tools pane: */
         m_pPaneToolsMachine->setItems(currentItems());
