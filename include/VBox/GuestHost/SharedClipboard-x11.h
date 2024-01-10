@@ -176,7 +176,9 @@ typedef enum _SHCLX11EVENTTYPE
     /** Reports formats to X11. */
     SHCLX11EVENTTYPE_REPORT_FORMATS,
     /** Reads clipboard from X11. */
-    SHCLX11EVENTTYPE_READ
+    SHCLX11EVENTTYPE_READ,
+    /** Writes clipboard to X11. */
+    SHCLX11EVENTTYPE_WRITE
 } SHCLX11EVENTTYPE;
 /** Pointer to an enumeration for an X11 event type. */
 typedef SHCLX11EVENTTYPE *PSHCLX11EVENTTYPE;
@@ -210,6 +212,18 @@ typedef struct _SHCLX11REQUEST
             /** How much bytes to read at max. */
             uint32_t         cbMax;
         } Read;
+        /** Write request. */
+        struct
+        {
+            /** The format of the data to write. */
+            SHCLFORMAT       uFmtVBox;
+            /** The format to write to X11. */
+            SHCLX11FMTIDX    idxFmtX11;
+            /** Data to write. */
+            void            *pvData;
+            /** How much bytes to write. */
+            uint32_t         cbData;
+        } Write;
     };
 } SHCLX11REQUEST;
 /** Pointer to an X11 clipboard request. */
@@ -231,6 +245,11 @@ typedef struct _SHCLX11RESPONSE
             void    *pvData;
             uint32_t cbData;
         } Read;
+        struct
+        {
+            const void *pvData;
+            uint32_t    cbData;
+        } Write;
     };
 } SHCLX11RESPONSE;
 /** Pointer to an X11 clipboard response. */
@@ -247,6 +266,8 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx);
 int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
 int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMax, PSHCLEVENT pEvent);
 int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout, SHCLFORMAT uFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcbBuf);
+int ShClX11WriteDataToX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, const void *pvBuf, uint32_t cbBuf, PSHCLEVENT pEvent);
+int ShClX11WriteDataToX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout, SHCLFORMAT uFmt, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int ShClX11TransferConvertToX11(const char *pszSrc, size_t cbSrc,  SHCLX11FMT enmFmtX11, void **ppvDst, size_t *pcbDst);

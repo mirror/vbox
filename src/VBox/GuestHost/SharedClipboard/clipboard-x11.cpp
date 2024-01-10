@@ -2726,3 +2726,82 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+/**
+ * Writes to the X11 clipboard (asynchronously).
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_AVAILABLE the the X11 clipboard is not available.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   uFmts               The format(s) to write.
+ *                              Conversions might be performed, if available.
+ * @param   pvBuf               Pointer to data to write.
+ * @param   cbBuf               Size (in bytes) of data to write.
+ * @param   pEvent              Event to use for waiting for data to get written.
+ *                              The event's payload will contain the amount of data written.
+ *                              Needs to be free'd with ShClEventRelease().
+ */
+int ShClX11WriteDataToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFmts, const void *pvBuf, uint32_t cbBuf, PSHCLEVENT pEvent)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,  VERR_INVALID_POINTER);
+    AssertReturn(cbBuf,  VERR_INVALID_PARAMETER);
+    /* pEvent not used yet. */ RT_NOREF(pEvent);
+
+    /*
+     * Immediately return if we are not connected to the X server.
+     */
+    if (!pCtx->fHaveX11)
+        return VERR_NOT_AVAILABLE;
+
+    int rc = ShClCacheSetMultiple(&pCtx->Cache, uFmts, pvBuf, cbBuf);
+    if (RT_SUCCESS(rc))
+    {
+        clipResetX11Formats(pCtx);
+        clipGrabX11Clipboard(pCtx, uFmts);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Writes to the X11 clipboard.
+ *
+ * This function currently only is implemented as asynchronous version.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_AVAILABLE the the X11 clipboard is not available.
+ * @retval  VERR_TRY_AGAIN if format is supported but data could not be written.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   uFmt                The format to write.
+ * @param   pvBuf               Pointer to data to write. Must match format to write.
+ * @param   cbBuf               Size (in bytes) of data to write.
+ * @param   pcbWritten          Where to return the written bytes on success. Optional.
+ *                              Currently always returns the value of \a cbBuf on success.
+ *
+ * @note    Text data must be in UTF-8, always.
+ */
+int ShClX11WriteDataToX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout,
+                          SHCLFORMAT uFmt, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEventSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    /* pcbWritetn is optional. */
+
+    RT_NOREF(msTimeout); /* Not used yet. */
+
+    int rc = ShClX11WriteDataToX11Async(pCtx, uFmt, pvBuf, cbBuf, NULL /* pEvent */);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            *pcbWritten = cbBuf;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
