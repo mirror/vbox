@@ -2663,7 +2663,7 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
 }
 
 /**
- * Reads the X11 clipboard.
+ * Reads from the X11 clipboard.
  *
  * @returns VBox status code.
  * @retval  VERR_NO_DATA if format is supported but no data is available currently.
@@ -2674,7 +2674,7 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
  * @param   uFmt                The format that the VBox would like to receive the data in.
  * @param   pvBuf               Where to store the received data on success.
  * @param   cbBuf               Size (in bytes) of \a pvBuf. Also marks maximum data to read (in bytes).
- * @param   pcbRead             Where to return the read bytes on success.
+ * @param   pcbRead             Where to return the read bytes on success. Optional.
  */
 int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout,
                            SHCLFORMAT uFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
@@ -2683,7 +2683,7 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
     AssertPtrReturn(pEventSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
+    /* pcbRead is optional. */
 
     PSHCLEVENT pEvent;
     int rc = ShClEventSourceGenerateAndRegisterEvent(pEventSource, &pEvent);
@@ -2705,7 +2705,8 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
                     AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
 
                     memcpy(pvBuf, pResp->Read.pvData, RT_MIN(cbBuf, pResp->Read.cbData));
-                    *pcbRead = pResp->Read.cbData;
+                    if (pcbRead)
+                        *pcbRead = pResp->Read.cbData;
 
                     RTMemFree(pResp->Read.pvData);
                     pResp->Read.cbData = 0;
@@ -2715,12 +2716,15 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
                 else /* No payload given; could happen on invalid / not-expected formats. */
                 {
                     rc = VERR_NO_DATA;
-                    *pcbRead = 0;
+                    if (pcbRead)
+                        *pcbRead = 0;
                 }
             }
             else if (rc == VERR_SHCLPB_EVENT_FAILED)
                 rc = rcEvent;
         }
+
+        ShClEventRelease(pEvent);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2804,4 +2808,3 @@ int ShClX11WriteDataToX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSI
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
