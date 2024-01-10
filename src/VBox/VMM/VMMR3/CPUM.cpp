@@ -192,9 +192,9 @@ typedef struct CPUMMTRRMAP
     uint8_t     cMtrrs;
     /** Alignment padding. */
     uint16_t    uAlign;
-    /** The number of bytes to map via these MTRRs. */
+    /** The number of bytes to map via these MTRRs (not including UC regions). */
     uint64_t    cbToMap;
-    /** The number of bytes mapped via these MTRRs. */
+    /** The number of bytes mapped via these MTRRs (not including UC regions). */
     uint64_t    cbMapped;
     /** The variable-range MTRRs. */
     X86MTRRVAR  aMtrrs[CPUMCTX_MAX_MTRRVAR_COUNT];
