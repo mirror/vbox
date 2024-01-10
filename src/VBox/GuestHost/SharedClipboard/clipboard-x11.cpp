@@ -1974,7 +1974,7 @@ static void clipGrabX11Clipboard(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
  *
  * @thread X11 event thread.
  */
-static void ShClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval */)
+static void shClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval */)
 {
     AssertPtrReturnVoid(pvUserData);
 
@@ -2024,7 +2024,7 @@ int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
         pReq->pCtx             = pCtx;
         pReq->Formats.fFormats = uFormats;
 
-        rc = clipThreadScheduleCall(pCtx, ShClX11ReportFormatsToX11Worker, (XtPointer)pReq);
+        rc = clipThreadScheduleCall(pCtx, shClX11ReportFormatsToX11Worker, (XtPointer)pReq);
         if (RT_FAILURE(rc))
             RTMemFree(pReq);
     }
