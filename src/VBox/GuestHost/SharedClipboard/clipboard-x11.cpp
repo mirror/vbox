@@ -1481,7 +1481,7 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 }
 
 /**
- * Helper for ShClX11RequestDataForX11Callback() that will cache the data returned.
+ * Helper for clipConvertToX11Data() that will cache the data returned.
  *
  * @returns VBox status code. VERR_NO_DATA if no data available.
  * @param   pCtx                The X11 clipboard context to use.
@@ -1978,6 +1978,9 @@ static void shClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval
  * @returns VBox status code.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   uFormats            Clipboard formats offered.
+ *
+ * @note    When calling this function, data for the clipboard already has to be available,
+ *          as we grab the clipboard, which in turn then calls the X11 data conversion callback.
  */
 int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
@@ -2523,7 +2526,7 @@ static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt, PSHCLX1
 /**
  * Worker function for ShClX11ReadDataFromX11Async.
  *
- * @param  pvUserData           Pointer to a CLIPREADX11CBREQ structure containing
+ * @param  pvUserData           Pointer to a PSHCLX11REQUEST structure containing
  *                              information about the clipboard read request.
  *                              Must be free'd by the worker.
  * @thread X11 event thread.
