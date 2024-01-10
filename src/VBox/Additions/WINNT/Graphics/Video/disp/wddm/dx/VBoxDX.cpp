@@ -588,7 +588,7 @@ static uint32_t vboxDXCalcResourceAllocationSize(PVBOXDX_RESOURCE pResource)
                                                       base_level_size,
                                                       pResource->AllocationDesc.surfaceInfo.numMipLevels,
                                                       pResource->AllocationDesc.surfaceInfo.arraySize,
-                                                      1);
+                                                      pResource->AllocationDesc.surfaceInfo.multisampleCount);
 }
 
 
@@ -661,8 +661,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
     if (MiscFlags & D3D11_DDI_RESOURCE_MISC_RESOURCE_CLAMP)
         f |= SVGA3D_SURFACE_RESOURCE_CLAMP;
 
-    /** @todo SVGA3D_SURFACE_MULTISAMPLE */
-    Assert(pCreateResource->SampleDesc.Count <= 1);
+    if (pCreateResource->SampleDesc.Count > 1)
+        f |= SVGA3D_SURFACE_MULTISAMPLE;
 
     return f;
 }
@@ -703,9 +703,17 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     pDesc->surfaceInfo.surfaceFlags       = vboxDXCalcSurfaceFlags(pCreateResource);
     pDesc->surfaceInfo.format             = vboxDXDxgiToSvgaFormat(pCreateResource->Format);
     pDesc->surfaceInfo.numMipLevels       = pCreateResource->MipLevels;
-    pDesc->surfaceInfo.multisampleCount   = 0;
-    pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_NONE;
-    pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_NONE;
+    pDesc->surfaceInfo.multisampleCount   = pCreateResource->SampleDesc.Count;
+    if (pDesc->surfaceInfo.multisampleCount > 1)
+    {
+        pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_STANDARD;
+        pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_FULL;
+    }
+    else
+    {
+        pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_NONE;
+        pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_NONE;
+    }
     pDesc->surfaceInfo.autogenFilter      = SVGA3D_TEX_FILTER_NONE;
     pDesc->surfaceInfo.size.width         = pCreateResource->pMipInfoList[0].TexelWidth;
     pDesc->surfaceInfo.size.height        = pCreateResource->pMipInfoList[0].TexelHeight;
@@ -3111,6 +3119,14 @@ void vboxDXResourceCopy(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, P
 }
 
 
+void vboxDXResourceResolveSubresource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT DstSubresource,
+                                      PVBOXDX_RESOURCE pSrcResource, UINT SrcSubresource, DXGI_FORMAT ResolveFormat)
+{
+    SVGA3dSurfaceFormat const copyFormat = vboxDXDxgiToSvgaFormat(ResolveFormat);
+    vgpu10ResolveCopy(pDevice, vboxDXGetAllocation(pDstResource), DstSubresource,
+                      vboxDXGetAllocation(pSrcResource), SrcSubresource, copyFormat);
+}
+
 static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
 {
     VBOXDXSHADERRESOURCEVIEW *pShaderResourceView;
@@ -3647,7 +3663,7 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
                   DXGI_DDI_ARG_BLT_FLAGS Flags, DXGI_DDI_MODE_ROTATION Rotate)
 {
     AssertReturn(Rotate == DXGI_DDI_MODE_ROTATION_IDENTITY, DXGI_ERROR_INVALID_CALL);
-    AssertReturn(Flags.Resolve == 0, DXGI_ERROR_INVALID_CALL);
+    AssertReturn(Flags.Resolve == 0, DXGI_ERROR_INVALID_CALL); /** @todo Multisampled resources. */
 
     SVGA3dBox boxSrc;
     vboxDXGetSubresourceBox(pSrcResource, SrcSubresource, &boxSrc); /* Entire subresource. */

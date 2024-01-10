@@ -261,6 +261,12 @@ int vgpu10ResourceCopyRegion(PVBOXDX_DEVICE pDevice,
 int vgpu10ResourceCopy(PVBOXDX_DEVICE pDevice,
                        D3DKMT_HANDLE hDstAllocation,
                        D3DKMT_HANDLE hSrcAllocation);
+int vgpu10ResolveCopy(PVBOXDX_DEVICE pDevice,
+                      D3DKMT_HANDLE hDstAllocation,
+                      uint32 dstSubResource,
+                      D3DKMT_HANDLE hSrcAllocation,
+                      uint32 srcSubResource,
+                      SVGA3dSurfaceFormat copyFormat);
 int vgpu10MobFence64(PVBOXDX_DEVICE pDevice,
                      uint64 value,
                      D3DKMT_HANDLE hAllocation,

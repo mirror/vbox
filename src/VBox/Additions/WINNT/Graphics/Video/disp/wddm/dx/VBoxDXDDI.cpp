@@ -1126,7 +1126,7 @@ static void APIENTRY ddi10ResourceCopy(
     vboxDXResourceCopy(pDevice, pDstResource, pSrcResource);
 }
 
-void APIENTRY vboxDXResourceResolveSubresource(
+static void APIENTRY ddi10ResourceResolveSubresource(
     D3D10DDI_HDEVICE hDevice,
     D3D10DDI_HRESOURCE hDstResource, // A handle to the destination resource to resolve to. This resource must have been created as D3D10_USAGE_DEFAULT and single sampled.
     UINT DstSubresource,             // An index that indicates the destination subresource to resolve to.
@@ -1135,9 +1135,15 @@ void APIENTRY vboxDXResourceResolveSubresource(
     DXGI_FORMAT ResolveFormat        // A DXGI_FORMAT-typed value that indicates how to interpret the contents of the resolved resource.
 )
 {
-    DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(hDevice, hDstResource, DstSubresource, hSrcResource, SrcSubresource, ResolveFormat);
-    LogFlowFuncEnter();
+    //DEBUG_BREAKPOINT_TEST();
+    PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDX_RESOURCE pDstResource = (PVBOXDX_RESOURCE)hDstResource.pDrvPrivate;
+    PVBOXDX_RESOURCE pSrcResource = (PVBOXDX_RESOURCE)hSrcResource.pDrvPrivate;
+    LogFlowFunc(("pDevice 0x%p, pDstResource 0x%p, pSrcResource 0x%p",
+                 pDevice, pDstResource, pSrcResource));
+
+    vboxDXResourceResolveSubresource(pDevice, pDstResource, DstSubresource,
+                                     pSrcResource, SrcSubresource, ResolveFormat);
 }
 
 static void APIENTRY ddi10ResourceMap(
@@ -1839,7 +1845,7 @@ static void APIENTRY ddi11_1CreateBlendState(
     //DEBUG_BREAKPOINT_TEST();
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     PVBOXDX_BLENDSTATE pBlendState = (PVBOXDX_BLENDSTATE)hBlendState.pDrvPrivate;
-    LogFlowFunc(("pDevice 0x%p, pBlendState 0x%p, RT[0] BlendEnable %d", pDevice, pBlendState, pBlendDesc->RenderTarget[0].BlendEnable));
+    LogFlowFunc(("pDevice 0x%p, pBlendState 0x%p, RT[0] BlendEnable %d\n", pDevice, pBlendState, pBlendDesc->RenderTarget[0].BlendEnable));
 
     /* Init the blend state and allocate blend id. */
     pBlendState->hRTBlendState = hRTBlendState;
@@ -1858,7 +1864,7 @@ static void APIENTRY ddi10_1CreateBlendState(
     //DEBUG_BREAKPOINT_TEST();
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     PVBOXDX_BLENDSTATE pBlendState = (PVBOXDX_BLENDSTATE)hBlendState.pDrvPrivate;
-    LogFlowFunc(("pDevice 0x%p, pBlendState 0x%p, RT[0] BlendEnable %d", pDevice, pBlendState, pBlendDesc->RenderTarget[0].BlendEnable));
+    LogFlowFunc(("pDevice 0x%p, pBlendState 0x%p, RT[0] BlendEnable %d\n", pDevice, pBlendState, pBlendDesc->RenderTarget[0].BlendEnable));
 
     /* Init the blend state and allocate blend id. */
     pBlendState->hRTBlendState = hRTBlendState;
@@ -2770,6 +2776,9 @@ void APIENTRY vboxDXCheckFormatSupport(
             if (u32Cap & SVGA3D_DXFMT_MIPS)
             if (u32Cap & SVGA3D_DXFMT_ARRAY)
             if (u32Cap & SVGA3D_DXFMT_VOLUME)*/
+
+            if (u32Cap & SVGA3D_DXFMT_MULTISAMPLE)
+                *pFormatCaps |= D3D10_DDI_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET;
         }
     } else {
         LogFlowFunc(("Format %d is not supported", Format));
@@ -2785,13 +2794,33 @@ void APIENTRY vboxDXCheckMultisampleQualityLevels(
 {
     //DEBUG_BREAKPOINT_TEST();
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    RT_NOREF(pDevice, Format, SampleCount, pNumQualityLevels);
- //   LogFlowFunc(("pDevice 0x%p, Format %d, SampleCount %d", pDevice, Format, SampleCount));
+    //LogFlowFunc(("pDevice 0x%p, Format %d, SampleCount %d", pDevice, Format, SampleCount));
 
     if (SampleCount == 1)
         *pNumQualityLevels = 1;
     else
+    {
         *pNumQualityLevels = 0;
+
+        SVGA3dDevCapIndex const idxDevCap = vboxDXGIFormat2CapIdx(Format);
+        if (idxDevCap != SVGA3D_DEVCAP_INVALID)
+        {
+            PVBOXDXADAPTER pVBoxAdapter = pDevice->pAdapter;
+            uint32_t const *au32Caps = pVBoxAdapter->AdapterInfo.u.vmsvga.HWInfo.u.svga.au32Caps;
+            uint32_t const u32Cap = au32Caps[idxDevCap];
+            if (u32Cap & SVGA3D_DXFMT_MULTISAMPLE)
+            {
+                bool fSampleCountSupported = false;
+                if (SampleCount == 2)
+                   fSampleCountSupported = RT_BOOL(au32Caps[SVGA3D_DEVCAP_MULTISAMPLE_2X]);
+                else if (SampleCount == 4)
+                   fSampleCountSupported = RT_BOOL(au32Caps[SVGA3D_DEVCAP_MULTISAMPLE_4X]);
+                else if (SampleCount == 8)
+                   fSampleCountSupported = RT_BOOL(au32Caps[SVGA3D_DEVCAP_MULTISAMPLE_8X]);
+                *pNumQualityLevels = fSampleCountSupported ? 1 : 0;
+            }
+        }
+    }
 }
 
 static void APIENTRY ddi10CheckCounterInfo(
@@ -4128,7 +4157,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
         p11_1DeviceFuncs->pfnFlush                                     = ddi11_1Flush;
         p11_1DeviceFuncs->pfnGenMips                                   = ddi10GenMips;
         p11_1DeviceFuncs->pfnResourceCopy                              = ddi10ResourceCopy;
-        p11_1DeviceFuncs->pfnResourceResolveSubresource                = vboxDXResourceResolveSubresource;
+        p11_1DeviceFuncs->pfnResourceResolveSubresource                = ddi10ResourceResolveSubresource;
 
         /* Infrequent paths. */
         p11_1DeviceFuncs->pfnResourceMap                               = ddi10ResourceMap;
@@ -4305,7 +4334,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
         p11DeviceFuncs->pfnFlush                                     = ddi10Flush;
         p11DeviceFuncs->pfnGenMips                                   = ddi10GenMips;
         p11DeviceFuncs->pfnResourceCopy                              = ddi10ResourceCopy;
-        p11DeviceFuncs->pfnResourceResolveSubresource                = vboxDXResourceResolveSubresource;
+        p11DeviceFuncs->pfnResourceResolveSubresource                = ddi10ResourceResolveSubresource;
 
         /* Infrequent paths. */
         p11DeviceFuncs->pfnResourceMap                               = ddi10ResourceMap;
@@ -4475,7 +4504,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
         p10_1DeviceFuncs->pfnFlush                                     = ddi10Flush;
         p10_1DeviceFuncs->pfnGenMips                                   = ddi10GenMips;
         p10_1DeviceFuncs->pfnResourceCopy                              = ddi10ResourceCopy;
-        p10_1DeviceFuncs->pfnResourceResolveSubresource                = vboxDXResourceResolveSubresource;
+        p10_1DeviceFuncs->pfnResourceResolveSubresource                = ddi10ResourceResolveSubresource;
 
         /* Infrequent paths. */
         p10_1DeviceFuncs->pfnResourceMap                               = ddi10ResourceMap;
@@ -4596,7 +4625,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
         p10DeviceFuncs->pfnFlush                                     = ddi10Flush;
         p10DeviceFuncs->pfnGenMips                                   = ddi10GenMips;
         p10DeviceFuncs->pfnResourceCopy                              = ddi10ResourceCopy;
-        p10DeviceFuncs->pfnResourceResolveSubresource                = vboxDXResourceResolveSubresource;
+        p10DeviceFuncs->pfnResourceResolveSubresource                = ddi10ResourceResolveSubresource;
 
         /* Infrequent paths. */
         p10DeviceFuncs->pfnResourceMap                               = ddi10ResourceMap;
