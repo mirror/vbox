@@ -1082,6 +1082,39 @@ void UIVirtualBoxManagerWidget::cleanup()
     cleanupWidgets();
 }
 
+void UIVirtualBoxManagerWidget::recacheCurrentMachineItemInformation(bool fDontRaiseErrorPane /* = false */)
+{
+    /* Sanity check, this method is for machine or group of machine items: */
+    if (!isMachineItemSelected() && !isGroupItemSelected())
+        return;
+
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
+
+    /* If current item is Ok: */
+    if (fCurrentItemIsOk)
+    {
+        /* If Error-pane is chosen currently => switch to tool currently chosen in Tools-menu: */
+        if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
+            switchMachineToolTo(m_pMenuToolsMachine->toolsType());
+
+        /* Propagate current items to the Tools pane: */
+        m_pPaneToolsMachine->setItems(currentItems());
+    }
+    /* Otherwise if we were not asked separately to calm down: */
+    else if (!fDontRaiseErrorPane)
+    {
+        /* Make sure Error pane raised: */
+        if (m_pPaneToolsMachine->currentTool() != UIToolType_Error)
+            m_pPaneToolsMachine->openTool(UIToolType_Error);
+
+        /* Propagate last access error to the Error-pane: */
+        if (pItem)
+            m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
+    }
+}
+
 void UIVirtualBoxManagerWidget::updateToolsMenuGlobal()
 {
     /* Update global tools restrictions: */
@@ -1124,37 +1157,4 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
     /* Take restrictions into account, closing all restricted tools: */
     foreach (const UIToolType &enmRestrictedType, restrictedTypes)
         m_pPaneToolsMachine->closeTool(enmRestrictedType);
-}
-
-void UIVirtualBoxManagerWidget::recacheCurrentMachineItemInformation(bool fDontRaiseErrorPane /* = false */)
-{
-    /* Sanity check, this method is for machine or group of machine items: */
-    if (!isMachineItemSelected() && !isGroupItemSelected())
-        return;
-
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    const bool fCurrentItemIsOk = pItem && pItem->accessible();
-
-    /* If current item is Ok: */
-    if (fCurrentItemIsOk)
-    {
-        /* If Error-pane is chosen currently => switch to tool currently chosen in Tools-menu: */
-        if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-            switchMachineToolTo(m_pMenuToolsMachine->toolsType());
-
-        /* Propagate current items to the Tools pane: */
-        m_pPaneToolsMachine->setItems(currentItems());
-    }
-    /* Otherwise if we were not asked separately to calm down: */
-    else if (!fDontRaiseErrorPane)
-    {
-        /* Make sure Error pane raised: */
-        if (m_pPaneToolsMachine->currentTool() != UIToolType_Error)
-            m_pPaneToolsMachine->openTool(UIToolType_Error);
-
-        /* Propagate last access error to the Error-pane: */
-        if (pItem)
-            m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
-    }
 }
