@@ -846,13 +846,14 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegRestoreGuestShadowsInVolatileRegs(PIEMRE
                                                                           uint32_t fHstRegsActiveShadows);
 
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff,
+                                                        bool fInitialized = false, uint8_t idxRegPref = UINT8_MAX);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
                                                                    IEMNATIVEGSTREG enmGstReg, uint32_t *poff);
 DECL_HIDDEN_THROW(uint32_t) iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                    uint32_t fHstRegsNotToSave);
 DECL_HIDDEN_THROW(uint32_t) iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                        uint32_t fHstRegsNotToSave);
-
 
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                  uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg);
@@ -958,6 +959,21 @@ iemNativeStackCalcBpDisp(uint8_t idxStackSlot)
 {
     Assert(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS);
     return idxStackSlot * sizeof(uint64_t) + IEMNATIVE_FP_OFF_STACK_VARS;
+}
+
+
+/**
+ * Releases the variable's register.
+ *
+ * The register must have been previously acquired calling
+ * iemNativeVarRegisterAcquire(), iemNativeVarRegisterAcquireForGuestReg() or
+ * iemNativeVarRegisterSetAndAcquire().
+ */
+DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(pReNative->Core.aVars[idxVar].fRegAcquired);
+    pReNative->Core.aVars[idxVar].fRegAcquired = false;
 }
 
 /** @} */
