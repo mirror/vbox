@@ -1351,9 +1351,32 @@ void UIChooserModel::sltHandleCloudMachineRemoved(const QString &strProviderShor
 
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
+    /* Compose a list of items to update: */
+    QList<UIChooserItem*> itemsToUpdate;
+
+    /* For the case if requested - just update everything: */
+    if (isKeepCloudNodesUpdated())
+    {
+        /* Search for a list of provider nodes having items: */
+        QList<UIChooserNode*> providerNodes;
+        invisibleRoot()->searchForNodes(QString(),
+                                        UIChooserItemSearchFlag_CloudProvider,
+                                        providerNodes);
+        foreach (UIChooserNode *pNode, providerNodes)
+            if (UIChooserItem *pItem = pNode->item())
+                itemsToUpdate << pItem;
+
+        /* Have at least something as a fallback: */
+        if (itemsToUpdate.isEmpty())
+            itemsToUpdate << selectedItems();
+    }
+    /* Otherwise update selected items only: */
+    else
+        itemsToUpdate << selectedItems();
+
     /* For every selected item: */
     QSet<UICloudEntityKey> selectedCloudProfileKeys;
-    foreach (UIChooserItem *pSelectedItem, selectedItems())
+    foreach (UIChooserItem *pSelectedItem, itemsToUpdate)
     {
         /* Enumerate cloud profile keys to update: */
         switch (pSelectedItem->type())

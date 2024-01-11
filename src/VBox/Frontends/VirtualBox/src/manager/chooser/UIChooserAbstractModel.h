@@ -142,6 +142,8 @@ public:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Returns whether real cloud nodes should be kept updated. */
+        bool isKeepCloudNodesUpdated() const { return m_fKeepCloudNodesUpdated; }
         /** Defines whether real cloud nodes should be kept updated. */
         void setKeepCloudNodesUpdated(bool fUpdate);
 
