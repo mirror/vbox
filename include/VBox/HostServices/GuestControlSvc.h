@@ -1183,6 +1183,20 @@ typedef struct HGCMMsgPathUserHome
 } HGCMMsgPathUserHome;
 
 /**
+ * Retrieves mount points / drive letters from the guest.
+ *
+ * @since 7.1
+ */
+typedef struct HGCMMsgMountPoints
+{
+    VBGLIOCHGCMCALL hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+    /** UInt32: Flags; currently unused. */
+    HGCMFunctionParameter flags;
+} HGCMMsgMountPoints;
+
+/**
  * Shuts down / reboots the guest.
  */
 typedef struct HGCMMsgShutdown

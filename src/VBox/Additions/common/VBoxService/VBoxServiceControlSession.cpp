@@ -1765,9 +1765,12 @@ static int vgsvcGstCtrlSessionHandleMountPoints(PVBOXSERVICECTRLSESSION pSession
     /*
      * Retrieve the request.
      */
-    int rc = VbglR3GuestCtrlGetMountPoints(pHostCtx);
+    uint32_t fFlags;
+    int rc = VbglR3GuestCtrlGetMountPoints(pHostCtx, &fFlags);
     if (RT_SUCCESS(rc))
     {
+        /* Note: fFlags is currently unused, so we simply ignore this here. */
+
         VGSVCMOUNTPOINTENUMCTX Ctx;
         Ctx.cb      = 0;
         Ctx.cbAlloc = _4K; /* Start with something sensible. */

@@ -1273,22 +1273,27 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
  * Retrieves a HOST_MSG_MOUNT_POINTS message.
  *
  * @param   pCtx                Guest control command context to use.
+ * @param   pfFlags             Where to return the get mount point flags on success.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlGetMountPoints(PVBGLR3GUESTCTRLCMDCTX pCtx)
+VBGLR3DECL(int) VbglR3GuestCtrlGetMountPoints(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     int rc;
     do
     {
-        HGCMMsgPathUserHome Msg;
+        HGCMMsgMountPoints Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_MOUNT_POINTS);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
+        {
             Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(pfFlags);
+        }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
