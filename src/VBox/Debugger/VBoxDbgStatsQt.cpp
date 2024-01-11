@@ -2469,11 +2469,11 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
                 return formatNumberSigned(sz, pNode->i64Delta, true /*fPositivePlus*/);
             }
             return "0";
+        case STAMTYPE_INTERNAL_SUM:
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
         case STAMTYPE_END:
             AssertFailed(); RT_FALL_THRU();
         case STAMTYPE_CALLBACK:
-        case STAMTYPE_FIRST_INTERNAL_TYPE:
-        case STAMTYPE_INTERNAL_PCT_OF_SUM:
         case STAMTYPE_INVALID:
             break;
     }
