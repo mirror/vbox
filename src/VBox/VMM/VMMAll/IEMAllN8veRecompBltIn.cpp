@@ -70,6 +70,7 @@ DECLASM(void) iemNativeHlpAsmSafeWrapLogCpuState(void);
  */
 IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu))
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeCodeTlbMissesNewPage);
     pVCpu->iem.s.pbInstrBuf       = NULL;
     pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE;
     pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;
@@ -88,6 +89,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu)
  */
 IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMissWithOff,(PVMCPUCC pVCpu, uint8_t offInstr))
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeCodeTlbMissesNewPage);
     pVCpu->iem.s.pbInstrBuf       = NULL;
     pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE - offInstr;
     pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;

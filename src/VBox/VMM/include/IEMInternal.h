@@ -1742,7 +1742,9 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTlbHitsForStack;
     /** Native recompiled execution: TLB hits for mapped accesses. */
     STAMCOUNTER             StatNativeTlbHitsForMapped;
-    uint64_t                au64Padding[7];
+    /** Native recompiled execution: Code TLB misses for new page. */
+    STAMCOUNTER             StatNativeCodeTlbMissesNewPage;
+    uint64_t                au64Padding[6];
     /** @} */
 
     /** Data TLB.

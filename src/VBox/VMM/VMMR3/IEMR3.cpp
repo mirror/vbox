@@ -297,7 +297,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Code TLB revision",                        "/IEM/CPU%u/CodeTlb-Revision", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.CodeTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Code TLB physical revision",               "/IEM/CPU%u/CodeTlb-PhysRev", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB slow read path",                  "/IEM/CPU%u/CodeTlb-SlowReads", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
@@ -316,14 +316,14 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Code TLB hits",                            "/IEM/CPU%u/CodeTlb-Hits", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB hits",                            "/IEM/CPU%u/DataTlb-Hits-Other", idCpu);
-#  ifdef VBOX_WITH_IEM_RECOMPILER
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForStack, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+#  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForStack, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB native stack access hits",        "/IEM/CPU%u/DataTlb-Hits-Native-Stack", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForFetch, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForFetch, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB native data fetch hits",          "/IEM/CPU%u/DataTlb-Hits-Native-Fetch", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForStore, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForStore, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB native data store hits",          "/IEM/CPU%u/DataTlb-Hits-Native-Store", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForMapped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForMapped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB native mapped data hits",         "/IEM/CPU%u/DataTlb-Hits-Native-Mapped", idCpu);
 #  endif
         char szPat[128];
@@ -339,6 +339,11 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         RTStrPrintf(szPat,   sizeof(szPat),   "/IEM/CPU%u/DataTlb-Hits-*", idCpu);
         STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PPM, szValue, szPat,
                                "Data TLB actual miss rate",         "/IEM/CPU%u/DataTlb-SafeRate", idCpu);
+
+#  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCodeTlbMissesNewPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB native misses on new page",       "/IEM/CPU%u/CodeTlb-Misses-New-Page", idCpu);
+#  endif
 # endif
 
 #ifdef VBOX_WITH_IEM_RECOMPILER
