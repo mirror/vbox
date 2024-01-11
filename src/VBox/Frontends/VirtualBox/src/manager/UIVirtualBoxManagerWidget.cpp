@@ -256,6 +256,9 @@ void UIVirtualBoxManagerWidget::switchGlobalToolTo(UIToolType enmType)
 
     /* Update toolbar: */
     updateToolbar();
+
+    /* Handle current tool type change: */
+    handleCurrentToolTypeChange(enmType);
 }
 
 void UIVirtualBoxManagerWidget::switchMachineToolTo(UIToolType enmType)
@@ -268,6 +271,9 @@ void UIVirtualBoxManagerWidget::switchMachineToolTo(UIToolType enmType)
 
     /* Update toolbar: */
     updateToolbar();
+
+    /* Handle current tool type change: */
+    handleCurrentToolTypeChange(enmType);
 }
 
 void UIVirtualBoxManagerWidget::closeGlobalTool(UIToolType enmType)
@@ -487,16 +493,22 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     {
         case SlidingDirection_Forward:
         {
+            /* Switch stacked widget to machine tool pane: */
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
             m_pPaneToolsGlobal->setActive(false);
             m_pPaneToolsMachine->setActive(true);
+            /* Handle current tool type change: */
+            handleCurrentToolTypeChange(m_pMenuToolsMachine->toolsType());
             break;
         }
         case SlidingDirection_Reverse:
         {
+            /* Switch stacked widget to global tool pane: */
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
             m_pPaneToolsMachine->setActive(false);
             m_pPaneToolsGlobal->setActive(true);
+            /* Handle current tool type change: */
+            handleCurrentToolTypeChange(m_pMenuToolsGlobal->toolsType());
             break;
         }
     }
@@ -1157,4 +1169,27 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
     /* Take restrictions into account, closing all restricted tools: */
     foreach (const UIToolType &enmRestrictedType, restrictedTypes)
         m_pPaneToolsMachine->closeTool(enmRestrictedType);
+}
+
+void UIVirtualBoxManagerWidget::handleCurrentToolTypeChange(UIToolType enmType)
+{
+    /* This method's behavior depends first of all of currently selected tool class.
+     * But keep in mind, it is called for both Global and Machine type changes. */
+
+    /* If Global tools currently chosen: */
+    if (m_pStackedWidget->currentWidget() == m_pPaneToolsGlobal)
+    {
+        /* For the Global tool type changes,
+         * start unconditionally updating all cloud VMs,
+         * if Activity Overview tool currently chosen (even if VMs are not selected): */
+        if (UIToolStuff::isTypeOfClass(enmType, UIToolClass_Global))
+            m_pPaneChooser->setKeepCloudNodesUpdated(enmType == UIToolType_VMActivityOverview);
+    }
+    /* If Machine tools currently chosen: */
+    else
+    {
+        /* Stop unconditionally updating all cloud VMs,
+         * (tho they will still be updated if selected): */
+        m_pPaneChooser->setKeepCloudNodesUpdated(false);
+    }
 }

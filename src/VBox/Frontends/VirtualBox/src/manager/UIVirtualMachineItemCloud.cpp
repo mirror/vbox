@@ -113,6 +113,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineIt
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
+    , m_fUpdateRequiredByGlobalReason(false)
     , m_fUpdateRequiredByLocalReason(false)
     , m_pProgressTaskRefresh(0)
 {
@@ -124,6 +125,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_comCloudMachine(comCloudMachine)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
+    , m_fUpdateRequiredByGlobalReason(false)
     , m_fUpdateRequiredByLocalReason(false)
     , m_pProgressTaskRefresh(0)
 {
@@ -145,6 +147,11 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
 {
     m_strFakeCloudItemErrorMessage = strErrorMessage;
     recache();
+}
+
+void UIVirtualMachineItemCloud::setUpdateRequiredByGlobalReason(bool fRequired)
+{
+    m_fUpdateRequiredByGlobalReason = fRequired;
 }
 
 void UIVirtualMachineItemCloud::setUpdateRequiredByLocalReason(bool fRequired)
@@ -172,6 +179,7 @@ void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
         return;
 
     /* Mark update canceled in any case: */
+    m_fUpdateRequiredByGlobalReason = false;
     m_fUpdateRequiredByLocalReason = false;
 
     /* Cancel refresh request
@@ -391,7 +399,8 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
     emit sigRefreshFinished();
 
     /* Refresh again if required: */
-    if (m_fUpdateRequiredByLocalReason)
+    if (   m_fUpdateRequiredByGlobalReason
+        || m_fUpdateRequiredByLocalReason)
         updateInfoAsync(true /* delayed? */);
 }
 

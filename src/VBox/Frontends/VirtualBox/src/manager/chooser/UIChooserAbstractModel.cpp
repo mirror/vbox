@@ -385,6 +385,7 @@ UIChooserAbstractModel::UIChooserAbstractModel(UIChooser *pParent)
     : QObject(pParent)
     , m_pParent(pParent)
     , m_pInvisibleRootNode(0)
+    , m_fKeepCloudNodesUpdated(false)
 {
     prepare();
 }
@@ -603,6 +604,50 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
         case UIChooserNodeDataValueType_GlobalDefault: return "GLOBAL";
     }
     return QString();
+}
+
+void UIChooserAbstractModel::setKeepCloudNodesUpdated(bool fUpdate)
+{
+    /* Make sure something changed: */
+    if (m_fKeepCloudNodesUpdated == fUpdate)
+        return;
+
+    /* Holds the value: */
+    m_fKeepCloudNodesUpdated = fUpdate;
+
+    /* Search for a list of provider nodes: */
+    QList<UIChooserNode*> providerNodes;
+    invisibleRoot()->searchForNodes(QString(),
+                                    UIChooserItemSearchFlag_CloudProvider,
+                                    providerNodes);
+
+    /* Search for a list of profile nodes: */
+    QList<UIChooserNode*> profileNodes;
+    foreach (UIChooserNode *pProviderNode, providerNodes)
+        pProviderNode->searchForNodes(QString(),
+                                      UIChooserItemSearchFlag_CloudProfile,
+                                      profileNodes);
+
+    /* Search for a list of machine nodes: */
+    QList<UIChooserNode*> machineNodes;
+    foreach (UIChooserNode *pProfileNode, profileNodes)
+        pProfileNode->searchForNodes(QString(),
+                                     UIChooserItemSearchFlag_Machine,
+                                     machineNodes);
+
+    /* Update all the real cloud items: */
+    foreach (UIChooserNode *pNode, machineNodes)
+    {
+        AssertReturnVoid(pNode && pNode->type() == UIChooserNodeType_Machine);
+        UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
+        AssertReturnVoid(pMachineNode);
+        if (pMachineNode->cacheType() != UIVirtualMachineItemType_CloudReal)
+            continue;
+        UIVirtualMachineItemCloud *pCloudMachineItem = pMachineNode->cache()->toCloud();
+        pCloudMachineItem->setUpdateRequiredByGlobalReason(m_fKeepCloudNodesUpdated);
+        if (m_fKeepCloudNodesUpdated)
+            pCloudMachineItem->updateInfoAsync(false /* delayed? */);
+    }
 }
 
 void UIChooserAbstractModel::insertCloudEntityKey(const UICloudEntityKey &key)
@@ -1643,10 +1688,12 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
                                                                                   toOldStyleUuid(comMachine.GetId())),
                                                            comMachine);
     /* Request for async node update if necessary: */
-    if (!comMachine.GetAccessible())
+    if (   m_fKeepCloudNodesUpdated
+        || !comMachine.GetAccessible())
     {
         AssertReturnVoid(pNode && pNode->cacheType() == UIVirtualMachineItemType_CloudReal);
         UIVirtualMachineItemCloud *pCloudMachineItem = pNode->cache()->toCloud();
+        pCloudMachineItem->setUpdateRequiredByGlobalReason(m_fKeepCloudNodesUpdated);
         pCloudMachineItem->updateInfoAsync(false /* delayed? */);
     }
 }

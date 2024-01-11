@@ -122,6 +122,9 @@ public:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Defines whether real cloud nodes should be kept updated. */
+        void setKeepCloudNodesUpdated(bool fUpdate);
+
         /** Returns whether at least one cloud profile currently being updated. */
         bool isCloudProfileUpdateInProgress() const;
     /** @} */

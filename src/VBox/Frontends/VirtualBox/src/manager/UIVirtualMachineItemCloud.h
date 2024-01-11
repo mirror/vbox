@@ -83,6 +83,8 @@ public:
         /** Returns fake cloud item error message. */
         QString fakeCloudItemErrorMessage() const { return m_strFakeCloudItemErrorMessage; }
 
+        /** Defines whether update is @a fRequired by global reason. */
+        void setUpdateRequiredByGlobalReason(bool fRequired);
         /** Defines whether update is @a fRequired by local reason. */
         void setUpdateRequiredByLocalReason(bool fRequired);
         /** Updates cloud VM info async way, @a fDelayed if requested or instantly otherwise. */
@@ -164,6 +166,8 @@ private:
         /** Holds fake cloud item error message. */
         QString                             m_strFakeCloudItemErrorMessage;
 
+        /** Holds whether update is required by global reason. */
+        bool            m_fUpdateRequiredByGlobalReason;
         /** Holds whether update is required by local reason. */
         bool            m_fUpdateRequiredByLocalReason;
         /** Holds the refresh progress-task instance. */

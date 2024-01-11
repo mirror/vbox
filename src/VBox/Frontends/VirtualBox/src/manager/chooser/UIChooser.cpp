@@ -56,6 +56,12 @@ bool UIChooser::isGroupSavingInProgress() const
     return model()->isGroupSavingInProgress();
 }
 
+void UIChooser::setKeepCloudNodesUpdated(bool fUpdate)
+{
+    AssertPtrReturnVoid(model());
+    return model()->setKeepCloudNodesUpdated(fUpdate);
+}
+
 bool UIChooser::isCloudProfileUpdateInProgress() const
 {
     AssertPtrReturn(model(), false);

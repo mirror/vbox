@@ -373,6 +373,9 @@ private:
         void updateToolsMenuGlobal();
         /** Updates Machine tools menu for @a pItem specified. */
         void updateToolsMenuMachine(UIVirtualMachineItem *pItem);
+
+        /** Handles current tool @a enmType change. */
+        void handleCurrentToolTypeChange(UIToolType enmType);
     /** @} */
 
     /** Holds the action-pool instance. */
