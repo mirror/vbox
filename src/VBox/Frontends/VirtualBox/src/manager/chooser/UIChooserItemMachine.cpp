@@ -240,10 +240,10 @@ void UIChooserItemMachine::setSelected(bool fSelected)
     {
         UIVirtualMachineItemCloud *pCloudMachineItem = cache()->toCloud();
         AssertPtrReturnVoid(pCloudMachineItem);
-        if (fSelected && pCloudMachineItem->accessible())
-            pCloudMachineItem->updateInfoAsync(false /* delayed? */, true /* subscribe */);
-        else
-            pCloudMachineItem->stopAsyncUpdates();
+        const bool fUpdateRequired = fSelected && pCloudMachineItem->accessible();
+        pCloudMachineItem->setUpdateRequiredByLocalReason(fUpdateRequired);
+        if (fUpdateRequired)
+            pCloudMachineItem->updateInfoAsync(false /* delayed? */);
     }
 }
 

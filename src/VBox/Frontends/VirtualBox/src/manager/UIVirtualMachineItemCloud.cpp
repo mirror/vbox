@@ -113,7 +113,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineIt
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
-    , m_fRefreshScheduled(false)
+    , m_fUpdateRequiredByLocalReason(false)
     , m_pProgressTaskRefresh(0)
 {
     prepare();
@@ -124,7 +124,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_comCloudMachine(comCloudMachine)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
-    , m_fRefreshScheduled(false)
+    , m_fUpdateRequiredByLocalReason(false)
     , m_pProgressTaskRefresh(0)
 {
     prepare();
@@ -147,31 +147,22 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
     recache();
 }
 
-void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed, bool fSubscribe /* = false */)
+void UIVirtualMachineItemCloud::setUpdateRequiredByLocalReason(bool fRequired)
+{
+    m_fUpdateRequiredByLocalReason = fRequired;
+}
+
+void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
     /* Ignore refresh request if progress-task is absent: */
     if (!m_pProgressTaskRefresh)
         return;
-
-    /* Mark update scheduled if requested: */
-    if (fSubscribe)
-        m_fRefreshScheduled = true;
 
     /* Schedule refresh request in a 10 or 0 seconds
      * if progress-task isn't already scheduled or running: */
     if (   !m_pProgressTaskRefresh->isScheduled()
         && !m_pProgressTaskRefresh->isRunning())
         m_pProgressTaskRefresh->schedule(fDelayed ? 10000 : 0);
-}
-
-void UIVirtualMachineItemCloud::stopAsyncUpdates()
-{
-    /* Ignore cancel request if progress-task is absent: */
-    if (!m_pProgressTaskRefresh)
-        return;
-
-    /* Mark update canceled in any case: */
-    m_fRefreshScheduled = false;
 }
 
 void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
@@ -181,7 +172,7 @@ void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
         return;
 
     /* Mark update canceled in any case: */
-    m_fRefreshScheduled = false;
+    m_fUpdateRequiredByLocalReason = false;
 
     /* Cancel refresh request
      * if progress-task already running: */
@@ -399,9 +390,9 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
     /* Notify listeners: */
     emit sigRefreshFinished();
 
-    /* Refresh again if scheduled: */
-    if (m_fRefreshScheduled)
-        updateInfoAsync(true /* async? */);
+    /* Refresh again if required: */
+    if (m_fUpdateRequiredByLocalReason)
+        updateInfoAsync(true /* delayed? */);
 }
 
 void UIVirtualMachineItemCloud::prepare()

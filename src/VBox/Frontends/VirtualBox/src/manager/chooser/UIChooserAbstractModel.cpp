@@ -1646,7 +1646,8 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
     if (!comMachine.GetAccessible())
     {
         AssertReturnVoid(pNode && pNode->cacheType() == UIVirtualMachineItemType_CloudReal);
-        pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
+        UIVirtualMachineItemCloud *pCloudMachineItem = pNode->cache()->toCloud();
+        pCloudMachineItem->updateInfoAsync(false /* delayed? */);
     }
 }
 
