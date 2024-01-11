@@ -81,21 +81,22 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
    	../clipboard-transfers-http.cpp \
    	../clipboard-transfers-provider-local.cpp
    tstClipboardHttpServer_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-  endif
 
-  if1of ($(KBUILD_TARGET), linux solaris)
-   # Derived executable which also includes X11 dependencies. Might not run on pure server installations where X isn't installed.
-   PROGRAMS += tstClipboardHttpServerX11
-   tstClipboardHttpServerX11_TEMPLATE   = VBoxR3TstExe
-   tstClipboardHttpServerX11_EXTENDS    = tstClipboardHttpServer
-   tstClipboardHttpServerX11_EXTENDS_BY = appending
-   tstClipboardHttpServerX11_NAME       = tstClipboardHttpServerX11
-   tstClipboardHttpServerX11_DEFS      += TESTCASE_WITH_X11
-   tstClipboardHttpServerX11_SOURCES   += \
-   	../clipboard-x11.cpp
-   tstClipboardHttpServerX11_LIBS      += \
+   if1of ($(KBUILD_TARGET), linux solaris)
+    # Derived executable which also includes X11 dependencies. Might not run on pure server installations where X isn't installed.
+    PROGRAMS += tstClipboardHttpServerX11
+    tstClipboardHttpServerX11_TEMPLATE   = VBoxR3TstExe
+    tstClipboardHttpServerX11_EXTENDS    = tstClipboardHttpServer
+    tstClipboardHttpServerX11_EXTENDS_BY = appending
+    tstClipboardHttpServerX11_NAME       = tstClipboardHttpServerX11
+    tstClipboardHttpServerX11_DEFS      += TESTCASE_WITH_X11
+    tstClipboardHttpServerX11_SOURCES   += \
+    	../clipboard-x11.cpp
+    tstClipboardHttpServerX11_LIBS      += \
   	Xt \
   	X11
+   endif
+
   endif
  endif
 
