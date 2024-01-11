@@ -356,6 +356,11 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
     RTListForEachSafe(&pUVM->stam.s.List, pCur, pNext, STAMDESC, ListEntry)
     {
         pCur->pLookup->pDesc = NULL;
+        if (   pCur->enmType != STAMTYPE_INTERNAL_SUM
+            && pCur->enmType != STAMTYPE_INTERNAL_PCT_OF_SUM)
+        { /* likely*/ }
+        else
+            RTMemFree(pCur->u.pSum);
         RTMemFree(pCur);
     }
 
@@ -393,7 +398,7 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
 VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName,
                                 STAMUNIT enmUnit, const char *pszDesc)
 {
-    AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
+    AssertReturn(enmType != STAMTYPE_CALLBACK && enmType < STAMTYPE_FIRST_INTERNAL_TYPE, VERR_INVALID_PARAMETER);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     return stamR3RegisterU(pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc, STAM_REFRESH_GRP_NONE);
 }
@@ -424,7 +429,7 @@ VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STA
 VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName,
                                STAMUNIT enmUnit, const char *pszDesc)
 {
-    AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
+    AssertReturn(enmType != STAMTYPE_CALLBACK && enmType < STAMTYPE_FIRST_INTERNAL_TYPE, VERR_INVALID_PARAMETER);
     return stamR3RegisterU(pVM->pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc,
                            STAM_REFRESH_GRP_NONE);
 }
@@ -629,7 +634,7 @@ VMMR3DECL(int) STAMR3RegisterRefresh(PUVM pUVM, void *pvSample, STAMTYPE enmType
 VMMR3DECL(int) STAMR3RegisterRefreshV(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                       uint8_t iRefreshGrp, const char *pszDesc, const char *pszName, va_list va)
 {
-    AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
+    AssertReturn(enmType != STAMTYPE_CALLBACK && enmType < STAMTYPE_FIRST_INTERNAL_TYPE, VERR_INVALID_PARAMETER);
 
     char   szFormattedName[STAM_MAX_NAME_LEN + 8];
     size_t cch = RTStrPrintfV(szFormattedName, sizeof(szFormattedName), pszName, va);
@@ -637,6 +642,660 @@ VMMR3DECL(int) STAMR3RegisterRefreshV(PUVM pUVM, void *pvSample, STAMTYPE enmTyp
 
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     return stamR3RegisterU(pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc, iRefreshGrp);
+}
+
+
+/**
+ * Refreshes the cached sum (STAMSUMSAMPLE::u) of a sum sample.
+ */
+static void stamR3SumRefresh(PSTAMSUMSAMPLE pSum)
+{
+    switch (pSum->enmType)
+    {
+        case STAMTYPE_COUNTER:
+        {
+            uint64_t  uSum = 0;
+            uintptr_t i    = pSum->cSummands;
+            while (i-- > 0)
+            {
+                PSTAMDESC const pDesc = pSum->apSummands[i];
+                switch (pDesc->enmType)
+                {
+                    case STAMTYPE_COUNTER:
+                        uSum += pDesc->u.pCounter->c;
+                        break;
+
+                    case STAMTYPE_U64:
+                    case STAMTYPE_U64_RESET:
+                    case STAMTYPE_X64:
+                    case STAMTYPE_X64_RESET:
+                        uSum += *pDesc->u.pu64;
+                        break;
+
+                    case STAMTYPE_U32:
+                    case STAMTYPE_U32_RESET:
+                    case STAMTYPE_X32:
+                    case STAMTYPE_X32_RESET:
+                        uSum += *pDesc->u.pu32;
+                        break;
+
+                    case STAMTYPE_U16:
+                    case STAMTYPE_U16_RESET:
+                    case STAMTYPE_X16:
+                    case STAMTYPE_X16_RESET:
+                        uSum += *pDesc->u.pu16;
+                        break;
+
+                    case STAMTYPE_U8:
+                    case STAMTYPE_U8_RESET:
+                    case STAMTYPE_X8:
+                    case STAMTYPE_X8_RESET:
+                        uSum += *pDesc->u.pu8;
+                        break;
+
+                    default:
+                        AssertFailedBreak();
+                }
+            }
+            pSum->u.Counter.c = uSum;
+            break;
+        }
+
+        case STAMTYPE_PROFILE:
+        {
+            uint64_t    cPeriods = 0;
+            uint64_t    uTotal   = 0;
+            uint64_t    uMax     = 0;
+            uint64_t    uMin     = UINT64_MAX;
+            uintptr_t   i        = pSum->cSummands;
+            while (i-- > 0)
+            {
+                PSTAMDESC const pDesc = pSum->apSummands[i];
+                AssertContinue(   pDesc->enmType == STAMTYPE_PROFILE
+                               || pDesc->enmType == STAMTYPE_PROFILE_ADV);
+                PSTAMPROFILE const pProfile = pDesc->u.pProfile;
+                cPeriods += pProfile->cPeriods;
+                uTotal   += pProfile->cTicks;
+                uint64_t u = pProfile->cTicksMax;
+                if (u > uMax)
+                    uMax = u;
+                u = pProfile->cTicksMin;
+                if (u < uMin)
+                    uMin = u;
+            }
+
+            pSum->u.Profile.cTicks    = uTotal;
+            pSum->u.Profile.cPeriods  = cPeriods;
+            pSum->u.Profile.cTicksMin = uMin;
+            pSum->u.Profile.cTicksMax = uMax;
+            break;
+        }
+
+        default:
+            AssertFailedReturnVoid();
+    }
+}
+
+
+/**
+ * Used by STAMR3RegisterSumV to locate the samples to sum up.
+ */
+static int stamR3RegisterSumEnumCallback(PSTAMDESC pDesc, void *pvArg)
+{
+    PSTAMSUMSAMPLE const pSum = (PSTAMSUMSAMPLE)pvArg;
+    if (pSum->cSummands == 0)
+    {
+        /*
+         * The first time around we check that the type is a supported one
+         * and just set the unit.
+         */
+        switch (pDesc->enmType)
+        {
+            case STAMTYPE_COUNTER:
+            case STAMTYPE_U64:
+            case STAMTYPE_U64_RESET:
+            case STAMTYPE_X64:
+            case STAMTYPE_X64_RESET:
+            case STAMTYPE_U32:
+            case STAMTYPE_U32_RESET:
+            case STAMTYPE_X32:
+            case STAMTYPE_X32_RESET:
+            case STAMTYPE_U16:
+            case STAMTYPE_U16_RESET:
+            case STAMTYPE_X16:
+            case STAMTYPE_X16_RESET:
+            case STAMTYPE_U8:
+            case STAMTYPE_U8_RESET:
+            case STAMTYPE_X8:
+            case STAMTYPE_X8_RESET:
+                pSum->enmType = STAMTYPE_COUNTER;
+                break;
+
+            case STAMTYPE_PROFILE:
+            case STAMTYPE_PROFILE_ADV:
+                pSum->enmType = STAMTYPE_PROFILE;
+                break;
+
+            default:
+                AssertMsgFailedReturn(("Summing up enmType=%d types have not been implemented yet! Sorry.\n", pDesc->enmType),
+                                      VERR_WRONG_TYPE);
+        }
+        pSum->enmTypeFirst = pDesc->enmType;
+        pSum->enmUnit      = pDesc->enmUnit;
+    }
+    else
+    {
+        /*
+         * Make sure additional sample compatible with the first,
+         * both type and unit.
+         */
+        if (RT_LIKELY(   pDesc->enmType == pSum->enmType
+                      || pDesc->enmType == (STAMTYPE)pSum->enmTypeFirst))
+        { /* likely */ }
+        else
+        {
+            switch (pSum->enmType)
+            {
+                case STAMTYPE_COUNTER:
+                    AssertMsgReturn(   pDesc->enmType == STAMTYPE_COUNTER
+                                    || pDesc->enmType == STAMTYPE_U64
+                                    || pDesc->enmType == STAMTYPE_U64_RESET
+                                    || pDesc->enmType == STAMTYPE_X64
+                                    || pDesc->enmType == STAMTYPE_X64_RESET
+                                    || pDesc->enmType == STAMTYPE_U32
+                                    || pDesc->enmType == STAMTYPE_U32_RESET
+                                    || pDesc->enmType == STAMTYPE_X32
+                                    || pDesc->enmType == STAMTYPE_X32_RESET
+                                    || pDesc->enmType == STAMTYPE_U16
+                                    || pDesc->enmType == STAMTYPE_U16_RESET
+                                    || pDesc->enmType == STAMTYPE_X16
+                                    || pDesc->enmType == STAMTYPE_X16_RESET
+                                    || pDesc->enmType == STAMTYPE_U8
+                                    || pDesc->enmType == STAMTYPE_U8_RESET
+                                    || pDesc->enmType == STAMTYPE_X8
+                                    || pDesc->enmType == STAMTYPE_X8_RESET,
+                                    ("Unsupported type mixup: %d & %d (%s)\n", pSum->enmType, pDesc->enmType, pDesc->pszName),
+                                    VERR_MISMATCH);
+                    break;
+
+                case STAMTYPE_PROFILE:
+                    AssertMsgReturn(   pDesc->enmType == STAMTYPE_PROFILE
+                                    || pDesc->enmType == STAMTYPE_PROFILE_ADV,
+                                    ("Unsupported type mixup: %d & %d (%s)\n", pSum->enmType, pDesc->enmType, pDesc->pszName),
+                                    VERR_MISMATCH);
+                    break;
+
+                default:
+                    AssertFailedReturn(VERR_MISMATCH);
+            }
+        }
+
+        if (RT_LIKELY(pDesc->enmUnit == pSum->enmUnit))
+        { /* likely */ }
+        else if (pDesc->enmUnit != STAMUNIT_NONE)
+        {
+            AssertReturn(pSum->enmUnit == STAMUNIT_NONE, VERR_MISMATCH);
+            pSum->enmUnit = pDesc->enmUnit;
+        }
+
+        AssertReturn(pSum->cSummands < pSum->cSummandsAlloc, VERR_TOO_MUCH_DATA);
+    }
+    pSum->apSummands[pSum->cSummands++] = pDesc;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Registers a sum that is to be calculated from the @a pszSummandPattern hits.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                Pointer to the user mode VM structure.
+ * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
+ * @param   pszSummandPattern   A simple pattern for the elements that should be
+ *                              summed up.  These must have matching types and
+ *                              units.
+ * @param   pszDesc             Sample description.
+ * @param   pszName             The sample name format string.
+ * @param   va                  Arguments to the format string.
+ */
+VMMR3DECL(int) STAMR3RegisterSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, const char *pszSummandPattern,
+                                  const char *pszDesc, const char *pszName, va_list va)
+{
+    char   szFormattedName[STAM_MAX_NAME_LEN + 8];
+    size_t cch = RTStrPrintfV(szFormattedName, sizeof(szFormattedName), pszName, va);
+    AssertReturn(cch <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
+
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * We have to resolve the summands before we continue with the actual registration.
+     */
+    uint8_t const        cMaxSummands = 32;
+    PSTAMSUMSAMPLE const pSum = (PSTAMSUMSAMPLE)RTMemAllocZ(RT_UOFFSETOF_DYN(STAMSUMSAMPLE, apSummands[cMaxSummands]));
+    AssertReturn(pSum, VERR_NO_MEMORY);
+    pSum->cSummandsAlloc = cMaxSummands;
+
+    STAM_LOCK_WR(pUVM);
+
+    int rc = stamR3EnumU(pUVM, pszSummandPattern, false /*fUpdateRing0*/, stamR3RegisterSumEnumCallback, pSum);
+    if (RT_SUCCESS(rc))
+    {
+        if (pSum->cSummands > 0)
+            rc = stamR3RegisterU(pUVM, pSum, NULL, NULL, STAMTYPE_INTERNAL_SUM, enmVisibility, szFormattedName,
+                                 (STAMUNIT)pSum->enmUnit, pszDesc, STAM_REFRESH_GRP_NONE);
+        else
+            AssertFailedStmt(rc = VERR_NO_DATA);
+    }
+
+    STAM_UNLOCK_WR(pUVM);
+
+    if (RT_FAILURE(rc))
+        RTMemFree(pSum);
+    return rc;
+}
+
+
+/**
+ * Registers a sum that is to be calculated from the @a pszSummandPattern hits.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                Pointer to the user mode VM structure.
+ * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
+ * @param   pszSummandPattern   A simple pattern for the elements that should be
+ *                              summed up.  These must have matching types and
+ *                              units.
+ * @param   pszDesc             Sample description.
+ * @param   pszName             The sample name format string.
+ * @param   ...                 Arguments to the format string.
+ */
+VMMR3DECL(int) STAMR3RegisterSum(PUVM pUVM, STAMVISIBILITY enmVisibility, const char *pszSummandPattern,
+                                 const char *pszDesc, const char *pszName, ...)
+{
+    va_list va;
+    va_start(va, pszName);
+    int rc = STAMR3RegisterSumV(pUVM, enmVisibility, pszSummandPattern, pszDesc, pszName, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Refreshes the cached value (STAMSUMSAMPLE::u) of a percent-of-sum sample.
+ */
+static void stamR3PctOfSumRefresh(PSTAMDESC pDesc, PSTAMSUMSAMPLE pSum)
+{
+    /*
+     * First the value so we only read it once.
+     */
+    PSTAMDESC const pValDesc = pSum->apSummands[0];
+    uint64_t        uValue;
+    switch (pValDesc->enmType)
+    {
+        case STAMTYPE_COUNTER:
+            uValue = pValDesc->u.pCounter->c;
+            break;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            uValue = *pValDesc->u.pu64;
+            break;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            uValue = *pValDesc->u.pu32;
+            break;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            uValue = *pValDesc->u.pu16;
+            break;
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            uValue = *pValDesc->u.pu8;
+            break;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            uValue = pValDesc->u.pProfile->cTicks;
+            break;
+
+        case STAMTYPE_INTERNAL_SUM:
+        {
+            PSTAMSUMSAMPLE const pSubSum = pValDesc->u.pSum;
+            stamR3SumRefresh(pSubSum);
+            if (pSubSum->enmType == STAMTYPE_COUNTER)
+                uValue = pSubSum->u.Counter.c;
+            else
+                uValue = pSubSum->u.Profile.cTicks;
+            break;
+        }
+
+        default:
+            AssertFailedReturnVoid();
+    }
+
+    /*
+     * Sum it up with the rest.
+     */
+    uint64_t  uSum = uValue;
+    uintptr_t i    = pSum->cSummands;
+    while (i-- > 1)
+    {
+        PSTAMDESC const pSummandDesc = pSum->apSummands[i];
+        switch (pSummandDesc->enmType)
+        {
+            case STAMTYPE_COUNTER:
+                uSum += pSummandDesc->u.pCounter->c;
+                break;
+
+            case STAMTYPE_U64:
+            case STAMTYPE_U64_RESET:
+            case STAMTYPE_X64:
+            case STAMTYPE_X64_RESET:
+                uSum += *pSummandDesc->u.pu64;
+                break;
+
+            case STAMTYPE_U32:
+            case STAMTYPE_U32_RESET:
+            case STAMTYPE_X32:
+            case STAMTYPE_X32_RESET:
+                uSum += *pSummandDesc->u.pu32;
+                break;
+
+            case STAMTYPE_U16:
+            case STAMTYPE_U16_RESET:
+            case STAMTYPE_X16:
+            case STAMTYPE_X16_RESET:
+                uSum += *pSummandDesc->u.pu16;
+                break;
+
+            case STAMTYPE_U8:
+            case STAMTYPE_U8_RESET:
+            case STAMTYPE_X8:
+            case STAMTYPE_X8_RESET:
+                uSum += *pSummandDesc->u.pu8;
+                break;
+
+            case STAMTYPE_PROFILE:
+            case STAMTYPE_PROFILE_ADV:
+                uSum += pSummandDesc->u.pProfile->cTicks;
+                break;
+
+            case STAMTYPE_INTERNAL_SUM:
+            {
+                PSTAMSUMSAMPLE const pSubSum = pSummandDesc->u.pSum;
+                stamR3SumRefresh(pSubSum);
+                if (pSubSum->enmType == STAMTYPE_COUNTER)
+                    uSum += pSubSum->u.Counter.c;
+                else
+                    uSum += pSubSum->u.Profile.cTicks;
+                break;
+            }
+
+            default:
+                AssertFailedBreak();
+        }
+    }
+
+    /*
+     * Calculate the percentage.
+     */
+    if (uSum && uValue)
+    {
+        switch (pDesc->enmUnit)
+        {
+            case STAMUNIT_PCT:
+                pSum->u.Counter.c = uValue * 100 / uSum;
+                break;
+            case STAMUNIT_PP1K:
+                pSum->u.Counter.c = uValue * 1000 / uSum;
+                break;
+            case STAMUNIT_PP10K:
+                pSum->u.Counter.c = uValue * 10000 / uSum;
+                break;
+            default:
+                AssertFailed();
+                RT_FALL_THROUGH();
+            case STAMUNIT_PPM:
+                pSum->u.Counter.c = uValue * 1000000 / uSum;
+                break;
+            case STAMUNIT_PPB:
+                pSum->u.Counter.c = uValue * 1000000000 / uSum;
+                break;
+        }
+    }
+    else
+        pSum->u.Counter.c = 0;
+}
+
+
+/**
+ * Used by STAMR3RegisterPctOfSumV to locate the value to turn into a
+ * percentage.
+ */
+static int stamR3RegisterPctOfSumEnumCallbackForValue(PSTAMDESC pDesc, void *pvArg)
+{
+    PSTAMSUMSAMPLE const pSum = (PSTAMSUMSAMPLE)pvArg;
+    AssertReturn(pSum->cSummands == 0, VERR_TOO_MUCH_DATA);
+
+    /*
+     * Check for compatibility.
+     */
+    switch (pDesc->enmType)
+    {
+        case STAMTYPE_COUNTER:
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+        case STAMTYPE_INTERNAL_SUM:
+            break;
+
+        default:
+            AssertMsgFailedReturn(("Pct-of-sum for enmType=%d types have not been implemented yet! Sorry.\n", pDesc->enmType),
+                                  VERR_WRONG_TYPE);
+    }
+    pSum->enmTypeFirst  = pDesc->enmType;
+    pSum->apSummands[0] = pDesc;
+    pSum->cSummands     = 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Used by STAMR3RegisterPctOfSumV to locate the samples to sum up.
+ */
+static int stamR3RegisterPctOfSumEnumCallbackForSummands(PSTAMDESC pDesc, void *pvArg)
+{
+    PSTAMSUMSAMPLE const pSum = (PSTAMSUMSAMPLE)pvArg;
+
+    /*
+     * Skip if the same as the value we're calculating the percentage for.
+     */
+    if (pDesc == pSum->apSummands[0])
+        return VINF_SUCCESS;
+
+    /*
+     * Make sure additional samples are compatible with the first as far as type.
+     */
+    if (RT_LIKELY(   pDesc->enmType == pSum->enmType
+                  || pDesc->enmType == (STAMTYPE)pSum->enmTypeFirst))
+    { /* likely */ }
+    else
+    {
+        switch (pDesc->enmType)
+        {
+            case STAMTYPE_COUNTER:
+            case STAMTYPE_U64:
+            case STAMTYPE_U64_RESET:
+            case STAMTYPE_X64:
+            case STAMTYPE_X64_RESET:
+            case STAMTYPE_U32:
+            case STAMTYPE_U32_RESET:
+            case STAMTYPE_X32:
+            case STAMTYPE_X32_RESET:
+            case STAMTYPE_U16:
+            case STAMTYPE_U16_RESET:
+            case STAMTYPE_X16:
+            case STAMTYPE_X16_RESET:
+            case STAMTYPE_U8:
+            case STAMTYPE_U8_RESET:
+            case STAMTYPE_X8:
+            case STAMTYPE_X8_RESET:
+            case STAMTYPE_PROFILE:
+            case STAMTYPE_PROFILE_ADV:
+            case STAMTYPE_INTERNAL_SUM:
+                break;
+
+            default:
+                AssertMsgFailedReturn(("Unsupported pct-of-sum type: %d (%s)\n", pDesc->enmType, pDesc->pszName), VERR_MISMATCH);
+        }
+    }
+
+    AssertReturn(pSum->cSummands < pSum->cSummandsAlloc, VERR_TOO_MUCH_DATA);
+    pSum->apSummands[pSum->cSummands++] = pDesc;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Registers a percentage of a sum that is to be calculated from @a pszValue and
+ * the @a pszSummandPattern hits.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                Pointer to the user mode VM structure.
+ * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
+ * @param   enmUnit             The sample unit: STAMUNIT_PCT, STAMUNIT_PP1K,
+ *                              STAMUNIT_PP10K, STAMUNIT_PPM or STAMUNIT_PPB.
+ * @param   pszName             Name of the sample which value should be put
+ *                              against the sum of all.
+ * @param   pszSummandPattern   A simple pattern for the elements that should be
+ *                              summed up and used to divide @a pszName by when
+ *                              calculating the percentage.  These must have
+ *                              compatible types.
+ *
+ *                              The @a pszName is implicitly included in the sum.
+ *
+ * @param   pszDesc             Sample description.
+ * @param   pszName             The sample name format string.
+ * @param   va                  Arguments to the format string.
+ */
+VMMR3DECL(int) STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
+                                       const char *pszSummandPattern, const char *pszDesc, const char *pszName, va_list va)
+{
+    char   szFormattedName[STAM_MAX_NAME_LEN + 8];
+    size_t cch = RTStrPrintfV(szFormattedName, sizeof(szFormattedName), pszName, va);
+    AssertReturn(cch <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
+    switch (enmUnit)
+    {
+            case STAMUNIT_PCT:
+            case STAMUNIT_PP1K:
+            case STAMUNIT_PP10K:
+            case STAMUNIT_PPM:
+            case STAMUNIT_PPB:
+                break;
+            default:
+                AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * We have to resolve the value and summands before we continue with the
+     * actual registration.  We reuse the STAMSUMSAMPLE structure here.
+     */
+    uint8_t const        cMaxSummands = 32;
+    PSTAMSUMSAMPLE const pSum = (PSTAMSUMSAMPLE)RTMemAllocZ(RT_UOFFSETOF_DYN(STAMSUMSAMPLE, apSummands[cMaxSummands]));
+    AssertReturn(pSum, VERR_NO_MEMORY);
+    pSum->cSummandsAlloc = cMaxSummands;
+    pSum->enmType        = STAMTYPE_COUNTER;
+    pSum->enmUnit        = enmUnit;
+
+    STAM_LOCK_WR(pUVM);
+
+    /* The first summand entry is the value. */
+    int rc = stamR3EnumU(pUVM, pszValue, false /*fUpdateRing0*/, stamR3RegisterPctOfSumEnumCallbackForValue, pSum);
+    if (RT_SUCCESS(rc))
+    {
+        if (pSum->cSummands == 1)
+        {
+            /* The additional ones are part of the sum we should divide the value by. */
+            rc = stamR3EnumU(pUVM, pszSummandPattern, false /*fUpdateRing0*/, stamR3RegisterPctOfSumEnumCallbackForSummands, pSum);
+            if (RT_SUCCESS(rc))
+            {
+                /* Now, register it. */
+                if (pSum->cSummands > 1)
+                    rc = stamR3RegisterU(pUVM, pSum, NULL, NULL, STAMTYPE_INTERNAL_PCT_OF_SUM, enmVisibility, szFormattedName,
+                                         (STAMUNIT)pSum->enmUnit, pszDesc, STAM_REFRESH_GRP_NONE);
+                else
+                    AssertFailedStmt(rc = VERR_NO_DATA);
+            }
+        }
+        else
+            AssertFailedStmt(rc = VERR_NO_DATA);
+    }
+
+    STAM_UNLOCK_WR(pUVM);
+
+    if (RT_FAILURE(rc))
+        RTMemFree(pSum);
+    return rc;
+}
+
+
+/**
+ * Registers a percentage of a sum that is to be calculated from @a pszValue and
+ * the @a pszSummandPattern hits.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                Pointer to the user mode VM structure.
+ * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
+ * @param   enmUnit             The sample unit: STAMUNIT_PCT, STAMUNIT_PP1K,
+ *                              STAMUNIT_PP10K, STAMUNIT_PPM or STAMUNIT_PPB.
+ * @param   pszName             Name of the sample which value should be put
+ *                              against the sum of all.
+ * @param   pszSummandPattern   A simple pattern for the elements that should be
+ *                              summed up and used to divide @a pszName by when
+ *                              calculating the percentage.  These must have
+ *                              compatible types.
+ *
+ *                              The @a pszName is implicitly included in the sum.
+ *
+ * @param   pszDesc             Sample description.
+ * @param   pszName             The sample name format string.
+ * @param   ...                 Arguments to the format string.
+ */
+VMMR3DECL(int) STAMR3RegisterPctOfSum(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
+                                      const char *pszSummandPattern, const char *pszDesc, const char *pszName, ...)
+{
+    va_list va;
+    va_start(va, pszName);
+    int rc = STAMR3RegisterPctOfSumV(pUVM, enmVisibility, enmUnit, pszValue, pszSummandPattern, pszDesc, pszName, va);
+    va_end(va);
+    return rc;
 }
 
 
@@ -1548,7 +2207,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
      */
     switch (enmType)
     {
-            /* 8 byte / 64-bit */
+        /* 8 byte / 64-bit */
         case STAMTYPE_U64:
         case STAMTYPE_U64_RESET:
         case STAMTYPE_X64:
@@ -1559,7 +2218,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
             AssertMsg(!((uintptr_t)pvSample & 7), ("%p - %s\n", pvSample, pszName));
             break;
 
-            /* 4 byte / 32-bit */
+        /* 4 byte / 32-bit */
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:
         case STAMTYPE_U32:
@@ -1569,7 +2228,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
             AssertMsg(!((uintptr_t)pvSample & 3), ("%p - %s\n", pvSample, pszName));
             break;
 
-            /* 2 byte / 32-bit */
+        /* 2 byte / 32-bit */
         case STAMTYPE_U16:
         case STAMTYPE_U16_RESET:
         case STAMTYPE_X16:
@@ -1577,7 +2236,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
             AssertMsg(!((uintptr_t)pvSample & 1), ("%p - %s\n", pvSample, pszName));
             break;
 
-            /* 1 byte / 8-bit / unaligned */
+        /* 1 byte / 8-bit / unaligned */
         case STAMTYPE_U8:
         case STAMTYPE_U8_RESET:
         case STAMTYPE_X8:
@@ -1585,6 +2244,8 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
         case STAMTYPE_BOOL:
         case STAMTYPE_BOOL_RESET:
         case STAMTYPE_CALLBACK:
+        case STAMTYPE_INTERNAL_SUM:
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
             break;
 
         default:
@@ -1650,6 +2311,11 @@ static int stamR3DestroyDesc(PSTAMDESC pCur)
     pCur->pLookup->pDesc = NULL; /** @todo free lookup nodes once it's working. */
     stamR3LookupDecUsage(pCur->pLookup);
     stamR3LookupMaybeFree(pCur->pLookup);
+    if (   pCur->enmType != STAMTYPE_INTERNAL_SUM
+        && pCur->enmType != STAMTYPE_INTERNAL_PCT_OF_SUM)
+    { /* likely */ }
+    else
+        RTMemFree(pCur->u.pSum);
     RTMemFree(pCur);
 
     return VINF_SUCCESS;
@@ -2005,6 +2671,8 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
         case STAMTYPE_X64:
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_BOOL:
+        case STAMTYPE_INTERNAL_SUM:
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
             break;
 
         default:
@@ -2177,9 +2845,44 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
             stamR3SnapshotPrintf(pThis, "<BOOL val=\"%RTbool\"", *pDesc->u.pf);
             break;
 
+        case STAMTYPE_INTERNAL_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3SumRefresh(pSum);
+            switch (pSum->enmType)
+            {
+                case STAMTYPE_COUNTER:
+                    if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Counter.c == 0)
+                        return VINF_SUCCESS;
+                    stamR3SnapshotPrintf(pThis, "<Counter c=\"%lld\"", pSum->u.Counter.c);
+                    break;
+
+                case STAMTYPE_PROFILE:
+                    if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Profile.cPeriods == 0)
+                        return VINF_SUCCESS;
+                    stamR3SnapshotPrintf(pThis, "<Profile cPeriods=\"%lld\" cTicks=\"%lld\" cTicksMin=\"%lld\" cTicksMax=\"%lld\"",
+                                         pSum->u.Profile.cPeriods, pSum->u.Profile.cTicks, pSum->u.Profile.cTicksMin,
+                                         pSum->u.Profile.cTicksMax);
+                    break;
+
+                default:
+                    AssertMsgFailedReturn(("%d\n", pSum->enmType), VINF_SUCCESS);
+            }
+            break;
+        }
+
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3PctOfSumRefresh(pDesc, pSum);
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Counter.c == 0)
+                return VINF_SUCCESS;
+            stamR3SnapshotPrintf(pThis, "<Counter c=\"%lld\"", pSum->u.Counter.c);
+            break;
+        }
+
         default:
-            AssertMsgFailed(("%d\n", pDesc->enmType));
-            return 0;
+            AssertMsgFailedReturn(("%d\n", pDesc->enmType), VINF_SUCCESS);
     }
 
     stamR3SnapshotPrintf(pThis, " unit=\"%s\"", STAMR3GetUnit(pDesc->enmUnit));
@@ -2471,7 +3174,7 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
             if (pDesc->enmVisibility == STAMVISIBILITY_USED && pDesc->u.pProfile->cPeriods == 0)
                 return VINF_SUCCESS;
 
-            uint64_t u64 = pDesc->u.pProfile->cPeriods ? pDesc->u.pProfile->cPeriods : 1;
+            uint64_t const u64 = pDesc->u.pProfile->cPeriods ? pDesc->u.pProfile->cPeriods : 1;
             pArgs->pfnPrintf(pArgs, "%-32s %8llu %s (%12llu %s, %7llu %s, max %9llu, min %7lld)\n", pDesc->pszName,
                              pDesc->u.pProfile->cTicks / u64, STAMR3GetUnit(pDesc->enmUnit),
                              pDesc->u.pProfile->cTicks, STAMR3GetUnit1(pDesc->enmUnit),
@@ -2559,11 +3262,53 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
             pArgs->pfnPrintf(pArgs, "%-32s %s %s\n", pDesc->pszName, *pDesc->u.pf ? "true    " : "false   ", STAMR3GetUnit(pDesc->enmUnit));
             break;
 
+        case STAMTYPE_INTERNAL_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3SumRefresh(pSum);
+            switch (pSum->enmType)
+            {
+                case STAMTYPE_COUNTER:
+                    if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Counter.c == 0)
+                        return VINF_SUCCESS;
+                    pArgs->pfnPrintf(pArgs, "%-32s %8llu %s\n", pDesc->pszName, pSum->u.Counter.c, STAMR3GetUnit(pDesc->enmUnit));
+                    break;
+
+                case STAMTYPE_PROFILE:
+                {
+                    if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Profile.cPeriods == 0)
+                        return VINF_SUCCESS;
+
+                    uint64_t const u64 = pSum->u.Profile.cPeriods ? pSum->u.Profile.cPeriods : 1;
+                    pArgs->pfnPrintf(pArgs, "%-32s %8llu %s (%12llu %s, %7llu %s, max %9llu, min %7lld)\n", pDesc->pszName,
+                                     pSum->u.Profile.cTicks / u64, STAMR3GetUnit(pDesc->enmUnit),
+                                     pSum->u.Profile.cTicks, STAMR3GetUnit1(pDesc->enmUnit),
+                                     pSum->u.Profile.cPeriods, STAMR3GetUnit2(pDesc->enmUnit),
+                                     pSum->u.Profile.cTicksMax, pSum->u.Profile.cTicksMin);
+                    break;
+                }
+
+                default:
+                    AssertMsgFailed(("%d\n", pSum->enmType));
+                    break;
+            }
+            break;
+        }
+
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3PctOfSumRefresh(pDesc, pSum);
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && pSum->u.Counter.c == 0)
+                return VINF_SUCCESS;
+            pArgs->pfnPrintf(pArgs, "%-32s %8llu %s\n", pDesc->pszName, pSum->u.Counter.c, STAMR3GetUnit(pDesc->enmUnit));
+            break;
+        }
+
         default:
             AssertMsgFailed(("enmType=%d\n", pDesc->enmType));
             break;
     }
-    NOREF(pvArg);
     return VINF_SUCCESS;
 }
 
@@ -2601,21 +3346,39 @@ VMMR3DECL(int) STAMR3Enum(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, 
  */
 static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg)
 {
-    PSTAMR3ENUMONEARGS pArgs = (PSTAMR3ENUMONEARGS)pvArg;
-    const char *pszUnit = STAMR3GetUnit(pDesc->enmUnit);
-    int rc;
-    if (pDesc->enmType == STAMTYPE_CALLBACK)
+    PSTAMR3ENUMONEARGS const pArgs   = (PSTAMR3ENUMONEARGS)pvArg;
+    const char * const       pszUnit = STAMR3GetUnit(pDesc->enmUnit);
+    switch (pDesc->enmType)
     {
-        /* Give the enumerator something useful. */
-        char szBuf[512];
-        pDesc->u.Callback.pfnPrint(pArgs->pVM, pDesc->u.Callback.pvSample, szBuf, sizeof(szBuf));
-        rc = pArgs->pfnEnum(pDesc->pszName, pDesc->enmType, szBuf, pDesc->enmUnit, pszUnit,
-                            pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
+        default:
+            return pArgs->pfnEnum(pDesc->pszName, pDesc->enmType, pDesc->u.pv, pDesc->enmUnit, pszUnit,
+                                  pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
+
+        case STAMTYPE_CALLBACK:
+        {
+            /* Give the enumerator something useful. */
+            char szBuf[512];
+            pDesc->u.Callback.pfnPrint(pArgs->pVM, pDesc->u.Callback.pvSample, szBuf, sizeof(szBuf));
+            return pArgs->pfnEnum(pDesc->pszName, pDesc->enmType, szBuf, pDesc->enmUnit, pszUnit,
+                                  pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
+        }
+
+        case STAMTYPE_INTERNAL_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3SumRefresh(pSum);
+            return pArgs->pfnEnum(pDesc->pszName, pSum->enmType, &pSum->u, pDesc->enmUnit, pszUnit,
+                                  pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
+        }
+
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
+        {
+            PSTAMSUMSAMPLE const pSum = pDesc->u.pSum;
+            stamR3PctOfSumRefresh(pDesc, pSum);
+            return pArgs->pfnEnum(pDesc->pszName, pSum->enmType, &pSum->u, pDesc->enmUnit, pszUnit,
+                                  pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
+        }
     }
-    else
-        rc = pArgs->pfnEnum(pDesc->pszName, pDesc->enmType, pDesc->u.pv, pDesc->enmUnit, pszUnit,
-                            pDesc->enmVisibility, pDesc->pszDesc, pArgs->pvUser);
-    return rc;
 }
 
 static void stamR3RefreshGroup(PUVM pUVM, uint8_t iRefreshGroup, uint64_t *pbmRefreshedGroups)
@@ -3058,6 +3821,10 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_NS_PER_CALL:          return "ns/call";
         case STAMUNIT_NS_PER_OCCURENCE:     return "ns/time";
         case STAMUNIT_PCT:                  return "%";
+        case STAMUNIT_PP1K:                 return "pp1k";
+        case STAMUNIT_PP10K:                return "pp10k";
+        case STAMUNIT_PPM:                  return "ppm";
+        case STAMUNIT_PPB:                  return "ppb";
         case STAMUNIT_HZ:                   return "Hz";
         case STAMUNIT_INSTR:                return "instr";
         case STAMUNIT_INSTR_PER_TB:         return "instr/tb";
@@ -3099,6 +3866,10 @@ VMMR3DECL(const char *) STAMR3GetUnit1(STAMUNIT enmUnit)
         case STAMUNIT_NS_PER_CALL:          return "ns";
         case STAMUNIT_NS_PER_OCCURENCE:     return "ns";
         case STAMUNIT_PCT:                  return "%";
+        case STAMUNIT_PP1K:                 return "pp1k";
+        case STAMUNIT_PP10K:                return "pp10k";
+        case STAMUNIT_PPM:                  return "ppm";
+        case STAMUNIT_PPB:                  return "ppb";
         case STAMUNIT_HZ:                   return "Hz";
         case STAMUNIT_INSTR:                return "instr";
         case STAMUNIT_INSTR_PER_TB:         return "instr";
