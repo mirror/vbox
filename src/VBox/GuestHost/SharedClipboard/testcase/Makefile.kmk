@@ -93,8 +93,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
     tstClipboardHttpServerX11_SOURCES   += \
     	../clipboard-x11.cpp
     tstClipboardHttpServerX11_LIBS      += \
-  	Xt \
-  	X11
+    	Xt \
+    	X11
    endif
 
   endif

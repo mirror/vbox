@@ -363,9 +363,9 @@ TOOL_Bs3Vcc64_COMPILE_C_DEPORD         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT)
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE) $(obj).original
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE_PRECIOUS = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE_PRECIOUS) $(outbase)-obj.asm
-define TOOL_Bs3Vcc64_COMPILE_C_CMDS
-$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS))
-	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+define TOOL_Bs3Vcc64_COMPILE_C_CMDS \
+$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)) \
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)" \
 	$(QUIET)$(SED) -e '/xmm[0-9]/!d' -e 'q11' $(outbase)-obj.asm
 endef
 
@@ -398,9 +398,9 @@ TOOL_Bs3Vcc64_COMPILE_CXX_DEPORD       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT)
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE) $(obj).original
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE_PRECIOUS = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE_PRECIOUS) $(outbase)-obj.asm
-define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
-$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS))
-	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS \
+$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)) \
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)" \
 	$(QUIET)$(SED) -e '/xmm[0-9]/!d' -e 'q11' $(outbase)-obj.asm
 endef
 
@@ -533,15 +533,15 @@ TOOL_Bs3Ow16_LINK_LIBRARY_OUTPUT                = $(outbase)-implib.lib $(outbas
 TOOL_Bs3Ow16_LINK_LIBRARY_OUTPUT_MAYBE_PRECIOUS = $(TOOL_OPENWATCOM_LINK_LIBRARY_OUTPUT_MAYBE_PRECIOUS)
 TOOL_Bs3Ow16_LINK_LIBRARY_OUTPUT_DEPEND         = $(TOOL_OPENWATCOM_LINK_LIBRARY_OUTPUT_DEPEND)
 TOOL_Bs3Ow16_LINK_LIBRARY_OUTPUT_DEPORD         = $(TOOL_OPENWATCOM_LINK_LIBRARY_OUTPUT_DEPORD)
-define TOOL_Bs3Ow16_LINK_LIBRARY_CMDS
-$(subst @@replace-me-with-list-option@@,-l=$(call TOOL_OPENWATCOM_FIX_SLASHES,$(outbase).lst),$(TOOL_OPENWATCOM_LINK_LIBRARY_CMDS))
+define TOOL_Bs3Ow16_LINK_LIBRARY_CMDS \
+$(subst @@replace-me-with-list-option@@,-l=$(call TOOL_OPENWATCOM_FIX_SLASHES,$(outbase).lst),$(TOOL_OPENWATCOM_LINK_LIBRARY_CMDS)) \
 	$(TOOL_Bs3Ow16_AR) -m "$(out)" \
 	| $(SED) \
 		-e '/^    _Bs3[_a-zA-Z0-9]*$$(DOLLAR)/!d' \
 		-e '/_EndProc/d' \
 		-e '/\./d' \
 		-e 's/^ *\(_Bs3[_a-zA-Z0-9]*\)$$(DOLLAR)/++\1.bs3kit/' \
-		--output $(outbase)-implib.rsp
+		--output $(outbase)-implib.rsp \
 	$(TOOL_Bs3Ow16_AR) -q -n -io -inn $(call TOOL_OPENWATCOM_FIX_SLASHES,$(outbase)-implib.lib) @$(outbase)-implib.rsp
 endef
 
