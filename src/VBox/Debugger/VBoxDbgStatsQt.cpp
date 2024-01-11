@@ -2472,6 +2472,8 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_END:
             AssertFailed(); RT_FALL_THRU();
         case STAMTYPE_CALLBACK:
+        case STAMTYPE_FIRST_INTERNAL_TYPE:
+        case STAMTYPE_INTERNAL_PCT_OF_SUM:
         case STAMTYPE_INVALID:
             break;
     }
@@ -3366,4 +3368,3 @@ VBoxDbgStats::actFocusToPat()
     if (!m_pPatCB->hasFocus())
         m_pPatCB->setFocus(Qt::ShortcutFocusReason);
 }
-
