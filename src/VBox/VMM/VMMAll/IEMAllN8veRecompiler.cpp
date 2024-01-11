@@ -7447,7 +7447,7 @@ DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSetAndAcquire(PIEMRECOMPILERSTATE
  * @param   off                 The code buffer position.
  * @param   fHstRegsNotToSave   Set of registers not to save & restore.
  */
-DECL_INLINE_THROW(uint32_t)
+DECL_HIDDEN_THROW(uint32_t)
 iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fHstRegsNotToSave)
 {
     uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~fHstRegsNotToSave;
@@ -7520,7 +7520,7 @@ iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t o
  * @see     iemNativeVarSaveVolatileRegsPreHlpCall(),
  *          iemNativeRegRestoreGuestShadowsInVolatileRegs()
  */
-DECL_INLINE_THROW(uint32_t)
+DECL_HIDDEN_THROW(uint32_t)
 iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fHstRegsNotToSave)
 {
     uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~fHstRegsNotToSave;

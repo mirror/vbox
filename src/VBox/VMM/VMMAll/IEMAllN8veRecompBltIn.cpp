@@ -1186,14 +1186,6 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
 #endif
 
     /*
-     * Move/spill/flush stuff out of call-volatile registers.
-     * This is the easy way out. We could contain this to the tlb-miss branch
-     * by saving and restoring active stuff here.
-     */
-    /** @todo save+restore active registers and maybe guest shadows in tlb-miss.  */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
-
-    /*
      * Define labels and allocate the register for holding the GCPhys of the new page.
      */
     uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
@@ -1211,6 +1203,10 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
+    /* Save variables in volatile registers. */
+    uint32_t const fHstRegsNotToSave = /*TlbState.getRegsNotToSave() | */ RT_BIT_32(idxRegGCPhys);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
     /* IEMNATIVE_CALL_ARG1_GREG = offInstr */
     off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, offInstr);
 
@@ -1223,6 +1219,10 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
     /* Move the result to the right register. */
     if (idxRegGCPhys != IEMNATIVE_CALL_RET_GREG)
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegGCPhys, IEMNATIVE_CALL_RET_GREG);
+
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, 0 /*TlbState.getActiveRegsWithShadows()*/);
 
     iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
 
@@ -1504,11 +1504,19 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
+    /* Save variables in volatile registers. */
+    uint32_t const fHstRegsNotToSave = /*TlbState.getRegsNotToSave() | */ RT_BIT_32(idxRegTmp) | RT_BIT_32(idxRegTmp);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
 
     /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpMemCodeNewPageTlbMiss);
+
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, 0 /*TlbState.getActiveRegsWithShadows()*/);
 
     /* Jmp back to the start and redo the checks. */
     off = iemNativeEmitLoadGpr8Imm(pReNative, off, idxRegTmp2, 1); /* indicate that we've looped once already */
