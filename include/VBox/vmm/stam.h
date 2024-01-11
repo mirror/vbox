@@ -1353,7 +1353,7 @@ VMMR3DECL(int)  STAMR3RegisterRefreshV(PUVM pUVM, void *pvSample, STAMTYPE enmTy
 VMMR3DECL(int)  STAMR3RegisterSum(PUVM pUVM, STAMVISIBILITY enmVisibility, const char *pszSummandPattern,
                                   const char *pszDesc, const char *pszName, ...) RT_IPRT_FORMAT_ATTR(5, 6);
 VMMR3DECL(int)  STAMR3RegisterSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, const char *pszSummandPattern,
-                                   const char *pszDesc, const char *pszName, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
+                                   const char *pszDesc, const char *pszName, va_list va) RT_IPRT_FORMAT_ATTR(5, 0);
 VMMR3DECL(int)  STAMR3RegisterPctOfSum(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
                                        const char *pszSummandPattern, const char *pszDesc, const char *pszName, ...);
 VMMR3DECL(int)  STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
