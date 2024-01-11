@@ -90,10 +90,9 @@ def main(argv):
           description='Python interface to VirtualBox',
           author='Oracle Corp.',
           author_email='vbox-dev@virtualbox.org',
-          url='http://www.virtualbox.org',
+          url='https://www.virtualbox.org',
           packages=['vboxapi']
           )
 
 if __name__ == '__main__':
     main(sys.argv)
-
