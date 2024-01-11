@@ -1190,7 +1190,7 @@ static int stamR3RegisterPctOfSumEnumCallbackForSummands(PSTAMDESC pDesc, void *
  * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit             The sample unit: STAMUNIT_PCT, STAMUNIT_PP1K,
  *                              STAMUNIT_PP10K, STAMUNIT_PPM or STAMUNIT_PPB.
- * @param   pszName             Name of the sample which value should be put
+ * @param   pszValue            Name of the sample which value should be put
  *                              against the sum of all.
  * @param   pszSummandPattern   A simple pattern for the elements that should be
  *                              summed up and used to divide @a pszName by when
@@ -1275,7 +1275,7 @@ VMMR3DECL(int) STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, 
  * @param   enmVisibility       Visibility type specifying whether unused statistics should be visible or not.
  * @param   enmUnit             The sample unit: STAMUNIT_PCT, STAMUNIT_PP1K,
  *                              STAMUNIT_PP10K, STAMUNIT_PPM or STAMUNIT_PPB.
- * @param   pszName             Name of the sample which value should be put
+ * @param   pszValue            Name of the sample which value should be put
  *                              against the sum of all.
  * @param   pszSummandPattern   A simple pattern for the elements that should be
  *                              summed up and used to divide @a pszName by when
