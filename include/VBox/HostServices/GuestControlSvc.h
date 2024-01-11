@@ -109,7 +109,8 @@ typedef struct VBOXGUESTCTRLHOSTCBCTX
 
 /**
  * Structure for low level HGCM host callback from
- * the guest. No deep copy. */
+ * the guest. No deep copy.
+ */
 typedef struct VBOXGUESTCTRLHOSTCALLBACK
 {
     /** Number of HGCM parameters. */
@@ -209,32 +210,44 @@ enum eHostMsg
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     /**
      * Removes a file on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_FILE_REMOVE = 273,
     /**
      * Opens (creates) a directory on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_DIR_OPEN = 310,
     /**
      * Closes a directory on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_DIR_CLOSE = 311,
     /**
      * Reads the next directory entry on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_DIR_READ = 312,
     /**
      * Rewinds and restarts the directory reading on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_DIR_REWIND = 313,
     /**
      * Creates a directory on the guest.
+     *
+     * @since 7.1
      */
     HOST_MSG_DIR_CREATE = 314,
     /**
      * Lists one or multiple directory entries at once.
      *
-     * @since   7.1
+     * @since 7.1
      */
     HOST_MSG_DIR_LIST = 315,
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -261,21 +274,27 @@ enum eHostMsg
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     /**
      * Retrieves information about a file system object.
+     *
+     * @since 7.1
      */
     HOST_MSG_FS_OBJ_QUERY_INFO = 334,
     /**
      * Creates a temporary file or directory.
+     *
+     * @since 7.1
      */
     HOST_MSG_FS_CREATE_TEMP = 335,
     /**
      * Retrieves information about a guest file system.
+     *
+     * @since 7.1
      */
     HOST_MSG_FS_QUERY_INFO = 336,
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     /**
      * Retrieves the currently accessible mount points from the guest.
      *
-     * @since   7.1
+     * @since 7.1
      */
     HOST_MSG_MOUNT_POINTS = 337,
     /** Blow the type up to 32-bits. */
@@ -1155,6 +1174,9 @@ typedef struct HGCMMsgDirList
 } HGCMMsgDirList;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
+/**
+ * Renames a path on the guest.
+ */
 typedef struct HGCMMsgPathRename
 {
     VBGLIOCHGCMCALL hdr;
@@ -1168,6 +1190,9 @@ typedef struct HGCMMsgPathRename
     HGCMFunctionParameter flags;
 } HGCMMsgPathRename;
 
+/**
+ * Retrieves the user's personal documents directory from the guest.
+ */
 typedef struct HGCMMsgPathUserDocuments
 {
     VBGLIOCHGCMCALL hdr;
@@ -1175,6 +1200,9 @@ typedef struct HGCMMsgPathUserDocuments
     HGCMFunctionParameter context;
 } HGCMMsgPathUserDocuments;
 
+/**
+ * Retrieves the user's home directory from the guest.
+ */
 typedef struct HGCMMsgPathUserHome
 {
     VBGLIOCHGCMCALL hdr;
@@ -1542,6 +1570,9 @@ typedef struct HGCMMsgFileRemove
 * callbacks and dispatched to the appropriate guest object.                   *
 ******************************************************************************/
 
+/**
+ * Reply from a guest file operation.
+ */
 typedef struct HGCMReplyFileNotify
 {
     VBGLIOCHGCMCALL hdr;
@@ -1598,6 +1629,9 @@ typedef struct HGCMReplyFileNotify
     } u;
 } HGCMReplyFileNotify;
 
+/**
+ * Reply from a guest directory operation.
+ */
 typedef struct HGCMReplyDirNotify
 {
     /** The generic reply header. */
