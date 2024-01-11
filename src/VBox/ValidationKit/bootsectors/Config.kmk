@@ -541,7 +541,7 @@ $(subst @@replace-me-with-list-option@@,-l=$(call TOOL_OPENWATCOM_FIX_SLASHES,$(
 		-e '/_EndProc/d' \
 		-e '/\./d' \
 		-e 's/^ *\(_Bs3[_a-zA-Z0-9]*\)$$(DOLLAR)/++\1.bs3kit/' \
-		--output $(outbase)-implib.rsp \
+		--output $(outbase)-implib.rsp
 	$(TOOL_Bs3Ow16_AR) -q -n -io -inn $(call TOOL_OPENWATCOM_FIX_SLASHES,$(outbase)-implib.lib) @$(outbase)-implib.rsp
 endef
 
