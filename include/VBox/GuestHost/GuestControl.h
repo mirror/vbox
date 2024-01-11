@@ -179,7 +179,8 @@ enum eProcessStatus
 /** @} */
 
 /** @name GUEST_SHUTDOWN_FLAG_XXX - Guest shutdown flags.
- * Must match Main's GuestShutdownFlag_ definitions.
+ *
+ * @note Must match Main's GuestShutdownFlag_ definitions.
  * @{
  */
 #define GUEST_SHUTDOWN_FLAG_NONE            UINT32_C(0)
@@ -216,6 +217,8 @@ enum eProcessStatus
 
 /** @name Internal tools built into VBoxService which are used in order
  *        to accomplish tasks host<->guest.
+ *
+ *  @deprecated Since 7.1 the built-in VBoxService tools aren't used anymore.
  * @{
  */
 #define VBOXSERVICE_TOOL_CAT        "vbox_cat"
@@ -226,7 +229,10 @@ enum eProcessStatus
 #define VBOXSERVICE_TOOL_STAT       "vbox_stat"
 /** @} */
 
-/** Special process exit codes for "vbox_cat". */
+/** Special process exit codes for "vbox_cat".
+ *
+ * @deprecated Since 7.1 the built-in VBoxService tools aren't used anymore.
+ */
 typedef enum VBOXSERVICETOOLBOX_CAT_EXITCODE
 {
     VBOXSERVICETOOLBOX_CAT_EXITCODE_ACCESS_DENIED = RTEXITCODE_END,
@@ -238,7 +244,10 @@ typedef enum VBOXSERVICETOOLBOX_CAT_EXITCODE
     VBOXSERVICETOOLBOX_CAT_32BIT_HACK = 0x7fffffff
 } VBOXSERVICETOOLBOX_CAT_EXITCODE;
 
-/** Special process exit codes for "vbox_stat". */
+/** Special process exit codes for "vbox_stat".
+ *
+ * @deprecated Since 7.1 the built-in VBoxService tools aren't used anymore.
+ */
 typedef enum VBOXSERVICETOOLBOX_STAT_EXITCODE
 {
     VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED = RTEXITCODE_END,
@@ -659,7 +668,7 @@ typedef GSTCTLDIRENTRYEX const *PCGSTCTLDIRENTRYEX;
  *
  * The order of the attributes also mark their packed order, so be careful when changing this!
  *
- * @since 7.1.
+ * @since 7.1
  */
 #pragma pack(1)
 typedef struct GSTCTLDIRENTRYLISTHDR
