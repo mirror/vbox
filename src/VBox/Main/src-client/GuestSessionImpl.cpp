@@ -3155,6 +3155,7 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest)
  * Returns the currently accessible mount points of the guest.
  *
  * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the installed Guest Additions do not support this feature.
  * @param   vecMountPoints      Where to return the mount points (guest-style paths).
  * @param   pvrcGuest           Guest VBox status code, when returning
  *                              VERR_GSTCTL_GUEST_ERROR. Any other return code indicates
@@ -3165,6 +3166,9 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest)
 int GuestSession::i_getMountPoints(std::vector<com::Utf8Str> &vecMountPoints, int *pvrcGuest)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!(mParent->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_MOUNT_POINTS_ENUM))
+        return VERR_NOT_SUPPORTED;
 
     GuestWaitEvent *pEvent = NULL;
     int vrc = registerWaitEvent(mData.mSession.mID, mData.mObjectID, &pEvent);

@@ -261,12 +261,13 @@ static int vgsvcGstCtrlInvalidate(void)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
                                       | VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-                                      | VBOX_GUESTCTRL_GF_0_SHUTDOWN;
+                                      | VBOX_GUESTCTRL_GF_0_SHUTDOWN
+                                      | VBOX_GUESTCTRL_GF_0_MOUNT_POINTS_ENUM;
         rc = VbglR3GuestCtrlReportFeatures(g_idControlSvcClient, fGuestFeatures, &g_fControlHostFeatures0);
         if (RT_SUCCESS(rc))
             VGSvcVerbose(3, "Host features: %#RX64\n", g_fControlHostFeatures0);
         else
-            VGSvcVerbose(1, "Warning! Feature reporing failed: %Rrc\n", rc);
+            VGSvcVerbose(1, "Warning! Feature reporting failed: %Rrc\n", rc);
 
         return VINF_SUCCESS;
     }

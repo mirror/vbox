@@ -831,6 +831,9 @@ enum GUEST_FILE_SEEKTYPE
 #define VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS         RT_BIT_64(4)
 /** Supports specifying the working directory for run / start. */
 #define VBOX_GUESTCTRL_GF_0_PROCESS_CWD             RT_BIT_64(5)
+/** Supports enumerating the guest mount points / drive letters.
+ *  @since 7.1 */
+#define VBOX_GUESTCTRL_GF_0_MOUNT_POINTS_ENUM       RT_BIT_64(6)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE             RT_BIT_64(63)
@@ -1687,4 +1690,3 @@ typedef struct HGCMReplyFsNotify
 } /* namespace guestControl */
 
 #endif /* !VBOX_INCLUDED_HostServices_GuestControlSvc_h */
-
