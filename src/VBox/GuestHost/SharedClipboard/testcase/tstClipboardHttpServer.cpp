@@ -32,9 +32,16 @@
 #include <iprt/http.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/rand.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/utf16.h>
+
+#ifdef TESTCASE_WITH_X11
+#include <VBox/GuestHost/SharedClipboard-x11.h>
+#endif
 
 #include <VBox/GuestHost/SharedClipboard-transfers.h>
 
@@ -47,8 +54,12 @@ static unsigned     g_uVerbosity = 0;
 static RTMSINTERVAL g_msRuntime     = RT_MS_5MIN;
 /** Shutdown indicator. */
 static bool         g_fShutdown     = false;
-/** Manual mode indicator; allows manual testing w/ other HTTP clients. */
+/** Manual mode indicator; allows manual (i.e. interactive) testing w/ other HTTP clients or desktop environments. */
 static bool         g_fManual       = false;
+#ifdef TESTCASE_WITH_X11
+ /** Puts the URL on the X11 clipboard. Only works with manual mode. */
+ static bool        g_fX11          = false;
+#endif
 
 /** Test files to handle + download.
  *  All files reside in a common temporary directory. */
@@ -75,24 +86,6 @@ static struct
     "VirtualBox가 크게 성공했습니다!",         "VirtualBox%EA%B0%80%20%ED%81%AC%EA%B2%8C%20%EC%84%B1%EA%B3%B5%ED%96%88%EC%8A%B5%EB%8B%88%EB%8B%A4%21", 42, VINF_SUCCESS
 };
 
-/* Worker thread for the HTTP server. */
-static DECLCALLBACK(int) tstSrvWorker(RTTHREAD hThread, void *pvUser)
-{
-    RT_NOREF(pvUser);
-
-    int rc = RTThreadUserSignal(hThread);
-    AssertRCReturn(rc, rc);
-
-    uint64_t const msStartTS = RTTimeMilliTS();
-    while (RTTimeMilliTS() - msStartTS < g_msRuntime)
-    {
-        if (g_fShutdown)
-            break;
-        RTThreadSleep(100); /* Wait a little. */
-    }
-
-    return RTTimeMilliTS() - msStartTS <= g_msRuntime ? VINF_SUCCESS : VERR_TIMEOUT;
-}
 
 static void tstCreateTransferSingle(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx, PSHCLHTTPSERVER pSrv,
                                     const char *pszFile, PSHCLTXPROVIDER pProvider)
@@ -106,6 +99,94 @@ static void tstCreateTransferSingle(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx,
     RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(pSrv, pTx));
 }
 
+/**
+ * Run a manual (i.e. interacive) test.
+ *
+ * This will keep the HTTP server running, so that the file(s) can be downloaded manually.
+ */
+static void tstManual(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx, PSHCLHTTPSERVER pHttpSrv)
+{
+    char *pszUrls = NULL;
+
+    uint32_t const cTx = ShClTransferCtxGetTotalTransfers(pTransferCtx);
+    if (!cTx)
+    {
+        RTTestFailed(hTest, "Must specify at least one file to serve!\n");
+        return;
+    }
+
+    for (uint32_t i = 0; i < cTx; i++)
+    {
+        PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(pTransferCtx, i);
+
+        uint16_t const uId    = ShClTransferGetID(pTx);
+        char          *pszUrl = ShClTransferHttpServerGetUrlA(pHttpSrv, uId, 0 /* Entry index */);
+        RTTEST_CHECK(hTest, pszUrl != NULL);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "URL #%02RU32: %s\n", i, pszUrl);
+        RTStrAPrintf(&pszUrls, "%s", pszUrl);
+        if (i > 0)
+            RTStrAPrintf(&pszUrls, "\n");
+        RTStrFree(pszUrl);
+    }
+
+#ifdef TESTCASE_WITH_X11
+    SHCLX11CTX      X11Ctx;
+    SHCLEVENTSOURCE EventSource;
+
+    if (g_fX11)
+    {
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Copied URLs to X11 clipboard\n");
+
+        SHCLCALLBACKS Callbacks;
+        RT_ZERO(Callbacks);
+        RTTEST_CHECK_RC_OK(hTest, ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, false /* fHeadless */));
+        RTTEST_CHECK_RC_OK(hTest, ShClX11ThreadStart(&X11Ctx, false /* fGrab */));
+        RTTEST_CHECK_RC_OK(hTest, ShClEventSourceCreate(&EventSource, 0));
+        RTTEST_CHECK_RC_OK(hTest, ShClX11WriteDataToX11(&X11Ctx, &EventSource, RT_MS_30SEC,
+                                                        VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_URI_LIST,
+                                                        pszUrls, RTStrNLen(pszUrls, RTSTR_MAX), NULL /* pcbWritten */));
+    }
+#endif
+
+    RTThreadSleep(g_msRuntime);
+
+#ifdef TESTCASE_WITH_X11
+    if (g_fX11)
+    {
+        RTTEST_CHECK_RC_OK(hTest, ShClEventSourceDestroy(&EventSource));
+        ShClX11ThreadStop(&X11Ctx);
+        ShClX11Destroy(&X11Ctx);
+    }
+#endif
+
+    RTStrFree(pszUrls);
+}
+
+static RTEXITCODE tstUsage(PRTSTREAM pStrm)
+{
+    RTStrmPrintf(pStrm, "Tests for the clipboard HTTP server.\n\n");
+
+    RTStrmPrintf(pStrm, "Usage: %s [options] [file 1] ... [file N]\n", RTProcShortName());
+    RTStrmPrintf(pStrm,
+                 "\n"
+                 "Options:\n"
+                 "  -h, -?, --help\n"
+                 "    Displays help.\n"
+                 "  -m, --manual\n"
+                 "    Enables manual (i.e. interactive) testing the HTTP server.\n"
+                 "  -p, --port\n"
+                 "    Sets the HTTP server port.\n"
+                 "  -v, --verbose\n"
+                 "    Increases verbosity.\n"
+#ifdef TESTCASE_WITH_X11
+                 "  -X, --x11\n"
+                 "    Copies the HTTP URLs to the X11 clipboard(s). Implies manual testing.\n"
+#endif
+                 );
+
+    return RTEXITCODE_SUCCESS;
+}
+
 int main(int argc, char *argv[])
 {
     /*
@@ -115,17 +196,18 @@ int main(int argc, char *argv[])
     RTEXITCODE rcExit = RTTestInitAndCreate("tstClipboardHttpServer", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
-    RTTestBanner(hTest);
 
     /*
      * Process options.
      */
     static const RTGETOPTDEF aOpts[] =
     {
-        { "--port",             'p',               RTGETOPT_REQ_UINT16 },
+        { "--help",             'h',               RTGETOPT_REQ_NOTHING },
         { "--manual",           'm',               RTGETOPT_REQ_NOTHING },
         { "--max-time",         't',               RTGETOPT_REQ_UINT32 },
-        { "--verbose",          'v',               RTGETOPT_REQ_NOTHING }
+        { "--port",             'p',               RTGETOPT_REQ_UINT16 },
+        { "--verbose",          'v',               RTGETOPT_REQ_NOTHING },
+        { "--x11",              'X',               RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -140,6 +222,9 @@ int main(int argc, char *argv[])
     {
         switch (ch)
         {
+            case 'h':
+                return tstUsage(g_pStdErr);
+
             case 'p':
                 uPort = ValueUnion.u16;
                 break;
@@ -156,6 +241,11 @@ int main(int argc, char *argv[])
                 g_uVerbosity++;
                 break;
 
+#ifdef TESTCASE_WITH_X11
+            case 'X':
+                g_fX11 = true;
+                break;
+#endif
             case VINF_GETOPT_NOT_OPTION:
                 continue;
 
@@ -163,6 +253,14 @@ int main(int argc, char *argv[])
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
+
+    RTTestBanner(hTest);
+
+#ifdef TESTCASE_WITH_X11
+    /* Enable manual mode if X11 was selected. Pure convenience. */
+    if (g_fX11 && !g_fManual)
+        g_fManual = true;
+#endif
 
     /*
      * Configure release logging to go to stdout.
@@ -226,7 +324,7 @@ int main(int argc, char *argv[])
     char *pszSrvAddr = ShClTransferHttpServerGetAddressA(&HttpSrv);
     RTTEST_CHECK(hTest, pszSrvAddr != NULL);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "HTTP server running: %s (for %RU32ms) ...\n", pszSrvAddr, g_msRuntime);
-    RTMemFree(pszSrvAddr);
+    RTStrFree(pszSrvAddr);
     pszSrvAddr = NULL;
 
     SHCLTRANSFERCTX TxCtx;
@@ -306,82 +404,54 @@ int main(int argc, char *argv[])
     /* Don't bail out here to prevent cleaning up after ourselves on failure. */
     if (RTTestErrorCount(hTest) == 0)
     {
-        /* Create  thread for our HTTP server. */
-        RTTHREAD hThread;
-        rc = RTThreadCreate(&hThread, tstSrvWorker, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "tstClpHttpSrv");
-        RTTEST_CHECK_RC_OK(hTest, rc);
-        if (RT_SUCCESS(rc))
+        if (g_fManual)
         {
-            rc = RTThreadUserWait(hThread, RT_MS_30SEC);
-            RTTEST_CHECK_RC_OK(hTest, rc);
+            tstManual(hTest, &TxCtx, &HttpSrv);
         }
-
-        if (RT_SUCCESS(rc))
+        else /* Download all files to a temp file using our HTTP client. */
         {
-            if (g_fManual)
+            RTHTTP hClient;
+            rc = RTHttpCreate(&hClient);
+            if (RT_SUCCESS(rc))
             {
-                uint32_t const cTx = ShClTransferCtxGetTotalTransfers(&TxCtx);
-                for (uint32_t i = 0; i < cTx; i++)
+                char szURL[RTPATH_MAX];
+                for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
                 {
                     PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
+                    char *pszUrlBase  = ShClTransferHttpServerGetUrlA(&HttpSrv, ShClTransferGetID(pTx), UINT64_MAX);
 
-                    uint16_t const uID    = ShClTransferGetID(pTx);
-                    char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
-                    RTTEST_CHECK(hTest, pszURL != NULL);
-                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "URL #%02RU32: %s\n", i, pszURL);
-                    RTStrFree(pszURL);
-                }
-            }
-            else /* Download all files to a temp file using our HTTP client. */
-            {
-                RTHTTP hClient;
-                rc = RTHttpCreate(&hClient);
-                if (RT_SUCCESS(rc))
-                {
-                    char szURL[RTPATH_MAX];
-                    for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
-                    {
-                        PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
-                        char *pszUrlBase  = ShClTransferHttpServerGetUrlA(&HttpSrv, ShClTransferGetID(pTx), UINT64_MAX);
+                    RTTEST_CHECK(hTest, RTStrPrintf2(szURL, sizeof(szURL), "%s/%s", pszUrlBase, g_aTests[i].pszUrl));
 
-                        RTTEST_CHECK(hTest, RTStrPrintf2(szURL, sizeof(szURL), "%s/%s", pszUrlBase, g_aTests[i].pszUrl));
+                    RTStrFree(pszUrlBase);
 
-                        RTStrFree(pszUrlBase);
+                    /* Download to destination file. */
+                    char szDstFile[RTPATH_MAX];
+                    RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
+                    RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
+                    RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
+                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szDstFile);
+                    RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szDstFile));
 
-                        /* Download to destination file. */
-                        char szDstFile[RTPATH_MAX];
-                        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
-                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
-                        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
-                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szDstFile);
-                        RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szDstFile));
+                    /* Compare files. */
+                    char szSrcFile[RTPATH_MAX];
+                    RTTEST_CHECK      (hTest, RTStrPrintf(szSrcFile, sizeof(szSrcFile),  szTempDir));
+                    RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szSrcFile, sizeof(szSrcFile), g_aTests[i].pszFileName));
+                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Comparing files '%s' vs. '%s'\n", szSrcFile, szDstFile);
+                    RTTEST_CHECK_RC_OK(hTest, RTFileCompare(szSrcFile, szDstFile));
 
-                        /* Compare files. */
-                        char szSrcFile[RTPATH_MAX];
-                        RTTEST_CHECK      (hTest, RTStrPrintf(szSrcFile, sizeof(szSrcFile),  szTempDir));
-                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szSrcFile, sizeof(szSrcFile), g_aTests[i].pszFileName));
-                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Comparing files '%s' vs. '%s'\n", szSrcFile, szDstFile);
-                        RTTEST_CHECK_RC_OK(hTest, RTFileCompare(szSrcFile, szDstFile));
-
-                        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
-                    }
-
-                    RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
+                    RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
                 }
 
-                /* This is supposed to run unattended, so shutdown automatically. */
-                ASMAtomicXchgBool(&g_fShutdown, true); /* Set shutdown indicator. */
+                RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
             }
+
+            /* This is supposed to run unattended, so shutdown automatically. */
+            ASMAtomicXchgBool(&g_fShutdown, true); /* Set shutdown indicator. */
         }
-
-        int rcThread;
-        RTTEST_CHECK_RC_OK(hTest, RTThreadWait(hThread, g_msRuntime, &rcThread));
-        RTTEST_CHECK_RC_OK(hTest, rcThread);
-
-        RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerDestroy(&HttpSrv));
-        ShClTransferCtxDestroy(&TxCtx);
     }
+
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerDestroy(&HttpSrv));
+    ShClTransferCtxDestroy(&TxCtx);
 
     /*
      * Cleanup
@@ -400,4 +470,3 @@ int main(int argc, char *argv[])
      */
     return RTTestSummaryAndDestroy(hTest);
 }
-
