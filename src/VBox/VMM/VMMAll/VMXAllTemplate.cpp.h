@@ -1038,6 +1038,7 @@ static int vmxHCSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVmcs
     {
         pVmcsInfoFrom = &pVCpu->hmr0.s.vmx.VmcsInfo;
         pVmcsInfoTo   = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
+        Assert(!pVCpu->hm.s.vmx.fMergedNstGstCtls);
     }
     else
     {
@@ -1427,12 +1428,20 @@ static int vmxHCCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, boo
                         VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_XCPT_BITMAP,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
-    rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_CTRL_TSC_OFFSET_FULL, &u64Val);
-    AssertRC(rc);
-    AssertMsgReturnStmt(pVmcsInfo->u64TscOffset == u64Val,
-                        ("%s TSC offset mismatch: Cache=%#RX64 VMCS=%#RX64\n", pcszVmcs, pVmcsInfo->u64TscOffset, u64Val),
-                        VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_TSC_OFFSET,
-                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+    /*
+     * The TSC offset will only be used when RDTSC is not intercepted.
+     * Since we don't actively clear it while switching between intercepting or not,
+     * the value here could be stale.
+     */
+    if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
+    {
+        rc = VMX_VMCS_READ_64(pVCpu, VMX_VMCS64_CTRL_TSC_OFFSET_FULL, &u64Val);
+        AssertRC(rc);
+        AssertMsgReturnStmt(pVmcsInfo->u64TscOffset == u64Val,
+                            ("%s TSC offset mismatch: Cache=%#RX64 VMCS=%#RX64\n", pcszVmcs, pVmcsInfo->u64TscOffset, u64Val),
+                            VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_TSC_OFFSET,
+                            VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+    }
 
     NOREF(pcszVmcs);
     return VINF_SUCCESS;
@@ -7766,6 +7775,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitIntWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    Assert(!pVmxTransient->fIsNestedGuest);
     vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
 
     /* Evaluate and deliver pending events and resume guest execution. */
