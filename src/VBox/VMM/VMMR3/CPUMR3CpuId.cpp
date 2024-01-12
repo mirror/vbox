@@ -3540,13 +3540,13 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         if (pVM->cpum.s.GuestFeatures.fMtrr)
         {
             /** @cfgm{/CPUM/MtrrWrite, boolean, true}
-             * Whether to enable MTRR read+write support. When enabled, this automatically
-             * enables MTRR read support as well. */
-            bool fEnableMtrrWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrWrite", &fEnableMtrrWrite,
+             * Whether to enable MTRR read-write support. This overrides the MTRR read-only CFGM
+             * setting. */
+            bool fEnableMtrrReadWrite;
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadWrite", &fEnableMtrrReadWrite,
                                     true /** @todo true - 2023-12-12 bird: does not work yet, so disabled it */);
             AssertRCReturn(rc, rc);
-            if (fEnableMtrrWrite)
+            if (fEnableMtrrReadWrite)
             {
                 pVM->cpum.s.fMtrrRead  = true;
                 pVM->cpum.s.fMtrrWrite = true;
@@ -3554,13 +3554,13 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             }
             else
             {
-                /** @cfgm{/CPUM/MtrrRead, boolean, false}
-                 * Whether to enable MTRR read support and to initialize mapping of guest memory via
-                 * MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and ignores
-                 * writes. Some guests like GNU/Linux recognize a virtual system when MTRRs are left
-                 * blank but some guests may expect their RAM to be mapped via MTRRs similar to
-                 * real hardware. */
-                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrRead", &pVM->cpum.s.fMtrrRead, false);
+                /** @cfgm{/CPUM/MtrrReadOnly, boolean, false}
+                 * Whether to enable MTRR read-only support and to initialize mapping of guest
+                 * memory via MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and
+                 * ignores writes. Some guests like GNU/Linux recognize a virtual system when MTRRs
+                 * are left blank but some guests may expect their RAM to be mapped via MTRRs
+                 * similar to real hardware. */
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadOnly", &pVM->cpum.s.fMtrrRead, false);
                 AssertRCReturn(rc, rc);
                 LogRel(("CPUM: Enabled MTRR read-only support\n"));
             }
@@ -3572,7 +3572,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
                 /** @cfgm{/CPUM/MtrrVarCountIsVirtual, boolean, true}
                  * When enabled, the number of variable-range MTRRs are virtualized. When disabled,
                  * the number of variable-range MTRRs are derived from the CPU profile. Unless
-                 * guests have problems with the virtualized variable-range MTRR count, it is
+                 * guests have problems with a virtualized number of variable-range MTRRs, it is
                  * recommended to keep this enabled so that there are sufficient MTRRs to fully
                  * describe all regions of the guest RAM. */
                 bool fMtrrVarCountIsVirt;
