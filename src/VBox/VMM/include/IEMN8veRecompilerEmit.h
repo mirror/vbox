@@ -724,7 +724,7 @@ iemNativeEmitStoreGprToVCpuU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t
     RT_NOREF(iGprTmp);
 
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitGprByVCpuLdStEx(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t), iGprTmp);
+    off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t), iGprTmp);
 
 #else
 # error "port me"
