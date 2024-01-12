@@ -453,7 +453,7 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pv
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 8); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 8); RT_NOREF(cbNeedle);
     const uint64_t uNeedle = *(const uint64_t *)pbNeedle;
     uint64_t const *puHaystack = (uint64_t const *)pbHaystack;
     cbHaystack /= sizeof(uint64_t);
@@ -469,7 +469,7 @@ static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(uint8_t cons
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 4); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 4); RT_NOREF(cbNeedle);
     const uint32_t uNeedle = *(const uint32_t *)pbNeedle;
     uint32_t const *puHaystack = (uint32_t const *)pbHaystack;
     cbHaystack /= sizeof(uint32_t);
@@ -485,7 +485,7 @@ static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(uint8_t cons
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 2); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 2); RT_NOREF(cbNeedle);
     const uint16_t uNeedle = *(const uint16_t *)pbNeedle;
     uint16_t const *puHaystack = (uint16_t const *)pbHaystack;
     cbHaystack /= sizeof(uint16_t);
@@ -500,7 +500,7 @@ static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(uint8_t cons
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 1); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 1); RT_NOREF(cbNeedle);
     const uint8_t bNeedle = *pbNeedle;
     while (cbHaystack-- > 0)
         if (*pbHaystack != bNeedle)
@@ -514,7 +514,7 @@ static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(uint8_t cons
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 4); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 4); RT_NOREF(cbNeedle);
     uint32_t const uNeedle = *(uint32_t const *)pbNeedle;
     while (cbHaystack >= sizeof(uint32_t))
     {
@@ -538,7 +538,7 @@ static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(uint8_t cons
 static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
                                                                     uint8_t const *pbNeedle, size_t cbNeedle)
 {
-    Assert(cbNeedle == 8); RT_NOREF(cbNeedle);
+    Assert(cbNeedle >= 8); RT_NOREF(cbNeedle);
     uint64_t const uNeedle = *(uint64_t const *)pbNeedle;
     while (cbHaystack >= sizeof(uint64_t))
     {
