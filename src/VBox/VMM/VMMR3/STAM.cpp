@@ -1885,7 +1885,7 @@ static PSTAMDESC stamR3LookupFindByPrefixRange(PSTAMLOOKUP pRoot, const char *pc
                     {
                         iDiff = memcmp(pCur->szName, pchPrefix, pCur->cch);
                         if (!iDiff)
-                            iDiff = 1;
+                            iDiff = -1;
                     }
                     if (iDiff > 0)
                     {
