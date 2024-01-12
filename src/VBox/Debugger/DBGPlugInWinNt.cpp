@@ -1292,8 +1292,8 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
 
     union
     {
-        uint8_t             au8[0x2000];
-        RTUTF16             wsz[0x2000/2];
+        uint8_t             au8[GUEST_PAGE_SIZE * 2];
+        RTUTF16             wsz[GUEST_PAGE_SIZE];
         NTKUSERSHAREDDATA   UserSharedData;
     }               u;
     DBGFADDRESS     Addr;
@@ -1303,7 +1303,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
      * Figure the NT version.
      */
     pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, pThis->f32Bit ? NTKUSERSHAREDDATA_WINNT32 : NTKUSERSHAREDDATA_WINNT64);
-    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &u, PAGE_SIZE);
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &u, GUEST_PAGE_SIZE);
     if (RT_SUCCESS(rc))
     {
         pThis->NtProductType  = u.UserSharedData.ProductTypeIsValid && u.UserSharedData.NtProductType <= kNtProductType_Server
@@ -1514,7 +1514,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
     DBGFADDRESS KernelAddr;
     for (pVMM->pfnDBGFR3AddrFromFlat(pUVM, &KernelAddr, uKrnlStart);
          KernelAddr.FlatPtr < uKrnlEnd;
-         KernelAddr.FlatPtr += PAGE_SIZE)
+         KernelAddr.FlatPtr += GUEST_PAGE_SIZE)
     {
         bool fNt31 = false;
         DBGFADDRESS const RetryAddress = KernelAddr;
@@ -1531,7 +1531,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
         }
         if (RT_FAILURE(rc))
             break;
-        pVMM->pfnDBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
+        pVMM->pfnDBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & GUEST_PAGE_OFFSET_MASK);
 
         /* MZ + PE header. */
         rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, &u, sizeof(u));

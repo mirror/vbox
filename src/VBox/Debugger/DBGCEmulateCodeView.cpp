@@ -3211,7 +3211,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
                          | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
         uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
         if (pDesc->Gen.u1Granularity)
-            cbLimit <<= PAGE_SHIFT;
+            cbLimit <<= GUEST_PAGE_SHIFT;
 
         rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
                                 iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
@@ -3265,7 +3265,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
                                  | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
                 uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
                 if (pDesc->Gen.u1Granularity)
-                    cbLimit <<= PAGE_SHIFT;
+                    cbLimit <<= GUEST_PAGE_SHIFT;
 
                 rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
@@ -3975,8 +3975,8 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         VarDefault = paArgs[0];
         if (fPAE)
             return DBGCCmdHlpPrintf(pCmdHlp, "PDE indexing is only implemented for 32-bit paging.\n");
-        if (VarDefault.u.u64Number >= PAGE_SIZE / cbEntry)
-            return DBGCCmdHlpPrintf(pCmdHlp, "PDE index is out of range [0..%d].\n", PAGE_SIZE / cbEntry - 1);
+        if (VarDefault.u.u64Number >= GUEST_PAGE_SIZE / cbEntry)
+            return DBGCCmdHlpPrintf(pCmdHlp, "PDE index is out of range [0..%d].\n", GUEST_PAGE_SIZE / cbEntry - 1);
         VarDefault.u.u64Number <<= X86_PD_SHIFT;
         VarDefault.enmType = DBGCVAR_TYPE_GC_FLAT;
         paArgs = &VarDefault;
@@ -4005,7 +4005,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             case DBGCVAR_RANGE_ELEMENTS:    cEntries = VarPDEAddr.u64Range; break;
             default:                        cEntries = 10; break;
         }
-        cEntriesMax = PAGE_SIZE / cbEntry;
+        cEntriesMax = GUEST_PAGE_SIZE / cbEntry;
     }
     else
     {
@@ -4014,7 +4014,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
          */
         switch (paArgs[0].enmRangeType)
         {
-            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / PAGE_SIZE; break;
+            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / GUEST_PAGE_SIZE; break;
             case DBGCVAR_RANGE_ELEMENTS:    cEntries = paArgs[0].u64Range; break;
             default:                        cEntries = 10; break;
         }
@@ -4082,7 +4082,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             VarPDEAddr = VarCur;
             VarPDEAddr.u.u64Number += iEntry * sizeof(X86PDE);
         }
-        cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
+        cEntriesMax = (GUEST_PAGE_SIZE - iEntry) / cbEntry;
     }
 
     /* adjust cEntries */
@@ -4219,7 +4219,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to convert %DV to a flat address: %Rrc", pRange, rc);
 
     uint64_t cbRange;
-    rc = DBGCCmdHlpVarGetRange(pCmdHlp, pRange, PAGE_SIZE, PAGE_SIZE * 8, &cbRange);
+    rc = DBGCCmdHlpVarGetRange(pCmdHlp, pRange, GUEST_PAGE_SIZE, GUEST_PAGE_SIZE * 8, &cbRange);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to obtain the range of %DV: %Rrc", pRange, rc);
 
@@ -4352,7 +4352,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             case DBGCVAR_RANGE_ELEMENTS:    cEntries = VarPTEAddr.u64Range; break;
             default:                        cEntries = 10; break;
         }
-        cEntriesMax = PAGE_SIZE / cbEntry;
+        cEntriesMax = GUEST_PAGE_SIZE / cbEntry;
     }
     else
     {
@@ -4361,7 +4361,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
          */
         switch (paArgs[0].enmRangeType)
         {
-            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / PAGE_SIZE; break;
+            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / GUEST_PAGE_SIZE; break;
             case DBGCVAR_RANGE_ELEMENTS:    cEntries = paArgs[0].u64Range; break;
             default:                        cEntries = 10; break;
         }
@@ -4377,7 +4377,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             VarGCPtr.u.GCFlat = (uintptr_t)VarGCPtr.u.pvHCFlat;
             VarGCPtr.enmType = DBGCVAR_TYPE_GC_FLAT;
         }
-        VarGCPtr.u.GCFlat &= ~(RTGCPTR)PAGE_OFFSET_MASK;
+        VarGCPtr.u.GCFlat &= ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
 
         /*
          * Do the paging walk until we get to the page table.
@@ -4450,7 +4450,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             VarPTEAddr.u.u64Number = Pde.u & X86_PDE_PG_MASK;
             VarPTEAddr.u.u64Number += iEntry * sizeof(X86PTE);
         }
-        cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
+        cEntriesMax = (GUEST_PAGE_SIZE - iEntry) / cbEntry;
     }
 
     /* adjust cEntries */
@@ -4510,7 +4510,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
          */
         VarPTEAddr.u.u64Number += cbEntry;
         if (iEntry != ~0U)
-            VarGCPtr.u.GCFlat += PAGE_SIZE;
+            VarGCPtr.u.GCFlat += GUEST_PAGE_SIZE;
     } while (cEntries-- > 0);
 
     return VINF_SUCCESS;

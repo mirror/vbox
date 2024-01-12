@@ -27,3 +27,10 @@
 
 /*.h: --guard-relative-to-dir . --guard-prefix DEBUGGER_INCLUDED_SRC_
 
+# Forbid PAGE_SIZE, PAGE_SIZE and PAGE_OFFSET_MASK w/o GUEST_ or HOST_ prefix.
+/*.cpp: --only-guest-host-page
+/*.h:   --only-guest-host-page
+
+# Forbid ASMMemIsZeroPage and ASMMemZeroPage.
+/*.cpp: --no-ASMMemPage-use
+/*.h:   --no-ASMMemPage-use

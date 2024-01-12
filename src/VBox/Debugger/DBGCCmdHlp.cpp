@@ -413,13 +413,13 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, void *pvBuffer, siz
         /*
          * Calc read size.
          */
-        size_t cb = RT_MIN(PAGE_SIZE, cbLeft);
+        size_t cb = RT_MIN(GUEST_PAGE_SIZE, cbLeft);
         switch (pVarPointer->enmType)
         {
-            case DBGCVAR_TYPE_GC_FLAT: cb = RT_MIN(cb, PAGE_SIZE - (Var.u.GCFlat & PAGE_OFFSET_MASK)); break;
-            case DBGCVAR_TYPE_GC_PHYS: cb = RT_MIN(cb, PAGE_SIZE - (Var.u.GCPhys & PAGE_OFFSET_MASK)); break;
-            case DBGCVAR_TYPE_HC_FLAT: cb = RT_MIN(cb, PAGE_SIZE - ((uintptr_t)Var.u.pvHCFlat & PAGE_OFFSET_MASK)); break;
-            case DBGCVAR_TYPE_HC_PHYS: cb = RT_MIN(cb, PAGE_SIZE - ((size_t)Var.u.HCPhys & PAGE_OFFSET_MASK)); break; /* size_t: MSC has braindead loss of data warnings! */
+            case DBGCVAR_TYPE_GC_FLAT: cb = RT_MIN(cb, GUEST_PAGE_SIZE - (Var.u.GCFlat & GUEST_PAGE_OFFSET_MASK)); break;
+            case DBGCVAR_TYPE_GC_PHYS: cb = RT_MIN(cb, GUEST_PAGE_SIZE - (Var.u.GCPhys & GUEST_PAGE_OFFSET_MASK)); break;
+            case DBGCVAR_TYPE_HC_FLAT: cb = RT_MIN(cb, GUEST_PAGE_SIZE - ((uintptr_t)Var.u.pvHCFlat & GUEST_PAGE_OFFSET_MASK)); break;
+            case DBGCVAR_TYPE_HC_PHYS: cb = RT_MIN(cb, GUEST_PAGE_SIZE - ((size_t)Var.u.HCPhys & GUEST_PAGE_OFFSET_MASK)); break; /* size_t: MSC has braindead loss of data warnings! */
             default: break;
         }
 
@@ -603,8 +603,8 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, const void *pvBuff
                 }
 
                 /* calc size. */
-                size_t cbChunk = PAGE_SIZE;
-                cbChunk -= (uintptr_t)Var.u.pvHCFlat & PAGE_OFFSET_MASK;
+                size_t cbChunk = GUEST_PAGE_SIZE;
+                cbChunk -= (uintptr_t)Var.u.pvHCFlat & GUEST_PAGE_OFFSET_MASK;
                 if (cbChunk > cbWrite)
                     cbChunk = cbWrite;
 
