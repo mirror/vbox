@@ -2324,6 +2324,7 @@ ifndef VBOX_BLD_PYTHON
  else ifndef VBOX_WITH_PYTHON2_PREFERENCE
   VBOX_BLD_PYTHON := $(firstword \
   		$(which python3$(HOSTSUFF_EXE)) \
+  		$(which python3.11$(HOSTSUFF_EXE)) \
   		$(which python3.10$(HOSTSUFF_EXE)) \
   		$(which python3.9$(HOSTSUFF_EXE)) \
   		$(which python3.8$(HOSTSUFF_EXE)) \
