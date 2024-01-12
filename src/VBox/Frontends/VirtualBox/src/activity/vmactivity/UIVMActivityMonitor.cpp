@@ -69,9 +69,8 @@ const ULONG g_iPeriod = 1;
 /** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
 const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
-
 const int g_iBackgroundTint = 104;
-
+const quint64 uInvalidValueSentinel = ~0U;
 
 /*********************************************************************************************************************************
 *   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
@@ -522,21 +521,21 @@ bool UIChart::event(QEvent *pEvent)
     else if (pEvent->type() == QEvent::ToolTip)
     {
         QHelpEvent *pToolTipEvent = static_cast<QHelpEvent *>(pEvent);
-        // if (m_iDataIndexUnderCursor == -1)
-        //     QToolTip::hideText();
-        // else
-        //     QToolTip::showText(pToolTipEvent->globalPos(), toolTipText(), this, m_lineChartRect);
         if (m_pMouseOverLabel)
         {
-            if (m_iDataIndexUnderCursor == -1)
+            if (m_iDataIndexUnderCursor < 0)
                 m_pMouseOverLabel->setVisible(false);
             else
             {
-                m_pMouseOverLabel->setText(toolTipText());
-
-                //m_pMouseOverLabel->resize(m_pMouseOverLabel->fontMetrics().size(Qt::TextSingleLine, m_pMouseOverLabel->text()));
-                m_pMouseOverLabel->move(QPoint(pToolTipEvent->pos().x(), pToolTipEvent->pos().y() - m_pMouseOverLabel->height()));
-                m_pMouseOverLabel->setVisible(true);
+                QString strToolTip = toolTipText();
+                if (!strToolTip.isEmpty())
+                {
+                    m_pMouseOverLabel->setText(strToolTip);
+                    m_pMouseOverLabel->move(QPoint(pToolTipEvent->pos().x(), pToolTipEvent->pos().y() - m_pMouseOverLabel->height()));
+                    m_pMouseOverLabel->setVisible(true);
+                }
+                else
+                    m_pMouseOverLabel->setVisible(false);
             }
         }
 
@@ -675,6 +674,9 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             for (int i = 0; i < data->size() - 1; ++i)
             {
                 int j = i + 1;
+                if (data->at(i) == uInvalidValueSentinel || data->at(j) == uInvalidValueSentinel)
+                    continue;
+
                 float fHeight = fH * data->at(i);
                 float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
                 float fHeight2 = fH * data->at(j);
@@ -686,6 +688,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(m_dataSeriesColor[k], fPointSize));
             for (int i = 0; i < data->size(); ++i)
             {
+                if (data->at(i) == uInvalidValueSentinel)
+                    continue;
                 float fHeight = fH * data->at(i);
                 float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
                 painter.drawPoint(fX, height() - (fHeight + m_iMarginBottom));
@@ -725,6 +729,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
 QString UIChart::YAxisValueLabel(quint64 iValue) const
 {
+    if (iValue == uInvalidValueSentinel)
+        return QString();
     if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
         return QString::number(iValue).append("%");
     if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
@@ -837,38 +843,35 @@ int UIChart::maxDataSize() const
 
 QString UIChart::toolTipText() const
 {
-    if (m_iDataIndexUnderCursor == -1)
+    if (m_iDataIndexUnderCursor < 0)
         return QString();
 
     if (!m_pMetric->data(0) ||  m_pMetric->data(0)->isEmpty())
         return QString();
     QString strToolTip;
-    if (m_pMetric->data(1) &&  !m_pMetric->data(1)->isEmpty())
+    QString strData0;
+    if (m_iDataIndexUnderCursor < m_pMetric->data(0)->size())
+        strData0 = YAxisValueLabel(m_pMetric->data(0)->at(m_iDataIndexUnderCursor));
+    QString strData1;
+    if (m_iDataIndexUnderCursor < m_pMetric->data(1)->size())
+        strData1 = YAxisValueLabel(m_pMetric->data(1)->at(m_iDataIndexUnderCursor));
+    if (!strData0.isEmpty() && !strData1.isEmpty())
     {
         strToolTip = QString("<font color=\"%1\">%2</font> / <font color=\"%3\">%4</font>")
-            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(0)->at(m_iDataIndexUnderCursor)))
-            .arg(m_dataSeriesColor[1].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(1)->at(m_iDataIndexUnderCursor)));
+            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(strData0)
+            .arg(m_dataSeriesColor[1].name(QColor::HexRgb)).arg(strData1);
     }
-    else
+    else if (!strData0.isEmpty())
     {
         strToolTip = QString("<font color=\"%1\">%2</font>")
-            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(YAxisValueLabel(m_pMetric->data(0)->at(m_iDataIndexUnderCursor)));
+            .arg(m_dataSeriesColor[0].name(QColor::HexRgb)).arg(strData0);
+    }
+    else if (!strData1.isEmpty())
+    {
+        strToolTip = QString("<font color=\"%1\">%2</font>")
+            .arg(m_dataSeriesColor[1].name(QColor::HexRgb)).arg(strData1);
     }
     return strToolTip;
-    //m_dataSeriesColor[iDataIndex]);
-    // return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
-    // QColor dataSeriesColor(int iDataSeriesIndex, int iDark = 0);
-    //QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
-
-    // QStringList toolTipStrings;
-    // for (int k = 0; k < DATA_SERIES_SIZE; ++k)
-    // {
-    //     const QQueue<quint64> *data = m_pMetric->data(k);
-    //     if (data && data->size() > 0 && m_iDataIndexUnderCursor < data->size())
-    //         toolTipStrings << YAxisValueLabel(data->at(m_iDataIndexUnderCursor));
-    // }
-    // return toolTipStrings.join(" / ");
-    //QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
@@ -1024,23 +1027,27 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
+
     m_data[iDataSeriesIndex].enqueue(iData);
-    if (m_fAutoUpdateMaximum)
-        m_iMaximum = qMax(m_iMaximum, iData);
 
     /* dequeue if needed and update the maximum value: */
     if (m_data[iDataSeriesIndex].size() > m_iMaximumQueueSize)
-    {
-        bool fSearchMax = false;
-        /* Check if the dequeued value is the Max value. In which case we will scan and find a new Max: */
-        if (m_fAutoUpdateMaximum && m_data[iDataSeriesIndex].head() >= m_iMaximum)
-            fSearchMax = true;
         m_data[iDataSeriesIndex].dequeue();
-        if (fSearchMax)
+
+    updateMax();
+}
+
+void UIMetric::updateMax()
+{
+    if (!m_fAutoUpdateMaximum)
+        return;
+    m_iMaximum = 0;
+    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+    {
+        for (int i = 0; i < m_data[k].size(); ++i)
         {
-            m_iMaximum = 0;
-            foreach (quint64 iVal, m_data[iDataSeriesIndex])
-                m_iMaximum = qMax(m_iMaximum, iVal);
+            if (m_data[k].at(i) != uInvalidValueSentinel)
+                m_iMaximum = qMax(m_iMaximum, m_data[k].at(i));
         }
     }
 }
@@ -1763,7 +1770,7 @@ void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
         m_charts[m_strVMExitMetricName]->update();
 }
 
-void UIVMActivityMonitorLocal::updateCPUChart(ULONG iExecutingPercentage, ULONG iOtherPercentage)
+void UIVMActivityMonitorLocal::updateCPUChart(quint64 iExecutingPercentage, ULONG iOtherPercentage)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
@@ -2064,39 +2071,95 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
 {
     if (data.size() != timeStamps.size())
         return;
+    /* Hack alert!! I am told that time series' interval is `guaranteed` to be 1 min. although it is clearly
+     * parametrized in OCI API. I would much prefer to have some way of deermining the said interval via our API
+     * but it looks like Christmas is over: */
+    const int iInterval = 60;
     QVector<QString> newTimeStamps;
-    foreach (const QString &strTimeStamp, timeStamps)
+    QVector<quint64> newData;
+    for (int i = 0; i < timeStamps.size() - 1; ++i)
     {
-        if (strTimeStamp.isEmpty())
+        if (timeStamps[i].isEmpty())
             continue;
-        QDateTime dateTime = QDateTime::fromString(strTimeStamp, Qt::RFC2822Date);
-        if (!dateTime.isValid())
+        QTime time = QDateTime::fromString(timeStamps[i], Qt::RFC2822Date).time();
+        if (!time.isValid())
             continue;
-        newTimeStamps << dateTime.time().toString("hh:mm");
-    }
+        newTimeStamps << time.toString("hh:mm");
+        /* It looks like in some cases OCI sends us negative values: */
+        if (data[i].toFloat() < 0)
+            newData << 0U;
+        else
+            newData << (quint64)data[i].toFloat();
 
-    for (int i = 0; i < data.size(); ++i)
+        QTime nextTime = QDateTime::fromString(timeStamps[i + 1], Qt::RFC2822Date).time();
+        while(time.secsTo(nextTime) > iInterval)
+        {
+            time = time.addSecs(iInterval);
+            newTimeStamps << time.toString("hh:mm");
+            newData << uInvalidValueSentinel;
+        }
+    }
+    if (!data.isEmpty())
+    {
+        if (!timeStamps.last().isEmpty())
+            newTimeStamps << QDateTime::fromString(timeStamps.last(), Qt::RFC2822Date).time().toString("hh:mm");
+        newData << (quint64)data.last().toFloat();
+    }
+    AssertReturnVoid(newData.size() == newTimeStamps.size());
+
+    if (enmMetricType == KMetricType_NetworksBytesIn)
+    {
+        m_networkReceiveCache.clear();
+        m_metrics[m_strNetworkMetricName].reset();
+    }
+    else if (enmMetricType == KMetricType_NetworksBytesOut)
+    {
+        m_networkTransmitCache.clear();
+        m_metrics[m_strNetworkMetricName].reset();
+    }
+    else if (enmMetricType == KMetricType_DiskBytesRead)
+    {
+        m_diskReadCache.clear();
+        m_metrics[m_strDiskIOMetricName].reset();
+    }
+    else if (enmMetricType == KMetricType_DiskBytesWritten)
+    {
+        m_diskWriteCache.clear();
+        m_metrics[m_strDiskIOMetricName].reset();
+
+    }
+    else if (enmMetricType == KMetricType_CpuUtilization)
+        m_metrics[m_strCPUMetricName].reset();
+    else if (enmMetricType == KMetricType_MemoryUtilization)
+        m_metrics[m_strRAMMetricName].reset();
+
+
+    for (int i = 0; i < newData.size(); ++i)
     {
         if (enmMetricType == KMetricType_CpuUtilization)
         {
-            float fValue = data[i].toFloat();
-            updateCPUChart((ULONG) fValue, newTimeStamps[i]);
+            updateCPUChart(newData[i], newTimeStamps[i]);
         }
         else if (enmMetricType == KMetricType_NetworksBytesOut)
-            cacheNetworkTransmit(newTimeStamps[i], (int)data[i].toFloat());
+            cacheNetworkTransmit(newTimeStamps[i], newData[i]);
         else if (enmMetricType == KMetricType_NetworksBytesIn)
-            cacheNetworkReceive(newTimeStamps[i], (int)data[i].toFloat());
+            cacheNetworkReceive(newTimeStamps[i], newData[i]);
         else if (enmMetricType == KMetricType_DiskBytesRead)
-            cacheDiskRead(newTimeStamps[i], (int)data[i].toFloat());
+            cacheDiskRead(newTimeStamps[i], newData[i]);
         else if (enmMetricType == KMetricType_DiskBytesWritten)
-            cacheDiskWrite(newTimeStamps[i], (int)data[i].toFloat());
+            cacheDiskWrite(newTimeStamps[i], newData[i]);
         else if (enmMetricType == KMetricType_MemoryUtilization)
         {
             if (m_iTotalRAM != 0)
             {
                 /* calculate used RAM amount in kb: */
-                quint64 iUsedRAM = data[i].toFloat() * (m_iTotalRAM / 100.f);
-                updateRAMChart(iUsedRAM, newTimeStamps[i]);
+                if (newData[i] != uInvalidValueSentinel)
+                {
+                    quint64 iUsedRAM = newData[i] * (m_iTotalRAM / 100.f);
+                    updateRAMChart(iUsedRAM, newTimeStamps[i]);
+                }
+                else
+                    updateRAMChart(newData[i], newTimeStamps[i]);
             }
         }
     }
@@ -2136,10 +2199,15 @@ void UIVMActivityMonitorCloud::obtainDataAndUpdate()
         /* Be a paranoid: */
         if (iDataSeriesIndex >= DATA_SERIES_SIZE)
             continue;
+#if 0
         int iDataSize = 1;
         if (metric.dataSize(iDataSeriesIndex) == 0)
             iDataSize = 60;
-
+#endif
+        /* Request the whole time series (all 60 values) at each iteration to detect time points with no
+         * data (due to stop and restart). We sanitize the data when we receive it and mark time points
+         * with no data with sentinel value: */
+        int iDataSize = 60;
         UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comMachine,
                                                                                                        enmMetricType, iDataSize);
         connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
@@ -2190,7 +2258,7 @@ void UIVMActivityMonitorCloud::start()
         m_pMachineStateUpdateTimer->start(1000 * 10);
 }
 
-void UIVMActivityMonitorCloud::updateCPUChart(ULONG iLoadPercentage, const QString &strLabel)
+void UIVMActivityMonitorCloud::updateCPUChart(quint64 iLoadPercentage, const QString &strLabel)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iLoadPercentage, strLabel);
@@ -2366,7 +2434,7 @@ void UIVMActivityMonitorCloud::resetDiskIOInfoLabel()
     }
 }
 
-void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, int iValue)
+void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, quint64 iValue)
 {
     /* Make sure this is the first time we receieve write for this time stap: */
     AssertReturnVoid(!m_diskWriteCache.contains(strTimeStamp));
@@ -2380,7 +2448,7 @@ void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, int i
         m_diskWriteCache[strTimeStamp] = iValue;
 }
 
-void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, int iValue)
+void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, quint64 iValue)
 {
     /* Make sure this is the first time we receieve read for this time stap: */
     AssertReturnVoid(!m_diskReadCache.contains(strTimeStamp));
@@ -2394,7 +2462,7 @@ void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, int iV
         m_diskReadCache[strTimeStamp] = iValue;
 }
 
-void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, int iValue)
+void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, quint64 iValue)
 {
     AssertReturnVoid(!m_networkReceiveCache.contains(strTimeStamp));
 
@@ -2408,7 +2476,7 @@ void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, 
 }
 
 
-void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp, int iValue)
+void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp, quint64 iValue)
 {
     AssertReturnVoid(!m_networkTransmitCache.contains(strTimeStamp));
 

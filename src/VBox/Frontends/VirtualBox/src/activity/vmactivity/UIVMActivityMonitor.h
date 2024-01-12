@@ -114,6 +114,7 @@ public:
     bool autoUpdateMaximum() const;
 
 private:
+    void updateMax();
 
     QString m_strName;
     QString m_strUnit;
@@ -286,7 +287,7 @@ private:
     void prepareMetrics();
     bool guestAdditionsAvailable(const char *pszMinimumVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
-    void updateCPUChart(ULONG iLoadPercentage, ULONG iOtherPercentage);
+    void updateCPUChart(quint64 iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
     void updateNetworkChart(quint64 uReceiveTotal, quint64 uTransmitTotal);
     void updateDiskIOChart(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
@@ -339,7 +340,7 @@ private:
     virtual void prepareWidgets();
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
-        void updateCPUChart(ULONG iLoadPercentage, const QString &strLabel);
+        void updateCPUChart(quint64 iLoadPercentage, const QString &strLabel);
         void updateNetworkChart(quint64 uReceive, quint64 uTransmit, const QString &strLabel);
         void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
         void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
@@ -350,11 +351,11 @@ private:
 
     /* Since we have a single UIMetric instance for disk IO we cache write and/or read until the other value arrives. Then update
      * the corresponding chart. */
-    void cacheDiskWrite(const QString &strTimeStamp, int iValue);
-    void cacheDiskRead(const QString &strTimeStamp, int iValue);
+    void cacheDiskWrite(const QString &strTimeStamp, quint64 iValue);
+    void cacheDiskRead(const QString &strTimeStamp, quint64 iValue);
 
-    void cacheNetworkReceive(const QString &strTimeStamp, int iValue);
-    void cacheNetworkTransmit(const QString &strTimeStamp, int iValue);
+    void cacheNetworkReceive(const QString &strTimeStamp, quint64 iValue);
+    void cacheNetworkTransmit(const QString &strTimeStamp, quint64 iValue);
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
