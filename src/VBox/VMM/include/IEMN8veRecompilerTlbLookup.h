@@ -159,32 +159,66 @@ typedef struct IEMNATIVEEMITTLBSTATE
         RT_NOREF_PV(a_cbMem);
     }
 
-    void freeRegsAndReleaseVars(PIEMRECOMPILERSTATE a_pReNative, uint8_t idxVarGCPtrMem = UINT8_MAX) const
+    /* Alternative constructor for the code TLB lookups where we implictly use RIP
+       variable, only a register derived from the guest RSP. */
+    IEMNATIVEEMITTLBSTATE(PIEMRECOMPILERSTATE a_pReNative, bool a_fFlat, uint32_t *a_poff)
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+        :           fSkip(false)
+#else
+        :           fSkip(true)
+#endif
+        ,    idxRegPtrHlp(UINT8_MAX)
+        ,       idxRegPtr(iemNativeRegAllocTmpForGuestReg(a_pReNative, a_poff, kIemNativeGstReg_Pc))
+        ,   idxRegSegBase(a_fFlat || fSkip
+                          ? UINT8_MAX
+                          : iemNativeRegAllocTmpForGuestReg(a_pReNative, a_poff, IEMNATIVEGSTREG_SEG_BASE(X86_SREG_CS)))
+        ,  idxRegSegLimit(/*a_fFlat || fSkip
+                          ? UINT8_MAX
+                          : iemNativeRegAllocTmpForGuestReg(a_pReNative, a_poff, IEMNATIVEGSTREG_SEG_LIMIT(X86_SREG_CS))*/
+                          UINT8_MAX)
+        , idxRegSegAttrib(UINT8_MAX)
+        ,         idxReg1(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+        ,         idxReg2(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+#if defined(RT_ARCH_ARM64)
+        ,         idxReg3(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+#endif
+        ,         uAbsPtr(UINT64_MAX)
+
     {
-        if (idxRegPtr != UINT8_MAX)
+    }
+
+    void freeRegsAndReleaseVars(PIEMRECOMPILERSTATE a_pReNative, uint8_t idxVarGCPtrMem = UINT8_MAX, bool fIsCode = false) const
+    {
+        if (!fIsCode)
         {
-            if (idxRegPtrHlp == UINT8_MAX)
+            if (idxRegPtr != UINT8_MAX)
             {
-                if (idxVarGCPtrMem != UINT8_MAX)
-                    iemNativeVarRegisterRelease(a_pReNative, idxVarGCPtrMem);
+                if (idxRegPtrHlp == UINT8_MAX)
+                {
+                    if (idxVarGCPtrMem != UINT8_MAX)
+                        iemNativeVarRegisterRelease(a_pReNative, idxVarGCPtrMem);
+                }
+                else
+                {
+                    Assert(idxRegPtrHlp == idxRegPtr);
+                    iemNativeRegFreeTmpImm(a_pReNative, idxRegPtrHlp);
+                }
             }
             else
-            {
-                Assert(idxRegPtrHlp == idxRegPtr);
-                iemNativeRegFreeTmpImm(a_pReNative, idxRegPtrHlp);
-            }
+                Assert(idxRegPtrHlp == UINT8_MAX);
         }
         else
+        {
+            Assert(idxVarGCPtrMem == UINT8_MAX);
             Assert(idxRegPtrHlp == UINT8_MAX);
+            iemNativeRegFreeTmp(a_pReNative, idxRegPtr); /* RIP */
+        }
         if (idxRegSegBase != UINT8_MAX)
             iemNativeRegFreeTmp(a_pReNative, idxRegSegBase);
         if (idxRegSegLimit != UINT8_MAX)
-        {
             iemNativeRegFreeTmp(a_pReNative, idxRegSegLimit);
+        if (idxRegSegAttrib != UINT8_MAX)
             iemNativeRegFreeTmp(a_pReNative, idxRegSegAttrib);
-        }
-        else
-            Assert(idxRegSegAttrib == UINT8_MAX);
 #if defined(RT_ARCH_ARM64)
         iemNativeRegFreeTmp(a_pReNative, idxReg3);
 #endif
@@ -206,11 +240,14 @@ typedef struct IEMNATIVEEMITTLBSTATE
     }
 
     /** This is only for avoid assertions. */
-    uint32_t getActiveRegsWithShadows() const
+    uint32_t getActiveRegsWithShadows(bool fCode = false) const
     {
 #ifdef VBOX_STRICT
         if (!fSkip)
-            return RT_BIT_32(idxRegSegBase) | RT_BIT_32(idxRegSegLimit) | RT_BIT_32(idxRegSegAttrib);
+            return (idxRegSegBase   != UINT8_MAX ? RT_BIT_32(idxRegSegBase)   : 0)
+                 | (idxRegSegLimit  != UINT8_MAX ? RT_BIT_32(idxRegSegLimit)  : 0)
+                 | (idxRegSegAttrib != UINT8_MAX ? RT_BIT_32(idxRegSegAttrib) : 0)
+                 | (fCode                        ? RT_BIT_32(idxRegPtr)       : 0);
 #endif
         return 0;
     }
@@ -228,10 +265,11 @@ iemNativeEmitTlbLookup(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEEMI
                        uint8_t offDisp = 0)
 {
     Assert(!pTlbState->fSkip);
+    uint32_t const   offVCpuTlb = a_fDataTlb ? RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb) : RT_UOFFSETOF(VMCPUCC, iem.s.CodeTlb);
 # if defined(RT_ARCH_AMD64)
-    uint8_t * const  pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 512);
+    uint8_t * const  pCodeBuf   = iemNativeInstrBufEnsure(pReNative, off, 512);
 # elif defined(RT_ARCH_ARM64)
-    uint32_t * const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
+    uint32_t * const pCodeBuf   = iemNativeInstrBufEnsure(pReNative, off, 64);
 # endif
 
     /*
@@ -295,8 +333,12 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      * 1. Segmentation.
      *
      * 1a. Check segment limit and attributes if non-flat 32-bit code.  This is complicated.
+     *
+     *     This can be skipped for code TLB lookups because limit is checked by jmp, call,
+     *     ret, and iret prior to making it.  It is also checked by the helpers prior to
+     *     doing TLB loading.
      */
-    if (iSegReg != UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT)
+    if (a_fDataTlb && iSegReg != UINT8_MAX && (pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT)
     {
         /* Check that we've got a segment loaded and that it allows the access.
            For write access this means a writable data segment.
@@ -538,15 +580,16 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 # if defined(RT_ARCH_AMD64)
     pCodeBuf[off++] = pTlbState->idxReg1 < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_R;
     pCodeBuf[off++] = 0x0b; /* OR r64,r/m64 */
-    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, pTlbState->idxReg1, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbRevision));
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, pTlbState->idxReg1, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbRevision));
 # else
-    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbRevision));
+    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbRevision));
     off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # endif
 
     /*
      * 3b. Calc pTlbe.
      */
+    uint32_t const offTlbEntries = offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries);
 # if defined(RT_ARCH_AMD64)
     /* movzx reg2, byte reg1 */
     off = iemNativeEmitLoadGprFromGpr8Ex(pCodeBuf, off, pTlbState->idxReg2, pTlbState->idxReg1);
@@ -559,17 +602,16 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = 0x8d;
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, pTlbState->idxReg2 & 7, 4 /*SIB*/);
     pCodeBuf[off++] = X86_SIB_MAKE(IEMNATIVE_REG_FIXED_PVMCPU & 7, pTlbState->idxReg2 & 7, 0);
-    pCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
-    pCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPUCC,  iem.s.DataTlb.aEntries));
+    pCodeBuf[off++] = RT_BYTE1(offTlbEntries);
+    pCodeBuf[off++] = RT_BYTE2(offTlbEntries);
+    pCodeBuf[off++] = RT_BYTE3(offTlbEntries);
+    pCodeBuf[off++] = RT_BYTE4(offTlbEntries);
 
 # elif defined(RT_ARCH_ARM64)
     /* reg2 = (reg1 & 0xff) << 5 */
     pCodeBuf[off++] = Armv8A64MkInstrUbfiz(pTlbState->idxReg2, pTlbState->idxReg1, 5, 8);
     /* reg2 += offsetof(VMCPUCC, iem.s.DataTlb.aEntries) */
-    off = iemNativeEmitAddGprImmEx(pCodeBuf, off, pTlbState->idxReg2, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.aEntries),
-                                   pTlbState->idxReg3 /*iGprTmp*/);
+    off = iemNativeEmitAddGprImmEx(pCodeBuf, off, pTlbState->idxReg2, offTlbEntries, pTlbState->idxReg3 /*iGprTmp*/);
     /* reg2 += pVCpu */
     off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, pTlbState->idxReg2, IEMNATIVE_REG_FIXED_PVMCPU);
 # else
@@ -601,6 +643,8 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     uint64_t const fNoUser = (((pReNative->fExec >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK) + 1) & IEMTLBE_F_PT_NO_USER;
     uint64_t       fTlbe   = IEMTLBE_F_PHYS_REV | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PT_NO_ACCESSED
                            | fNoUser;
+    if (fAccess & IEM_ACCESS_TYPE_EXEC)
+        fTlbe |= IEMTLBE_F_PT_NO_EXEC /*| IEMTLBE_F_PG_NO_READ?*/;
     if (fAccess & IEM_ACCESS_TYPE_READ)
         fTlbe |= IEMTLBE_F_PG_NO_READ;
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
@@ -617,12 +661,12 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_R);
     pCodeBuf[off++] = 0x3b;
     off = iemNativeEmitGprByGprDisp(pCodeBuf, off, pTlbState->idxReg1, IEMNATIVE_REG_FIXED_PVMCPU,
-                                    RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
+                                    offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbPhysRev));
 # elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg3, pTlbState->idxReg2,
                                          RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
     pCodeBuf[off++] = Armv8A64MkInstrAnd(pTlbState->idxReg1, pTlbState->idxReg1, pTlbState->idxReg3);
-    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, RT_UOFFSETOF(VMCPUCC, iem.s.DataTlb.uTlbPhysRev));
+    off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbPhysRev));
     off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # else
 #  error "Port me"
@@ -633,6 +677,9 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     /*
      * 5. Check that pbMappingR3 isn't NULL (paranoia) and calculate the
      *    resulting pointer.
+     *
+     *    For code TLB lookups we have some more work to do here to set various
+     *    IEMCPU members and we return a GCPhys address rather than a host pointer.
      */
     /* mov  reg1, [reg2->pbMappingR3] */
     off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
@@ -642,19 +689,57 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     off = iemNativeEmitTestIfGprIsZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, pTlbState->idxReg1,
                                                       true /*f64Bit*/, idxLabelTlbMiss);
 
-    if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
+    if (a_fDataTlb)
     {
-        /* and result, 0xfff */
-        off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+        if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
+        {
+            /* and result, 0xfff */
+            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+        }
+        else
+        {
+            Assert(idxRegFlatPtr == pTlbState->idxRegPtr);
+            /* result = regflat & 0xfff */
+            off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+        }
+
+        /* add result, reg1 */
+        off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
     }
     else
     {
-        Assert(idxRegFlatPtr == pTlbState->idxRegPtr);
-        /* result = regflat & 0xfff */
-        off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+        /*
+         * Code TLB use a la iemOpcodeFetchBytesJmp - keep reg2 pointing to the TLBE.
+         *
+         * Note. We do not need to set offCurInstrStart or offInstrNextByte.
+         */
+# ifdef RT_ARCH_AMD64
+        uint8_t const idxReg3 = UINT8_MAX;
+# else
+        uint8_t const idxReg3 = pTlbState->idxReg3;
+# endif
+        /* Set pbInstrBuf first since we've got it loaded already. */
+        off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
+                                               RT_UOFFSETOF(VMCPUCC, iem.s.pbInstrBuf), idxReg3);
+        /* Set uInstrBufPc to (FlatPC & ~GUEST_PAGE_OFFSET_MASK). */
+        off = iemNativeEmitGprEqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg1, idxRegFlatPtr, ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK);
+        off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
+                                               RT_UOFFSETOF(VMCPUCC, iem.s.uInstrBufPc), idxReg3);
+        /* Set cbInstrBufTotal to GUEST_PAGE_SIZE. */ /** @todo this is a simplifications. Calc right size using CS.LIM and EIP? */
+        off = iemNativeEmitStoreImmToVCpuU16Ex(pCodeBuf, off, GUEST_PAGE_SIZE, RT_UOFFSETOF(VMCPUCC, iem.s.cbInstrBufTotal),
+                                               pTlbState->idxReg1, idxReg3);
+        /* Now set GCPhysInstrBuf last as we'll be returning it in idxRegMemResult. */
+        off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1,
+                                             pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, GCPhys));
+        off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
+                                               RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf), idxReg3);
+        /* Set idxRegMemResult. */
+        if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
+            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+        else
+            off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+        off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
     }
-    /* add result, reg1 */
-    off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
 
 # if 0
     /*
@@ -664,39 +749,42 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      * iemNativeHlpAsmSafeWrapCheckTlbLookup(pVCpu, result, addr, seg | (cbMem << 8) | (fAccess << 16))
      */
 #  ifdef RT_ARCH_AMD64
-    /* push     seg | (cbMem << 8) | (fAccess << 16) */
-    pCodeBuf[off++] = 0x68;
-    pCodeBuf[off++] = iSegReg;
-    pCodeBuf[off++] = cbMem;
-    pCodeBuf[off++] = RT_BYTE1(fAccess);
-    pCodeBuf[off++] = RT_BYTE2(fAccess);
-    /* push     pTlbState->idxRegPtr / immediate address. */
-    if (pTlbState->idxRegPtr != UINT8_MAX)
+    if (a_fDataTlb)
     {
-        if (pTlbState->idxRegPtr >= 8)
+        /* push     seg | (cbMem << 8) | (fAccess << 16) */
+        pCodeBuf[off++] = 0x68;
+        pCodeBuf[off++] = iSegReg;
+        pCodeBuf[off++] = cbMem;
+        pCodeBuf[off++] = RT_BYTE1(fAccess);
+        pCodeBuf[off++] = RT_BYTE2(fAccess);
+        /* push     pTlbState->idxRegPtr / immediate address. */
+        if (pTlbState->idxRegPtr != UINT8_MAX)
+        {
+            if (pTlbState->idxRegPtr >= 8)
+                pCodeBuf[off++] = X86_OP_REX_B;
+            pCodeBuf[off++] = 0x50 + (pTlbState->idxRegPtr & 7);
+        }
+        else
+        {
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->uAbsPtr);
+            if (pTlbState->idxReg1 >= 8)
+                pCodeBuf[off++] = X86_OP_REX_B;
+            pCodeBuf[off++] = 0x50 + (pTlbState->idxReg1 & 7);
+        }
+        /* push     idxRegMemResult */
+        if (idxRegMemResult >= 8)
             pCodeBuf[off++] = X86_OP_REX_B;
-        pCodeBuf[off++] = 0x50 + (pTlbState->idxRegPtr & 7);
+        pCodeBuf[off++] = 0x50 + (idxRegMemResult & 7);
+        /* push     pVCpu */
+        pCodeBuf[off++] = 0x50 + IEMNATIVE_REG_FIXED_PVMCPU;
+        /* mov      reg1, helper */
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup);
+        /* call     [reg1] */
+        pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0xff;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, pTlbState->idxReg1 & 7);
+        /* The stack is cleaned up by helper function. */
     }
-    else
-    {
-        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->uAbsPtr);
-        if (pTlbState->idxReg1 >= 8)
-            pCodeBuf[off++] = X86_OP_REX_B;
-        pCodeBuf[off++] = 0x50 + (pTlbState->idxReg1 & 7);
-    }
-    /* push     idxRegMemResult */
-    if (idxRegMemResult >= 8)
-        pCodeBuf[off++] = X86_OP_REX_B;
-    pCodeBuf[off++] = 0x50 + (idxRegMemResult & 7);
-    /* push     pVCpu */
-    pCodeBuf[off++] = 0x50 + IEMNATIVE_REG_FIXED_PVMCPU;
-    /* mov      reg1, helper */
-    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup);
-    /* call     [reg1] */
-    pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_B);
-    pCodeBuf[off++] = 0xff;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, pTlbState->idxReg1 & 7);
-    /* The stack is cleaned up by helper function. */
 
 #  else
 #   error "Port me"

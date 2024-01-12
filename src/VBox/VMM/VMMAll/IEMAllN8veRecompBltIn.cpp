@@ -54,6 +54,7 @@
 #include "IEMThreadedFunctions.h"
 #include "IEMN8veRecompiler.h"
 #include "IEMN8veRecompilerEmit.h"
+#include "IEMN8veRecompilerTlbLookup.h"
 
 
 
@@ -89,7 +90,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu)
  */
 IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMissWithOff,(PVMCPUCC pVCpu, uint8_t offInstr))
 {
-    STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeCodeTlbMissesNewPage);
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeCodeTlbMissesNewPageWithOffset);
     pVCpu->iem.s.pbInstrBuf       = NULL;
     pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE - offInstr;
     pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;
@@ -1188,23 +1189,30 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
     /*
      * Define labels and allocate the register for holding the GCPhys of the new page.
      */
-    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
-    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
-    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
-    uint32_t const idxRegGCPhys     = iemNativeRegAllocTmp(pReNative, &off);
+    uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+    uint32_t const idxRegGCPhys      = iemNativeRegAllocTmp(pReNative, &off);
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, IEM_F_MODE_X86_IS_FLAT(pReNative->fExec), &off);
+    uint32_t const idxLabelTlbLookup = !TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+
+    //off = iemNativeEmitBrk(pReNative, off, 0x1111);
 
     /*
-     * First we try to go via the TLB.
+     * Jump to the TLB lookup code.
      */
-    /** @todo  */
+    if (!TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
 
     /*
-     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMissWithOff to do the work.
+     * TlbMiss:
+     *
+     * Call iemNativeHlpMemCodeNewPageTlbMissWithOff to do the work.
      */
-    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+    uint32_t const idxLabelTlbMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, off, uTlbSeqNo);
 
     /* Save variables in volatile registers. */
-    uint32_t const fHstRegsNotToSave = /*TlbState.getRegsNotToSave() | */ RT_BIT_32(idxRegGCPhys);
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave() | RT_BIT_32(idxRegGCPhys);
     off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
 
     /* IEMNATIVE_CALL_ARG1_GREG = offInstr */
@@ -1222,9 +1230,37 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
 
     /* Restore variables and guest shadow registers to volatile registers. */
     off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
-    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, 0 /*TlbState.getActiveRegsWithShadows()*/);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows(true /*fCode*/));
 
-    iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+    if (!TlbState.fSkip)
+    {
+        /* end of TlbMiss - Jump to the done label. */
+        uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbDone);
+
+        /*
+         * TlbLookup:
+         */
+        off = iemNativeEmitTlbLookup<false>(pReNative, off, &TlbState,
+                                            IEM_F_MODE_X86_IS_FLAT(pReNative->fExec) ? UINT8_MAX : X86_SREG_CS,
+                                            1 /*cbMem*/, 0 /*fAlignMask*/, IEM_ACCESS_TYPE_EXEC,
+                                            idxLabelTlbLookup, idxLabelTlbMiss, idxRegGCPhys, offInstr);
+
+# ifdef VBOX_WITH_STATISTICS
+        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, TlbState.idxReg1, TlbState.idxReg2,
+                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeCodeTlbHitsForNewPageWithOffset));
+# endif
+
+        /*
+         * TlbDone:
+         */
+        iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+        TlbState.freeRegsAndReleaseVars(pReNative, UINT8_MAX /*idxVarGCPtrMem*/, true /*fIsCode*/);
+    }
+#else
+    RT_NOREF(idxLabelTlbMiss);
+#endif
 
     /*
      * Now check the physical address of the page matches the expected one.
@@ -1250,58 +1286,6 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
 #define BODY_LOAD_TLB_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) \
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltLoadTlbAfterBranch(pReNative, off, pTb, a_idxRange)
-
-#if 0
-do { \
-        /* Is RIP within the current code page? */ \
-        Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu)); \
-        uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base; \
-        uint64_t const off = uPc - pVCpu->iem.s.uInstrBufPc; \
-        if (off < pVCpu->iem.s.cbInstrBufTotal) \
-        { \
-            Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK)); \
-            Assert(pVCpu->iem.s.pbInstrBuf); \
-            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
-                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
-            if (GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off) \
-            { /* we're good */ } \
-            else \
-            { \
-                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/1; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
-                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
-                      pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
-                RT_NOREF(a_cbInstr); \
-                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
-                return VINF_IEM_REEXEC_BREAK; \
-            } \
-        } \
-        else \
-        { \
-            /* Must translate new RIP. */ \
-            pVCpu->iem.s.pbInstrBuf       = NULL; \
-            pVCpu->iem.s.offCurInstrStart = 0; \
-            pVCpu->iem.s.offInstrNextByte = 0; \
-            iemOpcodeFetchBytesJmp(pVCpu, 0, NULL); \
-            Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) || !pVCpu->iem.s.pbInstrBuf); \
-            \
-            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
-                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
-            uint64_t const offNew                    = uPc - pVCpu->iem.s.uInstrBufPc; \
-            if (   GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + offNew \
-                && pVCpu->iem.s.pbInstrBuf) \
-            { /* likely */ } \
-            else \
-            { \
-                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/2; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
-                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
-                      pVCpu->iem.s.GCPhysInstrBuf + offNew, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
-                RT_NOREF(a_cbInstr); \
-                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
-                return VINF_IEM_REEXEC_BREAK; \
-            } \
-        } \
-    } while(0)
-#endif
 
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange)

@@ -342,7 +342,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 #  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCodeTlbMissesNewPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Code TLB native misses on new page",       "/IEM/CPU%u/CodeTlb-Misses-New-Page", idCpu);
+                        "Code TLB native misses on new page",           "/IEM/CPU%u/CodeTlb-Misses-New-Page", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCodeTlbMissesNewPageWithOffset, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB native misses on new page w/ offset", "/IEM/CPU%u/CodeTlb-Misses-New-Page-With-Offset", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCodeTlbHitsForNewPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB native hits on new page",   "/IEM/CPU%u/CodeTlb-Hits-New-Page", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCodeTlbHitsForNewPageWithOffset, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB native hits on new page /w offset",   "/IEM/CPU%u/CodeTlb-Hits-New-Page-With-Offset", idCpu);
 #  endif
 # endif
 

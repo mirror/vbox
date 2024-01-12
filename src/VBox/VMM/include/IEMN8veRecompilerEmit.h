@@ -709,26 +709,45 @@ iemNativeEmitLoadGprFromVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 /**
  * Emits a store of a GPR value to a 64-bit VCpu field.
  */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitStoreGprToVCpuU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGprToVCpuU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint32_t offVCpu,
+                                 uint8_t iGprTmp = UINT8_MAX)
 {
 #ifdef RT_ARCH_AMD64
     /* mov mem64, reg64 */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     if (iGpr < 8)
-        pbCodeBuf[off++] = X86_OP_REX_W;
+        pCodeBuf[off++] = X86_OP_REX_W;
     else
-        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x89;
-    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf,off,iGpr, offVCpu);
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        pCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iGpr, offVCpu);
+    RT_NOREF(iGprTmp);
 
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t));
+    off = iemNativeEmitGprByVCpuLdStEx(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t), iGprTmp);
 
 #else
 # error "port me"
 #endif
+    return off;
+}
+
+
+/**
+ * Emits a store of a GPR value to a 64-bit VCpu field.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGprToVCpuU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitStoreGprToVCpuU64Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGpr, offVCpu);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitStoreGprToVCpuU64Ex(iemNativeInstrBufEnsure(pReNative, off, 5), off, iGpr, offVCpu,
+                                           IEMNATIVE_REG_FIXED_TMP0);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -801,6 +820,47 @@ iemNativeEmitStoreGprToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a store of an immediate value to a 16-bit VCpu field.
+ *
+ * @note ARM64: A idxTmp1 is always required! The idxTmp2 depends on whehter the
+ *       offset can be encoded as an immediate or not.  The @a offVCpu immediate
+ *       range is 0..8190 bytes from VMCPU and the same from CPUMCPU.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImmToVCpuU16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint16_t uImm, uint32_t offVCpu,
+                                 uint8_t idxTmp1 = UINT8_MAX, uint8_t idxTmp2 = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem16, imm16 */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    pCodeBuf[off++] = 0xc7;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, offVCpu);
+    pCodeBuf[off++] = RT_BYTE1(uImm);
+    pCodeBuf[off++] = RT_BYTE2(uImm);
+    RT_NOREF(idxTmp1, idxTmp2);
+
+#elif defined(RT_ARCH_ARM64)
+    if (idxTmp1 != UINT8_MAX)
+    {
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(idxTmp1, uImm);
+        off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, idxTmp1, offVCpu, kArmv8A64InstrLdStType_St_Half,
+                                           sizeof(uint16_t), idxTmp2);
+    }
+    else
+# ifdef IEM_WITH_THROW_CATCH
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+        AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
 
 #else
 # error "port me"
@@ -3856,24 +3916,42 @@ iemNativeEmitClear16UpGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
  * @note When fSetFlags=true, JZ/JNZ jumps can be used afterwards on both AMD64
  *       and ARM64 hosts.
  */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitAndGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc, bool fSetFlags = false)
+{
+#if defined(RT_ARCH_AMD64)
+    /* and Gv, Ev */
+    pCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x23;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+    RT_NOREF(fSetFlags);
+
+#elif defined(RT_ARCH_ARM64)
+    if (!fSetFlags)
+        pCodeBuf[off++] = Armv8A64MkInstrAnd(iGprDst, iGprDst, iGprSrc);
+    else
+        pCodeBuf[off++] = Armv8A64MkInstrAnds(iGprDst, iGprDst, iGprSrc);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for AND'ing two 64-bit GPRs.
+ *
+ * @note When fSetFlags=true, JZ/JNZ jumps can be used afterwards on both AMD64
+ *       and ARM64 hosts.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitAndGprByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc, bool fSetFlags = false)
 {
 #if defined(RT_ARCH_AMD64)
-    /* and Gv, Ev */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-    pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R) | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0x23;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
-    RT_NOREF(fSetFlags);
-
+    off = iemNativeEmitAndGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 3), off, iGprDst, iGprSrc, fSetFlags);
 #elif defined(RT_ARCH_ARM64)
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    if (!fSetFlags)
-        pu32CodeBuf[off++] = Armv8A64MkInstrAnd(iGprDst, iGprDst, iGprSrc);
-    else
-        pu32CodeBuf[off++] = Armv8A64MkInstrAnds(iGprDst, iGprDst, iGprSrc);
-
+    off = iemNativeEmitAndGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iGprSrc, fSetFlags);
 #else
 # error "Port me"
 #endif
@@ -4086,6 +4164,50 @@ iemNativeEmitAndGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     return off;
 }
 
+
+/**
+ * Emits code for AND'ing an 64-bit GPRs with a constant.
+ *
+ * @note For ARM64 any complicated immediates w/o a AND/ANDS compatible
+ *       encoding will assert / throw exception if @a iGprDst and @a iGprSrc are
+ *       the same.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitGprEqGprAndImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc, uint64_t uImm,
+                              bool fSetFlags = false)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, iGprDst, uImm);
+    off = iemNativeEmitAndGprByGprEx(pCodeBuf, off, iGprDst, iGprSrc);
+    RT_NOREF(fSetFlags);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uImmR     = 0;
+    uint32_t uImmNandS = 0;
+    if (Armv8A64ConvertMask64ToImmRImmS(uImm, &uImmNandS, &uImmR))
+    {
+        if (!fSetFlags)
+            pCodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprSrc, uImmNandS, uImmR);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAndsImm(iGprDst, iGprSrc, uImmNandS, uImmR);
+    }
+    else if (iGprDst != iGprSrc)
+    {
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, iGprDst, uImm);
+        off = iemNativeEmitAndGprByGprEx(pCodeBuf, off, iGprDst, iGprSrc, fSetFlags);
+    }
+    else
+# ifdef IEM_WITH_THROW_CATCH
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+        AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
 
 /**
  * Emits code for AND'ing an 32-bit GPRs with a constant.

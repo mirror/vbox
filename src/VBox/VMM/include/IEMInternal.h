@@ -1744,7 +1744,13 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTlbHitsForMapped;
     /** Native recompiled execution: Code TLB misses for new page. */
     STAMCOUNTER             StatNativeCodeTlbMissesNewPage;
-    uint64_t                au64Padding[6];
+    /** Native recompiled execution: Code TLB hits for new page. */
+    STAMCOUNTER             StatNativeCodeTlbHitsForNewPage;
+    /** Native recompiled execution: Code TLB misses for new page with offset. */
+    STAMCOUNTER             StatNativeCodeTlbMissesNewPageWithOffset;
+    /** Native recompiled execution: Code TLB hits for new page with offset. */
+    STAMCOUNTER             StatNativeCodeTlbHitsForNewPageWithOffset;
+    uint64_t                au64Padding[3];
     /** @} */
 
     /** Data TLB.
