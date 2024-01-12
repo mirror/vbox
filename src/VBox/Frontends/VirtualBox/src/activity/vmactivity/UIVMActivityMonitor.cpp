@@ -72,6 +72,7 @@ const int g_iDecimalCount = 2;
 const int g_iBackgroundTint = 104;
 const quint64 uInvalidValueSentinel = ~0U;
 
+
 /*********************************************************************************************************************************
 *   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
 *********************************************************************************************************************************/
