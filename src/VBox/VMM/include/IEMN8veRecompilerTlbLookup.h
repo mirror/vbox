@@ -248,6 +248,8 @@ typedef struct IEMNATIVEEMITTLBSTATE
                  | (idxRegSegLimit  != UINT8_MAX ? RT_BIT_32(idxRegSegLimit)  : 0)
                  | (idxRegSegAttrib != UINT8_MAX ? RT_BIT_32(idxRegSegAttrib) : 0)
                  | (fCode                        ? RT_BIT_32(idxRegPtr)       : 0);
+#else
+        RT_NOREF_PV(fCode);
 #endif
         return 0;
     }
@@ -257,7 +259,7 @@ DECLASM(void) iemNativeHlpAsmSafeWrapCheckTlbLookup(void);
 
 
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
-template<bool const a_fDataTlb>
+template<bool const a_fDataTlb, bool const a_fNoReturn = false>
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitTlbLookup(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEEMITTLBSTATE const * const pTlbState,
                        uint8_t iSegReg, uint8_t cbMem, uint8_t fAlignMask, uint32_t fAccess,
@@ -733,12 +735,15 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
                                              pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, GCPhys));
         off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
                                                RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf), idxReg3);
-        /* Set idxRegMemResult. */
-        if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
-            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
-        else
-            off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
-        off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
+        if (!a_fNoReturn) /* (We skip this for iemNativeEmitBltLoadTlbAfterBranch.) */
+        {
+            /* Set idxRegMemResult. */
+            if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
+                off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+            else
+                off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+            off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
+        }
     }
 
 # if 0

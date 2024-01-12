@@ -1297,11 +1297,8 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /*
      * Define labels and allocate the register for holding the GCPhys of the new page.
      */
-    uint32_t const idxLabelCheckBranchMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckBranchMiss);
-    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
-    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
-    //
-
+    uint32_t const idxLabelCheckBranchMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckBranchMiss);
+    uint16_t const uTlbSeqNo                 = pReNative->uTlbSeqNo++;
     RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(pTb, idxRange)
                                              | pTb->aRanges[idxRange].offPhysPage;
 
@@ -1327,17 +1324,21 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
     /* Allocate registers for step 1. Get the shadowed stuff before allocating
        the temp register, so we don't accidentally clobber something we'll be
-       needing again immediately.  This is why we get idxRegCsBase here. */
-    /** @todo save+restore active registers and guest shadows in tlb-miss! */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */);
-    uint8_t const  idxRegPc     = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+       needing again immediately.  This is why we get idxRegCsBase here.
+       Update: We share registers with the TlbState, as the TLB code path has
+               little in common with the rest of the code. */
+    bool const     fIsFlat      = IEM_F_MODE_X86_IS_FLAT(pReNative->fExec);
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, fIsFlat, &off);
+    uint8_t const  idxRegPc     = !TlbState.fSkip ? TlbState.idxRegPtr
+                                : iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
                                                                   kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
-    uint8_t const  idxRegCsBase = IEM_F_MODE_X86_IS_FLAT(pReNative->fExec) ? UINT8_MAX
+    uint8_t const  idxRegCsBase = !TlbState.fSkip || fIsFlat ? TlbState.idxRegSegBase
                                 : iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_BASE(X86_SREG_CS),
                                                                  kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
 
-    uint8_t const  idxRegTmp    = iemNativeRegAllocTmp(pReNative, &off); /* volatile reg is okay for these two */
-    uint8_t const  idxRegTmp2   = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const  idxRegTmp    = !TlbState.fSkip ? TlbState.idxReg1 : iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const  idxRegTmp2   = !TlbState.fSkip ? TlbState.idxReg2 : iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const  idxRegDummy  = !TlbState.fSkip ? iemNativeRegAllocTmp(pReNative, &off) : UINT8_MAX;
 
 #ifdef VBOX_STRICT
     /* Do assertions before idxRegTmp contains anything. */
@@ -1476,6 +1477,8 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     off = iemNativeEmitJmpToFixed(pReNative, off, off + 512 /* force rel32 */);
 
     /*
+     * TlbLoad:
+     *
      * First we try to go via the TLB.
      */
     iemNativeFixupFixedJump(pReNative, offFixedJumpToTlbLoad, off);
@@ -1483,13 +1486,25 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /* Check that we haven't been here before. */
     off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, idxRegTmp2,  false /*f64Bit*/, idxLabelCheckBranchMiss);
 
+    /* Jump to the TLB lookup code. */
+    uint32_t const idxLabelTlbLookup = !TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+//off = iemNativeEmitBrk(pReNative, off, 0x1234);
+    if (!TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
+
     /*
-     * TLB miss: Call iemNativeHlpMemCodeNewPageTlbMiss to do the work.
+     * TlbMiss:
+     *
+     * Call iemNativeHlpMemCodeNewPageTlbMiss to do the work.
      */
-    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+    uint32_t const idxLabelTlbMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, off, uTlbSeqNo);
+    RT_NOREF(idxLabelTlbMiss);
 
     /* Save variables in volatile registers. */
-    uint32_t const fHstRegsNotToSave = /*TlbState.getRegsNotToSave() | */ RT_BIT_32(idxRegTmp) | RT_BIT_32(idxRegTmp);
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave() | RT_BIT_32(idxRegTmp) | RT_BIT_32(idxRegTmp2)
+                                     | (idxRegDummy != UINT8_MAX ? RT_BIT_32(idxRegDummy) : 0);
     off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
@@ -1500,20 +1515,61 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
     /* Restore variables and guest shadow registers to volatile registers. */
     off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
-    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, 0 /*TlbState.getActiveRegsWithShadows()*/);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off,
+                                                          TlbState.getActiveRegsWithShadows()
+                                                        | RT_BIT_32(idxRegPc)
+                                                        | (idxRegCsBase != UINT8_MAX ? RT_BIT_32(idxRegCsBase) : 0));
+
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+    if (!TlbState.fSkip)
+    {
+        /* end of TlbMiss - Jump to the done label. */
+        uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbDone);
+
+        /*
+         * TlbLookup:
+         */
+        off = iemNativeEmitTlbLookup<false, true>(pReNative, off, &TlbState, fIsFlat ? UINT8_MAX : X86_SREG_CS,
+                                                  1 /*cbMem*/, 0 /*fAlignMask*/, IEM_ACCESS_TYPE_EXEC,
+                                                  idxLabelTlbLookup, idxLabelTlbMiss, idxRegDummy);
+
+# ifdef VBOX_WITH_STATISTICS
+        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, TlbState.idxReg1, TlbState.idxReg2,
+                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeCodeTlbHitsForNewPage));
+# endif
+
+        /*
+         * TlbDone:
+         */
+        iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+        TlbState.freeRegsAndReleaseVars(pReNative, UINT8_MAX /*idxVarGCPtrMem*/, true /*fIsCode*/);
+    }
+#else
+    RT_NOREF(idxLabelTlbMiss);
+#endif
 
     /* Jmp back to the start and redo the checks. */
     off = iemNativeEmitLoadGpr8Imm(pReNative, off, idxRegTmp2, 1); /* indicate that we've looped once already */
     off = iemNativeEmitJmpToFixed(pReNative, off, offLabelRedoChecks);
 
-    /* The end. */
+    /*
+     * End:
+     *
+     * The end.
+     */
     iemNativeFixupFixedJump(pReNative, offFixedJumpToEnd, off);
 
-    iemNativeRegFreeTmp(pReNative, idxRegTmp2);
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
-    iemNativeRegFreeTmp(pReNative, idxRegPc);
-    if (idxRegCsBase != UINT8_MAX)
-        iemNativeRegFreeTmp(pReNative, idxRegCsBase);
+    if (!TlbState.fSkip)
+        iemNativeRegFreeTmp(pReNative, idxRegDummy);
+    else
+    {
+        iemNativeRegFreeTmp(pReNative, idxRegTmp2);
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+        iemNativeRegFreeTmp(pReNative, idxRegPc);
+        if (idxRegCsBase != UINT8_MAX)
+            iemNativeRegFreeTmp(pReNative, idxRegCsBase);
+    }
     return off;
 }
 
