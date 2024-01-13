@@ -10,6 +10,7 @@
 /* We need to use some engine deprecated APIs */
 #define OPENSSL_SUPPRESS_DEPRECATED
 
+#include "internal/deprecated.h"
 #include "eng_local.h"
 
 /* Basic get/set stuff */
