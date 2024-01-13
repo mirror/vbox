@@ -41,7 +41,7 @@ else ifeq ($(KBUILD_TARGET),win)
 endif
 
 # Can't use relative paths when dealing with sub-makefiles.
-VBOX_PATH_OPENSSL           := $(PATH_ROOT)/src/libs/openssl-3.1.3
+VBOX_PATH_OPENSSL           := $(PATH_ROOT)/src/libs/openssl-3.1.4
 VBOX_PATH_CRYPTO            := $(VBOX_PATH_OPENSSL)/crypto
 VBOX_PATH_CRYPTO_GENASM     := $(VBOX_PATH_CRYPTO)/genasm-$(VBOX_CRYPTO_ASM_SCHEME)
 VBOX_PATH_CRYPTO_AES        := $(VBOX_PATH_CRYPTO)/aes
@@ -55,7 +55,7 @@ VBOX_PATH_CRYPTO_RC4        := $(VBOX_PATH_CRYPTO)/rc4
 VBOX_PATH_CRYPTO_SHA        := $(VBOX_PATH_CRYPTO)/sha
 VBOX_PATH_CRYPTO_DES        := $(VBOX_PATH_CRYPTO)/des
 VBOX_PATH_CRYPTO_CAMELLIA   := $(VBOX_PATH_CRYPTO)/camellia
-VBOX_INST_CRYPTO_HEADERS    := obj/$(if-expr "$(CURSUBDIR)" == ".",,$(CURSUBDIR)/)crypto-3.1.3-headers/include/openssl/
+VBOX_INST_CRYPTO_HEADERS    := obj/$(if-expr "$(CURSUBDIR)" == ".",,$(CURSUBDIR)/)crypto-3.1.4-headers/include/openssl/
 VBOX_PATH_CRYPTO_HEADERS    := $(abspath $(PATH_OUT))/$(patsubst %/,%,$(VBOX_INST_CRYPTO_HEADERS))
 VBOX_PATH_CRYPTO_PROVIDERS  := $(VBOX_PATH_OPENSSL)/providers
 
