@@ -52,6 +52,69 @@
 # undef  LOG_GROUP
 # define LOG_GROUP LOG_GROUP_IEM_SYSCALL
 
+DECLINLINE(char *) iemLogSyscallFormatChr(char pszBuf[4], char ch)
+{
+    if (RT_C_IS_PRINT(ch))
+    {
+        pszBuf[0] = '\'';
+        pszBuf[1] = ch;
+        pszBuf[2] = '\'';
+    }
+    else if (ch == '\\n' || ch == '\\r')
+    {
+        pszBuf[0] = '\'';
+        pszBuf[1] = ch == '\\n' ? 'n' : 'r';
+        pszBuf[2] = ' ';
+    }
+    else
+    {
+        pszBuf[0] = ' ';
+        pszBuf[1] = '?';
+        pszBuf[2] = ' ';
+    }
+    pszBuf[3] = '\0';
+    return pszBuf;
+}
+
+
+/**
+ * The output buffer must be 4x + 8 the size of the input.
+ */
+static char *iemLogSyscallFormatStr(char *pszDst, const char *pszSrc, size_t cchSrc)
+{
+    char * const pszRet = pszDst;
+    *pszDst++ = '\"';
+    for (unsigned off = 0; off < cchSrc; off++)
+    {
+        char const ch = pszSrc[off];
+        if (RT_C_IS_PRINT(ch))
+            *pszDst++ = ch;
+        else
+        {
+            *pszDst++ = '\\';
+            if (ch == '\n')
+                *pszDst++ = 'n';
+            else if (ch == '\r')
+                *pszDst++ = 'r';
+            else if (ch == '\t')
+                *pszDst++ = 't';
+            else if (ch == '\0')
+                *pszDst++ = '0';
+            else
+            {
+                static char const s_szHexChars[17] = "0123456789abcdef";
+                *pszDst++ = 'x';
+                *pszDst++ = s_szHexChars[(uint8_t)ch >> 4];
+                *pszDst++ = s_szHexChars[(uint8_t)ch & 0xf];
+            }
+        }
+    }
+    *pszDst++ = '\"';
+    *pszDst++ = '\0';
+    return pszRet;
+}
+
+
 /**
  * VIDEO.
  */
@@ -86,16 +149,13 @@ static void iemLogSyscallVgaBiosInt10h(PVMCPUCC pVCpu)
         case 0x0c: pszSimple = "write graphics pixel"; break;
         case 0x0d: pszSimple = "read graphics pixel"; break;
         case 0x0e:
-            if (RT_C_IS_PRINT(pVCpu->cpum.GstCtx.al))
-                Log(("VGABIOS INT 10h: AH=0eh: teletype output: AL=%#04x '%c' BH=%#x (pg) BL=%#x\n",
-                     pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.bh, pVCpu->cpum.GstCtx.bl));
-            else
-                Log(("VGABIOS INT 10h: AH=0eh: teletype output: AL=%#04x %s BH=%#x (pg) BL=%#x\n", pVCpu->cpum.GstCtx.al,
-                     pVCpu->cpum.GstCtx.al   == '\n' ? "\\n "
-                     : pVCpu->cpum.GstCtx.al == '\r' ? "\\r "
-                     : pVCpu->cpum.GstCtx.al == '\t' ? "\\t " : " ? ",
-                     pVCpu->cpum.GstCtx.bh, pVCpu->cpum.GstCtx.bl));
+        {
+            char szChar[4];
+            Log(("VGABIOS INT 10h: AH=0eh: teletype output: AL=%#04x %s BH=%#x (pg) BL=%#x\n",
+                 pVCpu->cpum.GstCtx.al, iemLogSyscallFormatChr(szChar, pVCpu->cpum.GstCtx.al), pVCpu->cpum.GstCtx.bh,
+                 pVCpu->cpum.GstCtx.bl));
             return;
+        }
         case 0x13:
         {
             char            szRaw[256] = {0};
@@ -111,7 +171,7 @@ static void iemLogSyscallVgaBiosInt10h(PVMCPUCC pVCpu)
             else
             {
                 for (unsigned i = 0; i < cbToRead; i += 2)
-                    szChars[i]     = RT_C_IS_PRINT(szRaw[i]) ? szRaw[i] : '.';
+                    szChars[i] = RT_C_IS_PRINT(szRaw[i]) ? szRaw[i] : '.';
                 szChars[cbToRead] = '\0';
             }
             Log(("VGABIOS INT 10h: AH=13h: write string: AL=%#x BH=%#x (pg) BL=%#x DH=%#x (row) DL=%#x (col) CX=%#x (len) ES:BP=%04x:%04x: '%s' (%.*Rhxs)\n",
@@ -151,6 +211,69 @@ static void iemLogSyscallBiosInt16h(PVMCPUCC pVCpu)
     Log(("BIOS INT 16h: AH=%02xh: %s - AL=%#x BX=%#x CX=%#x DX=%#x\n",
          pVCpu->cpum.GstCtx.ah, pszSimple, pVCpu->cpum.GstCtx.al,
          pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.dx));
+}
+
+
+/**
+ * DOS INT 21h.
+ */
+static void iemLogSyscallDosInt21h(PVMCPUCC pVCpu)
+{
+    const char *pszSimple;
+    switch (pVCpu->cpum.GstCtx.ah)
+    {
+        case 0x00: pszSimple = "terminate program"; break;
+        case 0x01: pszSimple = "read stdin char w/ echo"; break;
+        case 0x02:
+        {
+            char szChar[4];
+            Log(("DOS INT 21h: AH=02h: write char to stdout - DL=%#04x %s (AL=%#x BX=%#x CX=%#x DX=%#x BP=%#x SI=%#x DI=%#x)\n",
+                 pVCpu->cpum.GstCtx.dl, iemLogSyscallFormatChr(szChar, pVCpu->cpum.GstCtx.dl), pVCpu->cpum.GstCtx.al,
+                 pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.dx, pVCpu->cpum.GstCtx.bp,
+                 pVCpu->cpum.GstCtx.si, pVCpu->cpum.GstCtx.di));
+            return;
+        }
+        case 0x03: pszSimple = "read char from stdaux"; break;
+        case 0x04: pszSimple = "write char to stdaux"; break;
+        case 0x05: pszSimple = "write char to printer"; break;
+        case 0x06: pszSimple = pVCpu->cpum.GstCtx.dl == 0xff ? "direct console input" : "direct console output"; break;
+        case 0x07: pszSimple = "direct character input w/o echo"; break;
+        case 0x08: pszSimple = "character input w/o echo"; break;
+        case 0x09:
+        {
+            char            achRaw[128] = {0};
+            unsigned const  cbToRead    = RT_MIN(RT_ELEMENTS(achRaw), 0x10000U - pVCpu->cpum.GstCtx.dx);
+            PGMPhysSimpleReadGCPtr(pVCpu, achRaw, pVCpu->cpum.GstCtx.ds.u64Base + pVCpu->cpum.GstCtx.dx, cbToRead);
+            unsigned        cchRaw = 0;
+            while (cchRaw < cbToRead)
+                if (achRaw[cchRaw++] == '$')
+                    break;
+
+            char szFmt[sizeof(achRaw) * 4 + 16];
+            Log(("DOS INT 21h: AH=09h: write string to stdout - DS:DX=%04x:%04x %s\n",
+                 pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.dx, iemLogSyscallFormatStr(szFmt, achRaw, cchRaw)));
+            return;
+        }
+        case 0x0a: pszSimple = "buffered input"; break;
+        case 0x0b: pszSimple = "get stdin status"; break;
+        case 0x0c: pszSimple = "flush buf & read stdin"; break;
+        case 0x0d: pszSimple = "disk reset"; break;
+        case 0x0e: pszSimple = "select default drive"; break;
+        case 0x0f: pszSimple = "open file (fcb)"; break;
+        case 0x10: pszSimple = "close file (fcb)"; break;
+        case 0x11: pszSimple = "find first (fcb)"; break;
+        case 0x12: pszSimple = "find next (fcb)"; break;
+        case 0x13: pszSimple = "delete file (fcb)"; break;
+        case 0x14: pszSimple = "seq read (fcb)"; break;
+        case 0x15: pszSimple = "seq write (fcb)"; break;
+        case 0x16: pszSimple = "create/truncate file (fcb)"; break;
+        case 0x17: pszSimple = "rename (fcb)"; break;
+        default:
+            return;
+    }
+    Log(("DOS INT 21h: AH=%02xh: %s - AL=%#x BX=%#x CX=%#x DX=%#x BP=%#x SI=%#x DI=%#x\n",
+         pVCpu->cpum.GstCtx.ah, pszSimple, pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx,
+         pVCpu->cpum.GstCtx.dx, pVCpu->cpum.GstCtx.bp, pVCpu->cpum.GstCtx.si, pVCpu->cpum.GstCtx.di));
 }
 
 
@@ -1188,6 +1311,9 @@ void iemLogSyscallRealModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
             case 0x16:
                 iemLogSyscallBiosInt16h(pVCpu);
                 break;
+            case 0x21:
+                iemLogSyscallDosInt21h(pVCpu);
+                break;
         }
     }
     RT_NOREF(cbInstr);
@@ -1207,6 +1333,9 @@ void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
                 break;
             case 0x16:
                 iemLogSyscallBiosInt16h(pVCpu);
+                break;
+            case 0x21:
+                iemLogSyscallDosInt21h(pVCpu);
                 break;
         }
     }
