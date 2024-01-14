@@ -4979,6 +4979,7 @@ DECL_NO_RETURN(void)    iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu) IEM_N
 #endif
 VBOXSTRICTRC            iemRaiseSimdFpException(PVMCPUCC pVCpu) RT_NOEXCEPT;
 
+void                    iemLogSyscallRealModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr);
 void                    iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr);
 
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError);

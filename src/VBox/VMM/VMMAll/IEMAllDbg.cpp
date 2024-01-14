@@ -39,6 +39,7 @@
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
 #include <iprt/errcore.h>
+#include <iprt/ctype.h>
 #include <iprt/string.h>
 
 
@@ -50,6 +51,107 @@
 
 # undef  LOG_GROUP
 # define LOG_GROUP LOG_GROUP_IEM_SYSCALL
+
+/**
+ * VIDEO.
+ */
+static void iemLogSyscallVgaBiosInt10h(PVMCPUCC pVCpu)
+{
+    const char *pszSimple;
+    switch (pVCpu->cpum.GstCtx.ah)
+    {
+        case 0x00:
+            Log(("VGABIOS INT 10h: AH=00h: set video mode: AL=%#x (BX=%#x)\n", pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.bx));
+            return;
+        case 0x01: pszSimple = "set text-mode cursor shape"; break;
+        case 0x02: pszSimple = "set cursor position"; break;
+        case 0x03: pszSimple = "get cursor position"; break;
+        case 0x04: pszSimple = "get light pen position"; break;
+        case 0x05: pszSimple = "select active display page"; break;
+        case 0x06: pszSimple = "scroll up window"; break;
+        case 0x07: pszSimple = "scroll down window"; break;
+        case 0x08: pszSimple = "read char & attr at cursor"; break;
+        case 0x09: pszSimple = "write char & attr at cursor"; break;
+        case 0x0a: pszSimple = "write char only at cursor"; break;
+        case 0x0b:
+            switch (pVCpu->cpum.GstCtx.bh)
+            {
+                case 0: pszSimple = "set background/border color"; break;
+                case 1: pszSimple = "set palette"; break;
+                case 2: pszSimple = "set palette entry"; break;
+                default:
+                    return;
+            }
+            break;
+        case 0x0c: pszSimple = "write graphics pixel"; break;
+        case 0x0d: pszSimple = "read graphics pixel"; break;
+        case 0x0e:
+            if (RT_C_IS_PRINT(pVCpu->cpum.GstCtx.al))
+                Log(("VGABIOS INT 10h: AH=0eh: teletype output: AL=%#04x '%c' BH=%#x (pg) BL=%#x\n",
+                     pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.bh, pVCpu->cpum.GstCtx.bl));
+            else
+                Log(("VGABIOS INT 10h: AH=0eh: teletype output: AL=%#04x %s BH=%#x (pg) BL=%#x\n", pVCpu->cpum.GstCtx.al,
+                     pVCpu->cpum.GstCtx.al   == '\n' ? "\\n "
+                     : pVCpu->cpum.GstCtx.al == '\r' ? "\\r "
+                     : pVCpu->cpum.GstCtx.al == '\t' ? "\\t " : " ? ",
+                     pVCpu->cpum.GstCtx.bh, pVCpu->cpum.GstCtx.bl));
+            return;
+        case 0x13:
+        {
+            char            szRaw[256] = {0};
+            unsigned const  cbToRead   = RT_MIN(RT_ELEMENTS(szRaw), pVCpu->cpum.GstCtx.cx);
+            PGMPhysSimpleReadGCPtr(pVCpu, szRaw, pVCpu->cpum.GstCtx.es.u64Base + pVCpu->cpum.GstCtx.bp, cbToRead);
+            char            szChars[256+1];
+            if (pVCpu->cpum.GstCtx.al & RT_BIT_32(1))
+            {
+                for (unsigned i = 0; i < cbToRead; i += 2)
+                    szChars[i / 2] = RT_C_IS_PRINT(szRaw[i]) ? szRaw[i] : '.';
+                szChars[cbToRead / 2] = '\0';
+            }
+            else
+            {
+                for (unsigned i = 0; i < cbToRead; i += 2)
+                    szChars[i]     = RT_C_IS_PRINT(szRaw[i]) ? szRaw[i] : '.';
+                szChars[cbToRead] = '\0';
+            }
+            Log(("VGABIOS INT 10h: AH=13h: write string: AL=%#x BH=%#x (pg) BL=%#x DH=%#x (row) DL=%#x (col) CX=%#x (len) ES:BP=%04x:%04x: '%s' (%.*Rhxs)\n",
+                 pVCpu->cpum.GstCtx.al, pVCpu->cpum.GstCtx.bh, pVCpu->cpum.GstCtx.bl, pVCpu->cpum.GstCtx.dh, pVCpu->cpum.GstCtx.dl,
+                 pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.es.Sel, pVCpu->cpum.GstCtx.bp, szChars, cbToRead, szRaw));
+            return;
+        }
+        default:
+            return;
+    }
+    Log(("VGABIOS INT 10h: AH=%02xh: %s - AL=%#x BX=%#x CX=%#x DX=%#x\n",
+         pVCpu->cpum.GstCtx.ah, pszSimple, pVCpu->cpum.GstCtx.al,
+         pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.dx));
+}
+
+
+/**
+ * BIOS INT 16h.
+ */
+static void iemLogSyscallBiosInt16h(PVMCPUCC pVCpu)
+{
+    const char *pszSimple;
+    switch (pVCpu->cpum.GstCtx.ah)
+    {
+        case 0x00: pszSimple = "get keystroke"; break;
+        case 0x01: pszSimple = "check for keystroke"; break;
+        case 0x02: pszSimple = "get shift flags"; break;
+        case 0x03: pszSimple = "set typematic rate and delay"; break;
+        case 0x09: pszSimple = "get keyboard functionality"; break;
+        case 0x0a: pszSimple = "get keyboard id"; break;
+        case 0x10: pszSimple = "get enhanced keystroke"; break;
+        case 0x11: pszSimple = "check for enhanced keystroke"; break;
+        case 0x12: pszSimple = "get enhanced shift flags"; break;
+        default:
+            return;
+    }
+    Log(("BIOS INT 16h: AH=%02xh: %s - AL=%#x BX=%#x CX=%#x DX=%#x\n",
+         pVCpu->cpum.GstCtx.ah, pszSimple, pVCpu->cpum.GstCtx.al,
+         pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.dx));
+}
 
 
 static void iemLogSyscallWinVxDCall(PVMCPUCC pVCpu, uint8_t cbInstr)
@@ -1073,11 +1175,40 @@ static void iemLogSyscallLinuxX86Int80(PVMCPUCC pVCpu)
 }
 
 
-void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
+void iemLogSyscallRealModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
 {
     /* DOS & BIOS (V86 mode) */
     if (LogIsEnabled())
     {
+        switch (u8Vector)
+        {
+            case 0x10:
+                iemLogSyscallVgaBiosInt10h(pVCpu);
+                break;
+            case 0x16:
+                iemLogSyscallBiosInt16h(pVCpu);
+                break;
+        }
+    }
+    RT_NOREF(cbInstr);
+}
+
+
+void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
+{
+    /* DOS & BIOS (V86 mode) */
+    if (   LogIsEnabled()
+        && pVCpu->cpum.GstCtx.eflags.Bits.u1VM /* v8086 mode */)
+    {
+        switch (u8Vector)
+        {
+            case 0x10:
+                iemLogSyscallVgaBiosInt10h(pVCpu);
+                break;
+            case 0x16:
+                iemLogSyscallBiosInt16h(pVCpu);
+                break;
+        }
     }
 
     /* Windows 3.x */
@@ -1086,7 +1217,7 @@ void iemLogSyscallProtModeInt(PVMCPUCC pVCpu, uint8_t u8Vector, uint8_t cbInstr)
         {
             case 0x20: /* VxD call. */
                 iemLogSyscallWinVxDCall(pVCpu, cbInstr);
-                break;;
+                break;
         }
 
     /* Linux */

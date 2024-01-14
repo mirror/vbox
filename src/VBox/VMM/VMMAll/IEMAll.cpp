@@ -2115,6 +2115,13 @@ iemRaiseXcptOrIntInRealMode(PVMCPUCC      pVCpu,
         return rcStrict;
     }
 
+#ifdef LOG_ENABLED
+    /* If software interrupt, try decode it if logging is enabled and such. */
+    if (   (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        && LogIsItEnabled(RTLOGGRPFLAGS_ENABLED, LOG_GROUP_IEM_SYSCALL))
+        iemLogSyscallRealModeInt(pVCpu, u8Vector, cbInstr);
+#endif
+
     /*
      * Push the stack frame.
      */
