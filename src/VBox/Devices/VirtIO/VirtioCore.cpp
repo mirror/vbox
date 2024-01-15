@@ -856,7 +856,8 @@ DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
             static volatile uint32_t s_cThreshold = 1;
             if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
             {
-                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop.\n"));
+                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop (cSegsIn=%u cSegsOut=%u uQueueSize=%u).\n",
+                               cSegsIn, cSegsOut, pVirtq->uQueueSize));
                 if (ASMAtomicReadU32(&s_cMessages) != 1)
                     LogRelMax(64, ("(the above error has occured %u times so far)\n", ASMAtomicReadU32(&s_cMessages)));
                 ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
