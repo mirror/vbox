@@ -478,6 +478,8 @@ RTFLOAT64U const g_ar64Zero[] = { RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(
 RTFLOAT80U const g_ar80Zero[] = { RTFLOAT80U_INIT_ZERO(0), RTFLOAT80U_INIT_ZERO(1) };
 
 /** One values (indexed by fSign). */
+RTFLOAT32U const g_ar32One[] =
+{ RTFLOAT32U_INIT(0, 0, RTFLOAT32U_EXP_BIAS), RTFLOAT32U_INIT(1, 0, RTFLOAT32U_EXP_BIAS) };
 RTFLOAT80U const g_ar80One[] =
 { RTFLOAT80U_INIT(0, RT_BIT_64(63), RTFLOAT80U_EXP_BIAS), RTFLOAT80U_INIT(1, RT_BIT_64(63), RTFLOAT80U_EXP_BIAS) };
 
@@ -16141,10 +16143,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rsqrtss_u128_r32,(PX86FXSTATE pFpuState, PIEMSS
 #ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_rcp_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val)
 {
-    RT_NOREF(pr32Res); RT_NOREF(fMxcsr); RT_NOREF(pr32Val);
-    /** @todo implement using softfloat! */
-    Assert(0);
-    return 0;
+    if (iemSseUnaryValIsNaNR32(pr32Res, pr32Val, &fMxcsr))
+        return fMxcsr;
+
+    RTFLOAT32U r32Src;
+    iemSsePrepareValueR32(&r32Src, fMxcsr | X86_MXCSR_DAZ, pr32Val);
+    if (RTFLOAT32U_IS_ZERO(&r32Src))
+    {
+        *pr32Res = g_ar32Infinity[r32Src.s.fSign];
+        return fMxcsr;
+    }
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
+    float32_t r32Result = f32_div(iemFpSoftF32FromIprt(&g_ar32One[0]), iemFpSoftF32FromIprt(&r32Src), &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Result, pr32Res, fMxcsr);
 }
 
 
