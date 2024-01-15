@@ -2597,6 +2597,62 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
+    def testGuestCtrlSessionSimple(self, oSession, oTestVm):
+        """
+        Tests simple session-based API calls.
+        """
+
+        reporter.log('Testing simple session-based API calls ...');
+
+        # Start a valid session.
+        aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
+        try:
+            oCreds = tdCtxCreds();
+            oCreds.applyDefaultsIfNotSet(oTestVm);
+            oGuest        = oSession.o.console.guest;
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionSimple");
+            oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
+        except:
+            reporter.logXcpt('Starting session for session-based API calls failed');
+            return False;
+
+        fRc = True;
+
+        # User home.
+        if self.oTstDrv.fpApiVer >= 7.0:
+            reporter.log('Getting user\'s home directory ...');
+            try:
+                reporter.log('User home directory: %s' % (oGuestSession.userHome));
+            except:
+                fRc = reporter.logXcpt('Getting user home directory failed');
+
+        # User documents.
+        if self.oTstDrv.fpApiVer >= 7.0:
+            reporter.log('Getting user\'s documents directory ...');
+            try:
+                reporter.log('User documents directory: %s' % (oGuestSession.userDocuments));
+            except:
+                fRc = reporter.logXcpt('Getting user documents directory failed');
+
+        # Mount points. Only available for Guest Additions >= 7.1.
+        if self.oTstDrv.fpApiVer >= 7.1:
+            reporter.log('Getting mount points ...');
+            try:
+                aMountpoints = oGuestSession.getMountPoints();
+                reporter.log('Got %ld mount points' % len(aMountpoints))
+                for mountPoint in aMountpoints:
+                    reporter.log('Mountpoint: %s' % (mountPoint));
+            except:
+                fRc = reporter.logXcpt('Getting mount points failed');
+
+        # Close the session.
+        try:
+            oGuestSession.close();
+        except:
+            fRc = reporter.errorXcpt('Closing guest session failed');
+
+        return fRc;
+
     def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm):
         """
         Tests the guest session handling.
@@ -2737,6 +2793,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     ## @todo any way to check that they work?
 
         ## @todo Test session timeouts.
+
+        fRc2 = self.testGuestCtrlSessionSimple(oSession, oTestVm);
+        if fRc:
+            fRc = fRc2;
 
         return (fRc, oTxsSession);
 
