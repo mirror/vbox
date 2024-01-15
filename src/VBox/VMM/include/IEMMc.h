@@ -2840,32 +2840,35 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     if (   !(pVCpu->cpum.GstCtx.eflags.u & (a_fBit)) \
         &&    !!(pVCpu->cpum.GstCtx.eflags.u & (a_fBit1)) \
            == !!(pVCpu->cpum.GstCtx.eflags.u & (a_fBit2)) ) {
-#define IEM_MC_IF_CX_IS_NZ()                            if (pVCpu->cpum.GstCtx.cx != 0) {
+#define IEM_MC_IF_CX_IS_NZ()                            if (pVCpu->cpum.GstCtx.cx  != 0) {
 #define IEM_MC_IF_ECX_IS_NZ()                           if (pVCpu->cpum.GstCtx.ecx != 0) {
 #define IEM_MC_IF_RCX_IS_NZ()                           if (pVCpu->cpum.GstCtx.rcx != 0) {
+#define IEM_MC_IF_CX_IS_NOT_ONE()                       if (pVCpu->cpum.GstCtx.cx  != 1) {
+#define IEM_MC_IF_ECX_IS_NOT_ONE()                      if (pVCpu->cpum.GstCtx.ecx != 1) {
+#define IEM_MC_IF_RCX_IS_NOT_ONE()                      if (pVCpu->cpum.GstCtx.rcx != 1) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.cx != 0 \
+#define IEM_MC_IF_CX_IS_NOT_ONE_AND_EFL_BIT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.cx != 1 \
             && (pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.ecx != 0 \
+#define IEM_MC_IF_ECX_IS_NOT_ONE_AND_EFL_BIT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.ecx != 1 \
             && (pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.rcx != 0 \
+#define IEM_MC_IF_RCX_IS_NOT_ONE_AND_EFL_BIT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.rcx != 1 \
             && (pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.cx != 0 \
+#define IEM_MC_IF_CX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.cx != 1 \
             && !(pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.ecx != 0 \
+#define IEM_MC_IF_ECX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.ecx != 1 \
             && !(pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 /** @note Not for IOPL or IF testing. */
-#define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
-        if (   pVCpu->cpum.GstCtx.rcx != 0 \
+#define IEM_MC_IF_RCX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(a_fBit) \
+        if (   pVCpu->cpum.GstCtx.rcx != 1 \
             && !(pVCpu->cpum.GstCtx.eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (iemGRegFetchU64(pVCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {

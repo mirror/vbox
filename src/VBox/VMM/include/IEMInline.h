@@ -2060,7 +2060,7 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXC
  * @see  @sdmv3{077,200,6.8.3,Masking Exceptions and Interrupts When Switching
  *              Stacks}
  */
-static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
+static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu, int rcNormal) RT_NOEXCEPT
 {
     /*
      * Normally we're just here to clear RF and/or interrupt shadow bits.
@@ -2101,9 +2101,10 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
             LogFlowFunc(("dbgf at %04X:%016llX: %Rrc\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, VBOXSTRICTRC_VAL(rcStrict)));
         }
         pVCpu->cpum.GstCtx.eflags.uBoth &= ~CPUMCTX_DBG_DBGF_MASK;
+        Assert(rcStrict != VINF_SUCCESS);
         return rcStrict;
     }
-    return VINF_SUCCESS;
+    return rcNormal;
 }
 
 
@@ -2111,8 +2112,11 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu) RT_NOEXCEPT
  * Clears the RF and CPUMCTX_INHIBIT_SHADOW, triggering \#DB if pending.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu, int rcNormal) RT_NOEXCEPT
 {
     /*
      * We assume that most of the time nothing actually needs doing here.
@@ -2120,8 +2124,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCE
     AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
     if (RT_LIKELY(!(  pVCpu->cpum.GstCtx.eflags.uBoth
                     & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) ))
-        return VINF_SUCCESS;
-    return iemFinishInstructionWithFlagsSet(pVCpu);
+        return rcNormal;
+    return iemFinishInstructionWithFlagsSet(pVCpu, rcNormal);
 }
 
 
@@ -2135,7 +2139,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCE
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
     iemRegAddToRip(pVCpu, cbInstr);
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2147,11 +2151,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pV
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = pVCpu->cpum.GstCtx.rip + cbInstr;
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2163,11 +2170,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingClearingRF(PVMCPUCC 
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = (uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr);
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2179,11 +2189,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingClearingRF(PVMCPUCC 
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = (uint16_t)(pVCpu->cpum.GstCtx.ip + cbInstr);
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2191,14 +2204,17 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingClearingRF(PVMCPUCC p
  * Tail method for a finish function that does't clear flags or raise \#DB.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishNoFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishNoFlags(PVMCPUCC pVCpu, int rcNormal) RT_NOEXCEPT
 {
     AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
     Assert(!(  pVCpu->cpum.GstCtx.eflags.uBoth
              & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) );
     RT_NOREF(pVCpu);
-    return VINF_SUCCESS;
+    return rcNormal;
 }
 
 
@@ -2210,11 +2226,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishNoFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = pVCpu->cpum.GstCtx.rip + cbInstr;
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2226,11 +2245,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingNoFlags(PVMCPUCC pVC
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = (uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr);
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2242,11 +2264,15 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingNoFlags(PVMCPUCC pVC
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
+ *
  */
-DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int rcNormal) RT_NOEXCEPT
 {
     pVCpu->cpum.GstCtx.rip = (uint16_t)(pVCpu->cpum.GstCtx.ip + cbInstr);
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2260,9 +2286,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingNoFlags(PVMCPUCC pVCp
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
  * @param   enmEffOpSize        Effective operand size.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
-                                                                             IEMMODE enmEffOpSize) RT_NOEXCEPT
+                                                                             IEMMODE enmEffOpSize, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
@@ -2283,7 +2312,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishClearingRF(PVM
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2298,9 +2327,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishClearingRF(PVM
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
  * @param   enmEffOpSize        Effective operand size.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
-                                                                             IEMMODE enmEffOpSize) RT_NOEXCEPT
+                                                                             IEMMODE enmEffOpSize, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
     Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
@@ -2320,7 +2352,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishClearingRF(PVM
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2333,9 +2365,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishClearingRF(PVM
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                            int8_t offNextInstr) RT_NOEXCEPT
+                                                                            int8_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2352,7 +2387,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishClearingRF(PVMC
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2367,9 +2402,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishClearingRF(PVMC
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
  * @param   enmEffOpSize        Effective operand size.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
-                                                                          IEMMODE enmEffOpSize) RT_NOEXCEPT
+                                                                          IEMMODE enmEffOpSize, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
@@ -2386,7 +2424,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishNoFlags(PVMCPU
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2401,9 +2439,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishNoFlags(PVMCPU
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
  * @param   enmEffOpSize        Effective operand size.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
-                                                                          IEMMODE enmEffOpSize) RT_NOEXCEPT
+                                                                          IEMMODE enmEffOpSize, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
     Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
@@ -2419,7 +2460,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishNoFlags(PVMCPU
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2433,9 +2474,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishNoFlags(PVMCPU
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                         int8_t offNextInstr) RT_NOEXCEPT
+                                                                         int8_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2448,7 +2492,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishNoFlags(PVMCPUC
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2459,9 +2503,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishNoFlags(PVMCPUC
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                              int16_t offNextInstr) RT_NOEXCEPT
+                                                                              int16_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2474,7 +2521,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishClearingRF(PV
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2488,12 +2535,15 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishClearingRF(PV
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  *
  * @note    This is also used by 16-bit code in pre-386 mode, as the code is
  *          identical.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                              int16_t offNextInstr) RT_NOEXCEPT
+                                                                              int16_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2510,7 +2560,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishClearingRF(PV
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2522,9 +2572,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishClearingRF(PV
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                           int16_t offNextInstr) RT_NOEXCEPT
+                                                                           int16_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2533,7 +2586,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishNoFlags(PVMCP
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2548,12 +2601,15 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishNoFlags(PVMCP
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  *
  * @note    This is also used by 16-bit code in pre-386 mode, as the code is
  *          identical.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                           int16_t offNextInstr) RT_NOEXCEPT
+                                                                           int16_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2566,7 +2622,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishNoFlags(PVMCP
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2584,9 +2640,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishNoFlags(PVMCP
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                              int32_t offNextInstr) RT_NOEXCEPT
+                                                                              int32_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2603,7 +2662,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishClearingRF(PV
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2621,9 +2680,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishClearingRF(PV
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                              int32_t offNextInstr) RT_NOEXCEPT
+                                                                              int32_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
     Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
@@ -2641,7 +2703,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishClearingRF(PV
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, rcNormal);
 }
 
 
@@ -2660,9 +2722,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishClearingRF(PV
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                           int32_t offNextInstr) RT_NOEXCEPT
+                                                                           int32_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(IEM_IS_64BIT_CODE(pVCpu));
 
@@ -2675,7 +2740,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishNoFlags(PVMCP
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2694,9 +2759,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishNoFlags(PVMCP
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             Instruction size.
  * @param   offNextInstr        The offset of the next instruction.
+ * @param   rcNormal            VINF_SUCCESS to continue TB.
+ *                              VINF_IEM_REEXEC_BREAK to force TB exit when
+ *                              taking the wrong conditional branhc.
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
-                                                                           int32_t offNextInstr) RT_NOEXCEPT
+                                                                           int32_t offNextInstr, int rcNormal) RT_NOEXCEPT
 {
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
     Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
@@ -2710,7 +2778,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishNoFlags(PVMCP
 #ifndef IEM_WITH_CODE_TLB
     iemOpcodeFlushLight(pVCpu, cbInstr);
 #endif
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, rcNormal);
 }
 
 
@@ -2754,7 +2822,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, 
 {
     iemRegAddToRip(pVCpu, cbInstr);
     if (!(fEflOld & X86_EFL_TF))
-        return iemRegFinishClearingRF(pVCpu);
+        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
     return iemFinishInstructionWithTfSet(pVCpu);
 }
 
@@ -2790,7 +2858,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU16AndFinishNoFlags(PVMCPUCC pVCpu, uint16
         pVCpu->cpum.GstCtx.rip = uNewIp;
     else
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2811,7 +2879,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU32AndFinishNoFlags(PVMCPUCC pVCpu, uint32
         pVCpu->cpum.GstCtx.rip = uNewEip;
     else
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2832,7 +2900,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU64AndFinishNoFlags(PVMCPUCC pVCpu, uint64
         pVCpu->cpum.GstCtx.rip = uNewRip;
     else
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    return iemRegFinishNoFlags(pVCpu);
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
 }
 
 #endif /* IEM_WITH_CODE_TLB */
@@ -2858,7 +2926,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU16AndFinishClearingRF(PVMCPUCC pVCpu, uin
 #else
     RT_NOREF_PV(cbInstr);
 #endif
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2884,7 +2952,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU32AndFinishClearingRF(PVMCPUCC pVCpu, uin
 #else
     RT_NOREF_PV(cbInstr);
 #endif
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2910,7 +2978,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU64AndFinishClearingRF(PVMCPUCC pVCpu, uin
 #else
     RT_NOREF_PV(cbInstr);
 #endif
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 

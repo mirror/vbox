@@ -12443,10 +12443,11 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_NOT_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
-            IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_CX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12455,10 +12456,11 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
-            IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_ECX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12467,10 +12469,11 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
-            IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_RCX_IS_NOT_ONE_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12495,10 +12498,11 @@ FNIEMOP_DEF(iemOp_loope_Jb)
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_NOT_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
-            IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_CX_IS_NOT_ONE_AND_EFL_BIT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12507,10 +12511,11 @@ FNIEMOP_DEF(iemOp_loope_Jb)
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
-            IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_ECX_IS_NOT_ONE_AND_EFL_BIT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12519,10 +12524,11 @@ FNIEMOP_DEF(iemOp_loope_Jb)
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
-            IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_IF_RCX_IS_NOT_ONE_AND_EFL_BIT_SET(X86_EFL_ZF) {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12587,10 +12593,11 @@ FNIEMOP_DEF(iemOp_loop_Jb)
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_NOT_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
-            IEM_MC_IF_CX_IS_NZ() {
+            IEM_MC_IF_CX_IS_NOT_ONE() {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12599,10 +12606,11 @@ FNIEMOP_DEF(iemOp_loop_Jb)
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
-            IEM_MC_IF_ECX_IS_NZ() {
+            IEM_MC_IF_ECX_IS_NOT_ONE() {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();
@@ -12611,10 +12619,11 @@ FNIEMOP_DEF(iemOp_loop_Jb)
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 0, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
-            IEM_MC_IF_RCX_IS_NZ() {
+            IEM_MC_IF_RCX_IS_NOT_ONE() {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
             } IEM_MC_ELSE() {
+                IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ENDIF();
             IEM_MC_END();

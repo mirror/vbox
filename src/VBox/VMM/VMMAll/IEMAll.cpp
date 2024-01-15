@@ -4638,7 +4638,7 @@ VBOXSTRICTRC iemRegRipRelativeJumpS8AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t 
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -4672,7 +4672,7 @@ VBOXSTRICTRC iemRegRipRelativeJumpS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -4720,7 +4720,7 @@ VBOXSTRICTRC iemRegRipRelativeJumpS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t
     /*
      * Clear RF and finish the instruction (maybe raise #DB).
      */
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 /** @}  */

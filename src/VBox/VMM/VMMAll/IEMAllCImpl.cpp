@@ -932,7 +932,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -956,7 +956,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -980,7 +980,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -1004,7 +1004,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -1028,7 +1028,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -1052,7 +1052,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
         {
             pVCpu->cpum.GstCtx.rip = uNewPC;
             IEM_FLUSH_PREFETCH_LIGHT(pVCpu, cbInstr);
-            return iemRegFinishClearingRF(pVCpu);
+            return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
         }
         return rcStrict;
     }
@@ -1966,7 +1966,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
             pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
                                | iemCalc32BitFlatIndicator(pVCpu);
 
-        return iemRegFinishClearingRF(pVCpu);
+        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
     }
 
     /*
@@ -2091,7 +2091,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2155,7 +2155,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         pVCpu->cpum.GstCtx.cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pVCpu->cpum.GstCtx.cs.u64Base    = (uint32_t)uSel << 4;
 
-        return iemRegFinishClearingRF(pVCpu);
+        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
     }
 
     /*
@@ -2317,7 +2317,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2394,7 +2394,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pVCpu->cpum.GstCtx.cs.ValidSel   = uNewCs;
         pVCpu->cpum.GstCtx.cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pVCpu->cpum.GstCtx.cs.u64Base    = (uint32_t)uNewCs << 4;
-        return iemRegFinishClearingRF(pVCpu);
+        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
     }
 
     /*
@@ -2735,7 +2735,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo use light flush for same privilege? */
 
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 
@@ -2818,7 +2818,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemCImpl_ReturnNearCommon(PVMCPUCC pVCpu, uint8_
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo only need a light flush here, don't we?  We don't really need any flushing... */
     RT_NOREF(cbInstr);
 
-    return iemRegFinishClearingRF(pVCpu);
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 

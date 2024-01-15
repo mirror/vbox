@@ -2344,6 +2344,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         uint16_t const cCallsPrev = pTb->Thrd.cCalls;
 
         rcStrict = FNIEMOP_CALL(g_apfnIemThreadedRecompilerOneByteMap[b]);
+#if 0
+        for (unsigned i = cCallsPrev; i < pTb->Thrd.cCalls; i++)
+            Log8(("-> %#u/%u - %d %s\n", i, pTb->Thrd.paCalls[i].idxInstr, pTb->Thrd.paCalls[i].enmFunction,
+                  g_apszIemThreadedFunctions[pTb->Thrd.paCalls[i].enmFunction]));
+#endif
         if (   rcStrict == VINF_SUCCESS
             && pVCpu->iem.s.rcPassUp == VINF_SUCCESS
             && !pVCpu->iem.s.fEndTb)
@@ -2494,7 +2499,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
             /* VINF_IEM_REEXEC_WITH_FLAGS needs to receive special treatment
                and converted to VINF_SUCCESS or whatever is appropriate. */
             if (rcStrict == VINF_IEM_REEXEC_FINISH_WITH_FLAGS)
-                return iemExecStatusCodeFiddling(pVCpu, iemFinishInstructionWithFlagsSet(pVCpu));
+                return iemExecStatusCodeFiddling(pVCpu, iemFinishInstructionWithFlagsSet(pVCpu, VINF_SUCCESS));
 
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }

@@ -129,6 +129,15 @@ g_kdIemFieldToType = {
     'uFpuOpcode':           ( 'uint16_t', ),
 };
 
+## @name McStmtCond.oIfBranchAnnotation/McStmtCond.oElseBranchAnnotation values
+## @{
+g_ksFinishAnnotation_Advance            = 'Advance';
+g_ksFinishAnnotation_RelJmp             = 'RelJmp';
+g_ksFinishAnnotation_SetJmp             = 'SetJmp';
+g_ksFinishAnnotation_DeferToCImpl       = 'DeferToCImpl';
+## @}
+
+
 class ThreadedParamRef(object):
     """
     A parameter reference for a threaded function.
@@ -164,41 +173,75 @@ class ThreadedFunctionVariation(object):
     ## @name Variations.
     ## These variations will match translation block selection/distinctions as well.
     ## @{
-    ksVariation_Default     = '';               ##< No variations - only used by IEM_MC_DEFER_TO_CIMPL_X_RET.
-    ksVariation_16          = '_16';            ##< 16-bit mode code (386+).
-    ksVariation_16f         = '_16f';           ##< 16-bit mode code (386+), check+clear eflags.
-    ksVariation_16_Addr32   = '_16_Addr32';     ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing.
-    ksVariation_16f_Addr32  = '_16f_Addr32';    ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing, eflags.
-    ksVariation_16_Pre386   = '_16_Pre386';     ##< 16-bit mode code, pre-386 CPU target.
-    ksVariation_16f_Pre386  = '_16f_Pre386';    ##< 16-bit mode code, pre-386 CPU target, check+clear eflags.
-    ksVariation_32          = '_32';            ##< 32-bit mode code (386+).
-    ksVariation_32f         = '_32f';           ##< 32-bit mode code (386+), check+clear eflags.
-    ksVariation_32_Flat     = '_32_Flat';       ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide.
-    ksVariation_32f_Flat    = '_32f_Flat';      ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide, eflags.
-    ksVariation_32_Addr16   = '_32_Addr16';     ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing.
-    ksVariation_32f_Addr16  = '_32f_Addr16';    ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing, eflags.
-    ksVariation_64          = '_64';            ##< 64-bit mode code.
-    ksVariation_64f         = '_64f';           ##< 64-bit mode code, check+clear eflags.
-    ksVariation_64_FsGs     = '_64_FsGs';       ##< 64-bit mode code, with memory accesses via FS or GS.
-    ksVariation_64f_FsGs    = '_64f_FsGs';      ##< 64-bit mode code, with memory accesses via FS or GS, check+clear eflags.
-    ksVariation_64_Addr32   = '_64_Addr32';     ##< 64-bit mode code, address size prefixed to 32-bit addressing.
-    ksVariation_64f_Addr32  = '_64f_Addr32';    ##< 64-bit mode code, address size prefixed to 32-bit addressing, c+c eflags.
+    # pylint: disable=line-too-long
+    ksVariation_Default           = '';                  ##< No variations - only used by IEM_MC_DEFER_TO_CIMPL_X_RET.
+    ksVariation_16                = '_16';               ##< 16-bit mode code (386+).
+    ksVariation_16f               = '_16f';              ##< 16-bit mode code (386+), check+clear eflags.
+    ksVariation_16_Jmp            = '_16_Jmp';           ##< 16-bit mode code (386+), conditional jump taken.
+    ksVariation_16f_Jmp           = '_16f_Jmp';          ##< 16-bit mode code (386+), check+clear eflags, conditional jump taken.
+    ksVariation_16_NoJmp          = '_16_NoJmp';         ##< 16-bit mode code (386+), conditional jump not taken.
+    ksVariation_16f_NoJmp         = '_16f_NoJmp';        ##< 16-bit mode code (386+), check+clear eflags, conditional jump not taken.
+    ksVariation_16_Addr32         = '_16_Addr32';        ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing.
+    ksVariation_16f_Addr32        = '_16f_Addr32';       ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing, eflags.
+    ksVariation_16_Pre386         = '_16_Pre386';        ##< 16-bit mode code, pre-386 CPU target.
+    ksVariation_16f_Pre386        = '_16f_Pre386';       ##< 16-bit mode code, pre-386 CPU target, check+clear eflags.
+    ksVariation_16_Pre386_Jmp     = '_16_Pre386_Jmp';    ##< 16-bit mode code, pre-386 CPU target, conditional jump taken.
+    ksVariation_16f_Pre386_Jmp    = '_16f_Pre386_Jmp';   ##< 16-bit mode code, pre-386 CPU target, check+clear eflags, conditional jump taken.
+    ksVariation_16_Pre386_NoJmp   = '_16_Pre386_NoJmp';  ##< 16-bit mode code, pre-386 CPU target, conditional jump not taken.
+    ksVariation_16f_Pre386_NoJmp  = '_16f_Pre386_NoJmp'; ##< 16-bit mode code, pre-386 CPU target, check+clear eflags, conditional jump not taken.
+    ksVariation_32                = '_32';               ##< 32-bit mode code (386+).
+    ksVariation_32f               = '_32f';              ##< 32-bit mode code (386+), check+clear eflags.
+    ksVariation_32_Jmp            = '_32_Jmp';           ##< 32-bit mode code (386+), conditional jump taken.
+    ksVariation_32f_Jmp           = '_32f_Jmp';          ##< 32-bit mode code (386+), check+clear eflags, conditional jump taken.
+    ksVariation_32_NoJmp          = '_32_NoJmp';         ##< 32-bit mode code (386+), conditional jump not taken.
+    ksVariation_32f_NoJmp         = '_32f_NoJmp';        ##< 32-bit mode code (386+), check+clear eflags, conditional jump not taken.
+    ksVariation_32_Flat           = '_32_Flat';          ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide.
+    ksVariation_32f_Flat          = '_32f_Flat';         ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide, eflags.
+    ksVariation_32_Addr16         = '_32_Addr16';        ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing.
+    ksVariation_32f_Addr16        = '_32f_Addr16';       ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing, eflags.
+    ksVariation_64                = '_64';               ##< 64-bit mode code.
+    ksVariation_64f               = '_64f';              ##< 64-bit mode code, check+clear eflags.
+    ksVariation_64_Jmp            = '_64_Jmp';           ##< 64-bit mode code, conditional jump taken.
+    ksVariation_64f_Jmp           = '_64f_Jmp';          ##< 64-bit mode code, check+clear eflags, conditional jump taken.
+    ksVariation_64_NoJmp          = '_64_NoJmp';         ##< 64-bit mode code, conditional jump not taken.
+    ksVariation_64f_NoJmp         = '_64f_NoJmp';        ##< 64-bit mode code, check+clear eflags, conditional jump not taken.
+    ksVariation_64_FsGs           = '_64_FsGs';          ##< 64-bit mode code, with memory accesses via FS or GS.
+    ksVariation_64f_FsGs          = '_64f_FsGs';         ##< 64-bit mode code, with memory accesses via FS or GS, check+clear eflags.
+    ksVariation_64_Addr32         = '_64_Addr32';        ##< 64-bit mode code, address size prefixed to 32-bit addressing.
+    ksVariation_64f_Addr32        = '_64f_Addr32';       ##< 64-bit mode code, address size prefixed to 32-bit addressing, c+c eflags.
+    # pylint: enable=line-too-long
     kasVariations           = (
         ksVariation_Default,
         ksVariation_16,
         ksVariation_16f,
+        ksVariation_16_Jmp,
+        ksVariation_16f_Jmp,
+        ksVariation_16_NoJmp,
+        ksVariation_16f_NoJmp,
         ksVariation_16_Addr32,
         ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
         ksVariation_16f_Pre386,
+        ksVariation_16_Pre386_Jmp,
+        ksVariation_16f_Pre386_Jmp,
+        ksVariation_16_Pre386_NoJmp,
+        ksVariation_16f_Pre386_NoJmp,
         ksVariation_32,
         ksVariation_32f,
+        ksVariation_32_Jmp,
+        ksVariation_32f_Jmp,
+        ksVariation_32_NoJmp,
+        ksVariation_32f_NoJmp,
         ksVariation_32_Flat,
         ksVariation_32f_Flat,
         ksVariation_32_Addr16,
         ksVariation_32f_Addr16,
         ksVariation_64,
         ksVariation_64f,
+        ksVariation_64_Jmp,
+        ksVariation_64f_Jmp,
+        ksVariation_64_NoJmp,
+        ksVariation_64f_NoJmp,
         ksVariation_64_FsGs,
         ksVariation_64f_FsGs,
         ksVariation_64_Addr32,
@@ -320,54 +363,118 @@ class ThreadedFunctionVariation(object):
         ksVariation_Default,
         ksVariation_64,
         ksVariation_64f,
+        ksVariation_64_Jmp,
+        ksVariation_64f_Jmp,
+        ksVariation_64_NoJmp,
+        ksVariation_64f_NoJmp,
         ksVariation_64_FsGs,
         ksVariation_64f_FsGs,
         ksVariation_32_Flat,
         ksVariation_32f_Flat,
         ksVariation_32,
         ksVariation_32f,
+        ksVariation_32_Jmp,
+        ksVariation_32f_Jmp,
+        ksVariation_32_NoJmp,
+        ksVariation_32f_NoJmp,
         ksVariation_16,
         ksVariation_16f,
+        ksVariation_16_Jmp,
+        ksVariation_16f_Jmp,
+        ksVariation_16_NoJmp,
+        ksVariation_16f_NoJmp,
         ksVariation_16_Addr32,
         ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
         ksVariation_16f_Pre386,
+        ksVariation_16_Pre386_Jmp,
+        ksVariation_16f_Pre386_Jmp,
+        ksVariation_16_Pre386_NoJmp,
+        ksVariation_16f_Pre386_NoJmp,
         ksVariation_32_Addr16,
         ksVariation_32f_Addr16,
         ksVariation_64_Addr32,
         ksVariation_64f_Addr32,
     );
     kdVariationNames = {
-        ksVariation_Default:    'defer-to-cimpl',
-        ksVariation_16:         '16-bit',
-        ksVariation_16f:        '16-bit w/ eflag checking and clearing',
-        ksVariation_16_Addr32:  '16-bit w/ address prefix (Addr32)',
-        ksVariation_16f_Addr32: '16-bit w/ address prefix (Addr32) and eflag checking and clearing',
-        ksVariation_16_Pre386:  '16-bit on pre-386 CPU',
-        ksVariation_16f_Pre386: '16-bit on pre-386 CPU w/ eflag checking and clearing',
-        ksVariation_32:         '32-bit',
-        ksVariation_32f:        '32-bit w/ eflag checking and clearing',
-        ksVariation_32_Flat:    '32-bit flat and wide open CS, SS, DS and ES',
-        ksVariation_32f_Flat:   '32-bit flat and wide open CS, SS, DS and ES w/ eflag checking and clearing',
-        ksVariation_32_Addr16:  '32-bit w/ address prefix (Addr16)',
-        ksVariation_32f_Addr16: '32-bit w/ address prefix (Addr16) and eflag checking and clearing',
-        ksVariation_64:         '64-bit',
-        ksVariation_64f:        '64-bit w/ eflag checking and clearing',
-        ksVariation_64_FsGs:    '64-bit with memory accessed via FS or GS',
-        ksVariation_64f_FsGs:   '64-bit with memory accessed via FS or GS and eflag checking and clearing',
-        ksVariation_64_Addr32:  '64-bit w/ address prefix (Addr32)',
-        ksVariation_64f_Addr32: '64-bit w/ address prefix (Addr32) and eflag checking and clearing',
+        ksVariation_Default:          'defer-to-cimpl',
+        ksVariation_16:               '16-bit',
+        ksVariation_16f:              '16-bit w/ eflag checking and clearing',
+        ksVariation_16_Jmp:           '16-bit w/ conditional jump taken',
+        ksVariation_16f_Jmp:          '16-bit w/ eflag checking and clearing and conditional jump taken',
+        ksVariation_16_NoJmp:         '16-bit w/ conditional jump not taken',
+        ksVariation_16f_NoJmp:        '16-bit w/ eflag checking and clearing and conditional jump not taken',
+        ksVariation_16_Addr32:        '16-bit w/ address prefix (Addr32)',
+        ksVariation_16f_Addr32:       '16-bit w/ address prefix (Addr32) and eflag checking and clearing',
+        ksVariation_16_Pre386:        '16-bit on pre-386 CPU',
+        ksVariation_16f_Pre386:       '16-bit on pre-386 CPU w/ eflag checking and clearing',
+        ksVariation_16_Pre386_Jmp:    '16-bit on pre-386 CPU w/ conditional jump taken',
+        ksVariation_16f_Pre386_Jmp:   '16-bit on pre-386 CPU w/ eflag checking and clearing and conditional jump taken',
+        ksVariation_16_Pre386_NoJmp:  '16-bit on pre-386 CPU w/ conditional jump taken',
+        ksVariation_16f_Pre386_NoJmp: '16-bit on pre-386 CPU w/ eflag checking and clearing and conditional jump taken',
+        ksVariation_32:               '32-bit',
+        ksVariation_32f:              '32-bit w/ eflag checking and clearing',
+        ksVariation_32_Jmp:           '32-bit w/ conditional jump taken',
+        ksVariation_32f_Jmp:          '32-bit w/ eflag checking and clearing and conditional jump taken',
+        ksVariation_32_NoJmp:         '32-bit w/ conditional jump not taken',
+        ksVariation_32f_NoJmp:        '32-bit w/ eflag checking and clearing and conditional jump not taken',
+        ksVariation_32_Flat:          '32-bit flat and wide open CS, SS, DS and ES',
+        ksVariation_32f_Flat:         '32-bit flat and wide open CS, SS, DS and ES w/ eflag checking and clearing',
+        ksVariation_32_Addr16:        '32-bit w/ address prefix (Addr16)',
+        ksVariation_32f_Addr16:       '32-bit w/ address prefix (Addr16) and eflag checking and clearing',
+        ksVariation_64:               '64-bit',
+        ksVariation_64f:              '64-bit w/ eflag checking and clearing',
+        ksVariation_64_Jmp:           '64-bit w/ conditional jump taken',
+        ksVariation_64f_Jmp:          '64-bit w/ eflag checking and clearing and  conditional jump taken',
+        ksVariation_64_NoJmp:         '64-bit w/ conditional jump not taken',
+        ksVariation_64f_NoJmp:        '64-bit w/ eflag checking and clearing and  conditional jump not taken',
+        ksVariation_64_FsGs:          '64-bit with memory accessed via FS or GS',
+        ksVariation_64f_FsGs:         '64-bit with memory accessed via FS or GS and eflag checking and clearing',
+        ksVariation_64_Addr32:        '64-bit w/ address prefix (Addr32)',
+        ksVariation_64f_Addr32:       '64-bit w/ address prefix (Addr32) and eflag checking and clearing',
     };
     kdVariationsWithEflagsCheckingAndClearing = {
         ksVariation_16f: True,
+        ksVariation_16f_Jmp: True,
+        ksVariation_16f_NoJmp: True,
         ksVariation_16f_Addr32: True,
         ksVariation_16f_Pre386: True,
+        ksVariation_16f_Pre386_Jmp: True,
+        ksVariation_16f_Pre386_NoJmp: True,
         ksVariation_32f: True,
+        ksVariation_32f_Jmp: True,
+        ksVariation_32f_NoJmp: True,
         ksVariation_32f_Flat: True,
         ksVariation_32f_Addr16: True,
         ksVariation_64f: True,
+        ksVariation_64f_Jmp: True,
+        ksVariation_64f_NoJmp: True,
         ksVariation_64f_FsGs: True,
         ksVariation_64f_Addr32: True,
+    };
+    kdVariationsOnly64NoFlags = {
+        ksVariation_64:        True,
+        ksVariation_64_Jmp:    True,
+        ksVariation_64_NoJmp:  True,
+        ksVariation_64_FsGs:   True,
+        ksVariation_64_Addr32: True,
+    };
+    kdVariationsOnly64WithFlags = {
+        ksVariation_64f:        True,
+        ksVariation_64f_Jmp:    True,
+        ksVariation_64f_NoJmp:  True,
+        ksVariation_64f_FsGs:   True,
+        ksVariation_64f_Addr32: True,
+    };
+    kdVariationsOnlyPre386NoFlags = {
+        ksVariation_16_Pre386:       True,
+        ksVariation_16_Pre386_Jmp:   True,
+        ksVariation_16_Pre386_NoJmp: True,
+    };
+    kdVariationsOnlyPre386WithFlags = {
+        ksVariation_16f_Pre386:       True,
+        ksVariation_16f_Pre386_Jmp:   True,
+        ksVariation_16f_Pre386_NoJmp: True,
     };
     kdVariationsWithFlatAddress = {
         ksVariation_32_Flat: True,
@@ -410,6 +517,50 @@ class ThreadedFunctionVariation(object):
         ksVariation_32f:        True,
         ksVariation_32_Flat:    True,
         ksVariation_32f_Flat:   True,
+    };
+    kdVariationsWithAddressOnly64 = {
+        ksVariation_64:         True,
+        ksVariation_64f:        True,
+        ksVariation_64_FsGs:    True,
+        ksVariation_64f_FsGs:   True,
+        ksVariation_64_Addr32:  True,
+        ksVariation_64f_Addr32: True,
+    };
+    kdVariationsWithConditional = {
+        ksVariation_16_Jmp:             True,
+        ksVariation_16_NoJmp:           True,
+        ksVariation_16_Pre386_Jmp:      True,
+        ksVariation_16_Pre386_NoJmp:    True,
+        ksVariation_32_Jmp:             True,
+        ksVariation_32_NoJmp:           True,
+        ksVariation_64_Jmp:             True,
+        ksVariation_64_NoJmp:           True,
+        ksVariation_16f_Jmp:            True,
+        ksVariation_16f_NoJmp:          True,
+        ksVariation_16f_Pre386_Jmp:     True,
+        ksVariation_16f_Pre386_NoJmp:   True,
+        ksVariation_32f_Jmp:            True,
+        ksVariation_32f_NoJmp:          True,
+        ksVariation_64f_Jmp:            True,
+        ksVariation_64f_NoJmp:          True,
+    };
+    kdVariationsWithConditionalNoJmp = {
+        ksVariation_16_NoJmp:           True,
+        ksVariation_16_Pre386_NoJmp:    True,
+        ksVariation_32_NoJmp:           True,
+        ksVariation_64_NoJmp:           True,
+        ksVariation_16f_NoJmp:          True,
+        ksVariation_16f_Pre386_NoJmp:   True,
+        ksVariation_32f_NoJmp:          True,
+        ksVariation_64f_NoJmp:          True,
+    };
+    kdVariationsOnlyPre386 = {
+        ksVariation_16_Pre386:          True,
+        ksVariation_16f_Pre386:         True,
+        ksVariation_16_Pre386_Jmp:      True,
+        ksVariation_16f_Pre386_Jmp:     True,
+        ksVariation_16_Pre386_NoJmp:    True,
+        ksVariation_16f_Pre386_NoJmp:   True,
     };
     ## @}
 
@@ -857,22 +1008,34 @@ class ThreadedFunctionVariation(object):
                                               'IEM_MC_SET_RIP_U64_AND_FINISH', ):
                         oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
                     if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', )
-                        and self.sVariation not in (self.ksVariation_16_Pre386, self.ksVariation_16f_Pre386,)):
+                        and self.sVariation not in self.kdVariationsOnlyPre386):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
-                    if   self.sVariation in (self.ksVariation_64,  self.ksVariation_64_FsGs,  self.ksVariation_64_Addr32):
+                    if   self.sVariation in self.kdVariationsOnly64NoFlags:
                         oNewStmt.sName += '_PC64';
-                    elif self.sVariation in (self.ksVariation_64f, self.ksVariation_64f_FsGs, self.ksVariation_64f_Addr32):
+                    elif self.sVariation in self.kdVariationsOnly64WithFlags:
                         oNewStmt.sName += '_PC64_WITH_FLAGS';
-                    elif self.sVariation == self.ksVariation_16_Pre386:
+                    elif self.sVariation in self.kdVariationsOnlyPre386NoFlags:
                         oNewStmt.sName += '_PC16';
-                    elif self.sVariation == self.ksVariation_16f_Pre386:
+                    elif self.sVariation in self.kdVariationsOnlyPre386WithFlags:
                         oNewStmt.sName += '_PC16_WITH_FLAGS';
                     elif self.sVariation not in self.kdVariationsWithEflagsCheckingAndClearing:
                         assert self.sVariation != self.ksVariation_Default;
                         oNewStmt.sName += '_PC32';
                     else:
                         oNewStmt.sName += '_PC32_WITH_FLAGS';
+
+                    # This is making the wrong branch of conditionals break out of the TB.
+                    if (oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
+                                        'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH')):
+                        sExitTbStatus = 'VINF_SUCCESS';
+                        if self.sVariation in self.kdVariationsWithConditional:
+                            if self.sVariation in self.kdVariationsWithConditionalNoJmp:
+                                if oStmt.sName != 'IEM_MC_ADVANCE_RIP_AND_FINISH':
+                                    sExitTbStatus = 'VINF_IEM_REEXEC_BREAK';
+                            elif oStmt.sName == 'IEM_MC_ADVANCE_RIP_AND_FINISH':
+                                sExitTbStatus = 'VINF_IEM_REEXEC_BREAK';
+                        oNewStmt.asParams.append(sExitTbStatus);
 
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
@@ -1027,7 +1190,7 @@ class ThreadedFunctionVariation(object):
                 self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
 
             if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',)
-                and self.sVariation not in (self.ksVariation_16_Pre386, self.ksVariation_16f_Pre386,)):
+                and self.sVariation not in self.kdVariationsOnlyPre386):
                 self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
@@ -1046,7 +1209,7 @@ class ThreadedFunctionVariation(object):
                     self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
                                                              'uint32_t', oStmt, sStdRef = 'u32Disp'));
                 else:
-                    assert self.sVariation in self.kasVariationsWithAddressOnly64;
+                    assert self.sVariation in self.kdVariationsWithAddressOnly64;
                     self.aoParamRefs.append(ThreadedParamRef('IEM_GET_MODRM_EX(pVCpu, bRm)',
                                                              'uint8_t',  oStmt, sStdRef = 'bRmEx'));
                     self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
@@ -1379,7 +1542,7 @@ class ThreadedFunction(object):
             # There shouldn't be any variables or arguments declared inside if/
             # else blocks, but scan them too to be on the safe side.
             if isinstance(oStmt, iai.McStmtCond):
-                cBefore = len(self.dVariables);
+                #cBefore = len(self.dVariables);
                 self.analyzeFindVariablesAndCallArgs(oStmt.aoIfBranch);
                 self.analyzeFindVariablesAndCallArgs(oStmt.aoElseBranch);
                 #if len(self.dVariables) != cBefore:
@@ -1393,7 +1556,12 @@ class ThreadedFunction(object):
         Currently this is simply looking for branching and adding the relevant
         branch flags to dsCImplFlags.  ASSUMES the caller pre-populates the
         dictionary with a copy of self.oMcBlock.dsCImplFlags.
+
+        This also sets McStmtCond.oIfBranchAnnotation & McStmtCond.oElseBranchAnnotation.
+
+        Returns annotation on return style.
         """
+        sAnnotation = None;
         for oStmt in aoStmts:
             # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
             if oStmt.sName.startswith('IEM_MC_SET_RIP'):
@@ -1419,13 +1587,29 @@ class ThreadedFunction(object):
                 else:
                     raise Exception('Unknown IEM_MC_CALL_* statement: %s' % (oStmt.sName,));
 
+            # Check for return statements.
+            if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH',):
+                assert sAnnotation is None;
+                sAnnotation = g_ksFinishAnnotation_Advance;
+            elif oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
+                                 'IEM_MC_REL_JMP_S32_AND_FINISH',):
+                assert sAnnotation is None;
+                sAnnotation = g_ksFinishAnnotation_RelJmp;
+            elif oStmt.sName in ('IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH',
+                                 'IEM_MC_SET_RIP_U64_AND_FINISH',):
+                assert sAnnotation is None;
+                sAnnotation = g_ksFinishAnnotation_SetJmp;
+            elif oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
+                assert sAnnotation is None;
+                sAnnotation = g_ksFinishAnnotation_DeferToCImpl;
+
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
-                self.analyzeCodeOperation(oStmt.aoIfBranch, True);
+                oStmt.oIfBranchAnnotation = self.analyzeCodeOperation(oStmt.aoIfBranch, True);
                 if oStmt.aoElseBranch:
-                    self.analyzeCodeOperation(oStmt.aoElseBranch, True);
+                    oStmt.oElseBranchAnnotation = self.analyzeCodeOperation(oStmt.aoElseBranch, True);
 
-        return True;
+        return sAnnotation;
 
     def analyze(self):
         """
@@ -1497,6 +1681,16 @@ class ThreadedFunction(object):
             else:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddress;
 
+            if (    'IEM_CIMPL_F_BRANCH_CONDITIONAL' in self.dsCImplFlags
+                and 'IEM_CIMPL_F_BRANCH_RELATIVE'    in self.dsCImplFlags): # (latter to avoid iemOp_into)
+                assert set(asVariations).issubset(ThreadedFunctionVariation.kasVariationsWithoutAddress), \
+                    '%s: vars=%s McFlags=%s' % (self.oMcBlock.oFunction.sName, asVariations, self.oMcBlock.dsMcFlags);
+                asVariationsBase = asVariations;
+                asVariations     = [];
+                for sVariation in asVariationsBase:
+                    asVariations.extend([sVariation + '_Jmp', sVariation + '_NoJmp']);
+                assert set(asVariations).issubset(ThreadedFunctionVariation.kdVariationsWithConditional);
+
         if not iai.McStmt.findStmtByNames(aoStmts,
                                           { 'IEM_MC_ADVANCE_RIP_AND_FINISH': True,
                                             'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
@@ -1534,10 +1728,14 @@ class ThreadedFunction(object):
         ThreadedFunctionVariation.ksVariation_16f_Addr32: True,
     };
 
-    def emitThreadedCallStmts(self):
+    def emitThreadedCallStmts(self, sBranch = None): # pylint: disable=too-many-statements
         """
         Worker for morphInputCode that returns a list of statements that emits
         the call to the threaded functions for the block.
+
+        The sBranch parameter is used with conditional branches where we'll emit
+        different threaded calls depending on whether we're in the jump-taken or
+        no-jump code path.
         """
         # Special case for only default variation:
         if len(self.aoVariations) == 1  and  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default:
@@ -1625,7 +1823,7 @@ class ThreadedFunction(object):
         # pylintx: disable=x
         aoCases = [];
         if ThreadedFunctionVariation.ksVariation_64_Addr32 in dByVari:
-            assert not fSimple;
+            assert not fSimple and not sBranch;
             aoCases.extend([
                 Case('IEMMODE_64BIT',       ThrdFnVar.ksVariation_64),
                 Case('IEMMODE_64BIT | 16',  ThrdFnVar.ksVariation_64_FsGs),
@@ -1640,13 +1838,20 @@ class ThreadedFunction(object):
                     Case('IEMMODE_64BIT | 32 | 8',   ThrdFnVar.ksVariation_64f_Addr32),
                 ]);
         elif ThrdFnVar.ksVariation_64 in dByVari:
-            assert fSimple;
+            assert fSimple and not sBranch;
             aoCases.append(Case('IEMMODE_64BIT', ThrdFnVar.ksVariation_64));
             if ThreadedFunctionVariation.ksVariation_64f in dByVari:
                 aoCases.append(Case('IEMMODE_64BIT | 32', ThrdFnVar.ksVariation_64f));
+        elif ThrdFnVar.ksVariation_64_Jmp in dByVari:
+            assert fSimple and sBranch;
+            aoCases.append(Case('IEMMODE_64BIT',
+                                ThrdFnVar.ksVariation_64_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_64_NoJmp));
+            if ThreadedFunctionVariation.ksVariation_64f_Jmp in dByVari:
+                aoCases.append(Case('IEMMODE_64BIT | 32',
+                                    ThrdFnVar.ksVariation_64f_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_64f_NoJmp));
 
         if ThrdFnVar.ksVariation_32_Addr16 in dByVari:
-            assert not fSimple;
+            assert not fSimple and not sBranch;
             aoCases.extend([
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',         ThrdFnVar.ksVariation_32_Flat),
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 16',    None), # fall thru
@@ -1669,7 +1874,7 @@ class ThreadedFunction(object):
                     Case('IEMMODE_32BIT                                       | 32 | 8',     ThrdFnVar.ksVariation_32f_Addr16),
                 ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
-            assert fSimple;
+            assert fSimple and not sBranch;
             aoCases.extend([
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', None), # fall thru
                 Case('IEMMODE_32BIT',                                       ThrdFnVar.ksVariation_32),
@@ -1679,9 +1884,22 @@ class ThreadedFunction(object):
                     Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', None), # fall thru
                     Case('IEMMODE_32BIT                                       | 32', ThrdFnVar.ksVariation_32f),
                 ]);
+        elif ThrdFnVar.ksVariation_32_Jmp in dByVari:
+            assert fSimple and sBranch;
+            aoCases.extend([
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', None), # fall thru
+                Case('IEMMODE_32BIT',
+                     ThrdFnVar.ksVariation_32_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_32_NoJmp),
+            ]);
+            if ThrdFnVar.ksVariation_32f_Jmp in dByVari:
+                aoCases.extend([
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32',
+                         ThrdFnVar.ksVariation_32f_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_32f_NoJmp),
+                ]);
 
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
-            assert not fSimple;
+            assert not fSimple and not sBranch;
             aoCases.extend([
                 Case('IEMMODE_16BIT | 16',      None), # fall thru
                 Case('IEMMODE_16BIT',           ThrdFnVar.ksVariation_16),
@@ -1696,10 +1914,18 @@ class ThreadedFunction(object):
                     Case('IEMMODE_16BIT | 32 | 8',       ThrdFnVar.ksVariation_16f_Addr32),
                 ]);
         elif ThrdFnVar.ksVariation_16 in dByVari:
-            assert fSimple;
+            assert fSimple and not sBranch;
             aoCases.append(Case('IEMMODE_16BIT', ThrdFnVar.ksVariation_16));
             if ThrdFnVar.ksVariation_16f in dByVari:
                 aoCases.append(Case('IEMMODE_16BIT | 32', ThrdFnVar.ksVariation_16f));
+        elif ThrdFnVar.ksVariation_16_Jmp in dByVari:
+            assert fSimple and sBranch;
+            aoCases.append(Case('IEMMODE_16BIT',
+                                ThrdFnVar.ksVariation_16_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_16_NoJmp));
+            if ThrdFnVar.ksVariation_16f_Jmp in dByVari:
+                aoCases.append(Case('IEMMODE_16BIT | 32',
+                                    ThrdFnVar.ksVariation_16f_Jmp if sBranch == 'Jmp' else ThrdFnVar.ksVariation_16f_NoJmp));
+
 
         if ThrdFnVar.ksVariation_16_Pre386 in dByVari:
             if not fSimple:
@@ -1709,6 +1935,17 @@ class ThreadedFunction(object):
             if not fSimple:
                 aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32 | 16', None)); # fall thru
             aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', ThrdFnVar.ksVariation_16f_Pre386));
+
+        if ThrdFnVar.ksVariation_16_Pre386_Jmp in dByVari:
+            assert fSimple and sBranch;
+            aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',
+                                ThrdFnVar.ksVariation_16_Pre386_Jmp if sBranch == 'Jmp'
+                                else ThrdFnVar.ksVariation_16_Pre386_NoJmp));
+        if ThrdFnVar.ksVariation_16f_Pre386_Jmp in dByVari:
+            assert fSimple and sBranch;
+            aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32',
+                                ThrdFnVar.ksVariation_16f_Pre386_Jmp if sBranch == 'Jmp'
+                                else ThrdFnVar.ksVariation_16f_Pre386_NoJmp));
 
         #
         # If the case bodies are all the same, except for the function called,
@@ -1752,7 +1989,7 @@ class ThreadedFunction(object):
 
         return aoStmts;
 
-    def morphInputCode(self, aoStmts, fCallEmitted = False, cDepth = 0):
+    def morphInputCode(self, aoStmts, fIsConditional = False, fCallEmitted = False, cDepth = 0, sBranchAnnotation = None):
         """
         Adjusts (& copies) the statements for the input/decoder so it will emit
         calls to the right threaded functions for each block.
@@ -1763,7 +2000,7 @@ class ThreadedFunction(object):
         #print('McBlock at %s:%s' % (os.path.split(self.oMcBlock.sSrcFile)[1], self.oMcBlock.iBeginLine,));
         aoDecoderStmts = [];
 
-        for oStmt in aoStmts:
+        for iStmt, oStmt in enumerate(aoStmts):
             # Copy the statement. Make a deep copy to make sure we've got our own
             # copies of all instance variables, even if a bit overkill at the moment.
             oNewStmt = copy.deepcopy(oStmt);
@@ -1782,10 +2019,40 @@ class ThreadedFunction(object):
                         or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_')
                         or oStmt.sName in ('IEM_MC_RAISE_DIVIDE_ERROR',)):
                         aoDecoderStmts.pop();
-                        aoDecoderStmts.extend(self.emitThreadedCallStmts());
+                        if not fIsConditional:
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts());
+                        elif oStmt.sName == 'IEM_MC_ADVANCE_RIP_AND_FINISH':
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp'));
+                        else:
+                            assert oStmt.sName in { 'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
+                                                    'IEM_MC_REL_JMP_S16_AND_FINISH': True,
+                                                    'IEM_MC_REL_JMP_S32_AND_FINISH': True, };
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp'));
                         aoDecoderStmts.append(oNewStmt);
                         fCallEmitted = True;
-                elif (    oStmt.fDecode
+
+                    elif iai.g_dMcStmtParsers[oStmt.sName][2]:
+                        # This is for Jmp/NoJmp with loopne and friends which modifies state other than RIP.
+                        if not sBranchAnnotation:
+                            self.raiseProblem('Modifying state before emitting calls! %s' % (oStmt.sName,));
+                        assert fIsConditional;
+                        aoDecoderStmts.pop();
+                        if sBranchAnnotation == g_ksFinishAnnotation_Advance:
+                            assert iai.McStmt.findStmtByNames(aoStmts[iStmt:], {'IEM_MC_ADVANCE_RIP_AND_FINISH':1,})
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp'));
+                        elif sBranchAnnotation == g_ksFinishAnnotation_RelJmp:
+                            assert iai.McStmt.findStmtByNames(aoStmts[iStmt:],
+                                                              { 'IEM_MC_REL_JMP_S8_AND_FINISH':  1,
+                                                                'IEM_MC_REL_JMP_S16_AND_FINISH': 1,
+                                                                'IEM_MC_REL_JMP_S32_AND_FINISH': 1, });
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp'));
+                        else:
+                            self.raiseProblem('Modifying state before emitting calls! %s' % (oStmt.sName,));
+                        aoDecoderStmts.append(oNewStmt);
+                        fCallEmitted = True;
+
+                elif (    not fIsConditional
+                      and oStmt.fDecode
                       and (   oStmt.asParams[0].find('IEMOP_HLP_DONE_') >= 0
                            or oStmt.asParams[0].find('IEMOP_HLP_DECODED_') >= 0)):
                     aoDecoderStmts.extend(self.emitThreadedCallStmts());
@@ -1793,9 +2060,12 @@ class ThreadedFunction(object):
 
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
-                (oNewStmt.aoIfBranch, fCallEmitted1) = self.morphInputCode(oStmt.aoIfBranch, fCallEmitted, cDepth + 1);
+                (oNewStmt.aoIfBranch, fCallEmitted1) = self.morphInputCode(oStmt.aoIfBranch, fIsConditional,
+                                                                           fCallEmitted, cDepth + 1, oStmt.oIfBranchAnnotation);
                 if oStmt.aoElseBranch:
-                    (oNewStmt.aoElseBranch, fCallEmitted2) = self.morphInputCode(oStmt.aoElseBranch, fCallEmitted, cDepth + 1);
+                    (oNewStmt.aoElseBranch, fCallEmitted2) = self.morphInputCode(oStmt.aoElseBranch, fIsConditional,
+                                                                                 fCallEmitted, cDepth + 1,
+                                                                                 oStmt.oElseBranchAnnotation);
                 else:
                     fCallEmitted2 = False;
                 fCallEmitted = fCallEmitted or (fCallEmitted1 and fCallEmitted2);
@@ -1827,7 +2097,9 @@ class ThreadedFunction(object):
 
         # IEM_MC_BEGIN/END block
         assert len(self.oMcBlock.asLines) > 2, "asLines=%s" % (self.oMcBlock.asLines,);
-        return iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts)[0],
+        fIsConditional = (    'IEM_CIMPL_F_BRANCH_CONDITIONAL' in self.dsCImplFlags
+                          and 'IEM_CIMPL_F_BRANCH_RELATIVE'    in self.dsCImplFlags); # (latter to avoid iemOp_into)
+        return iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts, fIsConditional)[0],
                                             cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
 
 # Short alias for ThreadedFunctionVariation.
