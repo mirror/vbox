@@ -117,6 +117,10 @@ Rules for adding a changelog entry to make them look more uniform:
          Guest Control sub command. Requires at least 7.1 Guest Additions</para>
       </listitem>
 
+      <listitem>
+       <para>VBoxShell: Lots of smaller and bigger bugfixes + Python 3.x compatibility</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
