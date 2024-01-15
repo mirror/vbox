@@ -1287,6 +1287,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetMountPoints(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
         HGCMMsgMountPoints Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_MOUNT_POINTS);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
