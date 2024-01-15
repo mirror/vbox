@@ -98,7 +98,7 @@
 
 /** Starting from 6.4.0, iter_iov() macro should be used in order to access to iov field
  * of struct iov_iter. */
-#if RTLNX_VER_MIN(6,4,0) || RTLNX_RHEL_MAJ_PREREQ(9,4)
+#if RTLNX_VER_MIN(6,4,0) || RTLNX_RHEL_RANGE(9,4, 9,99)
 # define VBSF_GET_ITER_IOV(_iter) iter_iov(_iter)
 #else
 # define VBSF_GET_ITER_IOV(_iter) iter->iov
@@ -2120,7 +2120,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
 #endif /* < 5.10.0 */
 #if RTLNX_VER_MIN(2,6,19)
 /* See kernel 6.0.0 change eba2d3d798295dc43cae8fade102f9d083a2a741. */
-# if RTLNX_VER_MIN(6,0,0) || RTLNX_RHEL_MAJ_PREREQ(9,4)
+# if RTLNX_VER_MIN(6,0,0) || RTLNX_RHEL_RANGE(9,4, 9,99)
 #  define VBOX_IOV_GET_PAGES iov_iter_get_pages2
 # else
 #  define VBOX_IOV_GET_PAGES iov_iter_get_pages

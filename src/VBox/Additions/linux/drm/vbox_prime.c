@@ -73,7 +73,7 @@ void vbox_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr)
 	WARN_ONCE(1, "not implemented");
 }
 
-#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_MAJ_PREREQ(9,4)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99)
 int vbox_gem_prime_mmap(struct drm_gem_object *obj, struct vm_area_struct *area)
 {
 	WARN_ONCE(1, "not implemented");

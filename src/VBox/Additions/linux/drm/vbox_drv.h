@@ -172,7 +172,7 @@
 # include <drm/drm_gem.h>
 #endif
 
-#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,3)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
 # include <drm/ttm/ttm_bo.h>
 #else
 # include <drm/ttm/ttm_bo_api.h>
@@ -249,7 +249,7 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 /** Field "num_pages" of struct ttm_resource was renamed to "size" in 6.2 and
  * now represents number of bytes. This macro handles this change. Input
  * argument is a pointer to struct ttm_resource. */
-#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,3)
+#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
 # define VBOX_BO_RESOURCE_NUM_PAGES(_resource) PFN_UP(_resource->size)
 #else
 # define VBOX_BO_RESOURCE_NUM_PAGES(_resource) _resource->num_pages
@@ -529,7 +529,7 @@ struct drm_gem_object *vbox_gem_prime_import_sg_table(
 #endif
 void *vbox_gem_prime_vmap(struct drm_gem_object *obj);
 void vbox_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr);
-#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_MAJ_PREREQ(9,4)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99)
 int vbox_gem_prime_mmap(struct drm_gem_object *obj,
 			struct vm_area_struct *area);
 #endif
