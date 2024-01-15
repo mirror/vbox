@@ -1700,9 +1700,9 @@ typedef struct IEMCPU
      * This is used together with fTbBranched and GCVirtTbBranchSrcBuf to determin
      * whether a branch instruction jumps to a new page or stays within the
      * current one. */
-    RTGCPHYS                GCPhysTbBranchSrcBuf;
+    RTGCPHYS                GCPhysTbBranchSrcBufUnused;
     /** Copy of IEMCPU::uInstrBufPc after decoding a branch instruction.  */
-    uint64_t                GCVirtTbBranchSrcBuf;
+    uint64_t                GCVirtTbBranchSrcBufUnused;
     /** Pointer to the ring-3 TB allocator for this EMT. */
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /** Pointer to the ring-3 executable memory allocator for this EMT. */

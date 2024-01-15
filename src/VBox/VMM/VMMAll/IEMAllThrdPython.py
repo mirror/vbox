@@ -1417,7 +1417,9 @@ class ThreadedFunctionVariation(object):
         Produces generic C++ statments that emits a call to the thread function
         variation and any subsequent checks that may be necessary after that.
 
-        The sCallVarNm is for emitting
+        The sCallVarNm is the name of the variable with the threaded function
+        to call.  This is for the case where all the variations have the same
+        parameters and only the threaded function number differs.
         """
         aoStmts = [
             iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS',
@@ -1471,7 +1473,9 @@ class ThreadedFunctionVariation(object):
                 asEndTbFlags.append(sFlag);
             elif sFlag.startswith('IEM_CIMPL_F_BRANCH_'):
                 asTbBranchedFlags.append(sFlag);
-        if asTbBranchedFlags:
+        if (    asTbBranchedFlags
+            and (   'IEM_CIMPL_F_BRANCH_CONDITIONAL' not in asTbBranchedFlags
+                 or self.sVariation not in self.kdVariationsWithConditionalNoJmp)):
             aoStmts.append(iai.McCppGeneric('iemThreadedSetBranched(pVCpu, %s);'
                                             % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
                                             cchIndent = cchIndent)); # Inline fn saves ~2 seconds for gcc 13/dbg (1m13s vs 1m15s).
@@ -1739,6 +1743,7 @@ class ThreadedFunction(object):
         """
         # Special case for only default variation:
         if len(self.aoVariations) == 1  and  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default:
+            assert not sBranch;
             return self.aoVariations[0].emitThreadedCallStmts(0);
 
         #
