@@ -60,10 +60,10 @@ DECLINLINE(char *) iemLogSyscallFormatChr(char pszBuf[4], char ch)
         pszBuf[1] = ch;
         pszBuf[2] = '\'';
     }
-    else if (ch == '\\n' || ch == '\\r')
+    else if (ch == '\n' || ch == '\r')
     {
         pszBuf[0] = '\'';
-        pszBuf[1] = ch == '\\n' ? 'n' : 'r';
+        pszBuf[1] = ch == '\n' ? 'n' : 'r';
         pszBuf[2] = ' ';
     }
     else
