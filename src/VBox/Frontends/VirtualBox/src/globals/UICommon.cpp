@@ -1058,8 +1058,10 @@ void UICommon::loadColorTheme()
     {
         ColorSlot_DarkActive,
         ColorSlot_DarkInactive,
+        ColorSlot_DarkAlternate,
         ColorSlot_LightActive,
         ColorSlot_LightInactive,
+        ColorSlot_LightAlternate,
     };
     QMap<ColorSlot, QColor> colors;
     switch (osRelease())
@@ -1091,6 +1093,9 @@ void UICommon::loadColorTheme()
         default:
             break;
     }
+    /* Redefine colors common for various OS types: */
+    colors[ColorSlot_DarkAlternate] = QColor("#2F2A2F");
+    colors[ColorSlot_LightAlternate] = QColor("#F4F5F5");
 
     /* Do we have redefined colors? */
     if (!colors.isEmpty())
@@ -1100,11 +1105,15 @@ void UICommon::loadColorTheme()
         {
             pal.setColor(QPalette::Active, QPalette::Window, colors.value(ColorSlot_DarkActive));
             pal.setColor(QPalette::Inactive, QPalette::Window, colors.value(ColorSlot_DarkInactive));
+            pal.setColor(QPalette::Active, QPalette::AlternateBase, colors.value(ColorSlot_DarkAlternate));
+            pal.setColor(QPalette::Inactive, QPalette::AlternateBase, colors.value(ColorSlot_DarkAlternate));
         }
         else
         {
             pal.setColor(QPalette::Active, QPalette::Window, colors.value(ColorSlot_LightActive));
             pal.setColor(QPalette::Inactive, QPalette::Window, colors.value(ColorSlot_LightInactive));
+            pal.setColor(QPalette::Active, QPalette::AlternateBase, colors.value(ColorSlot_LightAlternate));
+            pal.setColor(QPalette::Inactive, QPalette::AlternateBase, colors.value(ColorSlot_LightAlternate));
         }
         qApp->setPalette(pal);
     }
