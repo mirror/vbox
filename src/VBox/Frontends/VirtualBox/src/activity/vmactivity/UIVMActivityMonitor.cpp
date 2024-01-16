@@ -996,6 +996,8 @@ UIMetric::UIMetric()
     , m_fIsInitialized(false)
     , m_iMaximumQueueSize(0)
 {
+    m_iTotal[0] = 0;
+    m_iTotal[1] = 0;
 }
 
 void UIMetric::setMaximum(quint64 iMaximum)
