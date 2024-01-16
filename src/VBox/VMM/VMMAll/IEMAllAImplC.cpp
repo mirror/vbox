@@ -460,6 +460,7 @@ uint8_t const g_afParity[256] =
 extern const RTFLOAT32U  g_ar32Zero[];
 extern const RTFLOAT64U  g_ar64Zero[];
 extern const RTFLOAT80U  g_ar80Zero[];
+extern const RTFLOAT32U  g_ar32One[];
 extern const RTFLOAT80U  g_ar80One[];
 extern const RTFLOAT80U  g_r80Indefinite;
 extern const RTFLOAT32U  g_ar32Infinity[];
