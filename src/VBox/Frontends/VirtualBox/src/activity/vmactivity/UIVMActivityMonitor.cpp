@@ -994,6 +994,7 @@ UIMetric::UIMetric()
     : m_iMaximum(0)
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
+    , m_fAutoUpdateMaximum(false)
     , m_iMaximumQueueSize(0)
 {
     m_iTotal[0] = 0;
