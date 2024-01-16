@@ -2227,6 +2227,15 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     }
     pVM->cpum.s.HostFeatures               = g_CpumHostFeatures.s;
     pVM->cpum.s.GuestFeatures.enmCpuVendor = pVM->cpum.s.HostFeatures.enmCpuVendor;
+
+#elif defined(RT_ARCH_ARM64)
+    /** @todo we shouldn't be using the x86/AMD64 CPUMFEATURES for HostFeatures,
+     *        but it's too much work to fix that now.  So, instead we just set
+     *        the bits we think are important for CPUMR3CpuId...  This must
+     *        correspond to what IEM can emulate on ARM64. */
+    pVM->cpum.s.HostFeatures.fCmpXchg8b  = true;
+    pVM->cpum.s.HostFeatures.fCmpXchg16b = true;
+    pVM->cpum.s.HostFeatures.fPopCnt     = true;
 #endif
 
     /*
