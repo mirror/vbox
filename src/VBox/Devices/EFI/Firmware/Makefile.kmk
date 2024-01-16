@@ -87,7 +87,7 @@ if1of ($(KBUILD_HOST), win os2)
   $$$$(VBoxEfiBldPythonWrappers_0_OUTDIR)/$(PyWrap).cmd: | $$$$(dir $$$$@)
 	$$(APPEND) -tn "$$@" \
 		'@SET PYTHONPATH=$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python' \
-		'@"$$(VBOX_BLD_PYTHON_2X)" "$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/$(PyWrap)/$(PyWrap).py" %*'
+		'@"$$(VBOX_BLD_PYTHON)" "$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/$(PyWrap)/$(PyWrap).py" %*'
  endef
 else
  define VBoxEfiBldPythonWrappersRuleTemplate
@@ -95,7 +95,7 @@ else
 	$$(APPEND) -tn "$$@" \
 		'#!$(ASH)' \
 		'export PYTHONPATH="$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python"' \
-		'exec "$$(VBOX_BLD_PYTHON_2X)" "$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/$(PyWrap)/$(PyWrap).py" "$$(DOLLAR)@"'
+		'exec "$$(VBOX_BLD_PYTHON)" "$$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/$(PyWrap)/$(PyWrap).py" "$$(DOLLAR)@"'
 	$$(CHMOD) a+x "$$@"
  endef
 endif
@@ -278,7 +278,7 @@ VBOX_EFI_BUILD_CMD += \
 	-E 'IPF_PETOOLS_PREFIX=__no_ipf__' \
 	-E $(if-expr "$(KBUILD_VERBOSE)" != "",'EFI_QUIET=','EFI_QUIET=@') \
 	-C '$(VBOX_PATH_EFI_FIRMWARE)' \
-	-- $(VBOX_BLD_PYTHON_2X) "$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/build/build.py" \
+	-- $(VBOX_BLD_PYTHON) "$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/Python/build/build.py" \
 	-D VBOX=1 \
 	-D VBOX_WITH_OVMF=1 \
 	$(if $(VBOX_WITH_EFI_SECURE_BOOT),-D "SECURE_BOOT_ENABLE=1") \

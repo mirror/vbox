@@ -70,10 +70,6 @@ else
  VBOX_NASMCMD     ?= nasm$(HOSTSUFF_EXE)
 endif
 
-# EFI requires python v2.x, so provide a way to select that while using 3.x for the rest of VBox.
-ifndef VBOX_BLD_PYTHON_2X
- VBOX_BLD_PYTHON_2X = $(VBOX_BLD_PYTHON)
-endif
 
 #
 # Decide which tool chain to use for the EFI binaries.
