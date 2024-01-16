@@ -5024,6 +5024,7 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 # error "port me"
 #endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    RT_NOREF_PV(idxInstr);
     return off;
 }
 
@@ -5803,6 +5804,8 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
     {
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+        RT_NOREF_PV(idxInstr);
 #endif
         return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreak);
     }
