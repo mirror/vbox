@@ -2899,9 +2899,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adcx_adox)(uint8_t bMode)
 
                 Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
 
-                Ctx.rflags.u16 &= ~fEFlagsMod;
-                if (paValues[iValue].fFlagOut)
-                    Ctx.rflags.u16 |= fEFlagsMod;
+                if (fOkay)
+                {
+                    Ctx.rflags.u16 &= ~fEFlagsMod;
+                    if (paValues[iValue].fFlagOut)
+                        Ctx.rflags.u16 |= fEFlagsMod;
+                }
 
                 if (   TrapFrame.bXcpt     != bExpectXcpt
                     || TrapFrame.Ctx.rip.u != uExpectRip
