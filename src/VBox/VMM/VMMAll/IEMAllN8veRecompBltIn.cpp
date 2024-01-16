@@ -274,6 +274,9 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
     off = iemNativeEmitTestIfGpr32NotEqualImmAndJmpToNewLabel(pReNative, off, idxTmpReg, fExpectedExec & IEMTB_F_KEY_MASK,
                                                               kIemNativeLabelType_ReturnBreak);
     iemNativeRegFreeTmp(pReNative, idxTmpReg);
+
+    /* Maintain the recompiler fExec state. */
+    pReNative->fExec = fExpectedExec & IEMTB_F_IEM_F_MASK;
     return off;
 }
 

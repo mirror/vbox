@@ -2545,6 +2545,15 @@ class IEMThreadedGenerator(object):
             '',
         ];
 
+        # Emit indicators as to which of the builtin functions have a native
+        # recompiler function and which not.  (We only really need this for
+        # kIemThreadedFunc_BltIn_CheckMode, but do all just for simplicity.)
+        for atBltIn in self.katBltIns:
+            if atBltIn[1]:
+                asLines.append('#define IEMNATIVE_WITH_BLTIN_' + atBltIn[0].upper())
+            else:
+                asLines.append('#define IEMNATIVE_WITHOUT_BLTIN_' + atBltIn[0].upper())
+
         oOut.write('\n'.join(asLines));
         return True;
 
