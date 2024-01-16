@@ -352,6 +352,11 @@ rm -rf /usr/lib/virtualbox/ExtensionPacks
 rm -rf $RPM_BUILD_ROOT
 
 
+%changelog
+* %DATE% Oracle Corporation <info@virtualbox.org>
+- rebuild RPM package, see https://www.virtualbox.org/wiki/Changelog
+
+
 %files
 %defattr(-,root,root)
 %doc %{VBOXDOCDIR}/*

@@ -1,5 +1,5 @@
 %VERPKG% (%VER%%DEBREL%) unstable; urgency=low
 
-  * rebuild Debian package
+  * rebuild Debian package, see https://www.virtualbox.org/wiki/Changelog
 
  -- Oracle Corporation <info@virtualbox.org>  %DATE%
