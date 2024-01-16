@@ -84,9 +84,8 @@ class UIMetric
 
 public:
 
-    UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize);
+    UIMetric(const QString &strUnit, int iMaximumQueueSize);
     UIMetric();
-    const QString &name() const;
 
     void setMaximum(quint64 iMaximum);
     quint64 maximum() const;
@@ -125,7 +124,6 @@ public:
 private:
     void updateMax();
 
-    QString m_strName;
     QString m_strUnit;
     QString m_strDataSeriesName[DATA_SERIES_SIZE];
     quint64 m_iMaximum;

@@ -978,9 +978,8 @@ void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
 *   UIMetric implementation.                                                                                                     *
 *********************************************************************************************************************************/
 
-UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize)
-    : m_strName(strName)
-    , m_strUnit(strUnit)
+UIMetric::UIMetric(const QString &strUnit, int iMaximumQueueSize)
+    : m_strUnit(strUnit)
     , m_iMaximum(0)
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
@@ -997,11 +996,6 @@ UIMetric::UIMetric()
     , m_fIsInitialized(false)
     , m_iMaximumQueueSize(0)
 {
-}
-
-const QString &UIMetric::name() const
-{
-    return m_strName;
 }
 
 void UIMetric::setMaximum(quint64 iMaximum)
@@ -1152,7 +1146,6 @@ void UIMetric::reset()
 
 void UIMetric::toFile(QTextStream &stream) const
 {
-    stream << "Metric Name: " << m_strName << "\n";
     stream << "Unit: " << m_strUnit << "\n";
     stream << "Maximum: " << m_iMaximum << "\n";
     for (int i = 0; i < 2; ++i)
@@ -1651,7 +1644,7 @@ void UIVMActivityMonitorLocal::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric ramMetric("", metrics[i].GetUnit(), m_iMaximumQueueSize);
+                    UIMetric ramMetric(metrics[i].GetUnit(), m_iMaximumQueueSize);
                     ramMetric.setDataSeriesName(0, "Free");
                     ramMetric.setDataSeriesName(1, "Used");
                     ramMetric.setRequiresGuestAdditions(true);
@@ -1662,27 +1655,27 @@ void UIVMActivityMonitorLocal::prepareMetrics()
     }
 
     /* CPU Metric: */
-    UIMetric cpuMetric("", "%", m_iMaximumQueueSize);
+    UIMetric cpuMetric("%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "Guest Load");
     cpuMetric.setDataSeriesName(1, "VMM Load");
     m_metrics.insert(Metric_Type_CPU, cpuMetric);
 
     /* Network metric: */
-    UIMetric networkMetric("", "B", m_iMaximumQueueSize);
+    UIMetric networkMetric("B", m_iMaximumQueueSize);
     networkMetric.setDataSeriesName(0, "Receive Rate");
     networkMetric.setDataSeriesName(1, "Transmit Rate");
     networkMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_InOut, networkMetric);
 
     /* Disk IO metric */
-    UIMetric diskIOMetric("", "B", m_iMaximumQueueSize);
+    UIMetric diskIOMetric("B", m_iMaximumQueueSize);
     diskIOMetric.setDataSeriesName(0, "Write Rate");
     diskIOMetric.setDataSeriesName(1, "Read Rate");
     diskIOMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_InOut, diskIOMetric);
 
     /* VM exits metric */
-    UIMetric VMExitsMetric("", "times", m_iMaximumQueueSize);
+    UIMetric VMExitsMetric("times", m_iMaximumQueueSize);
     VMExitsMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_VM_Exits, VMExitsMetric);
 }
@@ -2380,36 +2373,36 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     /* RAM Metric: */
     if (m_iTotalRAM != 0)
     {
-        UIMetric ramMetric("", "kb", m_iMaximumQueueSize);
+        UIMetric ramMetric("kb", m_iMaximumQueueSize);
         ramMetric.setDataSeriesName(0, "Used");
         m_metrics.insert(Metric_Type_RAM, ramMetric);
     }
 
     /* CPU Metric: */
-    UIMetric cpuMetric("", "%", m_iMaximumQueueSize);
+    UIMetric cpuMetric("%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "CPU Utilization");
     m_metrics.insert(Metric_Type_CPU, cpuMetric);
 
     /* Network in metric: */
-    UIMetric networkInMetric("", "B", m_iMaximumQueueSize);
+    UIMetric networkInMetric("B", m_iMaximumQueueSize);
     networkInMetric.setDataSeriesName(0, "Receive Rate");
     networkInMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_In, networkInMetric);
 
     /* Network out metric: */
-    UIMetric networkOutMetric("", "B", m_iMaximumQueueSize);
+    UIMetric networkOutMetric("B", m_iMaximumQueueSize);
     networkOutMetric.setDataSeriesName(0, "Transmit Rate");
     networkOutMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_Out, networkOutMetric);
 
     /* Disk write metric */
-    UIMetric diskIOWrittenMetric("", "B", m_iMaximumQueueSize);
+    UIMetric diskIOWrittenMetric("B", m_iMaximumQueueSize);
     diskIOWrittenMetric.setDataSeriesName(0, "Write Rate");
     diskIOWrittenMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_In, diskIOWrittenMetric);
 
     /* Disk read metric */
-    UIMetric diskIOReadMetric("", "B", m_iMaximumQueueSize);
+    UIMetric diskIOReadMetric("B", m_iMaximumQueueSize);
     diskIOReadMetric.setDataSeriesName(0, "Read Rate");
     diskIOReadMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_Out, diskIOReadMetric);
