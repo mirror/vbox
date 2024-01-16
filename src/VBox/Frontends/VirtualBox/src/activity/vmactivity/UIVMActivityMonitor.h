@@ -173,7 +173,6 @@ protected:
     /** @name The following functions reset corresponding info labels
       * @{ */
         virtual void resetCPUInfoLabel() = 0;
-        virtual void resetDiskIOInfoLabel() = 0;
         void resetRAMInfoLabel();
     /** @} */
 
@@ -189,7 +188,6 @@ protected:
       * @{ */
         QString m_strCPUMetricName;
         QString m_strRAMMetricName;
-        QString m_strDiskIOMetricName;
     /** @} */
 
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
@@ -293,11 +291,12 @@ private:
     void resetVMExitInfoLabel();
     virtual void resetCPUInfoLabel();
     void resetNetworkInfoLabel();
-    virtual void resetDiskIOInfoLabel();
+    void resetDiskIOInfoLabel();
     virtual void prepareWidgets() RT_OVERRIDE;
 
     QString m_strVMExitMetricName;
     QString m_strNetworkMetricName;
+    QString m_strDiskIOMetricName;
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
@@ -347,21 +346,15 @@ private:
         void updateCPUChart(quint64 iLoadPercentage, const QString &strLabel);
         void updateNetworkInChart(quint64 uReceive, const QString &strLabel);
         void updateNetworkOutChart(quint64 uTransmit, const QString &strLabel);
-        void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
+        void updateDiskIOReadChart(quint64 uReadRate, const QString &strLabel);
+        void updateDiskIOWrittenChart(quint64 uWriteRate, const QString &strLabel);
         void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
     /** @} */
     virtual void resetCPUInfoLabel();
     void resetNetworkInInfoLabel();
     void resetNetworkOutInfoLabel();
-    virtual void resetDiskIOInfoLabel();
-
-    /* Since we have a single UIMetric instance for disk IO we cache write and/or read until the other value arrives. Then update
-     * the corresponding chart. */
-    void cacheDiskWrite(const QString &strTimeStamp, quint64 iValue);
-    void cacheDiskRead(const QString &strTimeStamp, quint64 iValue);
-
-    void cacheNetworkReceive(const QString &strTimeStamp, quint64 iValue);
-    void cacheNetworkTransmit(const QString &strTimeStamp, quint64 iValue);
+    void resetDiskIOWrittenInfoLabel();
+    void resetDiskIOReadInfoLabel();
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
@@ -369,6 +362,8 @@ private:
 
     QString m_strNetworkInMetricName;
     QString m_strNetworkOutMetricName;
+    QString m_strDiskIOReadMetricName;
+    QString m_strDiskIOWrittenMetricName;
 
     CCloudMachine m_comMachine;
     QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
@@ -377,12 +372,6 @@ private:
     /** Mapping from API enums to internal metric names. Necessary also since we don't hace a 1-to-1 mapping. */
     QHash<KMetricType, QString> m_metricTypeNames;
 
-    /* Key is time stamp we get from our Main API, value is disk write or read values. */
-    QMap<QString, quint64> m_diskWriteCache;
-    QMap<QString, quint64> m_diskReadCache;
-
-    QMap<QString, quint64> m_networkReceiveCache;
-    QMap<QString, quint64> m_networkTransmitCache;
     /** Total amount of RAM in kb. */
     quint64 m_iTotalRAM;
     QTimer *m_pMachineStateUpdateTimer;

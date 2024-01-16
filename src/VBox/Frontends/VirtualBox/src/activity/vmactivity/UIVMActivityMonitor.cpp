@@ -1189,7 +1189,6 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_iTimeStep(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
-    , m_strDiskIOMetricName("DiskIO")
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
@@ -1373,6 +1372,7 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     :UIVMActivityMonitor(enmEmbedding, pParent, 120 /* iMaximumQueueSize */)
     , m_strVMExitMetricName("VMExits")
     , m_strNetworkMetricName("Network")
+    , m_strDiskIOMetricName("DiskIO")
     , m_fGuestAdditionsAvailable(false)
 {
     prepareMetrics();
@@ -1934,13 +1934,15 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
     , m_strNetworkInMetricName("Network Receive")
     , m_strNetworkOutMetricName("Network Transmit")
+    , m_strDiskIOReadMetricName("Disk Written")
+    , m_strDiskIOWrittenMetricName("Disk Read")
     , m_pMachineStateUpdateTimer(0)
     , m_enmMachineState(KCloudMachineState_Invalid)
 {
     m_metricTypeNames[KMetricType_CpuUtilization] = m_strCPUMetricName;
     m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
-    m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskIOMetricName;
-    m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskIOMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskIOReadMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskIOWrittenMetricName;
     m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkInMetricName;
     m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkOutMetricName;
 
@@ -1958,7 +1960,8 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetCPUInfoLabel();
     resetNetworkInInfoLabel();
     resetNetworkOutInfoLabel();
-    resetDiskIOInfoLabel();
+    resetDiskIOWrittenInfoLabel();
+    resetDiskIOReadInfoLabel();
     resetRAMInfoLabel();
 
     /* Start the timer: */
@@ -2105,26 +2108,13 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
     AssertReturnVoid(newData.size() == newTimeStamps.size());
 
     if (enmMetricType == KMetricType_NetworksBytesIn)
-    {
-        m_networkReceiveCache.clear();
         m_metrics[m_strNetworkInMetricName].reset();
-    }
     else if (enmMetricType == KMetricType_NetworksBytesOut)
-    {
-        m_networkTransmitCache.clear();
         m_metrics[m_strNetworkOutMetricName].reset();
-    }
     else if (enmMetricType == KMetricType_DiskBytesRead)
-    {
-        m_diskReadCache.clear();
-        m_metrics[m_strDiskIOMetricName].reset();
-    }
+        m_metrics[m_strDiskIOReadMetricName].reset();
     else if (enmMetricType == KMetricType_DiskBytesWritten)
-    {
-        m_diskWriteCache.clear();
-        m_metrics[m_strDiskIOMetricName].reset();
-
-    }
+        m_metrics[m_strDiskIOWrittenMetricName].reset();
     else if (enmMetricType == KMetricType_CpuUtilization)
         m_metrics[m_strCPUMetricName].reset();
     else if (enmMetricType == KMetricType_MemoryUtilization)
@@ -2141,10 +2131,10 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
             updateNetworkOutChart(newData[i], newTimeStamps[i]);
         else if (enmMetricType == KMetricType_NetworksBytesIn)
             updateNetworkInChart(newData[i], newTimeStamps[i]);
-        // else if (enmMetricType == KMetricType_DiskBytesRead)
-
-        // else if (enmMetricType == KMetricType_DiskBytesWritten)
-        //     cacheDiskWrite(newTimeStamps[i], newData[i]);
+        else if (enmMetricType == KMetricType_DiskBytesRead)
+            updateDiskIOReadChart(newData[i], newTimeStamps[i]);
+        else if (enmMetricType == KMetricType_DiskBytesWritten)
+            updateDiskIOWrittenChart(newData[i], newTimeStamps[i]);
         else if (enmMetricType == KMetricType_MemoryUtilization)
         {
             if (m_iTotalRAM != 0)
@@ -2244,13 +2234,8 @@ void UIVMActivityMonitorCloud::reset()
     resetRAMInfoLabel();
     resetNetworkInInfoLabel();
     resetNetworkOutInfoLabel();
-    resetDiskIOInfoLabel();
-
-    m_diskWriteCache.clear();
-    m_diskReadCache.clear();
-
-    m_networkReceiveCache.clear();
-    m_networkTransmitCache.clear();
+    resetDiskIOWrittenInfoLabel();
+    resetDiskIOReadInfoLabel();
 
     update();
     //sltClearCOMData();
@@ -2321,26 +2306,46 @@ void UIVMActivityMonitorCloud::updateNetworkOutChart(quint64 uTransmitRate, cons
         m_charts[m_strNetworkOutMetricName]->update();
 }
 
-void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel)
+void UIVMActivityMonitorCloud::updateDiskIOWrittenChart(quint64 uWriteRate, const QString &strLabel)
 {
-    UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
+    UIMetric &diskMetric = m_metrics[m_strDiskIOWrittenMetricName];
 
     diskMetric.addData(0, uWriteRate, strLabel);
-    diskMetric.addData(1, uReadRate);
 
-    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+
+    if (m_infoLabels.contains(m_strDiskIOWrittenMetricName)  && m_infoLabels[m_strDiskIOWrittenMetricName])
     {
-        QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font><br/> <font color=\"%5\">%6: %7</font>")
+        QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font>")
             .arg(m_strDiskIOInfoLabelTitle)
-            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize(uWriteRate, g_iDecimalCount))
-            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize(uReadRate, g_iDecimalCount));
+            .arg(dataColorString(m_strDiskIOWrittenMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize(uWriteRate, g_iDecimalCount));
 
-        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+        m_infoLabels[m_strDiskIOWrittenMetricName]->setText(strInfo);
     }
 
-    if (m_charts.contains(m_strDiskIOMetricName))
-        m_charts[m_strDiskIOMetricName]->update();
+    if (m_charts.contains(m_strDiskIOWrittenMetricName))
+        m_charts[m_strDiskIOWrittenMetricName]->update();
 }
+
+void UIVMActivityMonitorCloud::updateDiskIOReadChart(quint64 uReadRate, const QString &strLabel)
+{
+    UIMetric &diskMetric = m_metrics[m_strDiskIOReadMetricName];
+
+    diskMetric.addData(0, uReadRate, strLabel);
+
+
+    if (m_infoLabels.contains(m_strDiskIOReadMetricName)  && m_infoLabels[m_strDiskIOReadMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/> <font color=\"%2\">%3: %4</font>")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(dataColorString(m_strDiskIOReadMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize(uReadRate, g_iDecimalCount));
+
+        m_infoLabels[m_strDiskIOReadMetricName]->setText(strInfo);
+    }
+
+    if (m_charts.contains(m_strDiskIOReadMetricName))
+        m_charts[m_strDiskIOReadMetricName]->update();
+}
+
 
 void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &strLabel)
 {
@@ -2408,12 +2413,17 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     networkOutMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strNetworkOutMetricName, networkOutMetric);
 
-    /* Disk IO metric */
-    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
-    diskIOMetric.setDataSeriesName(0, "Write Rate");
-    diskIOMetric.setDataSeriesName(1, "Read Rate");
-    diskIOMetric.setAutoUpdateMaximum(true);
-    m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
+    /* Disk write metric */
+    UIMetric diskIOWrittenMetric(m_strDiskIOWrittenMetricName, "B", m_iMaximumQueueSize);
+    diskIOWrittenMetric.setDataSeriesName(0, "Write Rate");
+    diskIOWrittenMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strDiskIOWrittenMetricName, diskIOWrittenMetric);
+
+    /* Disk read metric */
+    UIMetric diskIOReadMetric(m_strDiskIOReadMetricName, "B", m_iMaximumQueueSize);
+    diskIOReadMetric.setDataSeriesName(0, "Read Rate");
+    diskIOReadMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strDiskIOReadMetricName, diskIOReadMetric);
 
 }
 
@@ -2423,7 +2433,7 @@ void UIVMActivityMonitorCloud::prepareWidgets()
 
     QStringList chartOrder;
     chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
-        m_strNetworkInMetricName << m_strNetworkOutMetricName << m_strDiskIOMetricName;
+        m_strNetworkInMetricName << m_strNetworkOutMetricName << m_strDiskIOWrittenMetricName << m_strDiskIOReadMetricName;
     int iRow = 0;
     foreach (const QString &strMetricName, chartOrder)
     {
@@ -2501,70 +2511,27 @@ void UIVMActivityMonitorCloud::resetNetworkOutInfoLabel()
     }
 }
 
-void UIVMActivityMonitorCloud::resetDiskIOInfoLabel()
+void UIVMActivityMonitorCloud::resetDiskIOWrittenInfoLabel()
 {
-    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    if (m_infoLabels.contains(m_strDiskIOWrittenMetricName)  && m_infoLabels[m_strDiskIOWrittenMetricName])
     {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3")
             .arg(m_strDiskIOInfoLabelTitle)
-            .arg(m_strDiskIOInfoLabelWritten).arg("--")
-            .arg(m_strDiskIOInfoLabelRead).arg("--");
-        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+            .arg(m_strDiskIOInfoLabelWritten).arg("--");
+        m_infoLabels[m_strDiskIOWrittenMetricName]->setText(strInfo);
     }
 }
 
-void UIVMActivityMonitorCloud::cacheDiskWrite(const QString &strTimeStamp, quint64 iValue)
+void UIVMActivityMonitorCloud::resetDiskIOReadInfoLabel()
 {
-    /* Make sure this is the first time we receieve write for this time stap: */
-    AssertReturnVoid(!m_diskWriteCache.contains(strTimeStamp));
-    /* If we have read rate for this time stamp just update the chart and remove related data from the cache: */
-    if (m_diskReadCache.contains(strTimeStamp))
-    {
-        updateDiskIOChart((quint64) iValue, (quint64) m_diskReadCache[strTimeStamp], strTimeStamp);
-        m_diskReadCache[strTimeStamp];
-    }
-    else
-        m_diskWriteCache[strTimeStamp] = iValue;
-}
-
-void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, quint64 iValue)
-{
-    /* Make sure this is the first time we receieve read for this time stap: */
-    AssertReturnVoid(!m_diskReadCache.contains(strTimeStamp));
-    /* If we have write rate for this time stamp just update the chart and remove related data from the cache: */
-    if (m_diskWriteCache.contains(strTimeStamp))
-    {
-        updateDiskIOChart((quint64) m_diskWriteCache[strTimeStamp], (quint64) iValue, strTimeStamp);
-        m_diskWriteCache.remove(strTimeStamp);
-    }
-    else
-        m_diskReadCache[strTimeStamp] = iValue;
-}
-
-void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &, quint64 )
-{
-    // AssertReturnVoid(!m_networkReceiveCache.contains(strTimeStamp));
-
-    // if (m_networkTransmitCache.contains(strTimeStamp))
+    // if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     // {
-    //     updateNetworkChart((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp], strTimeStamp);
-    //     m_networkTransmitCache.remove(strTimeStamp);
+    //     QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+    //         .arg(m_strDiskIOInfoLabelTitle)
+    //         .arg(m_strDiskIOInfoLabelWritten).arg("--")
+    //         .arg(m_strDiskIOInfoLabelRead).arg("--");
+    //     m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     // }
-    // else
-    //     m_networkReceiveCache[strTimeStamp] = iValue;
-}
-
-void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &, quint64 )
-{
-    // AssertReturnVoid(!m_networkTransmitCache.contains(strTimeStamp));
-
-    // if (m_networkReceiveCache.contains(strTimeStamp))
-    // {
-    //     updateNetworkChart((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue, strTimeStamp);
-    //     m_networkReceiveCache.remove(strTimeStamp);
-    // }
-    // else
-    //     m_networkTransmitCache[strTimeStamp] = iValue;
 }
 
 /* static */
