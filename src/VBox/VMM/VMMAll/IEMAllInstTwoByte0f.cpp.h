@@ -11385,7 +11385,7 @@ FNIEMOP_DEF(iemOp_bsr_Gv_Ev)
 /** Opcode 0xf3 0x0f 0xbd - LZCNT Gv, Ev */
 FNIEMOP_DEF(iemOp_lzcnt_Gv_Ev)
 {
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1)
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAbm)
         return FNIEMOP_CALL(iemOp_bsr_Gv_Ev);
     IEMOP_MNEMONIC2(RM, LZCNT, lzcnt, Gv, Ev, DISOPTYPE_HARMLESS, 0);
 
