@@ -78,6 +78,9 @@ o32 jmp far    [cs:di]
 ; Following code must be copied to memory with type of EfiBootServicesCode.
 ; This is required if NX is enabled for EfiBootServicesCode of memory.
 ;
+ALIGN 16, int3      ; VBOX: Seems the MP_CPU_EXCHANGE_INFO structure is placed here in low memory.
+                    ; VBOX: So, to ensure that it's properly aligned wrt 'lock inc' and 'lock xadd'
+                    ; VBOX: below, we must align this entry point. @bugref 10547.
 BITS 32
 Flat32Start:                                   ; protected mode entry point
     mov        ds, dx
