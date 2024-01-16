@@ -1187,8 +1187,6 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_pContainerLayout(0)
     , m_pTimer(0)
     , m_iTimeStep(0)
-    , m_strCPUMetricName("CPU Load")
-    , m_strRAMMetricName("RAM Usage")
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
@@ -1370,9 +1368,6 @@ void UIVMActivityMonitor::setInfoLabelWidth()
 
 UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 120 /* iMaximumQueueSize */)
-    , m_strVMExitMetricName("VMExits")
-    , m_strNetworkMetricName("Network")
-    , m_strDiskIOMetricName("DiskIO")
     , m_fGuestAdditionsAvailable(false)
 {
     prepareMetrics();
@@ -1656,7 +1651,7 @@ void UIVMActivityMonitorLocal::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), m_iMaximumQueueSize);
+                    UIMetric ramMetric("", metrics[i].GetUnit(), m_iMaximumQueueSize);
                     ramMetric.setDataSeriesName(0, "Free");
                     ramMetric.setDataSeriesName(1, "Used");
                     ramMetric.setRequiresGuestAdditions(true);
@@ -1667,27 +1662,27 @@ void UIVMActivityMonitorLocal::prepareMetrics()
     }
 
     /* CPU Metric: */
-    UIMetric cpuMetric(m_strCPUMetricName, "%", m_iMaximumQueueSize);
+    UIMetric cpuMetric("", "%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "Guest Load");
     cpuMetric.setDataSeriesName(1, "VMM Load");
     m_metrics.insert(Metric_Type_CPU, cpuMetric);
 
     /* Network metric: */
-    UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
+    UIMetric networkMetric("", "B", m_iMaximumQueueSize);
     networkMetric.setDataSeriesName(0, "Receive Rate");
     networkMetric.setDataSeriesName(1, "Transmit Rate");
     networkMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_InOut, networkMetric);
 
     /* Disk IO metric */
-    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
+    UIMetric diskIOMetric("", "B", m_iMaximumQueueSize);
     diskIOMetric.setDataSeriesName(0, "Write Rate");
     diskIOMetric.setDataSeriesName(1, "Read Rate");
     diskIOMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_InOut, diskIOMetric);
 
     /* VM exits metric */
-    UIMetric VMExitsMetric(m_strVMExitMetricName, "times", m_iMaximumQueueSize);
+    UIMetric VMExitsMetric("", "times", m_iMaximumQueueSize);
     VMExitsMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_VM_Exits, VMExitsMetric);
 }
@@ -1932,10 +1927,6 @@ void UIVMActivityMonitorLocal::resetDiskIOInfoLabel()
 
 UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
-    , m_strNetworkInMetricName("Network Receive")
-    , m_strNetworkOutMetricName("Network Transmit")
-    , m_strDiskIOReadMetricName("Disk Written")
-    , m_strDiskIOWrittenMetricName("Disk Read")
     , m_pMachineStateUpdateTimer(0)
     , m_enmMachineState(KCloudMachineState_Invalid)
 {
@@ -2389,36 +2380,36 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     /* RAM Metric: */
     if (m_iTotalRAM != 0)
     {
-        UIMetric ramMetric(m_strRAMMetricName, "kb", m_iMaximumQueueSize);
+        UIMetric ramMetric("", "kb", m_iMaximumQueueSize);
         ramMetric.setDataSeriesName(0, "Used");
         m_metrics.insert(Metric_Type_RAM, ramMetric);
     }
 
     /* CPU Metric: */
-    UIMetric cpuMetric(m_strCPUMetricName, "%", m_iMaximumQueueSize);
+    UIMetric cpuMetric("", "%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "CPU Utilization");
     m_metrics.insert(Metric_Type_CPU, cpuMetric);
 
     /* Network in metric: */
-    UIMetric networkInMetric(m_strNetworkInMetricName, "B", m_iMaximumQueueSize);
+    UIMetric networkInMetric("", "B", m_iMaximumQueueSize);
     networkInMetric.setDataSeriesName(0, "Receive Rate");
     networkInMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_In, networkInMetric);
 
     /* Network out metric: */
-    UIMetric networkOutMetric(m_strNetworkOutMetricName, "B", m_iMaximumQueueSize);
+    UIMetric networkOutMetric("", "B", m_iMaximumQueueSize);
     networkOutMetric.setDataSeriesName(0, "Transmit Rate");
     networkOutMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Network_Out, networkOutMetric);
 
     /* Disk write metric */
-    UIMetric diskIOWrittenMetric(m_strDiskIOWrittenMetricName, "B", m_iMaximumQueueSize);
+    UIMetric diskIOWrittenMetric("", "B", m_iMaximumQueueSize);
     diskIOWrittenMetric.setDataSeriesName(0, "Write Rate");
     diskIOWrittenMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_In, diskIOWrittenMetric);
 
     /* Disk read metric */
-    UIMetric diskIOReadMetric(m_strDiskIOReadMetricName, "B", m_iMaximumQueueSize);
+    UIMetric diskIOReadMetric("", "B", m_iMaximumQueueSize);
     diskIOReadMetric.setDataSeriesName(0, "Read Rate");
     diskIOReadMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(Metric_Type_Disk_Out, diskIOReadMetric);

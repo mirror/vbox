@@ -191,12 +191,6 @@ protected:
     quint64                 m_iTimeStep;
     QMap<Metric_Type, UIMetric> m_metrics;
 
-    /** @name These metric names are used for map keys to identify metrics. They are not translated.
-      * @{ */
-        QString m_strCPUMetricName;
-        QString m_strRAMMetricName;
-    /** @} */
-
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
       * @{ */
         QVector<QString> m_nameList;
@@ -300,10 +294,6 @@ private:
     void resetDiskIOInfoLabel();
     virtual void prepareWidgets() RT_OVERRIDE;
 
-    QString m_strVMExitMetricName;
-    QString m_strNetworkMetricName;
-    QString m_strDiskIOMetricName;
-
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
     CSession m_comSession;
@@ -365,11 +355,6 @@ private:
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
     void determineTotalRAMAmount();
-
-    QString m_strNetworkInMetricName;
-    QString m_strNetworkOutMetricName;
-    QString m_strDiskIOReadMetricName;
-    QString m_strDiskIOWrittenMetricName;
 
     CCloudMachine m_comMachine;
     QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
