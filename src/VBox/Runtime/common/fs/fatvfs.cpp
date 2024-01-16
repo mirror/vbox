@@ -971,10 +971,10 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                             else if (   offDirtyLine != offEdge
                                      || SgBuf.cSegs >= RT_ELEMENTS(aSgSegs))
                             {
+                                RTSgBufReset(&SgBuf);
                                 int rc2 = RTVfsFileSgWrite(pThis->hVfsBacking, off, &SgBuf, true /*fBlocking*/, NULL);
                                 if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                                     rc = rc2;
-                                RTSgBufReset(&SgBuf);
                                 SgBuf.cSegs = 0;
                                 off = offDirtyLine;
                             }
@@ -1003,6 +1003,7 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
      */
     if (SgBuf.cSegs > 0)
     {
+        RTSgBufReset(&SgBuf);
         int rc2 = RTVfsFileSgWrite(pThis->hVfsBacking, off, &SgBuf, true /*fBlocking*/, NULL);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
