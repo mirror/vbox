@@ -44,6 +44,7 @@
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 
 
 /*********************************************************************************************************************************
@@ -107,22 +108,22 @@ static void testEmpty(void)
 }
 
 
-static PRTSGBUF createRandBuffer(unsigned cMaxSegs, size_t cbMin, size_t cbMax, bool fAllowZeroSegs, size_t *pcbTotal)
+static PRTSGBUF createRandBuffer(RTRAND hRnd, unsigned cMaxSegs, size_t cbMin, size_t cbMax, bool fAllowZeroSegs, size_t *pcbTotal)
 {
-    unsigned const cSegs   = RTRandU32Ex(1, cMaxSegs);
-    size_t const   cbTotal = (size_t)RTRandU64Ex(RT_MAX(cbMin, fAllowZeroSegs ? 1 : cSegs), cbMax);
+    unsigned const cSegs   = RTRandAdvU32Ex(hRnd, 1, cMaxSegs);
+    size_t const   cbTotal = (size_t)RTRandAdvU64Ex(hRnd, RT_MAX(cbMin, fAllowZeroSegs ? 1 : cSegs), cbMax);
     PRTSGBUF       pSgBuf  = (PRTSGBUF)RTMemAlloc(cSegs * sizeof(RTSGSEG) + sizeof(*pSgBuf) + cbTotal);
     if (pSgBuf)
     {
         PRTSGSEG   paSegs   = (PRTSGSEG)(pSgBuf + 1);
         uint8_t   *pbBytes  = (uint8_t *)&paSegs[cSegs];
-        RTRandBytes(pbBytes, cbTotal);
+        RTRandAdvBytes(hRnd, pbBytes, cbTotal);
 
         size_t     cbLeft   = cbTotal;
         unsigned   idxSeg;
         for (idxSeg = 0; idxSeg < cSegs - 1; idxSeg++)
         {
-            size_t const cbSeg = cbLeft ? (size_t)RTRandU64Ex(fAllowZeroSegs ? 0 : 1, cbLeft) : 0;
+            size_t const cbSeg = cbLeft ? (size_t)RTRandAdvU64Ex(hRnd, fAllowZeroSegs ? 0 : 1, cbLeft) : 0;
             paSegs[idxSeg].cbSeg = cbSeg;
             paSegs[idxSeg].pvSeg = pbBytes;
             pbBytes += cbSeg;
@@ -147,10 +148,26 @@ static void testBasic(void)
 {
     RTTestSub(g_hTest, "basics");
 
+    RTRAND hRnd;
+    int rc = RTRandAdvCreateParkMiller(&hRnd);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return;
+
+    uint64_t u64Seed = RTTimeSystemNanoTS();
+    rc = RTRandAdvSeed(hRnd, u64Seed);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+    {
+        RTRandAdvDestroy(hRnd);
+        return;
+    }
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Seed: %#RX64\n", u64Seed);
+
     for (unsigned iBufVar = 0; iBufVar < 64; iBufVar++)
     {
         size_t   cbSgBuf1;
-        PRTSGBUF pSgBuf1 = createRandBuffer(16, 32, _1M, true, &cbSgBuf1);
+        PRTSGBUF pSgBuf1 = createRandBuffer(hRnd, 16, 32, _1M, true, &cbSgBuf1);
         RTTESTI_CHECK_RETV(pSgBuf1);
 
         /* Do random advancing using RTSgBufAdvance. */
@@ -163,7 +180,7 @@ static void testBasic(void)
             size_t cbLeft = cbSgBuf1;
             while (cbLeft > 0)
             {
-                size_t cbToAdv = (size_t)RTRandU64Ex(0, iRun & 1 ? cbSgBuf1 * 2 : cbLeft);
+                size_t cbToAdv = (size_t)RTRandAdvU64Ex(hRnd, 0, iRun & 1 ? cbSgBuf1 * 2 : cbLeft);
                 size_t cbActual = RTSgBufAdvance(pSgBuf1, cbToAdv);
                 RTTESTI_CHECK(cbActual <= cbToAdv);
                 RTTESTI_CHECK(cbActual <= cbLeft);
@@ -196,9 +213,9 @@ static void testBasic(void)
             size_t cbLeft = cbSgBuf1;
             if (iRun > 1)
             {
-                size_t const cbInitial = (size_t)RTRandU64Ex(iRun, cbSgBuf1);
+                size_t const cbInitial = (size_t)RTRandAdvU64Ex(hRnd, iRun, cbSgBuf1);
                 size_t cbAdvanced = RTSgBufAdvance(pSgBuf1, cbInitial);
-                RTTESTI_CHECK_MSG(cbAdvanced == cbInitial, ("cbAdvanced=%zu, cbInitial=%zu\n", cbAdvanced, cbInitial));
+                RTTESTI_CHECK_MSG(cbAdvanced == cbInitial, ("iBufVar=%u iRun=%u cbAdvanced=%zu, cbInitial=%zu\n", iBufVar, iRun, cbAdvanced, cbInitial));
                 /* should probably print part of pSgBuf1 values... */
                 cbLeft -= cbInitial;
             }
@@ -221,9 +238,9 @@ static void testBasic(void)
         }
 
         /* Copy out of the S/G buffer and into a flat buffer w/ electric guard page: */
-        bool const fHead = RTRandU32Ex(0, 1) == 0;
+        bool const fHead = RTRandAdvU32Ex(hRnd, 0, 1) == 0;
         void *pvTmp = NULL;
-        int rc = RTTestGuardedAlloc(g_hTest, cbSgBuf1, 1, fHead, &pvTmp);
+        rc = RTTestGuardedAlloc(g_hTest, cbSgBuf1, 1, fHead, &pvTmp);
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
@@ -235,7 +252,7 @@ static void testBasic(void)
                 size_t cbInitial = 0;
                 if (iRun > 1)
                 {
-                    cbInitial = (size_t)RTRandU64Ex(iRun, cbSgBuf1);
+                    cbInitial = (size_t)RTRandAdvU64Ex(hRnd, iRun, cbSgBuf1);
                     size_t cbAdvanced = RTSgBufAdvance(pSgBuf1, cbInitial);
                     RTTESTI_CHECK_MSG(cbAdvanced == cbInitial, ("cbAdvanced=%zu, cbInitial=%zu\n",
                                                                 cbAdvanced, cbInitial));
@@ -244,7 +261,7 @@ static void testBasic(void)
 
                 size_t cbToCopy = cbLeft;
                 if (iRun  > _1K / 4 * 3)
-                    cbToCopy = (size_t)RTRandU64Ex(0, iRun & 1 ? cbToCopy : cbSgBuf1);
+                    cbToCopy = (size_t)RTRandAdvU64Ex(hRnd, 0, iRun & 1 ? cbToCopy : cbSgBuf1);
 
                 uint8_t *pbDst = (uint8_t *)pvTmp;
                 if (!fHead)
@@ -267,6 +284,9 @@ static void testBasic(void)
 
         RTMemFree(pSgBuf1);
     }
+
+    rc = RTRandAdvDestroy(hRnd);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 
 
