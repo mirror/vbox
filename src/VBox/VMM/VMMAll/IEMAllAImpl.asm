@@ -280,16 +280,17 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
 ; @param        1       The parameter (A0..A3) pointing to the eflags.
 ; @param        2       The set of modified flags.
 ; @param        3       The set of undefined flags.
+; @param        4       Force loading the flags.
 ;
-%macro IEM_MAYBE_LOAD_FLAGS 3
- ;%if (%3) != 0
+%macro IEM_MAYBE_LOAD_FLAGS 3-4 1
+ %if (%3 + %4) != 0
         pushf                           ; store current flags
         mov     T0_32, [%1]             ; load the guest flags
         and     dword [xSP], ~(%2 | %3) ; mask out the modified and undefined flags
         and     T0_32, (%2 | %3)        ; select the modified and undefined flags.
         or      [xSP], T0               ; merge guest flags with host flags.
         popf                            ; load the mixed flags.
- ;%endif
+ %endif
 %endmacro
 
 ;;
@@ -492,12 +493,13 @@ extern NAME(g_afParity)
 ; @param        2       Non-zero if there should be a locked version.
 ; @param        3       The modified flags.
 ; @param        4       The undefined flags.
+; @param        5       Force flag loading (ADC, SBC).
 ;
-%macro IEMIMPL_BIN_OP 4
+%macro IEMIMPL_BIN_OP 5
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         %1      byte [A0], A1_8
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -505,7 +507,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         %1      word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -513,7 +515,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         %1      dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -522,7 +524,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         %1      qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
@@ -533,7 +535,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         lock %1 byte [A0], A1_8
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -541,7 +543,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         lock %1 word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -549,7 +551,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         lock %1 dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS
@@ -558,7 +560,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
   %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4, %5
         lock %1 qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
@@ -567,16 +569,16 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
  %endif ; locked
 %endmacro
 
-;            instr,lock, modified-flags,                                                               undefined flags
-IEMIMPL_BIN_OP add,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP adc,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP sub,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP sbb,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
-IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
-IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
-IEMIMPL_BIN_OP cmp,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF
+;            instr,lock, modified-flags,                                                               undefined flags, force loading flags
+IEMIMPL_BIN_OP add,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,               0
+IEMIMPL_BIN_OP adc,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,               1
+IEMIMPL_BIN_OP sub,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,               0
+IEMIMPL_BIN_OP sbb,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,               1
+IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF,      0
+IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF,      0
+IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF,      0
+IEMIMPL_BIN_OP cmp,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,               0
+IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF),              X86_EFL_AF,      0
 
 
 ;;
@@ -657,7 +659,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif ; RT_ARCH_AMD64
 %endmacro
 
-;                  instr,  modified-flags,                                      undefined-flags
+;                    instr,  modified-flags,                                      undefined-flags
 IEMIMPL_VEX_BIN_OP_2 blsr,   (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_VEX_BIN_OP_2 blsmsk, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_VEX_BIN_OP_2 blsi,   (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF), (X86_EFL_AF | X86_EFL_PF)
@@ -924,6 +926,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %endif ; RT_ARCH_AMD64
  %endif ; locked
 %endmacro
+;                      modified efl, undefined eflags
 IEMIMPL_BIT_OP bt,  0, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_BIT_OP btc, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_BIT_OP bts, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
@@ -1103,7 +1106,7 @@ IEMIMPL_BIT_OP2 lzcnt, (X86_EFL_ZF | X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3, 0
         %1      T0_16, A1_16
         mov     [A0], T0_16
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -1112,7 +1115,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3, 0
         %1      T0_32, A1_32
         mov     [A0], T0_32
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -1122,7 +1125,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3, 0
         %1      T0, A1
         mov     [A0], T0
         IEM_SAVE_FLAGS                 A2, %2, %3
@@ -1282,7 +1285,7 @@ ENDPROC iemAImpl_xchg_u64_unlocked
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_xadd_u8, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_8, [A1]
         xadd    [A0], T0_8
         mov     [A1], T0_8
@@ -1292,7 +1295,7 @@ ENDPROC iemAImpl_xadd_u8
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_16, [A1]
         xadd    [A0], T0_16
         mov     [A1], T0_16
@@ -1302,7 +1305,7 @@ ENDPROC iemAImpl_xadd_u16
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_32, [A1]
         xadd    [A0], T0_32
         mov     [A1], T0_32
@@ -1313,7 +1316,7 @@ ENDPROC iemAImpl_xadd_u32
 %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0, [A1]
         xadd    [A0], T0
         mov     [A1], T0
@@ -1324,7 +1327,7 @@ ENDPROC iemAImpl_xadd_u64
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u8_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_8, [A1]
         lock xadd [A0], T0_8
         mov     [A1], T0_8
@@ -1334,7 +1337,7 @@ ENDPROC iemAImpl_xadd_u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u16_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_16, [A1]
         lock xadd [A0], T0_16
         mov     [A1], T0_16
@@ -1344,7 +1347,7 @@ ENDPROC iemAImpl_xadd_u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u32_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0_32, [A1]
         lock xadd [A0], T0_32
         mov     [A1], T0_32
@@ -1355,7 +1358,7 @@ ENDPROC iemAImpl_xadd_u32_locked
 %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0, 0
         mov     T0, [A1]
         lock xadd [A0], T0
         mov     [A1], T0
@@ -1390,7 +1393,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b, 16
 
         mov     ebx, [r8]
         mov     ecx, [r8 + 4]
-        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [r11]
         mov     edx, [r11 + 4]
 
@@ -1410,7 +1413,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b, 16
 
         mov     ebx, [r11]
         mov     ecx, [r11 + 4]
-        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [rsi]
         mov     edx, [rsi + 4]
 
@@ -1437,7 +1440,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b, 16
 
         mov     ebx, [ecx]
         mov     ecx, [ecx + 4]
-        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF), 0  ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [esi]
         mov     edx, [esi + 4]
 
@@ -1465,7 +1468,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b_locked, 16
 
         mov     ebx, [r8]
         mov     ecx, [r8 + 4]
-        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [r11]
         mov     edx, [r11 + 4]
 
@@ -1485,7 +1488,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b_locked, 16
 
         mov     ebx, [r11]
         mov     ecx, [r11 + 4]
-        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [rsi]
         mov     edx, [rsi + 4]
 
@@ -1512,7 +1515,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b_locked, 16
 
         mov     ebx, [ecx]
         mov     ecx, [ecx + 4]
-        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF), 0  ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [esi]
         mov     edx, [esi + 4]
 
@@ -1556,7 +1559,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b, 16
 
         mov     rbx, [r8]
         mov     rcx, [r8 + 8]
-        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     rax, [r11]
         mov     rdx, [r11 + 8]
 
@@ -1576,7 +1579,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b, 16
 
         mov     rbx, [r11]
         mov     rcx, [r11 + 8]
-        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     rax, [rsi]
         mov     rdx, [rsi + 8]
 
@@ -1601,7 +1604,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b_locked, 16
 
         mov     rbx, [r8]
         mov     rcx, [r8 + 8]
-        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     rax, [r11]
         mov     rdx, [r11 + 8]
 
@@ -1621,7 +1624,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b_locked, 16
 
         mov     rbx, [r11]
         mov     rcx, [r11 + 8]
-        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0, 0 ; clobbers T0 (eax)
         mov     rax, [rsi]
         mov     rdx, [rsi + 8]
 
@@ -1652,7 +1655,7 @@ BEGINCODE
 %macro IEMIMPL_CMPXCHG 2
 BEGINPROC_FASTCALL iemAImpl_cmpxchg_u8 %+ %2, 16
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0, 0 ; clobbers T0 (eax)
         mov     al, [A1]
         %1 cmpxchg [A0], A2_8
         mov     [A1], al
@@ -1662,7 +1665,7 @@ ENDPROC iemAImpl_cmpxchg_u8 %+ %2
 
 BEGINPROC_FASTCALL iemAImpl_cmpxchg_u16 %+ %2, 16
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0, 0 ; clobbers T0 (eax)
         mov     ax, [A1]
         %1 cmpxchg [A0], A2_16
         mov     [A1], ax
@@ -1672,7 +1675,7 @@ ENDPROC iemAImpl_cmpxchg_u16 %+ %2
 
 BEGINPROC_FASTCALL iemAImpl_cmpxchg_u32 %+ %2, 16
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0, 0 ; clobbers T0 (eax)
         mov     eax, [A1]
         %1 cmpxchg [A0], A2_32
         mov     [A1], eax
@@ -1683,7 +1686,7 @@ ENDPROC iemAImpl_cmpxchg_u32 %+ %2
 BEGINPROC_FASTCALL iemAImpl_cmpxchg_u64 %+ %2, 16
 %ifdef RT_ARCH_AMD64
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0, 0 ; clobbers T0 (eax)
         mov     rax, [A1]
         %1 cmpxchg [A0], A2
         mov     [A1], rax
@@ -1705,7 +1708,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg_u64 %+ %2, 16
 
         mov     ebx, [ecx]
         mov     ecx, [ecx + 4]
-        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0  ; clobbers T0 (eax)
+        IEM_MAYBE_LOAD_FLAGS ebp, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0, 0  ; clobbers T0 (eax)
         mov     eax, [esi]
         mov     edx, [esi + 4]
 
@@ -1713,6 +1716,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg_u64 %+ %2, 16
 
         ; cmpxchg8b doesn't set CF, PF, AF, SF and OF, so we have to do that.
         jz      .cmpxchg8b_not_equal
+;; @todo this isn't correct. Need to do a 64-bit compare, not just the lower 32-bit.
         cmp     eax, eax                ; just set the other flags.
 .store:
         mov     [esi], eax
@@ -1756,7 +1760,7 @@ IEMIMPL_CMPXCHG lock, _locked
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         %1      byte [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1764,7 +1768,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         lock %1 byte [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1772,7 +1776,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         %1      word [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1780,7 +1784,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         lock %1 word [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1788,7 +1792,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         %1      dword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1796,7 +1800,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         lock %1 dword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1805,7 +1809,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         %1      qword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1813,7 +1817,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         PROLOGUE_2_ARGS
-        IEM_MAYBE_LOAD_FLAGS A1, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A1, %2, %3, 0
         lock %1 qword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
@@ -1883,16 +1887,17 @@ ENDPROC iemAImpl_bswap_u64
 ; @param        1       The instruction mnemonic.
 ; @param        2       The modified flags.
 ; @param        3       The undefined flags.
+; @param        4       Force load flags.
 ;
 ; Makes ASSUMPTIONS about A0, A1 and A2 assignments.
 ;
 ; @note the _intel and _amd variants are implemented in C.
 ;
-%macro IEMIMPL_SHIFT_OP 3
+%macro IEMIMPL_SHIFT_OP 4
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
         mov     cl, A1_8
         %1      byte [A0], cl
@@ -1906,7 +1911,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
         mov     cl, A1_8
         %1      word [A0], cl
@@ -1920,7 +1925,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
         mov     cl, A1_8
         %1      dword [A0], cl
@@ -1935,7 +1940,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS A2, %2, %3, %4
   %ifdef ASM_CALL64_GCC
         mov     cl, A1_8
         %1      qword [A0], cl
@@ -1950,13 +1955,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 %endmacro
 
-IEMIMPL_SHIFT_OP rol, (X86_EFL_OF | X86_EFL_CF), 0
-IEMIMPL_SHIFT_OP ror, (X86_EFL_OF | X86_EFL_CF), 0
-IEMIMPL_SHIFT_OP rcl, (X86_EFL_OF | X86_EFL_CF), 0
-IEMIMPL_SHIFT_OP rcr, (X86_EFL_OF | X86_EFL_CF), 0
-IEMIMPL_SHIFT_OP shl, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
-IEMIMPL_SHIFT_OP shr, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
-IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
+;; @todo some questions wrt flags when the shift count is high according to intel docs...
+IEMIMPL_SHIFT_OP rol, (X86_EFL_OF | X86_EFL_CF), 0,                                                   X86_EFL_CF
+IEMIMPL_SHIFT_OP ror, (X86_EFL_OF | X86_EFL_CF), 0,                                                   X86_EFL_CF
+IEMIMPL_SHIFT_OP rcl, (X86_EFL_OF | X86_EFL_CF), 0,                                                   X86_EFL_CF
+IEMIMPL_SHIFT_OP rcr, (X86_EFL_OF | X86_EFL_CF), 0,                                                   X86_EFL_CF
+IEMIMPL_SHIFT_OP shl, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF), 0
+IEMIMPL_SHIFT_OP shr, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF), 0
+IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF), 0
 
 
 ;;
