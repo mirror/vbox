@@ -2239,6 +2239,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     pVM->cpum.s.HostFeatures.fAbm        = true;
     pVM->cpum.s.HostFeatures.fBmi1       = true;
     pVM->cpum.s.HostFeatures.fBmi2       = true;
+    pVM->cpum.s.HostFeatures.fAdx        = true;
 #endif
 
     /*
