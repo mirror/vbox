@@ -64,10 +64,18 @@ class UIProgressTaskReadCloudMachineMetricList;
 
 #define DATA_SERIES_SIZE 2
 
-struct UIMetricData
+enum Metric_Type
 {
-    quint64 m_value;
-    QString m_strLabel;
+    Metric_Type_CPU = 0,
+    Metric_Type_RAM,
+    Metric_Type_Disk_InOut,
+    Metric_Type_Disk_In,
+    Metric_Type_Disk_Out,
+    Metric_Type_Network_InOut,
+    Metric_Type_Network_In,
+    Metric_Type_Network_Out,
+    Metric_Type_VM_Exits,
+    Metric_Type_Max
 };
 
 /** UIMetric represents a performance metric and is used to store data related to the corresponding metric. */
@@ -167,8 +175,7 @@ protected:
     virtual void reset() = 0;
     virtual void start() = 0;
 
-    /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
-    QString dataColorString(const QString &strChartName, int iDataIndex);
+    QString dataColorString(Metric_Type enmType, int iDataIndex);
 
     /** @name The following functions reset corresponding info labels
       * @{ */
@@ -182,7 +189,7 @@ protected:
     QGridLayout            *m_pContainerLayout;
     QTimer                 *m_pTimer;
     quint64                 m_iTimeStep;
-    QMap<QString, UIMetric> m_metrics;
+    QMap<Metric_Type, UIMetric> m_metrics;
 
     /** @name These metric names are used for map keys to identify metrics. They are not translated.
       * @{ */
@@ -195,9 +202,8 @@ protected:
         QVector<QString> m_nameList;
         QVector<CUnknown> m_objectList;
     /** @} */
-    QMap<QString,UIChart*>  m_charts;
-    /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
-    QMap<QString,QLabel*>   m_infoLabels;
+    QMap<Metric_Type, UIChart*>  m_charts;
+    QMap<Metric_Type, QLabel*>   m_infoLabels;
 
     /** @name Cached translated strings.
       * @{ */
@@ -369,8 +375,8 @@ private:
     QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
 
     QVector<KMetricType> m_availableMetricTypes;
-    /** Mapping from API enums to internal metric names. Necessary also since we don't hace a 1-to-1 mapping. */
-    QHash<KMetricType, QString> m_metricTypeNames;
+    /** Mapping from API enums to internal metric type enum. */
+    QHash<KMetricType, Metric_Type> m_metricTypeDict;
 
     /** Total amount of RAM in kb. */
     quint64 m_iTotalRAM;
