@@ -2524,14 +2524,13 @@ void UIVMActivityMonitorCloud::resetDiskIOWrittenInfoLabel()
 
 void UIVMActivityMonitorCloud::resetDiskIOReadInfoLabel()
 {
-    // if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
-    // {
-    //     QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-    //         .arg(m_strDiskIOInfoLabelTitle)
-    //         .arg(m_strDiskIOInfoLabelWritten).arg("--")
-    //         .arg(m_strDiskIOInfoLabelRead).arg("--");
-    //     m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
-    // }
+    if (m_infoLabels.contains(m_strDiskIOReadMetricName)  && m_infoLabels[m_strDiskIOReadMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(m_strDiskIOInfoLabelRead).arg("--");
+        m_infoLabels[m_strDiskIOReadMetricName]->setText(strInfo);
+    }
 }
 
 /* static */
