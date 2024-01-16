@@ -1184,13 +1184,12 @@ bool UIMetric::autoUpdateMaximum() const
 
 UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, int iMaximumQueueSize)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pContainerLayout(0)
     , m_pTimer(0)
     , m_iTimeStep(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
-    , m_strNetworkMetricName("Network")
     , m_strDiskIOMetricName("DiskIO")
-    , m_strVMExitMetricName("VMExits")
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
@@ -1219,8 +1218,6 @@ void UIVMActivityMonitor::retranslateUi()
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelFree.length());
     m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelUsed.length());
-    m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Rate");
-    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelTitle.length());
     m_strNetworkInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Receive Rate");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceived.length());
     m_strNetworkInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Transmit Rate");
@@ -1240,18 +1237,6 @@ void UIVMActivityMonitor::retranslateUi()
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelReadTotal.length());
 }
-
-// bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
-// {
-//     if (pEvent-> type() == QEvent::Enter ||
-//         pEvent-> type() == QEvent::Leave)
-//     {
-//         UIChart *pChart = qobject_cast<UIChart*>(pObj);
-//         if (pChart)
-//             pChart->setMouseOver(pEvent-> type() == QEvent::Enter);
-//     }
-//     return false;
-// }
 
 void UIVMActivityMonitor::prepareWidgets()
 {
@@ -1274,52 +1259,12 @@ void UIVMActivityMonitor::prepareWidgets()
     m_pMainLayout->addWidget(pScrollArea);
 
     QWidget *pContainerWidget = new QWidget(pScrollArea);
-    QGridLayout *pContainerLayout = new QGridLayout(pContainerWidget);
-    pContainerWidget->setLayout(pContainerLayout);
-    pContainerLayout->setSpacing(10);
+    m_pContainerLayout = new QGridLayout(pContainerWidget);
+    pContainerWidget->setLayout(m_pContainerLayout);
+    m_pContainerLayout->setSpacing(10);
     pContainerWidget->show();
     pScrollArea->setWidget(pContainerWidget);
     pScrollArea->setWidgetResizable(true);
-
-    QStringList chartOrder;
-    chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
-        m_strNetworkMetricName << m_strDiskIOMetricName << m_strVMExitMetricName;
-    int iRow = 0;
-    foreach (const QString &strMetricName, chartOrder)
-    {
-        if (!m_metrics.contains(strMetricName))
-            continue;
-
-        QHBoxLayout *pChartLayout = new QHBoxLayout;
-        pChartLayout->setSpacing(0);
-
-        QLabel *pLabel = new QLabel(this);
-
-        QPalette tempPal = pLabel->palette();
-        tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
-        pLabel->setPalette(tempPal);
-        pLabel->setAutoFillBackground(true);
-
-        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        pChartLayout->addWidget(pLabel);
-        m_infoLabels.insert(strMetricName, pLabel);
-
-        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
-        connect(pChart, &UIChart::sigExportMetricsToFile,
-                this, &UIVMActivityMonitor::sltExportMetricsToFile);
-        connect(pChart, &UIChart::sigDataIndexUnderCursor,
-                this, &UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged);
-        m_charts.insert(strMetricName, pChart);
-        pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        pChartLayout->addWidget(pChart);
-        pContainerLayout->addLayout(pChartLayout, iRow, 0, 1, 2);
-        ++iRow;
-    }
-
-    QWidget *bottomSpacerWidget = new QWidget(this);
-    bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    bottomSpacerWidget->setVisible(true);
-    pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
 void UIVMActivityMonitor::sltTimeout()
@@ -1357,7 +1302,7 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
     menu.exec(mapToGlobal(point));
 }
 
-void UIVMActivityMonitor::sltChatDataIndexUnderCursorChanged(int iIndex)
+void UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged(int iIndex)
 {
     Q_UNUSED(iIndex);
 #if 0
@@ -1426,6 +1371,8 @@ void UIVMActivityMonitor::setInfoLabelWidth()
 
 UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 120 /* iMaximumQueueSize */)
+    , m_strVMExitMetricName("VMExits")
+    , m_strNetworkMetricName("Network")
     , m_fGuestAdditionsAvailable(false)
 {
     prepareMetrics();
@@ -1480,7 +1427,8 @@ void UIVMActivityMonitorLocal::retranslateUi()
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitLabelCurrent.length());
     m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitLabelTotal.length());
-
+    m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Rate");
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelTitle.length());
     setInfoLabelWidth();
 }
 
@@ -1643,6 +1591,51 @@ void UIVMActivityMonitorLocal::reset()
     resetVMExitInfoLabel();
     update();
     sltClearCOMData();
+}
+
+void UIVMActivityMonitorLocal::prepareWidgets()
+{
+    UIVMActivityMonitor::prepareWidgets();
+
+    QStringList chartOrder;
+    chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
+        m_strNetworkMetricName << m_strDiskIOMetricName << m_strVMExitMetricName;
+    int iRow = 0;
+    foreach (const QString &strMetricName, chartOrder)
+    {
+        if (!m_metrics.contains(strMetricName))
+            continue;
+
+        QHBoxLayout *pChartLayout = new QHBoxLayout;
+        pChartLayout->setSpacing(0);
+
+        QLabel *pLabel = new QLabel(this);
+
+        QPalette tempPal = pLabel->palette();
+        tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
+        pLabel->setPalette(tempPal);
+        pLabel->setAutoFillBackground(true);
+
+        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        pChartLayout->addWidget(pLabel);
+        m_infoLabels.insert(strMetricName, pLabel);
+
+        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
+        connect(pChart, &UIChart::sigExportMetricsToFile,
+                this, &UIVMActivityMonitor::sltExportMetricsToFile);
+        connect(pChart, &UIChart::sigDataIndexUnderCursor,
+                this, &UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged);
+        m_charts.insert(strMetricName, pChart);
+        pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        pChartLayout->addWidget(pChart);
+        m_pContainerLayout->addLayout(pChartLayout, iRow, 0, 1, 2);
+        ++iRow;
+    }
+
+    QWidget *bottomSpacerWidget = new QWidget(this);
+    bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    bottomSpacerWidget->setVisible(true);
+    m_pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
 void UIVMActivityMonitorLocal::prepareMetrics()
@@ -1939,6 +1932,8 @@ void UIVMActivityMonitorLocal::resetDiskIOInfoLabel()
 
 UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
+    , m_strNetworkInMetricName("Network Receive")
+    , m_strNetworkOutMetricName("Network Transmit")
     , m_pMachineStateUpdateTimer(0)
     , m_enmMachineState(KCloudMachineState_Invalid)
 {
@@ -1946,8 +1941,8 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
     m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskIOMetricName;
     m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskIOMetricName;
-    m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkMetricName;
-    m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkMetricName;
+    m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkInMetricName;
+    m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkOutMetricName;
 
     setMachine(machine);
     determineTotalRAMAmount();
@@ -1961,7 +1956,8 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     retranslateUi();
     prepareActions();
     resetCPUInfoLabel();
-    resetNetworkInfoLabel();
+    resetNetworkInInfoLabel();
+    resetNetworkOutInfoLabel();
     resetDiskIOInfoLabel();
     resetRAMInfoLabel();
 
@@ -2111,12 +2107,12 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
     if (enmMetricType == KMetricType_NetworksBytesIn)
     {
         m_networkReceiveCache.clear();
-        m_metrics[m_strNetworkMetricName].reset();
+        m_metrics[m_strNetworkInMetricName].reset();
     }
     else if (enmMetricType == KMetricType_NetworksBytesOut)
     {
         m_networkTransmitCache.clear();
-        m_metrics[m_strNetworkMetricName].reset();
+        m_metrics[m_strNetworkOutMetricName].reset();
     }
     else if (enmMetricType == KMetricType_DiskBytesRead)
     {
@@ -2142,13 +2138,13 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
             updateCPUChart(newData[i], newTimeStamps[i]);
         }
         else if (enmMetricType == KMetricType_NetworksBytesOut)
-            cacheNetworkTransmit(newTimeStamps[i], newData[i]);
+            updateNetworkOutChart(newData[i], newTimeStamps[i]);
         else if (enmMetricType == KMetricType_NetworksBytesIn)
-            cacheNetworkReceive(newTimeStamps[i], newData[i]);
-        else if (enmMetricType == KMetricType_DiskBytesRead)
-            cacheDiskRead(newTimeStamps[i], newData[i]);
-        else if (enmMetricType == KMetricType_DiskBytesWritten)
-            cacheDiskWrite(newTimeStamps[i], newData[i]);
+            updateNetworkInChart(newData[i], newTimeStamps[i]);
+        // else if (enmMetricType == KMetricType_DiskBytesRead)
+
+        // else if (enmMetricType == KMetricType_DiskBytesWritten)
+        //     cacheDiskWrite(newTimeStamps[i], newData[i]);
         else if (enmMetricType == KMetricType_MemoryUtilization)
         {
             if (m_iTotalRAM != 0)
@@ -2186,6 +2182,13 @@ void UIVMActivityMonitorCloud::retranslateUi()
     UIVMActivityMonitor::retranslateUi();
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
+
+    m_strNetworkInInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Receive Rate");
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInInfoLabelTitle.length());
+
+    m_strNetworkOutInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Transmit Rate");
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkOutInfoLabelTitle.length());
+
     setInfoLabelWidth();
 }
 
@@ -2239,7 +2242,8 @@ void UIVMActivityMonitorCloud::reset()
     /* Reset the info labels: */
     resetCPUInfoLabel();
     resetRAMInfoLabel();
-    resetNetworkInfoLabel();
+    resetNetworkInInfoLabel();
+    resetNetworkOutInfoLabel();
     resetDiskIOInfoLabel();
 
     m_diskWriteCache.clear();
@@ -2280,24 +2284,41 @@ void UIVMActivityMonitorCloud::updateCPUChart(quint64 iLoadPercentage, const QSt
         m_charts[m_strCPUMetricName]->update();
 }
 
-void UIVMActivityMonitorCloud::updateNetworkChart(quint64 uReceiveRate, quint64 uTransmitRate, const QString &strLabel)
+void UIVMActivityMonitorCloud::updateNetworkInChart(quint64 uReceiveRate, const QString &strLabel)
 {
-    UIMetric &networkMetric = m_metrics[m_strNetworkMetricName];
+    UIMetric &networkMetric = m_metrics[m_strNetworkInMetricName];
     networkMetric.addData(0, uReceiveRate, strLabel);
-    networkMetric.addData(1, uTransmitRate);
 
-    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+
+    if (m_infoLabels.contains(m_strNetworkInMetricName)  && m_infoLabels[m_strNetworkInMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/><font color=\"%5\">%6: %7<br/></font>")
-            .arg(m_strNetworkInfoLabelTitle)
-            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount))
-            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize(uTransmitRate, g_iDecimalCount));
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/>")
+            .arg(m_strNetworkInInfoLabelTitle)
+            .arg(dataColorString(m_strNetworkInMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount));
 
-        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+        m_infoLabels[m_strNetworkInMetricName]->setText(strInfo);
     }
-    if (m_charts.contains(m_strNetworkMetricName))
-        m_charts[m_strNetworkMetricName]->update();
+    if (m_charts.contains(m_strNetworkInMetricName))
+        m_charts[m_strNetworkInMetricName]->update();
+}
+
+void UIVMActivityMonitorCloud::updateNetworkOutChart(quint64 uTransmitRate, const QString &strLabel)
+{
+    UIMetric &networkMetric = m_metrics[m_strNetworkOutMetricName];
+    networkMetric.addData(0, uTransmitRate, strLabel);
+
+    if (m_infoLabels.contains(m_strNetworkOutMetricName)  && m_infoLabels[m_strNetworkOutMetricName])
+    {
+        QString strInfo;
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%5\">%6: %7<br/></font>")
+            .arg(m_strNetworkOutInfoLabelTitle)
+            .arg(dataColorString(m_strNetworkOutMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize(uTransmitRate, g_iDecimalCount));
+
+        m_infoLabels[m_strNetworkOutMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strNetworkOutMetricName))
+        m_charts[m_strNetworkOutMetricName]->update();
 }
 
 void UIVMActivityMonitorCloud::updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel)
@@ -2375,12 +2396,17 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     cpuMetric.setDataSeriesName(0, "CPU Utilization");
     m_metrics.insert(m_strCPUMetricName, cpuMetric);
 
-    /* Network metric: */
-    UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
-    networkMetric.setDataSeriesName(0, "Receive Rate");
-    networkMetric.setDataSeriesName(1, "Transmit Rate");
-    networkMetric.setAutoUpdateMaximum(true);
-    m_metrics.insert(m_strNetworkMetricName, networkMetric);
+    /* Network in metric: */
+    UIMetric networkInMetric(m_strNetworkInMetricName, "B", m_iMaximumQueueSize);
+    networkInMetric.setDataSeriesName(0, "Receive Rate");
+    networkInMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strNetworkInMetricName, networkInMetric);
+
+    /* Network out metric: */
+    UIMetric networkOutMetric(m_strNetworkInMetricName, "B", m_iMaximumQueueSize);
+    networkOutMetric.setDataSeriesName(0, "Transmit Rate");
+    networkOutMetric.setAutoUpdateMaximum(true);
+    m_metrics.insert(m_strNetworkOutMetricName, networkOutMetric);
 
     /* Disk IO metric */
     UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
@@ -2390,9 +2416,50 @@ void UIVMActivityMonitorCloud::prepareMetrics()
     m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
 }
+
 void UIVMActivityMonitorCloud::prepareWidgets()
 {
     UIVMActivityMonitor::prepareWidgets();
+
+    QStringList chartOrder;
+    chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
+        m_strNetworkInMetricName << m_strNetworkOutMetricName << m_strDiskIOMetricName;
+    int iRow = 0;
+    foreach (const QString &strMetricName, chartOrder)
+    {
+        if (!m_metrics.contains(strMetricName))
+            continue;
+
+        QHBoxLayout *pChartLayout = new QHBoxLayout;
+        pChartLayout->setSpacing(0);
+
+        QLabel *pLabel = new QLabel(this);
+
+        QPalette tempPal = pLabel->palette();
+        tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
+        pLabel->setPalette(tempPal);
+        pLabel->setAutoFillBackground(true);
+
+        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        pChartLayout->addWidget(pLabel);
+        m_infoLabels.insert(strMetricName, pLabel);
+
+        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
+        connect(pChart, &UIChart::sigExportMetricsToFile,
+                this, &UIVMActivityMonitor::sltExportMetricsToFile);
+        connect(pChart, &UIChart::sigDataIndexUnderCursor,
+                this, &UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged);
+        m_charts.insert(strMetricName, pChart);
+        pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        pChartLayout->addWidget(pChart);
+        m_pContainerLayout->addLayout(pChartLayout, iRow, 0, 1, 2);
+        ++iRow;
+    }
+
+    QWidget *bottomSpacerWidget = new QWidget(this);
+    bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    bottomSpacerWidget->setVisible(true);
+    m_pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
     m_charts[m_strCPUMetricName]->setShowPieChart(false);
 }
 
@@ -2410,16 +2477,27 @@ void UIVMActivityMonitorCloud::resetCPUInfoLabel()
     }
 }
 
-void UIVMActivityMonitorCloud::resetNetworkInfoLabel()
+void UIVMActivityMonitorCloud::resetNetworkInInfoLabel()
 {
-    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    if (m_infoLabels.contains(m_strNetworkInMetricName)  && m_infoLabels[m_strNetworkInMetricName])
     {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5")
-            .arg(m_strNetworkInfoLabelTitle)
-            .arg(m_strNetworkInfoLabelReceived).arg("--")
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3")
+            .arg(m_strNetworkInInfoLabelTitle)
+            .arg(m_strNetworkInfoLabelReceived).arg("--");
+
+        m_infoLabels[m_strNetworkInMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitorCloud::resetNetworkOutInfoLabel()
+{
+    if (m_infoLabels.contains(m_strNetworkOutMetricName)  && m_infoLabels[m_strNetworkOutMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3")
+            .arg(m_strNetworkOutInfoLabelTitle)
             .arg(m_strNetworkInfoLabelTransmitted).arg("--");
 
-        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+        m_infoLabels[m_strNetworkOutMetricName]->setText(strInfo);
     }
 }
 
@@ -2463,31 +2541,30 @@ void UIVMActivityMonitorCloud::cacheDiskRead(const QString &strTimeStamp, quint6
         m_diskReadCache[strTimeStamp] = iValue;
 }
 
-void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &strTimeStamp, quint64 iValue)
+void UIVMActivityMonitorCloud::cacheNetworkReceive(const QString &, quint64 )
 {
-    AssertReturnVoid(!m_networkReceiveCache.contains(strTimeStamp));
+    // AssertReturnVoid(!m_networkReceiveCache.contains(strTimeStamp));
 
-    if (m_networkTransmitCache.contains(strTimeStamp))
-    {
-        updateNetworkChart((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp], strTimeStamp);
-        m_networkTransmitCache.remove(strTimeStamp);
-    }
-    else
-        m_networkReceiveCache[strTimeStamp] = iValue;
+    // if (m_networkTransmitCache.contains(strTimeStamp))
+    // {
+    //     updateNetworkChart((quint64) iValue, (quint64) m_networkTransmitCache[strTimeStamp], strTimeStamp);
+    //     m_networkTransmitCache.remove(strTimeStamp);
+    // }
+    // else
+    //     m_networkReceiveCache[strTimeStamp] = iValue;
 }
 
-
-void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &strTimeStamp, quint64 iValue)
+void UIVMActivityMonitorCloud::cacheNetworkTransmit(const QString &, quint64 )
 {
-    AssertReturnVoid(!m_networkTransmitCache.contains(strTimeStamp));
+    // AssertReturnVoid(!m_networkTransmitCache.contains(strTimeStamp));
 
-    if (m_networkReceiveCache.contains(strTimeStamp))
-    {
-        updateNetworkChart((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue, strTimeStamp);
-        m_networkReceiveCache.remove(strTimeStamp);
-    }
-    else
-        m_networkTransmitCache[strTimeStamp] = iValue;
+    // if (m_networkReceiveCache.contains(strTimeStamp))
+    // {
+    //     updateNetworkChart((quint64)  m_networkReceiveCache[strTimeStamp], (quint64) iValue, strTimeStamp);
+    //     m_networkReceiveCache.remove(strTimeStamp);
+    // }
+    // else
+    //     m_networkTransmitCache[strTimeStamp] = iValue;
 }
 
 /* static */

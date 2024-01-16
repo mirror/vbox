@@ -53,6 +53,7 @@
 #include "UIMonitorCommon.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QTimer;
 class QVBoxLayout;
 class QLabel;
@@ -155,6 +156,7 @@ public:
 public slots:
 
         void sltExportMetricsToFile();
+        void sltChartDataIndexUnderCursorChanged(int iIndex);
 
 protected:
 
@@ -171,7 +173,6 @@ protected:
     /** @name The following functions reset corresponding info labels
       * @{ */
         virtual void resetCPUInfoLabel() = 0;
-        virtual void resetNetworkInfoLabel() = 0;
         virtual void resetDiskIOInfoLabel() = 0;
         void resetRAMInfoLabel();
     /** @} */
@@ -179,6 +180,7 @@ protected:
     virtual void prepareWidgets();
     void prepareActions();
     void setInfoLabelWidth();
+    QGridLayout            *m_pContainerLayout;
     QTimer                 *m_pTimer;
     quint64                 m_iTimeStep;
     QMap<QString, UIMetric> m_metrics;
@@ -187,9 +189,7 @@ protected:
       * @{ */
         QString m_strCPUMetricName;
         QString m_strRAMMetricName;
-        QString m_strNetworkMetricName;
         QString m_strDiskIOMetricName;
-        QString m_strVMExitMetricName;
     /** @} */
 
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
@@ -213,7 +213,6 @@ protected:
         QString m_strRAMInfoLabelFree;
         QString m_strRAMInfoLabelUsed;
         /** Net traffic info label strings. */
-        QString m_strNetworkInfoLabelTitle;
         QString m_strNetworkInfoLabelReceived;
         QString m_strNetworkInfoLabelTransmitted;
         QString m_strNetworkInfoLabelReceivedTotal;
@@ -233,7 +232,6 @@ private slots:
     /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
     void sltCreateContextMenu(const QPoint &point);
-    void sltChatDataIndexUnderCursorChanged(int iIndex);
 
 private:
 
@@ -294,8 +292,13 @@ private:
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
     virtual void resetCPUInfoLabel();
-    virtual void resetNetworkInfoLabel();
+    void resetNetworkInfoLabel();
     virtual void resetDiskIOInfoLabel();
+    virtual void prepareWidgets() RT_OVERRIDE;
+
+    QString m_strVMExitMetricName;
+    QString m_strNetworkMetricName;
+
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
     CSession m_comSession;
@@ -307,6 +310,7 @@ private:
     QString m_strVMExitInfoLabelTitle;
     QString m_strVMExitLabelCurrent;
     QString m_strVMExitLabelTotal;
+    QString m_strNetworkInfoLabelTitle;
 };
 
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonitor
@@ -337,16 +341,18 @@ private:
     virtual QString defaultMachineFolder() const RT_OVERRIDE;
     virtual void reset() RT_OVERRIDE;
     virtual void start() RT_OVERRIDE;
-    virtual void prepareWidgets();
+    virtual void prepareWidgets() RT_OVERRIDE;
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
         void updateCPUChart(quint64 iLoadPercentage, const QString &strLabel);
-        void updateNetworkChart(quint64 uReceive, quint64 uTransmit, const QString &strLabel);
+        void updateNetworkInChart(quint64 uReceive, const QString &strLabel);
+        void updateNetworkOutChart(quint64 uTransmit, const QString &strLabel);
         void updateDiskIOChart(quint64 uWriteRate, quint64 uReadRate, const QString &strLabel);
         void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
     /** @} */
     virtual void resetCPUInfoLabel();
-    virtual void resetNetworkInfoLabel();
+    void resetNetworkInInfoLabel();
+    void resetNetworkOutInfoLabel();
     virtual void resetDiskIOInfoLabel();
 
     /* Since we have a single UIMetric instance for disk IO we cache write and/or read until the other value arrives. Then update
@@ -360,6 +366,9 @@ private:
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
     void determineTotalRAMAmount();
+
+    QString m_strNetworkInMetricName;
+    QString m_strNetworkOutMetricName;
 
     CCloudMachine m_comMachine;
     QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
@@ -378,5 +387,8 @@ private:
     quint64 m_iTotalRAM;
     QTimer *m_pMachineStateUpdateTimer;
     KCloudMachineState m_enmMachineState;
+
+    QString m_strNetworkInInfoLabelTitle;
+    QString m_strNetworkOutInfoLabelTitle;
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */
