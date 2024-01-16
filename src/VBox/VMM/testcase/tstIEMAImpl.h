@@ -657,6 +657,8 @@ TSTIEM_DECLARE_TEST_ARRAY(Int-Amd,          BINU32_TEST_T,              imul_two
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU32_TEST_T,              bsf_u32_intel            );
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU32_TEST_T,              bsr_u32_intel            );
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU32_TEST_T,              imul_two_u32_intel       );
+TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU32_TEST_T,              adcx_u32                 );
+TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU32_TEST_T,              adox_u32                 );
 
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU64_TEST_T,              add_u64                  );
 TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU64_TEST_T,              add_u64_locked           );
@@ -687,6 +689,8 @@ TSTIEM_DECLARE_TEST_ARRAY(Int-Amd,          BINU64_TEST_T,              imul_two
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU64_TEST_T,              bsf_u64_intel            );
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU64_TEST_T,              bsr_u64_intel            );
 TSTIEM_DECLARE_TEST_ARRAY(Int-Intel,        BINU64_TEST_T,              imul_two_u64_intel       );
+TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU64_TEST_T,              adcx_u64                 );
+TSTIEM_DECLARE_TEST_ARRAY(Int,              BINU64_TEST_T,              adox_u64                 );
 
 TSTIEM_DECLARE_TEST_ARRAY(Int-Amd,          BINU16_TEST_T,              shrd_u16_amd             );
 TSTIEM_DECLARE_TEST_ARRAY(Int-Amd,          BINU16_TEST_T,              shld_u16_amd             );

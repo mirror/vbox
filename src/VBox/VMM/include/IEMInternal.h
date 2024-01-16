@@ -2703,15 +2703,10 @@ FNIEMAIMPLRDRANDSEEDU64 iemAImpl_rdseed_u64, iemAImpl_rdseed_u64_fallback;
 
 /** @name ADOX and ADCX
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLADXU32,(uint32_t *puDst, uint32_t *pfEFlags, uint32_t uSrc));
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLADXU64,(uint64_t *puDst, uint32_t *pfEFlags, uint64_t uSrc));
-typedef FNIEMAIMPLADXU32  *PFNIEMAIMPLADXU32;
-typedef FNIEMAIMPLADXU64  *PFNIEMAIMPLADXU64;
-
-FNIEMAIMPLADXU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
-FNIEMAIMPLADXU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
-FNIEMAIMPLADXU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
-FNIEMAIMPLADXU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
+FNIEMAIMPLBINU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
+FNIEMAIMPLBINU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
+FNIEMAIMPLBINU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
+FNIEMAIMPLBINU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
 /** @} */
 
 /** @name FPU operations taking a 32-bit float argument
