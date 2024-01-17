@@ -1,6 +1,8 @@
 #!/bin/sh
 # -*- coding: utf-8 -*-
-# pylint: disable=too-many-lines
+# pylint: disable=line-too-long
+# pylint: disable=too-many-statements
+# pylint: disable=deprecated-module
 # $Id$
 
 # The following checks for the right (i.e. most recent) Python binary available
@@ -24,22 +26,20 @@ exit 1
 
 from __future__ import print_function
 
-"""
-VirtualBox Python Shell.
-
-This program is a simple interactive shell for VirtualBox. You can query
-information and issue commands from a simple command line.
-
-It also provides you with examples on how to use VirtualBox's Python API.
-This shell is even somewhat documented, supports TAB-completion and
-history if you have Python readline installed.
-
-Finally, shell allows arbitrary custom extensions, just create
-.VirtualBox/shexts/ and drop your extensions there.
-                                               Enjoy.
-
-P.S. Our apologies for the code quality.
-"""
+# VirtualBox Python Shell.
+#
+# This program is a simple interactive shell for VirtualBox. You can query
+# information and issue commands from a simple command line.
+#
+# It also provides you with examples on how to use VirtualBox's Python API.
+# This shell is even somewhat documented, supports TAB-completion and
+# history if you have Python readline installed.
+#
+# Finally, shell allows arbitrary custom extensions, just create
+# .VirtualBox/shexts/ and drop your extensions there.
+#                                                Enjoy.
+#
+# P.S. Our apologies for the code quality.
 
 __copyright__ = \
 """
@@ -127,10 +127,9 @@ if g_fHasReadline:
             taken from:
             http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496812
             """
-            if False and text == "":
+            if text == "":
                 return ['\t', None][state]
-            else:
-                return rlcompleter.Completer.complete(self, text, state)
+            return rlcompleter.Completer.complete(self, text, state)
 
         def canBePath(self, _phrase, word):
             return word.startswith('/')
@@ -271,13 +270,9 @@ def colSizeM(_ctx, mbyte):
     return colored(str(mbyte)+'M', 'red')
 
 def platformArchFromString(ctx, arch):
-    if     arch == 'x86' \
-        or arch == 'x86_64' \
-        or arch == 'x64':
+    if arch in [ 'x86', 'x86_64', 'x64' ]:
         return ctx['global'].constants.PlatformArchitecture_x86
-    elif    arch == 'arm' \
-         or arch == 'aarch32' \
-         or arch == 'aarch64':
+    if arch in ['arm', 'aarch32', 'aarch64' ]:
         return ctx['global'].constants.PlatformArchitecture_ARM
     return ctx['global'].constants.PlatformArchitecture_None
 
@@ -335,7 +330,7 @@ class CachedMach:
             self.name = mach.name
         else:
             self.name = '<inaccessible>'
-        self.id = mach.id
+        self.id = mach.id # pylint: disable=invalid-name
 
 def cacheMachines(_ctx, lst):
     result = []
@@ -351,22 +346,18 @@ def getMachines(ctx, invalidate = False, simple=False):
             ctx['_machlistsimple'] = cacheMachines(ctx, ctx['_machlist'])
         if simple:
             return ctx['_machlistsimple']
-        else:
-            return ctx['_machlist']
-    else:
-        return []
+        return ctx['_machlist']
+    return []
 
 def asState(var):
     if var:
         return colored('on', 'green')
-    else:
-        return colored('off', 'green')
+    return colored('off', 'green')
 
 def asFlag(var):
     if var:
         return 'yes'
-    else:
-        return 'no'
+    return 'no'
 
 def getFacilityStatus(ctx, guest, facilityType):
     (status, _timestamp) = guest.getFacilityStatus(facilityType)
@@ -481,10 +472,6 @@ def monitorSource(ctx, eventSource, active, dur):
 
 g_tsLast = 0
 def recordDemo(ctx, console, filename, dur):
-    demo = open(filename, 'w')
-    header = "VM=" + console.machine.name + "\n"
-    demo.write(header)
-
     global g_tsLast
     g_tsLast = time.time()
 
@@ -513,111 +500,112 @@ def recordDemo(ctx, console, filename, dur):
     registered = False
     # we create an aggregated event source to listen for multiple event sources (keyboard and mouse in our case)
     agg = console.eventSource.createAggregator([console.keyboard.eventSource, console.mouse.eventSource])
-    demo = open(filename, 'w', encoding='utf-8')
-    header = "VM=" + console.machine.name + "\n"
-    demo.write(header)
-    if dur == -1:
-        # not infinity, but close enough
-        dur = 100000
-    try:
-        agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
-        registered = True
-        end = time.time() + dur
-        while  time.time() < end:
-            event = agg.getEvent(listener, 1000)
-            if event:
-                handleEventImpl(event)
-                # keyboard/mouse events aren't waitable, so no need for eventProcessed
-    # We need to catch all exceptions here, otherwise listener will never be unregistered
-    except:
-        traceback.print_exc()
+    with open(filename, 'w', encoding='utf-8') as demo:
+        header = "VM=" + console.machine.name + "\n"
+        demo.write(header)
+        if dur == -1:
+            # not infinity, but close enough
+            dur = 100000
+        try:
+            agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
+            registered = True
+            end = time.time() + dur
+            while  time.time() < end:
+                event = agg.getEvent(listener, 1000)
+                if event:
+                    handleEventImpl(event)
+                    # keyboard/mouse events aren't waitable, so no need for eventProcessed
+        # We need to catch all exceptions here, otherwise listener will never be unregistered
+        except:
+            traceback.print_exc()
 
-    demo.close()
+        demo.close()
     if listener and registered:
         agg.unregisterListener(listener)
 
 
 def playbackDemo(ctx, console, filename, dur):
-    demo = open(filename, 'r', encoding='utf-8')
-
     if dur == -1:
         # not infinity, but close enough
         dur = 100000
+    with open(filename, 'r', encoding='utf-8') as demo:
+        header = demo.readline()
+        if g_fVerbose:
+            print("Header is", header)
+        basere = re.compile(r'(?P<s>\d+): (?P<t>[km]) (?P<p>.*)')
+        mre = re.compile(r'(?P<a>\d+) (?P<x>-*\d+) (?P<y>-*\d+) (?P<z>-*\d+) (?P<w>-*\d+) (?P<b>-*\d+)')
+        kre = re.compile(r'\d+')
 
-    header = demo.readline()
-    print("Header is", header)
-    basere = re.compile(r'(?P<s>\d+): (?P<t>[km]) (?P<p>.*)')
-    mre = re.compile(r'(?P<a>\d+) (?P<x>-*\d+) (?P<y>-*\d+) (?P<z>-*\d+) (?P<w>-*\d+) (?P<b>-*\d+)')
-    kre = re.compile(r'\d+')
+        kbd = console.keyboard
+        mouse = console.mouse
 
-    kbd = console.keyboard
-    mouse = console.mouse
+        try:
+            end = time.time() + dur
+            for line in demo:
+                if time.time() > end:
+                    break
+                match = basere.search(line)
+                if match is None:
+                    continue
 
-    try:
-        end = time.time() + dur
-        for line in demo:
-            if time.time() > end:
-                break
-            match = basere.search(line)
-            if match is None:
-                continue
+                rdict = match.groupdict()
+                stamp = rdict['s']
+                params = rdict['p']
+                rtype = rdict['t']
 
-            rdict = match.groupdict()
-            stamp = rdict['s']
-            params = rdict['p']
-            rtype = rdict['t']
+                time.sleep(float(stamp)/1000)
 
-            time.sleep(float(stamp)/1000)
+                if rtype == 'k':
+                    codes = kre.findall(params)
+                    if g_fVerbose:
+                        print("KBD:", codes)
+                    kbd.putScancodes(codes)
+                elif rtype == 'm':
+                    mouseEvent = mre.search(params)
+                    if mouseEvent is not None:
+                        mdict = mouseEvent.groupdict()
+                        if mdict['a'] == '1':
+                            if g_fVerbose:
+                                print("MA: ", mdict['x'], mdict['y'], mdict['z'], mdict['b'])
+                            mouse.putMouseEventAbsolute(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
+                        else:
+                            if g_fVerbose:
+                                print("MR: ", mdict['x'], mdict['y'], mdict['b'])
+                            mouse.putMouseEvent(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
 
-            if rtype == 'k':
-                codes = kre.findall(params)
-                #print("KBD:", codes)
-                kbd.putScancodes(codes)
-            elif rtype == 'm':
-                mm = mre.search(params)
-                if mm is not None:
-                    mdict = mm.groupdict()
-                    if mdict['a'] == '1':
-                        # absolute
-                        #print("MA: ", mdict['x'], mdict['y'], mdict['z'], mdict['b'])
-                        mouse.putMouseEventAbsolute(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
-                    else:
-                        #print("MR: ", mdict['x'], mdict['y'], mdict['b'])
-                        mouse.putMouseEvent(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
+        # We need to catch all exceptions here, to close file
+        except KeyboardInterrupt:
+            ctx['interrupt'] = True
+        except:
+            traceback.print_exc()
 
-    # We need to catch all exceptions here, to close file
-    except KeyboardInterrupt:
-        ctx['interrupt'] = True
-    except:
-        traceback.print_exc()
-
-    demo.close()
+        demo.close()
 
 def takeScreenshot(ctx, console, args):
     display = console.display
     if len(args) > 0:
-        f = args[0]
+        filename = args[0]
     else:
-        f = os.path.join(tempfile.gettempdir(), "screenshot.png")
+        filename = os.path.join(tempfile.gettempdir(), "screenshot.png")
     if len(args) > 3:
         screen = int(args[3])
     else:
         screen = 0
     (fbw, fbh, _fbbpp, _fbx, _fby, _) = display.getScreenResolution(screen)
     if len(args) > 1:
-        w = int(args[1])
+        width = int(args[1])
     else:
-        w = fbw
+        width = fbw
     if len(args) > 2:
-        h = int(args[2])
+        height = int(args[2])
     else:
-        h = fbh
+        height = fbh
 
-    print("Saving screenshot (%d x %d) screen %d in %s..." % (w, h, screen, f))
-    data = display.takeScreenShotToArray(screen, w, h, ctx['const'].BitmapFormat_PNG)
-    pngfile = open(f, 'wb')
-    pngfile.write(data)
-    pngfile.close()
+    print("Saving screenshot (%d x %d) screen %d in %s..." % (width, height, screen, filename))
+    data = display.takeScreenShotToArray(screen, width, height, ctx['const'].BitmapFormat_PNG)
+    with open(filename, 'wb') as pngfile:
+        pngfile.write(data)
+        pngfile.close()
 
 def teleport(ctx, _session, console, args):
     if args[0].find(":") == -1:
@@ -684,20 +672,22 @@ def mountIso(_ctx, machine, _session, args):
     machine.mountMedium(args[0], args[1], args[2], args[3], args[4])
     machine.saveSettings()
 
-def cond(c, v1, v2):
-    if c:
-        return v1
-    else:
-        return v2
+def cond(condToCheck, resTrue, resFalse):
+    if condToCheck:
+        return resTrue
+    return resFalse
 
-def printHostUsbDev(ctx, ud):
-    print("  %s: %s (vendorId=%d productId=%d serial=%s) %s" % (ud.id, colored(ud.product, 'blue'), ud.vendorId, ud.productId, ud.serialNumber, asEnumElem(ctx, 'USBDeviceState', ud.state)))
+def printHostUsbDev(ctx, usbdev):
+    print("  %s: %s (vendorId=%d productId=%d serial=%s) %s" \
+          % (usbdev.id, colored(usbdev.product, 'blue'), usbdev.vendorId, usbdev.productId, usbdev.serialNumber, asEnumElem(ctx, 'USBDeviceState', usbdev.state)))
 
-def printUsbDev(_ctx, ud):
-    print("  %s: %s (vendorId=%d productId=%d serial=%s)" % (ud.id,  colored(ud.product, 'blue'), ud.vendorId, ud.productId, ud.serialNumber))
+def printUsbDev(_ctx, usbdev):
+    print("  %s: %s (vendorId=%d productId=%d serial=%s)" \
+          % (usbdev.id,  colored(usbdev.product, 'blue'), usbdev.vendorId, usbdev.productId, usbdev.serialNumber))
 
-def printSf(ctx, sf):
-    print("    name=%s host=%s %s %s" % (sf.name, colPath(ctx, sf.hostPath), cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only")))
+def printSf(ctx, sharedfolder):
+    print("    name=%s host=%s %s %s" \
+          % (sharedfolder.name, colPath(ctx, sharedfolder.hostPath), cond(sharedfolder.accessible, "accessible", "not accessible"), cond(sharedfolder.writable, "writable", "read-only")))
 
 def ginfo(ctx, console, _args):
     guest = console.guest
@@ -714,16 +704,16 @@ def ginfo(ctx, console, _args):
         print("No additions")
     usbs = ctx['global'].getArray(console, 'USBDevices')
     print("Attached USB:")
-    for ud in usbs:
-        printUsbDev(ctx, ud)
+    for usbdev in usbs:
+        printUsbDev(ctx, usbdev)
     rusbs = ctx['global'].getArray(console, 'remoteUSBDevices')
     print("Remote USB:")
-    for ud in rusbs:
-        printHostUsbDev(ctx, ud)
+    for usbdev in rusbs:
+        printHostUsbDev(ctx, usbdev)
     print("Transient shared folders:")
     sfs = rusbs = ctx['global'].getArray(console, 'sharedFolders')
-    for sf in sfs:
-        printSf(ctx, sf)
+    for sharedfolder in sfs:
+        printSf(ctx, sharedfolder)
 
 def cmdExistingVm(ctx, mach, cmd, args):
     session = None
@@ -745,10 +735,10 @@ def cmdExistingVm(ctx, mach, cmd, args):
         session.unlockMachine()
         return
     console = session.console
-    ops = {'pause':           lambda: console.pause(),
-           'resume':          lambda: console.resume(),
-           'powerdown':       lambda: console.powerDown(),
-           'powerbutton':     lambda: console.powerButton(),
+    ops = {'pause':           console.pause(),
+           'resume':          console.resume(),
+           'powerdown':       console.powerDown(),
+           'powerbutton':     console.powerButton(),
            'stats':           lambda: perfStats(ctx, mach),
            'guest':           lambda: guestExec(ctx, mach, console, args),
            'ginfo':           lambda: ginfo(ctx, console, args),
@@ -773,7 +763,7 @@ def cmdExistingVm(ctx, mach, cmd, args):
     session.unlockMachine()
 
 
-def cmdClosedVm(ctx, mach, cmd, args=[], save=True):
+def cmdClosedVm(ctx, mach, cmd, args=None, save=True):
     session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     mach = session.machine
     try:
@@ -793,7 +783,7 @@ def cmdClosedVm(ctx, mach, cmd, args=[], save=True):
     ctx['global'].closeMachineSession(session)
 
 
-def cmdAnyVm(ctx, mach, cmd, args=[], save=False):
+def cmdAnyVm(ctx, mach, cmd, args=None, save=False):
     session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     mach = session.machine
     try:
@@ -837,7 +827,7 @@ class XPathNode:
                 xdict = match.groupdict()
                 attr = xdict['a']
                 val = xdict['v']
-                matches = (str(getattr(self.obj, attr)) == val)
+                matches = str(getattr(self.obj, attr)) == val
         except:
             pass
         return matches
@@ -935,12 +925,12 @@ def argsToMach(ctx, args):
         print("Machine '%s' is unknown, use list command to find available machines" % (uuid))
     return mach
 
-def helpSingleCmd(cmd, h, sp):
-    if sp != 0:
-        spec = " [ext from "+sp+"]"
+def helpSingleCmd(cmd, help_text, from_ext):
+    if from_ext != 0:
+        spec = " [ext from "+from_ext+"]"
     else:
         spec = ""
-    print("    %s: %s%s" % (colored(cmd, 'blue'), h, spec))
+    print("    %s: %s%s" % (colored(cmd, 'blue'), help_text, spec))
 
 def helpCmd(_ctx, args):
     if len(args) == 1:
@@ -952,7 +942,7 @@ def helpCmd(_ctx, args):
     else:
         cmd = args[1]
         c = commands.get(cmd)
-        if c == None:
+        if not c:
             print("Command '%s' not known" % (cmd))
         else:
             helpSingleCmd(cmd, c[0], c[2])
@@ -1063,30 +1053,30 @@ def infoCmd(ctx, args):
     if attaches:
         print()
         print(colCat(ctx, "  Media:"))
-    for a in attaches:
-        print("   Controller: '%s' port/device: %d:%d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx, "DeviceType", a.type), a.type))
-        medium = a.medium
-        if a.type == ctx['global'].constants.DeviceType_HardDisk:
+    for att in attaches:
+        print("   Controller: '%s' port/device: %d:%d type: %s (%s):" % (att.controller, att.port, att.device, asEnumElem(ctx, "DeviceType", att.type), att.type))
+        medium = att.medium
+        if att.type == ctx['global'].constants.DeviceType_HardDisk:
             print("   HDD:")
             print("    Id: %s" % (medium.id))
             print("    Location: %s" % (colPath(ctx, medium.location)))
             print("    Name: %s" % (medium.name))
             print("    Format: %s" % (medium.format))
 
-        if a.type == ctx['global'].constants.DeviceType_DVD:
+        if att.type == ctx['global'].constants.DeviceType_DVD:
             print("   DVD:")
             if medium:
                 print("    Id: %s" % (medium.id))
                 print("    Name: %s" % (medium.name))
                 if medium.hostDrive:
                     print("    Host DVD %s" % (colPath(ctx, medium.location)))
-                    if a.passthrough:
+                    if att.passthrough:
                         print("    [passthrough mode]")
                 else:
                     print("    Virtual image at %s" % (colPath(ctx, medium.location)))
                     print("    Size: %s" % (medium.size))
 
-        if a.type == ctx['global'].constants.DeviceType_Floppy:
+        if att.type == ctx['global'].constants.DeviceType_Floppy:
             print("   Floppy:")
             if medium:
                 print("    Id: %s" % (medium.id))
@@ -1099,8 +1089,8 @@ def infoCmd(ctx, args):
 
     print()
     print(colCat(ctx, "  Shared folders:"))
-    for sf in ctx['global'].getArray(mach, 'sharedFolders'):
-        printSf(ctx, sf)
+    for sharedfolder in ctx['global'].getArray(mach, 'sharedFolders'):
+        printSf(ctx, sharedfolder)
 
     return 0
 
@@ -1152,7 +1142,7 @@ def gstctlPrintErr(_ctx, string):
 def execInGuest(ctx, console, args, env, user, passwd, tmo, inputPipe=None, _outputPipe=None):
     if len(args) < 1:
         print("exec in guest needs at least program name")
-        return
+        return 1
     guest = console.guest
     # shall contain program name as argv[0]
     gargs = args
@@ -1219,9 +1209,9 @@ def execInGuest(ctx, console, args, env, user, passwd, tmo, inputPipe=None, _out
                         write = len(indata)
                         off = 0
                         while write > 0:
-                            w = process.write(0, 10*1000, indata[off:])
-                            off = off + w
-                            write = write - w
+                            written = process.write(0, 10*1000, indata[off:])
+                            off = off + written
+                            write = write - written
                     else:
                         # EOF
                         try:
@@ -1341,16 +1331,16 @@ def gpipeCmd(ctx, args):
     gcmd = args[3]
     (user, passwd) = getCred(ctx)
     import subprocess
-    ctx['process'] = subprocess.Popen(split_no_quotes(hcmd), stdout=subprocess.PIPE)
-    gargs = split_no_quotes(gcmd)
-    env = []
-    gargs.insert(0, lambda ctx, mach, console, args: execInGuest(ctx, console, args, env, user, passwd, 10000, lambda ctx:readCmdPipe(ctx, hcmd)))
-    cmdExistingVm(ctx, mach, 'guestlambda', gargs)
-    try:
-        ctx['process'].terminate()
-    except:
-        pass
-    ctx['process'] = None
+    with subprocess.Popen(split_no_quotes(hcmd), stdout=subprocess.PIPE) as ctx['process']:
+        gargs = split_no_quotes(gcmd)
+        env = []
+        gargs.insert(0, lambda ctx, mach, console, args: execInGuest(ctx, console, args, env, user, passwd, 10000, lambda ctx:readCmdPipe(ctx, hcmd)))
+        cmdExistingVm(ctx, mach, 'guestlambda', gargs)
+        try:
+            ctx['process'].terminate()
+        except:
+            pass
+        ctx['process'] = None
     return 0
 
 
@@ -1577,10 +1567,10 @@ def getExtraDataCmd(ctx, args):
         obj = ctx['vb']
     else:
         obj = argsToMach(ctx, args)
-        if obj == None:
+        if not obj:
             return 0
 
-    if key == None:
+    if not key:
         keys = obj.getExtraDataKeys()
     else:
         keys = [ key ]
@@ -1604,7 +1594,7 @@ def aliasCmd(_ctx, args):
 def verboseCmd(_ctx, args):
     global g_fVerbose
     if len(args) > 1:
-        g_fVerbose = (args[1]=='on')
+        g_fVerbose = args[1]=='on'
     else:
         g_fVerbose = not g_fVerbose
     return 0
@@ -1612,7 +1602,7 @@ def verboseCmd(_ctx, args):
 def colorsCmd(_ctx, args):
     global g_fHasColors
     if len(args) > 1:
-        g_fHasColors = (args[1] == 'on')
+        g_fHasColors = args[1] == 'on'
     else:
         g_fHasColors = not g_fHasColors
     return 0
@@ -1648,20 +1638,20 @@ def hostCmd(ctx, _args):
         print(colCat(ctx, "3D acceleration NOT available"))
 
     print(colCat(ctx, "Network interfaces:"))
-    for ni in ctx['global'].getArray(host, 'networkInterfaces'):
-        print("  %s (%s)" % (ni.name, ni.IPAddress))
+    for iface in ctx['global'].getArray(host, 'networkInterfaces'):
+        print("  %s (%s)" % (iface.name, iface.IPAddress))
 
     print(colCat(ctx, "DVD drives:"))
-    for dd in ctx['global'].getArray(host, 'DVDDrives'):
-        print("  %s - %s" % (dd.name, dd.description))
+    for drive in ctx['global'].getArray(host, 'DVDDrives'):
+        print("  %s - %s" % (drive.name, drive.description))
 
     print(colCat(ctx, "Floppy drives:"))
-    for dd in ctx['global'].getArray(host, 'floppyDrives'):
-        print("  %s - %s" % (dd.name, dd.description))
+    for drive in ctx['global'].getArray(host, 'floppyDrives'):
+        print("  %s - %s" % (drive.name, drive.description))
 
     print(colCat(ctx, "USB devices:"))
-    for ud in ctx['global'].getArray(host, 'USBDevices'):
-        printHostUsbDev(ctx, ud)
+    for usbdev in ctx['global'].getArray(host, 'USBDevices'):
+        printHostUsbDev(ctx, usbdev)
 
     if ctx['perf']:
         for metric in ctx['perf'].query(["*"], [host]):
@@ -1738,21 +1728,19 @@ def monitorVBoxCmd(ctx, args):
     return 0
 
 def getAdapterType(ctx, natype):
-    if (natype == ctx['global'].constants.NetworkAdapterType_Am79C970A or
-        natype == ctx['global'].constants.NetworkAdapterType_Am79C973 or
-        natype == ctx['global'].constants.NetworkAdapterType_Am79C960):
+    if (natype in (  ctx['global'].constants.NetworkAdapterType_Am79C970A
+                   , ctx['global'].constants.NetworkAdapterType_Am79C973
+                   , ctx['global'].constants.NetworkAdapterType_Am79C960)):
         return "pcnet"
-    elif (natype == ctx['global'].constants.NetworkAdapterType_I82540EM or
-          natype == ctx['global'].constants.NetworkAdapterType_I82545EM or
-          natype == ctx['global'].constants.NetworkAdapterType_I82543GC):
+    if (natype in (  ctx['global'].constants.NetworkAdapterType_I82540EM
+                   , ctx['global'].constants.NetworkAdapterType_I82545EM
+                   , ctx['global'].constants.NetworkAdapterType_I82543GC)):
         return "e1000"
-    elif (natype == ctx['global'].constants.NetworkAdapterType_Virtio):
+    if natype == ctx['global'].constants.NetworkAdapterType_Virtio:
         return "virtio"
-    elif (natype == ctx['global'].constants.NetworkAdapterType_Null):
+    if natype == ctx['global'].constants.NetworkAdapterType_Null:
         return None
-    else:
-        raise Exception("Unknown adapter type: "+natype)
-
+    raise Exception("Unknown adapter type: "+natype)
 
 def portForwardCmd(ctx, args):
     if len(args) != 5:
@@ -1827,13 +1815,13 @@ def findLogCmd(ctx, args):
         data = mach.readLog(log, uOffset, 512*1024)
         if len(data) == 0:
             break
-        d = str(data).split("\n")
-        for s in d:
-            match = re.findall(pattern, s)
+        buf = str(data).split("\n")
+        for line in buf:
+            match = re.findall(pattern, line)
             if len(match) > 0:
-                for mt in match:
-                    s = s.replace(mt, colored(mt, 'red'))
-                print(s)
+                for cur_match in match:
+                    line = line.replace(cur_match, colored(cur_match, 'red'))
+                print(line)
         uOffset += len(data)
 
     return 0
@@ -1860,20 +1848,20 @@ def findAssertCmd(ctx, args):
         data = mach.readLog(log, uOffset, 512*1024)
         if len(data) == 0:
             break
-        d = str(data).split("\n")
-        for s in d:
+        buf = str(data).split("\n")
+        for line in buf:
             if active:
-                print(s)
+                print(line)
                 if context == 0:
                     active = False
                 else:
                     context = context - 1
                 continue
-            match = ere.findall(s)
+            match = ere.findall(line)
             if len(match) > 0:
                 active = True
                 context = 50
-                print(s)
+                print(line)
         uOffset += len(data)
 
     return 0
@@ -1898,28 +1886,28 @@ def runScriptCmd(ctx, args):
     if len(args) != 2:
         print("usage: runScript <script>")
         return 0
+
     try:
-        lf = open(args[1], 'r', encoding='utf-8')
+        with open(args[1], 'r', encoding='utf-8') as file:
+            try:
+                lines = file.readlines()
+                ctx['scriptLine'] = 0
+                ctx['interrupt'] = False
+                while ctx['scriptLine'] < len(lines):
+                    line = lines[ctx['scriptLine']]
+                    ctx['scriptLine'] = ctx['scriptLine'] + 1
+                    done = runCommand(ctx, line)
+                    if done != 0 or ctx['interrupt']:
+                        break
+
+            except Exception as e:
+                printErr(ctx, e)
+                if g_fVerbose:
+                    traceback.print_exc()
+            file.close()
     except IOError as e:
         print("cannot open:", args[1], ":", e)
-        return 0
-
-    try:
-        lines = lf.readlines()
-        ctx['scriptLine'] = 0
-        ctx['interrupt'] = False
-        while ctx['scriptLine'] < len(lines):
-            line = lines[ctx['scriptLine']]
-            ctx['scriptLine'] = ctx['scriptLine'] + 1
-            done = runCommand(ctx, line)
-            if done != 0 or ctx['interrupt']:
-                break
-
-    except Exception as e:
-        printErr(ctx, e)
-        if g_fVerbose:
-            traceback.print_exc()
-    lf.close()
+        return 1
     return 0
 
 def sleepCmd(_ctx, args):
@@ -2182,7 +2170,7 @@ def typeInGuest(console, text, delay):
             # just wait a bit
             time.sleep(0.3)
             continue
-        if  ch == '^' or  ch == '|' or ch == '$' or ch == '_':
+        if ch in ('^', '|', '$', '_'):
             if ch == '^':
                 ch = 'LCTR'
             if ch == '|':
@@ -2242,14 +2230,12 @@ def typeGuestCmd(ctx, args):
 def optId(verbose, uuid):
     if verbose:
         return ": "+uuid
-    else:
-        return ""
+    return ""
 
 def asSize(val, inBytes):
     if inBytes:
         return int(val)/(1024*1024)
-    else:
-        return int(val)
+    return int(val)
 
 def listMediaCmd(ctx, args):
     if len(args) > 1:
@@ -2285,16 +2271,16 @@ def listUsbCmd(ctx, args):
         return 0
 
     host = ctx['vb'].host
-    for ud in ctx['global'].getArray(host, 'USBDevices'):
-        printHostUsbDev(ctx, ud)
+    for usbdev in ctx['global'].getArray(host, 'USBDevices'):
+        printHostUsbDev(ctx, usbdev)
 
     return 0
 
 def findDevOfType(ctx, mach, devtype):
-    atts = ctx['global'].getArray(mach, 'mediumAttachments')
-    for a in atts:
-        if a.type == devtype:
-            return [a.controller, a.port, a.device]
+    attachments = ctx['global'].getArray(mach, 'mediumAttachments')
+    for att in attachments:
+        if att.type == devtype:
+            return [att.controller, att.port, att.device]
     return [None, 0, 0]
 
 def createHddCmd(ctx, args):
@@ -2360,12 +2346,12 @@ def attachHddCmd(ctx, args):
     return 0
 
 def detachVmDevice(ctx, mach, args):
-    atts = ctx['global'].getArray(mach, 'mediumAttachments')
+    attachments = ctx['global'].getArray(mach, 'mediumAttachments')
     hid = args[0]
-    for a in atts:
-        if a.medium:
-            if hid == "ALL" or a.medium.id == hid:
-                mach.detachDevice(a.controller, a.port, a.device)
+    for att in attachments:
+        if att.medium:
+            if hid in ('ALL', att.medium.id):
+                mach.detachDevice(att.controller, att.port, att.device)
 
 def detachMedium(ctx, mid, medium):
     cmdClosedVm(ctx, machById(ctx, mid), detachVmDevice, [medium])
@@ -2575,7 +2561,7 @@ def unmountIsoCmd(ctx, args):
 def attachCtr(_ctx, mach, args):
     [name, bus, ctrltype] = args
     ctr = mach.addStorageController(name, bus)
-    if ctrltype != None:
+    if ctrltype:
         ctr.controllerType = ctrltype
 
 def attachCtrCmd(ctx, args):
@@ -2585,7 +2571,7 @@ def attachCtrCmd(ctx, args):
 
     if len(args) > 4:
         ctrltype = enumFromString(ctx, 'StorageControllerType', args[4])
-        if ctrltype == None:
+        if not ctrltype:
             print("Controller type %s unknown" % (args[4]))
             return 0
     else:
@@ -2673,10 +2659,10 @@ def shareFolderCmd(ctx, args):
     writable = False
     persistent = False
     if len(args) > 4:
-        for a in args[4:]:
-            if a == 'writable':
+        for cur_arg in args[4:]:
+            if cur_arg == 'writable':
                 writable = True
-            if a == 'persistent':
+            if cur_arg == 'persistent':
                 persistent = True
     if persistent:
         cmdClosedVm(ctx, mach, lambda ctx, mach, args: mach.createSharedFolder(name, path, writable), [])
@@ -2694,8 +2680,8 @@ def unshareFolderCmd(ctx, args):
         return 0
     name = args[2]
     found = False
-    for sf in ctx['global'].getArray(mach, 'sharedFolders'):
-        if sf.name == name:
+    for sharedfolder in ctx['global'].getArray(mach, 'sharedFolders'):
+        if sharedfolder.name == name:
             cmdClosedVm(ctx, mach, lambda ctx, mach, args: mach.removeSharedFolder(name), [])
             found = True
             break
@@ -2756,7 +2742,7 @@ def snapshotCmd(ctx, args):
     print("Command '%s' is unknown" % (cmd))
     return 0
 
-def natAlias(_ctx, _mach, _nicnum, nat, args=[]):
+def natAlias(_ctx, _mach, _nicnum, nat, args=None):
     """This command shows/alters NAT's alias settings.
     usage: nat <vmname|uuid> <nicnum> alias [default|[log] [proxyonly] [sameports]]
     default - set settings to default values
@@ -2782,19 +2768,20 @@ def natAlias(_ctx, _mach, _nicnum, nat, args=[]):
             else:
                 msg += '%s: %s' % (aliasmode, 'off')
         return (0, [msg])
-    else:
-        nat.aliasMode = 0
-        if 'default' not in args:
-            for a in range(1, len(args)):
-                if args[a] not in alias:
-                    print('Invalid alias mode: ' + args[a])
-                    print(natAlias.__doc__)
-                    return (1, None)
-                nat.aliasMode = int(nat.aliasMode) | alias[args[a]]
+
+    nat.aliasMode = 0
+    if 'default' not in args:
+        for idx in range(1, len(args)):
+            if args[idx] not in alias:
+                print('Invalid alias mode: ' + args[idx])
+                print(natAlias.__doc__)
+                return (1, None)
+            nat.aliasMode = int(nat.aliasMode) | alias[args[idx]]
     return (0, None)
 
 def natSettings(_ctx, _mach, _nicnum, nat, args):
-    """This command shows/alters NAT settings.
+    """
+    This command shows/alters NAT settings.
     usage: nat <vmname|uuid> <nicnum> settings [<mtu> [[<socsndbuf> <sockrcvbuf> [<tcpsndwnd> <tcprcvwnd>]]]]
     mtu - set mtu <= 16000
     socksndbuf/sockrcvbuf - sets amount of kb for socket sending/receiving buffer
@@ -2809,22 +2796,22 @@ def natSettings(_ctx, _mach, _nicnum, nat, args):
         if tcprcvwnd == 0: tcprcvwnd = 64
         msg = 'mtu:%s socket(snd:%s, rcv:%s) tcpwnd(snd:%s, rcv:%s)' % (mtu, socksndbuf, sockrcvbuf, tcpsndwnd, tcprcvwnd)
         return (0, [msg])
-    else:
-        if args[1] < 16000:
-            print('invalid mtu value (%s not in range [65 - 16000])' % (args[1]))
+
+    if args[1] < 16000:
+        print('invalid mtu value (%s not in range [65 - 16000])' % (args[1]))
+        return (1, None)
+    for i in range(2, len(args)):
+        if not args[i].isdigit() or int(args[i]) < 8 or int(args[i]) > 1024:
+            print('invalid %s parameter (%i not in range [8-1024])' % (i, args[i]))
             return (1, None)
-        for i in range(2, len(args)):
-            if not args[i].isdigit() or int(args[i]) < 8 or int(args[i]) > 1024:
-                print('invalid %s parameter (%i not in range [8-1024])' % (i, args[i]))
-                return (1, None)
-        a = [args[1]]
-        if len(args) < 6:
-            for i in range(2, len(args)): a.append(args[i])
-            for i in range(len(args), 6): a.append(0)
-        else:
-            for i in range(2, len(args)): a.append(args[i])
-        #print(a)
-        nat.setNetworkSettings(int(a[0]), int(a[1]), int(a[2]), int(a[3]), int(a[4]))
+    nic_args = [args[1]]
+    if len(args) < 6:
+        for i in range(2, len(args)): nic_args.append(args[i])
+        for i in range(len(args), 6): nic_args.append(0)
+    else:
+        for i in range(2, len(args)): nic_args.append(args[i])
+    #print(a)
+    nat.setNetworkSettings(int(nic_args[0]), int(nic_args[1]), int(nic_args[2]), int(nic_args[3]), int(nic_args[4]))
     return (0, None)
 
 def natDns(_ctx, _mach, _nicnum, nat, args):
@@ -2838,10 +2825,10 @@ def natDns(_ctx, _mach, _nicnum, nat, args):
     if len(args) == 1:
         msg = 'passdomain:%s, proxy:%s, usehostresolver:%s' % (yesno[int(nat.DNSPassDomain)], yesno[int(nat.DNSProxy)], yesno[int(nat.DNSUseHostResolver)])
         return (0, [msg])
-    else:
-        nat.DNSPassDomain = 'passdomain' in args
-        nat.DNSProxy = 'proxy' in args
-        nat.DNSUseHostResolver = 'usehostresolver' in args
+
+    nat.DNSPassDomain = 'passdomain' in args
+    nat.DNSProxy = 'proxy' in args
+    nat.DNSUseHostResolver = 'usehostresolver' in args
     return (0, None)
 
 def natTftp(ctx, mach, nicnum, nat, args):
@@ -2860,8 +2847,8 @@ def natTftp(ctx, mach, nicnum, nat, args):
             (server, _mask) = server.split('/')
             while server.count('.') != 3:
                 server += '.0'
-            (a, b, c, _d) = server.split('.')
-            server = '%d.%d.%d.4' % (a, b, c)
+            (ipA, ipB, ipC, _ipD) = server.split('.')
+            server = '%d.%d.%d.4' % (ipA, ipB, ipC)
         prefix = nat.TFTPPrefix
         if prefix is None:
             prefix = '%s/TFTP/' % (ctx['vb'].homeFolder)
@@ -2870,19 +2857,18 @@ def natTftp(ctx, mach, nicnum, nat, args):
             bootfile = '%s.pxe' % (mach.name)
         msg = 'server:%s, prefix:%s, bootfile:%s' % (server, prefix, bootfile)
         return (0, [msg])
-    else:
 
-        cmd = args[1]
-        if len(args) != 3:
-            print('invalid args:', args)
-            print(natTftp.__doc__)
-            return (1, None)
-        if cmd == 'prefix': nat.TFTPPrefix = args[2]
-        elif cmd == 'bootfile': nat.TFTPBootFile = args[2]
-        elif cmd == 'server': nat.TFTPNextServer = args[2]
-        else:
-            print("invalid cmd:", cmd)
-            return (1, None)
+    cmd = args[1]
+    if len(args) != 3:
+        print('invalid args:', args)
+        print(natTftp.__doc__)
+        return (1, None)
+    if   cmd == 'prefix': nat.TFTPPrefix = args[2]
+    elif cmd == 'bootfile': nat.TFTPBootFile = args[2]
+    elif cmd == 'server': nat.TFTPNextServer = args[2]
+    else:
+        print("invalid cmd:", cmd)
+        return (1, None)
     return (0, None)
 
 def natPortForwarding(ctx, _mach, _nicnum, nat, args):
@@ -2897,38 +2883,38 @@ def natPortForwarding(ctx, _mach, _nicnum, nat, args):
         # note: keys/values are swapped in defining part of the function
         proto = {0: 'udp', 1: 'tcp'}
         msg = []
-        pfs = ctx['global'].getArray(nat, 'redirects')
-        for pf in pfs:
-            (pfnme, pfp, pfhip, pfhp, pfgip, pfgp) = str(pf).split(', ')
+        port_forwardings = ctx['global'].getArray(nat, 'redirects')
+        for forwarding in port_forwardings:
+            (pfnme, pfp, pfhip, pfhp, pfgip, pfgp) = str(forwarding).split(', ')
             msg.append('%s: %s %s:%s => %s:%s' % (pfnme, proto[int(pfp)], pfhip, pfhp, pfgip, pfgp))
         return (0, msg) # msg is array
-    else:
-        proto = {'udp': 0, 'tcp': 1}
-        pfcmd = {
-            'simple': {
-                'validate': lambda: args[1] in list(pfcmd.keys()) and args[2] in list(proto.keys()) and len(args) == 5,
-                'func':lambda: nat.addRedirect('', proto[args[2]], '', int(args[3]), '', int(args[4]))
-            },
-            'no_name': {
-                'validate': lambda: args[1] in list(pfcmd.keys()) and args[2] in list(proto.keys()) and len(args) == 7,
-                'func': lambda: nat.addRedirect('', proto[args[2]], args[3], int(args[4]), args[5], int(args[6]))
-            },
-            'ex': {
-                'validate': lambda: args[1] in list(pfcmd.keys()) and args[2] in list(proto.keys()) and len(args) == 8,
-                'func': lambda: nat.addRedirect(args[3], proto[args[2]], args[4], int(args[5]), args[6], int(args[7]))
-            },
-            'delete': {
-                'validate': lambda: len(args) == 3,
-                'func': lambda: nat.removeRedirect(args[2])
-            }
+
+    proto = {'udp': 0, 'tcp': 1}
+    pfcmd = {
+        'simple': {
+            'validate': lambda: args[1] in list(pfcmd) and args[2] in list(proto) and len(args) == 5,
+            'func':lambda: nat.addRedirect('', proto[args[2]], '', int(args[3]), '', int(args[4]))
+        },
+        'no_name': {
+            'validate': lambda: args[1] in list(pfcmd) and args[2] in list(proto) and len(args) == 7,
+            'func': lambda: nat.addRedirect('', proto[args[2]], args[3], int(args[4]), args[5], int(args[6]))
+        },
+        'ex': {
+            'validate': lambda: args[1] in list(pfcmd) and args[2] in list(proto) and len(args) == 8,
+            'func': lambda: nat.addRedirect(args[3], proto[args[2]], args[4], int(args[5]), args[6], int(args[7]))
+        },
+        'delete': {
+            'validate': lambda: len(args) == 3,
+            'func': lambda: nat.removeRedirect(args[2])
         }
+    }
 
-        if not pfcmd[args[1]]['validate']():
-            print('invalid port-forwarding or args of sub command ', args[1])
-            print(natPortForwarding.__doc__)
-            return (1, None)
+    if not pfcmd[args[1]]['validate']():
+        print('invalid port-forwarding or args of sub command ', args[1])
+        print(natPortForwarding.__doc__)
+        return (1, None)
 
-        _a = pfcmd[args[1]]['func']()
+    _not_sure_for_what_this_is = pfcmd[args[1]]['func']()
     return (0, None)
 
 def natNetwork(_ctx, _mach, nicnum, nat, args):
@@ -2941,12 +2927,12 @@ def natNetwork(_ctx, _mach, nicnum, nat, args):
         else:
             msg = '10.0.%d.0/24' % (int(nicnum) + 2)
         return (0, [msg])
-    else:
-        (addr, mask) = args[1].split('/')
-        if addr.count('.') > 3 or int(mask) < 0 or int(mask) > 32:
-            print('Invalid arguments')
-            return (1, None)
-        nat.network = args[1]
+
+    (addr, mask) = args[1].split('/')
+    if addr.count('.') > 3 or int(mask) < 0 or int(mask) > 32:
+        print('Invalid arguments')
+        return (1, None)
+    nat.network = args[1]
     return (0, None)
 
 def natCmd(ctx, args):
@@ -3000,51 +2986,51 @@ def natCmd(ctx, args):
 
     adapter = mach.getNetworkAdapter(nicnum)
     natEngine = adapter.NATEngine
-    (rc, report) = natcommands[func](ctx, mach, nicnum, natEngine, cmdargs)
+    (rc, reports) = natcommands[func](ctx, mach, nicnum, natEngine, cmdargs)
     if rosession == 0:
         if rc == 0:
             mach.saveSettings()
         session.unlockMachine()
-    elif report is not None:
-        for r in report:
-            msg ='%s nic%d %s: %s' % (mach.name, nicnum, func, r)
+    elif reports:
+        for cur_report in reports:
+            msg ='%s nic%d %s: %s' % (mach.name, nicnum, func, cur_report)
             print(msg)
     return 0
 
 def nicSwitchOnOff(adapter, attr, args):
     if len(args) == 1:
         yesno = {0: 'off', 1: 'on'}
-        r = yesno[int(adapter.__getattr__(attr))]
-        return (0, r)
-    else:
-        yesno = {'off' : 0, 'on' : 1}
-        if args[1] not in yesno:
-            print('%s isn\'t acceptable, please choose %s' % (args[1], list(yesno.keys())))
-            return (1, None)
-        adapter.__setattr__(attr, yesno[args[1]])
+        resp = yesno[int(adapter.getattr(attr))]
+        return (0, resp)
+
+    yesno = {'off' : 0, 'on' : 1}
+    if args[1] not in yesno:
+        print('%s isn\'t acceptable, please choose %s' % (args[1], list(yesno.keys())))
+        return (1, None)
+    adapter.setsetattr(attr, yesno[args[1]])
     return (0, None)
 
 def nicTraceSubCmd(_ctx, _vm, _nicnum, adapter, args):
     '''
     usage: nic <vmname|uuid> <nicnum> trace [on|off [file]]
     '''
-    (rc, r) = nicSwitchOnOff(adapter, 'traceEnabled', args)
+    (rc, resp) = nicSwitchOnOff(adapter, 'traceEnabled', args)
     if len(args) == 1 and rc == 0:
-        r = '%s file:%s' % (r, adapter.traceFile)
-        return (0, r)
-    elif len(args) == 3 and rc == 0:
+        resp = '%s file:%s' % (resp, adapter.traceFile)
+        return (0, resp)
+    if len(args) == 3 and rc == 0:
         adapter.traceFile = args[2]
     return (0, None)
 
 def nicLineSpeedSubCmd(_ctx, _vm, _nicnum, adapter, args):
     if len(args) == 1:
-        r = '%d kbps'% (adapter.lineSpeed)
-        return (0, r)
-    else:
-        if not args[1].isdigit():
-            print('%s isn\'t a number' % (args[1]))
-            return (1, None)
-        adapter.lineSpeed = int(args[1])
+        resp = '%d kbps'% (adapter.lineSpeed)
+        return (0, resp)
+
+    if not args[1].isdigit():
+        print('%s isn\'t a number' % (args[1]))
+        return (1, None)
+    adapter.lineSpeed = int(args[1])
     return (0, None)
 
 def nicCableSubCmd(_ctx, _vm, _nicnum, adapter, args):
@@ -3069,12 +3055,12 @@ def nicTypeSubCmd(ctx, _vm, _nicnum, adapter, args):
             if str(adapter.adapterType) == str(nictypes[key]):
                 return (0, str(key))
         return (1, None)
-    else:
-        nictypes = ctx['const'].all_values('NetworkAdapterType')
-        if args[1] not in list(nictypes.keys()):
-            print('%s not in acceptable values (%s)' % (args[1], list(nictypes.keys())))
-            return (1, None)
-        adapter.adapterType = nictypes[args[1]]
+
+    nictypes = ctx['const'].all_values('NetworkAdapterType')
+    if args[1] not in list(nictypes.keys()):
+        print('%s not in acceptable values (%s)' % (args[1], list(nictypes.keys())))
+        return (1, None)
+    adapter.adapterType = nictypes[args[1]]
     return (0, None)
 
 def nicAttachmentSubCmd(ctx, _vm, _nicnum, adapter, args):
@@ -3091,48 +3077,48 @@ def nicAttachmentSubCmd(ctx, _vm, _nicnum, adapter, args):
             # @todo show details of the generic network attachment type
             ctx['global'].constants.NetworkAttachmentType_Generic: ('Generic', ''),
         }
-        if type(adapter.attachmentType) != int:
+        if not isinstance(adapter.attachmentType, int):
             t = str(adapter.attachmentType)
         else:
             t = adapter.attachmentType
-        (r, p) = nicAttachmentType[t]
-        return (0, 'attachment:%s, name:%s' % (r, p))
-    else:
-        nicAttachmentType = {
-            'Null': {
-                'v': lambda: len(args) == 2,
-                'p': lambda: 'do nothing',
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Null},
-            'NAT': {
-                'v': lambda: len(args) == 2,
-                'p': lambda: 'do nothing',
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_NAT},
-            'Bridged': {
-                'v': lambda: len(args) == 3,
-                'p': lambda: adapter.__setattr__('bridgedInterface', args[2]),
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Bridged},
-            'Internal': {
-                'v': lambda: len(args) == 3,
-                'p': lambda: adapter.__setattr__('internalNetwork', args[2]),
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Internal},
-            'HostOnly': {
-                'v': lambda: len(args) == 2,
-                'p': lambda: adapter.__setattr__('hostOnlyInterface', args[2]),
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_HostOnly},
-            # @todo implement setting the properties of a generic attachment
-            'Generic': {
-                'v': lambda: len(args) == 3,
-                'p': lambda: 'do nothing',
-                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Generic}
-        }
-        if args[1] not in list(nicAttachmentType.keys()):
-            print('%s not in acceptable values (%s)' % (args[1], list(nicAttachmentType.keys())))
-            return (1, None)
-        if not nicAttachmentType[args[1]]['v']():
-            print(nicAttachmentType.__doc__)
-            return (1, None)
-        nicAttachmentType[args[1]]['p']()
-        adapter.attachmentType = nicAttachmentType[args[1]]['f']()
+        (resp, name) = nicAttachmentType[t]
+        return (0, 'attachment:%s, name:%s' % (resp, name))
+
+    nicAttachmentType = {
+        'Null': {
+            'v': lambda: len(args) == 2,
+            'p': lambda: 'do nothing',
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_Null},
+        'NAT': {
+            'v': lambda: len(args) == 2,
+            'p': lambda: 'do nothing',
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_NAT},
+        'Bridged': {
+            'v': lambda: len(args) == 3,
+            'p': lambda: adapter.setattr('bridgedInterface', args[2]),
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_Bridged},
+        'Internal': {
+            'v': lambda: len(args) == 3,
+            'p': lambda: adapter.setattr('internalNetwork', args[2]),
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_Internal},
+        'HostOnly': {
+            'v': lambda: len(args) == 2,
+            'p': lambda: adapter.setattr('hostOnlyInterface', args[2]),
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_HostOnly},
+        # @todo implement setting the properties of a generic attachment
+        'Generic': {
+            'v': lambda: len(args) == 3,
+            'p': lambda: 'do nothing',
+            'f': lambda: ctx['global'].constants.NetworkAttachmentType_Generic}
+    }
+    if args[1] not in list(nicAttachmentType):
+        print('%s not in acceptable values (%s)' % (args[1], list(nicAttachmentType.keys())))
+        return (1, None)
+    if not nicAttachmentType[args[1]]['v']():
+        ## @todo r=andy Log this properly!
+        return (1, None)
+    nicAttachmentType[args[1]]['p']()
+    adapter.attachmentType = nicAttachmentType[args[1]]['f']()
     return (0, None)
 
 def nicCmd(ctx, args):
@@ -3160,28 +3146,27 @@ def nicCmd(ctx, args):
             print(nicCmd.__doc__)
         return 0
 
-    vm = ctx['argsToMach'](args)
-    if vm is None:
-        print('please specify vm')
-        return 0
+    mach = ctx['argsToMach'](args)
+    if not mach:
+        return 1
 
-    platformProps = vm.platform.properties
+    platformProps = mach.platform.properties
     if    len(args) < 3 \
-       or int(args[2]) not in list(range(0, platformProps.getMaxNetworkAdapters(vm.platform.chipsetType))):
-        print('please specify adapter num %d isn\'t in range [0-%d]'% (args[2], platformProps.getMaxNetworkAdapters(vm.platform.chipsetType)))
-        return 0
+       or int(args[2]) not in list(range(0, platformProps.getMaxNetworkAdapters(mach.platform.chipsetType))):
+        print('please specify adapter num %d isn\'t in range [0-%d]'% (args[2], platformProps.getMaxNetworkAdapters(mach.platform.chipsetType)))
+        return 1
     nicnum = int(args[2])
     cmdargs = args[3:]
     func = args[3]
     session = None
-    session = ctx['global'].openMachineSession(vm, fPermitSharing=True)
-    vm = session.machine
-    adapter = vm.getNetworkAdapter(nicnum)
-    (rc, report) = niccomand[func](ctx, vm, nicnum, adapter, cmdargs)
+    session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
+    mach = session.machine
+    adapter = mach.getNetworkAdapter(nicnum)
+    (rc, report) = niccomand[func](ctx, mach, nicnum, adapter, cmdargs)
     if rc == 0:
-        vm.saveSettings()
+        mach.saveSettings()
     if report is not None:
-        print('%s nic %d %s: %s' % (vm.name, nicnum, args[3], report))
+        print('%s nic %d %s: %s' % (mach.name, nicnum, args[3], report))
     session.unlockMachine()
     return 0
 
@@ -3256,16 +3241,16 @@ def pciAddr(ctx, addr):
 
 def lspci(ctx, console):
     assigned = ctx['global'].getArray(console.machine, 'PCIDeviceAssignments')
-    for a in assigned:
-        if a.isPhysicalDevice:
-            print("%s: assigned host device %s guest %s" % (colDev(ctx, a.name), pciAddr(ctx, a.hostAddress), pciAddr(ctx, a.guestAddress)))
+    for assignment in assigned:
+        if assignment.isPhysicalDevice:
+            print("%s: assigned host device %s guest %s" % (colDev(ctx, assignment.name), pciAddr(ctx, assignment.hostAddress), pciAddr(ctx, assignment.guestAddress)))
 
     atts = ctx['global'].getArray(console, 'attachedPCIDevices')
-    for a in atts:
-        if a.isPhysicalDevice:
-            print("%s: physical, guest %s, host %s" % (colDev(ctx, a.name), pciAddr(ctx, a.guestAddress), pciAddr(ctx, a.hostAddress)))
+    for att in atts:
+        if att.isPhysicalDevice:
+            print("%s: physical, guest %s, host %s" % (colDev(ctx, att.name), pciAddr(ctx, att.guestAddress), pciAddr(ctx, att.hostAddress)))
         else:
-            print("%s: virtual, guest %s" % (colDev(ctx, a.name), pciAddr(ctx, a.guestAddress)))
+            print("%s: virtual, guest %s" % (colDev(ctx, att.name), pciAddr(ctx, att.guestAddress)))
     return
 
 def parsePci(strg):
@@ -3429,17 +3414,17 @@ commands = {'help':['Prints help information', helpCmd, 0],
 
 def runCommandArgs(ctx, args):
     c = args[0]
-    if aliases.get(c, None) != None:
+    if aliases.get(c, None):
         c = aliases[c]
-    ci = commands.get(c, None)
-    if ci == None:
+    cmd_internal = commands.get(c, None)
+    if not cmd_internal:
         print("Unknown command: '%s', type 'help' for list of known commands" % (c))
         return 0
     if ctx['remote'] and ctx['vb'] is None:
         if c not in ['connect', 'reconnect', 'help', 'quit']:
             print("First connect to remote server with %s command." % (colored('connect', 'blue')))
             return 0
-    return ci[1](ctx, args)
+    return cmd_internal[1](ctx, args)
 
 
 def runCommand(ctx, cmd):
@@ -3468,13 +3453,15 @@ def runCommand(ctx, cmd):
 def addExtsFromFile(_ctx, cmds, filename):
     if not os.path.isfile(filename):
         return
-    d = {}
+    extDict = {}
     try:
-        exec(compile(open(filename, encoding='utf-8').read(), filename, 'exec'), d, d) # pylint: disable=exec-used
-        for (k, v) in list(d['commands'].items()):
+        with open(filename, encoding='utf-8') as file:
+            file_buf = file.read()
+            exec(compile(file_buf, filename, 'exec'), extDict, extDict) # pylint: disable=exec-used
+        for (key, value) in list(extDict['commands'].items()):
             if g_fVerbose:
-                print("customize: adding \"%s\" - %s" % (k, v[0]))
-            cmds[k] = [v[0], v[1], filename]
+                print("customize: adding \"%s\" - %s" % (key, value[0]))
+            cmds[key] = [value[0], value[1], filename]
     except:
         print("Error loading user extensions from %s" % (filename))
         traceback.print_exc()
@@ -3499,8 +3486,8 @@ def getHomeFolder(ctx):
         if 'VBOX_USER_HOME' in os.environ:
             return os.path.join(os.environ['VBOX_USER_HOME'])
         return os.path.join(os.path.expanduser("~"), ".VirtualBox")
-    else:
-        return ctx['vb'].homeFolder
+
+    return ctx['vb'].homeFolder
 
 def interpret(ctx):
     if ctx['remote']:
@@ -3543,21 +3530,22 @@ def interpret(ctx):
 
     if g_sCmd is not None:
         cmds = g_sCmd.split(';')
-    it = cmds.__iter__()
+    itCmd = iter(cmds)
 
     while True:
         try:
             if g_fBatchMode:
                 cmd = 'runScript %s'% (g_sScriptFile)
             elif g_sCmd is not None:
-                cmd = next(it)
+                cmd = next(itCmd)
             else:
                 if sys.version_info[0] <= 2:
                     cmd = raw_input(ctx['prompt']) # pylint: disable=undefined-variable
                 else:
                     cmd = input(ctx['prompt'])
             done = runCommand(ctx, cmd)
-            if done != 0: break
+            if done != 0:
+                break
             if g_fBatchMode:
                 break
         except KeyboardInterrupt:
