@@ -878,8 +878,8 @@ int main()
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "", sizeof("") * 2);
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world", sizeof("hello world"), 8);
     rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
-    RTTESTI_CHECK_MSG(cbActual == 0, ("expected 0 but got %RU32\n", cbActual));
-    RTTESTI_CHECK_MSG(rc == VINF_SUCCESS, ("expected VINF_SUCCESS but got %Rrc, context: %s\n", rc));
+    RTTEST_CHECK_MSG(hTest, cbActual == 0, (hTest, "expected 0 but got %RU32\n", cbActual));
+    RTTEST_CHECK_MSG(hTest, rc == VINF_SUCCESS, (hTest, "expected VINF_SUCCESS but got %Rrc, context: %s\n", rc));
 
     /* Read from VBox */
     RTTestSub(hTest, "reading from VBox, headless clipboard");
