@@ -3139,7 +3139,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         # Paths:
-        sVBoxControl    = None; ## @todo Get path of installed Guest Additions. Later.
+        sVBoxControl    = None; # Only available on supported Windows guests.
         sShell          = self.oTstDrv.getGuestSystemShell(oTestVm);
         sShellOpt       = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
         sSystemDir      = self.oTstDrv.getGuestSystemDir(oTestVm);
@@ -3148,7 +3148,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows() or oTestVm.isOS2():
             sImageOut = self.oTstDrv.getGuestSystemShell(oTestVm);
             if oTestVm.isWindows():
-                sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
+                sVBoxControl = oTestVm.pathJoin(self.oTstDrv.getGuestWinDir(oTestVm), 'VBoxControl.exe');
         else:
             # Really old guests (like OL 6) have their coreutils in /bin instead of /usr/bin.
             if self.oTstDrv.txsIsFile(oSession, oTxsSession, "/bin/ls", fIgnoreErrors = True):
