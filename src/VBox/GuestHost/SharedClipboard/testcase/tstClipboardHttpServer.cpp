@@ -414,6 +414,14 @@ int main(int argc, char *argv[])
             rc = RTHttpCreate(&hClient);
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Set it to not use any proxies for our testcase as it is not necessary and
+                 * it will cause memory leaks on Linux where libproxy is used making the testcase fail
+                 * for ASAN enabled builds.
+                 */
+                RTTEST_CHECK_RC_OK(hTest, RTHttpSetProxy(hClient, NULL /*pszProxyUrl*/, 0 /*uPort*/,
+                                                         NULL /*pszProxyUser*/, NULL /*pszProxyPwd*/));
+
                 char szURL[RTPATH_MAX];
                 for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
                 {
