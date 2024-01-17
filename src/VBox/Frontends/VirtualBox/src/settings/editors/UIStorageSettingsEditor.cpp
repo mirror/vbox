@@ -232,11 +232,6 @@ public:
     /** Returns ID. */
     QUuid id() const;
 
-    /** Returns machine ID. */
-    QUuid machineId() const;
-    /** Defines @a uMachineId. */
-    void setMachineId(const QUuid &uMachineId);
-
     /** Returns runtime type information. */
     virtual ItemType rtti() const = 0;
 
@@ -265,8 +260,6 @@ private:
     AbstractItem *m_pParentItem;
     /** Holds the item ID. */
     QUuid         m_uId;
-    /** Holds the item machine ID. */
-    QUuid         m_uMachineId;
 };
 Q_DECLARE_METATYPE(AbstractItem::ItemType);
 
@@ -721,9 +714,6 @@ public:
     /** Returns device type of attachment with certain @a uAttId from controller with certain @a uCtrId. */
     KDeviceType attachmentDeviceType(const QUuid &uCtrId, const QUuid &uAttId) const;
 
-    /** Defines @a uMachineId for reference. */
-    void setMachineId(const QUuid &uMachineId);
-
     /** Sorts the contents of model by @a iColumn and @a enmOrder. */
     void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder);
     /** Returns attachment index by specified @a controllerIndex and @a attachmentStorageSlot. */
@@ -1076,16 +1066,6 @@ AbstractItem *AbstractItem::parent() const
 QUuid AbstractItem::id() const
 {
     return m_uId;
-}
-
-QUuid AbstractItem::machineId() const
-{
-    return m_uMachineId;
-}
-
-void AbstractItem::setMachineId(const QUuid &uMachineId)
-{
-    m_uMachineId = uMachineId;
 }
 
 
@@ -2605,11 +2585,6 @@ KDeviceType StorageModel::attachmentDeviceType(const QUuid &uCtrId, const QUuid 
     return KDeviceType_Null;
 }
 
-void StorageModel::setMachineId(const QUuid &uMachineId)
-{
-    m_pRootItem->setMachineId(uMachineId);
-}
-
 void StorageModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
 {
     /* Count of controller items: */
@@ -3047,8 +3022,6 @@ void UIStorageSettingsEditor::setActionPool(UIActionPool *pActionPool)
 void UIStorageSettingsEditor::setMachineId(const QUuid &uMachineId)
 {
     m_uMachineId = uMachineId;
-    if (m_pModelStorage)
-        m_pModelStorage->setMachineId(uMachineId);
 }
 
 void UIStorageSettingsEditor::setMachineName(const QString &strName)
