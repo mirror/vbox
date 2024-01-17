@@ -303,6 +303,7 @@
 #   define RTASM_ARM_DMB_ST_IN_REG      RTASM_ARM_DMB_SY_IN_REG
 #   define RTASM_ARM_DMB_LD             RTASM_ARM_DMB_SY
 #   define RTASM_ARM_DMB_LD_IN_REG      RTASM_ARM_DMB_SY_IN_REG
+
 #  elif RT_ARCH_ARM32 >= 4
 #   warning armv5 or older
 #   define RTASM_ARM_DSB_SY             "mcr p15, 0, %[uZero], c7, c10, 4\n\t"
@@ -1093,6 +1094,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrexb    %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1101,8 +1104,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1230,6 +1234,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrex     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1238,8 +1244,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1392,6 +1399,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1401,8 +1410,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1737,6 +1747,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrexb     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1745,8 +1757,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u8ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -1862,6 +1875,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "stlxrh    %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrexh     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1870,8 +1885,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu16)
                          , [uOld]   "=&r" (u16ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -1987,6 +2003,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrex     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -1995,8 +2013,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -2157,6 +2176,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
+                         "1:\n\t"
+                         "clrex\n\t"
 #  else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
@@ -2166,8 +2187,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
-#  endif
                          "1:\n\t"
+                         /** @todo clrexne on armv7? */
+#  endif
                          : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64ActualOld)
                          , [rc]     "=&r" (rcSpill)
