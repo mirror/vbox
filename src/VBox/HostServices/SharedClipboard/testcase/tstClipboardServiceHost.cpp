@@ -101,7 +101,9 @@ static void testSetMode(void)
 
     u32Mode = ShClSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF, ("u32Mode=%u\n", (unsigned) u32Mode));
-    table.pfnUnload(NULL);
+
+    rc = table.pfnUnload(NULL);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -132,6 +134,9 @@ static void testSetTransferMode(void)
     /* Disable transfers again. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_F_NONE);
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+
+    rc = table.pfnUnload(NULL);
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
