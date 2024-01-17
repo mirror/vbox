@@ -98,6 +98,14 @@
 # endif
 #endif
 
+#if (defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN)) || defined(DOXYGEN_RUNNING)
+/** @def RTASM_ARM64_USE_FEAT_LSE
+ * Use instructions from the FEAT_LSE set to implement atomic operations,
+ * assuming that the host CPU always supports these. */
+# define RTASM_ARM64_USE_FEAT_LSE 1
+#endif
+
+
 /*
  * Undefine all symbols we have Watcom C/C++ #pragma aux'es for.
  */
@@ -3513,8 +3521,23 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool RT_FAR *pf) RT_NOTHROW_DEF
  */
 DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    /* The DMB SY will ensure ordering a la x86, the stlrb is probably overkill
+       as all byte accesses are single-copy atomic, which I think suffices here. */
+    __asm__ __volatile__("Lstart_ASMAtomicWriteU8_%=:\n\t"
+# if defined(RTASM_ARM64_USE_FEAT_LSE) && 0 /* this is a lot slower and has no alignment benefits with LSE2 */
+                         RTASM_ARM_DMB_SY
+                         "swpb      %w[uValue], wzr, %[pMem]\n\t"
+# else
+                         RTASM_ARM_DMB_SY
+                         "stlrb     %w[uValue], %[pMem]\n\t" /* single-copy atomic w/ release semantics. */
+# endif
+                         : [pMem]   "+Q" (*pu8)
+                         : [uValue] "r" ((uint32_t)u8)
+                         : );
+#else
     ASMAtomicXchgU8(pu8, u8);
+#endif
 }
 
 
@@ -3526,7 +3549,6 @@ DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_N
  */
 DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 improvements here? */
     *pu8 = u8;      /* byte writes are atomic on x86 */
 }
 
@@ -3539,8 +3561,11 @@ DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
  */
 DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    ASMAtomicWriteU8((volatile uint8_t RT_FAR *)pi8, (uint8_t)i8);
+#else
     ASMAtomicXchgS8(pi8, i8);
+#endif
 }
 
 
@@ -3564,8 +3589,21 @@ DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_N
  */
 DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicWriteU16_%=:\n\t"
+# if defined(RTASM_ARM64_USE_FEAT_LSE) /* slower on M1, but benefits from relaxed LSE2 alignment requirements (M2?). */
+                         RTASM_ARM_DMB_SY
+                         "swph      %w[uValue], wzr, %[pMem]\n\t"
+# else
+                         RTASM_ARM_DMB_SY
+                         "stlrh     %w[uValue], %[pMem]\n\t" /* single-copy atomic w/ release semantics. */
+# endif
+                         : [pMem]   "+Q" (*pu16)
+                         : [uValue] "r" ((uint32_t)u16)
+                         : );
+#else
     ASMAtomicXchgU16(pu16, u16);
+#endif
 }
 
 
@@ -3590,8 +3628,11 @@ DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u1
  */
 DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    ASMAtomicWriteU16((volatile uint16_t RT_FAR *)pi16, (uint16_t)i16);
+#else
     ASMAtomicXchgS16(pi16, i16);
+#endif
 }
 
 
@@ -3616,8 +3657,21 @@ DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
  */
 DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicWriteU32_%=:\n\t"
+# if defined(RTASM_ARM64_USE_FEAT_LSE) /* slower on M1, but benefits from relaxed LSE2 alignment requirements (M2?). */
+                         RTASM_ARM_DMB_SY
+                         "swp      %w[uValue], wzr, %[pMem]\n\t"
+# else
+                         RTASM_ARM_DMB_SY
+                         "stlr     %w[uValue], %[pMem]\n\t" /* single-copy atomic w/ release semantics. */
+# endif
+                         : [pMem]   "+Q" (*pu32)
+                         : [uValue] "r" (u32)
+                         : "cc");
+#else
     ASMAtomicXchgU32(pu32, u32);
+#endif
 }
 
 
@@ -3646,7 +3700,11 @@ DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u3
  */
 DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
+#if defined(RT_ARCH_ARM64)
+    ASMAtomicWriteU32((volatile uint32_t RT_FAR *)pi32, (uint32_t)i32);
+#else
     ASMAtomicXchgS32(pi32, i32);
+#endif
 }
 
 
@@ -3675,8 +3733,21 @@ DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
  */
 DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicWriteU64_%=:\n\t"
+# if defined(RTASM_ARM64_USE_FEAT_LSE) /* slower on M1, but benefits from relaxed LSE2 alignment requirements (M2?). */
+                         RTASM_ARM_DMB_SY
+                         "swp      %[uValue], xzr, %[pMem]\n\t"
+# else
+                         RTASM_ARM_DMB_SY /** @todo necessary? */
+                         "stlr     %[uValue], %[pMem]\n\t"
+# endif
+                         : [pMem]   "+Q" (*pu64)
+                         : [uValue] "r" (u64)
+                         : );
+#else
     ASMAtomicXchgU64(pu64, u64);
+#endif
 }
 
 
@@ -3705,8 +3776,11 @@ DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
  */
 DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
-    /** @todo Any possible ARM32/ARM64 optimizations here? */
+#if defined(RT_ARCH_ARM64)
+    ASMAtomicWriteU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64);
+#else
     ASMAtomicXchgS64(pi64, i64);
+#endif
 }
 
 
