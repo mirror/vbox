@@ -3042,106 +3042,107 @@ void UIStorageSettingsEditor::setMachineGuestOSTypeId(const QString &strId)
 void UIStorageSettingsEditor::setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel)
 {
     /* Check whether update is required: */
-    if (m_enmConfigurationAccessLevel != enmConfigurationAccessLevel)
-    {
-        /* Update value and let model know: */
-        m_enmConfigurationAccessLevel = enmConfigurationAccessLevel;
-        if (m_pModelStorage)
-            m_pModelStorage->setConfigurationAccessLevel(enmConfigurationAccessLevel);
+    if (m_enmConfigurationAccessLevel == enmConfigurationAccessLevel)
+        return;
 
-        /* Check actual level: */
-        const bool fMachineOffline = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full;
-        const bool fMachinePoweredOff = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_PoweredOff;
-        const bool fMachineSaved = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_Saved;
-        const bool fMachineOnline = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_Running;
-        const bool fMachineInValidMode = fMachineOffline || fMachinePoweredOff || fMachineSaved || fMachineOnline;
+    /* Update the value: */
+    m_enmConfigurationAccessLevel = enmConfigurationAccessLevel;
 
-        /* Declare required variables: */
-        const QModelIndex index = m_pTreeViewStorage->currentIndex();
-        const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
+    /* Propagate value to storage model as well: */
+    AssertPtrReturnVoid(m_pModelStorage);
+    m_pModelStorage->setConfigurationAccessLevel(enmConfigurationAccessLevel);
 
-        /* Polish left pane availability: */
-        m_pLabelSeparatorLeftPane->setEnabled(fMachineInValidMode);
-        m_pTreeViewStorage->setEnabled(fMachineInValidMode);
+    /* Acquire various options: */
+    const bool fMachineOffline = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full;
+    const bool fMachinePoweredOff = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_PoweredOff;
+    const bool fMachineSaved = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_Saved;
+    const bool fMachineOnline = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Partial_Running;
+    const bool fMachineInValidMode = fMachineOffline || fMachinePoweredOff || fMachineSaved || fMachineOnline;
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
 
-        /* Polish empty information pane availability: */
-        m_pLabelSeparatorEmpty->setEnabled(fMachineInValidMode);
-        m_pLabelInfo->setEnabled(fMachineInValidMode);
+    /* Polish left pane availability: */
+    m_pLabelSeparatorLeftPane->setEnabled(fMachineInValidMode);
+    m_pTreeViewStorage->setEnabled(fMachineInValidMode);
 
-        /* Polish controllers pane availability: */
-        m_pLabelSeparatorParameters->setEnabled(fMachineInValidMode);
-        m_pLabelName->setEnabled(fMachineOffline);
-        m_pEditorName->setEnabled(fMachineOffline);
-        m_pLabelType->setEnabled(fMachineOffline);
-        m_pComboType->setEnabled(fMachineOffline);
-        m_pLabelPortCount->setEnabled(fMachineOffline);
-        m_pSpinboxPortCount->setEnabled(fMachineOffline);
-        m_pCheckBoxIoCache->setEnabled(fMachineOffline);
+    /* Polish empty information pane availability: */
+    m_pLabelSeparatorEmpty->setEnabled(fMachineInValidMode);
+    m_pLabelInfo->setEnabled(fMachineInValidMode);
 
-        /* Polish attachments pane availability: */
-        m_pLabelSeparatorAttributes->setEnabled(fMachineInValidMode);
-        m_pLabelMedium->setEnabled(fMachineOffline || (fMachineOnline && enmDeviceType != KDeviceType_HardDisk));
-        m_pComboSlot->setEnabled(fMachineOffline);
-        m_pToolButtonOpen->setEnabled(fMachineOffline || (fMachineOnline && enmDeviceType != KDeviceType_HardDisk));
-        m_pCheckBoxPassthrough->setEnabled(fMachineOffline);
-        m_pCheckBoxTempEject->setEnabled(fMachineInValidMode);
-        m_pCheckBoxNonRotational->setEnabled(fMachineOffline);
-        m_pCheckBoxHotPluggable->setEnabled(fMachineOffline);
-        m_pLabelSeparatorInformation->setEnabled(fMachineInValidMode);
-        m_pLabelHDFormat->setEnabled(fMachineInValidMode);
-        m_pFieldHDFormat->setEnabled(fMachineInValidMode);
-        m_pLabelCDFDType->setEnabled(fMachineInValidMode);
-        m_pFieldCDFDType->setEnabled(fMachineInValidMode);
-        m_pLabelHDVirtualSize->setEnabled(fMachineInValidMode);
-        m_pFieldHDVirtualSize->setEnabled(fMachineInValidMode);
-        m_pLabelHDActualSize->setEnabled(fMachineInValidMode);
-        m_pFieldHDActualSize->setEnabled(fMachineInValidMode);
-        m_pLabelCDFDSize->setEnabled(fMachineInValidMode);
-        m_pFieldCDFDSize->setEnabled(fMachineInValidMode);
-        m_pLabelHDDetails->setEnabled(fMachineInValidMode);
-        m_pFieldHDDetails->setEnabled(fMachineInValidMode);
-        m_pLabelLocation->setEnabled(fMachineInValidMode);
-        m_pFieldLocation->setEnabled(fMachineInValidMode);
-        m_pLabelUsage->setEnabled(fMachineInValidMode);
-        m_pFieldUsage->setEnabled(fMachineInValidMode);
-        m_pLabelEncryption->setEnabled(fMachineInValidMode);
-        m_pFieldEncryption->setEnabled(fMachineInValidMode);
+    /* Polish controllers pane availability: */
+    m_pLabelSeparatorParameters->setEnabled(fMachineInValidMode);
+    m_pLabelName->setEnabled(fMachineOffline);
+    m_pEditorName->setEnabled(fMachineOffline);
+    m_pLabelType->setEnabled(fMachineOffline);
+    m_pComboType->setEnabled(fMachineOffline);
+    m_pLabelPortCount->setEnabled(fMachineOffline);
+    m_pSpinboxPortCount->setEnabled(fMachineOffline);
+    m_pCheckBoxIoCache->setEnabled(fMachineOffline);
 
-        /* Update remaining stuff: */
-        sltUpdateActionStates();
-        sltGetInformation();
-    }
+    /* Polish attachments pane availability: */
+    m_pLabelSeparatorAttributes->setEnabled(fMachineInValidMode);
+    m_pLabelMedium->setEnabled(fMachineOffline || (fMachineOnline && enmDeviceType != KDeviceType_HardDisk));
+    m_pComboSlot->setEnabled(fMachineOffline);
+    m_pToolButtonOpen->setEnabled(fMachineOffline || (fMachineOnline && enmDeviceType != KDeviceType_HardDisk));
+    m_pCheckBoxPassthrough->setEnabled(fMachineOffline);
+    m_pCheckBoxTempEject->setEnabled(fMachineInValidMode);
+    m_pCheckBoxNonRotational->setEnabled(fMachineOffline);
+    m_pCheckBoxHotPluggable->setEnabled(fMachineOffline);
+    m_pLabelSeparatorInformation->setEnabled(fMachineInValidMode);
+    m_pLabelHDFormat->setEnabled(fMachineInValidMode);
+    m_pFieldHDFormat->setEnabled(fMachineInValidMode);
+    m_pLabelCDFDType->setEnabled(fMachineInValidMode);
+    m_pFieldCDFDType->setEnabled(fMachineInValidMode);
+    m_pLabelHDVirtualSize->setEnabled(fMachineInValidMode);
+    m_pFieldHDVirtualSize->setEnabled(fMachineInValidMode);
+    m_pLabelHDActualSize->setEnabled(fMachineInValidMode);
+    m_pFieldHDActualSize->setEnabled(fMachineInValidMode);
+    m_pLabelCDFDSize->setEnabled(fMachineInValidMode);
+    m_pFieldCDFDSize->setEnabled(fMachineInValidMode);
+    m_pLabelHDDetails->setEnabled(fMachineInValidMode);
+    m_pFieldHDDetails->setEnabled(fMachineInValidMode);
+    m_pLabelLocation->setEnabled(fMachineInValidMode);
+    m_pFieldLocation->setEnabled(fMachineInValidMode);
+    m_pLabelUsage->setEnabled(fMachineInValidMode);
+    m_pFieldUsage->setEnabled(fMachineInValidMode);
+    m_pLabelEncryption->setEnabled(fMachineInValidMode);
+    m_pFieldEncryption->setEnabled(fMachineInValidMode);
+
+    /* Update remaining stuff: */
+    sltUpdateActionStates();
+    sltGetInformation();
 }
 
 void UIStorageSettingsEditor::setChipsetType(KChipsetType enmType)
 {
-    if (m_pModelStorage)
-    {
-        /* Make sure chipset type has changed: */
-        if (m_pModelStorage->chipsetType() != enmType)
-        {
-            /* Update chipset type value: */
-            m_pModelStorage->setChipsetType(enmType);
-            sltUpdateActionStates();
+    /* Check whether update is required: */
+    AssertPtrReturnVoid(m_pModelStorage);
+    if (m_pModelStorage->chipsetType() == enmType)
+        return;
 
-            /* Notify listeners: */
-            emit sigValueChanged();
-        }
-    }
+    /* Update chipset type value: */
+    m_pModelStorage->setChipsetType(enmType);
+    sltUpdateActionStates();
+
+    /* Notify listeners: */
+    emit sigValueChanged();
 }
 
 KChipsetType UIStorageSettingsEditor::chipsetType() const
 {
-    return m_pModelStorage ? m_pModelStorage->chipsetType() : KChipsetType_Null;
+    AssertPtrReturn(m_pModelStorage, KChipsetType_Null);
+    return m_pModelStorage->chipsetType();
 }
 
 QMap<KStorageBus, int> UIStorageSettingsEditor::currentControllerTypes() const
 {
+    AssertPtr(m_pModelStorage);
     return m_pModelStorage ? m_pModelStorage->currentControllerTypes() : QMap<KStorageBus, int>();
 }
 
 QMap<KStorageBus, int> UIStorageSettingsEditor::maximumControllerTypes() const
 {
+    AssertPtr(m_pModelStorage);
     return m_pModelStorage ? m_pModelStorage->maximumControllerTypes() : QMap<KStorageBus, int>();
 }
 
@@ -3149,6 +3150,7 @@ void UIStorageSettingsEditor::setValue(const QList<UIDataStorageController> &con
                                        const QList<QList<UIDataStorageAttachment> > &attachments)
 {
     /* Clear model initially: */
+    AssertPtrReturnVoid(m_pModelStorage);
     m_pModelStorage->clear();
 
     /* For each controller: */
@@ -3199,6 +3201,7 @@ void UIStorageSettingsEditor::getValue(QList<UIDataStorageController> &controlle
                                        QList<QList<UIDataStorageAttachment> > &attachments)
 {
     /* For each controller: */
+    AssertPtrReturnVoid(m_pModelStorage);
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int iControllerIndex = 0; iControllerIndex < m_pModelStorage->rowCount(rootIndex); ++iControllerIndex)
     {
@@ -3338,9 +3341,11 @@ void UIStorageSettingsEditor::showEvent(QShowEvent *pEvent)
 
 void UIStorageSettingsEditor::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
-    /* Search for corresponding medium: */
+    /* Acquire newly recached medium: */
     const UIMedium medium = uiCommon().medium(uMediumId);
 
+    /* Search for corresponding medium: */
+    AssertPtrReturnVoid(m_pModelStorage);
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
     {
@@ -3362,6 +3367,8 @@ void UIStorageSettingsEditor::sltHandleMediumEnumerated(const QUuid &uMediumId)
 
 void UIStorageSettingsEditor::sltHandleMediumDeleted(const QUuid &uMediumId)
 {
+    /* Search for corresponding medium: */
+    AssertPtrReturnVoid(m_pModelStorage);
     QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
     {
@@ -3458,10 +3465,12 @@ void UIStorageSettingsEditor::sltAddControllerVirtioSCSI()
 
 void UIStorageSettingsEditor::sltRemoveController()
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
-    if (!m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
-        return;
+    AssertPtrReturnVoid(m_pModelStorage);
+    AssertReturnVoid(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
 
+    /* Remove controller: */
     m_pModelStorage->delController(m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid());
 
     /* Notify listeners: */
@@ -3470,10 +3479,13 @@ void UIStorageSettingsEditor::sltRemoveController()
 
 void UIStorageSettingsEditor::sltAddAttachment()
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
-    Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
+    AssertPtrReturnVoid(m_pModelStorage);
+    AssertReturnVoid(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
 
-    const DeviceTypeList deviceTypeList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
+    /* Prepare menu: */
+    const DeviceTypeList deviceTypeList = m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>();
     const bool fJustTrigger = deviceTypeList.size() == 1;
     const bool fShowMenu = deviceTypeList.size() > 1;
     QMenu menu;
@@ -3524,23 +3536,21 @@ void UIStorageSettingsEditor::sltAddAttachmentFD()
 
 void UIStorageSettingsEditor::sltRemoveAttachment()
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
-
-    const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
-    /* Check if this would be the last DVD. If so let the user confirm this again. */
-    if (   enmDeviceType == KDeviceType_DVD
-        && deviceCount(KDeviceType_DVD) == 1)
-    {
-        if (!msgCenter().confirmRemovingOfLastDVDDevice(this))
-            return;
-    }
-
+    AssertPtrReturnVoid(m_pModelStorage);
+    AssertReturnVoid(m_pModelStorage->data(index, StorageModel::R_IsAttachment).toBool());
     const QModelIndex parentIndex = index.parent();
-    if (!index.isValid() || !parentIndex.isValid() ||
-        !m_pModelStorage->data(index, StorageModel::R_IsAttachment).toBool() ||
-        !m_pModelStorage->data(parentIndex, StorageModel::R_IsController).toBool())
+    AssertReturnVoid(m_pModelStorage->data(parentIndex, StorageModel::R_IsController).toBool());
+
+    /* Check if this would be the last DVD. If so let the user confirm this again. */
+    const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
+    if (   enmDeviceType == KDeviceType_DVD
+        && deviceCount(KDeviceType_DVD) == 1
+        && !msgCenter().confirmRemovingOfLastDVDDevice(this))
         return;
 
+    /* Remove attachment: */
     m_pModelStorage->delAttachment(m_pModelStorage->data(parentIndex, StorageModel::R_ItemId).toUuid(),
                                    m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid());
 
@@ -3552,10 +3562,12 @@ void UIStorageSettingsEditor::sltGetInformation()
 {
     m_fLoadingInProgress = true;
 
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    AssertPtrReturnVoid(m_pModelStorage);
     if (!index.isValid() || index == m_pModelStorage->root())
     {
-        /* Showing Initial Page: */
+        /* Showing initial page: */
         m_pStackRightPane->setCurrentIndex(0);
     }
     else
@@ -3564,7 +3576,7 @@ void UIStorageSettingsEditor::sltGetInformation()
         {
             case AbstractItem::Type_ControllerItem:
             {
-                /* Getting Controller Name: */
+                /* Getting controller name: */
                 const QString strCtrName = m_pModelStorage->data(index, StorageModel::R_CtrName).toString();
                 if (m_pEditorName->text() != strCtrName)
                     m_pEditorName->setText(strCtrName);
@@ -3576,7 +3588,7 @@ void UIStorageSettingsEditor::sltGetInformation()
                 foreach (const KStorageBus &enmCurrentBus, controllerBusList)
                 {
                     /* Getting controller types: */
-                    const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, m_pModelStorage->busToRole(enmCurrentBus)).value<ControllerTypeList>());
+                    const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::busToRole(enmCurrentBus)).value<ControllerTypeList>());
                     foreach (const KStorageControllerType &enmCurrentType, controllerTypeList)
                     {
                         m_pComboType->addItem(gpConverter->toString(enmCurrentType));
@@ -3599,13 +3611,13 @@ void UIStorageSettingsEditor::sltGetInformation()
                 const bool fUseIoCache = m_pModelStorage->data(index, StorageModel::R_CtrIoCache).toBool();
                 m_pCheckBoxIoCache->setChecked(fUseIoCache);
 
-                /* Showing Controller Page: */
+                /* Showing controller page: */
                 m_pStackRightPane->setCurrentIndex(1);
                 break;
             }
             case AbstractItem::Type_AttachmentItem:
             {
-                /* Getting Attachment Slot: */
+                /* Getting attachment slot: */
                 m_pComboSlot->clear();
                 const SlotsList slotsList(m_pModelStorage->data(index, StorageModel::R_AttSlots).value<SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++i)
@@ -3615,7 +3627,7 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pComboSlot->setCurrentIndex(iAttSlotPos == -1 ? 0 : iAttSlotPos);
                 m_pComboSlot->setToolTip(m_pComboSlot->itemText(m_pComboSlot->currentIndex()));
 
-                /* Getting Attachment Medium: */
+                /* Getting attachment medium: */
                 const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
                 switch (enmDeviceType)
                 {
@@ -3661,16 +3673,16 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pLabelMedium->setEnabled(fIsEditable);
                 m_pToolButtonOpen->setEnabled(fIsEditable);
 
-                /* Getting Passthrough state: */
+                /* Getting passthrough state: */
                 const bool fHostDrive = m_pModelStorage->data(index, StorageModel::R_AttIsHostDrive).toBool();
                 m_pCheckBoxPassthrough->setVisible(enmDeviceType == KDeviceType_DVD && fHostDrive);
                 m_pCheckBoxPassthrough->setChecked(fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsPassthrough).toBool());
 
-                /* Getting TempEject state: */
+                /* Getting temp-eject state: */
                 m_pCheckBoxTempEject->setVisible(enmDeviceType == KDeviceType_DVD && !fHostDrive);
                 m_pCheckBoxTempEject->setChecked(!fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsTempEject).toBool());
 
-                /* Getting NonRotational state: */
+                /* Getting non-rotational state: */
                 m_pCheckBoxNonRotational->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pCheckBoxNonRotational->setChecked(m_pModelStorage->data(index, StorageModel::R_AttIsNonRotational).toBool());
 
@@ -3694,7 +3706,7 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pLabelEncryption->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pFieldEncryption->setVisible(enmDeviceType == KDeviceType_HardDisk);
 
-                /* Getting Other Information: */
+                /* Getting other information: */
                 m_pFieldHDFormat->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
                 m_pFieldCDFDType->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
                 m_pFieldHDVirtualSize->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLogicalSize).toString()));
@@ -3705,7 +3717,7 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pFieldUsage->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttUsage).toString()));
                 m_pFieldEncryption->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttEncryptionPasswordID).toString()));
 
-                /* Showing Attachment Page: */
+                /* Showing attachment page: */
                 m_pStackRightPane->setCurrentIndex(2);
                 break;
             }
@@ -3722,7 +3734,9 @@ void UIStorageSettingsEditor::sltGetInformation()
 
 void UIStorageSettingsEditor::sltSetInformation()
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    AssertPtrReturnVoid(m_pModelStorage);
     if (m_fLoadingInProgress || !index.isValid() || index == m_pModelStorage->root())
         return;
 
@@ -3731,10 +3745,10 @@ void UIStorageSettingsEditor::sltSetInformation()
     {
         case AbstractItem::Type_ControllerItem:
         {
-            /* Setting Controller Name: */
+            /* Setting controller name: */
             if (pSender == m_pEditorName)
                 m_pModelStorage->setData(index, m_pEditorName->text(), StorageModel::R_CtrName);
-            /* Setting Controller Sub-Type: */
+            /* Setting controller sub-type: */
             else if (pSender == m_pComboType)
             {
                 const KStorageBus enmBus = m_pComboType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>();
@@ -3752,7 +3766,7 @@ void UIStorageSettingsEditor::sltSetInformation()
         }
         case AbstractItem::Type_AttachmentItem:
         {
-            /* Setting Attachment Slot: */
+            /* Setting attachment slot: */
             if (pSender == m_pComboSlot)
             {
                 QModelIndex controllerIndex = m_pModelStorage->parent(index);
@@ -3762,7 +3776,7 @@ void UIStorageSettingsEditor::sltSetInformation()
                 AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));
                 m_pTreeViewStorage->setCurrentIndex(theSameIndexAtNewPosition);
             }
-            /* Setting Attachment Medium: */
+            /* Setting attachment medium: */
             else if (pSender == m_pMediumIdHolder)
                 m_pModelStorage->setData(index, m_pMediumIdHolder->id(), StorageModel::R_AttMediumId);
             else if (pSender == m_pCheckBoxPassthrough)
@@ -3924,8 +3938,11 @@ void UIStorageSettingsEditor::sltChooseRecentMedium()
 
 void UIStorageSettingsEditor::sltUpdateActionStates()
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
 
+    /* Acquire options: */
+    AssertPtrReturnVoid(m_pModelStorage);
     const bool fIDEPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreIDEControllersPossible).toBool();
     const bool fSATAPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreSATAControllersPossible).toBool();
     const bool fSCSIPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreSCSIControllersPossible).toBool();
@@ -3934,7 +3951,6 @@ void UIStorageSettingsEditor::sltUpdateActionStates()
     const bool fUSBPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreUSBControllersPossible).toBool();
     const bool fNVMePossible = m_pModelStorage->data(index, StorageModel::R_IsMoreNVMeControllersPossible).toBool();
     const bool fVirtioSCSIPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreVirtioSCSIControllersPossible).toBool();
-
     const bool fController = m_pModelStorage->data(index, StorageModel::R_IsController).toBool();
     const bool fAttachment = m_pModelStorage->data(index, StorageModel::R_IsAttachment).toBool();
     const bool fAttachmentsPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
@@ -3974,6 +3990,8 @@ void UIStorageSettingsEditor::sltUpdateActionStates()
 
 void UIStorageSettingsEditor::sltHandleRowInsertion(const QModelIndex &parentIndex, int iPosition)
 {
+    AssertPtrReturnVoid(m_pModelStorage);
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pModelStorage->index(iPosition, 0, parentIndex);
 
     switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value<AbstractItem::ItemType>())
@@ -4001,8 +4019,11 @@ void UIStorageSettingsEditor::sltHandleRowInsertion(const QModelIndex &parentInd
 
 void UIStorageSettingsEditor::sltHandleRowRemoval()
 {
-    if (m_pModelStorage->rowCount (m_pModelStorage->root()) == 0)
-        m_pTreeViewStorage->setCurrentIndex (m_pModelStorage->root());
+    /* If no items left => just choose the root to be currnt: */
+    AssertPtrReturnVoid(m_pModelStorage);
+    AssertPtrReturnVoid(m_pTreeViewStorage);
+    if (m_pModelStorage->rowCount(m_pModelStorage->root()) == 0)
+        m_pTreeViewStorage->setCurrentIndex(m_pModelStorage->root());
 
     sltUpdateActionStates();
     sltGetInformation();
@@ -4019,11 +4040,13 @@ void UIStorageSettingsEditor::sltHandleContextMenuRequest(const QPoint &position
     /* Forget last mouse press position: */
     m_mousePressPosition = QPoint();
 
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->indexAt(position);
     if (!index.isValid())
         return sltAddController();
 
     QMenu menu;
+    AssertPtrReturnVoid(m_pModelStorage);
     switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value<AbstractItem::ItemType>())
     {
         case AbstractItem::Type_ControllerItem:
@@ -4063,14 +4086,18 @@ void UIStorageSettingsEditor::sltHandleContextMenuRequest(const QPoint &position
 
 void UIStorageSettingsEditor::sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index)
 {
+    /* Make sure we are painting branches for attachments only,
+     * i.e. for items which have parent which have parent as well: */
     if (!index.parent().isValid() || !index.parent().parent().isValid())
         return;
 
     pPainter->save();
     QStyleOption options;
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     options.initFrom(m_pTreeViewStorage);
     options.rect = rect;
     options.state |= QStyle::State_Item;
+    AssertPtrReturnVoid(m_pModelStorage);
     if (index.row() < m_pModelStorage->rowCount(index.parent()) - 1)
         options.state |= QStyle::State_Sibling;
     /* This pen is commonly used by different
@@ -4090,10 +4117,12 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
     const QPoint gPos = pEvent->globalPosition().toPoint();
     const QPoint lPos = pEvent->position().toPoint();
 
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
     const QRect indexRect = m_pTreeViewStorage->visualRect(index);
 
     /* Expander tool-tip: */
+    AssertPtrReturnVoid(m_pModelStorage);
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
@@ -4220,6 +4249,7 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
     const QPoint lPos = pEvent->position().toPoint();
 
     /* Acquire indexes: */
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex currentIndex = m_pTreeViewStorage->currentIndex();
     const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
     const QRect indexRect = m_pTreeViewStorage->visualRect(index);
@@ -4229,6 +4259,7 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
         m_mousePressPosition = gPos;
 
     /* Expander icon: */
+    AssertPtrReturnVoid(m_pModelStorage);
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
@@ -5053,6 +5084,7 @@ void UIStorageSettingsEditor::cleanup()
 void UIStorageSettingsEditor::addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType)
 {
 #ifdef RT_STRICT
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     switch (enmBus)
     {
@@ -5085,12 +5117,17 @@ void UIStorageSettingsEditor::addControllerWrapper(const QString &strName, KStor
     }
 #endif
 
+    /* Add controller: */
+    AssertPtrReturnVoid(m_pModelStorage);
     m_pModelStorage->addController(strName, enmBus, enmType);
+
+    /* Notify listeners: */
     emit sigValueChanged();
 }
 
 void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
 {
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
     Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
@@ -5114,6 +5151,8 @@ void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
         (enmDeviceType != KDeviceType_DVD && enmDeviceType != KDeviceType_Floppy))
         return;
 
+    /* Add attachment: */
+    AssertPtrReturnVoid(m_pModelStorage);
     m_pModelStorage->addAttachment(m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid(), enmDeviceType, uMediumId);
     m_pModelStorage->sort();
 
@@ -5123,6 +5162,7 @@ void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
 
 QString UIStorageSettingsEditor::generateUniqueControllerName(const QString &strTemplate) const
 {
+    AssertPtrReturn(m_pModelStorage, QString());
     int iMaxNumber = 0;
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
@@ -5142,6 +5182,7 @@ QString UIStorageSettingsEditor::generateUniqueControllerName(const QString &str
 
 uint32_t UIStorageSettingsEditor::deviceCount(KDeviceType enmType) const
 {
+    AssertPtrReturn(m_pModelStorage, 0);
     uint32_t cDevices = 0;
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
