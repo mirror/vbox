@@ -111,6 +111,9 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
                     else if (rc == VERR_SHCLPB_EVENT_FAILED)
                         rc = rcEvent;
                 }
+
+                ShClEventRelease(pEvent);
+                pEvent = NULL;
             }
             break;
         }
