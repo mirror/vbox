@@ -716,8 +716,6 @@ public:
 
     /** Sorts the contents of model by @a iColumn and @a enmOrder. */
     void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder);
-    /** Returns attachment index by specified @a controllerIndex and @a attachmentStorageSlot. */
-    QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
 
     /** Returns chipset type. */
     KChipsetType chipsetType() const;
@@ -2640,26 +2638,6 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
     }
 }
 
-QModelIndex StorageModel::attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot)
-{
-    /* Check what parent model index is valid, set and of 'controller' type: */
-    AssertMsg(controllerIndex.isValid(), ("Controller index should be valid!\n"));
-    AbstractItem *pParentItem = static_cast<AbstractItem*>(controllerIndex.internalPointer());
-    AssertMsg(pParentItem, ("Parent item should be set!\n"));
-    AssertMsg(pParentItem->rtti() == AbstractItem::Type_ControllerItem, ("Parent item should be of 'controller' type!\n"));
-    NOREF(pParentItem);
-
-    /* Search for suitable attachment one by one: */
-    for (int i = 0; i < rowCount(controllerIndex); ++i)
-    {
-        QModelIndex curAttachmentIndex = index(i, 0, controllerIndex);
-        StorageSlot curAttachmentStorageSlot = data(curAttachmentIndex, R_AttSlot).value<StorageSlot>();
-        if (curAttachmentStorageSlot ==  attachmentStorageSlot)
-            return curAttachmentIndex;
-    }
-    return QModelIndex();
-}
-
 KChipsetType StorageModel::chipsetType() const
 {
     return m_enmChipsetType;
@@ -3465,6 +3443,7 @@ void UIStorageSettingsEditor::sltAddControllerVirtioSCSI()
 
 void UIStorageSettingsEditor::sltRemoveController()
 {
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     AssertPtrReturnVoid(m_pModelStorage);
@@ -3479,6 +3458,7 @@ void UIStorageSettingsEditor::sltRemoveController()
 
 void UIStorageSettingsEditor::sltAddAttachment()
 {
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     AssertPtrReturnVoid(m_pModelStorage);
@@ -3536,6 +3516,7 @@ void UIStorageSettingsEditor::sltAddAttachmentFD()
 
 void UIStorageSettingsEditor::sltRemoveAttachment()
 {
+    /* Acquire model, current index and it's parent index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     AssertPtrReturnVoid(m_pModelStorage);
@@ -3734,6 +3715,7 @@ void UIStorageSettingsEditor::sltGetInformation()
 
 void UIStorageSettingsEditor::sltSetInformation()
 {
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     AssertPtrReturnVoid(m_pModelStorage);
@@ -3772,9 +3754,16 @@ void UIStorageSettingsEditor::sltSetInformation()
                 QModelIndex controllerIndex = m_pModelStorage->parent(index);
                 StorageSlot attachmentStorageSlot = gpConverter->fromString<StorageSlot>(m_pComboSlot->currentText());
                 m_pModelStorage->setData(index, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
-                QModelIndex theSameIndexAtNewPosition = m_pModelStorage->attachmentBySlot(controllerIndex, attachmentStorageSlot);
-                AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));
-                m_pTreeViewStorage->setCurrentIndex(theSameIndexAtNewPosition);
+                for (int iAttachmentIndex = 0; iAttachmentIndex < m_pModelStorage->rowCount(controllerIndex); ++iAttachmentIndex)
+                {
+                    QModelIndex enumeratedIndex = m_pModelStorage->index(iAttachmentIndex, 0, controllerIndex);
+                    StorageSlot enumeratedStorageSlot = m_pModelStorage->data(enumeratedIndex, StorageModel::R_AttSlot).value<StorageSlot>();
+                    if (enumeratedStorageSlot == attachmentStorageSlot)
+                    {
+                        m_pTreeViewStorage->setCurrentIndex(enumeratedIndex);
+                        break;
+                    }
+                }
             }
             /* Setting attachment medium: */
             else if (pSender == m_pMediumIdHolder)
@@ -3938,6 +3927,7 @@ void UIStorageSettingsEditor::sltChooseRecentMedium()
 
 void UIStorageSettingsEditor::sltUpdateActionStates()
 {
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
 
@@ -3990,7 +3980,7 @@ void UIStorageSettingsEditor::sltUpdateActionStates()
 
 void UIStorageSettingsEditor::sltHandleRowInsertion(const QModelIndex &parentIndex, int iPosition)
 {
-    AssertPtrReturnVoid(m_pModelStorage);
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pModelStorage->index(iPosition, 0, parentIndex);
 
@@ -4348,8 +4338,10 @@ void UIStorageSettingsEditor::sltHandleDragMove(QDragMoveEvent *pEvent)
     const QString strAttachmentId = pMimeData->data(UIStorageSettingsEditor::s_strAttachmentMimeType);
 
     /* Check what item we are hovering currently: */
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
+    AssertPtrReturnVoid(m_pModelStorage);
     if (   !m_pModelStorage->data(index, StorageModel::R_IsController).toBool()
         || m_pModelStorage->data(index, StorageModel::R_ItemId).toString() == strControllerId)
         return;
@@ -4375,8 +4367,10 @@ void UIStorageSettingsEditor::sltHandleDragDrop(QDropEvent *pEvent)
     AssertPtrReturnVoid(pMimeData);
 
     /* Check what item we are hovering currently: */
+    AssertPtrReturnVoid(m_pTreeViewStorage);
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
+    AssertPtrReturnVoid(m_pModelStorage);
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         /* Get controller/attachment ids: */
@@ -5085,6 +5079,7 @@ void UIStorageSettingsEditor::addControllerWrapper(const QString &strName, KStor
 {
 #ifdef RT_STRICT
     AssertPtrReturnVoid(m_pTreeViewStorage);
+    AssertPtrReturnVoid(m_pModelStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     switch (enmBus)
     {
@@ -5127,8 +5122,10 @@ void UIStorageSettingsEditor::addControllerWrapper(const QString &strName, KStor
 
 void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
 {
+    /* Acquire current index: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    AssertPtrReturnVoid(m_pModelStorage);
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
     Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
