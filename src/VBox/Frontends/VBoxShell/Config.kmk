@@ -1,0 +1,90 @@
+# $Id$
+## @file
+# kBuild Configuration file for VBoxShell.
+#
+
+#
+# Copyright (C) 2024 Oracle and/or its affiliates.
+#
+# This file is part of VirtualBox base platform packages, as
+# available from https://www.virtualbox.org.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, in version 3 of the
+# License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses>.
+#
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL), a copy of it is provided in the "COPYING.CDDL" file included
+# in the VirtualBox distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
+# SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
+#
+
+VBOX_VBOXSHELL_CONFIG_KMK_INCLUDED = 1
+
+# Include the top-level configure file.
+ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/Config.kmk
+endif
+
+#
+# Globals
+#
+VBOX_PATH_VBOXSHELL_SRC := $(PATH_ROOT)/src/VBox/Frontends/VBoxShell
+
+#
+# List of python sources that should be linted.
+#
+VBOX_VBOXSHELL_PYTHON_SOURCES     :=
+VBOX_VBOXSHELL_PYLINT_TARGETS     :=
+
+ifdef VBOX_WITH_PYLINT
+ TESTING +=
+endif
+
+#
+# Process python sources.
+#
+if1of ($(KBUILD_TARGET), win os2)
+ VBOX_PYTHONPATH_VBOXSHELL = $(PYTHONPATH);$(VBOX_PATH_VBOXSHELL_SRC)
+else
+ VBOX_PYTHONPATH_VBOXSHELL = $(PYTHONPATH):$(VBOX_PATH_VBOXSHELL_SRC)
+endif
+BLDDIRS += $(PATH_TARGET)/pylint
+
+define def_vbox_vboxshell_py_check
+ $(eval name:=$(basename $(notdir $(py))))
+
+ pylint: $(name)-py-phony.o
+ $(name).o: $(name)-py-phony.o
+ $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ ifdef VBOX_WITH_PYLINT
+	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
+	$(QUIET)$(REDIRECT) -C "$(dir $(py))" -E LC_ALL=C -E PYTHONPATH="$(VBOX_PYTHONPATH_VBOXSHELL)" -- \
+		$(VBOX_PYLINT) --rcfile=$(VBOX_PATH_VBOXSHELL_SRC)/pylintrc $$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
+ endif
+	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
+ TESTING += $(name)-py-phony.o
+ VBOX_VBOXSHELL_PYLINT_TARGETS    += $(PATH_TARGET)/pylint/$(name).o
+endef # def_vbox_vboxshell_py_check
+
+
+define def_vbox_vboxshell_process_python_sources
+ if $(words $(_SUB_MAKEFILE_STACK)) <= 0 || "$1" == "FORCE"
+  $(foreach py, $(VBOX_VBOXSHELL_PYTHON_SOURCES), $(eval $(def_vbox_vboxshell_py_check)))
+ endif
+endef

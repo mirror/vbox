@@ -28,6 +28,8 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+include $(PATH_SUB_CURRENT)/Config.kmk
+
 INSTALLS += VBoxShell
 VBoxShell_INST = $(INST_SDK)/bindings/
 VBoxShell_SOURCES = \
@@ -35,7 +37,17 @@ VBoxShell_SOURCES = \
 	vboxinfo.vbs=>mscom/vbs/sample/vboxinfo.vbs \
 	vboxinfo.vb=>mscom/vb/sample/vboxinfo.vb
 
+#
+# Automatically lint VBoxShell.
+#
+if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITHOUT_AUTO_PYLINT)
+ OTHERS      += $(PATH_TARGET)/pylintVBoxShell.run
+ OTHER_CLEAN += $(PATH_TARGET)/pylintVBoxShell.run
+ $(PATH_TARGET)/pylintVBoxShell.run: vboxshell.py
+	$(QUIET)$(APPEND) -t "$@"
+endif
 
+VBOX_VBOXSHELL_PYTHON_SOURCES := $(wildcard $(PATH_SUB_CURRENT)/*.py)
 
+$(evalcall def_vbox_vboxshell_process_python_sources,FORCE)
 include $(FILE_KBUILD_SUB_FOOTER)
-
