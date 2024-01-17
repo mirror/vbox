@@ -1460,7 +1460,7 @@ class TestDriver(base.TestDriver):                                              
             # x.y release, so the third component only indicates whether it's a stable or
             # development build of the next release.
             self.fpApiVer = aiVerComponents[0] + 0.1 * aiVerComponents[1];
-            if aiVerComponents[2] >= 51:
+            if aiVerComponents[2] >= 71:
                 if self.fpApiVer not in [6.1, 5.2, 4.3, 3.2,]:
                     self.fpApiVer += 0.1;
                 else:
