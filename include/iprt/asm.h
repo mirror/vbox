@@ -2710,16 +2710,32 @@ DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
+# if defined(RTASM_ARM64_USE_FEAT_LSE) && 0 /* very expensive on M1 */
     __asm__ __volatile__("Lstart_ASMAtomicReadU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxrb     %w[uDst], %[pMem]\n\t"
+                         "casab     %w[uDst], wzr, %[pMem]\n\t"
+                         : [uDst] "=&r" (u32)
+                         : [pMem] "Q" (*pu8),
+                           "0" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
 # else
+    __asm__ __volatile__("Lstart_ASMAtomicReadU8_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#  if defined(RT_ARCH_ARM64)
+#   if 1 /* shouldn't be any need for more than single-copy atomicity when we've got a proper barrier, just like on x86. */
+                         "ldurb     %w[uDst], %[pMem]\n\t"
+#   else
+                         "ldxrb     %w[uDst], %[pMem]\n\t"
+                         "clrex\n\t"
+#   endif
+#  else
                          "ldrexb    %[uDst], %[pMem]\n\t"
-# endif
+                         /** @todo clrex   */
+#  endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu8)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
+# endif
     return (uint8_t)u32;
 #else
     ASMMemoryFence();
@@ -2740,9 +2756,9 @@ DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_D
     uint32_t u32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadU8_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxrb     %w[uDst], %[pMem]\n\t"
+                         "ldurb    %w[uDst], %[pMem]\n\t"
 # else
-                         "ldrexb    %[uDst], %[pMem]\n\t"
+                         "ldrexb    %[uDst], %[pMem]\n\t" /** @todo fix this */
 # endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu8));
@@ -2761,21 +2777,10 @@ DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_D
  */
 DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
 {
-    ASMMemoryFence();
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    int32_t i32;
-    __asm__ __volatile__("Lstart_ASMAtomicReadS8_%=:\n\t"
-                         RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxrb     %w[iDst], %[pMem]\n\t"
-# else
-                         "ldrexb    %[iDst], %[pMem]\n\t"
-# endif
-                         : [iDst] "=&r" (i32)
-                         : [pMem] "Q" (*pi8)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
-    return (int8_t)i32;
+    return (int8_t)ASMAtomicReadU8((volatile uint8_t RT_FAR *)pi8);
 #else
+    ASMMemoryFence();
     return *pi8;    /* byte reads are atomic on x86 */
 #endif
 }
@@ -2793,9 +2798,9 @@ DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
     int32_t i32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadS8_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxrb     %w[iDst], %[pMem]\n\t"
+                         "ldurb     %w[iDst], %[pMem]\n\t"
 # else
-                         "ldrexb    %[iDst], %[pMem]\n\t"
+                         "ldrexb    %[iDst], %[pMem]\n\t" /** @todo fix this */
 # endif
                          : [iDst] "=&r" (i32)
                          : [pMem] "Q" (*pi8));
@@ -2817,16 +2822,32 @@ DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW
     Assert(!((uintptr_t)pu16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
+# if defined(RTASM_ARM64_USE_FEAT_LSE) && 0 /* very expensive on M1, but alignment advantages with LEA2 (M2?). */
     __asm__ __volatile__("Lstart_ASMAtomicReadU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxrh     %w[uDst], %[pMem]\n\t"
+                         "casah     %w[uDst], wzr, %[pMem]\n\t"
+                         : [uDst] "=&r" (u32)
+                         : [pMem] "Q" (*pu16),
+                           "0" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
 # else
+    __asm__ __volatile__("Lstart_ASMAtomicReadU16_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#  if defined(RT_ARCH_ARM64)
+#   if 1 /* ASSUMING proper barrier and aligned access, we should be fine with single-copy atomicity, just like on x86. */
+                         "ldurh     %w[uDst], %[pMem]\n\t"
+#   else
+                         "ldxrh     %w[uDst], %[pMem]\n\t"
+                         "clrex\n\t"
+#   endif
+#  else
                          "ldrexh    %[uDst], %[pMem]\n\t"
-# endif
+                         /** @todo clrex    */
+#  endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu16)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
+# endif
     return (uint16_t)u32;
 #else
     ASMMemoryFence();
@@ -2848,9 +2869,9 @@ DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHR
     uint32_t u32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadU16_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxrh     %w[uDst], %[pMem]\n\t"
+                         "ldurh     %w[uDst], %[pMem]\n\t"
 # else
-                         "ldrexh    %[uDst], %[pMem]\n\t"
+                         "ldrexh    %[uDst], %[pMem]\n\t" /** @todo fix this */
 # endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu16));
@@ -2871,18 +2892,7 @@ DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_D
 {
     Assert(!((uintptr_t)pi16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    int32_t i32;
-    __asm__ __volatile__("Lstart_ASMAtomicReadS16_%=:\n\t"
-                         RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxrh     %w[iDst], %[pMem]\n\t"
-# else
-                         "ldrexh    %[iDst], %[pMem]\n\t"
-# endif
-                         : [iDst] "=&r" (i32)
-                         : [pMem] "Q" (*pi16)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
-    return (int16_t)i32;
+    return (int16_t)ASMAtomicReadU16((volatile uint16_t RT_FAR *)pi16);
 #else
     ASMMemoryFence();
     return *pi16;
@@ -2903,9 +2913,9 @@ DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW
     int32_t i32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadS16_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxrh     %w[iDst], %[pMem]\n\t"
+                         "ldurh     %w[iDst], %[pMem]\n\t"
 # else
-                         "ldrexh    %[iDst], %[pMem]\n\t"
+                         "ldrexh    %[iDst], %[pMem]\n\t" /** @todo fix this */
 # endif
                          : [iDst] "=&r" (i32)
                          : [pMem] "Q" (*pi16));
@@ -2927,16 +2937,32 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW
     Assert(!((uintptr_t)pu32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
+# if defined(RTASM_ARM64_USE_FEAT_LSE) && 0 /* very expensive on M1, but alignment advantages with LEA2 (M2?). */
     __asm__ __volatile__("Lstart_ASMAtomicReadU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxr      %w[uDst], %[pMem]\n\t"
+                         "casa      %w[uDst], wzr, %[pMem]\n\t"
+                         : [uDst] "=&r" (u32)
+                         : [pMem] "Q" (*pu32),
+                           "0" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
 # else
+    __asm__ __volatile__("Lstart_ASMAtomicReadU32_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#  if defined(RT_ARCH_ARM64)
+#   if 1 /* ASSUMING proper barrier and aligned access, we should be fine with single-copy atomicity, just like on x86. */
+                         "ldur      %w[uDst], %[pMem]\n\t"
+#   else
+                         "ldxr      %w[uDst], %[pMem]\n\t"
+                         "clrex\n\t"
+#   endif
+#  else
                          "ldrex    %[uDst], %[pMem]\n\t"
-# endif
+                         /** @todo clrex    */
+#  endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu32)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
+# endif
     return u32;
 #else
     ASMMemoryFence();
@@ -2961,9 +2987,9 @@ DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHR
     uint32_t u32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadU32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxr      %w[uDst], %[pMem]\n\t"
+                         "ldur      %w[uDst], %[pMem]\n\t"
 # else
-                         "ldrex    %[uDst], %[pMem]\n\t"
+                         "ldrex     %[uDst], %[pMem]\n\t" /** @todo fix this */
 # endif
                          : [uDst] "=&r" (u32)
                          : [pMem] "Q" (*pu32));
@@ -2987,18 +3013,7 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_D
 {
     Assert(!((uintptr_t)pi32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    int32_t i32;
-    __asm__ __volatile__("Lstart_ASMAtomicReadS32_%=:\n\t"
-                         RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxr      %w[iDst], %[pMem]\n\t"
-# else
-                         "ldrex    %[iDst], %[pMem]\n\t"
-# endif
-                         : [iDst] "=&r" (i32)
-                         : [pMem] "Q" (*pi32)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
-    return i32;
+    return (int32_t)ASMAtomicReadU32((volatile uint32_t RT_FAR *)pi32);
 #else
     ASMMemoryFence();
 # if ARCH_BITS == 16
@@ -3022,9 +3037,9 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
     int32_t i32;
     __asm__ __volatile__("Lstart_ASMAtomicUoReadS32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxr      %w[iDst], %[pMem]\n\t"
+                         "ldur      %w[iDst], %[pMem]\n\t"
 # else
-                         "ldrex    %[iDst], %[pMem]\n\t"
+                         "ldrex     %[iDst], %[pMem]\n\t" /** @todo thix this */
 # endif
                          : [iDst] "=&r" (i32)
                          : [pMem] "Q" (*pi32));
@@ -3120,17 +3135,33 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     Assert(!((uintptr_t)pu64 & 7));
+
+# if defined(RTASM_ARM64_USE_FEAT_LSE) && 0 /* very expensive on M1, but alignment advantages with LEA2 (M2?). */
     __asm__ __volatile__("Lstart_ASMAtomicReadU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
-# if defined(RT_ARCH_ARM64)
-                         "ldxr      %[uDst], %[pMem]\n\t"
+                         "casa      %[uDst], xzr, %[pMem]\n\t"
+                         : [uDst] "=&r" (u64)
+                         : [pMem] "Q" (*pu64),
+                           "0" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG);
 # else
+    __asm__ __volatile__("Lstart_ASMAtomicReadU64_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#   if defined(RT_ARCH_ARM64)
+#    if 1 /* ASSUMING proper barrier and aligned access, we should be fine with single-copy atomicity, just like on x86. */
+                         "ldur      %[uDst], %[pMem]\n\t"
+#    else
+                         "ldxr      %[uDst], %[pMem]\n\t"
+                         "clrex\n\t"
+#    endif
+#   else
                          "ldrexd    %[uDst], %H[uDst], %[pMem]\n\t"
-# endif
+                         /** @todo clrex    */
+#   endif
                          : [uDst] "=&r" (u64)
                          : [pMem] "Q" (*pu64)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
-
+#  endif
 # else
 #  error "Port me"
 # endif
@@ -3224,9 +3255,10 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
     Assert(!((uintptr_t)pu64 & 7));
     __asm__ __volatile__("Lstart_ASMAtomicUoReadU64_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
-                         "ldxr      %[uDst], %[pMem]\n\t"
+                         "ldur      %[uDst], %[pMem]\n\t"
 # else
-                         "ldrexd    %[uDst], %H[uDst], %[pMem]\n\t"
+                         "ldrexd    %[uDst], %H[uDst], %[pMem]\n\t" /* this is required for atomic access since it's a pair */
+                         /** @todo clrex? */
 # endif
                          : [uDst] "=&r" (u64)
                          : [pMem] "Q" (*pu64));
