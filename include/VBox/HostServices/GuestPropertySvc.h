@@ -86,9 +86,9 @@
  */
 DECLINLINE(int) GuestPropValidateName(const char *pszName, size_t cbName)
 {
-    /* Property name is expected to be at least 1 charecter long plus terminating character. */
-    AssertReturn(cbName >= 2, VERR_INVALID_PARAMETER);
-    AssertReturn(cbName <= GUEST_PROP_MAX_NAME_LEN, VERR_INVALID_PARAMETER);
+    if (   cbName < 2 /* Property name is expected to be at least 1 charecter long plus terminating character. */
+        || cbName > GUEST_PROP_MAX_NAME_LEN)
+        return VERR_INVALID_PARAMETER;
 
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
@@ -117,7 +117,9 @@ DECLINLINE(int) GuestPropValidateValue(const char *pszValue, size_t cbValue)
 
     /* Zero-length values are possible, however buffer should contain terminating character at least. */
     AssertReturn(cbValue > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cbValue <= GUEST_PROP_MAX_VALUE_LEN, VERR_TOO_MUCH_DATA);
+
+    if (cbValue > GUEST_PROP_MAX_VALUE_LEN)
+        return VERR_TOO_MUCH_DATA;
 
     return VINF_SUCCESS;
 }
