@@ -3161,7 +3161,7 @@ void UIStorageSettingsEditor::setValue(const QList<UIDataStorageController> &con
         const QModelIndex controllerIndex = m_pModelStorage->addController(oldControllerData.m_strName,
                                                                            oldControllerData.m_enmBus,
                                                                            oldControllerData.m_enmType);
-        const QUuid controllerId = QUuid(m_pModelStorage->data(controllerIndex, StorageModel::R_ItemId).toString());
+        const QUuid controllerId = m_pModelStorage->data(controllerIndex, StorageModel::R_ItemId).toUuid();
         m_pModelStorage->setData(controllerIndex, oldControllerData.m_uPortCount, StorageModel::R_CtrPortCount);
         m_pModelStorage->setData(controllerIndex, oldControllerData.m_fUseHostIOCache, StorageModel::R_CtrIoCache);
 
@@ -3462,7 +3462,7 @@ void UIStorageSettingsEditor::sltRemoveController()
     if (!m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
         return;
 
-    m_pModelStorage->delController(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()));
+    m_pModelStorage->delController(m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid());
 
     /* Notify listeners: */
     emit sigValueChanged();
@@ -3541,8 +3541,8 @@ void UIStorageSettingsEditor::sltRemoveAttachment()
         !m_pModelStorage->data(parentIndex, StorageModel::R_IsController).toBool())
         return;
 
-    m_pModelStorage->delAttachment(QUuid(m_pModelStorage->data(parentIndex, StorageModel::R_ItemId).toString()),
-                                   QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()));
+    m_pModelStorage->delAttachment(m_pModelStorage->data(parentIndex, StorageModel::R_ItemId).toUuid(),
+                                   m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid());
 
     /* Notify listeners: */
     emit sigValueChanged();
@@ -4182,11 +4182,11 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
         m_mousePressPosition = QPoint();
 
         /* Check what item we are hovering currently: */
-        QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
-        AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
-        /* And make sure this is attachment item, we are supporting dragging for this kind only: */
-        AttachmentItem *pItemAttachment = qobject_cast<AttachmentItem*>(pItem);
-        if (pItemAttachment)
+        const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
+        const QModelIndex parentIndex = index.parent();
+        /* And make sure it is attachment, and parent is controller: */
+        if (   m_pModelStorage->data(index, StorageModel::R_IsAttachment).toBool()
+            && m_pModelStorage->data(parentIndex, StorageModel::R_IsController).toBool())
         {
             /* Initialize dragging: */
             pEvent->setAccepted(true);
@@ -4194,13 +4194,15 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
             if (pDrag)
             {
                 /* Assign pixmap: */
-                pDrag->setPixmap(pItem->pixmap());
+                pDrag->setPixmap(m_pModelStorage->data(index, StorageModel::R_ItemPixmapDefault).value<QPixmap>());
                 /* Prepare mime: */
                 QMimeData *pMimeData = new QMimeData;
                 if (pMimeData)
                 {
-                    pMimeData->setData(s_strControllerMimeType, pItemAttachment->parent()->id().toString().toLatin1());
-                    pMimeData->setData(s_strAttachmentMimeType, pItemAttachment->id().toString().toLatin1());
+                    const QString parentId = m_pModelStorage->data(parentIndex, StorageModel::R_ItemId).toString();
+                    const QString id = m_pModelStorage->data(index, StorageModel::R_ItemId).toString();
+                    pMimeData->setData(s_strControllerMimeType, parentId.toLatin1());
+                    pMimeData->setData(s_strAttachmentMimeType, id.toLatin1());
                     pDrag->setMimeData(pMimeData);
                 }
                 /* Start dragging: */
@@ -4316,10 +4318,9 @@ void UIStorageSettingsEditor::sltHandleDragMove(QDragMoveEvent *pEvent)
 
     /* Check what item we are hovering currently: */
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
-    AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
-    ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
-    if (!pItemController || pItemController->id().toString() == strControllerId)
+    if (   !m_pModelStorage->data(index, StorageModel::R_IsController).toBool()
+        || m_pModelStorage->data(index, StorageModel::R_ItemId).toString() == strControllerId)
         return;
     /* Then make sure we support such attachment device type: */
     const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
@@ -4344,15 +4345,14 @@ void UIStorageSettingsEditor::sltHandleDragDrop(QDropEvent *pEvent)
 
     /* Check what item we are hovering currently: */
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
-    AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
-    ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
-    if (pItemController)
+    if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         /* Get controller/attachment ids: */
         const QString strControllerId = pMimeData->data(UIStorageSettingsEditor::s_strControllerMimeType);
         const QString strAttachmentId = pMimeData->data(UIStorageSettingsEditor::s_strAttachmentMimeType);
-        m_pModelStorage->moveAttachment(QUuid(strAttachmentId), QUuid(strControllerId), pItemController->id());
+        m_pModelStorage->moveAttachment(QUuid(strAttachmentId), QUuid(strControllerId),
+                                        m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid());
     }
 }
 
@@ -5114,7 +5114,7 @@ void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
         (enmDeviceType != KDeviceType_DVD && enmDeviceType != KDeviceType_Floppy))
         return;
 
-    m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDeviceType, uMediumId);
+    m_pModelStorage->addAttachment(m_pModelStorage->data(index, StorageModel::R_ItemId).toUuid(), enmDeviceType, uMediumId);
     m_pModelStorage->sort();
 
     /* Notify listeners: */
