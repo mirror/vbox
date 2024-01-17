@@ -2780,11 +2780,10 @@ StorageDelegate::StorageDelegate(QObject *pParent)
 void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     /* Sanity check: */
-    if (!index.isValid())
-        return;
+    AssertReturnVoid(index.isValid());
 
     /* Acquire model: */
-    const StorageModel *pModel = qobject_cast<const StorageModel*>(index.model());
+    const QAbstractItemModel *pModel = index.model();
     AssertPtrReturnVoid(pModel);
 
     /* Fetch options: */
@@ -2798,15 +2797,15 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 
     /* Setup foreground settings: */
     QPalette::ColorGroup cg = enmState & QStyle::State_Active ? QPalette::Active : QPalette::Inactive;
-    bool fSelected = enmState & QStyle::State_Selected;
-    bool fFocused = enmState & QStyle::State_HasFocus;
-    bool fGrayOnLoosingFocus = QApplication::style()->styleHint(QStyle::SH_ItemView_ChangeHighlightOnFocus, &option) != 0;
+    const bool fSelected = enmState & QStyle::State_Selected;
+    const bool fFocused = enmState & QStyle::State_HasFocus;
+    const bool fGrayOnLoosingFocus = QApplication::style()->styleHint(QStyle::SH_ItemView_ChangeHighlightOnFocus, &option) != 0;
     pPainter->setPen(option.palette.color(cg, fSelected &&(fFocused || !fGrayOnLoosingFocus) ?
                                           QPalette::HighlightedText : QPalette::Text));
 
     pPainter->translate(rect.x(), rect.y());
 
-    /* Draw Item Pixmap: */
+    /* Draw item pixmap: */
     const bool fHasChildren = enmState & QStyle::State_Children;
     const bool fOpened = enmState & QStyle::State_Open;
     QPixmap pixmap = !fHasChildren
@@ -2844,7 +2843,7 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
     pPainter->setFont(font);
     pPainter->drawText(textPosition, strShortText);
 
-    /* Draw Controller Additions: */
+    /* Draw controller additions: */
     if (pModel->data(index, StorageModel::R_IsController).toBool() && enmState & QStyle::State_Selected)
     {
         DeviceTypeList devicesList(pModel->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
