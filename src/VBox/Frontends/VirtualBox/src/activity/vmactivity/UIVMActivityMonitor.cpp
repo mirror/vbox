@@ -348,8 +348,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     connect(this, &UIChart::customContextMenuRequested,
             this, &UIChart::sltCreateContextMenu);
 
-    m_dataSeriesColor[0] = QColor(200, 0, 0, 255);
-    m_dataSeriesColor[1] = QColor(0, 0, 200, 255);
+    setDataSeriesColor(0, QColor(200, 0, 0, 255));
+    setDataSeriesColor(1, QColor(0, 0, 200, 255));
 
     m_iMarginLeft = 3 * QFontMetricsF(m_axisFont).averageCharWidth();
     m_iMarginRight = m_iRightMarginCharWidth * QFontMetricsF(m_axisFont).averageCharWidth();
@@ -1219,7 +1219,7 @@ void UIVMActivityMonitor::retranslateUi()
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceivedTotal.length());
     m_strNetworkInfoLabelTransmittedTotal = QApplication::translate("UIVMInformationDialog", "Total Transmitted");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceivedTotal.length());
-    m_strDiskIOInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Disk IO Rate");
+    m_strDiskIOInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Disk IO");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelTitle.length());
     m_strDiskIOInfoLabelWritten = QApplication::translate("UIVMInformationDialog", "Write Rate");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelWritten.length());
@@ -1819,7 +1819,7 @@ void UIVMActivityMonitorLocal::updateNetworkChart(quint64 uReceiveTotal, quint64
     if (m_infoLabels.contains(Metric_Type_Network_InOut)  && m_infoLabels[Metric_Type_Network_InOut])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5: %6</font><br/><font color=\"%7\">%8: %9<br/>%10: %11</font>")
             .arg(m_strNetworkInfoLabelTitle)
             .arg(dataColorString(Metric_Type_Network_InOut, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount))
             .arg(m_strNetworkInfoLabelReceivedTotal).arg(UITranslator::formatSize(uReceiveTotal, g_iDecimalCount))
@@ -1851,7 +1851,7 @@ void UIVMActivityMonitorLocal::updateDiskIOChart(quint64 uDiskIOTotalWritten, qu
 
     if (m_infoLabels.contains(Metric_Type_Disk_InOut)  && m_infoLabels[Metric_Type_Disk_InOut])
     {
-        QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+        QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5: %6</font><br/><font color=\"%7\">%8: %9<br/>%10: %11</font>")
             .arg(m_strDiskIOInfoLabelTitle)
             .arg(dataColorString(Metric_Type_Disk_InOut, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize(uWriteRate, g_iDecimalCount))
             .arg(m_strDiskIOInfoLabelWrittenTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
@@ -2158,10 +2158,10 @@ void UIVMActivityMonitorCloud::retranslateUi()
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
 
-    m_strNetworkInInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Receive Rate");
+    m_strNetworkInInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInInfoLabelTitle.length());
 
-    m_strNetworkOutInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Transmit Rate");
+    m_strNetworkOutInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkOutInfoLabelTitle.length());
 
     setInfoLabelWidth();
@@ -2450,6 +2450,12 @@ void UIVMActivityMonitorCloud::prepareWidgets()
         m_pContainerLayout->addLayout(pChartLayout, iRow, 0, 1, 2);
         ++iRow;
     }
+
+    if (m_charts.contains(Metric_Type_Network_Out) && m_charts[Metric_Type_Network_Out])
+        m_charts[Metric_Type_Network_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
+
+    if (m_charts.contains(Metric_Type_Disk_Out) && m_charts[Metric_Type_Disk_Out])
+        m_charts[Metric_Type_Disk_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
 
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
