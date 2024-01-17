@@ -2079,7 +2079,6 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
 {
     PRTHTTPINTERNAL pThis = hHttp;
     RTHTTP_VALID_RETURN(pThis);
-    AssertPtrReturn(pcszProxy, VERR_INVALID_PARAMETER);
     AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
 
     /*
@@ -2089,6 +2088,9 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
      * leave that to cURL.  (A bit afraid of breaking user settings.)
      */
     pThis->fUseSystemProxySettings = false;
+    if (!pcszProxy)
+        return rtHttpUpdateAutomaticProxyDisable(pThis);
+
     return rtHttpUpdateProxyConfig(pThis, CURLPROXY_HTTP, pcszProxy, uPort ? uPort : 1080, pcszProxyUser, pcszProxyPwd);
 }
 
