@@ -1351,14 +1351,14 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
         else
         {
             aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
-            fWaitForStdOut = gctlRunSetupHandle(fWaitForStdOut, RTHANDLESTD_OUTPUT, "stdout", enmStdOutTransform, &hVfsStdOut);
-            if (fWaitForStdOut)
+            if (   fWaitForStdOut
+                && gctlRunSetupHandle(fWaitForStdOut, RTHANDLESTD_OUTPUT, "stdout", enmStdOutTransform, &hVfsStdOut))
             {
                 aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
                 aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
             }
-            fWaitForStdErr = gctlRunSetupHandle(fWaitForStdErr, RTHANDLESTD_ERROR, "stderr", enmStdErrTransform, &hVfsStdErr);
-            if (fWaitForStdErr)
+            if (   fWaitForStdErr
+                && gctlRunSetupHandle(fWaitForStdErr, RTHANDLESTD_ERROR, "stderr", enmStdErrTransform, &hVfsStdErr))
             {
                 aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
                 aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
