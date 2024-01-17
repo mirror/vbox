@@ -471,6 +471,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         # pylint: disable=line-too-long
         oSet.aoTestVms.extend([
             #
+            #
+            # x86/amd64 VMs
+            #
+            #
+
+            #
             # Windows.  The older windows ISOs requires a keyfile (for xp sp3
             # pick a key from the PID.INF file on the ISO).
             #
@@ -553,6 +559,16 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                          UnattendedVm.kfNoGAs),
 
             #
+            # Debian
+            #
+            UnattendedVm(oSet, 'tst-debian-9.3-64', 'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-9.4-64', 'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-10.0-64', 'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork),
+
+            #
             # OS/2.
             #
             UnattendedVm(oSet, 'tst-acp2',              'OS2Warp45', '7.0/uaisos/acp2_us_cd2.iso'),                  # ~400MiB
@@ -564,18 +580,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             # ARM VMs
             #
             #
-            UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',   # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork, "ARM"),
 
             #
             # Debian
             #
-            UnattendedVm(oSet, 'tst-debian-9.3-64', 'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-9.4-64', 'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-debian-10.0-64', 'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork),
+            UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',   # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork, "ARM"),
 
             #
             # OracleLinux
