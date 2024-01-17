@@ -419,12 +419,10 @@ int VBClX11ClipboardInit(void)
         }
     }
     else
-        rc = VERR_NO_MEMORY;
+        VBClLogError("Initializing clipboard failed with %Rrc\n", rc);
 
     if (RT_FAILURE(rc))
     {
-        VBClLogError("Error connecting to host service, rc=%Rrc\n", rc);
-
         VbglR3ClipboardDisconnectEx(&g_Ctx.CmdCtx);
         ShClX11Destroy(&g_Ctx.X11);
     }
