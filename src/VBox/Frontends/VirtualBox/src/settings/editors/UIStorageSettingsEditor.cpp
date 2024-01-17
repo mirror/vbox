@@ -595,7 +595,9 @@ public:
     enum DataRole
     {
         R_ItemId = Qt::UserRole + 1,
-        R_ItemPixmap,
+        R_ItemPixmapDefault,
+        R_ItemPixmapCollapsed,
+        R_ItemPixmapExpanded,
         R_ItemPixmapRect,
         R_ItemName,
         R_ItemNamePoint,
@@ -790,10 +792,10 @@ public:
     /** Constructs storage delegate passing @a pParent to the base-class. */
     StorageDelegate(QObject *pParent);
 
-private:
+protected:
 
     /** Paints @a index item with specified @a option using specified @a pPainter. */
-    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    virtual void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const RT_OVERRIDE;
 };
 
 
@@ -1850,16 +1852,22 @@ QVariant StorageModel::data(const QModelIndex &specifiedIndex, int iRole) const
                 return pItem->id();
             return QUuid();
         }
-        case R_ItemPixmap:
+        case R_ItemPixmapDefault:
         {
             if (AbstractItem *pItem = static_cast<AbstractItem*>(specifiedIndex.internalPointer()))
-            {
-                ItemState enmState = ItemState_Default;
-                if (hasChildren(specifiedIndex))
-                    if (QTreeView *view = qobject_cast<QTreeView*>(QObject::parent()))
-                        enmState = view->isExpanded(specifiedIndex) ? ItemState_Expanded : ItemState_Collapsed;
-                return pItem->pixmap(enmState);
-            }
+                return pItem->pixmap(ItemState_Default);
+            return QPixmap();
+        }
+        case R_ItemPixmapCollapsed:
+        {
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(specifiedIndex.internalPointer()))
+                return pItem->pixmap(ItemState_Collapsed);
+            return QPixmap();
+        }
+        case R_ItemPixmapExpanded:
+        {
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(specifiedIndex.internalPointer()))
+                return pItem->pixmap(ItemState_Expanded);
             return QPixmap();
         }
         case R_ItemPixmapRect:
@@ -2771,13 +2779,17 @@ StorageDelegate::StorageDelegate(QObject *pParent)
 
 void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    if (!index.isValid()) return;
+    /* Sanity check: */
+    if (!index.isValid())
+        return;
 
-    /* Initialize variables: */
+    /* Acquire model: */
+    const StorageModel *pModel = qobject_cast<const StorageModel*>(index.model());
+    AssertPtrReturnVoid(pModel);
+
+    /* Fetch options: */
     QStyle::State enmState = option.state;
     QRect rect = option.rect;
-    const StorageModel *pModel = qobject_cast<const StorageModel*>(index.model());
-    Assert(pModel);
 
     pPainter->save();
 
@@ -2795,8 +2807,15 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
     pPainter->translate(rect.x(), rect.y());
 
     /* Draw Item Pixmap: */
+    const bool fHasChildren = enmState & QStyle::State_Children;
+    const bool fOpened = enmState & QStyle::State_Open;
+    QPixmap pixmap = !fHasChildren
+                   ? pModel->data(index, StorageModel::R_ItemPixmapDefault).value<QPixmap>()
+                   : !fOpened
+                   ? pModel->data(index, StorageModel::R_ItemPixmapCollapsed).value<QPixmap>()
+                   : pModel->data(index, StorageModel::R_ItemPixmapExpanded).value<QPixmap>();
     pPainter->drawPixmap(pModel->data(index, StorageModel::R_ItemPixmapRect).toRect().topLeft(),
-                         pModel->data(index, StorageModel::R_ItemPixmap).value<QPixmap>());
+                         pixmap);
 
     /* Draw compressed item name: */
     int iMargin = pModel->data(index, StorageModel::R_Margin).toInt();
