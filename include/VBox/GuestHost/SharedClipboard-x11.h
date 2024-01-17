@@ -115,10 +115,14 @@ typedef struct _SHCLX11CTX
     PSHCLCONTEXT     pFrontend;
     /** Our callback table to use. */
     SHCLCALLBACKS    Callbacks;
-    /** Is an X server actually available?
-     *  Needed for non-interactive systems (i.e. servers) where X11 depedencies are installed,
-     *  but no X11 server is actually running. */
-    bool             fHaveX11;
+    /**
+     * Are we running in headless mode?
+     *
+     * This is a special situation for running on UNIX-y environments, where an
+     * X server could not be available when running on a server without any
+     * desktop environment available, for example.
+     */
+    bool             fHeadless;
     /** The X Toolkit application context structure. */
     XtAppContext     pAppContext;
     /** We have a separate thread to wait for window and clipboard events. */
@@ -261,7 +265,7 @@ typedef SHCLX11RESPONSE *PSHCLX11RESPONSE;
  * @{
  */
 int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParent, bool fHeadless);
-void ShClX11Destroy(PSHCLX11CTX pCtx);
+int ShClX11Destroy(PSHCLX11CTX pCtx);
 int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool grab);
 int ShClX11ThreadStartEx(PSHCLX11CTX pCtx, const char *pszName, bool fGrab);
 int ShClX11ThreadStop(PSHCLX11CTX pCtx);

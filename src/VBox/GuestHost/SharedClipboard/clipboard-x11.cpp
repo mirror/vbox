@@ -333,7 +333,8 @@ static void clipUnregisterContext(PSHCLX11CTX pCtx)
     AssertPtrReturnVoid(pCtx);
 
     Widget pWidget = pCtx->pWidget;
-    AssertPtrReturnVoid(pWidget);
+    if (!pWidget)
+        return;
 
     bool fFound = false;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aContexts); ++i)
@@ -1154,6 +1155,22 @@ static void clipUninitInternal(PSHCLX11CTX pCtx)
 }
 
 /**
+ * Helper function for public X11 Shared Clipboard APIs to know whether we're running in headless mode or not.
+ *
+ * Headless mode either could mean that we don't want to touch the X11 clipboard, or that X simply isn't installed and/or
+ * isn't available (e.g. running on a pure server installation w/o any desktop environment).
+ *
+ * Goal here is to make the X11 API transparent for the caller whether X is available or not.
+ *
+ * @returns \c true if running in headless mode, or \c false if not.
+ * @param   pCtx                The X11 clipboard context to use.
+ */
+DECLINLINE(bool) shClX11HeadlessIsEnabled(PSHCLX11CTX pCtx)
+{
+    return pCtx->fHeadless;
+}
+
+/**
  * Sets the callback table, internal version.
  *
  * @param   pCtx                The clipboard context.
@@ -1195,20 +1212,7 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
-    int rc = VINF_SUCCESS;
-
     RT_BZERO(pCtx, sizeof(SHCLX11CTX));
-
-    if (fHeadless)
-    {
-        /*
-         * If we don't find the DISPLAY environment variable we assume that
-         * we are not connected to an X11 server. Don't actually try to do
-         * this then, just fail silently and report success on every call.
-         * This is important for VBoxHeadless.
-         */
-        LogRel(("Shared Clipboard: X11 DISPLAY variable not set -- disabling clipboard sharing\n"));
-    }
 
     /* Init clipboard cache. */
     ShClCacheInit(&pCtx->Cache);
@@ -1216,7 +1220,7 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
     /* Install given callbacks. */
     shClX11SetCallbacksInternal(pCtx, pCallbacks);
 
-    pCtx->fHaveX11       = !fHeadless;
+    pCtx->fHeadless      = fHeadless;
     pCtx->pFrontend      = pParent;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
@@ -1224,19 +1228,29 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
     pCtx->fXtNeedsUpdate = false;
 #endif
 
+    int rc = VINF_SUCCESS;
+
+    LogRel(("Shared Clipboard: Initializing X11 clipboard (%s mode)\n", fHeadless ? "headless" : "regular"));
+
+    if (!pCtx->fHeadless)
+    {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    ShClTransferHttpServerInit(&pCtx->HttpCtx.HttpServer);
+        rc = ShClTransferHttpServerInit(&pCtx->HttpCtx.HttpServer);
 #endif
 
 #ifdef TESTCASE
-    if (RT_SUCCESS(rc))
-    {
-        /** @todo The testcases currently do not utilize the threading code. So init stuff here. */
-        rc = clipInitInternal(pCtx);
         if (RT_SUCCESS(rc))
-            rc = clipRegisterContext(pCtx);
-    }
+        {
+            /** @todo The testcases currently do not utilize the threading code. So init stuff here. */
+            rc = clipInitInternal(pCtx);
+            if (RT_SUCCESS(rc))
+                rc = clipRegisterContext(pCtx);
+        }
 #endif
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Initializing X11 clipboard failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1245,20 +1259,22 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
 /**
  * Destroys a Shared Clipboard X11 context.
  *
+ * @returns VBox status code.
  * @param   pCtx                The X11 clipboard context to destroy.
  */
-void ShClX11Destroy(PSHCLX11CTX pCtx)
+int ShClX11Destroy(PSHCLX11CTX pCtx)
 {
     if (!pCtx)
-        return;
+        return VINF_SUCCESS;
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
     /* Destroy clipboard cache. */
     ShClCacheDestroy(&pCtx->Cache);
 
+    int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    ShClTransferHttpServerDestroy(&pCtx->HttpCtx.HttpServer);
+    rc = ShClTransferHttpServerDestroy(&pCtx->HttpCtx.HttpServer);
 #endif
 
 #ifdef TESTCASE
@@ -1267,13 +1283,15 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
     clipUninitInternal(pCtx);
 #endif
 
-    if (pCtx->fHaveX11)
+    if (!shClX11HeadlessIsEnabled(pCtx))
     {
         /* We set this to NULL when the event thread exits.  It really should
          * have exited at this point, when we are about to unload the code from
          * memory. */
-        Assert(pCtx->pWidget == NULL);
+        AssertStmt(pCtx->pWidget == NULL, rc = VERR_WRONG_ORDER);
     }
+
+    return rc;
 }
 
 #ifndef TESTCASE
@@ -1289,10 +1307,7 @@ int ShClX11ThreadStartEx(PSHCLX11CTX pCtx, const char *pszName, bool fGrab)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
+    if (shClX11HeadlessIsEnabled(pCtx))
         return VINF_SUCCESS;
 
     pCtx->fGrabClipboardOnStart = fGrab;
@@ -1375,17 +1390,13 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
  */
 int ShClX11ThreadStop(PSHCLX11CTX pCtx)
 {
-    int rc;
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
+    if (shClX11HeadlessIsEnabled(pCtx))
         return VINF_SUCCESS;
 
     LogRel2(("Shared Clipboard: Signalling the X11 event thread to stop\n"));
 
     /* Write to the "stop" pipe. */
-    rc = clipThreadScheduleCall(pCtx, clipThreadSignalStop, (XtPointer)pCtx);
+    int rc = clipThreadScheduleCall(pCtx, clipThreadSignalStop, (XtPointer)pCtx);
     if (RT_FAILURE(rc))
     {
         LogRel(("Shared Clipboard: cannot notify X11 event thread on shutdown with %Rrc\n", rc));
@@ -1984,10 +1995,7 @@ static void shClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval
  */
 int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
+    if (shClX11HeadlessIsEnabled(pCtx))
         return VINF_SUCCESS;
 
     int rc;
@@ -2631,10 +2639,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMax, PSHCLEVENT pEvent)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
+
+    if (shClX11HeadlessIsEnabled(pCtx))
         return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
@@ -2682,6 +2688,13 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
+
+    if (shClX11HeadlessIsEnabled(pCtx))
+    {
+        if (pcbRead)
+            *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
 
     PSHCLEVENT pEvent;
     int rc = ShClEventSourceGenerateAndRegisterEvent(pEventSource, &pEvent);
@@ -2749,10 +2762,7 @@ int ShClX11WriteDataToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS uFmts, const void *
     AssertReturn(cbBuf,  VERR_INVALID_PARAMETER);
     /* pEvent not used yet. */ RT_NOREF(pEvent);
 
-    /*
-     * Immediately return if we are not connected to the X server.
-     */
-    if (!pCtx->fHaveX11)
+    if (shClX11HeadlessIsEnabled(pCtx))
         return VINF_SUCCESS;
 
     int rc = ShClCacheSetMultiple(&pCtx->Cache, uFmts, pvBuf, cbBuf);

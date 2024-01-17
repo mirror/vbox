@@ -590,14 +590,6 @@ static void tstStringFromVBox(RTTEST hTest, PSHCLX11CTX pCtx, const char *pcszTa
                              pcszTarget, valueExp);
 }
 
-static void tstNoX11(PSHCLX11CTX pCtx, const char *pcszTestCtx)
-{
-    uint32_t cbActual = 0;
-    uint8_t  abBuf[TESTCASE_MAX_BUF_SIZE];
-    int rc = ShClX11ReadDataFromX11(pCtx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
-    RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
-}
-
 static void tstStringFromVBoxFailed(RTTEST hTest, PSHCLX11CTX pCtx, const char *pcszTarget)
 {
     RT_NOREF(pCtx);
@@ -877,20 +869,21 @@ int main()
     /*
      * Headless clipboard tests
      */
-    rc = ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, true /* fHeadless */);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTTEST_CHECK_RC_OK(hTest, ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, true /* fHeadless */));
 
     /* Read from X11 */
     RTTestSub(hTest, "reading from X11, headless clipboard");
+
     /* Simple test */
-    tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "",
-                        sizeof("") * 2);
-    tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
-                              sizeof("hello world"), 8);
-    tstNoX11(&X11Ctx, "reading from X11, headless clipboard");
+    tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "", sizeof("") * 2);
+    tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world", sizeof("hello world"), 8);
+    rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
+    RTTESTI_CHECK_MSG(cbActual == 0, ("expected 0 but got %RU32\n", cbActual));
+    RTTESTI_CHECK_MSG(rc == VINF_SUCCESS, ("expected VINF_SUCCESS but got %Rrc, context: %s\n", rc));
 
     /* Read from VBox */
     RTTestSub(hTest, "reading from VBox, headless clipboard");
+
     /* Simple test */
     tstClipEmptyVBox(&X11Ctx, VERR_WRONG_ORDER);
     tstClipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
@@ -898,7 +891,7 @@ int main()
                         sizeof("hello world") * 2);
     tstNoSelectionOwnership(&X11Ctx, "reading from VBox, headless clipboard");
 
-    ShClX11Destroy(&X11Ctx);
+    RTTEST_CHECK_RC_OK(hTest, ShClX11Destroy(&X11Ctx));
     ShClEventSourceDestroy(&g_EventSource);
 
     return RTTestSummaryAndDestroy(hTest);
