@@ -679,25 +679,28 @@ public:
     /** Destructs storage model. */
     virtual ~StorageModel() RT_OVERRIDE;
 
-    /** Returns platform architecture. */
-    KPlatformArchitecture arch() const;
-
     /** Returns row count for the passed @a parentIndex. */
-    int rowCount(const QModelIndex &parentIndex = QModelIndex()) const;
+    virtual int rowCount(const QModelIndex &parentIndex = QModelIndex()) const RT_OVERRIDE;
     /** Returns column count for the passed @a parentIndex. */
-    int columnCount(const QModelIndex &parentIndex = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex &parentIndex = QModelIndex()) const RT_OVERRIDE;
 
     /** Returns root item. */
     QModelIndex root() const;
     /** Returns item specified by @a iRow, @a iColum and @a parentIndex. */
-    QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIndex = QModelIndex()) const;
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIndex = QModelIndex()) const RT_OVERRIDE;
     /** Returns parent item of @a specifiedIndex item. */
-    QModelIndex parent(const QModelIndex &specifiedIndex) const;
+    virtual QModelIndex parent(const QModelIndex &specifiedIndex) const RT_OVERRIDE;
 
     /** Returns model data for @a specifiedIndex and @a iRole. */
-    QVariant data(const QModelIndex &specifiedIndex, int iRole) const;
+    virtual QVariant data(const QModelIndex &specifiedIndex, int iRole) const RT_OVERRIDE;
     /** Defines model data for @a specifiedIndex and @a iRole as @a value. */
-    bool setData(const QModelIndex &specifiedIndex, const QVariant &value, int iRole);
+    virtual bool setData(const QModelIndex &specifiedIndex, const QVariant &value, int iRole) RT_OVERRIDE;
+
+    /** Sorts the contents of model by @a iColumn and @a enmOrder. */
+    virtual void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder) RT_OVERRIDE;
+
+    /** Clears model of all contents. */
+    void clear();
 
     /** Adds controller with certain @a strCtrName, @a enmBus and @a enmType. */
     QModelIndex addController(const QString &strCtrName, KStorageBus enmBus, KStorageControllerType enmType);
@@ -714,8 +717,8 @@ public:
     /** Returns device type of attachment with certain @a uAttId from controller with certain @a uCtrId. */
     KDeviceType attachmentDeviceType(const QUuid &uCtrId, const QUuid &uAttId) const;
 
-    /** Sorts the contents of model by @a iColumn and @a enmOrder. */
-    void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder);
+    /** Returns platform architecture. */
+    KPlatformArchitecture arch() const;
 
     /** Returns chipset type. */
     KChipsetType chipsetType() const;
@@ -724,9 +727,6 @@ public:
 
     /** Defines @a enmConfigurationAccessLevel. */
     void setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel);
-
-    /** Clears model of all contents. */
-    void clear();
 
     /** Returns current controller types. */
     QMap<KStorageBus, int> currentControllerTypes() const;
@@ -1724,11 +1724,6 @@ StorageModel::~StorageModel()
     delete m_pRootItem;
 }
 
-KPlatformArchitecture StorageModel::arch() const
-{
-    return m_pParentEditor ? m_pParentEditor->arch() : KPlatformArchitecture_x86;
-}
-
 int StorageModel::rowCount(const QModelIndex &parentIndex) const
 {
     return !parentIndex.isValid() ? 1 /* only root item has invalid parent */ :
@@ -2455,6 +2450,71 @@ bool StorageModel::setData(const QModelIndex &specifiedIndex, const QVariant &aV
     return false;
 }
 
+void StorageModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
+{
+    /* Count of controller items: */
+    int iItemLevel1Count = m_pRootItem->childCount();
+    /* For each of controller items: */
+    for (int iItemLevel1Pos = 0; iItemLevel1Pos < iItemLevel1Count; ++iItemLevel1Pos)
+    {
+        /* Get iterated controller item: */
+        AbstractItem *pItemLevel1 = m_pRootItem->childItem(iItemLevel1Pos);
+        ControllerItem *pControllerItem = qobject_cast<ControllerItem*>(pItemLevel1);
+        /* Count of attachment items: */
+        int iItemLevel2Count = pItemLevel1->childCount();
+        /* Prepare empty list for sorted attachments: */
+        QList<AbstractItem*> newAttachments;
+        /* For each of attachment items: */
+        for (int iItemLevel2Pos = 0; iItemLevel2Pos < iItemLevel2Count; ++iItemLevel2Pos)
+        {
+            /* Get iterated attachment item: */
+            AbstractItem *pItemLevel2 = pItemLevel1->childItem(iItemLevel2Pos);
+            AttachmentItem *pAttachmentItem = qobject_cast<AttachmentItem*>(pItemLevel2);
+            /* Get iterated attachment storage slot: */
+            StorageSlot attachmentSlot = pAttachmentItem->storageSlot();
+            int iInsertPosition = 0;
+            for (; iInsertPosition < newAttachments.size(); ++iInsertPosition)
+            {
+                /* Get sorted attachment item: */
+                AbstractItem *pNewItemLevel2 = newAttachments[iInsertPosition];
+                AttachmentItem *pNewAttachmentItem = qobject_cast<AttachmentItem*>(pNewItemLevel2);
+                /* Get sorted attachment storage slot: */
+                StorageSlot newAttachmentSlot = pNewAttachmentItem->storageSlot();
+                /* Apply sorting rule: */
+                if (((enmOrder == Qt::AscendingOrder) && (attachmentSlot < newAttachmentSlot)) ||
+                    ((enmOrder == Qt::DescendingOrder) && (attachmentSlot > newAttachmentSlot)))
+                    break;
+            }
+            /* Insert iterated attachment into sorted position: */
+            newAttachments.insert(iInsertPosition, pItemLevel2);
+        }
+
+        /* If that controller has attachments: */
+        if (iItemLevel2Count)
+        {
+            /* We should update corresponding model-indexes: */
+            QModelIndex controllerIndex = index(iItemLevel1Pos, 0, root());
+            pControllerItem->setAttachments(newAttachments);
+            /* That is actually beginMoveRows() + endMoveRows() which
+             * unfortunately become available only in Qt 4.6 version. */
+            beginRemoveRows(controllerIndex, 0, iItemLevel2Count - 1);
+            endRemoveRows();
+            beginInsertRows(controllerIndex, 0, iItemLevel2Count - 1);
+            endInsertRows();
+        }
+    }
+}
+
+void StorageModel::clear()
+{
+    while (m_pRootItem->childCount())
+    {
+        beginRemoveRows(root(), 0, 0);
+        delete m_pRootItem->childItem(0);
+        endRemoveRows();
+    }
+}
+
 QModelIndex StorageModel::addController(const QString &aCtrName, KStorageBus enmBus, KStorageControllerType enmType)
 {
     beginInsertRows(root(), m_pRootItem->childCount(), m_pRootItem->childCount());
@@ -2583,59 +2643,9 @@ KDeviceType StorageModel::attachmentDeviceType(const QUuid &uCtrId, const QUuid 
     return KDeviceType_Null;
 }
 
-void StorageModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
+KPlatformArchitecture StorageModel::arch() const
 {
-    /* Count of controller items: */
-    int iItemLevel1Count = m_pRootItem->childCount();
-    /* For each of controller items: */
-    for (int iItemLevel1Pos = 0; iItemLevel1Pos < iItemLevel1Count; ++iItemLevel1Pos)
-    {
-        /* Get iterated controller item: */
-        AbstractItem *pItemLevel1 = m_pRootItem->childItem(iItemLevel1Pos);
-        ControllerItem *pControllerItem = qobject_cast<ControllerItem*>(pItemLevel1);
-        /* Count of attachment items: */
-        int iItemLevel2Count = pItemLevel1->childCount();
-        /* Prepare empty list for sorted attachments: */
-        QList<AbstractItem*> newAttachments;
-        /* For each of attachment items: */
-        for (int iItemLevel2Pos = 0; iItemLevel2Pos < iItemLevel2Count; ++iItemLevel2Pos)
-        {
-            /* Get iterated attachment item: */
-            AbstractItem *pItemLevel2 = pItemLevel1->childItem(iItemLevel2Pos);
-            AttachmentItem *pAttachmentItem = qobject_cast<AttachmentItem*>(pItemLevel2);
-            /* Get iterated attachment storage slot: */
-            StorageSlot attachmentSlot = pAttachmentItem->storageSlot();
-            int iInsertPosition = 0;
-            for (; iInsertPosition < newAttachments.size(); ++iInsertPosition)
-            {
-                /* Get sorted attachment item: */
-                AbstractItem *pNewItemLevel2 = newAttachments[iInsertPosition];
-                AttachmentItem *pNewAttachmentItem = qobject_cast<AttachmentItem*>(pNewItemLevel2);
-                /* Get sorted attachment storage slot: */
-                StorageSlot newAttachmentSlot = pNewAttachmentItem->storageSlot();
-                /* Apply sorting rule: */
-                if (((enmOrder == Qt::AscendingOrder) && (attachmentSlot < newAttachmentSlot)) ||
-                    ((enmOrder == Qt::DescendingOrder) && (attachmentSlot > newAttachmentSlot)))
-                    break;
-            }
-            /* Insert iterated attachment into sorted position: */
-            newAttachments.insert(iInsertPosition, pItemLevel2);
-        }
-
-        /* If that controller has attachments: */
-        if (iItemLevel2Count)
-        {
-            /* We should update corresponding model-indexes: */
-            QModelIndex controllerIndex = index(iItemLevel1Pos, 0, root());
-            pControllerItem->setAttachments(newAttachments);
-            /* That is actually beginMoveRows() + endMoveRows() which
-             * unfortunately become available only in Qt 4.6 version. */
-            beginRemoveRows(controllerIndex, 0, iItemLevel2Count - 1);
-            endRemoveRows();
-            beginInsertRows(controllerIndex, 0, iItemLevel2Count - 1);
-            endInsertRows();
-        }
-    }
+    return m_pParentEditor ? m_pParentEditor->arch() : KPlatformArchitecture_x86;
 }
 
 KChipsetType StorageModel::chipsetType() const
@@ -2651,16 +2661,6 @@ void StorageModel::setChipsetType(KChipsetType enmChipsetType)
 void StorageModel::setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel)
 {
     m_enmConfigurationAccessLevel = enmConfigurationAccessLevel;
-}
-
-void StorageModel::clear()
-{
-    while (m_pRootItem->childCount())
-    {
-        beginRemoveRows(root(), 0, 0);
-        delete m_pRootItem->childItem(0);
-        endRemoveRows();
-    }
 }
 
 QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
