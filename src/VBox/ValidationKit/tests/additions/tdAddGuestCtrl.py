@@ -3180,14 +3180,23 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         atExec = [];
         if oTestVm.isWindows() or oTestVm.isOS2():
+            if oTestVm.sKind is 'WindowsNT4':
+                # For whatever reason NT4 SP6 (tst-nt4sp6) returns exit code 2 for existing *and* non-existing files.
+                # I've manually checked that on the VM itself, so this is *not* a bug in the Guest Control code.
+                # So we have to tweak the expected exit codes here in order to make the following tests pass.
+                iExitCodeForExistingFiles    = 2
+                iExitCodeForNonExistingFiles = 2
+            else:
+                iExitCodeForExistingFiles    = 0
+                iExitCodeForNonExistingFiles = 1
             atExec += [
                 # Basic execution.
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sFileForReading ]),
-                  tdTestResultExec(fRc = True) ],
+                  tdTestResultExec(fRc = True, iExitCode = iExitCodeForExistingFiles) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir + '\\nonexist.dll' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                  tdTestResultExec(fRc = True, iExitCode = iExitCodeForNonExistingFiles) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 [ tdTestExec(sCmd = sShell, asArgs = [ sShell, sShellOpt, 'wrongcommand' ]),
@@ -3196,17 +3205,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                  tdTestResultExec(fRc = True, iExitCode = iExitCodeForNonExistingFiles) ],
                 # StdErr.
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                  tdTestResultExec(fRc = True, iExitCode = iExitCodeForNonExistingFiles) ],
                 # StdOut + StdErr.
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                  tdTestResultExec(fRc = True, iExitCode = iExitCodeForNonExistingFiles) ],
             ];
 
             if self.oTstDrv.isVersionEqualOrBigger(self.tpAdditionsVer, "7.1.0"):
