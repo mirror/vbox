@@ -1226,6 +1226,8 @@ typedef struct HGCMMsgMountPoints
 
 /**
  * Shuts down / reboots the guest.
+ *
+ * @since 7.0
  */
 typedef struct HGCMMsgShutdown
 {
