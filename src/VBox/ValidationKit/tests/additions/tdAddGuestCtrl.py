@@ -3180,7 +3180,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         atExec = [];
         if oTestVm.isWindows() or oTestVm.isOS2():
-            if oTestVm.sKind is 'WindowsNT4':
+            if oTestVm.sKind == 'WindowsNT4':
                 # For whatever reason NT4 SP6 (tst-nt4sp6) returns exit code 2 for existing *and* non-existing files.
                 # I've manually checked that on the VM itself, so this is *not* a bug in the Guest Control code.
                 # So we have to tweak the expected exit codes here in order to make the following tests pass.
