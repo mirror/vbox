@@ -1351,18 +1351,27 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
         else
         {
             aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
-            if (   fWaitForStdOut
-                && gctlRunSetupHandle(fWaitForStdOut, RTHANDLESTD_OUTPUT, "stdout", enmStdOutTransform, &hVfsStdOut))
+            if (gctlRunSetupHandle(fWaitForStdOut, RTHANDLESTD_OUTPUT, "stdout", enmStdOutTransform, &hVfsStdOut))
             {
-                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
-                aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
+                if (fWaitForStdOut)
+                {
+                    aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
+                    aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
+                }
             }
-            if (   fWaitForStdErr
-                && gctlRunSetupHandle(fWaitForStdErr, RTHANDLESTD_ERROR, "stderr", enmStdErrTransform, &hVfsStdErr))
+            else /* Failed to set up handle, disable. */
+                fWaitForStdOut = false;
+
+            if (gctlRunSetupHandle(fWaitForStdErr, RTHANDLESTD_ERROR, "stderr", enmStdErrTransform, &hVfsStdErr))
             {
-                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
-                aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
+                if (fWaitForStdErr)
+                {
+                    aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
+                    aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
+                }
             }
+            else /* Failed to set up handle, disable. */
+                fWaitForStdErr = false;
         }
     }
     catch (std::bad_alloc &)
