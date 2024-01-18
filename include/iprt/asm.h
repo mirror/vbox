@@ -5170,12 +5170,31 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+    uint32_t u32Spill;
+    __asm__ __volatile__("Lstart_ASMAtomicOrU32_%=:\n\t"
+                         "ldsetal   %w[fBitsToSet], %w[uSpill], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uSpill]     "=&r" (u32Spill)
+                         : [fBitsToSet] "r"   (u32)
+                         : );
+#   else
+    __asm__ __volatile__("Lstart_ASMAtomicOrU32_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "stset     %w[fBitsToSet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         : [fBitsToSet] "r"   (u32)
+                         : );
+#   endif
+#  else
     /* For more on Orr see https://en.wikipedia.org/wiki/Orr_(Catch-22) ;-) */
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicOr32, pu32, DMB_SY,
                                            "orr %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "orr %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
 
+#  endif
 # else
 #  error "Port me"
 # endif
@@ -5194,10 +5213,25 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
 DECLINLINE(uint32_t) ASMAtomicOrExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicOrExU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldsetal   %w[fBitsToSet], %w[uOldRet], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldset     %w[fBitsToSet], %w[uOldRet], %[pMem]\n\t"
+#   endif
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldRet]    "=&r" (u32OldRet)
+                         : [fBitsToSet] "r"   (u32)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicOrEx32, pu32, DMB_SY,
                                            "orr %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "orr %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+#   endif
     return u32OldRet;
 
 #else
@@ -5249,12 +5283,31 @@ DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT
                          : "cc");
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+    uint64_t u64Spill;
+    __asm__ __volatile__("Lstart_ASMAtomicOrU64_%=:\n\t"
+                         "ldsetal   %[fBitsToSet], %[uSpill], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uSpill]     "=&r" (u64Spill)
+                         : [fBitsToSet] "r"   (u64)
+                         : );
+#   else
+    __asm__ __volatile__("Lstart_ASMAtomicOrU64_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "stset     %[fBitsToSet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         : [fBitsToSet] "r"   (u64)
+                         : );
+#   endif
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicOrU64, pu64, DMB_SY,
                                            "orr %[uNew], %[uNew], %[uVal]\n\t"
                                            ,
                                            "orr %[uNew], %[uNew], %[uVal]\n\t"
                                            "orr %H[uNew], %H[uNew], %H[uVal]\n\t",
                                            [uVal] "r" (u64));
+#  endif
 
 # else
     for (;;)
@@ -5322,11 +5375,30 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+    uint32_t u32Spill;
+    __asm__ __volatile__("Lstart_ASMAtomicAndU32_%=:\n\t"
+                         "ldclral   %w[fBitsToClear], %w[uSpill], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu32)
+                         , [uSpill]         "=&r" (u32Spill)
+                         : [fBitsToClear]   "r"   (~u32)
+                         : );
+#   else
+    __asm__ __volatile__("Lstart_ASMAtomicAndU32_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "stclr     %w[fBitsToClear], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu32)
+                         : [fBitsToClear]   "r"   (~u32)
+                         : );
+#   endif
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicAnd32, pu32, DMB_SY,
                                            "and %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "and %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
 
+#  endif
 # else
 #  error "Port me"
 # endif
@@ -5344,10 +5416,25 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 DECLINLINE(uint32_t) ASMAtomicAndExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicAndExU32_%=:\n\t"
+#  if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldclral   %w[fBitsToClear], %w[uOldRet], %[pMem]\n\t"
+#  else
+                         RTASM_ARM_DMB_SY
+                         "ldclr     %w[fBitsToClear], %w[uOldRet], %[pMem]\n\t"
+#  endif
+                         : [pMem]           "+Q"  (*pu32)
+                         , [uOldRet]        "=&r" (u32OldRet)
+                         : [fBitsToClear]   "r"   (~u32)
+                         : );
+# else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicAndEx32, pu32, DMB_SY,
                                            "and %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "and %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 #else
@@ -5399,12 +5486,31 @@ DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) R
                          : "cc");
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+    uint64_t u64Spill;
+    __asm__ __volatile__("Lstart_ASMAtomicAndU64_%=:\n\t"
+                         "ldclral   %[fBitsToClear], %[uSpill], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu64)
+                         , [uSpill]         "=&r" (u64Spill)
+                         : [fBitsToClear]   "r"   (~u64)
+                         : );
+#   else
+    __asm__ __volatile__("Lstart_ASMAtomicAndU64_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "stclr     %[fBitsToClear], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu64)
+                         : [fBitsToClear]   "r"   (~u64)
+                         : );
+#   endif
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicAndU64, pu64, DMB_SY,
                                            "and %[uNew], %[uNew], %[uVal]\n\t"
                                            ,
                                            "and %[uNew], %[uNew], %[uVal]\n\t"
                                            "and %H[uNew], %H[uNew], %H[uVal]\n\t",
                                            [uVal] "r" (u64));
+#  endif
 
 # else
     for (;;)
@@ -5472,10 +5578,29 @@ DECLINLINE(void) ASMAtomicXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+    uint32_t u32Spill;
+    __asm__ __volatile__("Lstart_ASMAtomicXorU32_%=:\n\t"
+                         "ldeoral   %w[fBitMask], %w[uSpill], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uSpill]     "=&r" (u32Spill)
+                         : [fBitMask]   "r"   (u32)
+                         : );
+#   else
+    __asm__ __volatile__("Lstart_ASMAtomicXorU32_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "steor     %w[fBitMask], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         : [fBitMask]   "r"   (u32)
+                         : );
+#   endif
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicXor32, pu32, DMB_SY,
                                            "eor %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "eor %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+#  endif
 
 # else
 #  error "Port me"
@@ -5495,10 +5620,25 @@ DECLINLINE(void) ASMAtomicXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 DECLINLINE(uint32_t) ASMAtomicXorExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicXorExU32_%=:\n\t"
+#  if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldeoral   %w[fBitMask], %w[uOldRet], %[pMem]\n\t"
+#  else
+                         RTASM_ARM_DMB_SY
+                         "ldeor     %w[fBitMask], %w[uOldRet], %[pMem]\n\t"
+#  endif
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldRet]    "=&r" (u32OldRet)
+                         : [fBitMask]   "r"   (u32)
+                         : );
+# else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicXorEx32, pu32, DMB_SY,
                                            "eor %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "eor %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 #else
@@ -5561,10 +5701,19 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: stset=1974  vs non-lse=6271 */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicUoOrU32_%=:\n\t"
+                         "stset     %w[fBitsToSet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         : [fBitsToSet] "r"   (u32)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoOrU32, pu32, NO_BARRIER,
                                            "orr %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "orr %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+#  endif
 
 # else
 #  error "Port me"
@@ -5584,10 +5733,20 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
 DECLINLINE(uint32_t) ASMAtomicUoOrExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicOrExU32_%=:\n\t"
+                         "ldset     %w[fBitsToSet], %w[uOldRet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldRet]    "=&r" (u32OldRet)
+                         : [fBitsToSet] "r"   (u32)
+                         : );
+# else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoOrExU32, pu32, NO_BARRIER,
                                            "orr %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "orr %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 #else
@@ -5631,12 +5790,20 @@ DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) 
                          : "cc");
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicUoOrU64_%=:\n\t"
+                         "stset     %[fBitsToSet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         : [fBitsToSet] "r"   (u64)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicUoOrU64, pu64, NO_BARRIER,
                                            "orr %[uNew], %[uNew], %[uVal]\n\t"
                                            ,
                                            "orr %[uNew], %[uNew], %[uVal]\n\t"
                                            "orr %H[uNew], %H[uNew], %H[uVal]\n\t",
                                            [uVal] "r" (u64));
+#  endif
 
 # else
     for (;;)
@@ -5701,10 +5868,19 @@ DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: stclr=1884 vs non-lse=6299 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicUoAndU32_%=:\n\t"
+                         "stclr     %w[fBitsToClear], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu32)
+                         : [fBitsToClear]   "r"   (~u32)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoAnd32, pu32, NO_BARRIER,
                                            "and %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "and %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+#  endif
 
 # else
 #  error "Port me"
@@ -5724,10 +5900,20 @@ DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 DECLINLINE(uint32_t) ASMAtomicUoAndExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicAndExU32_%=:\n\t"
+                         "ldclr     %w[fBitsToClear], %w[uOldRet], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu32)
+                         , [uOldRet]        "=&r" (u32OldRet)
+                         : [fBitsToClear]   "r"   (~u32)
+                         : );
+# else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoAndEx32, pu32, NO_BARRIER,
                                            "and %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "and %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 #else
@@ -5771,12 +5957,20 @@ DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
                          : "cc");
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicUoAndU64_%=:\n\t"
+                         "stclr     %[fBitsToClear], %[pMem]\n\t"
+                         : [pMem]           "+Q"  (*pu64)
+                         : [fBitsToClear]   "r"   (~u64)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicUoAndU64, pu64, NO_BARRIER,
                                            "and %[uNew], %[uNew], %[uVal]\n\t"
                                            ,
                                            "and %[uNew], %[uNew], %[uVal]\n\t"
                                            "and %H[uNew], %H[uNew], %H[uVal]\n\t",
                                            [uVal] "r" (u64));
+#  endif
 
 # else
     for (;;)
@@ -5841,10 +6035,18 @@ DECLINLINE(void) ASMAtomicUoXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicUoXorU32_%=:\n\t"
+                         "steor     %w[fBitMask], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         : [fBitMask]   "r"   (u32)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoXorU32, pu32, NO_BARRIER,
                                            "eor %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "eor %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+#  endif
 
 # else
 #  error "Port me"
@@ -5864,10 +6066,20 @@ DECLINLINE(void) ASMAtomicUoXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 DECLINLINE(uint32_t) ASMAtomicUoXorExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicUoXorExU32_%=:\n\t"
+                         "ldeor     %w[fBitMask], %w[uOldRet], %[pMem]\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldRet]    "=&r" (u32OldRet)
+                         : [fBitMask]   "r"   (u32)
+                         : );
+# else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoXorExU32, pu32, NO_BARRIER,
                                            "eor %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "eor %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 #else
