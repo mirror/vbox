@@ -1168,10 +1168,28 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgU8_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB) /* M1 bench: casalb=5625 vs dmb+casb=1597 vs non-lse=5623 (ps/call) */
+                         "casalb    %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "casb      %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %w[uOldActual], %w[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu8)
+                         , [uOldActual] "=&r" (u32Spill)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  ((uint32_t)u8New)
+                         , [uOldOrg]     "r"  ((uint32_t)u8Old)
+                         , "[uOldActual]"     ((uint32_t)u8Old)
+                         : "cc");
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -1180,7 +1198,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrexb    %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "strexbeq  %[rc], %[uNew], %[pMem]\n\t"
@@ -1190,7 +1208,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1200,6 +1218,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          , "[fXchg]" (0)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return fXchg.f;
 
 # else
@@ -1308,10 +1327,30 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
+    /* M1 bench:   match: casal= 6592 vs dmb+cas= 1562 vs non-lse=5634 (ps/call)
+                mismatch: casal=18794 vs dmb+cas=19697 vs non-lse=2499 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casal     %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "cas       %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %w[uOldActual], %w[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldActual] "=&r" (u32Spill)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  (u32New)
+                         , [uOldOrg]     "r"  (u32Old)
+                         , "[uOldActual]"     (u32Old)
+                         : "cc");
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -1320,7 +1359,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrex     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "strexeq   %[rc], %[uNew], %[pMem]\n\t"
@@ -1330,7 +1369,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1340,6 +1379,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          , "[fXchg]" (0)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#   endif
     return fXchg.f;
 
 # else
@@ -1473,10 +1513,30 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     union { uint32_t u; bool f; } fXchg;
     uint64_t u64Spill;
+    /* M1 bench:   match: casal= 6599 vs dmb+cas= 1565 vs non-lse=5000 (ps/call)
+                mismatch: casal=18797 vs dmb+cas=19731 vs non-lse=2512 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgU75_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casal     %[uOldActual], %[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "cas       %[uOldActual], %[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %[uOldActual], %[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uOldActual] "=&r" (u64Spill)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  (u64New)
+                         , [uOldOrg]     "r"  (u64Old)
+                         , "[uOldActual]"     (u64Old)
+                         : "cc");
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "cmp       %[uOld], %[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -1485,7 +1545,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "teqeq     %H[uOld], %H[uCmp]\n\t"
@@ -1496,7 +1556,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64Spill)
                          , [rc]     "=&r" (rcSpill)
@@ -1506,6 +1566,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          , "[fXchg]" (0)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return fXchg.f;
 
 # else
@@ -1819,12 +1880,35 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 bench:   match: casalb= 6594 vs dmb+casb= 1561 vs non-lse=5051 (ps/call)
+                mismatch: casalb=15346 vs dmb+casb=16349 vs non-lse=2505 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    union { uint32_t u; bool f; } fXchg;
+    uint32_t u32Actual;
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgExU8_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casalb    %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "casb      %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %w[uOldActual], %w[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu8)
+                         , [uOldActual] "=&r" (u32Actual)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  ((uint32_t)u8New)
+                         , [uOldOrg]     "r"  ((uint32_t)u8Old)
+                         , "[uOldActual]"     ((uint32_t)u8Old)
+                         : "cc");
+    *pu8Old = (uint8_t)u32Actual;
+#  else
     union { uint8_t u; bool f; } fXchg;
     uint8_t u8ActualOld;
     uint8_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -1833,7 +1917,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrexb     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "strexbeq  %[rc], %[uNew], %[pMem]\n\t"
@@ -1843,7 +1927,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u8ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -1854,6 +1938,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
     *pu8Old = u8ActualOld;
+# endif
     return fXchg.f;
 
 # else
@@ -1947,12 +2032,35 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 bench:   match: casalh= 6577 vs dmb+cash= 1608 vs non-lse=5078 (ps/call)
+                mismatch: casalh=18791 vs dmb+cash=19721 vs non-lse=2543 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    union { uint32_t u; bool f; } fXchg;
+    uint32_t u32Actual;
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgExU16_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casalh    %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "cash      %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %w[uOldActual], %w[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu16)
+                         , [uOldActual] "=&r" (u32Actual)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  ((uint32_t)u16New)
+                         , [uOldOrg]     "r"  ((uint32_t)u16Old)
+                         , "[uOldActual]"     ((uint32_t)u16Old)
+                         : "cc");
+    *pu16Old = (uint16_t)u32Actual;
+#  else
     union { uint16_t u; bool f; } fXchg;
     uint16_t u16ActualOld;
     uint16_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxrh    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -1961,7 +2069,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrexh     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "strexheq  %[rc], %[uNew], %[pMem]\n\t"
@@ -1971,7 +2079,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu16)
                          , [uOld]   "=&r" (u16ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -1982,6 +2090,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
     *pu16Old = u16ActualOld;
+#  endif
     return fXchg.f;
 
 # else
@@ -2076,11 +2185,31 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     union { uint32_t u; bool f; } fXchg;
+    /* M1 bench:   match: casal= 6590 vs dmb+cas= 1564 vs non-lse=5033 (ps/call)
+                mismatch: casal=18790 vs dmb+cas=19711 vs non-lse=2503 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgExU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casal     %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "cas       %w[uOldActual], %w[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %w[uOldActual], %w[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldActual] "=&r" (*pu32Old)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  (u32New)
+                         , [uOldOrg]     "r"  (u32Old)
+                         , "[uOldActual]"     (u32Old)
+                         : "cc");
+#  else
     uint32_t u32ActualOld;
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -2089,7 +2218,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrex     %[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "strexeq   %[rc], %[uNew], %[pMem]\n\t"
@@ -2099,7 +2228,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -2110,6 +2239,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
     *pu32Old = u32ActualOld;
+#  endif
     return fXchg.f;
 
 # else
@@ -2249,11 +2379,31 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     union { uint32_t u; bool f; } fXchg;
+    /* M1 bench:   match: casal= 6606 vs dmb+cas= 1565 vs non-lse=5006 (ps/call)
+                mismatch: casal=18786 vs dmb+cas=19718 vs non-lse=2503 (ps/call) */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    __asm__ __volatile__("Lstart_ASMAtomicCmpXchgExU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "casal     %[uOldActual], %[uNew], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "cas       %[uOldActual], %[uNew], %[pMem]\n\t"
+#   endif
+                         "cmp       %[uOldActual], %[uOldOrg]\n\t"
+                         "cset      %w[fXchg], eq\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uOldActual] "=&r" (*pu64Old)
+                         , [fXchg]      "=&r" (fXchg.u)
+                         : [uNew]        "r"  (u64New)
+                         , [uOldOrg]     "r"  (u64Old)
+                         , "[uOldActual]"     (u64Old)
+                         : "cc");
+#  else
     uint64_t u64ActualOld;
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "cmp       %[uOld], %[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
@@ -2262,7 +2412,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "mov       %w[fXchg], #1\n\t"
                          "1:\n\t"
                          "clrex\n\t"
-#  else
+#   else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
                          "teq       %[uOld], %[uCmp]\n\t"
                          "teqeq     %H[uOld], %H[uCmp]\n\t"
@@ -2273,7 +2423,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "mov       %[fXchg], #1\n\t"
                          "1:\n\t"
                          /** @todo clrexne on armv7? */
-#  endif
+#   endif
                          : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64ActualOld)
                          , [rc]     "=&r" (rcSpill)
@@ -2284,6 +2434,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
     *pu64Old = u64ActualOld;
+#  endif
     return fXchg.f;
 
 # else
