@@ -2553,6 +2553,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                             TMTimerPollVoid(pVM, pVCpu);
 #endif
                     }
+                    else
+                        rc = VINF_EM_RESCHEDULE; /* Need to check whether we can run in HM or NEM again. */
                     fFFDone = false;
                     break;
                 }
