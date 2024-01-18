@@ -525,25 +525,39 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
 
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    /* SWPALB is ~40% more expensive than the non-LSE variant (M1), but since we
+       have the barrier we shouldn't need that, right? Ordering should be taken
+       care of by the DMB. The SWPB is rather cheap (~70% faster). */
+    __asm__ __volatile__("Lstart_ASMAtomicXchgU8_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "swpb      %w[uNew], %w[uOld], %[pMem]\n\t"
+                         : [pMem] "+Q" (*pu8)
+                         , [uOld] "=&r" (uOld)
+                         : [uNew] "r" ((uint32_t)u8)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : );
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicXchgU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU8_%=\n\t"
-#  else
+#   else
                          "ldrexb    %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexb    %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicXchgU8_%=\n\t"
-#  endif
+#   endif
                          : [pMem] "+Q" (*pu8)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r" ((uint32_t)u8)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return (uint8_t)uOld;
 
 # else
@@ -622,25 +636,40 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
 
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    /* SWPALH is ~40% more expensive than the non-LSE variant on an M1, 20%
+       slower if we remove the barrier.  But since we have the barrier we
+       shouldn't need that, right? Ordering should be taken care of by the DMB.
+       The SWPH is rather cheap (~70% faster). */
+    __asm__ __volatile__("Lstart_ASMAtomicXchgU16_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "swph      %w[uNew], %w[uOld], %[pMem]\n\t"
+                         : [pMem] "+Q" (*pu16)
+                         , [uOld] "=&r" (uOld)
+                         : [uNew] "r" ((uint32_t)u16)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : );
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicXchgU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxrh    %w[uOld], %[pMem]\n\t"
                          "stlxrh    %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU16_%=\n\t"
-#  else
+#   else
                          "ldrexh    %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexh    %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicXchgU16_%=\n\t"
-#  endif
+#   endif
                          : [pMem] "+Q" (*pu16)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r" ((uint32_t)u16)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return (uint16_t)uOld;
 
 # else
@@ -708,25 +737,40 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
 
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    /* SWPAL is ~40% more expensive than the non-LSE variant on an M1, 20%
+       slower if we remove the barrier.  But since we have the barrier we
+       shouldn't need that, right? Ordering should be taken care of by the DMB.
+       The SWP is rather cheap (~70% faster). */
+    __asm__ __volatile__("Lstart_ASMAtomicXchgU32_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "swp       %w[uNew], %w[uOld], %[pMem]\n\t"
+                         : [pMem] "+Q" (*pu32)
+                         , [uOld] "=&r" (uOld)
+                         : [uNew] "r" (u32)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : );
+#  else
     uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicXchgU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU32_%=\n\t"
-#  else
+#   else
                          "ldrex     %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strex     %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicXchgU32_%=\n\t"
-#  endif
+#   endif
                          : [pMem] "+Q"  (*pu32)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r"   (u32)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return uOld;
 
 # else
@@ -833,26 +877,41 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
     return u64;
 
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
-    uint32_t rcSpill;
     uint64_t uOld;
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    /* SWPAL is ~40% more expensive than the non-LSE variant on an M1, 20%
+       slower if we remove the barrier.  But since we have the barrier we
+       shouldn't need that, right? Ordering should be taken care of by the DMB.
+       The SWP is rather cheap (~70% faster). */
+    __asm__ __volatile__("Lstart_ASMAtomicXchgU64_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "swp       %[uNew], %[uOld], %[pMem]\n\t"
+                         : [pMem] "+Q" (*pu64)
+                         , [uOld] "=&r" (uOld)
+                         : [uNew] "r" (u64)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : );
+#  else
+    uint32_t rcSpill;
     __asm__ __volatile__("Ltry_again_ASMAtomicXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
-#  if defined(RT_ARCH_ARM64)
+#   if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
                          "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU64_%=\n\t"
-#  else
+#   else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexd    %[rc], %[uNew], %H[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
                          "bne       Ltry_again_ASMAtomicXchgU64_%=\n\t"
-#  endif
+#   endif
                          : [pMem] "+Q"  (*pu64)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r"   (u64)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : "cc");
+#  endif
     return uOld;
 
 # else
