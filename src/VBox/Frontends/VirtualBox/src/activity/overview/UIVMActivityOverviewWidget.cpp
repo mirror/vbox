@@ -43,6 +43,8 @@
 #include "QIDialogButtonBox.h"
 #include "QIToolBar.h"
 #include "UIActionPoolManager.h"
+#include "UICloudEntityKey.h"
+#include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataDefs.h"
@@ -59,6 +61,7 @@
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
+#include "CCloudClient.h"
 #include "CConsole.h"
 #include "CMachine.h"
 #include "CMachineDebugger.h"
@@ -341,6 +344,7 @@ private slots:
     void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
     void sltMachineRegistered(const QUuid &uId, bool fRegistered);
     void sltTimeout();
+    void sltCloudUpdateTimeout();
 
 private:
 
@@ -351,10 +355,12 @@ private:
     void addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
+    void obtainCloudClientList();
 
     QVector<UIActivityOverviewItem> m_itemList;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
+    QTimer *m_pCloudUpdateTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
        QVector<QString> m_nameList;
@@ -370,6 +376,7 @@ private:
     QColor m_defaultViewFontColor;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
+    QVector<CCloudClient> m_comCloudClients;
 };
 
 
@@ -960,6 +967,7 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
 UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
+    , m_pCloudUpdateTimer(new QTimer(this))
     , m_fShouldUpdate(true)
 {
     initialize();
@@ -980,6 +988,13 @@ void UIActivityOverviewModel::initialize()
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltTimeout);
         m_pTimer->start(1000);
     }
+
+    if (m_pCloudUpdateTimer)
+    {
+        connect(m_pCloudUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltCloudUpdateTimeout);
+        m_pCloudUpdateTimer->start(10 * 1000);
+    }
+    obtainCloudClientList();
 }
 
 int UIActivityOverviewModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
@@ -1248,6 +1263,70 @@ void UIActivityOverviewModel::sltTimeout()
     }
     emit sigDataUpdate();
     emit sigHostStatsUpdate(m_hostStats);
+}
+
+void UIActivityOverviewModel::obtainCloudClientList()
+{
+    /* Acquire Cloud Profile Manager restrictions: */
+    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
+
+    foreach (CCloudProvider comCloudProvider, listCloudProviders())
+    {
+        /* Skip if we have nothing to populate: */
+        if (comCloudProvider.isNull())
+            continue;
+
+        /* Acquire provider id: */
+        QUuid uProviderId;
+        if (!cloudProviderId(comCloudProvider, uProviderId))
+            continue;
+
+        /* Acquire provider short name: */
+        QString strProviderShortName;
+        if (!cloudProviderShortName(comCloudProvider, strProviderShortName))
+            continue;
+
+        /* Make sure this provider isn't restricted: */
+        const QString strProviderPath = QString("/%1").arg(strProviderShortName);
+        if (restrictions.contains(strProviderPath))
+            continue;
+
+        /* Acquire list of profiles: */
+        const QVector<CCloudProfile> profiles = listCloudProfiles(comCloudProvider);
+        if (profiles.isEmpty())
+            continue;
+
+        foreach (CCloudProfile comCloudProfile, profiles)
+        {
+            /* Skip if we have nothing to populate: */
+            if (comCloudProfile.isNull())
+                continue;
+
+            /* Acquire profile name: */
+            QString strProfileName;
+            if (!cloudProfileName(comCloudProfile, strProfileName))
+                continue;
+
+            /* Make sure this profile isn't restricted: */
+            const QString strProfilePath = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+            if (restrictions.contains(strProfilePath))
+                continue;
+
+
+            QString strErrorMessage;
+            /* Create read cloud machine list task: */
+            const UICloudEntityKey cloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
+            CCloudClient comCloudClient = cloudClientByName(cloudProfileKey.m_strProviderShortName,
+                                                            cloudProfileKey.m_strProfileName,
+                                                            strErrorMessage);
+            if (strErrorMessage.isEmpty() && comCloudClient.isOk())
+                m_comCloudClients << comCloudClient;
+        }
+    }
+}
+
+void UIActivityOverviewModel::sltCloudUpdateTimeout()
+{
 }
 
 void UIActivityOverviewModel::setupPerformanceCollector()
