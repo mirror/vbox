@@ -103,6 +103,11 @@
  * Use instructions from the FEAT_LSE set to implement atomic operations,
  * assuming that the host CPU always supports these. */
 # define RTASM_ARM64_USE_FEAT_LSE 1
+/** @def RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB
+ * Set to use DMB w/o barrier in most places and rely on the acquire-release
+ * aspects to do the serializing.   The assumption is that the tstRTInline
+ * benchmark may be skewing the results testing an unusual scenario. */
+# define RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB 1
 #endif
 
 
@@ -530,12 +535,15 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
        have the barrier we shouldn't need that, right? Ordering should be taken
        care of by the DMB. The SWPB is rather cheap (~70% faster). */
     __asm__ __volatile__("Lstart_ASMAtomicXchgU8_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "swpalb    %w[uNew], %w[uOld], %[pMem]\n\t"
+#   else
                          RTASM_ARM_DMB_SY
                          "swpb      %w[uNew], %w[uOld], %[pMem]\n\t"
+#   endif
                          : [pMem] "+Q" (*pu8)
                          , [uOld] "=&r" (uOld)
                          : [uNew] "r" ((uint32_t)u8)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : );
 #  else
     uint32_t rcSpill;
@@ -642,12 +650,15 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
        shouldn't need that, right? Ordering should be taken care of by the DMB.
        The SWPH is rather cheap (~70% faster). */
     __asm__ __volatile__("Lstart_ASMAtomicXchgU16_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "swpalh    %w[uNew], %w[uOld], %[pMem]\n\t"
+#   else
                          RTASM_ARM_DMB_SY
                          "swph      %w[uNew], %w[uOld], %[pMem]\n\t"
+#   endif
                          : [pMem] "+Q" (*pu16)
                          , [uOld] "=&r" (uOld)
                          : [uNew] "r" ((uint32_t)u16)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : );
 #  else
     uint32_t rcSpill;
@@ -743,12 +754,15 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
        shouldn't need that, right? Ordering should be taken care of by the DMB.
        The SWP is rather cheap (~70% faster). */
     __asm__ __volatile__("Lstart_ASMAtomicXchgU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "swpal     %w[uNew], %w[uOld], %[pMem]\n\t"
+#   else
                          RTASM_ARM_DMB_SY
                          "swp       %w[uNew], %w[uOld], %[pMem]\n\t"
+#   endif
                          : [pMem] "+Q" (*pu32)
                          , [uOld] "=&r" (uOld)
                          : [uNew] "r" (u32)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : );
 #  else
     uint32_t rcSpill;
@@ -884,12 +898,15 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
        shouldn't need that, right? Ordering should be taken care of by the DMB.
        The SWP is rather cheap (~70% faster). */
     __asm__ __volatile__("Lstart_ASMAtomicXchgU64_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "swpal     %[uNew], %[uOld], %[pMem]\n\t"
+#   else
                          RTASM_ARM_DMB_SY
                          "swp       %[uNew], %[uOld], %[pMem]\n\t"
+#   endif
                          : [pMem] "+Q" (*pu64)
                          , [uOld] "=&r" (uOld)
                          : [uNew] "r" (u64)
-                           RTASM_ARM_DMB_SY_COMMA_IN_REG
                          : );
 #  else
     uint32_t rcSpill;
