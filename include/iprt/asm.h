@@ -4434,10 +4434,26 @@ DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: ldaddal=6907 vs dmb+ldadd=2114 vs non-lse=6249 (ps/call)  */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicAddU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %w[uAddend], %w[uOldActual], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %w[uAddend], %w[uOldActual], %[pMem]\n\t"
+#   endif
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uOldActual] "=&r" (u32OldRet)
+                         : [uAddend]    "r"   (u32)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicAddU32, pu32, DMB_SY,
                                            "add %w[uNew], %w[uOld], %w[uVal]\n\t",
                                            "add %[uNew], %[uOld], %[uVal]\n\t",
                                            [uVal] "r" (u32));
+# endif
     return u32OldRet;
 
 # else
@@ -4491,12 +4507,27 @@ DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u6
     return u64;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint64_t u64OldRet;
+    __asm__ __volatile__("Lstart_ASMAtomicAddU64_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %[uAddend], %[uOldActual], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %[uAddend], %[uOldActual], %[pMem]\n\t"
+#   endif
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uOldActual] "=&r" (u64OldRet)
+                         : [uAddend]    "r"   (u64)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_64(ASMAtomicAddU64, pu64, DMB_SY,
                                            "add %[uNew], %[uOld], %[uVal]\n\t"
                                            ,
                                            "add %[uNew], %[uOld], %[uVal]\n\t"
                                            "adc %H[uNew], %H[uOld], %H[uVal]\n\t",
                                            [uVal] "r" (u64));
+#  endif
     return u64OldRet;
 
 # else
@@ -4765,10 +4796,27 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: ldaddal=6887 vs dmb+ldadd=2117 vs non-lse=6247 (ps/call)  */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicIncU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+#   endif
+                         "add       %w[uNewRet], %w[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uNewRet]    "=&r" (u32NewRet)
+                         : [uAddend]    "r"   ((uint32_t)1)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicIncU32, pu32, DMB_SY,
                                            "add %w[uNew], %w[uNew], #1\n\t",
                                            "add %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
                                            "X" (0) /* dummy */);
+#  endif
     return u32NewRet;
 
 # else
@@ -4820,12 +4868,28 @@ DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
     return u64 + 1;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint64_t u64NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicIncU64_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %[uAddend], %[uNewRet], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %[uAddend], %[uNewRet], %[pMem]\n\t"
+#   endif
+                         "add       %[uNewRet], %[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uNewRet]    "=&r" (u64NewRet)
+                         : [uAddend]    "r"   ((uint64_t)1)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicIncU64, pu64, DMB_SY,
                                            "add %[uNew], %[uNew], #1\n\t"
                                            ,
                                            "add %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */
                                            "adc %H[uNew], %H[uNew], %[uZeroVal]\n\t",
                                            RTASM_ARM_PICK_6432("X" (0) /* dummy */, [uZeroVal] "r" (0)) );
+#  endif
     return u64NewRet;
 
 # else
@@ -4929,10 +4993,27 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
 # endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: ldaddal=6887 vs dmb+ldadd=2120 vs non-lse=6260 (ps/call)  */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicDecU32_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+#   endif
+                         "sub       %w[uNewRet], %w[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uNewRet]    "=&r" (u32NewRet)
+                         : [uAddend]    "r"   (~(uint32_t)0)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicDecU32, pu32, DMB_SY,
                                            "sub %w[uNew], %w[uNew], #1\n\t",
                                            "sub %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
                                            "X" (0) /* dummy */);
+#  endif
     return u32NewRet;
 
 # else
@@ -4984,12 +5065,28 @@ DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
     return u64-1;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint64_t u64NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicDecU64_%=:\n\t"
+#   if defined(RTASM_ARM64_USE_FEAT_LSE_WITHOUT_DMB)
+                         "ldaddal   %[uAddend], %[uNewRet], %[pMem]\n\t"
+#   else
+                         RTASM_ARM_DMB_SY
+                         "ldadd     %[uAddend], %[uNewRet], %[pMem]\n\t"
+#   endif
+                         "sub       %[uNewRet], %[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu64)
+                         , [uNewRet]    "=&r" (u64NewRet)
+                         : [uAddend]    "r"   (~(uint64_t)0)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicDecU64, pu64, DMB_SY,
                                            "sub %[uNew], %[uNew], #1\n\t"
                                            ,
                                            "sub %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */
                                            "sbc %H[uNew], %H[uNew], %[uZeroVal]\n\t",
                                            RTASM_ARM_PICK_6432("X" (0) /* dummy */, [uZeroVal] "r" (0)) );
+# endif
     return u64NewRet;
 
 # else
@@ -5834,10 +5931,22 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: ldadd=2031 vs non-lse=6301 (ps/call)  */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicUoIncU32_%=:\n\t"
+                         "ldadd     %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+                         "add       %w[uNewRet], %w[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uNewRet]    "=&r" (u32NewRet)
+                         : [uAddend]    "r"   ((uint32_t)1)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoIncU32, pu32, NO_BARRIER,
                                            "add %w[uNew], %w[uNew], #1\n\t",
                                            "add %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
                                            "X" (0) /* dummy */);
+#  endif
     return u32NewRet;
 
 # else
@@ -5888,10 +5997,22 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* M1 benchmark: ldadd=2101 vs non-lse=6268 (ps/call)  */
+#  if defined(RTASM_ARM64_USE_FEAT_LSE)
+    uint32_t u32NewRet;
+    __asm__ __volatile__("Lstart_ASMAtomicUoDecU32_%=:\n\t"
+                         "ldadd     %w[uAddend], %w[uNewRet], %[pMem]\n\t"
+                         "sub       %w[uNewRet], %w[uNewRet], #1\n\t"
+                         : [pMem]       "+Q"  (*pu32)
+                         , [uNewRet]    "=&r" (u32NewRet)
+                         : [uAddend]    "r"   (~(uint32_t)0)
+                         : );
+#  else
     RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoDecU32, pu32, NO_BARRIER,
                                            "sub %w[uNew], %w[uNew], #1\n\t",
                                            "sub %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
                                            "X" (0) /* dummy */);
+#  endif
     return u32NewRet;
 
 # else
