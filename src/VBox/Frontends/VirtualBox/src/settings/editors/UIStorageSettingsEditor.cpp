@@ -3172,13 +3172,8 @@ void UIStorageSettingsEditor::setValue(const QList<UIDataStorageController> &con
         }
     }
 
-    /* Choose first controller as current: */
-    AssertPtrReturnVoid(m_pTreeViewStorage);
-    const QAbstractItemModel *pModel = m_pTreeViewStorage->model();
-    AssertPtrReturnVoid(pModel);
-    const QModelIndex rootIndex = pModel->index(0, 0);
-    if (pModel->rowCount(rootIndex) > 0)
-        m_pTreeViewStorage->setCurrentIndex(pModel->index(0, 0, rootIndex));
+    /* Update root and current indexes: */
+    updateRootAndCurrentIndexes();
 
     /* Fetch recent information: */
     sltHandleCurrentItemChange();
@@ -3324,6 +3319,22 @@ void UIStorageSettingsEditor::showEvent(QShowEvent *pEvent)
 
     /* Call to base-class: */
     UIEditor::showEvent(pEvent);
+}
+
+void UIStorageSettingsEditor::handleFilterChange()
+{
+    /* First of all we could remap view's root to
+     * something more appropriate to current mode.
+     * In Basic mode we no need controllers. */
+    updateRootAndCurrentIndexes();
+
+    /* Update action visibility. In Basic mode
+     * we no need controller actions as well. */
+    m_pActionAddController->setVisible(m_fInExpertMode);
+    m_pActionRemoveController->setVisible(m_fInExpertMode);
+
+    /* We should also redraw branches if any: */
+    update();
 }
 
 void UIStorageSettingsEditor::sltHandleMediumEnumerated(const QUuid &uMediumId)
@@ -4103,6 +4114,10 @@ void UIStorageSettingsEditor::sltHandleContextMenuRequest(const QPoint &position
 
 void UIStorageSettingsEditor::sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index)
 {
+    /* Do nothing for Basic experience mode:  */
+    if (!m_fInExpertMode)
+        return;
+
     /* Acquire model: */
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QAbstractItemModel *pModel = m_pTreeViewStorage->model();
@@ -5117,6 +5132,48 @@ void UIStorageSettingsEditor::cleanup()
 {
     /* Destroy icon-pool: */
     UIIconPoolStorageSettings::destroy();
+}
+
+void UIStorageSettingsEditor::updateRootAndCurrentIndexes()
+{
+    /* Acquire model: */
+    AssertPtrReturnVoid(m_pTreeViewStorage);
+    const QAbstractItemModel *pModel = m_pTreeViewStorage->model();
+    AssertPtrReturnVoid(pModel);
+
+    /* What indexes we wish to make current/root of the view? */
+    QModelIndex currentIndex;
+    QModelIndex rootIndex;
+
+    /* Select the model's root index.
+     * It contains all the controllers we have: */
+    currentIndex = pModel->index(0, 0);
+    /* Map the view to this selection: */
+    rootIndex = currentIndex;
+    /* But if we have at least one controller: */
+    if (pModel->rowCount(currentIndex) > 0)
+    {
+        /* Why not select it as well?
+         * It contains all the attachments we have (there): */
+        currentIndex = pModel->index(0, 0, currentIndex);
+        /* For Basic experience mode: */
+        if (!m_fInExpertMode)
+        {
+            /* Map the view to this selection: */
+            rootIndex = currentIndex;
+            /* But if we have at least one attachment: */
+            if (pModel->rowCount(currentIndex) > 0)
+            {
+                /* Why not select it as well?
+                 * It's useful for Basic experience mode: */
+                currentIndex = pModel->index(0, 0, currentIndex);
+            }
+        }
+    }
+
+    /* Use the indexes we found: */
+    m_pTreeViewStorage->setRootIndex(rootIndex);
+    m_pTreeViewStorage->setCurrentIndex(currentIndex);
 }
 
 void UIStorageSettingsEditor::addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType)
