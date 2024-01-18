@@ -569,6 +569,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                          UnattendedVm.kfAvoidNetwork),
 
             #
+            # Fedora
+            #
+            UnattendedVm(oSet, 'tst-fedora-39-64', 'Fedora_64', '7.0/uaisos/Fedora-Workstation-Live-x86_64-39-1.5.iso',
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+
+            #
             # OS/2.
             #
             UnattendedVm(oSet, 'tst-acp2',              'OS2Warp45', '7.0/uaisos/acp2_us_cd2.iso'),                  # ~400MiB
