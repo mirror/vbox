@@ -1877,7 +1877,10 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
 
         rc = ShClTransferValidatePath(pszPathCur, false /* fMustExist */);
         if (RT_FAILURE(rc))
+        {
+            RTStrFree(pszPathCur);
             break;
+        }
 
         /* No root path determined yet? */
         if (!pszPathRootAbs)
