@@ -3543,8 +3543,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
              * Whether to enable MTRR read-write support. This overrides the MTRR read-only CFGM
              * setting. */
             bool fEnableMtrrReadWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadWrite", &fEnableMtrrReadWrite,
-                                    true /** @todo true - 2023-12-12 bird: does not work yet, so disabled it */);
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadWrite", &fEnableMtrrReadWrite, true);
             AssertRCReturn(rc, rc);
             if (fEnableMtrrReadWrite)
             {
