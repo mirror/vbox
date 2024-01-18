@@ -4187,6 +4187,10 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
 
+        <listitem><para>The Python API bindings for Python 2.x is now marked as being deprecated and will
+          be removed in a future version. Please upgrade your code to use Python 3.</para>
+        </listitem>
+
         <listitem><para>Guest process creation requires a new parameter for specifying the current working directory for the new
           guest process. This is optional and can be empty.
           See <link linkend="IGuestSession__processCreate">IGuestSession::processCreate</link> and

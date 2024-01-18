@@ -3654,6 +3654,11 @@ def main(_argv):
             del sTmp
         del sPath, asLocations
 
+    # Deprecation warning for older Python stuff (< Python 3.x).
+    if sys.version_info.major < 3:
+        print("\nWarning: Running VirtualBox with Python %d.%d is marked as being deprecated.\n" \
+              "Please upgrade your Python installation to avoid breakage.\n" \
+              % (sys.version_info.major, sys.version_info.minor))
 
     #
     # Set up the shell interpreter context and start working.
