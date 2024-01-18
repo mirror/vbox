@@ -290,6 +290,8 @@ static void testTransferObjOpenSingle(RTTEST hTest,
         RTTESTI_CHECK_RC_OK(rc);
     }
 
+    ShClTransferObjOpenParmsDestroy(&openCreateParms);
+
     rc = ShClTransferDestroy(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 }
@@ -309,9 +311,7 @@ static void testEvents(void)
     RTTESTI_CHECK_RC_OK(ShClEventSourceGenerateAndRegisterEvent(&Source, &pEvent));
     ShClEventSourceReset(&Source);
     RTTESTI_CHECK(ShClEventSourceGetLast(&Source) == NULL); /* Event still valid, but removed from the source. */
-    RTTESTI_CHECK(ShClEventRelease(pEvent) == 0);
-    RTTESTI_CHECK(ShClEventRelease(pEvent) == UINT32_MAX); /* Ref count already was 0, so returns UINT32_MAX. */
-    RTTESTI_CHECK(ShClEventRelease(pEvent) == UINT32_MAX); /* Again. */
+    RTTESTI_CHECK(ShClEventRelease(pEvent) == 0); /* Free'd event, as ref count is 0. */
     RTTESTI_CHECK(ShClEventSourceGetLast(&Source) == NULL); /* Now it should be empty. */
     RTTESTI_CHECK_RC_OK(ShClEventSourceDestroy(&Source));
 
@@ -324,8 +324,7 @@ static void testEvents(void)
     RTTESTI_CHECK(ShClEventGetRefs(pEvent) == 2); /* Make sure the ref count didn't drop due to ShClEventSourceDestroy(). */
     RTTESTI_CHECK(ShClEventRelease(pEvent) == 1);
     RTTESTI_CHECK(ShClEventGetRefs(pEvent) == 1);
-    RTTESTI_CHECK(ShClEventRelease(pEvent) == 0); /* Destroys event, as ref count is 0. */
-    RTTESTI_CHECK(ShClEventRelease(pEvent) == UINT32_MAX);
+    RTTESTI_CHECK(ShClEventRelease(pEvent) == 0); /* Free'd event, as ref count is 0. */
     RTTESTI_CHECK_RC_OK(ShClEventSourceDestroy(&Source)); /* Try to destruct again. */
 }
 
@@ -338,6 +337,7 @@ static void testTransferBasics(void)
     RTTESTI_CHECK_RC_OK(rc);
     rc = ShClTransferDestroy(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
+    pTransfer = NULL; /* Was free'd above. */
     rc = ShClTransferDestroy(pTransfer); /* Second time, intentional. */
     RTTESTI_CHECK_RC_OK(rc);
 
@@ -353,6 +353,9 @@ static void testTransferBasics(void)
     RTTESTI_CHECK_RC_OK(ShClTransferListEntryInit(&Entry));
     ShClTransferListEntryDestroy(&Entry);
     ShClTransferListEntryDestroy(&Entry); /* Second time, intentional. */
+
+    rc = ShClTransferDestroy(pTransfer);
+    RTTESTI_CHECK_RC_OK(rc);
 }
 
 static void testTransferRootsSet(RTTEST hTest)

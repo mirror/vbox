@@ -1161,7 +1161,8 @@ int ShClTransferCreate(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSF
  * Destroys a clipboard transfer.
  *
  * @returns VBox status code.
- * @param   pTransferCtx                Clipboard transfer to destroy.
+ * @param   pTransfer           Clipboard transfer to destroy.
+ *                              The pointer will be invalid after return.
  */
 int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 {
@@ -1194,6 +1195,9 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
     pTransfer->StatusChangeEvent = NIL_RTSEMEVENT;
 
     ShClEventSourceDestroy(&pTransfer->Events);
+
+    RTMemFree(pTransfer);
+    pTransfer = NULL;
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
@@ -2678,12 +2682,8 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
     {
-        ShClTransferDestroy(pTransfer);
-
         shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
-
-        RTMemFree(pTransfer);
-        pTransfer = NULL;
+        ShClTransferDestroy(pTransfer);
     }
 
     pTransferCtx->cRunning   = 0;
@@ -3234,11 +3234,7 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
             shClTransferUnlock(pTransfer);
 
             shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
-
             ShClTransferDestroy(pTransfer);
-
-            RTMemFree(pTransfer);
-            pTransfer = NULL;
         }
         else
             shClTransferUnlock(pTransfer);
