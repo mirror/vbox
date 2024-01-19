@@ -3025,6 +3025,7 @@ g_dMcStmtParsers = {
     'IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT':             (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE':              (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_MEM_COMMIT_AND_UNMAP_ATOMIC':                        (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_RW':                            (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_RO':                            (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_WO':                            (McBlock.parseMcGeneric,           True,  True,  True,  ),
@@ -3036,18 +3037,23 @@ g_dMcStmtParsers = {
     'IEM_MC_MEM_MAP_R32_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_R64_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_R80_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_MEM_MAP_U8_ATOMIC':                                  (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U8_RW':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U8_RO':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U8_WO':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_MEM_MAP_U16_ATOMIC':                                 (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U16_RW':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U16_RO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U16_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_MEM_MAP_U32_ATOMIC':                                 (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U32_RW':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U32_RO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U32_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_MEM_MAP_U64_ATOMIC':                                 (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U64_RW':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U64_RO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U64_WO':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_MEM_MAP_U128_ATOMIC':                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U128_RW':                                    (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U128_RO':                                    (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_MAP_U128_WO':                                    (McBlock.parseMcGeneric,           True,  True,  True,  ),
@@ -3487,16 +3493,16 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.cTotalTagged   = 0;
         self.cTotalMcBlocks = 0;
 
-        self.oReMacroName   = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
-        self.oReMnemonic    = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
-        self.oReStatsName   = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
-        self.oReFunctionName= re.compile('^iemOp_[A-Za-z_][A-Za-z0-9_]*$');
-        self.oReGroupName   = re.compile('^og_[a-z0-9]+(|_[a-z0-9]+|_[a-z0-9]+_[a-z0-9]+)$');
-        self.oReDisEnum     = re.compile('^OP_[A-Z0-9_]+$');
-        self.oReFunTable    = re.compile('^(IEM_STATIC|static) +const +PFNIEMOP +g_apfn[A-Za-z0-9_]+ *\[ *\d* *\] *= *$');
-        self.oReComment     = re.compile('//.*?$|/\*.*?\*/'); ## Full comments.
-        self.oReHashDefine2 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*(.*)\Z'); ##< With arguments.
-        self.oReHashDefine3 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)[^(]\s*(.*)\Z');        ##< Simple, no arguments.
+        self.oReMacroName   = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$');
+        self.oReMnemonic    = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$');
+        self.oReStatsName   = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$');
+        self.oReFunctionName= re.compile(r'^iemOp_[A-Za-z_][A-Za-z0-9_]*$');
+        self.oReGroupName   = re.compile(r'^og_[a-z0-9]+(|_[a-z0-9]+|_[a-z0-9]+_[a-z0-9]+)$');
+        self.oReDisEnum     = re.compile(r'^OP_[A-Z0-9_]+$');
+        self.oReFunTable    = re.compile(r'^(IEM_STATIC|static) +const +PFNIEMOP +g_apfn[A-Za-z0-9_]+ *\[ *\d* *\] *= *$');
+        self.oReComment     = re.compile(r'//.*?$|/\*.*?\*/'); ## Full comments.
+        self.oReHashDefine2 = re.compile(r'(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*(.*)\Z'); ##< With arguments.
+        self.oReHashDefine3 = re.compile(r'(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)[^(]\s*(.*)\Z');        ##< Simple, no arguments.
         self.oReMcBeginEnd  = re.compile(r'\bIEM_MC_(BEGIN|END|DEFER_TO_CIMPL_[1-5]_RET)\s*\('); ##> Not DEFER_TO_CIMPL_0_RET!
         self.fDebug         = True;
         self.fDebugMc       = False;
@@ -3618,7 +3624,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #
         # Extract the table name.
         #
-        sName = re.search(' *([a-zA-Z_0-9]+) *\[', sLine).group(1);
+        sName = re.search(r' *([a-zA-Z_0-9]+) *\[', sLine).group(1);
         oMap  = g_dInstructionMapsByIemName.get(sName);
         if not oMap:
             self.debug('No map for PFNIEMOP table: %s' % (sName,));
@@ -3634,7 +3640,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         cValidTableLength = 1024;
         asPrefixes        = ('none', '0x66', '0xf3', '0xf2');
 
-        oEntriesMatch = re.search('\[ *(256|32) *\]', sLine);
+        oEntriesMatch = re.search(r'\[ *(256|32) *\]', sLine);
         if oEntriesMatch:
             cEntriesPerByte   = 1;
             cValidTableLength = int(oEntriesMatch.group(1));
@@ -3953,7 +3959,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpBrief(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    \@opbrief
+        Tag:    @opbrief
         Value:  Text description, multiple sections, appended.
 
         Brief description.  If not given, it's the first sentence from @opdesc.
@@ -3983,7 +3989,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpDesc(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    \@opdesc
+        Tag:    @opdesc
         Value:  Text description, multiple sections, appended.
 
         It is used to describe instructions.
@@ -4021,7 +4027,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpOperandN(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tags:  \@op1, \@op2, \@op3, \@op4
+        Tags:  @op1, @op2, @op3, @op4
         Value: [where:]type
 
         The 'where' value indicates where the operand is found, like the 'reg'
@@ -4071,7 +4077,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpMaps(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    \@opmaps
+        Tag:    @opmaps
         Value:  map[,map2]
 
         Indicates which maps the instruction is in.  There is a default map
@@ -4106,7 +4112,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpPfx(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@oppfx
+        Tag:        @oppfx
         Value:      n/a|none|0x66|0xf3|0xf2
 
         Required prefix for the instruction.  (In a (E)VEX context this is the
@@ -4144,7 +4150,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpcode(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opcode
+        Tag:        @opcode
         Value:      0x?? | /reg (TODO: | mr/reg | 11 /reg | !11 /reg | 11 mr/reg | !11 mr/reg)
 
         The opcode byte or sub-byte for the instruction in the context of a map.
@@ -4174,7 +4180,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpcodeSub(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opcodesub
+        Tag:        @opcodesub
         Value:      none | 11 mr/reg | !11 mr/reg | rex.w=0 | rex.w=1 | vex.l=0 | vex.l=1
                     | 11 mr/reg vex.l=0 | 11 mr/reg vex.l=1 | !11 mr/reg vex.l=0 | !11 mr/reg vex.l=1
 
@@ -4201,7 +4207,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpEnc(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@openc
+        Tag:        @openc
         Value:      ModR/M|fixed|prefix|<map name>
 
         The instruction operand encoding style.
@@ -4237,7 +4243,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpEFlags(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tags:   \@opfltest, \@opflmodify, \@opflundef, \@opflset, \@opflclear
+        Tags:   @opfltest, @opflmodify, @opflundef, @opflset, @opflclear
         Value:  <eflags specifier>
 
         """
@@ -4269,7 +4275,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpHints(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@ophints
+        Tag:        @ophints
         Value:      Comma or space separated list of flags and hints.
 
         This covers the disassembler flags table and more.
@@ -4303,7 +4309,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpDisEnum(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opdisenum
+        Tag:        @opdisenum
         Value:      OP_XXXX
 
         This is for select a specific (legacy) disassembler enum value for the
@@ -4332,7 +4338,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpMinCpu(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opmincpu
+        Tag:        @opmincpu
         Value:      <simple CPU name>
 
         Indicates when this instruction was introduced.
@@ -4362,7 +4368,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpCpuId(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opcpuid
+        Tag:        @opcpuid
         Value:      none | <CPUID flag specifier>
 
         CPUID feature bit which is required for the instruction to be present.
@@ -4396,7 +4402,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpGroup(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opgroup
+        Tag:        @opgroup
         Value:      op_grp1[_subgrp2[_subsubgrp3]]
 
         Instruction grouping.
@@ -4422,17 +4428,17 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpUnusedInvalid(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    \@opunused, \@opinvalid, \@opinvlstyle
+        Tag:    @opunused, @opinvalid, @opinvlstyle
         Value:  <invalid opcode behaviour style>
 
-        The \@opunused indicates the specification is for a currently unused
+        The @opunused indicates the specification is for a currently unused
         instruction encoding.
 
-        The \@opinvalid indicates the specification is for an invalid currently
+        The @opinvalid indicates the specification is for an invalid currently
         instruction encoding (like UD2).
 
-        The \@opinvlstyle just indicates how CPUs decode the instruction when
-        not supported (\@opcpuid, \@opmincpu) or disabled.
+        The @opinvlstyle just indicates how CPUs decode the instruction when
+        not supported (@opcpuid, @opmincpu) or disabled.
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
 
@@ -4460,7 +4466,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpTest(self, sTag, aasSections, iTagLine, iEndLine): # pylint: disable=too-many-locals
         """
-        Tag:        \@optest
+        Tag:        @optest
         Value:      [<selectors>[ ]?] <inputs> -> <outputs>
         Example:    mode==64bit / in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
 
@@ -4605,7 +4611,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpTestNum(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Numbered \@optest tag.  Either \@optest42 or \@optest[42].
+        Numbered @optest tag.  Either @optest42 or @optest[42].
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
 
@@ -4621,21 +4627,21 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpTestIgnore(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@optestign | \@optestignore
+        Tag:        @optestign | @optestignore
         Value:      <value is ignored>
 
         This is a simple trick to ignore a test while debugging another.
 
-        See also \@oponlytest.
+        See also @oponlytest.
         """
         _ = sTag; _ = aasSections; _ = iTagLine; _ = iEndLine;
         return True;
 
     def parseTagOpCopyTests(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opcopytests
+        Tag:        @opcopytests
         Value:      <opstat | function> [..]
-        Example:    \@opcopytests add_Eb_Gb
+        Example:    @opcopytests add_Eb_Gb
 
         Trick to avoid duplicating tests for different encodings of the same
         operation.
@@ -4662,13 +4668,13 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpOnlyTest(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@oponlytest | \@oponly
+        Tag:        @oponlytest | @oponly
         Value:      none
 
         Only test instructions with this tag.  This is a trick that is handy
         for singling out one or two new instructions or tests.
 
-        See also \@optestignore.
+        See also @optestignore.
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
 
@@ -4685,7 +4691,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpXcptType(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opxcpttype
+        Tag:        @opxcpttype
         Value:      [none|1|2|3|4|4UA|5|6|7|8|11|12|E1|E1NF|E2|E3|E3NF|E4|E4NF|E5|E5NF|E6|E6NF|E7NF|E9|E9NF|E10|E11|E12|E12NF]
 
         Sets the SSE or AVX exception type (see SDMv2 2.4, 2.7).
@@ -4712,7 +4718,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpFunction(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opfunction
+        Tag:        @opfunction
         Value:      <VMM function name>
 
         This is for explicitly setting the IEM function name.  Normally we pick
@@ -4740,7 +4746,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpStats(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@opstats
+        Tag:        @opstats
         Value:      <VMM statistics base name>
 
         This is for explicitly setting the statistics name.  Normally we pick
@@ -4768,7 +4774,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
     def parseTagOpDone(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    \@opdone
+        Tag:    @opdone
         Value:  none
 
         Used to explictily flush the instructions that have been specified.
@@ -5486,13 +5492,13 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             sRegex = '';
             for sName, oMacro in self.dMacros.items():
                 if sRegex:
-                    sRegex += '|' + sName;
+                    sRegex += r'|' + sName;
                 else:
-                    sRegex  = '\\b(' + sName;
+                    sRegex  = r'\b(' + sName;
                 if oMacro.asArgs is not None:
-                    sRegex += '\s*\(';
+                    sRegex += r'\s*\(';
                 else:
-                    sRegex += '\\b';
+                    sRegex += r'\b';
             sRegex += ')';
             self.oReMacros = re.compile(sRegex);
         else:

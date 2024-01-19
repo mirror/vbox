@@ -272,7 +272,9 @@
 #define VINF_EM_PENDING_R3_IOPORT_WRITE      1160
 /** Trick for resuming EMHistoryExec after a VMCPU_FF_IOM is handled. */
 #define VINF_EM_RESUME_R3_HISTORY_EXEC       1161
-/** Emulate split-lock access on SMP. */
+/** Emulate split-lock access on SMP.
+ * This is also used for dealing with locked alignment conflicts with the host
+ * in general from IEM. */
 #define VINF_EM_EMULATE_SPLIT_LOCK           1162
 /** @} */
 

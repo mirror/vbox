@@ -705,8 +705,8 @@ static const char *emR3GetStateName(EMSTATE enmState)
 }
 #endif /* LOG_ENABLED || VBOX_STRICT */
 
-
 #if !defined(VBOX_VMM_TARGET_ARMV8)
+
 /**
  * Handle pending ring-3 I/O port write.
  *
@@ -850,8 +850,8 @@ VBOXSTRICTRC emR3ExecuteSplitLockInstruction(PVM pVM, PVMCPU pVCpu)
     LogFunc(("\n"));
     return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, emR3ExecuteSplitLockInstructionRendezvous, pVCpu);
 }
-#endif /* VBOX_VMM_TARGET_ARMV8 */
 
+#endif /* VBOX_VMM_TARGET_ARMV8 */
 
 /**
  * Debug loop.
@@ -892,6 +892,16 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                     if (rc == VINF_SUCCESS || rc == VINF_EM_RESCHEDULE)
                         rc = VINF_EM_DBG_STEPPED;
                 }
+#ifndef VBOX_VMM_TARGET_ARMV8
+                if (rc != VINF_EM_EMULATE_SPLIT_LOCK)
+                { /* likely */ }
+                else
+                {
+                    rc = emR3ExecuteSplitLockInstruction(pVM, pVCpu);
+                    if (rc == VINF_SUCCESS || rc == VINF_EM_RESCHEDULE)
+                        rc = VINF_EM_DBG_STEPPED;
+                }
+#endif
                 break;
 
             /*
@@ -1115,12 +1125,19 @@ static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         if (rcStrict != VINF_SUCCESS)
         {
-#if 0
-            if (RT_LIKELY(rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST))
-                break;
-            /* Fatal error: */
+#ifndef VBOX_VMM_TARGET_ARMV8
+            if (rcStrict == VINF_EM_EMULATE_SPLIT_LOCK)
+                rcStrict = emR3ExecuteSplitLockInstruction(pVM, pVCpu);
 #endif
-            break;
+            if (rcStrict != VINF_SUCCESS)
+            {
+#if 0
+                if (RT_LIKELY(rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST))
+                    break;
+                /* Fatal error: */
+#endif
+                break;
+            }
         }
 
 
@@ -2555,6 +2572,12 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     }
                     else if (rc == VINF_SUCCESS)
                         rc = VINF_EM_RESCHEDULE; /* Need to check whether we can run in HM or NEM again. */
+#ifndef VBOX_VMM_TARGET_ARMV8
+                    if (rc != VINF_EM_EMULATE_SPLIT_LOCK)
+                    { /* likely */ }
+                    else
+                        rc = VBOXSTRICTRC_TODO(emR3ExecuteSplitLockInstruction(pVM, pVCpu));
+#endif
                     fFFDone = false;
                     break;
                 }

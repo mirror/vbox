@@ -381,6 +381,8 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
 
 /**
  * Inlined read-write memory mapping function that longjumps on error.
+ *
+ * Almost identical to RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtJmp).
  */
 DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
@@ -437,6 +439,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
 
 /**
  * Inlined flat read-write memory mapping function that longjumps on error.
+ *
+ * Almost identical to RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,AtJmp).
  */
 DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
@@ -489,6 +493,123 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
 
+#  ifdef TMPL_MEM_WITH_ATOMIC_MAPPING
+
+/**
+ * Inlined atomic read-write memory mapping function that longjumps on error.
+ *
+ * Almost identical to RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp).
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                 uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
+    RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(!(GCPtrEff & TMPL_MEM_TYPE_ALIGN))) /* strictly aligned, otherwise do fall back which knows th details. */
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                                         | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Return the address.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM AT/map " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: %p\n",
+                                          iSegReg, GCPtrMem, GCPtrEff, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
+#  endif
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+}
+
+
+/**
+ * Inlined flat read-write memory mapping function that longjumps on error.
+ *
+ * Almost identical to RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp).
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Check that the address doesn't cross a page boundrary.
+     */
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(!(GCPtrMem & TMPL_MEM_TYPE_ALIGN))) /* strictly aligned, otherwise do fall back which knows th details. */
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                                         | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Return the address.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM AT/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
+#  endif
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+}
+
+#  endif /* TMPL_MEM_WITH_ATOMIC_MAPPING */
 
 /**
  * Inlined write-only memory mapping function that longjumps on error.

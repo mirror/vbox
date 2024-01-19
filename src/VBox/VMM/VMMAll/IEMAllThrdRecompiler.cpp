@@ -2664,7 +2664,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
     /*
      * Init the execution environment.
      */
-#ifdef RT_ARCH_ARM64 /** @todo ARM64: fix unaligned locked instructions properly. @bugref{10547} */
+#if 1 /** @todo this seems like a good idea, however if we ever share memory
+       * directly with other threads on the host, it isn't necessarily... */
     if (pVM->cCpus == 1)
         iemInitExec(pVCpu, IEM_F_X86_DISREGARD_LOCK /*fExecOpts*/);
     else

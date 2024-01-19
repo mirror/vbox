@@ -6218,9 +6218,11 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, 
  *                      GDT and LDT accesses).
  * @param   GCPtrMem    The address of the guest memory.
  * @param   fAccess     How the memory is being accessed.  The
- *                      IEM_ACCESS_TYPE_XXX bit is used to figure out how to map
- *                      the memory, while the IEM_ACCESS_WHAT_XXX bit is used
- *                      when raising exceptions.
+ *                      IEM_ACCESS_TYPE_XXX part is used to figure out how to
+ *                      map the memory, while the IEM_ACCESS_WHAT_XXX part is
+ *                      used when raising exceptions.  The IEM_ACCESS_ATOMIC and
+ *                      IEM_ACCESS_PARTIAL_WRITE bits are also allowed to be
+ *                      set.
  * @param   uAlignCtl   Alignment control:
  *                          - Bits 15:0 is the alignment mask.
  *                          - Bits 31:16 for flags like IEM_MEMMAP_F_ALIGN_GP,
@@ -6237,7 +6239,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
     Assert(cbMem <= sizeof(pVCpu->iem.s.aBounceBuffers[0]));
     Assert(   cbMem <= 64 || cbMem == 512 || cbMem == 256 || cbMem == 108 || cbMem == 104 || cbMem == 102 || cbMem == 94
            || (iSegReg == UINT8_MAX && uAlignCtl == 0 && fAccess == IEM_ACCESS_DATA_R /* for the CPUID logging interface */) );
-    Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
+    Assert(!(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK | IEM_ACCESS_ATOMIC | IEM_ACCESS_PARTIAL_WRITE)));
     Assert(pVCpu->iem.s.cActiveMappings < RT_ELEMENTS(pVCpu->iem.s.aMemMappings));
 
     unsigned iMemMap = pVCpu->iem.s.iNextMapping;
@@ -6296,6 +6298,27 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
             else
                 return iemRaiseGeneralProtectionFault0(pVCpu);
         }
+
+#if (defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)) || defined(RT_ARCH_ARM64)
+        /* If the access is atomic there are host platform alignmnet restrictions
+           we need to conform with. */
+        if (   !(fAccess & IEM_ACCESS_ATOMIC)
+# if defined(RT_ARCH_AMD64)
+            || (64U - (GCPtrMem & 63U) >= cbMem) /* split-lock detection. ASSUMES 64 byte cache line. */
+# elif defined(RT_ARCH_ARM64)
+            || (16U - (GCPtrMem & 15U) >= cbMem) /* LSE2 allows atomics anywhere within a 16 byte sized & aligned block. */
+# else
+#  error port me
+# endif
+           )
+        { /* okay */ }
+        else
+        {
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv LB %u - misaligned atomic fallback.\n", GCPtrMem, cbMem));
+            pVCpu->iem.s.cMisalignedAtomics += 1;
+            return VINF_EM_EMULATE_SPLIT_LOCK;
+        }
+#endif
     }
 
 #ifdef IEM_WITH_DATA_TLB
@@ -6585,11 +6608,12 @@ void iemMemRollbackAndUnmap(PVMCPUCC pVCpu, uint8_t bUnmapInfo) RT_NOEXCEPT
  *                      Use UINT8_MAX to indicate that no segmentation
  *                      is required (for IDT, GDT and LDT accesses).
  * @param   GCPtrMem    The address of the guest memory.
- * @param   fAccess     How the memory is being accessed.  The
- *                      IEM_ACCESS_TYPE_XXX bit is used to figure out
- *                      how to map the memory, while the
- *                      IEM_ACCESS_WHAT_XXX bit is used when raising
- *                      exceptions.
+ * @param   fAccess     How the memory is being accessed. The
+ *                      IEM_ACCESS_TYPE_XXX part is used to figure out how to
+ *                      map the memory, while the IEM_ACCESS_WHAT_XXX part is
+ *                      used when raising exceptions. The IEM_ACCESS_ATOMIC and
+ *                      IEM_ACCESS_PARTIAL_WRITE bits are also allowed to be
+ *                      set.
  * @param   uAlignCtl   Alignment control:
  *                          - Bits 15:0 is the alignment mask.
  *                          - Bits 31:16 for flags like IEM_MEMMAP_F_ALIGN_GP,
@@ -6605,7 +6629,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t i
      * with segment base.
      */
     Assert(cbMem <= 64 || cbMem == 512 || cbMem == 108 || cbMem == 104 || cbMem == 94); /* 512 is the max! */
-    Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
+    Assert(!(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK | IEM_ACCESS_ATOMIC | IEM_ACCESS_PARTIAL_WRITE)));
     Assert(pVCpu->iem.s.cActiveMappings < RT_ELEMENTS(pVCpu->iem.s.aMemMappings));
 
     VBOXSTRICTRC rcStrict = iemMemApplySegment(pVCpu, fAccess, iSegReg, cbMem, &GCPtrMem);
@@ -6641,6 +6665,27 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t i
             else
                 iemRaiseGeneralProtectionFault0Jmp(pVCpu);
         }
+
+#if (defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)) || defined(RT_ARCH_ARM64)
+        /* If the access is atomic there are host platform alignmnet restrictions
+           we need to conform with. */
+        if (   !(fAccess & IEM_ACCESS_ATOMIC)
+# if defined(RT_ARCH_AMD64)
+            || (64U - (GCPtrMem & 63U) >= cbMem) /* split-lock detection. ASSUMES 64 byte cache line. */
+# elif defined(RT_ARCH_ARM64)
+            || (16U - (GCPtrMem & 15U) >= cbMem) /* LSE2 allows atomics anywhere within a 16 byte sized & aligned block. */
+# else
+#  error port me
+# endif
+           )
+        { /* okay */ }
+        else
+        {
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv LB %u - misaligned atomic fallback.\n", GCPtrMem, cbMem));
+            pVCpu->iem.s.cMisalignedAtomics += 1;
+            IEM_DO_LONGJMP(pVCpu, VINF_EM_EMULATE_SPLIT_LOCK);
+        }
+#endif
     }
 
     /*
@@ -6923,6 +6968,14 @@ void iemMemCommitAndUnmapJmp(PVMCPUCC pVCpu, uint8_t bUnmapInfo) IEM_NOEXCEPT_MA
 
 /** Fallback for iemMemCommitAndUnmapRwJmp.  */
 void iemMemCommitAndUnmapRwSafeJmp(PVMCPUCC pVCpu, uint8_t bUnmapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    Assert(((bUnmapInfo >> 4) & IEM_ACCESS_TYPE_MASK) == (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE));
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+}
+
+
+/** Fallback for iemMemCommitAndUnmapAtJmp.  */
+void iemMemCommitAndUnmapAtSafeJmp(PVMCPUCC pVCpu, uint8_t bUnmapInfo) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(((bUnmapInfo >> 4) & IEM_ACCESS_TYPE_MASK) == (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE));
     iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);

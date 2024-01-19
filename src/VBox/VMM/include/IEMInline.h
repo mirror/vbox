@@ -55,13 +55,11 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
 #endif
             )
         {
-            if (pVCpu->iem.s.rcPassUp == VINF_SUCCESS)
-                rcStrict = VINF_SUCCESS;
+            rcStrict = pVCpu->iem.s.rcPassUp;
+            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            { /* likely */ }
             else
-            {
                 pVCpu->iem.s.cRetPassUpStatus++;
-                rcStrict = pVCpu->iem.s.rcPassUp;
-            }
         }
         else if (RT_SUCCESS(rcStrict))
         {
@@ -78,6 +76,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR
                       || rcStrict == VINF_EM_RAW_TO_R3
                       || rcStrict == VINF_EM_TRIPLE_FAULT
+                      || rcStrict == VINF_EM_EMULATE_SPLIT_LOCK
                       || rcStrict == VINF_GIM_R3_HYPERCALL
                       /* raw-mode / virt handlers only: */
                       || rcStrict == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
@@ -116,10 +115,11 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
         else
             pVCpu->iem.s.cRetErrStatuses++;
     }
-    else if (pVCpu->iem.s.rcPassUp != VINF_SUCCESS)
+    else
     {
-        pVCpu->iem.s.cRetPassUpStatus++;
         rcStrict = pVCpu->iem.s.rcPassUp;
+        if (rcStrict != VINF_SUCCESS)
+            pVCpu->iem.s.cRetPassUpStatus++;
     }
 
     /* Just clear it here as well. */
@@ -3935,6 +3935,16 @@ DECL_INLINE_THROW(void) iemMemCommitAndUnmapRwJmp(PVMCPUCC pVCpu, uint8_t bMapIn
 }
 
 
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapAtJmp(PVMCPUCC pVCpu, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    if (RT_LIKELY(bMapInfo == 0))
+        return;
+# endif
+    iemMemCommitAndUnmapAtSafeJmp(pVCpu, bMapInfo);
+}
+
+
 DECL_INLINE_THROW(void) iemMemCommitAndUnmapWoJmp(PVMCPUCC pVCpu, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
@@ -3990,6 +4000,8 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 # define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) 0
 #endif
 
+#define TMPL_MEM_WITH_ATOMIC_MAPPING
+
 #define TMPL_MEM_TYPE       uint8_t
 #define TMPL_MEM_TYPE_ALIGN 0
 #define TMPL_MEM_TYPE_SIZE  1
@@ -4027,6 +4039,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #undef TMPL_MEM_WITH_STACK
+#undef TMPL_MEM_WITH_ATOMIC_MAPPING
 
 #define TMPL_MEM_NO_STORE
 #define TMPL_MEM_NO_MAPPING
@@ -4057,6 +4070,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_DESC   "tword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
+#define TMPL_MEM_WITH_ATOMIC_MAPPING
 #define TMPL_MEM_TYPE       RTUINT128U
 #define TMPL_MEM_TYPE_ALIGN 15
 #define TMPL_MEM_TYPE_SIZE  16
@@ -4064,6 +4078,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_TYPE   "%.16Rhxs"
 #define TMPL_MEM_FMT_DESC   "dqword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+#undef  TMPL_MEM_WITH_ATOMIC_MAPPING
 
 #undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
 

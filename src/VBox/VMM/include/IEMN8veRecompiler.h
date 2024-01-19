@@ -43,8 +43,10 @@
 # define IEMNATIVE_WITH_TB_DEBUG_INFO
 #endif
 
+#ifdef VBOX_WITH_STATISTICS
 /** Always count instructions for now. */
-#define IEMNATIVE_WITH_INSTRUCTION_COUNTING
+# define IEMNATIVE_WITH_INSTRUCTION_COUNTING
+#endif
 
 
 /** @name Stack Frame Layout

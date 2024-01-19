@@ -37,3 +37,29 @@ NAME(iemAImpl_placeholder):
         brk #1
         ret
 
+/* Some sketches.
+
+// IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
+        .p2align        2
+        .private_extern NAME(iemAImpl_xchg_u8_locked)
+        .globl          NAME(iemAImpl_xchg_u8_locked)
+NAME(iemAImpl_xchg_u8_locked):
+        ldrb    w2, [x1]
+        swpalb  w2, w2, [x0]
+        strb    w2, [x1]
+        ret
+
+// IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_locked,(uint16_t *pu16Mem, uint16_t *pu16Reg));
+        .p2align        2
+        .private_extern NAME(iemAImpl_xchg_u16_locked)
+        .globl          NAME(iemAImpl_xchg_u16_locked)
+NAME(iemAImpl_xchg_u16_locked):
+        ldrh    w2, [x1]
+        swpalh  w2, w2, [x0]
+        strh    w2, [x1]
+        ret
+
+// IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32_locked,(uint32_t *pu32Mem, uint32_t *pu32Reg));
+// IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64_locked,(uint64_t *pu64Mem, uint64_t *pu64Reg));
+
+*/
