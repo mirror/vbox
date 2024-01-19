@@ -4855,7 +4855,6 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (pLayoutAttachmentSettings)
             {
                 pLayoutAttachmentSettings->setContentsMargins(0, 0, 0, 0);
-                pLayoutAttachmentSettings->setSpacing(0);
 
                 /* Prepare attachment passthrough check-box: */
                 m_pCheckBoxPassthrough = new QCheckBox(pWidgetAttachment);
