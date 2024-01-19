@@ -257,8 +257,18 @@ void UIBootListWidget::retranslateUi()
 
 void UIBootListWidget::dropEvent(QDropEvent *pEvent)
 {
-    /* Call to base-class: */
-    QITreeWidget::dropEvent(pEvent);
+    /* Accept certain positions only: */
+    switch (dropIndicatorPosition())
+    {
+        case QAbstractItemView::AboveItem:
+        case QAbstractItemView::BelowItem:
+            /* Call to base-class: */
+            QITreeWidget::dropEvent(pEvent);
+            break;
+        default:
+            break;
+    }
+
     /* Separately notify listeners: */
     emit sigRowChanged();
 }
