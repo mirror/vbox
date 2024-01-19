@@ -94,7 +94,7 @@ class tdCpuIemInstr1(vbox.TestDriver):
         # There is no official IEM support in the virt modes yet, so hwvirt is interpreted IEM
         # and hwvirt-np is recompiled IEM for now (gets configured in the IemTestVm class).
         #
-        asVirtModesSup = [ 'hwvirt', 'hwvirt-np' ]; # @todo Add 'hwvirt-np' for the recompiled mode, currently crashes on Ventura in libunwind
+        asVirtModesSup = [ 'hwvirt', 'hwvirt-np' ];
 
         kaTestVMs = (
             # @todo r=aeichner Crashes in ASMAtomicXchgU16, unaligned pointer, see @bugref{10547}.
