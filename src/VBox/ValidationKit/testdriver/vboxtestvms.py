@@ -143,8 +143,10 @@ g_aaNameToDetails = \
     [ 'Solaris',        'Solaris',               g_k32,    1, 256, ['sol10',  'sol10u[0-9]']],
     [ 'Solaris_64',     'Solaris_64',            g_k64,    1, 256, ['sol10-64', 'sol10u-64[0-9]']],
     [ 'Solaris_64',     'Solaris11_64',          g_k64,    1, 256, ['sol11u1']],
-    [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1,   ['bs-.*']], # boot sectors, wanted 64-bit type.
+    [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1,   ['bs-.*']],  # boot sectors, wanted 64-bit type.
+    [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1,   ['bs3-.*']], # boot sectors, wanted 64-bit type.
     [ 'DOS',            'DOS',                   g_k32,    1, 1,   ['bs-.*']],
+    [ 'DOS',            'DOS',                   g_k32,    1, 1,   ['bs3-.*']],
 ];
 
 

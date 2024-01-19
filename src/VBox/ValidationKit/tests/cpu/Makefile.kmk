@@ -42,7 +42,8 @@ INSTALLS += ValidationKitTestsCpu
 ValidationKitTestsCpu_TEMPLATE = VBoxValidationKitR3
 ValidationKitTestsCpu_INST = $(INST_VALIDATIONKIT)tests/cpu/
 ValidationKitTestsCpu_EXEC_SOURCES := \
-	$(PATH_SUB_CURRENT)/tdCpuPae1.py
+	$(PATH_SUB_CURRENT)/tdCpuPae1.py \
+	$(PATH_SUB_CURRENT)/tdCpuIemInstr1.py
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsCpu_EXEC_SOURCES)
 
