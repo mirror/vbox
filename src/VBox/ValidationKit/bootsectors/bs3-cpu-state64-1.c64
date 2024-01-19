@@ -160,7 +160,5 @@ BS3_DECL(void) Main_lm64()
 
         /** @todo DRx */
     Bs3TestTerm();
-    for (;;)
-        ASMHalt();
 }
 
