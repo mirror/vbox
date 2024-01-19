@@ -3680,8 +3680,8 @@ static int cpumR3MapMtrrsAbove4GB(PVM pVM, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
     Assert(cb >= _4K);
 
     /*
-     * Until the remainder of the memory fits within 4GB, map regions at
-     * incremental powers of two offsets and sizes.
+     * Map regions at incremental powers of two offsets and sizes.
+     * Note: We cannot map an 8GB region in a 4GB offset.
      */
     uint64_t cbLeft    = cb;
     uint64_t offRegion = _4G;
@@ -3699,11 +3699,15 @@ static int cpumR3MapMtrrsAbove4GB(PVM pVM, uint64_t cb, PCPUMMTRRMAP pMtrrMap)
     }
 
     /*
-     * Optimally try and map any remaining memory smaller than 4GB.
+     * Optimally try and map any remaining memory that is smaller than
+     * the last power of two offset (size) above.
      */
-    Assert(pMtrrMap->cMtrrs - pMtrrMap->idxMtrr > 0);
-    Assert(cbLeft < _4G);
-    return cpumR3MapMtrrsOptimal(pVM, offRegion, cbLeft, pMtrrMap);
+    if (cbLeft > 0)
+    {
+        Assert(pMtrrMap->cMtrrs - pMtrrMap->idxMtrr > 0);
+        return cpumR3MapMtrrsOptimal(pVM, offRegion, cbLeft, pMtrrMap);
+    }
+    return VINF_SUCCESS;
 }
 
 
