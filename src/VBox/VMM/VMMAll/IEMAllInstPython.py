@@ -2787,6 +2787,7 @@ class McBlock(object):
 # The raw table was generated via the following command
 #       sed -n -e "s/^# *define *\(IEM_MC_[A-Z_0-9]*\)[ (].*$/        '\1': McBlock.parseMcGeneric,/p" include/IEMMc.h \
 #       | sort | uniq | gawk "{printf """    %%-60s (%%s,        True)\n""", $1, $2}"
+# pylint: disable=line-too-long
 g_dMcStmtParsers = {
     'IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE':                     (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ':                       (McBlock.parseMcGeneric,           False, False, True,  ),
@@ -3210,6 +3211,7 @@ g_dMcStmtParsers = {
     'IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP':                    (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_NO_NATIVE_RECOMPILE':                                (McBlock.parseMcGeneric,           False, False, False, ),
 };
+# pylint: enable=line-too-long
 
 ## List of microcode blocks.
 g_aoMcBlocks = [] # type: List[McBlock]

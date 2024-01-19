@@ -12521,13 +12521,13 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK) || (pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
             {
                 BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo),RW);
-                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags,RW);
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL(RW);
             }
             else
             {
                 BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo),ATOMIC);
-                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags,ATOMIC);
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL(ATOMIC);
             }
         }
@@ -12536,7 +12536,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
             {
                 BODY_CMPXCHG16B_HEAD(IEM_MC_LOCAL(uint8_t, bUnmapInfo),RW);
-                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags,RW);
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
                 BODY_CMPXCHG16B_TAIL(RW);
             }
             else
