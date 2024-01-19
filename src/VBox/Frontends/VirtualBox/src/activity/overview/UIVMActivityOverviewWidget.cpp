@@ -230,7 +230,7 @@ class UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
+    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, bool fIsCloudVM = false);
 
     UIActivityOverviewItem();
     ~UIActivityOverviewItem();
@@ -240,6 +240,8 @@ public:
 
     QUuid         m_VMuid;
     QString       m_strVMName;
+    bool          m_fIsCloudVM;
+
     KMachineState m_enmMachineState;
 
     quint64  m_uCPUGuestLoad;
@@ -789,9 +791,10 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, bool fIsCloudVM /* = false */)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
+    , m_fIsCloudVM(fIsCloudVM)
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
@@ -815,6 +818,7 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
 
 UIActivityOverviewItem::UIActivityOverviewItem()
     : m_VMuid(QUuid())
+    , m_fIsCloudVM(false)
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
@@ -1343,7 +1347,17 @@ QVector<CCloudClient> UIActivityOverviewModel::obtainCloudClientList()
 
 void UIActivityOverviewModel::sltCloudUpdateTimeout()
 {
-    ///QVector<CCloudMachine> obtainCloudMachineList(); UIActivityOverviewModel::obtainCloudMachineList()
+    /* Update the m_items list: This is necessary as we dont have add/remove/change events for cloud machines: */
+    QVector<CCloudMachine> cloudMachines = obtainCloudMachineList();
+    foreach (const CCloudMachine &comMachine, cloudMachines)
+    {
+        if (!comMachine.isOk())
+            continue;
+        UIActivityOverviewItem cloudVMItem(comMachine.GetId(), comMachine.GetName(), true /* cloud vm*/);
+        if (m_itemList.contains(cloudVMItem))
+            continue;
+        m_itemList << cloudVMItem;
+    }
 }
 
 void UIActivityOverviewModel::setupPerformanceCollector()
