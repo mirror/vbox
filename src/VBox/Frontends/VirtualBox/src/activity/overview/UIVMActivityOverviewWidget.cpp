@@ -1537,6 +1537,11 @@ void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
         m_pModel->setShouldUpdate(fIsCurrentTool);
 }
 
+void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud> &itemList)
+{
+    Q_UNUSED(itemList);
+}
+
 void UIVMActivityOverviewWidget::retranslateUi()
 {
     m_columnTitles[VMActivityOverviewColumn_Name] = UIVMActivityOverviewWidget::tr("VM Name");

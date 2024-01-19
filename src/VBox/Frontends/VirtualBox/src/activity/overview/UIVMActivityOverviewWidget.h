@@ -37,6 +37,7 @@
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UIVirtualMachineItemCloud.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -72,6 +73,8 @@ public:
 
     bool isCurrentTool() const;
     void setIsCurrentTool(bool fIsCurrentTool);
+
+    void setCloudMachineItems(const QList<UIVirtualMachineItemCloud> &itemList);
 
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
