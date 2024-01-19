@@ -9353,7 +9353,11 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
          * bits in the descriptor are set, but it -does- for INVVPID. Until we test on real
          * hardware, it's assumed INVEPT behaves the same as INVVPID in this regard. It's
          * better to be strict in our emulation until proven otherwise.
+         *
+         * UPDATE: Hyper-V enabled Windows 10 Pro guests do NOT clear the reserved bits in
+         * the descriptor. Hence, I've disabled this check for now, see @bugref{10318#c122}.
          */
+#if 0
         if (uDesc.s.Hi)
         {
             Log(("invept: reserved bits set in invept descriptor %#RX64 -> VMFail\n", uDesc.s.Hi));
@@ -9362,6 +9366,7 @@ static VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSe
             iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
             return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
         }
+#endif
 
         /*
          * Flush TLB mappings based on the EPT type.
