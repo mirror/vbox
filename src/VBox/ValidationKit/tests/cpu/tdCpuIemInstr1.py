@@ -100,14 +100,14 @@ class tdCpuIemInstr1(vbox.TestDriver):
             # @todo r=aeichner Crashes in ASMAtomicXchgU16, unaligned pointer, see @bugref{10547}.
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-2', asVirtModesSup),
 
+            # @todo r=aeichner Image can not be found (probably it is too large for a floppy weighing in at 16MiB)
+            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3', asVirtModesSup),
+
             # @todo r=aeichner Fails currently in IEM
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-decoding-1', asVirtModesSup),
 
             # @todo r=aeichner Fails and hangs in 'lm64' / aaa
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-generated-1', asVirtModesSup),
-
-            # @todo r=aeichner Image can not be found (probably it is too large for a floppy weighing in at 16MiB)
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3', asVirtModesSup),
 
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-2', asVirtModesSup),
 
@@ -117,7 +117,8 @@ class tdCpuIemInstr1(vbox.TestDriver):
             # @todo r=aeichner Hangs after test.
             #IemTestVm(self.oTestVmSet, self, 'b3s-cpu-state64-1', asVirtModesSup),
 
-            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1', asVirtModesSup)
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1', asVirtModesSup),
+            IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1', asVirtModesSup)
         );
 
         for oTestVm in kaTestVMs:
