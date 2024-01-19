@@ -134,13 +134,11 @@ public:
     quint64 m_iFSFree;
 };
 
-/** A container QWidget to layout host stats. related widgets. */
-
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewHostStatsWidget definition.                                                                        *
 *********************************************************************************************************************************/
-
+/** A container QWidget to layout host stats. related widgets. */
 class UIVMActivityOverviewHostStatsWidget : public QIWithRetranslateUI<QWidget>
 {
 
@@ -232,8 +230,8 @@ class UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, KMachineState enmState);
-    //yUIActivityOverviewItem(const QUuid &uid);
+    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
+
     UIActivityOverviewItem();
     ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
@@ -355,7 +353,8 @@ private:
     void addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
-    void obtainCloudClientList();
+    QVector<CCloudClient> obtainCloudClientList();
+    QVector<CCloudMachine> obtainCloudMachineList();
 
     QVector<UIActivityOverviewItem> m_itemList;
     QMap<int, QString> m_columnTitles;
@@ -368,15 +367,11 @@ private:
     /** @} */
     CPerformanceCollector m_performanceCollector;
     QMap<int, bool> m_columnVisible;
-    /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
-     *  when the widget is visible in the main UI. */
-    bool m_fShouldUpdate;
     UIVMActivityOverviewHostStats m_hostStats;
     QFont m_defaultViewFont;
     QColor m_defaultViewFontColor;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
-    QVector<CCloudClient> m_comCloudClients;
 };
 
 
@@ -794,10 +789,9 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, KMachineState enmState)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
-    , m_enmMachineState(enmState)
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
@@ -968,7 +962,6 @@ UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
     , m_pCloudUpdateTimer(new QTimer(this))
-    , m_fShouldUpdate(true)
 {
     initialize();
 }
@@ -994,7 +987,6 @@ void UIActivityOverviewModel::initialize()
         connect(m_pCloudUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltCloudUpdateTimeout);
         m_pCloudUpdateTimer->start(10 * 1000);
     }
-    obtainCloudClientList();
 }
 
 int UIActivityOverviewModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
@@ -1011,7 +1003,20 @@ int UIActivityOverviewModel::columnCount(const QModelIndex &parent /* = QModelIn
 
 void UIActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
 {
-    m_fShouldUpdate = fShouldUpdate;
+    if (m_pTimer)
+    {
+        if (fShouldUpdate)
+            m_pTimer->start();
+        else
+            m_pTimer->stop();
+    }
+    if (m_pCloudUpdateTimer)
+    {
+        if (fShouldUpdate)
+            m_pCloudUpdateTimer->start();
+        else
+            m_pCloudUpdateTimer->stop();
+    }
 }
 
 const QMap<int, int> UIActivityOverviewModel::dataLengths() const
@@ -1141,8 +1146,6 @@ void UIActivityOverviewModel::getHostRAMStats()
 
 void UIActivityOverviewModel::sltTimeout()
 {
-    if (!m_fShouldUpdate)
-        return;
     ULONG aPctExecuting;
     ULONG aPctHalted;
     ULONG aPctVMM;
@@ -1265,8 +1268,20 @@ void UIActivityOverviewModel::sltTimeout()
     emit sigHostStatsUpdate(m_hostStats);
 }
 
-void UIActivityOverviewModel::obtainCloudClientList()
+QVector<CCloudMachine> UIActivityOverviewModel::obtainCloudMachineList()
 {
+    QVector<CCloudMachine> cloudMachineList;
+    QVector<CCloudClient> cloudClientList = obtainCloudClientList();
+    foreach (const CCloudClient &comClient, cloudClientList)
+    {
+        cloudMachineList << comClient.GetCloudMachineList();
+    }
+    return cloudMachineList;
+}
+
+QVector<CCloudClient> UIActivityOverviewModel::obtainCloudClientList()
+{
+    QVector<CCloudClient> comCloudClients;
     /* Acquire Cloud Profile Manager restrictions: */
     const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
 
@@ -1320,13 +1335,15 @@ void UIActivityOverviewModel::obtainCloudClientList()
                                                             cloudProfileKey.m_strProfileName,
                                                             strErrorMessage);
             if (strErrorMessage.isEmpty() && comCloudClient.isOk())
-                m_comCloudClients << comCloudClient;
+                comCloudClients << comCloudClient;
         }
     }
+    return comCloudClients;
 }
 
 void UIActivityOverviewModel::sltCloudUpdateTimeout()
 {
+    ///QVector<CCloudMachine> obtainCloudMachineList(); UIActivityOverviewModel::obtainCloudMachineList()
 }
 
 void UIActivityOverviewModel::setupPerformanceCollector()
@@ -1436,7 +1453,9 @@ void UIActivityOverviewModel::queryPerformanceCollector()
 
 void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    m_itemList.append(UIActivityOverviewItem(uMachineId, strMachineName, enmState));
+    UIActivityOverviewItem newItem(uMachineId, strMachineName);
+    newItem.m_enmMachineState = enmState;
+    m_itemList.append(newItem);
 }
 
 void UIActivityOverviewModel::removeItem(const QUuid& uMachineId)
