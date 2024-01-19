@@ -1949,6 +1949,8 @@ QVariant StorageModel::data(const QModelIndex &specifiedIndex, int iRole) const
         {
             if (AbstractItem *pItem = static_cast<AbstractItem*>(specifiedIndex.internalPointer()))
             {
+                if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
+                    pItem = pItem->parent();
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
@@ -3484,7 +3486,9 @@ void UIStorageSettingsEditor::sltAddAttachment()
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QAbstractItemModel *pModel = m_pTreeViewStorage->model();
     AssertPtrReturnVoid(pModel);
-    const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    QModelIndex index = m_pTreeViewStorage->currentIndex();
+    if (pModel->data(index, StorageModel::R_IsAttachment).toBool())
+        index = index.parent();
     AssertReturnVoid(pModel->data(index, StorageModel::R_IsController).toBool());
 
     /* Prepare menu: */
@@ -3992,10 +3996,10 @@ void UIStorageSettingsEditor::sltUpdateActionStates()
     m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setEnabled(fVirtioSCSIPossible);
 
     /* Configure "add attachment" actions: */
-    m_pActionAddAttachment->setEnabled(fController && fAttachmentsPossible);
-    m_pActionAddAttachmentHD->setEnabled(fController && fAttachmentsPossible);
-    m_pActionAddAttachmentCD->setEnabled(fController && fAttachmentsPossible);
-    m_pActionAddAttachmentFD->setEnabled(fController && fAttachmentsPossible);
+    m_pActionAddAttachment->setEnabled(fAttachmentsPossible);
+    m_pActionAddAttachmentHD->setEnabled(fAttachmentsPossible);
+    m_pActionAddAttachmentCD->setEnabled(fAttachmentsPossible);
+    m_pActionAddAttachmentFD->setEnabled(fAttachmentsPossible);
 
     /* Configure "delete controller" action: */
     const bool fControllerInSuitableState = m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full;
@@ -5230,7 +5234,9 @@ void UIStorageSettingsEditor::addAttachmentWrapper(KDeviceType enmDeviceType)
     AssertPtrReturnVoid(m_pTreeViewStorage);
     const QAbstractItemModel *pModel = m_pTreeViewStorage->model();
     AssertPtrReturnVoid(pModel);
-    const QModelIndex index = m_pTreeViewStorage->currentIndex();
+    QModelIndex index = m_pTreeViewStorage->currentIndex();
+    if (pModel->data(index, StorageModel::R_IsAttachment).toBool())
+        index = index.parent();
     Assert(pModel->data(index, StorageModel::R_IsController).toBool());
     Assert(pModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
