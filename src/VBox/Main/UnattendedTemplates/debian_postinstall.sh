@@ -33,7 +33,13 @@
 #
 # Globals.
 #
-MY_TARGET="/target"
+
+# subiquity will execute this script inside the target already
+if [ "$1" = "--direct" ]; then
+    MY_TARGET="/"
+else
+    MY_TARGET="/target"
+fi
 MY_LOGFILE="${MY_TARGET}/var/log/vboxpostinstall.log"
 MY_CHROOT_CDROM="/cdrom"
 MY_CDROM_NOCHROOT="/cdrom"
