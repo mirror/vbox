@@ -211,6 +211,10 @@ fi
 
 
 #
+# GAs
+#
+@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+#
 # Packages needed for GAs.
 #
 echo "--------------------------------------------------" >> "${MY_LOGFILE}"
@@ -218,11 +222,6 @@ echo '** Installing packages for building kernel modules...' | tee -a "${MY_LOGF
 log_command_in_target apt-get -y install build-essential
 log_command_in_target apt-get -y install linux-headers-$(uname -r)
 
-
-#
-# GAs
-#
-@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
 echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing VirtualBox Guest Additions...' | tee -a "${MY_LOGFILE}"
 MY_IGNORE_EXITCODE=2  # returned if modules already loaded and reboot required.
