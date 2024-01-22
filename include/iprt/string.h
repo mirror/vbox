@@ -258,7 +258,7 @@ RT_C_DECLS_BEGIN
  * @param   a_cbDst         Size of destination buffer.
  */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
-# if (RTLNX_VER_MIN(3,16,60))
+# if (RTLNX_VER_MIN(4,3,0))
 #  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)   (void)strscpy((a_pDst), (a_pSrc), (a_cbDst))
 # else /* < 3.16.60 */
 #  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)   strlcpy((a_pDst), (a_pSrc), (a_cbDst))
