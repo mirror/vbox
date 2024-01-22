@@ -245,6 +245,28 @@ RT_C_DECLS_BEGIN
 # define RT_BCOPY_UNFORTIFIED(a_pDst, a_pSrc, a_cbToCopy)   memcpy((a_pDst), (a_pSrc), (a_cbToCopy))
 #endif /* !RT_OS_LINUX && !__KERNEL__ */
 
+/** @def RT_STRSCPY
+ * Copy string and NULL-terminate output buffer.
+ *
+ * This macro should mostly be used in Linux kernel code. This is
+ * the replacement for deprecated strlcpy. It was deprecated since 3.16.60
+ * when strscpy was introduced as an alternative. Finally, strlcpy was
+ * completely removed from kernel code in 6.8.0.
+ *
+ * @param   a_pDst          Pointer to the destination string buffer.
+ * @param   a_pSrc          Pointer to the source NULL-terminated string buffer.
+ * @param   a_cbToCopy      Size of destination buffer..
+ */
+#if defined(RT_OS_LINUX) && defined(__KERNEL__)
+# if (RTLNX_VER_MIN(3,16,60))
+#  define RT_STRSCPY(a_pDst, a_pSrc, a_cbToCopy)    strscpy((a_pDst), (a_pSrc), (a_cbToCopy))
+# else /* < 3.16.60 */
+#  define RT_STRSCPY(a_pDst, a_pSrc, a_cbToCopy)    strlcpy((a_pDst), (a_pSrc), (a_cbToCopy))
+# endif
+#else  /* !RT_OS_LINUX && !__KERNEL__ */
+# define RT_STRSCPY(a_pDst, a_pSrc, a_cbToCopy)    strscpy((a_pDst), (a_pSrc), (a_cbToCopy))
+#endif /* !RT_OS_LINUX && !__KERNEL__ */
+
 
 #ifdef IN_RING3
 
