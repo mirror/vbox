@@ -259,12 +259,16 @@ RT_C_DECLS_BEGIN
  */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # if (RTLNX_VER_MIN(4,3,0))
-#  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)   (void)strscpy((a_pDst), (a_pSrc), (a_cbDst))
+#  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst) \
+    { \
+      ssize_t _ret; \
+      _ret = strscpy((a_pDst), (a_pSrc), (a_cbDst)); \
+    }
 # else /* < 3.16.60 */
 #  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)   strlcpy((a_pDst), (a_pSrc), (a_cbDst))
 # endif
 #else  /* !RT_OS_LINUX && !__KERNEL__ */
-# define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)    (void)strscpy((a_pDst), (a_pSrc), (a_cbDst))
+# define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)    strlcpy((a_pDst), (a_pSrc), (a_cbDst))
 #endif /* !RT_OS_LINUX && !__KERNEL__ */
 
 
