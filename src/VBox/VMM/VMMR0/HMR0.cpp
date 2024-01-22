@@ -133,12 +133,18 @@ static bool             g_fHmVmxUsingSUPR0EnableVTx = false;
 /** VMX: Set if we've called SUPR0EnableVTx(true) and should disable it during
  * module termination. */
 static bool             g_fHmVmxCalledSUPR0EnableVTx = false;
+/** VMX: Host CR0 value (set by ring-0 VMX init) */
+uint64_t                g_uHmVmxHostCr0;
 /** VMX: Host CR4 value (set by ring-0 VMX init) */
 uint64_t                g_uHmVmxHostCr4;
 /** VMX: Host EFER value (set by ring-0 VMX init) */
 uint64_t                g_uHmVmxHostMsrEfer;
 /** VMX: Host SMM monitor control (used for logging/diagnostics) */
 uint64_t                g_uHmVmxHostSmmMonitorCtl;
+/** VMX: Host core capabilities (set by ring-0 VMX init) */
+uint64_t                g_uHmVmxHostCoreCap;
+/** VMX: Host memory control register (set by ring-0 VMX init) */
+uint64_t                g_uHmVmxHostMemoryCtrl;
 
 
 /** Set if AMD-V is supported by the CPU. */
@@ -459,6 +465,7 @@ static int hmR0InitIntel(void)
     if (RT_SUCCESS(rc))
     {
         /* Read CR4 and EFER for logging/diagnostic purposes. */
+        g_uHmVmxHostCr0     = ASMGetCR0();
         g_uHmVmxHostCr4     = ASMGetCR4();
         g_uHmVmxHostMsrEfer = ASMRdMsr(MSR_K6_EFER);
 
@@ -473,6 +480,19 @@ static int hmR0InitIntel(void)
         uint64_t const uVmxBasicMsr = g_HmMsrs.u.vmx.u64Basic;
         if (RT_BF_GET(uVmxBasicMsr, VMX_BF_BASIC_DUAL_MON))
             g_uHmVmxHostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
+
+        /*
+         * Host core and memory capabilities MSRs.
+         * Primarily for logging split-lock disable status.
+         */
+        uint32_t uDummy, uStdExtFeatEdx;
+        ASMCpuId_Idx_ECX(7, 0, &uDummy, &uDummy, &uDummy, &uStdExtFeatEdx);
+        if (uStdExtFeatEdx & X86_CPUID_STEXT_FEATURE_EDX_CORECAP)
+        {
+            g_uHmVmxHostCoreCap = ASMRdMsr(MSR_IA32_CORE_CAPABILITIES);
+            if (g_uHmVmxHostCoreCap & MSR_IA32_CORE_CAP_SPLIT_LOCK_DISABLE)
+                g_uHmVmxHostMemoryCtrl = ASMRdMsr(MSR_MEMORY_CTRL);
+        }
 
         /* Initialize VPID - 16 bits ASID. */
         g_uHmMaxAsid = 0x10000; /* exclusive */
@@ -1232,9 +1252,12 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
         pVM->hmr0.s.vmx.fUsePreemptTimer            = pVM->hm.s.vmx.fUsePreemptTimerCfg && g_fHmVmxUsePreemptTimer;
         pVM->hm.s.vmx.fUsePreemptTimerCfg           = pVM->hmr0.s.vmx.fUsePreemptTimer;
         pVM->hm.s.vmx.cPreemptTimerShift            = g_cHmVmxPreemptTimerShift;
+        pVM->hm.s.ForR3.vmx.u64HostCr0              = g_uHmVmxHostCr0;
         pVM->hm.s.ForR3.vmx.u64HostCr4              = g_uHmVmxHostCr4;
         pVM->hm.s.ForR3.vmx.u64HostMsrEfer          = g_uHmVmxHostMsrEfer;
         pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl    = g_uHmVmxHostSmmMonitorCtl;
+        pVM->hm.s.ForR3.vmx.u64HostCoreCap          = g_uHmVmxHostCoreCap;
+        pVM->hm.s.ForR3.vmx.u64HostMemoryCtrl       = g_uHmVmxHostMemoryCtrl;
         pVM->hm.s.ForR3.vmx.u64HostFeatCtrl         = g_HmMsrs.u.vmx.u64FeatCtrl;
         HMGetVmxMsrsFromHwvirtMsrs(&g_HmMsrs, &pVM->hm.s.ForR3.vmx.Msrs);
         /* If you need to tweak host MSRs for testing VMX R0 code, do it here. */

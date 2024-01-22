@@ -371,6 +371,8 @@ typedef struct HM
              * logging). */
             bool                        fAlwaysInterceptMovDRx;
 
+            /** Host CR0 value (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostCr0;
             /** Host CR4 value (set by ring-0 VMX init, for logging). */
             uint64_t                    u64HostCr4;
             /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
@@ -379,6 +381,11 @@ typedef struct HM
             uint64_t                    u64HostMsrEfer;
             /** Host IA32_FEATURE_CONTROL MSR (set by ring-0 VMX init, for logging). */
             uint64_t                    u64HostFeatCtrl;
+            /** Host IA32_CORE_CAPABILITIES MSR (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostCoreCap;
+            /** Host MSR_MEMORY_CTRL MSR (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostMemoryCtrl;
+
             /** Host zero'ed DR6 value (set by ring-0 VMX init, for logging). */
             uint64_t                    u64HostDr6Zeroed;
 
@@ -1185,9 +1192,12 @@ extern uint32_t         g_uHmMaxAsid;
 extern bool             g_fHmVmxUsePreemptTimer;
 extern uint8_t          g_cHmVmxPreemptTimerShift;
 extern bool             g_fHmVmxSupportsVmcsEfer;
+extern uint64_t         g_uHmVmxHostCr0;
 extern uint64_t         g_uHmVmxHostCr4;
 extern uint64_t         g_uHmVmxHostMsrEfer;
 extern uint64_t         g_uHmVmxHostSmmMonitorCtl;
+extern uint64_t         g_uHmVmxHostCoreCap;
+extern uint64_t         g_uHmVmxHostMemoryCtrl;
 extern bool             g_fHmSvmSupported;
 extern uint32_t         g_uHmSvmRev;
 extern uint32_t         g_fHmSvmFeatures;

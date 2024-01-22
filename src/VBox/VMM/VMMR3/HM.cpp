@@ -1637,9 +1637,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 
     LogRel(("HM: Using VT-x implementation 3.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
+    LogRel(("HM: Host CR0                          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCr0));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCr4));
     LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
-    LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl));
+    LogRel(("HM: Host SMM_MONITOR_CTL              = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl));
+    LogRel(("HM: Host CORE_CAPABILITIES            = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCoreCap));
+    LogRel(("HM: Host MEMORY_CTRL                  = %#RX64%s\n", pVM->hm.s.ForR3.vmx.u64HostMemoryCtrl,
+            pVM->hm.s.ForR3.vmx.u64HostMemoryCtrl & MSR_MEMORY_CTRL_SPLIT_LOCK_DISABLE ? " - split-lock disable!" : ""));
     LogRel(("HM: Host DR6 zero'ed                  = %#RX64%s\n", pVM->hm.s.ForR3.vmx.u64HostDr6Zeroed,
             pVM->hm.s.ForR3.vmx.fAlwaysInterceptMovDRx ? " - always intercept MOV DRx" : ""));
 
