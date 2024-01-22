@@ -538,9 +538,7 @@ int vbox_gem_prime_mmap(struct drm_gem_object *obj,
 int vbox_irq_init(struct vbox_private *vbox);
 void vbox_irq_fini(struct vbox_private *vbox);
 void vbox_report_hotplug(struct vbox_private *vbox);
-#if RTLNX_VER_MAX(5,15,0) && !RTLNX_RHEL_MAJ_PREREQ(9,1) && !RTLNX_SUSE_MAJ_PREREQ(15,5)
 irqreturn_t vbox_irq_handler(int irq, void *arg);
-#endif
 
 /* vbox_hgsmi.c */
 void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,

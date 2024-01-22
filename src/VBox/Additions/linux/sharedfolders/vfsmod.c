@@ -1408,7 +1408,7 @@ static int vbsf_parse_param(struct fs_context *fc, struct fs_parameter *param)
     switch (opt) {
     case Opt_iocharset:
     case Opt_nls:
-        strlcpy(info->nls_name, param->string, sizeof(info->nls_name));
+        RT_STRSCPY(info->nls_name, param->string, sizeof(info->nls_name));
         break;
     case Opt_uid:
         info->uid = result.uint_32;
@@ -1469,7 +1469,7 @@ static int vbsf_parse_param(struct fs_context *fc, struct fs_parameter *param)
             printk(KERN_WARNING "vboxsf: cache mode (%u) is out of range, using default instead.\n", result.uint_32);
         break;
     case Opt_tag:
-        strlcpy(info->szTag, param->string, sizeof(info->szTag));
+        RT_STRSCPY(info->szTag, param->string, sizeof(info->szTag));
         break;
     default:
         return invalf(fc, "Invalid mount option: '%s'", param->key);
@@ -1528,7 +1528,7 @@ static int vbsf_get_tree(struct fs_context *fc)
     }
 
     /* fc->source (the shared folder name) is set after vbsf_init_fs_ctx() */
-    strlcpy(info->name, fc->source, sizeof(info->name));
+    RT_STRSCPY(info->name, fc->source, sizeof(info->name));
 
 # if RTLNX_VER_MAX(5,3,0)
     return vfs_get_super(fc, vfs_get_independent_super, vbsf_read_super_aux);
