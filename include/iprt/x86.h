@@ -708,6 +708,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD         RT_BIT_32(28)
 /** EDX Bit 29 - ARCHCAP - Supports the IA32_ARCH_CAPABILITIES MSR. */
 #define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
+/** EDX Bit 30 - CORECAP - Supports the IA32_CORE_CAPABILITIES MSR. */
+#define X86_CPUID_STEXT_FEATURE_EDX_CORECAP           RT_BIT_32(30)
 /** EDX Bit 31 - SSBD - Supports the SSBD flag in IA32_SPEC_CTRL. */
 #define X86_CPUID_STEXT_FEATURE_EDX_SSBD              RT_BIT_32(31)
 
@@ -1311,6 +1313,15 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 # define MSR_IA32_APICBASE_GET_ADDR(a_Msr)  ((a_Msr) & X86_PAGE_4K_BASE_MASK)
 #endif
 
+/** Memory Control (Intel-specific). */
+#define MSR_MEMORY_CTRL                     0x33
+/** Memory Control - UC-store throttle. */
+#define MSR_MEMORY_CTRL_UC_STORE_THROTTLE           RT_BIT_64(27)
+/** Memory Control - UC-lock disable. */
+#define MSR_MEMORY_CTRL_UC_LOCK_DISABLE             RT_BIT_64(28)
+/** Memory Control - Split-lock disable. */
+#define MSR_MEMORY_CTRL_SPLIT_LOCK_DISABLE          RT_BIT_64(29)
+
 /** Undocumented intel MSR for reporting thread and core counts.
  * Judging from the XNU sources, it seems to be introduced in Nehalem. The
  * first 16 bits is the thread count. The next 16 bits the core count, except
@@ -1398,6 +1409,23 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** Nehalem power control. */
 #define MSR_IA32_PLATFORM_INFO              0xCE
+
+/** Core Capabilities (Intel-specific). */
+#define MSR_IA32_CORE_CAPABILITIES          0xCF
+/** STLB QoS feature supported. */
+#define MSR_IA32_CORE_CAP_STLB_QOS                  RT_BIT_64(0)
+/** FUSA feature supported. */
+#define MSR_IA32_CORE_CAP_FUSA                      RT_BIT_64(2)
+/** RSM instruction only allowed in CPL 0. */
+#define MSR_IA32_CORE_CAP_RSM_CPL0                  RT_BIT_64(3)
+/** UC lock disable supported. */
+#define MSR_IA32_CORE_CAP_UC_LOCK_DISABLE           RT_BIT_64(4)
+/** Split-lock disable supported. */
+#define MSR_IA32_CORE_CAP_SPLIT_LOCK_DISABLE        RT_BIT_64(5)
+/** Snoop filter QoS Mask MSRs supported. */
+#define MSR_IA32_CORE_CAP_SNOOP_FILTER_QOS          RT_BIT_64(6)
+/** UC store throttling supported. */
+#define MSR_IA32_CORE_CAP_UC_STORE_THROTTLE         RT_BIT_64(7)
 
 /** Get FSB clock status (Intel-specific). */
 #define MSR_IA32_FSB_CLOCK_STS              0xCD
