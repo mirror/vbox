@@ -253,6 +253,12 @@ class tdUnitTest1(vbox.TestDriver):
                                                         # Solaris testboxes).
     };
 
+    ## The permanent exclude list for ASAN builds because they trigger false-positives.
+    # @note Stripped of extensions!
+    kdTestCasesBlackListAsan = {
+        'testcase/tstVMMR0CallHost-1': '',              # Triggers a stack overflow error on linux.amd64
+    }
+
     # Suffix exclude list.
     kasSuffixBlackList = [
         '.r0',
@@ -1286,6 +1292,13 @@ class tdUnitTest1(vbox.TestDriver):
                     reporter.log('%s: Skipping, buggy in general.' % (sName,));
                     reporter.testDone(fSkipped = True);
                     self.cSkipped += 1;
+                    continue;
+
+                # Some testcases don't work with ASAN.
+                if self.getBuildType() == 'asan' \
+                and self._isExcluded(sName, self.kdTestCasesBlackListAsan):
+                    # (No testStart/Done or accounting here!)
+                    reporter.log('%s: SKIPPED (blacklisted ASAN)' % (sName,));
                     continue;
 
                 if self._isExcluded(sName, dTestCasesBuggyForHostOs):
