@@ -1024,7 +1024,7 @@ class WuiHlpForm(object):
                   u' <thead>\n'
                   u'  <tr>\n'
                   u'    <th rowspan="2"></th>\n'
-                  u'    <th rowspan="2">Schedulding Group</th>\n'
+                  u'    <th rowspan="2">Scheduling Group</th>\n'
                   u'    <th rowspan="2">Priority [0..31]</th>\n'
                   u'  </tr>\n'
                   u' </thead>\n'
