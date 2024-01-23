@@ -820,7 +820,11 @@ static bool bldProgStrTab_compressorDoStringCompression(PBLDPROGSTRTAB pThis, bo
     size_t cb     = 0;
     size_t cWords = 0;
     size_t iDict  = 0;
+# ifdef BLDPROG_STRTAB_PURE_ASCII
     for (size_t i = 0; i < RT_ELEMENTS(pThis->aCompDict); i++)
+# else
+    for (size_t i = 0; i < RT_ELEMENTS(pThis->aCompDict) - 1; i++)
+# endif
     {
         char        szTmp[2] = { (char)i, '\0' };
         const char *psz      = szTmp;
@@ -978,7 +982,11 @@ static bool BldProgStrTab_CompileIt(PBLDPROGSTRTAB pThis, bool fVerbose)
         if (pThis->aCompDict[i].cchString > 1)
             bldProgStrTab_AddStringToHashTab(pThis, &pThis->aCompDict[i]);
 # ifdef RT_STRICT
-        else if (pThis->aCompDict[i].cchString != 1)
+        else if (   pThis->aCompDict[i].cchString != 1
+#  ifndef BLDPROG_STRTAB_PURE_ASCII
+                 && i != 0xff
+#  endif
+                )
             abort();
 # endif
 #endif
@@ -1140,6 +1148,10 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
         if (!(uch & 0x80))
 #endif
         {
+#ifdef BLDPROG_STRTAB_WITH_COMPRESSION
+            if (uch == 0xff)
+                abort();
+#endif
             if (uch != '\'' && uch != '\\')
                 fputc((char)uch, pOut);
             else
@@ -1156,10 +1168,9 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
             psz += RTStrCpSize(uc);
             fprintf(pOut, "\\u%04x", uc);
         }
-# else
+# endif
         else
             fputs(pThis->aCompDict[uch].pszString, pOut);
-# endif
 #else
         else
             fprintf(pOut, "\\x%02x", (unsigned)uch);
@@ -1193,7 +1204,12 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCompDict); i++)
     {
         if (BldProgBitIsSet(pThis->bmUsedChars, i)
-            ? pThis->aCompDict[i].cchString != 1 : pThis->aCompDict[i].cchString < 1)
+#  ifdef BLDPROG_STRTAB_PURE_ASCII
+            ? pThis->aCompDict[i].cchString != 1
+#  else
+            ? pThis->aCompDict[i].cchString != (i != 0xff ? 1 : 0)
+#  endif
+            : pThis->aCompDict[i].cchString < 1)
             abort();
         if (pThis->aCompDict[i].cchString > 1)
             BldProgStrTab_CheckStrTabString(pThis, &pThis->aCompDict[i]);
@@ -1290,7 +1306,7 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
 # endif
         else if (i == 0)
             fprintf(pOut, "    /*[%3u]=*/ { 0x000000, 0x00 }, // unused, because zero terminator\n", i);
-        else if (i < 0x20)
+        else if (i < 0x20 || i >= 0x7f)
             fprintf(pOut, "    /*[%3u]=*/ { 0x000000, 0x00 }, // %02x\n", i, i);
         else
             fprintf(pOut, "    /*[%3u]=*/ { 0x000000, 0x00 }, // '%c'\n", i,  (char)i);
