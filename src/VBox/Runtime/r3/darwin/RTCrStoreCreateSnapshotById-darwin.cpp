@@ -45,10 +45,16 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 
-/* HACK ALERT! Shut up those deprecated messages on SecKeychainSearchCreateFromAttributes and SecKeychainSearchCopyNext. */
+
+/* HACK ALERT! Shut up those deprecated messages on SecKeychainSearchCreateFromAttributes and SecKeychainSearchCopyNext
+   with older SDKs version (newer requires RT_GCC_NO_WARN_DEPRECATED_BEGIN). */
 #include <CoreFoundation/CoreFoundation.h>
 #undef  DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
 #define DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
+
+/* The SecKeychainCopyDomainSearchList and others API are also deprecated since 10.0.
+   See https://developer.apple.com/documentation/technotes/tn3137-on-mac-keychains for some info.
+   We use RT_GCC_NO_WARN_DEPRECATED_BEGIN to silence these. */
 
 #include <Security/Security.h>
 
@@ -204,14 +210,18 @@ static int rtCrStoreAddCertsFromNativeKeystoreDomain(RTCRSTORE hStore, SecPrefer
      * Get a list of keystores for this domain and call common worker on each.
      */
     CFArrayRef hKeychains;
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
     OSStatus orc = SecKeychainCopyDomainSearchList(enmDomain, &hKeychains);
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (orc == noErr)
     {
         CFIndex const cEntries = CFArrayGetCount(hKeychains);
         for (CFIndex i = 0; i < cEntries; i++)
         {
             SecKeychainRef hKeychain = (SecKeychainRef)CFArrayGetValueAtIndex(hKeychains, i);
+            RT_GCC_NO_WARN_DEPRECATED_BEGIN
             Assert(CFGetTypeID(hKeychain) == SecKeychainGetTypeID());
+            RT_GCC_NO_WARN_DEPRECATED_END
             CFRetain(hKeychain);
 
             rc = rtCrStoreAddCertsFromNativeKeychain(hStore, hKeychain, enmTrustDomain, rc, pErrInfo);
