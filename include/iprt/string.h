@@ -249,7 +249,7 @@ RT_C_DECLS_BEGIN
  * Copy string and NULL-terminate output buffer.
  *
  * This macro should mostly be used in Linux kernel code. This is
- * the replacement for deprecated strlcpy. It was deprecated since 3.16.60
+ * the replacement for deprecated strlcpy. It was deprecated since 4.3.0
  * when strscpy was introduced as an alternative. Finally, strlcpy was
  * completely removed from kernel code in 6.8.0.
  *
@@ -264,7 +264,7 @@ RT_C_DECLS_BEGIN
       ssize_t _ret; \
       _ret = strscpy((a_pDst), (a_pSrc), (a_cbDst)); \
     }
-# else /* < 3.16.60 */
+# else /* < 4.3.0 */
 #  define RT_STRSCPY(a_pDst, a_pSrc, a_cbDst)   strlcpy((a_pDst), (a_pSrc), (a_cbDst))
 # endif
 #else  /* !RT_OS_LINUX && !__KERNEL__ */
