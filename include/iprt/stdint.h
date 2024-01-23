@@ -53,7 +53,8 @@
   && !defined(__IBMCPP__) \
   && !defined(IPRT_NO_CRT) \
   && !defined(IPRT_DONT_USE_SYSTEM_STDINT_H) \
-  && !defined(DOXYGEN_RUNNING)
+  && !defined(DOXYGEN_RUNNING) \
+  && !defined(__ASSEMBLER__)
 
 # ifndef __STDC_CONSTANT_MACROS
 #  define __STDC_CONSTANT_MACROS
@@ -83,7 +84,7 @@
 #  define UINT32_C(Value)   (Value ## U)
 # endif /* 64-bit darwin kludge. */
 
-#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL) && !defined(__ASSEMBLER__)
 
 # ifndef __STDC_CONSTANT_MACROS
 #  define __STDC_CONSTANT_MACROS
@@ -93,7 +94,7 @@
 # endif
 # include <sys/stdint.h>
 
-#elif defined(RT_OS_NETBSD) && defined(_KERNEL)
+#elif defined(RT_OS_NETBSD) && defined(_KERNEL) && !defined(__ASSEMBLER__)
 
 # ifndef __STDC_CONSTANT_MACROS
 #  define __STDC_CONSTANT_MACROS
@@ -131,100 +132,114 @@
 #  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) \
    || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64) \
    || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
-#   if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)
+#   ifndef __ASSEMBLER__
+#    if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)
 typedef signed char         int8_t;
-#   endif
-#   if !defined(_UINT8_T_DECLARED)  && !defined(_UINT8_T)
+#    endif
+#    if !defined(_UINT8_T_DECLARED)  && !defined(_UINT8_T)
 typedef unsigned char       uint8_t;
-#   endif
-#   if !defined(_INT16_T_DECLARED)  && !defined(_INT16_T)
+#    endif
+#    if !defined(_INT16_T_DECLARED)  && !defined(_INT16_T)
 typedef signed short        int16_t;
-#   endif
-#   if !defined(_UINT16_T_DECLARED) && !defined(_UINT16_T)
+#    endif
+#    if !defined(_UINT16_T_DECLARED) && !defined(_UINT16_T)
 typedef unsigned short      uint16_t;
-#   endif
-#   if !defined(_INT32_T_DECLARED)  && !defined(_INT32_T)
-#    if ARCH_BITS != 16
+#    endif
+#    if !defined(_INT32_T_DECLARED)  && !defined(_INT32_T)
+#     if ARCH_BITS != 16
 typedef signed int          int32_t;
-#    else
+#     else
 typedef signed long         int32_t;
+#     endif
 #    endif
-#   endif
-#   if !defined(_UINT32_T_DECLARED) && !defined(_UINT32_T)
-#    if ARCH_BITS != 16
+#    if !defined(_UINT32_T_DECLARED) && !defined(_UINT32_T)
+#     if ARCH_BITS != 16
 typedef unsigned int        uint32_t;
-#    else
+#     else
 typedef unsigned long       uint32_t;
+#     endif
 #    endif
-#   endif
-#   if defined(_MSC_VER)
-#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+#    if defined(_MSC_VER)
+#     if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
 typedef signed _int64       int64_t;
-#    endif
-#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+#     endif
+#     if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
 typedef unsigned _int64     uint64_t;
-#    endif
-#   elif defined(__WATCOMC__)
-#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+#     endif
+#    elif defined(__WATCOMC__)
+#     if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
 typedef signed __int64      int64_t;
-#    endif
-#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+#     endif
+#     if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
 typedef unsigned __int64    uint64_t;
-#    endif
-#   elif defined(IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES)
-#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+#     endif
+#    elif defined(IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES)
+#     if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
 typedef struct { uint32_t lo; int32_t hi; }     int64_t;
-#    endif
-#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+#     endif
+#     if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
 typedef struct { uint32_t lo; uint32_t hi; }    uint64_t;
-#    endif
-#   else /* Use long long for 64-bit types */
-#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+#     endif
+#    else /* Use long long for 64-bit types */
+#     if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
 typedef signed long long    int64_t;
-#    endif
-#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+#     endif
+#     if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
 typedef unsigned long long  uint64_t;
+#     endif
 #    endif
-#   endif
 
     /* max integer types */
-#   if !defined(_INTMAX_T_DECLARED)  && !defined(_INTMAX_T)
+#    if !defined(_INTMAX_T_DECLARED)  && !defined(_INTMAX_T)
 typedef int64_t             intmax_t;
-#   endif
-#   if !defined(_UINTMAX_T_DECLARED) && !defined(_UINTMAX_T)
+#    endif
+#    if !defined(_UINTMAX_T_DECLARED) && !defined(_UINTMAX_T)
 typedef uint64_t            uintmax_t;
-#   endif
+#    endif
+#   endif  /* !__ASSEMBLER__ */
 
     /* smallest minimum-width integer types - assumes to be the same as above! */
+#   ifndef __ASSEMBLER__
 typedef int8_t              int_least8_t;
 typedef uint8_t             uint_least8_t;
+#   endif
 #   define INT_LEAST8_MIN   INT8_MIN
 #   define INT_LEAST8_MAX   INT8_MAX
 #   define UINT_LEAST8_MAX  UINT8_MAX
+#   ifndef __ASSEMBLER__
 typedef int16_t             int_least16_t;
 typedef uint16_t            uint_least16_t;
+#   endif
 #   define INT_LEAST16_MIN  INT16_MIN
 #   define INT_LEAST16_MAX  INT16_MAX
 #   define UINT_LEAST16_MAX UINT16_MAX
+#   ifndef __ASSEMBLER__
 typedef int32_t             int_least32_t;
 typedef uint32_t            uint_least32_t;
+#   endif
 #   define INT_LEAST32_MIN  INT32_MIN
 #   define INT_LEAST32_MAX  INT32_MAX
 #   define UINT_LEAST32_MAX UINT32_MAX
+#   ifndef __ASSEMBLER__
 typedef int64_t             int_least64_t;
 typedef uint64_t            uint_least64_t;
+#   endif
 #   define INT_LEAST64_MIN  INT64_MIN
 #   define INT_LEAST64_MAX  INT64_MAX
 #   define UINT_LEAST64_MAX UINT64_MAX
 
     /* fastest minimum-width integer types */
+#   ifndef __ASSEMBLER__
 typedef signed char         int_fast8_t;
 typedef unsigned char       uint_fast8_t;
+#   endif
 #   define INT_FAST8_MIN    INT8_MIN
 #   define INT_FAST8_MAX    INT8_MAX
 #   define UINT_FAST8_MAX   UINT8_MAX
+#   ifndef __ASSEMBLER__
 typedef signed int          int_fast16_t;
 typedef unsigned int        uint_fast16_t;
+#   endif
 #   if ARCH_BITS == 16
 #    define INT_FAST16_MIN  INT16_MIN
 #    define INT_FAST16_MAX  INT16_MAX
@@ -234,13 +249,17 @@ typedef unsigned int        uint_fast16_t;
 #    define INT_FAST16_MAX  INT32_MAX
 #    define UINT_FAST16_MAX UINT32_MAX
 #   endif
+#   ifndef __ASSEMBLER__
 typedef int32_t             int_fast32_t;
 typedef uint32_t            uint_fast32_t;
+#   endif
 #   define INT_FAST32_MIN   INT32_MIN
 #   define INT_FAST32_MAX   INT32_MAX
 #   define UINT_FAST32_MAX  UINT32_MAX
+#   ifndef __ASSEMBLER__
 typedef int64_t             int_fast64_t;
 typedef uint64_t            uint_fast64_t;
+#   endif
 #   define INT_FAST64_MIN   INT64_MIN
 #   define INT_FAST64_MAX   INT64_MAX
 #   define UINT_FAST64_MAX  UINT64_MAX
@@ -252,7 +271,7 @@ typedef uint64_t            uint_fast64_t;
 # endif /* !linux kernel or stuff */
 
     /* pointer <-> integer types */
-# if (!defined(_MSC_VER) && !defined(__WATCOMC__)) || defined(DOXYGEN_RUNNING)
+# if (!defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__ASSEMBLER__)) || defined(DOXYGEN_RUNNING)
 #  if ARCH_BITS == 32 \
    || defined(RT_OS_LINUX) \
    || defined(RT_OS_FREEBSD)
@@ -270,7 +289,7 @@ typedef int64_t             intptr_t;
 typedef uint64_t            uintptr_t;
 #   endif
 #  endif
-# endif /* !_MSC_VER */
+# endif /* !_MSC_VER && !__WATCOMC__ && !__ASSEMLBER__ */
 
 #endif /* no system stdint.h */
 

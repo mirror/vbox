@@ -55,12 +55,15 @@
  * @{
  */
 
+
 /**
  * RTASSERTTYPE is the type the AssertCompile() macro redefines.
  * It has no other function and shouldn't be used.
  * Visual C++ uses this.
  */
+#ifndef __ASSEMBLER__
 typedef int RTASSERTTYPE[1];
+#endif
 
 /**
  * RTASSERTVAR is the type the AssertCompile() macro redefines.
@@ -75,28 +78,32 @@ typedef int RTASSERTTYPE[1];
  * function if we declare it globally, so we don't do it for those, but we do
  * for 4.x+ to prevent linkage confusion.
  */
-#if !defined(__cplusplus) || !defined(__GNUC__)
+#ifndef __ASSEMBLER__
+# if !defined(__cplusplus) || !defined(__GNUC__)
 extern int RTASSERTVAR[1];
-#elif RT_GNUC_PREREQ(4, 0) || defined(__clang_major__) /* Not sure when they fixed the global scoping __unused__/whatever problem. */
+# elif RT_GNUC_PREREQ(4, 0) || defined(__clang_major__) /* Not sure when they fixed the global scoping __unused__/whatever problem. */
 RT_C_DECLS_BEGIN
 extern int RTASSERTVAR[1];
 RT_C_DECLS_END
+# endif
 #endif
 
 /** @def RTASSERT_HAVE_STATIC_ASSERT
  * Indicates that the compiler implements static_assert(expr, msg).
  */
-#ifdef _MSC_VER
-# if _MSC_VER >= 1600 && defined(__cplusplus) && !defined(VBOX_WITH_PARFAIT)
+#ifndef __ASSEMBLER__
+# ifdef _MSC_VER
+#  if _MSC_VER >= 1600 && defined(__cplusplus) && !defined(VBOX_WITH_PARFAIT)
+#  define RTASSERT_HAVE_STATIC_ASSERT
+#  endif
+# endif
+# if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
 #  define RTASSERT_HAVE_STATIC_ASSERT
 # endif
-#endif
-#if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
-# define RTASSERT_HAVE_STATIC_ASSERT
-#endif
-#if RT_CLANG_PREREQ(6, 0)
-# if __has_feature(cxx_static_assert) || __has_feature(c_static_assert)
-#  define RTASSERT_HAVE_STATIC_ASSERT
+# if RT_CLANG_PREREQ(6, 0)
+#  if __has_feature(cxx_static_assert) || __has_feature(c_static_assert)
+#   define RTASSERT_HAVE_STATIC_ASSERT
+#  endif
 # endif
 #endif
 #ifdef DOXYGEN_RUNNING
@@ -111,7 +118,9 @@ RT_C_DECLS_END
  *
  * @param   expr    Expression which should be true.
  */
-#ifdef __GNUC__
+#ifdef __ASSEMBLER__
+# define AssertCompileNS(expr)
+#elif defined(__GNUC__)
 # define AssertCompileNS(expr)  AssertCompileNS2(expr,RTASSERTVAR)
 # define AssertCompileNS2(expr,a_VarName)   extern int a_VarName[         1    ] __attribute__((__unused__)), \
                                                        a_VarName[(expr) ? 1 : 0] __attribute__((__unused__))
