@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <iprt/initterm.h>
+
 #include "nsTHashtable.h"
 #include "nsBaseHashtable.h"
 #include "nsDataHashtable.h"
@@ -398,7 +400,9 @@ nsIEnum2(nsISupports* aKey, PRUint32& aData, void* userArg) {
 }
 
 int
-main(void) {
+main(int argc, char *argv[]) {
+  RTR3InitExe(argc, &argv, 0);
+
   // check an nsTHashtable
   nsTHashtable<EntityToUnicodeEntry> EntityToUnicode;
 
