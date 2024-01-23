@@ -43,6 +43,8 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
 #include <VBox/version.h>
 
 #include "tstIEMAImpl.h"
@@ -159,6 +161,9 @@ static uint32_t     g_cIncludeTestPatterns;
 static uint32_t     g_cExcludeTestPatterns;
 static const char  *g_apszIncludeTestPatterns[64];
 static const char  *g_apszExcludeTestPatterns[64];
+
+/** Higher value, means longer benchmarking. */
+static uint64_t     g_cPicoSecBenchmark = 0;
 
 static unsigned     g_cVerbosity = 0;
 
@@ -1380,8 +1385,51 @@ static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint3
 # define GEN_BINARY_TESTS(a_cBits, a_Fmt, a_TestType)
 #endif
 
+
+/** Based on a quick probe run, guess how long to run the benchmark. */
+static uint32_t EstimateIterations(uint32_t cProbeIterations, uint64_t cNsProbe)
+{
+    uint64_t cPicoSecPerIteration = cNsProbe * 1000 / cProbeIterations;
+    uint64_t cIterations = g_cPicoSecBenchmark / cPicoSecPerIteration;
+    if (cIterations > _2G)
+        return _2G;
+    if (cIterations < _4K)
+        return _4K;
+    return RT_ALIGN_32((uint32_t)cIterations, _4K);
+}
+
+
 #define TEST_BINARY_OPS(a_cBits, a_uType, a_Fmt, a_TestType, a_aSubTests) \
 GEN_BINARY_TESTS(a_cBits, a_Fmt, a_TestType) \
+\
+static uint64_t BinU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLBINU ## a_cBits pfn, a_TestType const *pEntry) \
+{ \
+    uint32_t const fEflIn = pEntry->fEflIn; \
+    a_uType  const uDstIn = pEntry->uDstIn; \
+    a_uType  const uSrcIn = pEntry->uSrcIn; \
+    cIterations /= 4; \
+    RTThreadYield(); \
+    uint64_t const nsStart     = RTTimeNanoTS(); \
+    for (uint32_t i = 0; i < cIterations; i++) \
+    { \
+        uint32_t fBenchEfl = fEflIn; \
+        a_uType  uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+    } \
+    return RTTimeNanoTS() - nsStart; \
+} \
 \
 static void BinU ## a_cBits ## Test(void) \
 { \
@@ -1392,7 +1440,7 @@ static void BinU ## a_cBits ## Test(void) \
         uint32_t const             cTests  = *a_aSubTests[iFn].pcTests; \
         PFNIEMAIMPLBINU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         uint32_t const             cVars   = COUNT_VARIATIONS(a_aSubTests[iFn]); \
-        if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
+        if (!cTests) { RTTestSkipped(g_hTest, "no tests"); continue; } \
         for (uint32_t iVar = 0; iVar < cVars; iVar++) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
@@ -1401,7 +1449,7 @@ static void BinU ## a_cBits ## Test(void) \
                 a_uType  uDst = paTests[iTest].uDstIn; \
                 pfn(&uDst, paTests[iTest].uSrcIn, &fEfl); \
                 if (   uDst != paTests[iTest].uDstOut \
-                    || fEfl != paTests[iTest].fEflOut) \
+                    || fEfl != paTests[iTest].fEflOut ) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s - %s\n", \
                                  iTest, !iVar ? "" : "/n", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
                                  fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
@@ -1412,10 +1460,22 @@ static void BinU ## a_cBits ## Test(void) \
                      *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
                      *g_pfEfl = paTests[iTest].fEflIn; \
                      pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, g_pfEfl); \
-                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
-                     RTTEST_CHECK(g_hTest, *g_pfEfl         == paTests[iTest].fEflOut); \
+                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits  == paTests[iTest].uDstOut); \
+                     RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
                 } \
             } \
+            \
+            /* Benchmark if all succeeded. */ \
+            if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0) \
+            { \
+                uint32_t const iTest       = cTests / 2; \
+                uint32_t const cIterations = EstimateIterations(_64K, BinU ## a_cBits ## Bench(_64K, pfn, &paTests[iTest])); \
+                uint64_t const cNsRealRun  = BinU ## a_cBits ## Bench(cIterations, pfn, &paTests[iTest]); \
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL, \
+                             "%s%s", a_aSubTests[iFn].pszName, iVar ? "-native" : ""); \
+            } \
+            \
+            /* Next variation is native. */ \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
     } \
@@ -9389,6 +9449,7 @@ int main(int argc, char **argv)
         // mode:
         { "--generate",             'g', RTGETOPT_REQ_NOTHING },
         { "--test",                 't', RTGETOPT_REQ_NOTHING },
+        { "--benchmark",            'b', RTGETOPT_REQ_NOTHING },
         // test selection (both)
         { "--all",                  'a', RTGETOPT_REQ_NOTHING },
         { "--none",                 'z', RTGETOPT_REQ_NOTHING },
@@ -9422,10 +9483,16 @@ int main(int argc, char **argv)
         switch (rc)
         {
             case 'g':
-                enmMode     = kModeGenerate;
+                enmMode                 = kModeGenerate;
+                g_cPicoSecBenchmark     = 0;
                 break;
             case 't':
-                enmMode     = kModeTest;
+                enmMode                 = kModeTest;
+                g_cPicoSecBenchmark     = 0;
+                break;
+            case 'b':
+                enmMode                 = kModeTest;
+                g_cPicoSecBenchmark    += RT_NS_1SEC / 2 * UINT64_C(1000); /* half a second in pico seconds */
                 break;
 
             case 'a':
@@ -9516,6 +9583,9 @@ int main(int argc, char **argv)
                          "    Generate test data.\n"
                          "  -t, --test\n"
                          "    Execute tests.\n"
+                         "  -b, --benchmark\n"
+                         "    Execute tests and do 1/2 seconds of benchmarking.\n"
+                         "    Repeating the option increases the benchmark duration by 0.5 seconds.\n"
                          "\n"
                          "Test selection (both modes):\n"
                          "  -a, --all\n"
