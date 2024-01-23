@@ -44,6 +44,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/dbg.h>
 #include <iprt/err.h>
 #include <iprt/latin1.h>

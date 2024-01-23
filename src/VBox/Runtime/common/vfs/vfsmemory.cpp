@@ -41,7 +41,7 @@
 #include "internal/iprt.h"
 #include <iprt/vfs.h>
 
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>

@@ -48,7 +48,7 @@
 *******************************************************************************/
 #include <VBox/log.h>
 #include <VBox/types.h>
-#include <iprt/asm.h>
+#include <iprt/asm.h> /* ASMByteSwapU16/U32 */
 #include <iprt/assert.h>
 #include <iprt/net.h>
 #include <iprt/string.h>

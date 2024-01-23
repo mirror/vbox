@@ -42,6 +42,7 @@
 #include <iprt/mem.h>
 #include <iprt/log.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/thread.h>
 #include <VBox/sup.h>
 #include <iprt/errcore.h>

@@ -4695,6 +4695,14 @@
 # define RT_INLINE_ASM_EXTERNAL 0
 #endif
 
+/** @def RT_INLINE_ASM_EXTERNAL_TMP_ARM
+ * Temporary version of RT_INLINE_ASM_EXTERNAL that excludes ARM. */
+#if RT_INLINE_ASM_EXTERNAL && !(defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+# define RT_INLINE_ASM_EXTERNAL_TMP_ARM 1
+#else
+# define RT_INLINE_ASM_EXTERNAL_TMP_ARM 0
+#endif
+
 /** @def RT_INLINE_ASM_GNU_STYLE
  * Defined as 1 if the compiler understands GNU style inline assembly.
  */

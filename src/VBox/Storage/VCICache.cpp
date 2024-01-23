@@ -35,9 +35,10 @@
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
-#include <iprt/file.h>
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
+#include <iprt/mem.h>
+#include <iprt/file.h>
 
 #include "VDBackends.h"
 

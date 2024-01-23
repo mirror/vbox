@@ -107,6 +107,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_POOL
 #define VBOX_WITHOUT_PAGING_BIT_FIELDS /* 64-bit bitfields are just asking for trouble. See @bugref{9841} and others. */
+#define RT_ASM_INCLUDE_PAGE_SIZE /* ASMMemZeroPage */
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
 #include "PGMInternal.h"
@@ -116,7 +117,7 @@
 
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/string.h>
 #include <VBox/dbg.h>
 

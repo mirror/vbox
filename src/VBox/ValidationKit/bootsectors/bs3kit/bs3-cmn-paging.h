@@ -41,7 +41,6 @@
 #endif
 
 #include "bs3kit.h"
-#include <iprt/asm.h>
 
 RT_C_DECLS_BEGIN
 

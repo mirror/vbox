@@ -41,6 +41,7 @@
 
 #include <iprt/types.h>
 #include <iprt/mp.h> /* RTMpCpuIdToSetIndex */
+#include <iprt/asm-mem.h> /* not necessary, but avoids trouble */
 #include <iprt/asm.h>
 
 

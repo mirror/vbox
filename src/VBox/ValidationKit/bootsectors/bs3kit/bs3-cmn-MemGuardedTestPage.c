@@ -39,7 +39,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
-#include "iprt/asm.h"
+#include "iprt/asm-mem.h"
 
 
 #undef Bs3MemGuardedTestPageAllocEx

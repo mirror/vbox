@@ -67,6 +67,7 @@
 #include <iprt/stream.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #ifndef HAVE_FWRITE_UNLOCKED
 # include <iprt/critsect.h>

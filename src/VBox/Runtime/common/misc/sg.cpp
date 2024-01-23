@@ -41,7 +41,7 @@
 #include <iprt/sg.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 
 
 /**

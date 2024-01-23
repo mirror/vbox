@@ -40,6 +40,7 @@
 #endif
 
 #include <VBox/types.h>
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
 

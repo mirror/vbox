@@ -41,6 +41,7 @@
 #define LOG_GROUP RTLOGGROUP_FS
 #include <iprt/fsvfs.h>
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>

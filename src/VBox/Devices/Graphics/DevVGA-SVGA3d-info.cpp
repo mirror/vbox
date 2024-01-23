@@ -35,6 +35,8 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 
+#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>

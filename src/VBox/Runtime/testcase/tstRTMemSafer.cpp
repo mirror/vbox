@@ -40,7 +40,7 @@
 *********************************************************************************************************************************/
 #include <iprt/memsafer.h>
 
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/param.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>

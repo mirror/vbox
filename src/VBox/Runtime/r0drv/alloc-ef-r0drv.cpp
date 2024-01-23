@@ -43,6 +43,7 @@
 #include <iprt/mem.h>
 
 #include <iprt/alloc.h>
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>

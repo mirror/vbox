@@ -40,6 +40,7 @@
 *********************************************************************************************************************************/
 #include <iprt/mempool.h>
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>

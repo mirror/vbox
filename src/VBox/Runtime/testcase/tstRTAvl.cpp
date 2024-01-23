@@ -41,7 +41,6 @@
 #include <iprt/avl.h>
 #include <iprt/cpp/hardavlrange.h>
 
-#include <iprt/asm.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/rand.h>

@@ -51,6 +51,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>

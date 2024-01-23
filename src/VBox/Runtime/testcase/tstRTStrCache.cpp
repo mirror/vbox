@@ -40,7 +40,7 @@
 *********************************************************************************************************************************/
 #include <iprt/strcache.h>
 
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/ctype.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>

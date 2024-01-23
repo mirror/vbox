@@ -312,12 +312,11 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
          * on the cache.
          */
         size_t const cbPage = RTSystemGetPageSize();
-        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAlloc(cbPage);
+        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAllocZ(cbPage);
         if (pPage)
         {
             uint32_t const cObjects = RT_MIN(pThis->cPerPage, pThis->cMax - pThis->cTotal);
 
-            ASMMemZeroPage(pPage);
             pPage->pCache       = pThis;
             pPage->pNext        = NULL;
             pPage->cFree        = cObjects;

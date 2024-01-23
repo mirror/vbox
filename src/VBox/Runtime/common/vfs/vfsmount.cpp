@@ -41,7 +41,8 @@
 #define LOG_GROUP RTLOGGROUP_VFS
 #include <iprt/vfs.h>
 
-#include <iprt/asm.h>
+#define RT_ASM_INCLUDE_PAGE_SIZE
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>

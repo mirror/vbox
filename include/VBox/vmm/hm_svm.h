@@ -41,7 +41,6 @@
 
 #include <VBox/types.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
 
 #ifdef RT_OS_SOLARIS
 # undef ES

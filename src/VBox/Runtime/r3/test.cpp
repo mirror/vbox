@@ -41,6 +41,7 @@
 #include <iprt/test.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/err.h>

@@ -33,7 +33,7 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>
-#include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/buildconfig.h>
 #include <iprt/fsvfs.h>
 #include <iprt/fsisomaker.h>

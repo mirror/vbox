@@ -43,6 +43,7 @@
 #include <iprt/fsvfs.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>

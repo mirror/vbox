@@ -34,6 +34,7 @@
 #include "ConsoleImpl.h"
 #include "Global.h"
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/env.h>
 #include <iprt/semaphore.h>

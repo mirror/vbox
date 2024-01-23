@@ -44,6 +44,7 @@
 
 #include <iprt/avl.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>

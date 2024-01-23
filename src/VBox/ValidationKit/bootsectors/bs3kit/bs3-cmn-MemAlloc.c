@@ -40,7 +40,6 @@
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-memory.h"
-#include <iprt/asm.h>
 
 
 #undef Bs3MemAlloc

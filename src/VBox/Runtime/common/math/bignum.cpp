@@ -44,6 +44,7 @@
 #include "internal/iprt.h"
 #include <iprt/bignum.h>
 
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
 #include <iprt/err.h>

@@ -41,6 +41,7 @@
 #include <iprt/memcache.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

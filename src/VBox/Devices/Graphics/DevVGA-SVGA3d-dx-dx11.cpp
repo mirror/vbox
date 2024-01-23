@@ -35,6 +35,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
 
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/errcore.h>

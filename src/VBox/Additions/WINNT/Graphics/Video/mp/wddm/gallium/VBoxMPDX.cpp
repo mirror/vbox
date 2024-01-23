@@ -31,6 +31,8 @@
 #include "../VBoxMPVidPn.h"
 #include "VBoxMPGaExt.h"
 
+#include <iprt/asm-mem.h> /* must be included before SvgaHw.h */
+
 #include "Svga.h"
 #include "SvgaFifo.h"
 #include "SvgaCmd.h"

@@ -58,6 +58,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/mm.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #ifdef IN_RING3

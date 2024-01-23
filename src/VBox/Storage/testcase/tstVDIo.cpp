@@ -29,6 +29,7 @@
 #include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>

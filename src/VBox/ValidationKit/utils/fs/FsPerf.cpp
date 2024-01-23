@@ -45,6 +45,7 @@
 #endif
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/dir.h>

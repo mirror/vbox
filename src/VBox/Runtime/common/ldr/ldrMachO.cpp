@@ -69,6 +69,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <iprt/assert.h>
 #include <iprt/base64.h>
 #include <iprt/ctype.h>

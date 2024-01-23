@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -378,44 +378,6 @@
     parm [ecx] \
     value [eax] \
     modify exact [eax];
-#endif
-
-#undef      ASMMemZeroPage
-#ifdef IPRT_ASM_WATCOM_X86_32_WITH_PRAGMAS
-#pragma aux ASMMemZeroPage = \
-    "mov ecx, 1024" \
-    "xor eax, eax" \
-    "rep stosd"  \
-    parm [edi] \
-    modify exact [eax ecx edi];
-#endif
-
-#undef      ASMMemZero32
-#ifdef IPRT_ASM_WATCOM_X86_32_WITH_PRAGMAS
-#pragma aux ASMMemZero32 = \
-    "shr ecx, 2" \
-    "xor eax, eax" \
-    "rep stosd"  \
-    parm [edi] [ecx] \
-    modify exact [eax ecx edi];
-#endif
-
-#undef      ASMMemFill32
-#ifdef IPRT_ASM_WATCOM_X86_32_WITH_PRAGMAS
-#pragma aux ASMMemFill32 = \
-    "shr ecx, 2" \
-    "rep stosd"  \
-    parm [edi] [ecx] [eax]\
-    modify exact [ecx edi];
-#endif
-
-#undef      ASMProbeReadByte
-#ifdef IPRT_ASM_WATCOM_X86_32_WITH_PRAGMAS
-#pragma aux ASMProbeReadByte = \
-    "mov al, [ecx]" \
-    parm [ecx] \
-    value [al] \
-    modify exact [al];
 #endif
 
 #undef      ASMBitSet
