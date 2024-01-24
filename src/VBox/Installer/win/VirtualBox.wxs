@@ -511,6 +511,7 @@
     <?endif ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <ComponentRef Id="cp_VBoxPyInst" />
+        <ComponentRef Id="cp_VBoxPySetup" />
         <ComponentRef Id="cp_VBoxPyMod" />
         <ComponentRef Id="cp_VBoxPyDel" />
     <?endif ?>

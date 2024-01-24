@@ -36,24 +36,26 @@
                DiskId="$(var.Property_DiskIdCommon)" />
     </Component>
     <Directory Id="dir_VBoxPythonSDKVBoxAPI" Name="vboxapi">
-        <Component Id="cp_VBoxPyMod" Guid="DF19CB76-5102-11DE-943B-13C755D89593" Win64="$(var.Property_Win64)">
+        <Component Id="cp_VBoxPySetup" Guid="" Win64="$(var.Property_Win64)">
             <File Id="file_setup.py" Name="setup.py"
                   Source="$(env.PATH_OUT)\bin\sdk\installer\python\vboxapi\setup.py"
                   DiskId="$(var.Property_DiskIdCommon)" />
             <File Id="file_pyproject.toml" Name="pyproject.toml"
                   Source="$(env.PATH_OUT)\bin\sdk\installer\python\vboxapi\pyproject.toml"
                   DiskId="$(var.Property_DiskIdCommon)" />
-            <Directory Id="dir_VBoxPythonSDKVBoxAPISrc" Name="src">
-                <Directory Id="dir_VBoxPythonSDKVBoxAPISrcRoot" Name="vboxapi">
+        </Component>
+        <Directory Id="dir_VBoxPythonSDKVBoxAPISrc" Name="src">
+            <Directory Id="dir_VBoxPythonSDKVBoxAPISrcRoot" Name="vboxapi">
+                <Component Id="cp_VBoxPyMod" Guid="DF19CB76-5102-11DE-943B-13C755D89593" Win64="$(var.Property_Win64)">
                     <File Id="file___init__.py" Name="__init__.py"
                           Source="$(env.PATH_OUT)\bin\sdk\installer\python\vboxapi\src\vboxapi\__init__.py"
                           DiskId="$(var.Property_DiskIdCommon)" />
                     <File Id="file_VirtualBox_constants.py" Name="VirtualBox_constants.py"
                           Source="$(env.PATH_OUT)\bin\sdk\installer\python\vboxapi\src\vboxapi\VirtualBox_constants.py"
                           DiskId="$(var.Property_DiskIdCommon)" />
-                </Directory>
+                </Component>
             </Directory>
-        </Component>
+        </Directory>
     </Directory>
     <Component Id="cp_VBoxPyDel" Guid="D3C59511-E148-49FA-ADFF-718F2FF1B07A" Win64="$(var.Property_Win64)">
         <RegistryValue Root="HKLM" Key="$(var.Property_RegKey)" Name="PythonApiInstallDir" Type="string"
