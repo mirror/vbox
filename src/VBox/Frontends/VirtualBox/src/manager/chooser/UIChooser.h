@@ -50,12 +50,6 @@ class UIChooser : public QWidget
 
 signals:
 
-    /** @name Cloud machine stuff.
-      * @{ */
-        /** Notifies listeners about state change for cloud machine with certain @a uId. */
-        void sigCloudMachineStateChange(const QUuid &uId);
-    /** @} */
-
     /** @name Group saving stuff.
       * @{ */
         /** Notifies listeners about group saving state change. */
@@ -64,6 +58,10 @@ signals:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Notifies listeners about cloud machine state change.
+          * @param  uId  Brings the cloud machine ID. */
+        void sigCloudMachineStateChange(const QUuid &uId);
+
         /** Notifies listeners about cloud update state change. */
         void sigCloudUpdateStateChanged();
     /** @} */
