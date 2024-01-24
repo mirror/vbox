@@ -36,7 +36,7 @@
                DiskId="$(var.Property_DiskIdCommon)" />
     </Component>
     <Directory Id="dir_VBoxPythonSDKVBoxAPI" Name="vboxapi">
-        <Component Id="cp_VBoxPySetup" Guid="" Win64="$(var.Property_Win64)">
+        <Component Id="cp_VBoxPySetup" Guid="49B68C11-E6BB-4798-B809-F522E64ACD4E" Win64="$(var.Property_Win64)">
             <File Id="file_setup.py" Name="setup.py"
                   Source="$(env.PATH_OUT)\bin\sdk\installer\python\vboxapi\setup.py"
                   DiskId="$(var.Property_DiskIdCommon)" />
