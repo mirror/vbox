@@ -722,8 +722,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi\src \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi\src\vboxapi \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi/src \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi/src/vboxapi \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/ \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/python \
