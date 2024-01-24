@@ -577,6 +577,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                          UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
 
             #
+            # OracleLinux
+            #
+            UnattendedVm(oSet, 'tst-ol-9_2-amd64', 'Oracle_64', '7.1/uaisos/OracleLinux-R9-U2-x86_64-dvd.iso',
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+
+            #
             # OS/2.
             #
             UnattendedVm(oSet, 'tst-acp2',              'OS2Warp45', '7.0/uaisos/acp2_us_cd2.iso'),                  # ~400MiB
