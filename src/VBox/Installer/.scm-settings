@@ -30,7 +30,8 @@
 /common/virtualbox.xml:                              --external-copyright
 
 # Dual licensed code.
-/common/vboxapisetup.py: --license-ose-dual
+/common/vboxapisetup.py:      --license-ose-dual
+/common/vboxapisetup-stub.py: --license-ose-dual
 
 # ignore desktop files.
 --filter-out-files *.desktop.in|*.desktop
