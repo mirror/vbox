@@ -2382,36 +2382,6 @@ static void tstASMAtomicAndOrXor(void)
 }
 
 
-typedef struct
-{
-    uint8_t ab[PAGE_SIZE];
-} TSTPAGE;
-
-
-DECLINLINE(void) tstASMMemZeroPageWorker(TSTPAGE *pPage)
-{
-    for (unsigned j = 0; j < 16; j++)
-    {
-        memset(pPage, 0x11 * j, sizeof(*pPage));
-        ASMMemZeroPage(pPage);
-        for (unsigned i = 0; i < sizeof(pPage->ab); i++)
-            if (pPage->ab[i])
-                RTTestFailed(g_hTest, "ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
-        if (ASMMemIsZero(pPage, RT_ASM_PAGE_SIZE) != true)
-            RTTestFailed(g_hTest, "ASMMemIsZero/RT_ASM_PAGE_SIZE returns false after ASMMemZeroPage!\n");
-        if (ASMMemFirstMismatchingU32(pPage, sizeof(pPage), 0) != NULL)
-            RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,0) returns non-NULL after ASMMemZeroPage!\n");
-    }
-}
-
-
-static void tstASMMemZeroPage(void)
-{
-    RTTestISub("ASMMemZeroPage");
-    DO_SIMPLE_TEST_NO_SUB_NO_STACK(tstASMMemZeroPageWorker, TSTPAGE);
-}
-
-
 static void tstASMMemFirstMismatchingU8(RTTEST hTest)
 {
     RTTestSub(hTest, "ASMMemFirstMismatchingU8");
@@ -3296,7 +3266,6 @@ int main(int argc, char **argv)
     tstASMAtomicDecInc();
     tstASMAtomicAndOrXor();
 
-    tstASMMemZeroPage();
     tstASMMemFirstMismatchingU8(g_hTest);
     tstASMMemZero32();
     tstASMMemFill32();

@@ -80,7 +80,6 @@ EXPORTS
     ASMBitNextClear             ; not-amd64 not-x86
     ASMBitFirstSet              ; not-amd64 not-x86
     ASMBitNextSet               ; not-amd64 not-x86
-    ASMMemZeroPage              ; not-amd64 not-x86
     ASMMemZero32                ; not-amd64 not-x86
     ASMMemFill32                ; not-amd64 not-x86
     ASMMemFirstMismatchingU8    ; not-amd64 not-x86

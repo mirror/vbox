@@ -878,7 +878,6 @@ RuntimeBaseR3_SOURCES.arm64 := \
 	common/asm/ASMBitNextClear-generic.cpp \
 	common/asm/ASMBitFirstSet-generic.cpp \
 	common/asm/ASMBitNextSet-generic.cpp \
-	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \
 	common/asm/ASMMemFirstMismatchingU8-generic.cpp \
@@ -892,7 +891,6 @@ RuntimeBaseR3_SOURCES.sparc32 += \
 	common/asm/ASMBitNextClear-generic.cpp \
 	common/asm/ASMBitFirstSet-generic.cpp \
 	common/asm/ASMBitNextSet-generic.cpp \
-	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \
 	common/asm/ASMMemFirstMismatchingU8-generic.cpp \

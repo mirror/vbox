@@ -5143,7 +5143,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
     /* paranoia, clear the shadow page. Remove this laser (i.e. let Alloc and ClearAll do it). */
     STAM_PROFILE_START(&pPool->StatZeroPage, z);
-    ASMMemZeroPage(pvShw);
+    RT_BZERO(pvShw, PAGE_SIZE);
     STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
     pPage->fZeroed = true;
     Assert(!pPage->cPresent);
@@ -5479,7 +5479,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     {
         STAM_PROFILE_START(&pPool->StatZeroPage, z);
         void *pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
-        ASMMemZeroPage(pv);
+        RT_BZERO(pv, PAGE_SIZE);
         STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
     }
 

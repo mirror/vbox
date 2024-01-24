@@ -102,64 +102,6 @@
 #endif
 
 
-#ifdef RT_ASM_PAGE_SIZE
-/**
- * Zeros a 4K memory page.
- *
- * @param   pv  Pointer to the memory block. This must be page aligned.
- */
-# if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_PROTO;
-#  else
-DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
-{
-#   if RT_INLINE_ASM_USES_INTRIN
-#    ifdef RT_ARCH_AMD64
-    __stosq((unsigned __int64 *)pv, 0, RT_ASM_PAGE_SIZE / 8);
-#    else
-    __stosd((unsigned long *)pv, 0, RT_ASM_PAGE_SIZE / 4);
-#    endif
-
-#   elif RT_INLINE_ASM_GNU_STYLE
-    RTCCUINTREG uDummy;
-#    ifdef RT_ARCH_AMD64
-    __asm__ __volatile__("rep stosq"
-                         : "=D" (pv),
-                           "=c" (uDummy)
-                         : "0" (pv),
-                           "c" (RT_ASM_PAGE_SIZE >> 3),
-                           "a" (0)
-                         : "memory");
-#    else
-    __asm__ __volatile__("rep stosl"
-                         : "=D" (pv),
-                           "=c" (uDummy)
-                         : "0" (pv),
-                           "c" (RT_ASM_PAGE_SIZE >> 2),
-                           "a" (0)
-                         : "memory");
-#    endif
-#   else
-    __asm
-    {
-#    ifdef RT_ARCH_AMD64
-        xor     rax, rax
-        mov     ecx, 0200h
-        mov     rdi, [pv]
-        rep     stosq
-#    else
-        xor     eax, eax
-        mov     ecx, 0400h
-        mov     edi, [pv]
-        rep     stosd
-#    endif
-    }
-#   endif
-}
-# endif
-#endif /* RT_ASM_PAGE_SIZE */
-
-
 /**
  * Zeros a memory block with a 32-bit aligned size.
  *

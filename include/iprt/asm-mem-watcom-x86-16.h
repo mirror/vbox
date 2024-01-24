@@ -52,25 +52,6 @@
  *       the watcom header at both the top and the bottom of asm.h file.
  */
 
-#undef      ASMMemZeroPage
-#ifdef IPRT_ASM_WATCOM_X86_16_WITH_PRAGMAS
-# if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
-#  pragma aux ASMMemZeroPage = \
-    "mov cx, 2048" \
-    "xor ax, ax" \
-    "rep stosw"  \
-    parm [es di] \
-    modify exact [ax cx di];
-# else
-#  pragma aux ASMMemZeroPage = \
-    "mov ecx, 1024" \
-    "xor eax, eax" \
-    "rep stosd"  \
-    parm [es di] \
-    modify exact [ax cx di];
-# endif
-#endif
-
 #undef      ASMMemZero32
 #ifdef IPRT_ASM_WATCOM_X86_16_WITH_PRAGMAS
 # if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)

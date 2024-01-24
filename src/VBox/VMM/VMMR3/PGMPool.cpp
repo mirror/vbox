@@ -681,7 +681,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                                 break;
                         }
 #endif
-                        ASMMemZeroPage(pvShw);
+                        RT_BZERO(pvShw, PAGE_SIZE);
                         STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
                         pPage->cPresent = 0;
                         pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
