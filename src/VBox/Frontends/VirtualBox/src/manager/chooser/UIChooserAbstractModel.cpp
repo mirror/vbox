@@ -665,6 +665,23 @@ bool UIChooserAbstractModel::isCloudProfileUpdateInProgress() const
     return false;
 }
 
+QList<UIVirtualMachineItemCloud*> UIChooserAbstractModel::cloudMachineItems() const
+{
+    QList<UIVirtualMachineItemCloud*> items;
+    foreach (UIChooserNode *pNode, enumerateCloudMachineNodes())
+    {
+        AssertReturn(pNode && pNode->type() == UIChooserNodeType_Machine, items);
+        UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
+        AssertPtrReturn(pMachineNode, items);
+        if (pMachineNode->cacheType() != UIVirtualMachineItemType_CloudReal)
+            continue;
+        UIVirtualMachineItemCloud *pCloudMachineItem = pMachineNode->cache()->toCloud();
+        AssertPtrReturn(pCloudMachineItem, items);
+        items << pCloudMachineItem;
+    }
+    return items;
+}
+
 void UIChooserAbstractModel::sltHandleCloudMachineRefreshStarted()
 {
     /* Acquire sender: */
@@ -1010,6 +1027,10 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
 
     /* Remove cloud entity key from the list of keys currently being updated: */
     removeCloudEntityKey(guiCloudProfileKey);
+
+    /* Notify listeners: */
+    emit sigCloudProfileStateChange(guiCloudProfileKey.m_strProviderShortName,
+                                    guiCloudProfileKey.m_strProfileName);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()

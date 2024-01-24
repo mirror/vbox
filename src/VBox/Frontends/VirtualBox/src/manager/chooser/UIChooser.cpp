@@ -68,6 +68,12 @@ bool UIChooser::isCloudProfileUpdateInProgress() const
     return model()->isCloudProfileUpdateInProgress();
 }
 
+QList<UIVirtualMachineItemCloud*> UIChooser::cloudMachineItems() const
+{
+    AssertPtrReturn(model(), QList<UIVirtualMachineItemCloud*>());
+    return model()->cloudMachineItems();
+}
+
 UIVirtualMachineItem *UIChooser::currentItem() const
 {
     AssertPtrReturn(model(), 0);
@@ -275,6 +281,8 @@ void UIChooser::prepareConnections()
     /* Abstract Chooser-model connections: */
     connect(model(), &UIChooserModel::sigGroupSavingStateChanged,
             this, &UIChooser::sigGroupSavingStateChanged);
+    connect(model(), &UIChooserModel::sigCloudProfileStateChange,
+            this, &UIChooser::sigCloudProfileStateChange);
     connect(model(), &UIChooserModel::sigCloudMachineStateChange,
             this, &UIChooser::sigCloudMachineStateChange);
     connect(model(), &UIChooserModel::sigCloudUpdateStateChanged,
@@ -323,6 +331,8 @@ void UIChooser::cleanupConnections()
     /* Abstract Chooser-model connections: */
     disconnect(model(), &UIChooserModel::sigGroupSavingStateChanged,
                this, &UIChooser::sigGroupSavingStateChanged);
+    disconnect(model(), &UIChooserModel::sigCloudProfileStateChange,
+               this, &UIChooser::sigCloudProfileStateChange);
     disconnect(model(), &UIChooserModel::sigCloudMachineStateChange,
                this, &UIChooser::sigCloudMachineStateChange);
     disconnect(model(), &UIChooserModel::sigCloudUpdateStateChanged,

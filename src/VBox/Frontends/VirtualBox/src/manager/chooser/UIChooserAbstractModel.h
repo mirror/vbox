@@ -47,6 +47,7 @@
 /* Forward declaration: */
 class UIChooser;
 class UIChooserNode;
+class UIVirtualMachineItemCloud;
 class CMachine;
 
 /** QObject extension used as VM Chooser-pane abstract model.
@@ -68,6 +69,11 @@ signals:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Notifies listeners about cloud profile state change.
+          * @param  strProviderShortName  Brings the cloud provider short name.
+          * @param  strProfileName        Brings the cloud profile name. */
+        void sigCloudProfileStateChange(const QString &strProviderShortName,
+                                        const QString &strProfileName);
         /** Notifies listeners about cloud machine state change.
           * @param  uId  Brings the cloud machine ID. */
         void sigCloudMachineStateChange(const QUuid &uId);
@@ -154,6 +160,9 @@ public:
 
         /** Returns whether at least one cloud profile currently being updated. */
         bool isCloudProfileUpdateInProgress() const;
+
+        /** Returns a list of real cloud machine items. */
+        QList<UIVirtualMachineItemCloud*> cloudMachineItems() const;
     /** @} */
 
 public slots:

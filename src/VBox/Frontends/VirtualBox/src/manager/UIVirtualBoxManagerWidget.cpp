@@ -516,6 +516,17 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     sltHandleChooserPaneIndexChange();
 }
 
+void UIVirtualBoxManagerWidget::sltHandleCloudProfileStateChange(const QString &strProviderShortName,
+                                                                 const QString &strProfileName)
+{
+    RT_NOREF(strProviderShortName, strProfileName);
+
+    /* If Global Activity Overview tool is currently chosen: */
+    if (   m_pStackedWidget->currentWidget() == m_pPaneToolsGlobal
+        && m_pPaneToolsGlobal->currentTool() == UIToolType_VMActivityOverview)
+        m_pPaneToolsGlobal->setCloudMachineItems(m_pPaneChooser->cloudMachineItems());
+}
+
 void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uId)
 {
     /* Not for global items: */
@@ -808,6 +819,8 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sigCloudUpdateStateChanged);
     connect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
+    connect(m_pPaneChooser, &UIChooser::sigCloudProfileStateChange,
+            this, &UIVirtualBoxManagerWidget::sltHandleCloudProfileStateChange);
     connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
             this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
     connect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,
@@ -1062,6 +1075,8 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
                this, &UIVirtualBoxManagerWidget::sigCloudUpdateStateChanged);
     disconnect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
                this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
+    disconnect(m_pPaneChooser, &UIChooser::sigCloudProfileStateChange,
+               this, &UIVirtualBoxManagerWidget::sltHandleCloudProfileStateChange);
     disconnect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
                this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
     disconnect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,

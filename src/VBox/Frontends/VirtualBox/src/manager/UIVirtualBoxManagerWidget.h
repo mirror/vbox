@@ -314,6 +314,9 @@ private slots:
           * @param  enmDirection  Brings which direction was animation finished for. */
         void sltHandleSlidingAnimationComplete(SlidingDirection enmDirection);
 
+        /** Handles state change for cloud profile with certain @a strProviderShortName and @a strProfileName. */
+        void sltHandleCloudProfileStateChange(const QString &strProviderShortName,
+                                              const QString &strProfileName);
         /** Handles state change for cloud machine with certain @a uId. */
         void sltHandleCloudMachineStateChange(const QUuid &uId);
     /** @} */
