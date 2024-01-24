@@ -299,7 +299,7 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
     /* Cache passed value: */
     m_items = items;
 
-    /* Update details pane is open: */
+    /* Update details pane if it is open: */
     if (isToolOpened(UIToolType_Details))
     {
         AssertPtrReturnVoid(m_pPaneDetails);
@@ -323,6 +323,7 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
         AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
         m_pPaneVMActivityMonitor->setSelectedVMListItems(m_items);
     }
+    /* Update file manager pane if it is open: */
     if (isToolOpened(UIToolType_FileManager))
     {
         AssertPtrReturnVoid(m_pPaneFileManager);

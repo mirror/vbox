@@ -48,7 +48,7 @@ class UIExtensionPackManagerWidget;
 class UIMediumManagerWidget;
 class UINetworkManagerWidget;
 class UIVMActivityOverviewWidget;
-class UIVirtualMachineItem;
+class UIVirtualMachineItemCloud;
 class UIWelcomePane;
 class CMachine;
 
@@ -91,6 +91,9 @@ public:
     /** Returns the help keyword of the current tool's widget. */
     QString currentHelpKeyword() const;
 
+    /** Defines the @a cloudItems. */
+    void setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems);
+
 private:
 
     /** Prepares all. */
@@ -123,6 +126,9 @@ private:
 
     /** Holds whether this pane is active. */
     bool  m_fActive;
+
+    /** Holds the cache of passed cloud machine items. */
+    QList<UIVirtualMachineItemCloud*>  m_cloudItems;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIToolPaneGlobal_h */

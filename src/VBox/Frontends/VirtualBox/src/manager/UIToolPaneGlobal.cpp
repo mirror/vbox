@@ -231,6 +231,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                     m_pPaneVMActivityOverview->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
                     connect(m_pPaneVMActivityOverview, &UIVMActivityOverviewWidget::sigSwitchToMachineActivityPane,
                             this, &UIToolPaneGlobal::sigSwitchToMachineActivityPane);
+                    m_pPaneVMActivityOverview->setCloudMachineItems(m_cloudItems);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneVMActivityOverview);
@@ -308,6 +309,19 @@ QString UIToolPaneGlobal::currentHelpKeyword() const
             break;
     }
     return uiCommon().helpKeyword(pCurrentToolWidget);
+}
+
+void UIToolPaneGlobal::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
+{
+    /* Cache passed value: */
+    m_cloudItems = cloudItems;
+
+    /* Update activity overview pane if open: */
+    if (isToolOpened(UIToolType_VMActivityOverview))
+    {
+        AssertPtrReturnVoid(m_pPaneVMActivityOverview);
+        m_pPaneVMActivityOverview->setCloudMachineItems(m_cloudItems);
+    }
 }
 
 void UIToolPaneGlobal::prepare()
