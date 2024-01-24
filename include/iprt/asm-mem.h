@@ -297,68 +297,6 @@ DECLINLINE(bool) ASMMemIsZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 }
 
 
-#ifdef RT_ASM_PAGE_SIZE
-/**
- * Checks if a memory page is all zeros.
- *
- * @returns true / false.
- *
- * @param   pvPage      Pointer to the page.  Must be aligned on 16 byte
- *                      boundary
- */
-DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage) RT_NOTHROW_DEF
-{
-# if 0 /*RT_INLINE_ASM_GNU_STYLE - this is actually slower... */
-    union { RTCCUINTREG r; bool f; } uAX;
-    RTCCUINTREG xCX, xDI;
-   Assert(!((uintptr_t)pvPage & 15));
-    __asm__ __volatile__("repe; "
-#  ifdef RT_ARCH_AMD64
-                         "scasq\n\t"
-#  else
-                         "scasl\n\t"
-#  endif
-                         "setnc %%al\n\t"
-                         : "=&c" (xCX)
-                         , "=&D" (xDI)
-                         , "=&a" (uAX.r)
-                         : "mr" (pvPage)
-#  ifdef RT_ARCH_AMD64
-                         , "0" (RT_ASM_PAGE_SIZE/8)
-#  else
-                         , "0" (RT_ASM_PAGE_SIZE/4)
-#  endif
-                         , "1" (pvPage)
-                         , "2" (0)
-                         : "cc");
-    return uAX.f;
-# else
-   uintptr_t const RT_FAR *puPtr = (uintptr_t const RT_FAR *)pvPage;
-   size_t                  cLeft = RT_ASM_PAGE_SIZE / sizeof(uintptr_t) / 8;
-   Assert(!((uintptr_t)pvPage & 15));
-   for (;;)
-   {
-       if (puPtr[0])        return false;
-       if (puPtr[4])        return false;
-
-       if (puPtr[2])        return false;
-       if (puPtr[6])        return false;
-
-       if (puPtr[1])        return false;
-       if (puPtr[5])        return false;
-
-       if (puPtr[3])        return false;
-       if (puPtr[7])        return false;
-
-       if (!--cLeft)
-           return true;
-       puPtr += 8;
-   }
-# endif
-}
-#endif /* RT_ASM_PAGE_SIZE */
-
-
 /**
  * Checks if a memory block is filled with the specified byte, returning the
  * first mismatch.

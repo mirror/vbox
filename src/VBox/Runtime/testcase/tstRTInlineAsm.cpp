@@ -2397,8 +2397,8 @@ DECLINLINE(void) tstASMMemZeroPageWorker(TSTPAGE *pPage)
         for (unsigned i = 0; i < sizeof(pPage->ab); i++)
             if (pPage->ab[i])
                 RTTestFailed(g_hTest, "ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
-        if (ASMMemIsZeroPage(pPage) != true)
-            RTTestFailed(g_hTest, "ASMMemIsZeroPage returns false after ASMMemZeroPage!\n");
+        if (ASMMemIsZero(pPage, RT_ASM_PAGE_SIZE) != true)
+            RTTestFailed(g_hTest, "ASMMemIsZero/RT_ASM_PAGE_SIZE returns false after ASMMemZeroPage!\n");
         if (ASMMemFirstMismatchingU32(pPage, sizeof(pPage), 0) != NULL)
             RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,0) returns non-NULL after ASMMemZeroPage!\n");
     }
@@ -2409,41 +2409,6 @@ static void tstASMMemZeroPage(void)
 {
     RTTestISub("ASMMemZeroPage");
     DO_SIMPLE_TEST_NO_SUB_NO_STACK(tstASMMemZeroPageWorker, TSTPAGE);
-}
-
-
-static void tstASMMemIsZeroPage(RTTEST hTest)
-{
-    RTTestSub(hTest, "ASMMemIsZeroPage");
-
-    void *pvPage1 = RTTestGuardedAllocHead(hTest, PAGE_SIZE);
-    void *pvPage2 = RTTestGuardedAllocTail(hTest, PAGE_SIZE);
-    RTTESTI_CHECK_RETV(pvPage1 && pvPage2);
-
-    memset(pvPage1, 0, PAGE_SIZE);
-    memset(pvPage2, 0, PAGE_SIZE);
-    RTTESTI_CHECK(ASMMemIsZeroPage(pvPage1));
-    RTTESTI_CHECK(ASMMemIsZeroPage(pvPage2));
-
-    memset(pvPage1, 0xff, PAGE_SIZE);
-    memset(pvPage2, 0xff, PAGE_SIZE);
-    RTTESTI_CHECK(!ASMMemIsZeroPage(pvPage1));
-    RTTESTI_CHECK(!ASMMemIsZeroPage(pvPage2));
-
-    memset(pvPage1, 0, PAGE_SIZE);
-    memset(pvPage2, 0, PAGE_SIZE);
-    for (unsigned off = 0; off < PAGE_SIZE; off++)
-    {
-        ((uint8_t *)pvPage1)[off] = 1;
-        RTTESTI_CHECK(!ASMMemIsZeroPage(pvPage1));
-        ((uint8_t *)pvPage1)[off] = 0;
-
-        ((uint8_t *)pvPage2)[off] = 0x80;
-        RTTESTI_CHECK(!ASMMemIsZeroPage(pvPage2));
-        ((uint8_t *)pvPage2)[off] = 0;
-    }
-
-    RTTestSubDone(hTest);
 }
 
 
@@ -3332,7 +3297,6 @@ int main(int argc, char **argv)
     tstASMAtomicAndOrXor();
 
     tstASMMemZeroPage();
-    tstASMMemIsZeroPage(g_hTest);
     tstASMMemFirstMismatchingU8(g_hTest);
     tstASMMemZero32();
     tstASMMemFill32();

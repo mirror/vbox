@@ -1769,7 +1769,7 @@ RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t 
             };
             if (    cbSrc == _4K
                 &&  !((uintptr_t)pvSrc & 15)
-                &&  ASMMemIsZeroPage(pvSrc))
+                &&  ASMMemIsZero(pvSrc, _4K))
             {
                 if (RT_UNLIKELY(cbDst < sizeof(s_abZero4K)))
                     return VERR_BUFFER_OVERFLOW;
