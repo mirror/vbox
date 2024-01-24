@@ -147,6 +147,25 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef struct IEMBINARYOUTPUT
+{
+    /** The output file. */
+    RTVFSFILE       hVfsFile;
+    /** The stream we write uncompressed binary test data to. */
+    RTVFSIOSTREAM   hVfsUncompressed;
+    /** Write status. */
+    int             rcWrite;
+    /** Set if NULL. */
+    bool            fNull;
+    /** Filename.   */
+    char            szFilename[79];
+} IEMBINARYOUTPUT;
+typedef IEMBINARYOUTPUT *PIEMBINARYOUTPUT;
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static RTTEST       g_hTest;
@@ -979,6 +998,97 @@ static void GenerateArrayEnd(PRTSTREAM pOut, const char *pszName)
                  "\n",
                  pszName, pszName);
 }
+
+
+static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName,
+                               const char *pszCpuType = NULL)
+{
+    pBinOut->hVfsFile         = NIL_RTVFSFILE;
+    pBinOut->hVfsUncompressed = NIL_RTVFSIOSTREAM;
+    if (pszFilenameFmt)
+    {
+        pBinOut->fNull = false;
+        if (RTStrPrintf2(pBinOut->szFilename, sizeof(pBinOut->szFilename), pszFilenameFmt, pszName, pszCpuType) > 0)
+        {
+            RTMsgInfo("GenerateBinaryOpen: %s...\n", pBinOut->szFilename);
+            pBinOut->rcWrite = RTVfsFileOpenNormal(pBinOut->szFilename,
+                                                   RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_READWRITE,
+                                                   &pBinOut->hVfsFile);
+            if (RT_SUCCESS(pBinOut->rcWrite))
+            {
+                RTVFSIOSTREAM hVfsIoFile = RTVfsFileToIoStream(pBinOut->hVfsFile);
+                if (hVfsIoFile != NIL_RTVFSIOSTREAM)
+                {
+                    pBinOut->rcWrite = RTZipGzipCompressIoStream(hVfsIoFile, 0 /*fFlags*/, 9, &pBinOut->hVfsUncompressed);
+                    RTVfsIoStrmRelease(hVfsIoFile);
+                    if (RT_SUCCESS(pBinOut->rcWrite))
+                    {
+                        pBinOut->rcWrite = VINF_SUCCESS;
+                        return true;
+                    }
+
+                    RTMsgError("RTZipGzipCompressIoStream: %Rrc", pBinOut->rcWrite);
+                }
+                else
+                {
+                    RTMsgError("RTVfsFileToIoStream failed!");
+                    pBinOut->rcWrite = VERR_VFS_CHAIN_CAST_FAILED;
+                }
+                RTVfsFileRelease(pBinOut->hVfsFile);
+                RTFileDelete(pBinOut->szFilename);
+            }
+            else
+                RTMsgError("Failed to open '%s' for writing: %Rrc", pBinOut->szFilename, pBinOut->rcWrite);
+        }
+        else
+        {
+            RTMsgError("filename too long: %s + %s + %s", pszFilenameFmt, pszName, pszCpuType);
+            pBinOut->rcWrite = VERR_BUFFER_OVERFLOW;
+        }
+        return false;
+    }
+    RTMsgInfo("GenerateBinaryOpen: %s -> /dev/null\n", pszName);
+    pBinOut->rcWrite       = VERR_IGNORED;
+    pBinOut->fNull         = true;
+    pBinOut->szFilename[0] = '\0';
+    return true;
+}
+
+
+static void GenerateBinaryWrite(PIEMBINARYOUTPUT pBinOut, const void *pvData, size_t cbData)
+{
+    if (RT_SUCCESS_NP(pBinOut->rcWrite))
+    {
+        pBinOut->rcWrite = RTVfsIoStrmWrite(pBinOut->hVfsUncompressed, pvData, cbData, true /*fBlocking*/, NULL);
+        if (RT_SUCCESS(pBinOut->rcWrite))
+            return;
+        RTMsgError("Error writing '%s': %Rrc", pBinOut->szFilename, pBinOut->rcWrite);
+    }
+}
+
+
+static bool GenerateBinaryClose(PIEMBINARYOUTPUT pBinOut)
+{
+    if (!pBinOut->fNull)
+    {
+        /* This is rather jovial about rcWrite. */
+        int const rc1 = RTVfsIoStrmFlush(pBinOut->hVfsUncompressed);
+        RTVfsIoStrmRelease(pBinOut->hVfsUncompressed);
+        pBinOut->hVfsUncompressed = NIL_RTVFSIOSTREAM;
+        if (RT_FAILURE(rc1))
+            RTMsgError("Error flushing '%s' (uncompressed stream): %Rrc", pBinOut->szFilename, rc1);
+
+        int const rc2 = RTVfsFileFlush(pBinOut->hVfsFile);
+        RTVfsFileRelease(pBinOut->hVfsFile);
+        pBinOut->hVfsFile = NIL_RTVFSFILE;
+        if (RT_FAILURE(rc2))
+            RTMsgError("Error flushing '%s' (compressed file): %Rrc", pBinOut->szFilename, rc2);
+
+        return RT_SUCCESS(rc2) && RT_SUCCESS(rc1) && RT_SUCCESS(pBinOut->rcWrite);
+    }
+    return true;
+}
+
 
 #endif /* TSTIEMAIMPL_WITH_GENERATOR */
 
@@ -4803,13 +4913,8 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseBinaryR32[iFn].pfnNative ? g_aSseBinaryR32[iFn].pfnNative : g_aSseBinaryR32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -4852,7 +4957,7 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -4860,7 +4965,7 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -4871,7 +4976,7 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -4882,7 +4987,7 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -4894,17 +4999,12 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5002,13 +5102,8 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseBinaryR64[iFn].pfnNative ? g_aSseBinaryR64[iFn].pfnNative : g_aSseBinaryR64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5044,7 +5139,7 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -5052,7 +5147,7 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5063,7 +5158,7 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5074,7 +5169,7 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5086,17 +5181,12 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5186,13 +5276,8 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
     {
         PFNIEMAIMPLFPSSEF2U128R32 const pfn = g_aSseBinaryU128R32[iFn].pfnNative ? g_aSseBinaryU128R32[iFn].pfnNative : g_aSseBinaryU128R32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryU128R32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryU128R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryU128R32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5233,7 +5318,7 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -5241,7 +5326,7 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5252,7 +5337,7 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5263,7 +5348,7 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5275,17 +5360,12 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryU128R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5377,13 +5457,8 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
     {
         PFNIEMAIMPLFPSSEF2U128R64 const pfn = g_aSseBinaryU128R64[iFn].pfnNative ? g_aSseBinaryU128R64[iFn].pfnNative : g_aSseBinaryU128R64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryU128R64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryU128R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryU128R64[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5418,7 +5493,7 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -5426,7 +5501,7 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5437,7 +5512,7 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5448,7 +5523,7 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5460,17 +5535,12 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryU128R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5553,13 +5623,8 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2I32U64 const pfn = g_aSseBinaryI32R64[iFn].pfnNative ? g_aSseBinaryI32R64[iFn].pfnNative : g_aSseBinaryI32R64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryI32R64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryI32R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI32R64[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5591,7 +5656,7 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.i32ValOut = i32OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; int32_t i32OutU;
@@ -5599,7 +5664,7 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.i32ValOut = i32OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5610,7 +5675,7 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.i32ValOut = i32Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5621,7 +5686,7 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.i32ValOut = i32Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5633,17 +5698,12 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.i32ValOut = i32Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryI32R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5722,13 +5782,8 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2I64U64 const pfn = g_aSseBinaryI64R64[iFn].pfnNative ? g_aSseBinaryI64R64[iFn].pfnNative : g_aSseBinaryI64R64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryI64R64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryI64R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI64R64[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5760,7 +5815,7 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.i64ValOut = i64OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; int64_t i64OutU;
@@ -5768,7 +5823,7 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.i64ValOut = i64OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5779,7 +5834,7 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.i64ValOut = i64Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5790,7 +5845,7 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.i64ValOut = i64Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5802,17 +5857,12 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.i64ValOut = i64Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryI64R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -5891,13 +5941,8 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2I32U32 const pfn = g_aSseBinaryI32R32[iFn].pfnNative ? g_aSseBinaryI32R32[iFn].pfnNative : g_aSseBinaryI32R32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryI32R32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryI32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI32R32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5929,7 +5974,7 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.i32ValOut = i32OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; int32_t i32OutU;
@@ -5937,7 +5982,7 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.i32ValOut = i32OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -5948,7 +5993,7 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.i32ValOut = i32Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -5959,7 +6004,7 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.i32ValOut = i32Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -5971,17 +6016,12 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.i32ValOut = i32Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryI32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6060,13 +6100,8 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2I64U32 const pfn = g_aSseBinaryI64R32[iFn].pfnNative ? g_aSseBinaryI64R32[iFn].pfnNative : g_aSseBinaryI64R32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryI64R32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryI64R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI64R32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -6098,7 +6133,7 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.i64ValOut = i64OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; int64_t i64OutU;
@@ -6106,7 +6141,7 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.i64ValOut = i64OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6117,7 +6152,7 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.i64ValOut = i64Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6128,7 +6163,7 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.i64ValOut = i64Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6140,17 +6175,12 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.i64ValOut = i64Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryI64R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6228,13 +6258,8 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2R64I32 const pfn = g_aSseBinaryR64I32[iFn].pfnNative ? g_aSseBinaryR64I32[iFn].pfnNative : g_aSseBinaryR64I32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR64I32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR64I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64I32[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6257,7 +6282,7 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.r64ValOut = r64OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; RTFLOAT64U r64OutU;
@@ -6265,7 +6290,7 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.r64ValOut = r64OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6276,7 +6301,7 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.r64ValOut = r64Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6287,7 +6312,7 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.r64ValOut = r64Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6299,17 +6324,12 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.r64ValOut = r64Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR64I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6387,13 +6407,8 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2R64I64 const pfn = g_aSseBinaryR64I64[iFn].pfnNative ? g_aSseBinaryR64I64[iFn].pfnNative : g_aSseBinaryR64I64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR64I64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR64I64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64I64[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6416,7 +6431,7 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.r64ValOut = r64OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; RTFLOAT64U r64OutU;
@@ -6424,7 +6439,7 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.r64ValOut = r64OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6435,7 +6450,7 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.r64ValOut = r64Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6446,7 +6461,7 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.r64ValOut = r64Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6458,17 +6473,12 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.r64ValOut = r64Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR64I64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6546,13 +6556,8 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2R32I32 const pfn = g_aSseBinaryR32I32[iFn].pfnNative ? g_aSseBinaryR32I32[iFn].pfnNative : g_aSseBinaryR32I32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR32I32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR32I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32I32[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6575,7 +6580,7 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.r32ValOut = r32OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; RTFLOAT32U r32OutU;
@@ -6583,7 +6588,7 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.r32ValOut = r32OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6594,7 +6599,7 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.r32ValOut = r32Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6605,7 +6610,7 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.r32ValOut = r32Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6617,17 +6622,12 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.r32ValOut = r32Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR32I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6705,13 +6705,8 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLSSEF2R32I64 const pfn = g_aSseBinaryR32I64[iFn].pfnNative ? g_aSseBinaryR32I64[iFn].pfnNative : g_aSseBinaryR32I64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseBinaryR32I64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseBinaryR32I64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32I64[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6734,7 +6729,7 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.r32ValOut = r32OutM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU; RTFLOAT32U r32OutU;
@@ -6742,7 +6737,7 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.r32ValOut = r32OutU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6753,7 +6748,7 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.r32ValOut = r32Out1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6764,7 +6759,7 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.r32ValOut = r32Out2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6776,17 +6771,12 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.r32ValOut = r32Out3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseBinaryR32I64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -6872,13 +6862,8 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR32R32[iFn].pfnNative ? g_aSseCompareEflR32R32[iFn].pfnNative : g_aSseCompareEflR32R32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseCompareEflR32R32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseCompareEflR32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareEflR32R32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -6920,7 +6905,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.fEflIn     = fEFlags;
                         TestData.fEflOut    = fEFlagsM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
@@ -6930,7 +6915,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.fEflIn     = fEFlags;
                         TestData.fEflOut    = fEFlagsU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -6943,7 +6928,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.fEflIn     = fEFlags;
                             TestData.fEflOut    = fEFlags1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -6956,7 +6941,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.fEflIn     = fEFlags;
                                 TestData.fEflOut    = fEFlags2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -6970,17 +6955,12 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.fEflIn     = fEFlags;
                                         TestData.fEflOut    = fEFlags3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseCompareEflR32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -7065,13 +7045,8 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR64R64[iFn].pfnNative ? g_aSseCompareEflR64R64[iFn].pfnNative : g_aSseCompareEflR64R64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseCompareEflR64R64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseCompareEflR64R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareEflR64R64[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7113,7 +7088,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.fEflIn     = fEFlags;
                         TestData.fEflOut    = fEFlagsM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
@@ -7123,7 +7098,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.fEflIn     = fEFlags;
                         TestData.fEflOut    = fEFlagsU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -7136,7 +7111,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.fEflIn     = fEFlags;
                             TestData.fEflOut    = fEFlags1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -7149,7 +7124,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.fEflIn     = fEFlags;
                                 TestData.fEflOut    = fEFlags2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -7163,17 +7138,12 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.fEflIn     = fEFlags;
                                         TestData.fEflOut    = fEFlags3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseCompareEflR64R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -7259,13 +7229,8 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
     {
         PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR32Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR32Imm8[iFn].pfnNative : g_aSseCompareF2XmmR32Imm8[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseCompareF2XmmR32Imm8[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseCompareF2XmmR32Imm8[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareF2XmmR32Imm8[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7318,7 +7283,7 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
                             TestData.fMxcsrOut  = fMxcsrM;
                             TestData.bImm       = bImm;
                             TestData.OutVal     = ResM;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                             uint32_t fMxcsrU  = fMxcsrIn;
@@ -7328,7 +7293,7 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
                             TestData.fMxcsrOut  = fMxcsrU;
                             TestData.bImm       = bImm;
                             TestData.OutVal     = ResU;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                             if (fXcpt)
@@ -7341,7 +7306,7 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
                                 TestData.fMxcsrOut  = fMxcsr1;
                                 TestData.bImm       = bImm;
                                 TestData.OutVal     = Res1;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                                 if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                                 {
@@ -7354,7 +7319,7 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
                                     TestData.fMxcsrOut  = fMxcsr2;
                                     TestData.bImm       = bImm;
                                     TestData.OutVal     = Res2;
-                                    RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                 }
                                 if (!RT_IS_POWER_OF_TWO(fXcpt))
                                     for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -7368,17 +7333,12 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
                                             TestData.fMxcsrOut  = fMxcsr3;
                                             TestData.bImm       = bImm;
                                             TestData.OutVal     = Res3;
-                                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                         }
                             }
                         }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseCompareF2XmmR32Imm8[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -7471,13 +7431,8 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
     {
         PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR64Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR64Imm8[iFn].pfnNative : g_aSseCompareF2XmmR64Imm8[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseCompareF2XmmR64Imm8[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseCompareF2XmmR64Imm8[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareF2XmmR64Imm8[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7522,7 +7477,7 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
                             TestData.fMxcsrOut  = fMxcsrM;
                             TestData.bImm       = bImm;
                             TestData.OutVal     = ResM;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                             uint32_t fMxcsrU  = fMxcsrIn;
@@ -7532,7 +7487,7 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
                             TestData.fMxcsrOut  = fMxcsrU;
                             TestData.bImm       = bImm;
                             TestData.OutVal     = ResU;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                             if (fXcpt)
@@ -7545,7 +7500,7 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
                                 TestData.fMxcsrOut  = fMxcsr1;
                                 TestData.bImm       = bImm;
                                 TestData.OutVal     = Res1;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                                 if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                                 {
@@ -7558,7 +7513,7 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
                                     TestData.fMxcsrOut  = fMxcsr2;
                                     TestData.bImm       = bImm;
                                     TestData.OutVal     = Res2;
-                                    RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                    GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                 }
                                 if (!RT_IS_POWER_OF_TWO(fXcpt))
                                     for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -7572,17 +7527,12 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
                                             TestData.fMxcsrOut  = fMxcsr3;
                                             TestData.bImm       = bImm;
                                             TestData.OutVal     = Res3;
-                                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                         }
                             }
                         }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseCompareF2XmmR64Imm8[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -7666,13 +7616,8 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmI32R32[iFn].pfnNative ? g_aSseConvertXmmI32R32[iFn].pfnNative : g_aSseConvertXmmI32R32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmI32R32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmI32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmI32R32[iFn].pszName), RTEXITCODE_FAILURE);
 
         X86FXSTATE State;
         RT_ZERO(State);
@@ -7700,7 +7645,7 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -7708,7 +7653,7 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -7719,7 +7664,7 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -7730,7 +7675,7 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -7742,17 +7687,12 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmI32R32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -7842,13 +7782,8 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmR32I32[iFn].pfnNative ? g_aSseConvertXmmR32I32[iFn].pfnNative : g_aSseConvertXmmR32I32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmR32I32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmR32I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR32I32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7886,7 +7821,7 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -7894,7 +7829,7 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -7905,7 +7840,7 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -7916,7 +7851,7 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -7928,17 +7863,12 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmR32I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8026,13 +7956,8 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmI32R64[iFn].pfnNative ? g_aSseConvertXmmI32R64[iFn].pfnNative : g_aSseConvertXmmI32R64[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmI32R64[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmI32R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmI32R64[iFn].pszName), RTEXITCODE_FAILURE);
 
         X86FXSTATE State;
         RT_ZERO(State);
@@ -8060,7 +7985,7 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -8068,7 +7993,7 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8079,7 +8004,7 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8090,7 +8015,7 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8102,17 +8027,12 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmI32R64[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8196,13 +8116,8 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmR64I32[iFn].pfnNative ? g_aSseConvertXmmR64I32[iFn].pfnNative : g_aSseConvertXmmR64I32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmR64I32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmR64I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR64I32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8236,7 +8151,7 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResM.MXCSR;
                         TestData.OutVal    = ResM.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         State.MXCSR = State.MXCSR & ~X86_MXCSR_XCPT_MASK;
                         IEMSSERESULT ResU; RT_ZERO(ResU);
@@ -8244,7 +8159,7 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
                         TestData.fMxcsrIn  = State.MXCSR;
                         TestData.fMxcsrOut = ResU.MXCSR;
                         TestData.OutVal    = ResU.uResult;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (ResM.MXCSR | ResU.MXCSR) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8255,7 +8170,7 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
                             TestData.fMxcsrIn  = State.MXCSR;
                             TestData.fMxcsrOut = Res1.MXCSR;
                             TestData.OutVal    = Res1.uResult;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((Res1.MXCSR & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (Res1.MXCSR & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8266,7 +8181,7 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
                                 TestData.fMxcsrIn  = State.MXCSR;
                                 TestData.fMxcsrOut = Res2.MXCSR;
                                 TestData.OutVal    = Res2.uResult;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8278,17 +8193,12 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
                                         TestData.fMxcsrIn  = State.MXCSR;
                                         TestData.fMxcsrOut = Res3.MXCSR;
                                         TestData.OutVal    = Res3.uResult;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmR64I32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8377,13 +8287,8 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
     {
         PFNIEMAIMPLMXCSRU64U128 const pfn = g_aSseConvertMmXmm[iFn].pfnNative ? g_aSseConvertMmXmm[iFn].pfnNative : g_aSseConvertMmXmm[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertMmXmm[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertMmXmm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertMmXmm[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8418,7 +8323,7 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.OutVal.u   = u64ResM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
@@ -8427,7 +8332,7 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.OutVal.u   = u64ResU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8439,7 +8344,7 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.OutVal.u   = u64Res1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8451,7 +8356,7 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.OutVal.u   = u64Res2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8464,17 +8369,12 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.OutVal.u   = u64Res3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertMmXmm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8551,13 +8451,8 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
     {
         PFNIEMAIMPLMXCSRU128U64 const pfn = g_aSseConvertXmmR64Mm[iFn].pfnNative ? g_aSseConvertXmmR64Mm[iFn].pfnNative : g_aSseConvertXmmR64Mm[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmR64Mm[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmR64Mm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR64Mm[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -8580,14 +8475,14 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
                         pfn(&fMxcsrM, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
                         pfn(&fMxcsrU, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8597,7 +8492,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
                             pfn(&fMxcsr1, &TestData.OutVal, TestData.InVal.u);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8607,7 +8502,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
                                 pfn(&fMxcsr2, &TestData.OutVal, TestData.InVal.u);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8618,17 +8513,12 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
                                         pfn(&fMxcsr3, &TestData.OutVal, TestData.InVal.u);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmR64Mm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8703,13 +8593,8 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
     {
         PFNIEMAIMPLMXCSRU128U64 const pfn = g_aSseConvertXmmR32Mm[iFn].pfnNative ? g_aSseConvertXmmR32Mm[iFn].pfnNative : g_aSseConvertXmmR32Mm[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertXmmR32Mm[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertXmmR32Mm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR32Mm[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -8732,14 +8617,14 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
                         pfn(&fMxcsrM, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
                         pfn(&fMxcsrU, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8749,7 +8634,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
                             pfn(&fMxcsr1, &TestData.OutVal, TestData.InVal.u);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8759,7 +8644,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
                                 pfn(&fMxcsr2, &TestData.OutVal, TestData.InVal.u);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8770,17 +8655,12 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
                                         pfn(&fMxcsr3, &TestData.OutVal, TestData.InVal.u);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertXmmR32Mm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -8859,13 +8739,8 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
     {
         PFNIEMAIMPLMXCSRU64U64 const pfn = g_aSseConvertMmI32XmmR32[iFn].pfnNative ? g_aSseConvertMmI32XmmR32[iFn].pfnNative : g_aSseConvertMmI32XmmR32[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSseConvertMmI32XmmR32[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSseConvertMmI32XmmR32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertMmI32XmmR32[iFn].pszName), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8904,7 +8779,7 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
                         TestData.fMxcsrIn  = fMxcsrIn;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.OutVal.u  = u64ResM;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
@@ -8913,7 +8788,7 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
                         TestData.fMxcsrIn  = fMxcsrIn;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.OutVal.u  = u64ResU;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         uint16_t fXcpt = (fMxcsrM | fMxcsrU) & X86_MXCSR_XCPT_FLAGS;
                         if (fXcpt)
@@ -8925,7 +8800,7 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
                             TestData.fMxcsrIn  = fMxcsrIn;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.OutVal.u  = u64Res1;
-                            RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                            GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                             if (((fMxcsr1 & X86_MXCSR_XCPT_FLAGS) & fXcpt) != (fMxcsr1 & X86_MXCSR_XCPT_FLAGS))
                             {
@@ -8937,7 +8812,7 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
                                 TestData.fMxcsrIn  = fMxcsrIn;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.OutVal.u  = u64Res2;
-                                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                             }
                             if (!RT_IS_POWER_OF_TWO(fXcpt))
                                 for (uint16_t fUnmasked = 1; fUnmasked <= X86_MXCSR_PE; fUnmasked <<= 1)
@@ -8950,17 +8825,12 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
                                         TestData.fMxcsrIn  = fMxcsrIn;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.OutVal.u  = u64Res3;
-                                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                                     }
                         }
                     }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSseConvertMmI32XmmR32[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -9042,13 +8912,8 @@ static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLPCMPISTRIU128IMM8 const pfn = g_aSsePcmpistri[iFn].pfnNative ? g_aSsePcmpistri[iFn].pfnNative : g_aSsePcmpistri[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpistri[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpistri[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpistri[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9069,7 +8934,7 @@ static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
-                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
             }
 
             /* Repeat the test with the input value being the same. */
@@ -9084,15 +8949,10 @@ static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
-                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
             }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpistri[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -9164,13 +9024,8 @@ static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLPCMPISTRMU128IMM8 const pfn = g_aSsePcmpistrm[iFn].pfnNative ? g_aSsePcmpistrm[iFn].pfnNative : g_aSsePcmpistrm[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpistrm[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpistrm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpistrm[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9191,7 +9046,7 @@ static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
-                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
             }
 
             /* Repeat the test with the input value being the same. */
@@ -9206,15 +9061,10 @@ static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
-                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
             }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpistrm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -9288,13 +9138,8 @@ static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLPCMPESTRIU128IMM8 const pfn = g_aSsePcmpestri[iFn].pfnNative ? g_aSsePcmpestri[iFn].pfnNative : g_aSsePcmpestri[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpestri[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpestri[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpestri[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9323,7 +9168,7 @@ static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32
                         TestData.fEFlagsIn  = fEFlagsIn;
                         TestData.fEFlagsOut = fEFlagsOut;
                         TestData.bImm       = (uint8_t)u16Imm;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                     }
 
                     /* Repeat the test with the input value being the same. */
@@ -9338,16 +9183,11 @@ static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32
                         TestData.fEFlagsIn  = fEFlagsIn;
                         TestData.fEFlagsOut = fEFlagsOut;
                         TestData.bImm       = (uint8_t)u16Imm;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                     }
                 }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpestri[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -9423,13 +9263,8 @@ static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32
     {
         PFNIEMAIMPLPCMPESTRMU128IMM8 const pfn = g_aSsePcmpestrm[iFn].pfnNative ? g_aSsePcmpestrm[iFn].pfnNative : g_aSsePcmpestrm[iFn].pfn;
 
-        PRTSTREAM pStrmOut = NULL;
-        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpestrm[iFn].pszName);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpestrm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpestrm[iFn].pszName), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9458,7 +9293,7 @@ static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32
                         TestData.fEFlagsIn  = fEFlagsIn;
                         TestData.fEFlagsOut = fEFlagsOut;
                         TestData.bImm       = (uint8_t)u16Imm;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                     }
 
                     /* Repeat the test with the input value being the same. */
@@ -9473,16 +9308,11 @@ static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32
                         TestData.fEFlagsIn  = fEFlagsIn;
                         TestData.fEFlagsOut = fEFlagsOut;
                         TestData.bImm       = (uint8_t)u16Imm;
-                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                        GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
                     }
                 }
         }
-        rc = RTStrmClose(pStrmOut);
-        if (RT_FAILURE(rc))
-        {
-            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpestrm[iFn].pszName, rc);
-            return RTEXITCODE_FAILURE;
-        }
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
 
     return RTEXITCODE_SUCCESS;
@@ -9899,7 +9729,7 @@ int main(int argc, char **argv)
 
         if (fSseFpBinary)
         {
-            const char *pszDataFileFmt = fCommonData ? "tstIEMAImplDataSseBinary-%s.bin" : pszBitBucket;
+            const char * const pszDataFileFmt = fCommonData ? "tstIEMAImplDataSseBinary-%s.bin.gz" : NULL;
 
             RTEXITCODE rcExit = SseBinaryR32Generate(pszDataFileFmt, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
@@ -9932,8 +9762,8 @@ int main(int argc, char **argv)
 
         if (fSseFpOther)
         {
-            const char *pszDataFileFmtCmp = fCommonData ? "tstIEMAImplDataSseCompare-%s.bin" : pszBitBucket;
-            const char *pszDataFileFmtConv = fCommonData ? "tstIEMAImplDataSseConvert-%s.bin" : pszBitBucket;
+            const char * const pszDataFileFmtCmp  = fCommonData ? "tstIEMAImplDataSseCompare-%s.bin.gz" : NULL;
+            const char * const pszDataFileFmtConv = fCommonData ? "tstIEMAImplDataSseConvert-%s.bin.gz" : NULL;
 
             RTEXITCODE rcExit = SseCompareEflR32R32Generate(pszDataFileFmtCmp, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
@@ -9964,7 +9794,7 @@ int main(int argc, char **argv)
 
         if (fSsePcmpxstrx)
         {
-            const char *pszDataFileFmtCmp = fCommonData ? "tstIEMAImplDataSsePcmpxstrx-%s.bin" : pszBitBucket;
+            const char * const pszDataFileFmtCmp = fCommonData ? "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz" : NULL;
 
             RTEXITCODE rcExit = SseComparePcmpistriGenerate(pszDataFileFmtCmp, cTests);
             if (rcExit == RTEXITCODE_SUCCESS)
