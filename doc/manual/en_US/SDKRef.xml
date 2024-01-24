@@ -4191,6 +4191,12 @@ AuthResult AUTHCALL AuthEntry(
           be removed in a future version. Please upgrade your code to use Python 3.</para>
         </listitem>
 
+        <listitem><para>The Python API bindings now live in a separate <computeroutput>python</computeroutput>
+          sub directory and also now support installing via the pip package manager
+          (e.g. <computeroutput>pip -v install ./vboxapi</computeroutput>). This also allows installing into
+          Python virtual environments.</para>
+        </listitem>
+
         <listitem><para>Guest process creation requires a new parameter for specifying the current working directory for the new
           guest process. This is optional and can be empty.
           See <link linkend="IGuestSession__processCreate">IGuestSession::processCreate</link> and
