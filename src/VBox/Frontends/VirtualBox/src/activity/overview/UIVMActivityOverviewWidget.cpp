@@ -53,6 +53,7 @@
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityOverviewWidget.h"
 
@@ -1537,9 +1538,9 @@ void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
         m_pModel->setShouldUpdate(fIsCurrentTool);
 }
 
-void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud> &itemList)
+void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
-    Q_UNUSED(itemList);
+    Q_UNUSED(cloudItems);
 }
 
 void UIVMActivityOverviewWidget::retranslateUi()
