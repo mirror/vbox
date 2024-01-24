@@ -605,7 +605,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             # OracleLinux
             #
             UnattendedVm(oSet, 'tst-ol-9_2-arm64', 'Oracle_arm64', '7.1/uaisos/OracleLinux-R9-U2-aarch64-dvd.iso',
-                         0, "ARM"),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs, "ARM"),
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
