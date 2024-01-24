@@ -308,7 +308,7 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	    echo "Plugins = /usr/lib/$(package)/plugins" >> $(prefix)/usr/lib/$(package)/qt.conf; \
 	fi
 	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
-	    cd $(builddir)/bin/sdk/installer && \
+	    cd $(builddir)/bin/sdk/installer/python && \
 	    $(PYTHON) ./vboxapisetup.py install --root $(prefix)
 	rm -rf $(prefix)/usr/lib/$(package)/sdk/installer
 	ln -s ../VBoxVMM.so $(prefix)/usr/lib/$(package)/components/VBoxVMM.so

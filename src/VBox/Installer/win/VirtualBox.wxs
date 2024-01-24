@@ -383,14 +383,16 @@
                 </Directory>
                 <Directory Id="dir_SDK" Name="sdk">
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-                    <Directory Id="dir_SDKInstall" Name="install">
-    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-                        <Merge Id="msm_VBoxPython" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergePython)" DiskId="1" />
-    <?else ?>
-                        <Directory Id="msm_VBoxPythonFolder" FileSource=".">
-                            <?include VBoxMergePython.wxi ?>
+                    <Directory Id="dir_SDKInstaller" Name="installer"> <!-- Note: For < VBox 7.1 this folder was called 'install'. -->
+                        <Directory Id="dir_SDKInstallerPython" Name="python">
+        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+                            <Merge Id="msm_VBoxPython" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergePython)" DiskId="1" />
+        <?else ?>
+                            <Directory Id="msm_VBoxPythonFolder" FileSource=".">
+                                <?include VBoxMergePython.wxi ?>
+                            </Directory>
+        <?endif ?>
                         </Directory>
-    <?endif ?>
                     </Directory>
 <?endif ?>
                     <!-- Component for removing empty folder after cleaning traces -->

@@ -720,7 +720,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(if-expr defined(VBOX_WITH_PYTHON), \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/vboxapi \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer/python/vboxapi \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/ \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/bindings/xpcom/python \

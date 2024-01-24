@@ -1,0 +1,20 @@
+[project]
+name = "vboxapi"
+version = "1"
+description = "Python interface to VirtualBox"
+dependencies = [ "packaging" ]
+authors = [ { name = "Oracle Corp.", email = "vbox-dev@virtualbox.org" } ]
+
+[project.urls]
+Homepage = "https://www.virtualbox.org"
+Repo = "https://www.virtualbox.org/svn/vbox/"
+Issues = "https://www.virtualbox.org/wiki/Bugtracker"
+
+[build-system]
+requires = [ "setuptools" ]
+build-backend = "setuptools.build_meta"
+
+#[tool.setuptools.packages.find]
+#where = ["src"]
+#include = ["pkg*"]  # alternatively: `exclude = ["additional*"]`
+#namespaces = false

@@ -510,6 +510,8 @@ DEFAULT_FILE_NAMES=" \
     sdk/include/VBoxAuth.h \
     sdk/installer/build/lib/vboxapi/VirtualBox_constants.py
     sdk/installer/build/lib/vboxapi/__init__.py
+    sdk/installer/python/build/lib/vboxapi/VirtualBox_constants.py
+    sdk/installer/python/build/lib/vboxapi/__init__.py
     sdk/idl/ \
     sdk/idl/nsIDebug.idl \
     sdk/idl/nsIInterfaceRequestor.idl \

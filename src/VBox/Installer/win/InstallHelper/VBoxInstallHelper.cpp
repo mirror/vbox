@@ -607,17 +607,17 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
      * Set up the VBox API.
      */
     /* Get the VBox API setup string. */
-    WCHAR wszVBoxSDKPath[RTPATH_MAX];
-    rcWin = VBoxGetMsiProp(hModule, L"CustomActionData", wszVBoxSDKPath, RT_ELEMENTS(wszVBoxSDKPath));
+    WCHAR wszVBoxPythonInstallerPath[RTPATH_MAX];
+    rcWin = VBoxGetMsiProp(hModule, L"CustomActionData", wszVBoxPythonInstallerPath, RT_ELEMENTS(wszVBoxPythonInstallerPath));
     if (rcWin == ERROR_SUCCESS)
     {
         /* Make sure our current working directory is the VBox installation path. */
-        if (SetCurrentDirectoryW(wszVBoxSDKPath))
+        if (SetCurrentDirectoryW(wszVBoxPythonInstallerPath))
         {
             /* Set required environment variables. */
-            if (SetEnvironmentVariableW(L"VBOX_INSTALL_PATH", wszVBoxSDKPath))
+            if (SetEnvironmentVariableW(L"VBOX_INSTALL_PATH", wszVBoxPythonInstallerPath)) /** @todo BUGBUG r=andy That can't be right! */
             {
-                logStringF(hModule, "InstallPythonAPI: Invoking vboxapisetup.py in \"%ls\" ...", wszVBoxSDKPath);
+                logStringF(hModule, "InstallPythonAPI: Invoking vboxapisetup.py in \"%ls\" ...", wszVBoxPythonInstallerPath);
 
                 rcWin = procRun(hModule, wszPythonExe, L"vboxapisetup.py install");
                 if (rcWin == ERROR_SUCCESS)
@@ -649,7 +649,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         }
         else
             logStringF(hModule, "InstallPythonAPI: Could set working directory to \"%ls\": LastError=%u",
-                       wszVBoxSDKPath, GetLastError());
+                       wszVBoxPythonInstallerPath, GetLastError());
     }
     else
         logStringF(hModule, "InstallPythonAPI: Unable to retrieve VBox installation directory: rcWin=%u (%#x)", rcWin, rcWin);

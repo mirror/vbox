@@ -1,0 +1,77 @@
+# $Id$
+## @file
+# kBuild Configuration file for Main glue for Python.
+#
+
+#
+# Copyright (C) 2024 Oracle and/or its affiliates.
+#
+# This file is part of VirtualBox base platform packages, as
+# available from https://www.virtualbox.org.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, in version 3 of the
+# License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses>.
+#
+# SPDX-License-Identifier: GPL-3.0-only
+#
+
+VBOX_MAIN_GLUE_PYTHON_CONFIG_KMK_INCLUDED = 1
+
+# Include the top-level configure file.
+ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/Config.kmk
+endif
+
+#
+# Globals
+#
+VBOX_PATH_MAIN_GLUE_PYTHON_SRC := $(PATH_ROOT)/src/VBox/Main/glue/python
+
+#
+# List of python sources that should be linted.
+#
+VBOX_MAIN_GLUE_PYTHON_PYTHON_SOURCES :=
+VBOX_MAIN_GLUE_PYTHON_PYLINT_TARGETS :=
+
+ifdef VBOX_WITH_PYLINT
+ TESTING +=
+endif
+
+#
+# Process python sources.
+#
+VBOX_PYTHONPATH_MAIN_GLUE_PYTHON = $(PYTHONPATH):$(VBOX_PATH_MAIN_GLUE_PYTHON_SRC)
+BLDDIRS += $(PATH_TARGET)/pylint
+
+define def_vbox_main_glue_python_py_check
+ $(eval name:=$(basename $(notdir $(py))))
+
+ pylint: $(name)-py-phony.o
+ $(name).o: $(name)-py-phony.o
+ $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ ifdef VBOX_WITH_PYLINT
+	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
+	$(QUIET)$(REDIRECT) -C "$(dir $(py))" -E LC_ALL=C -E PYTHONPATH="$(VBOX_PYTHONPATH_MAIN_GLUE_PYTHON)" -- \
+		$(VBOX_PYLINT) --rcfile=$(VBOX_PATH_MAIN_GLUE_PYTHON_SRC)/pylintrc $$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
+ endif
+	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
+ TESTING += $(name)-py-phony.o
+ VBOX_MAIN_GLUE_PYTHON_PYLINT_TARGETS    += $(PATH_TARGET)/pylint/$(name).o
+endef # def_vbox_main_glue_python_py_check
+
+
+define def_vbox_main_glue_python_process_python_sources
+ if $(words $(_SUB_MAKEFILE_STACK)) <= 0 || "$1" == "FORCE"
+  $(foreach py, $(VBOX_MAIN_GLUE_PYTHON_PYTHON_SOURCES), $(eval $(def_vbox_main_glue_python_py_check)))
+ endif
+endef

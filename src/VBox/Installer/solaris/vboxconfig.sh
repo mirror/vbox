@@ -902,47 +902,115 @@ remove_drivers()
     return 0
 }
 
-# install_python_bindings(pythonbin pythondesc)
+# install_python_bindings(PYTHON_BIN PYTHON_VER)
 # failure: non fatal
+#
+## @todo r=andy Merge this code with linux/routines.sh!
 install_python_bindings()
 {
-    pythonbin="$1"
-    pythondesc="$2"
+    PYTHON_BIN="$1"
+    PYTHON_VER="$2"
 
     # The python binary might not be there, so just exit silently
-    if test -z "$pythonbin"; then
+    if test -z "$PYTHON_BIN"; then
         return 0
     fi
 
-    if test -z "$pythondesc"; then
+    if test -z "$PYTHON_VER"; then
         errorprint "missing argument to install_python_bindings"
         return 1
     fi
 
-    infoprint "Python found: $pythonbin, installing bindings..."
+    infoprint "Python found: $PYTHON_BIN, installing bindings..."
 
     # check if python has working distutils
-    "$pythonbin" -c "from distutils.core import setup" > /dev/null 2>&1
+    "$PYTHON_BIN" -c "from distutils.core import setup" > /dev/null 2>&1
     if test "$?" -ne 0; then
-        subprint "Skipped: $pythondesc install is unusable, missing package 'distutils'"
+        subprint "Skipped: Python $PYTHON_VER does not have package 'distutils', skipping..."
         return 0
     fi
+
+    MY_PYTHON_INSTALLER_PATH="$VBOX_INSTALL_PATH/sdk/installer/python"
 
     # Pass install path via environment
     export VBOX_INSTALL_PATH
     mkdir -p "$CONFIG_DIR"
     rm -f "$CONFIG_DIR/python-$CONFIG_FILES"
-    $SHELL -c "cd \"$VBOX_INSTALL_PATH\"/sdk/installer && \"$pythonbin\" ./vboxapisetup.py install \
+
+    $SHELL -c "cd ${MY_PYTHON_INSTALLER_PATH} && ${PYTHON_BIN} ./vboxapisetup.py install \
         --record \"$CONFIG_DIR/python-$CONFIG_FILES\"" > /dev/null 2>&1
     if test "$?" -eq 0; then
         cat "$CONFIG_DIR/python-$CONFIG_FILES" >> "$CONFIG_DIR/$CONFIG_FILES"
     else
-        errorprint "Failed to install bindings for $pythondesc"
+        errorprint "Failed to install bindings for Python $PYTHON_VER"
     fi
     rm "$CONFIG_DIR/python-$CONFIG_FILES"
 
     # Remove files created by Python API setup.
-    rm -rf $VBOX_INSTALL_PATH/sdk/installer/build
+    rm -rf "$MY_PYTHON_INSTALLER_PATH/build"
+    return 0
+}
+
+## @todo r=andy Merge this code with linux/routines.sh!
+maybe_run_python_bindings_installer() {
+    MY_PYTHON_INSTALLER_PATH="$VBOX_INSTALL_PATH/sdk/installer/python"
+
+    if test -f "$MY_PYTHON_INSTALLER_PATH/vboxapisetup.py" || test -h "$MY_PYTHON_INSTALLER_PATH/vboxapisetup.py"; then
+        # Install python bindings for non-remote installs
+        if test "$REMOTEINST" -eq 0; then
+            infoprint "Installing Python bindings..."
+
+            # Loop over all usual suspect Python executable names and try installing
+            # the VirtualBox API bindings. Needs to prevent double installs which waste
+            # quite a bit of time.
+            PYTHON_VER_INSTALLED=""
+            PYTHON_BINARIES="\
+                python2.4  \
+                python2.5  \
+                python2.6  \
+                python2.7  \
+                python2    \
+                python3.3  \
+                python3.4  \
+                python3.5  \
+                python3.6  \
+                python3.7  \
+                python3.8  \
+                python3.9  \
+                python3.10 \
+                python3.11 \
+                python3    \
+                python     \
+                "
+
+            for PYTHON_BIN in $PYTHON_BINARIES; do
+                if [ "`$PYTHON_BIN -c 'import sys
+if sys.version_info >= (2, 6) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
+print(\"test\")' 2> /dev/null`" != "test" ]; then
+                    continue
+                fi
+                # Get python major/minor version, and skip if it was
+                # already covered.  Uses grep -F to avoid trouble with '.'
+                # matching any char.
+                PYTHON_VER="`$PYTHON_BIN -c 'import sys
+print("%s.%s" % (sys.version_info[0], sys.version_info[1]))' 2> /dev/null`"
+                if echo "$PYTHON_VER_INSTALLED" | /usr/xpg4/bin/grep -Fq ":$PYTHON_VER:"; then
+                    continue
+                fi
+                # Record which version will be installed. If it fails there
+                # is no point trying with different executable/symlink
+                # reporting the same version.
+                PYTHON_VER_INSTALLED="$PYTHON_VER_INSTALLED:$PYTHON_VER:"
+                install_python_bindings "$PYTHON_BIN" "$PYTHON_VER"
+            done
+            if [ -z "$PYTHON_VER_INSTALLED" ]; then
+                warnprint "Python (2.4 to 2.7 or 3.3 and later) unavailable, skipping bindings installation."
+            fi
+        else
+            warnprint "Skipped installing Python bindings. Run, as root, 'vboxapisetup.py install' manually from the booted system."
+        fi
+    fi
+
     return 0
 }
 
@@ -1339,43 +1407,7 @@ postinstall()
             fi
         fi
 
-        if test -f "$VBOX_INSTALL_PATH/sdk/installer/vboxapisetup.py" || test -h "$VBOX_INSTALL_PATH/sdk/installer/vboxapisetup.py"; then
-            # Install python bindings for non-remote installs
-            if test "$REMOTEINST" -eq 0; then
-                infoprint "Installing Python bindings..."
-
-                # Loop over all usual suspect Python executable names and try
-                # installing the VirtualBox API bindings. Needs to prevent
-                # double installs which waste quite a bit of time.
-                PYTHONS=""
-                for p in python2.4 python2.5 python2.6 python2.7 python2 python3.3 python3.4 python3.5 python3.6 python3.7 python3.8 python3.9 python3.10 python3.11 python3 python; do
-                    if [ "`$p -c 'import sys
-if sys.version_info >= (2, 4) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
-    print(\"test\")' 2> /dev/null`" != "test" ]; then
-                        continue
-                    fi
-                    # Get python major/minor version, and skip if it was
-                    # already covered.  Uses grep -F to avoid trouble with '.'
-                    # matching any char.
-                    pyvers="`$p -c 'import sys
-print("%s.%s" % (sys.version_info[0], sys.version_info[1]))' 2> /dev/null`"
-                    if echo "$PYTHONS" | /usr/xpg4/bin/grep -Fq ":$pyvers:"; then
-                        continue
-                    fi
-                    # Record which version will be installed. If it fails there
-                    # is no point trying with different executable/symlink
-                    # reporting the same version.
-                    PYTHONS="$PYTHONS:$pyvers:"
-                    install_python_bindings "$p" "Python $pyvers"
-                done
-                if [ -z "$PYTHONS" ]; then
-                    warnprint "Python (2.4 to 2.7 or 3.3 and later) unavailable, skipping bindings installation."
-                fi
-            else
-                warnprint "Skipped installing Python bindings. Run, as root, 'vboxapisetup.py install' manually from the booted system."
-            fi
-        fi
-
+        maybe_run_python_bindings_installer
         update_boot_archive
 
         return 0

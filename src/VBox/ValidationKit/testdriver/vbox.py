@@ -1393,7 +1393,7 @@ class TestDriver(base.TestDriver):                                              
         sys.path.insert(0, self.oBuild.sInstallPath);
         if self.oBuild.sSdkPath is not None:
             sys.path.insert(0, os.path.join(self.oBuild.sSdkPath, 'installer'))
-            sys.path.insert(1, os.path.join(self.oBuild.sSdkPath, 'install')); # stupid stupid windows installer!
+            sys.path.insert(1, os.path.join(self.oBuild.sSdkPath, 'install')); # stupid stupid windows installer (VBox < 7.1)!
             sys.path.insert(2, os.path.join(self.oBuild.sSdkPath, 'bindings', 'xpcom', 'python'))
         os.environ['VBOX_PROGRAM_PATH'] = self.oBuild.sInstallPath;
         reporter.log("sys.path: %s" % (sys.path));

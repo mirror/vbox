@@ -33,17 +33,58 @@ INSTALL=/usr/bin/install
 #
 # Install the Python bindings
 #
+## @todo r=andy Merge this code with linux/routines.sh!
+#
 VBOX_INSTALL_PATH=/Applications/VirtualBox.app/Contents/MacOS
-PYTHON="python python2.3 python2.5 python2.6 python2.7"
-if [ -e "${VBOX_INSTALL_PATH}/sdk/installer/vboxapisetup.py" ]; then
-    for p in $PYTHON; do
+PYTHON_INSTALLER_PATH="$VBOX_INSTALL_PATH/sdk/installer/python"
+PYTHON_BINARIES="\
+    python2.7  \
+    python2    \
+    python3.3  \
+    python3.4  \
+    python3.5  \
+    python3.6  \
+    python3.7  \
+    python3.8  \
+    python3.9  \
+    python3.10 \
+    python3.11 \
+    python3.12 \
+    python3    \
+    python"
+
+if [ -e "$PYTHON_INSTALLER_PATH/vboxapisetup.py" ]; then
+    for PYTHON_BIN in $PYTHON_BINARIES; do
         # Install the python bindings if python is in the path
-        if [ "`\${p} -c 'print "test"' 2> /dev/null`" = "test" ]; then
-                echo  1>&2 "Python found: ${p}, installing bindings..."
-                # Pass install path via environment
-                export VBOX_INSTALL_PATH
-                /bin/sh -c "cd $VBOX_INSTALL_PATH/sdk/installer && ${p} vboxapisetup.py install"
-                /bin/sh -c "cd $VBOX_INSTALL_PATH/sdk/installer && ${p} vboxapisetup.py clean --all"
+        if [ "`\${PYTHON_BIN} -c 'print "test"' 2> /dev/null`" = "test" ]; then
+            echo  1>&2 "Python found: ${PYTHON_BIN}, installing bindings..."
+            # Pass install path via environment
+            export VBOX_INSTALL_PATH
+            # Check if python has working distutils
+            "$PYTHON_BIN" -c "from distutils.core import setup" > /dev/null 2>&1
+            if test "$?" -ne 0; then
+                echo 1>&2 "Python $PYTHON_VER does not have package 'distutils', checking for 'setuptools'..."
+                # Since Python 3.12 there are no distutils anymore. See PEP632.
+                "$PYTHON_BIN" -c "from setuptools import setup" > /dev/null 2>&1
+                if test "$?" -ne 0; then
+                    echo 1>&2 "Python $PYTHON_VER also does not have package 'setuptools'. Skipping installation."
+                    return 0
+                fi
+                # When we reach here, we have to use 'pip' in order to install our bindings (Python >= 3.12).
+                if test -x "`which pip 2>/dev/null`"; then
+                    PYTHON_PIP_BIN=$(which pip)
+                else
+                    echo 1>&2 "Python package manager 'pip' not found. Skipping installation."
+                fi
+            fi
+
+            if [ -n "$PYTHON_PIP_BIN" ]; then
+                # Note: We use '-v' to show verbose output of our setup.py script on error.
+                $SHELL -c "cd ${PYTHON_INSTALLER_PATH} && ${PYTHON_PIP_BIN} -v install ./vboxapi"
+            else
+                $SHELL -c "cd ${PYTHON_INSTALLER_PATH} && ${PYTHON_BIN} vboxapisetup.py install"
+                $SHELL -c "cd ${PYTHON_INSTALLER_PATH} && ${PYTHON_BIN} vboxapisetup.py clean --all"
+            fi
         fi
     done
 fi

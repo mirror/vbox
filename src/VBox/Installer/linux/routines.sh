@@ -400,72 +400,111 @@ terminate_proc() {
 }
 
 
-# install_python_bindings(pythonbin pythondesc)
+# install_python_bindings(PYTHON_BIN PYTHON_VER)
 # failure: non fatal
+#
+## @todo r=andy Merge this code with darwin/VirtualBox/postflight!
 install_python_bindings()
 {
-    pythonbin="$1"
-    pythondesc="$2"
+    PYTHON_BIN="$1"
+    PYTHON_VER="$2"
 
     # The python binary might not be there, so just exit silently
-    if test -z "$pythonbin"; then
+    if test -z "$PYTHON_BIN"; then
         return 0
     fi
 
-    if test -z "$pythondesc"; then
+    if test -z "$PYTHON_VER"; then
         echo 1>&2 "missing argument to install_python_bindings"
         return 1
     fi
 
-    echo 1>&2 "Python found: $pythonbin, installing bindings..."
+    echo 1>&2 "Python found: $PYTHON_BIN, installing bindings..."
 
-    # check if python has working distutils
-    "$pythonbin" -c "from distutils.core import setup" > /dev/null 2>&1
+    # Check if python has working distutils
+    "$PYTHON_BIN" -c "from distutils.core import setup" > /dev/null 2>&1
     if test "$?" -ne 0; then
-        echo 1>&2 "Skipped: $pythondesc install is unusable, missing package 'distutils'"
-        return 0
+        echo 1>&2 "Python $PYTHON_VER does not have package 'distutils', checking for 'setuptools'..."
+        # Since Python 3.12 there are no distutils anymore. See PEP632.
+        "$PYTHON_BIN" -c "from setuptools import setup" > /dev/null 2>&1
+        if test "$?" -ne 0; then
+            echo 1>&2 "Python $PYTHON_VER also does not have package 'setuptools'. Skipping installation."
+            return 0
+        fi
+        # When we reach here, we have to use 'pip' in order to install our bindings (Python >= 3.12).
+        if test -x "`which pip 2>/dev/null`"; then
+            PYTHON_PIP_BIN=$(which pip)
+        else
+            echo 1>&2 "Python package manager 'pip' not found. Skipping installation."
+        fi
     fi
+
+    PYTHON_INSTALLER_PATH="$VBOX_INSTALL_PATH/sdk/installer/python"
 
     # Pass install path via environment
     export VBOX_INSTALL_PATH
-    $SHELL -c "cd $VBOX_INSTALL_PATH/sdk/installer && $pythonbin vboxapisetup.py install \
-        --record $CONFIG_DIR/python-$CONFIG_FILES"
-    cat $CONFIG_DIR/python-$CONFIG_FILES >> $CONFIG_DIR/$CONFIG_FILES
-    rm -f $CONFIG_DIR/python-$CONFIG_FILES
+
+    if [ -n "$PYTHON_PIP_BIN" ]; then
+        # Note: We use '-v' to show verbose output of our setup.py script on error.
+        $SHELL -c "cd ${PYTHON_INSTALLER_PATH} && ${PYTHON_PIP_BIN} -v install ./vboxapi"
+    else
+        $SHELL -c "cd ${PYTHON_INSTALLER_PATH} && ${PYTHON_BIN} ./vboxapisetup.py install \
+                   --record $CONFIG_DIR/python-$CONFIG_FILES"
+        cat "$CONFIG_DIR/python-$CONFIG_FILES" >> "$CONFIG_DIR/$CONFIG_FILES"
+        rm -f "$CONFIG_DIR/python-$CONFIG_FILES"
+    fi
 
     # Remove files created by Python API setup.
-    rm -rf $VBOX_INSTALL_PATH/sdk/installer/build
+    rm -rf "$PYTHON_INSTALLER_PATH/build"
 }
 
+## @todo r=andy Merge this code with darwin/VirtualBox/postflight!
 maybe_run_python_bindings_installer() {
     VBOX_INSTALL_PATH="${1}"
 
     # Loop over all usual suspect Python executable names and try installing
     # the VirtualBox API bindings. Needs to prevent double installs which waste
     # quite a bit of time.
-    PYTHONS=""
-    for p in python2.6 python2.7 python2 python3.3 python3.4 python3.5 python3.6 python3.7 python3.8 python3.9 python3.10 python3.11 python3 python; do
-        if [ "`$p -c 'import sys
+    PYTHON_VER_INSTALLED=""
+    PYTHON_BINARIES="\
+        python2.7 \
+        python2   \
+        python3.3 \
+        python3.4 \
+        python3.5 \
+        python3.6 \
+        python3.7 \
+        python3.8 \
+        python3.9 \
+        python3.10 \
+        python3.11 \
+        python3.12 \
+        python3 \
+        python"
+
+    for PYTHON_BIN in $PYTHON_BINARIES; do
+        if [ "`$PYTHON_BIN -c 'import sys
 if sys.version_info >= (2, 6) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
     print(\"test\")' 2> /dev/null`" != "test" ]; then
             continue
         fi
         # Get python major/minor version, and skip if it was already covered.
         # Uses grep -F to avoid trouble with '.' matching any char.
-        pyvers="`$p -c 'import sys
+        PYTHON_VER="`$PYTHON_BIN -c 'import sys
 print("%s.%s" % (sys.version_info[0], sys.version_info[1]))' 2> /dev/null`"
-        if echo "$PYTHONS" | grep -Fq ":$pyvers:"; then
+        if echo "$PYTHON_VER_INSTALLED" | grep -Fq ":$PYTHON_VER:"; then
             continue
         fi
         # Record which version will be installed. If it fails there is no point
         # trying with different executable/symlink reporting the same version.
-        PYTHONS="$PYTHONS:$pyvers:"
-        install_python_bindings "$p" "Python $pyvers"
+        PYTHON_VER_INSTALLED="$PYTHON_VER_INSTALLED:$PYTHON_VER:"
+        install_python_bindings "$PYTHON_BIN" "$PYTHON_VER"
     done
-    if [ -z "$PYTHONS" ]; then
-        echo 1>&2 "Python (2.6, 2.7 or 3.3 and later) unavailable, skipping bindings installation."
+    if [ -z "$PYTHON_VER_INSTALLED" ]; then
+        echo 1>&2 "Python (2.7 or 3.3 and later) unavailable, skipping bindings installation."
         return 1
     fi
 
     return 0
 }
+

@@ -1,0 +1,91 @@
+# $Id$
+## @file
+# Makefile for the VBox Python glue.
+#
+
+#
+# Copyright (C) 2004-2023 Oracle and/or its affiliates.
+#
+# This file is part of VirtualBox base platform packages, as
+# available from https://www.virtualbox.org.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, in version 3 of the
+# License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses>.
+#
+# SPDX-License-Identifier: GPL-3.0-only
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# Make sure our Config.kmk is included.
+#
+ifndef VBOX_MAIN_GLUE_PYTHON_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
+if defined(VBOX_WITH_PYTHON) && !defined(VBOX_ONLY_EXTPACKS)
+ VBOX_PATH_PYTHON_GLUE_SRC := $(PATH_SUB_CURRENT)
+
+ INSTALLS += VBox-python-glue
+ VBox-python-glue_INST = $(INST_SDK)installer/python/vboxapi/
+ VBox-python-glue_MODE = a+r,u+w
+ VBox-python-glue_SOURCES = \
+ 	pyproject.toml
+ INSTALLS += VBox-python-vboxapi
+ VBox-python-vboxapi_INST = $(INST_SDK)installer/python/vboxapi/src/vboxapi/
+ VBox-python-vboxapi_MODE = a+r,u+w
+ VBox-python-vboxapi_SOURCES = \
+ 	vboxapi.py=>__init__.py \
+ 	$(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants.py
+ VBox-python-vboxapi_CLEAN = \
+ 	$(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants.py \
+ 	$(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants_err_h_1.txt
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBox-python-vboxapi)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants.py)
+ $(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants.py \
+ + $(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants_err_h_1.txt: \
+ 		$(VBOX_PATH_PYTHON_GLUE_SRC)/constants-python.xsl \
+ 		$(VBOX_PATH_PYTHON_GLUE_SRC)/vbox-err-consts.sed \
+ 		$(PATH_ROOT)/include/iprt/err.h \
+ 		$(PATH_ROOT)/include/VBox/err.h \
+ 		$(VBOX_XIDL_FILE) \
+ 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
+	$(SED) -f $(VBOX_PATH_PYTHON_GLUE_SRC)/vbox-err-consts.sed \
+       	--output $(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants_err_h_1.txt \
+		$(PATH_ROOT)/include/iprt/err.h \
+		$(PATH_ROOT)/include/VBox/err.h
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
+		--stringparam "g_sErrHFile" "$(VBox-python-vboxapi_0_OUTDIR)/VirtualBox_constants_err_h_1.txt" \
+		$(VBOX_PATH_PYTHON_GLUE_SRC)/constants-python.xsl $(VBOX_XIDL_FILE)
+
+ #
+ # Automatically lint Main Python glue.
+ #
+ if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITHOUT_AUTO_PYLINT)
+  OTHERS      += $(PATH_TARGET)/pylintMainPythonGlue.run
+  OTHER_CLEAN += $(PATH_TARGET)/pylintMainPythonGlue.run
+  $(PATH_TARGET)/pylintMainPythonGlue.run: $(PATH_SUB_CURRENT)/vboxapi.py
+	$(QUIET)$(APPEND) -t "$@"
+ endif
+
+ VBOX_MAIN_GLUE_PYTHON_PYTHON_SOURCES := $(wildcard $(PATH_SUB_CURRENT)/*.py)
+
+ $(evalcall def_vbox_main_glue_python_process_python_sources,FORCE)
+
+endif # VBOX_WITH_PYTHON && !VBOX_ONLY_EXTPACKS
+
+include $(FILE_KBUILD_SUB_FOOTER)

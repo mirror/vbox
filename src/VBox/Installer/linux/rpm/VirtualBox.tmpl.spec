@@ -107,7 +107,7 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 %if %{?with_python:1}%{!?with_python:0}
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
-  cd ./sdk/installer && \
+  cd ./sdk/installer/python && \
   %{vbox_python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
 %endif
 rm -rf sdk/installer

@@ -36,13 +36,33 @@ endif
 # Python glue installer
 ifdef VBOX_WITH_PYTHON
 
- INSTALLS += VBox-python-glue-installer
+ INSTALLS += VBox-python-glue-vboxapisetup
 
- VBox-python-glue-installer_INST = $(INST_SDK)installer/
- VBox-python-glue-installer_MODE = a+r,u+w
- VBox-python-glue-installer_SOURCES = vboxapisetup.py
+ VBox-python-glue-vboxapisetup_INST = $(INST_SDK)installer/python/vboxapi/
+ VBox-python-glue-vboxapisetup_MODE = a+r,u+w
+ VBox-python-glue-vboxapisetup_SOURCES = vboxapisetup.py=>setup.py
+
+ INSTALLS += VBox-python-glue-vboxapisetup-stub
+
+ VBox-python-glue-vboxapisetup-stub_INST = $(INST_SDK)installer/python/
+ VBox-python-glue-vboxapisetup-stub_MODE = a+r,u+w
+ VBox-python-glue-vboxapisetup-stub_SOURCES = vboxapisetup-stub.py=>vboxapisetup.py
+
+ #
+ # Automatically lint common installer Python stuff.
+ #
+ if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITHOUT_AUTO_PYLINT)
+  OTHERS      += $(PATH_TARGET)/pylintInstallerCommon.run
+  OTHER_CLEAN += $(PATH_TARGET)/pylintInstallerCommon.run
+  $(PATH_TARGET)/pylintInstallerCommon.run: \
+	${PATH_SUB_CURRENT}/vboxapisetup.py ${PATH_SUB_CURRENT}/vboxapisetup-stub.py
+	$(QUIET)$(APPEND) -t "$@"
+ endif
+
+ VBOX_INSTALLER_COMMON_PYTHON_SOURCES := $(wildcard $(PATH_SUB_CURRENT)/*.py)
+
+ $(evalcall def_vbox_installer_common_process_python_sources,FORCE)
 
 endif # VBOX_WITH_PYTHON
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
