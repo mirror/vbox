@@ -2761,6 +2761,8 @@ class TestDriver(base.TestDriver):                                              
                     fRc = oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VMSVGA);
                 elif sGraphicsControllerType == 'VBoxVGA':
                     fRc = oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VBoxVGA);
+                elif sGraphicsControllerType == 'QemuRamFb':
+                    fRc = oSession.setVideoControllerType(vboxcon.GraphicsControllerType_QemuRamFB);
 
             #
             # x86-specifics.

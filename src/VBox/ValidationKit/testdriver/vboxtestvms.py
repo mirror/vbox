@@ -438,6 +438,8 @@ class BaseTestVm(object):
             reporter.log('Skipping Shanghai (Zhaoxin) incompatible VM.');
         elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
             reporter.log('Skipping P4 incompatible VM.');
+        elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
+            reporter.log('Skipping ARM VM on amd64 host');
         else:
             return False;
         return True;
@@ -1001,7 +1003,8 @@ class TestVm(object):
                  sDvdControllerType = 'IDE Controller',     # type: str
                  sGraphicsControllerType = None,            # type: str
                  fSecureBoot = False,                       # type: bool
-                 sUefiMokPathPrefix = None                  # type: str
+                 sUefiMokPathPrefix = None,                 # type: str
+                 sPlatformArchitecture = 'x86'              # type: str
                  ):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
@@ -1032,6 +1035,7 @@ class TestVm(object):
 
         self.fSecureBoot             = fSecureBoot;
         self.sUefiMokPathPrefix      = sUefiMokPathPrefix;
+        self.sPlatformArchitecture   = sPlatformArchitecture;
 
         self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
@@ -1171,6 +1175,8 @@ class TestVm(object):
         if self.fNstHwVirt and not oTestDrv.hasHostNestedHwVirt():
             reporter.log('Ignoring VM %s (Nested hardware-virtualization not support on this host).' % (self.sVmName,));
             return True;
+        elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
+            return True;
         return False;
 
     def createVm(self, oTestDrv, eNic0AttachType = None, sDvdImage = None):
@@ -1233,7 +1239,8 @@ class TestVm(object):
                                      sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None,
                                      fSecureBoot        = self.fSecureBoot,
                                      sUefiMokPathPrefix = self.sUefiMokPathPrefix,
-                                     sGraphicsControllerType = self.sGraphicsControllerType
+                                     sGraphicsControllerType = self.sGraphicsControllerType,
+                                     sPlatformArchitecture   = self.sPlatformArchitecture
                                      );
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
@@ -1258,6 +1265,8 @@ class TestVm(object):
                 elif self.isShanghaiIncompatible() and oTestDrv.isHostCpuShanghai():
                     fRc = None; # Skip the test.
                 elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
+                    fRc = None; # Skip the test.
+                elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
                     fRc = None; # Skip the test.
                 else:
                     oSession = oTestDrv.openSession(oVM);
@@ -2019,6 +2028,10 @@ class TestVmManager(object):
         TestVm('tst-ol-6u10-32',            kfGrpStdSmoke,        sHd = '7.1/ol-6u10-x86.vdi',
                sKind = 'Oracle',    acCpusSup = range(1, 33), fIoApic = True,
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        TestVm('tst-ol-9_2-amd64',          kfGrpStdSmoke,        sHd = '7.1/smoketests/ol-9_2-amd64-txs.vdi',
+               sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True,
+               asParavirtModesSup = [g_ksParavirtProviderKVM,], sHddControllerType='SATA Controller',
+               sDvdControllerType = 'SATA Controller', sGraphicsControllerType = 'VMSVGA'),
         # Note: Don't use this image for VBoxService / Guest Control-related tests anymore;
         #       The distro has a buggy dbus implementation, which crashes often in some dbus watcher functions when being
         #       invoked by pm_sm_authenticate(). Also, the distro's repositories can't be used either easily anymore due to old
@@ -2173,6 +2186,13 @@ class TestVmManager(object):
                       sHd = '5.2/great-old-ones/t-dos71/t-dos71.vdi'),
 
         #AncientTestVm('tst-dos5-win311a',       sKind = 'DOS',  sHd = '5.2/great-old-ones/t-dos5-win311a/t-dos5-win311a.vdi'),
+
+        #
+        # ARM
+        #
+        TestVm('tst-ol-9_2-arm64',          kfGrpStdSmoke,        sHd = '7.1/smoketests/ol-9_2-arm64-txs.vdi',
+               sKind = 'Oracle_arm64', acCpusSup = range(1, 33), sHddControllerType='VirtIO SCSI Controller',
+               sDvdControllerType = 'SATA Controller', sGraphicsControllerType = 'QemuRamFb', sPlatformArchitecture = 'ARM'),
     );
 
 
