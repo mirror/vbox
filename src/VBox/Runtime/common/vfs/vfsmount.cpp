@@ -43,6 +43,7 @@
 
 #define RT_ASM_INCLUDE_PAGE_SIZE
 #include <iprt/asm-mem.h>
+#include <iprt/asm.h> /* ASMByteSwapU32/U16 on sparc */
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
