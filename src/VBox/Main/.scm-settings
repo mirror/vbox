@@ -34,7 +34,7 @@
 /cbinding/makefile.tstCAPIGlue:         --license-mit --treat-as Makefile
 
 # The Python bindings is licensed under dual GPL and CDDL.
-/glue/vboxapi.py:                       --license-ose-dual
+/glue/python/vboxapi.py:                --license-ose-dual
 
 # Source dirs.
 --filter-out-files /src-all/VBoxAPI-end.d
@@ -97,4 +97,3 @@
 
 /testcase/tstUnattendedScript-1.expected: --treat-as plaintext --external-copyright
 /testcase/tstUnattendedScript-1.template: --treat-as plaintext --external-copyright
-
