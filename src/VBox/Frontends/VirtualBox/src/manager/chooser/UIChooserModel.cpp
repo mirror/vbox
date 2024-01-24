@@ -1270,8 +1270,9 @@ void UIChooserModel::sltHandleReadCloudMachineListTaskComplete()
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete();
 
-    /* Restart cloud profile update timer: */
-    m_pTimerCloudProfileUpdate->start(10000);
+    /* Postpone update since we have just updated: */
+    if (m_pTimerCloudProfileUpdate)
+        m_pTimerCloudProfileUpdate->start(10000);
 }
 
 void UIChooserModel::sltHandleCloudProfileManagerCumulativeChange()
@@ -1351,6 +1352,10 @@ void UIChooserModel::sltHandleCloudMachineRemoved(const QString &strProviderShor
 
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
+    /* Postpone update since we are already working on it: */
+    if (m_pTimerCloudProfileUpdate)
+        m_pTimerCloudProfileUpdate->start(10000);
+
     /* Compose a list of items to update: */
     QList<UIChooserItem*> itemsToUpdate;
 
@@ -1593,7 +1598,7 @@ void UIChooserModel::prepareCloudUpdateTimer()
 {
     m_pTimerCloudProfileUpdate = new QTimer;
     if (m_pTimerCloudProfileUpdate)
-        m_pTimerCloudProfileUpdate->setSingleShot(true);
+        m_pTimerCloudProfileUpdate->start(10000);
 }
 
 void UIChooserModel::prepareConnections()
@@ -1953,14 +1958,16 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         machines << pMachineItem->cache()->toCloud()->machine();
 
     /* Stop cloud profile update prematurely: */
-    m_pTimerCloudProfileUpdate->stop();
+    if (m_pTimerCloudProfileUpdate)
+        m_pTimerCloudProfileUpdate->stop();
 
     /* Confirm machine removal: */
     const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
     {
         /* Resume cloud profile update if cancelled: */
-        m_pTimerCloudProfileUpdate->start(10000);
+        if (m_pTimerCloudProfileUpdate)
+            m_pTimerCloudProfileUpdate->start(10000);
         return;
     }
 
@@ -1990,6 +1997,10 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
                 this, &UIChooserModel::sltHandleCloudMachineRemoved);
         gpNotificationCenter->append(pNotification);
     }
+
+    /* Resume cloud profile update after all: */
+    if (m_pTimerCloudProfileUpdate)
+        m_pTimerCloudProfileUpdate->start(10000);
 }
 
 bool UIChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
