@@ -1175,7 +1175,7 @@ class TestVm(object):
         if self.fNstHwVirt and not oTestDrv.hasHostNestedHwVirt():
             reporter.log('Ignoring VM %s (Nested hardware-virtualization not support on this host).' % (self.sVmName,));
             return True;
-        elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
+        if self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
             return True;
         return False;
 
