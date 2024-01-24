@@ -72,36 +72,6 @@
  * @{
  */
 
-#if defined(DOXYGEN_RUNNING) || defined(RT_ASM_INCLUDE_PAGE_SIZE)
-/** @def RT_ASM_PAGE_SIZE
- * We try avoid dragging in iprt/param.h here.
- * @internal
- */
-# if defined(RT_ARCH_SPARC64)
-#  define RT_ASM_PAGE_SIZE   0x2000
-#  if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
-#   if PAGE_SIZE != 0x2000
-#    error "PAGE_SIZE is not 0x2000!"
-#   endif
-#  endif
-# elif defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN)
-#  define RT_ASM_PAGE_SIZE   0x4000
-#  if defined(PAGE_SIZE) && !defined(NT_INCLUDED) && !defined(_MACH_ARM_VM_PARAM_H_)
-#   if PAGE_SIZE != 0x4000
-#    error "PAGE_SIZE is not 0x4000!"
-#   endif
-#  endif
-# else
-#  define RT_ASM_PAGE_SIZE   0x1000
-#  if defined(PAGE_SIZE) && !defined(NT_INCLUDED) && !defined(RT_OS_LINUX) && !defined(RT_ARCH_ARM64)
-#   if PAGE_SIZE != 0x1000
-#    error "PAGE_SIZE is not 0x1000!"
-#   endif
-#  endif
-# endif
-#endif
-
-
 /**
  * Zeros a memory block with a 32-bit aligned size.
  *
@@ -367,40 +337,6 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 # else
 #  error "Port me"
 # endif
-}
-#endif
-
-#ifdef RT_ASM_PAGE_SIZE
-/**
- * Probes a buffer for read access page by page.
- *
- * While the function will fault if the buffer is not fully read
- * accessible, the idea is to do this in a safe place like before
- * acquiring locks and such like.
- *
- * Also, this functions guarantees that an eager compiler is not going
- * to optimize the probing away.
- *
- * @param   pvBuf       Pointer to the buffer.
- * @param   cbBuf       The size of the buffer in bytes. Must be >= 1.
- */
-DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf) RT_NOTHROW_DEF
-{
-    /** @todo verify that the compiler actually doesn't optimize this away. (intel & gcc) */
-    /* the first byte */
-    const uint8_t RT_FAR *pu8 = (const uint8_t RT_FAR *)pvBuf;
-    ASMProbeReadByte(pu8);
-
-    /* the pages in between pages. */
-    while (cbBuf > RT_ASM_PAGE_SIZE)
-    {
-        ASMProbeReadByte(pu8);
-        cbBuf -= RT_ASM_PAGE_SIZE;
-        pu8   += RT_ASM_PAGE_SIZE;
-    }
-
-    /* the last byte */
-    ASMProbeReadByte(pu8 + cbBuf - 1);
 }
 #endif
 

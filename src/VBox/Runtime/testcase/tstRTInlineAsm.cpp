@@ -38,7 +38,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define RT_ASM_INCLUDE_PAGE_SIZE
 #include <iprt/asm-mem.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
@@ -2651,11 +2650,10 @@ static void tstASMMemFill32(void)
 
 static void tstASMProbe(RTTEST hTest)
 {
-    RTTestSub(hTest, "ASMProbeReadByte/Buffer");
+    RTTestSub(hTest, "ASMProbeReadByte");
 
     uint8_t b = 42;
     RTTESTI_CHECK(ASMProbeReadByte(&b) == 42);
-    ASMProbeReadBuffer(&b, sizeof(b));
 
     for (uint32_t cPages = 1; cPages < 16; cPages++)
     {
@@ -2670,9 +2668,6 @@ static void tstASMProbe(RTTEST hTest)
         RTTESTI_CHECK(ASMProbeReadByte(&pbBuf2[cPages * PAGE_SIZE - 1]) == 0x42);
         RTTESTI_CHECK(ASMProbeReadByte(&pbBuf1[0]) == 0xf6);
         RTTESTI_CHECK(ASMProbeReadByte(&pbBuf2[0]) == 0x42);
-
-        ASMProbeReadBuffer(pbBuf1, cPages * PAGE_SIZE);
-        ASMProbeReadBuffer(pbBuf2, cPages * PAGE_SIZE);
     }
 }
 
