@@ -1731,7 +1731,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             /* The IO bitmap starts right after the virtual interrupt redirection bitmap.
                Refer Intel spec. 20.3.3 "Software Interrupt Handling in Virtual-8086 mode"
                esp. Figure 20-5.*/
-            ASMMemZero32(pVM->hm.s.vmx.pRealModeTSS, sizeof(*pVM->hm.s.vmx.pRealModeTSS));
+            RT_BZERO(pVM->hm.s.vmx.pRealModeTSS, sizeof(*pVM->hm.s.vmx.pRealModeTSS));
             pVM->hm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hm.s.vmx.pRealModeTSS);
 
             /* Bit set to 0 means software interrupts are redirected to the
@@ -2136,7 +2136,7 @@ VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
     pVM->hm.s.cPatches           = 0;
     pVM->hm.s.PatchTree          = 0;
     pVM->hm.s.fTprPatchingActive = false;
-    ASMMemZero32(pVM->hm.s.aPatches, sizeof(pVM->hm.s.aPatches));
+    RT_BZERO(pVM->hm.s.aPatches, sizeof(pVM->hm.s.aPatches));
 }
 
 

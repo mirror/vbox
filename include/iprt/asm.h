@@ -6225,6 +6225,9 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
 }
 #endif
 
+/** @todo Move ASMByteSwapU16, ASMByteSwapU32 and ASMByteSwapU64 in their own
+ *        header as it's a common reason for including asm.h. */
+
 
 /**
  * Reverse the byte order of the given 16-bit integer.
@@ -6348,7 +6351,12 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
 
 
 
-/** @defgroup grp_inline_bits   Bit Operations
+/** @defgroup grp_inline_bits   Bitmap Operations
+ *
+ * @todo Move these into a separate header, with standard IPRT prefix
+ *       (RTBitmapXxx).  Move the more complex (searched) stuff into C source
+ *       files.
+ *
  * @{
  */
 
@@ -7459,6 +7467,12 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
 }
 #endif
 
+/** @} */
+
+
+/** @defgroup grp_inline_bits   Bit Operations
+ * @{
+ */
 
 /**
  * Finds the first bit which is set in the given 32-bit integer.

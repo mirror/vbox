@@ -131,6 +131,8 @@ RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb
 #else
 DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
 {
+    Assert(!(cb & 3));
+    Assert(cb > 0);
 # if RT_INLINE_ASM_USES_INTRIN
 #  ifdef RT_ARCH_AMD64
     if (!(cb & 7))
