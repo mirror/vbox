@@ -531,7 +531,10 @@ BLDDIRS += $(foreach d, \
 			archive/plugins/styles,) \
 		$(if $(VBOX_WITH_PYTHON), \
 			archive/sdk/installer \
+			archive/sdk/installer/python \
 			archive/sdk/installer/python/vboxapi \
+			archive/sdk/installer/python/vboxapi/src \
+			archive/sdk/installer/python/vboxapi/src/vboxapi \
 			archive/sdk/bindings/xpcom/python/xpcom \
 			archive/sdk/bindings/xpcom/python/xpcom/client \
 			archive/sdk/bindings/xpcom/python/xpcom/server,) \
