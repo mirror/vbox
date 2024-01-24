@@ -55,7 +55,7 @@ ifdef VBOX_WITH_PYTHON
   OTHERS      += $(PATH_TARGET)/pylintInstallerCommon.run
   OTHER_CLEAN += $(PATH_TARGET)/pylintInstallerCommon.run
   $(PATH_TARGET)/pylintInstallerCommon.run: \
-	${PATH_SUB_CURRENT}/vboxapisetup.py ${PATH_SUB_CURRENT}/vboxapisetup-stub.py
+  		${PATH_SUB_CURRENT}/vboxapisetup.py ${PATH_SUB_CURRENT}/vboxapisetup-stub.py
 	$(QUIET)$(APPEND) -t "$@"
  endif
 
