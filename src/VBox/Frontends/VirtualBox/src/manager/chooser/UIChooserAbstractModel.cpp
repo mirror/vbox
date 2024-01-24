@@ -615,35 +615,16 @@ void UIChooserAbstractModel::setKeepCloudNodesUpdated(bool fUpdate)
     /* Holds the value: */
     m_fKeepCloudNodesUpdated = fUpdate;
 
-    /* Search for a list of provider nodes: */
-    QList<UIChooserNode*> providerNodes;
-    invisibleRoot()->searchForNodes(QString(),
-                                    UIChooserItemSearchFlag_CloudProvider,
-                                    providerNodes);
-
-    /* Search for a list of profile nodes: */
-    QList<UIChooserNode*> profileNodes;
-    foreach (UIChooserNode *pProviderNode, providerNodes)
-        pProviderNode->searchForNodes(QString(),
-                                      UIChooserItemSearchFlag_CloudProfile,
-                                      profileNodes);
-
-    /* Search for a list of machine nodes: */
-    QList<UIChooserNode*> machineNodes;
-    foreach (UIChooserNode *pProfileNode, profileNodes)
-        pProfileNode->searchForNodes(QString(),
-                                     UIChooserItemSearchFlag_Machine,
-                                     machineNodes);
-
-    /* Update all the real cloud items: */
-    foreach (UIChooserNode *pNode, machineNodes)
+    /* Update all the real cloud machine items: */
+    foreach (UIChooserNode *pNode, enumerateCloudMachineNodes())
     {
         AssertReturnVoid(pNode && pNode->type() == UIChooserNodeType_Machine);
         UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
-        AssertReturnVoid(pMachineNode);
+        AssertPtrReturnVoid(pMachineNode);
         if (pMachineNode->cacheType() != UIVirtualMachineItemType_CloudReal)
             continue;
         UIVirtualMachineItemCloud *pCloudMachineItem = pMachineNode->cache()->toCloud();
+        AssertPtrReturnVoid(pCloudMachineItem);
         pCloudMachineItem->setUpdateRequiredByGlobalReason(m_fKeepCloudNodesUpdated);
         if (m_fKeepCloudNodesUpdated)
             pCloudMachineItem->updateInfoAsync(false /* delayed? */);
@@ -1941,6 +1922,31 @@ UIChooserNode *UIChooserAbstractModel::searchFakeNode(const QString &strProvider
 {
     /* Wrap method above: */
     return searchMachineNode(strProviderShortName, strProfileName, QUuid());
+}
+
+QList<UIChooserNode*> UIChooserAbstractModel::enumerateCloudMachineNodes() const
+{
+    /* Search for a list of provider nodes: */
+    QList<UIChooserNode*> providerNodes;
+    invisibleRoot()->searchForNodes(QString(),
+                                    UIChooserItemSearchFlag_CloudProvider,
+                                    providerNodes);
+
+    /* Search for a list of profile nodes: */
+    QList<UIChooserNode*> profileNodes;
+    foreach (UIChooserNode *pProviderNode, providerNodes)
+        pProviderNode->searchForNodes(QString(),
+                                      UIChooserItemSearchFlag_CloudProfile,
+                                      profileNodes);
+
+    /* Search for a list of machine nodes: */
+    QList<UIChooserNode*> machineNodes;
+    foreach (UIChooserNode *pProfileNode, profileNodes)
+        pProfileNode->searchForNodes(QString(),
+                                     UIChooserItemSearchFlag_Machine,
+                                     machineNodes);
+
+    return machineNodes;
 }
 
 void UIChooserAbstractModel::stopCloudUpdates(bool fForced /* = false */)

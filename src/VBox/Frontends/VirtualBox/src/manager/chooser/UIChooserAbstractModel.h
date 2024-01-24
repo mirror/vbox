@@ -58,12 +58,6 @@ class UIChooserAbstractModel : public QObject
 
 signals:
 
-    /** @name Cloud machine stuff.
-      * @{ */
-        /** Notifies listeners about state change for cloud machine with certain @a uId. */
-        void sigCloudMachineStateChange(const QUuid &uId);
-    /** @} */
-
     /** @name Group saving stuff.
       * @{ */
         /** Issues request to save settings. */
@@ -74,6 +68,10 @@ signals:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Notifies listeners about cloud machine state change.
+          * @param  uId  Brings the cloud machine ID. */
+        void sigCloudMachineStateChange(const QUuid &uId);
+
         /** Notifies listeners about cloud update state changed. */
         void sigCloudUpdateStateChanged();
     /** @} */
@@ -373,6 +371,9 @@ private:
 
     /** @name Cloud update stuff.
       * @{ */
+        /** Enumerates all cloud machine nodes. */
+        QList<UIChooserNode*> enumerateCloudMachineNodes() const;
+
         /** Stops all cloud updates.
           * @param  fForced  Brings whether cloud updates should be killed. */
         void stopCloudUpdates(bool fForced = false);
