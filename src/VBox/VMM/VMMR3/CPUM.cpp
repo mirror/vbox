@@ -3813,12 +3813,12 @@ static int cpumR3MapMtrrs(PVM pVM)
      */
     uint32_t const cbRamHole = MMR3PhysGet4GBRamHoleSize(pVM);
     AssertMsg(cbRamHole <= 4032U * _1M, ("RAM hole size (%RU32 bytes) is too large\n", cbRamHole));
-    AssertMsg(cbRamHole > 16 * _1M,     ("RAM hole size (%RU32 byets) is too small\n", cbRamHole));
+    AssertMsg(cbRamHole > 16 * _1M,     ("RAM hole size (%RU32 bytes) is too small\n", cbRamHole));
     AssertMsg(!(cbRamHole & (_4M - 1)), ("RAM hole size (%RU32 bytes) must be 4MB aligned\n", cbRamHole));
 
     /*
      * Paranoia.
-     * Ensure the maximum physical-address width can accomodate the specified RAM size.
+     * Ensure the maximum physical-address width can accommodate the specified RAM size.
      */
     RTGCPHYS const GCPhysEndMax = RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth);
     RTGCPHYS const GCPhysEnd    = cbRam + cbRamHole;
