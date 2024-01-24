@@ -43,6 +43,7 @@
 #include "the-linux-kernel.h"
 #include <iprt/list.h>
 #include <iprt/asm.h>
+#include <iprt/asm-mem.h>
 #include <VBox/log.h>
 
 #if RTLNX_VER_MIN(2,6,0)
