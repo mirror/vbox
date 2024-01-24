@@ -35,8 +35,11 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/mp.h>
 #include <iprt/rand.h>
@@ -45,6 +48,8 @@
 #include <iprt/test.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
+#include <iprt/vfs.h>
+#include <iprt/zip.h>
 #include <VBox/version.h>
 
 #include "tstIEMAImpl.h"
@@ -65,7 +70,7 @@
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, \
-      RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
+      RT_ELEMENTS(g_aFixedTests_ ## a_Name), false, false, g_aFixedTests_ ## a_Name }
 #else
 # define ENTRY_FIX_EX(a_Name, a_uExtra) ENTRY_EX(a_Name, a_uExtra)
 #endif
@@ -80,19 +85,19 @@
 #define ENTRY_EX_BIN(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 
 #define ENTRY_BIN_AVX(a_Name)       ENTRY_BIN_AVX_EX(a_Name, 0)
 #ifndef IEM_WITHOUT_ASSEMBLY
 # define ENTRY_BIN_AVX_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #else
 # define ENTRY_BIN_AVX_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name ## _fallback, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #endif
 
 #define ENTRY_BIN_SSE_OPT(a_Name)   ENTRY_BIN_SSE_OPT_EX(a_Name, 0)
@@ -100,12 +105,12 @@
 # define ENTRY_BIN_SSE_OPT_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #else
 # define ENTRY_BIN_SSE_OPT_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name ## _fallback, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #endif
 
 
@@ -124,15 +129,17 @@
 #define TYPEDEF_SUBTEST_TYPE(a_TypeName, a_TestType, a_FunctionPtrType) \
     typedef struct a_TypeName \
     { \
-        const char             *pszName; \
-        a_FunctionPtrType       pfn; \
-        a_FunctionPtrType       pfnNative; \
-        a_TestType const       *paTests; \
-        uint32_t const         *pcTests; \
-        uint32_t                uExtra; \
-        uint8_t                 idxCpuEflFlavour; \
-        uint16_t                cFixedTests; \
-        a_TestType const       *paFixedTests; \
+        const char                 *pszName; \
+        const a_FunctionPtrType     pfn; \
+        const a_FunctionPtrType     pfnNative; \
+        a_TestType const           *paTests;     /**< These are update for compressed tests. */ \
+        uint32_t const             *pcTests;     /**< These are update for compressed tests. */ \
+        uint32_t const              uExtra; \
+        uint8_t const               idxCpuEflFlavour; \
+        bool const                  fBinary; \
+        bool                        fCompressed; /**< This is cleared after decompressing the tests. */ \
+        uint16_t const              cFixedTests; \
+        a_TestType const * const    paFixedTests; \
     } a_TypeName
 
 #define COUNT_VARIATIONS(a_SubTest) \
@@ -1011,6 +1018,117 @@ static bool SubTestAndCheckIfEnabled(const char *pszName)
 }
 
 
+/** Decompresses test data before use as required. */
+static int DecompressBinaryTest(bool *pfCompressed, void **ppvTests, uint32_t const **ppcTests, size_t cbEntry, bool fBinary)
+{
+    if (!*pfCompressed)
+        return VINF_SUCCESS;
+
+    /* Open a memory stream for the compressed binary data. */
+    uint32_t const cbCompressed = **ppcTests;
+    RTVFSIOSTREAM  hVfsIos      = NIL_RTVFSIOSTREAM;
+    int rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, *ppvTests, cbCompressed, &hVfsIos);
+    RTTESTI_CHECK_RC_OK_RET(rc, rc);
+
+    /* Open a decompressed stream for it. */
+    RTVFSIOSTREAM hVfsIosDecomp = NIL_RTVFSIOSTREAM;
+    rc = RTZipGzipDecompressIoStream(hVfsIos, RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR, &hVfsIosDecomp);
+    RTTESTI_CHECK_RC_OK(rc);
+    if (RT_SUCCESS(rc))
+    {
+        /* Initial output buffer allocation. */
+        size_t   cbDecompressedAlloc = cbCompressed <= _16M ? (size_t)cbCompressed * 16 : (size_t)cbCompressed * 4;
+        uint8_t *pbDecompressed      = (uint8_t *)RTMemAllocZ(cbDecompressedAlloc);
+        if (pbDecompressed)
+        {
+            size_t off = 0;
+            for (;;)
+            {
+                size_t cbRead = 0;
+                rc = RTVfsIoStrmRead(hVfsIosDecomp, &pbDecompressed[off], cbDecompressedAlloc - off,  true /*fBlocking*/, &cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+                if (rc == VINF_EOF && cbRead == 0)
+                    break;
+                off += cbRead;
+
+                if (cbDecompressedAlloc < off + 256)
+                {
+                    size_t const cbNew = cbDecompressedAlloc < _128M ? cbDecompressedAlloc * 2 : cbDecompressedAlloc + _32M;
+                    void * const pvNew = RTMemRealloc(pbDecompressed, cbNew);
+                    AssertBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+                    cbDecompressedAlloc = cbNew;
+                    pbDecompressed = (uint8_t *)pvNew;
+                }
+            }
+            if (RT_SUCCESS(rc))
+            {
+                if ((off % cbEntry) == 0)
+                {
+                    if (cbDecompressedAlloc - off > _512K)
+                    {
+                        void * const pvNew = RTMemRealloc(pbDecompressed, off);
+                        if (pvNew)
+                            pbDecompressed = (uint8_t *)pvNew;
+                    }
+                    uint32_t *pcTests = (uint32_t *)RTMemAlloc(sizeof(uint32_t));
+                    if (pcTests)
+                    {
+                        /* Done! */
+                        *pcTests      = (uint32_t)(fBinary ? off : off / cbEntry);
+                        *ppvTests     = pbDecompressed;
+                        *ppcTests     = pcTests;
+                        *pfCompressed = false;
+
+                        pbDecompressed = NULL;
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        RTTestIFailed("Out of memory decompressing test data (uint32_t)");
+                        rc = VERR_NO_MEMORY;
+                    }
+                }
+                else
+                {
+                    RTTestIFailed("Uneven decompressed data size: %#zx vs entry size %#zx -> %#zx", off, cbEntry, off % cbEntry);
+                    rc = VERR_IO_BAD_LENGTH;
+                }
+            }
+            else
+                RTTestIFailed("Failed to decompress binary stream: %Rrc (off=%#zx, cbCompressed=%#x)", rc, off, cbCompressed);
+            RTMemFree(pbDecompressed);
+        }
+        else
+        {
+            RTTestIFailed("Out of memory decompressing test data");
+            rc = VERR_NO_MEMORY;
+        }
+        RTVfsIoStrmRelease(hVfsIosDecomp);
+    }
+    RTVfsIoStrmRelease(hVfsIos);
+    return rc;
+}
+
+
+/** Decompresses test data before use as required. */
+static int SubTestAndCheckIfEnabledAndDecompress(const char *pszName, size_t cbEntry, bool fBinary,
+                                                 bool *pfCompressed, void **ppvTests, uint32_t const **ppcTests)
+{
+    if (SubTestAndCheckIfEnabled(pszName))
+    {
+        int const rc = DecompressBinaryTest(pfCompressed, ppvTests, ppcTests, cbEntry, fBinary);
+        if (RT_SUCCESS(rc))
+            return true;
+    }
+    return false;
+}
+
+#define SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_Entry) \
+    SubTestAndCheckIfEnabledAndDecompress((a_Entry).pszName, sizeof((a_Entry).paTests[0]), (a_Entry).fBinary, \
+                                          &(a_Entry).fCompressed, (void **)&(a_Entry).paTests, &(a_Entry).pcTests)
+
+
 static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
 {
     if (fActual == fExpected)
@@ -1435,7 +1553,8 @@ static void BinU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         a_TestType const * const   paTests = a_aSubTests[iFn].paTests; \
         uint32_t const             cTests  = *a_aSubTests[iFn].pcTests; \
         PFNIEMAIMPLBINU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
@@ -1485,7 +1604,7 @@ static void BinU ## a_cBits ## Test(void) \
 /*
  * 8-bit binary operations.
  */
-static const BINU8_T g_aBinU8[] =
+static BINU8_T g_aBinU8[] =
 {
     ENTRY(add_u8),
     ENTRY(add_u8_locked),
@@ -1517,7 +1636,7 @@ static const BINU16_TEST_T g_aFixedTests_add_u16[] =
     { UINT32_MAX,    0,      1,       0, UINT16_MAX,      0 },
 };
 #endif
-static const BINU16_T g_aBinU16[] =
+static BINU16_T g_aBinU16[] =
 {
     ENTRY_FIX(add_u16),
     ENTRY(add_u16_locked),
@@ -1563,7 +1682,7 @@ static const BINU32_TEST_T g_aFixedTests_add_u32[] =
     { UINT32_MAX,    0,      1,       0, UINT32_MAX,      0 },
 };
 #endif
-static const BINU32_T g_aBinU32[] =
+static BINU32_T g_aBinU32[] =
 {
     ENTRY_FIX(add_u32),
     ENTRY(add_u32_locked),
@@ -1610,7 +1729,7 @@ static const BINU64_TEST_T g_aFixedTests_add_u64[] =
     { UINT32_MAX,    0,      1,       0, UINT64_MAX,      0 },
 };
 #endif
-static const BINU64_T g_aBinU64[] =
+static BINU64_T g_aBinU64[] =
 {
     ENTRY_FIX(add_u64),
     ENTRY(add_u64_locked),
@@ -2009,7 +2128,7 @@ static void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 #define TEST_SHIFT_DBL(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTDBLU ## a_cBits); \
 \
-static a_SubTestType const a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY_AMD(shld_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
     ENTRY_INTEL(shld_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
@@ -2023,7 +2142,8 @@ static void ShiftDblU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         a_TestType const * const        paTests = a_aSubTests[iFn].paTests; \
         PFNIEMAIMPLSHIFTDBLU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         uint32_t const                  cTests  = *a_aSubTests[iFn].pcTests; \
@@ -2111,7 +2231,7 @@ static void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 
 #define TEST_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLUNARYU ## a_cBits); \
-static a_SubTestType const g_aUnaryU ## a_cBits [] = \
+static a_SubTestType g_aUnaryU ## a_cBits [] = \
 { \
     ENTRY(inc_u ## a_cBits), \
     ENTRY(inc_u ## a_cBits ## _locked), \
@@ -2129,7 +2249,8 @@ static void UnaryU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(g_aUnaryU ## a_cBits[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aUnaryU ## a_cBits[iFn])) \
+            continue; \
         a_TestType const * const paTests = g_aUnaryU ## a_cBits[iFn].paTests; \
         uint32_t const           cTests  = *g_aUnaryU ## a_cBits[iFn].pcTests; \
         if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
@@ -2223,7 +2344,7 @@ static void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 
 #define TEST_SHIFT(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTU ## a_cBits); \
-static a_SubTestType const a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY_AMD(  rol_u ## a_cBits, X86_EFL_OF), \
     ENTRY_INTEL(rol_u ## a_cBits, X86_EFL_OF), \
@@ -2247,7 +2368,8 @@ static void ShiftU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         PFNIEMAIMPLSHIFTU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         a_TestType const * const     paTests = a_aSubTests[iFn].paTests; \
         uint32_t const               cTests  = *a_aSubTests[iFn].pcTests; \
@@ -2313,7 +2435,7 @@ static void ShiftTest(void)
 
 /* U8 */
 TYPEDEF_SUBTEST_TYPE(INT_MULDIV_U8_T, MULDIVU8_TEST_T, PFNIEMAIMPLMULDIVU8);
-static INT_MULDIV_U8_T const g_aMulDivU8[] =
+static INT_MULDIV_U8_T g_aMulDivU8[] =
 {
     ENTRY_AMD_EX(mul_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
                             X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
@@ -2357,7 +2479,8 @@ static void MulDivU8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aMulDivU8[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aMulDivU8[iFn])) \
+            continue; \
         MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
         uint32_t const                cTests  = *g_aMulDivU8[iFn].pcTests;
         uint32_t const                fEflIgn = g_aMulDivU8[iFn].uExtra;
@@ -2430,7 +2553,7 @@ void MulDivU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 
 #define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLMULDIVU ## a_cBits); \
-static a_SubTestType const a_aSubTests [] = \
+static a_SubTestType a_aSubTests [] = \
 { \
     ENTRY_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
     ENTRY_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
@@ -2448,7 +2571,8 @@ static void MulDivU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         a_TestType const * const      paTests = a_aSubTests[iFn].paTests; \
         uint32_t const                cTests  = *a_aSubTests[iFn].pcTests; \
         uint32_t const                fEflIgn = a_aSubTests[iFn].uExtra; \
@@ -2565,7 +2689,7 @@ static void BswapTest(void)
  */
 TYPEDEF_SUBTEST_TYPE(FPU_LD_CONST_T, FPU_LD_CONST_TEST_T, PFNIEMAIMPLFPUR80LDCONST);
 
-static const FPU_LD_CONST_T g_aFpuLdConst[] =
+static FPU_LD_CONST_T g_aFpuLdConst[] =
 {
     ENTRY(fld1),
     ENTRY(fldl2t),
@@ -2616,7 +2740,7 @@ static void FpuLoadConstTest(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdConst); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuLdConst[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuLdConst[iFn]))
             continue;
 
         uint32_t const              cTests  = *g_aFpuLdConst[iFn].pcTests;
@@ -2688,7 +2812,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPULDR80FROM ## a_cBits,(PCX86FXSTATE
 typedef FNIEMAIMPLFPULDR80FROM ## a_cBits *PFNIEMAIMPLFPULDR80FROM ## a_cBits; \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPULDR80FROM ## a_cBits); \
 \
-static const a_SubTestType a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY(RT_CONCAT(fld_r80_from_r,a_cBits)) \
 }; \
@@ -2700,7 +2824,8 @@ static void FpuLdR ## a_cBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const                     cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const           * const paTests = a_aSubTests[iFn].paTests; \
@@ -2794,7 +2919,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPULDR80FROMI ## a_cBits,(PCX86FXSTAT
 typedef FNIEMAIMPLFPULDR80FROMI ## a_cBits *PFNIEMAIMPLFPULDR80FROMI ## a_cBits; \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPULDR80FROMI ## a_cBits); \
 \
-static const a_SubTestType a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY(RT_CONCAT(fild_r80_from_i,a_cBits)) \
 }; \
@@ -2806,7 +2931,8 @@ static void FpuLdI ## a_cBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const                      cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const            * const paTests = a_aSubTests[iFn].paTests; \
@@ -2867,7 +2993,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPULDR80FROMD80,(PCX86FXSTATE, PIEMFP
 typedef FNIEMAIMPLFPULDR80FROMD80 *PFNIEMAIMPLFPULDR80FROMD80;
 TYPEDEF_SUBTEST_TYPE(FPU_LD_D80_T, FPU_D80_IN_TEST_T, PFNIEMAIMPLFPULDR80FROMD80);
 
-static const FPU_LD_D80_T g_aFpuLdD80[] =
+static FPU_LD_D80_T g_aFpuLdD80[] =
 {
     ENTRY(fld_r80_from_d80)
 };
@@ -2907,7 +3033,7 @@ static void FpuLdD80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdD80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuLdD80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuLdD80[iFn]))
             continue;
 
         uint32_t const                  cTests  = *g_aFpuLdD80[iFn].pcTests;
@@ -3016,7 +3142,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUSTR80TOR ## a_cBits,(PCX86FXSTATE,
 typedef FNIEMAIMPLFPUSTR80TOR ## a_cBits *PFNIEMAIMPLFPUSTR80TOR ## a_cBits; \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPUSTR80TOR ## a_cBits); \
 \
-static const a_SubTestType a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY(RT_CONCAT(fst_r80_to_r,a_cBits)) \
 }; \
@@ -3028,7 +3154,8 @@ static void FpuStR ## a_cBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const                    cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const          * const paTests = a_aSubTests[iFn].paTests; \
@@ -3093,18 +3220,18 @@ TYPEDEF_SUBTEST_TYPE(FPU_ST_I16_T, FPU_ST_I16_TEST_T, PFNIEMAIMPLFPUSTR80TOI16);
 TYPEDEF_SUBTEST_TYPE(FPU_ST_I32_T, FPU_ST_I32_TEST_T, PFNIEMAIMPLFPUSTR80TOI32);
 TYPEDEF_SUBTEST_TYPE(FPU_ST_I64_T, FPU_ST_I64_TEST_T, PFNIEMAIMPLFPUSTR80TOI64);
 
-static const FPU_ST_I16_T g_aFpuStI16[] =
+static FPU_ST_I16_T g_aFpuStI16[] =
 {
     ENTRY(fist_r80_to_i16),
     ENTRY_AMD(  fistt_r80_to_i16, 0),
     ENTRY_INTEL(fistt_r80_to_i16, 0),
 };
-static const FPU_ST_I32_T g_aFpuStI32[] =
+static FPU_ST_I32_T g_aFpuStI32[] =
 {
     ENTRY(fist_r80_to_i32),
     ENTRY(fistt_r80_to_i32),
 };
-static const FPU_ST_I64_T g_aFpuStI64[] =
+static FPU_ST_I64_T g_aFpuStI64[] =
 {
     ENTRY(fist_r80_to_i64),
     ENTRY(fistt_r80_to_i64),
@@ -3262,7 +3389,8 @@ static void FpuStI ## a_cBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const                    cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const          * const paTests = a_aSubTests[iFn].paTests; \
@@ -3326,7 +3454,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUSTR80TOD80,(PCX86FXSTATE, uint16_t
 typedef FNIEMAIMPLFPUSTR80TOD80 *PFNIEMAIMPLFPUSTR80TOD80;
 TYPEDEF_SUBTEST_TYPE(FPU_ST_D80_T, FPU_ST_D80_TEST_T, PFNIEMAIMPLFPUSTR80TOD80);
 
-static const FPU_ST_D80_T g_aFpuStD80[] =
+static FPU_ST_D80_T g_aFpuStD80[] =
 {
     ENTRY(fst_r80_to_d80),
 };
@@ -3392,7 +3520,7 @@ static void FpuStD80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuStD80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuStD80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuStD80[iFn]))
             continue;
 
         uint32_t const                  cTests  = *g_aFpuStD80[iFn].pcTests;
@@ -3440,7 +3568,7 @@ static void FpuStD80Test(void)
 TYPEDEF_SUBTEST_TYPE(FPU_BINARY_R80_T, FPU_BINARY_R80_TEST_T, PFNIEMAIMPLFPUR80);
 enum { kFpuBinaryHint_fprem = 1, };
 
-static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
+static FPU_BINARY_R80_T g_aFpuBinaryR80[] =
 {
     ENTRY(fadd_r80_by_r80),
     ENTRY(fsub_r80_by_r80),
@@ -3667,7 +3795,7 @@ static void FpuBinaryR80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuBinaryR80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuBinaryR80[iFn]))
             continue;
 
         uint32_t const                      cTests  = *g_aFpuBinaryR80[iFn].pcTests;
@@ -3789,7 +3917,7 @@ static void FpuBinary ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 #define TEST_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_I, a_Type2, a_SubTestType, a_aSubTests, a_TestType) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPU ## a_UpBits); \
 \
-static const a_SubTestType a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY(RT_CONCAT4(f, a_I, add_r80_by_, a_LoBits)), \
     ENTRY(RT_CONCAT4(f, a_I, mul_r80_by_, a_LoBits)), \
@@ -3807,7 +3935,8 @@ static void FpuBinary ## a_UpBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const             cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const * const   paTests = a_aSubTests[iFn].paTests; \
@@ -3926,7 +4055,7 @@ static void FpuBinaryFsw ## a_UpBits ## Generate(PRTSTREAM pOut, uint32_t cTests
 #define TEST_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_SubTestType, a_aSubTests, a_TestType, ...) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPU ## a_UpBits ## FSW); \
 \
-static const a_SubTestType a_aSubTests[] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     __VA_ARGS__ \
 }; \
@@ -3939,7 +4068,8 @@ static void FpuBinaryFsw ## a_UpBits ## Test(void) \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SubTestAndCheckIfEnabled(a_aSubTests[iFn].pszName)) continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
+            continue; \
         \
         uint32_t const                      cTests  = *a_aSubTests[iFn].pcTests; \
         a_TestType const * const            paTests = a_aSubTests[iFn].paTests; \
@@ -3983,7 +4113,7 @@ TEST_FPU_BINARY_FSW(1, 16, I16, int16_t,    FPU_BINARY_FSW_I16_T, g_aFpuBinaryFs
  */
 TYPEDEF_SUBTEST_TYPE(FPU_BINARY_EFL_R80_T, FPU_BINARY_EFL_R80_TEST_T, PFNIEMAIMPLFPUR80EFL);
 
-static const FPU_BINARY_EFL_R80_T g_aFpuBinaryEflR80[] =
+static FPU_BINARY_EFL_R80_T g_aFpuBinaryEflR80[] =
 {
     ENTRY(fcomi_r80_by_r80),
     ENTRY(fucomi_r80_by_r80),
@@ -4044,7 +4174,7 @@ static void FpuBinaryEflR80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryEflR80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuBinaryEflR80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuBinaryEflR80[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aFpuBinaryEflR80[iFn].pcTests;
@@ -4093,7 +4223,7 @@ static void FpuBinaryEflR80Test(void)
 TYPEDEF_SUBTEST_TYPE(FPU_UNARY_R80_T, FPU_UNARY_R80_TEST_T, PFNIEMAIMPLFPUR80UNARY);
 
 enum { kUnary_Accurate = 0, kUnary_Accurate_Trigonometry /*probably not accurate, but need impl to know*/, kUnary_Rounding_F2xm1 };
-static const FPU_UNARY_R80_T g_aFpuUnaryR80[] =
+static FPU_UNARY_R80_T g_aFpuUnaryR80[] =
 {
     ENTRY_EX(      fabs_r80,     kUnary_Accurate),
     ENTRY_EX(      fchs_r80,     kUnary_Accurate),
@@ -4286,7 +4416,7 @@ static void FpuUnaryR80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryR80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuUnaryR80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuUnaryR80[iFn]))
             continue;
 
         uint32_t const                     cTests           = *g_aFpuUnaryR80[iFn].pcTests;
@@ -4335,7 +4465,7 @@ static void FpuUnaryR80Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(FPU_UNARY_FSW_R80_T, FPU_UNARY_R80_TEST_T, PFNIEMAIMPLFPUR80UNARYFSW);
 
-static const FPU_UNARY_FSW_R80_T g_aFpuUnaryFswR80[] =
+static FPU_UNARY_FSW_R80_T g_aFpuUnaryFswR80[] =
 {
     ENTRY(ftst_r80),
     ENTRY_EX(fxam_r80, 1),
@@ -4424,7 +4554,7 @@ static void FpuUnaryFswR80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryFswR80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuUnaryFswR80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuUnaryFswR80[iFn]))
             continue;
 
         uint32_t const                     cTests  = *g_aFpuUnaryFswR80[iFn].pcTests;
@@ -4463,7 +4593,7 @@ static void FpuUnaryFswR80Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(FPU_UNARY_TWO_R80_T, FPU_UNARY_TWO_R80_TEST_T, PFNIEMAIMPLFPUR80UNARYTWO);
 
-static const FPU_UNARY_TWO_R80_T g_aFpuUnaryTwoR80[] =
+static FPU_UNARY_TWO_R80_T g_aFpuUnaryTwoR80[] =
 {
     ENTRY(fxtract_r80_r80),
     ENTRY_AMD(  fptan_r80_r80, 0),   // rounding differences
@@ -4592,7 +4722,7 @@ static void FpuUnaryTwoR80Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryTwoR80); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aFpuUnaryTwoR80[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aFpuUnaryTwoR80[iFn]))
             continue;
 
         uint32_t const                         cTests  = *g_aFpuUnaryTwoR80[iFn].pcTests;
@@ -4639,7 +4769,7 @@ static void FpuUnaryTwoR80Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_T, SSE_BINARY_TEST_T, PFNIEMAIMPLFPSSEF2U128);
 
-static const SSE_BINARY_R32_T g_aSseBinaryR32[] =
+static SSE_BINARY_R32_T g_aSseBinaryR32[] =
 {
     ENTRY_BIN(addps_u128),
     ENTRY_BIN(mulps_u128),
@@ -4787,17 +4917,17 @@ static void SseBinaryR32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR32[iFn]))
             continue;
 
-        uint32_t const                  cTests  = *g_aSseBinaryR32[iFn].pcTests;
+        uint32_t const                  cbTests = *g_aSseBinaryR32[iFn].pcTests;
         SSE_BINARY_TEST_T const * const paTests = g_aSseBinaryR32[iFn].paTests;
         PFNIEMAIMPLFPSSEF2U128          pfn     = g_aSseBinaryR32[iFn].pfn;
         uint32_t const                  cVars   = COUNT_VARIATIONS(g_aSseBinaryR32[iFn]);
-        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        if (!cbTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
-            for (uint32_t iTest = 0; iTest < cTests / sizeof(SSE_BINARY_TEST_T); iTest++)
+            for (uint32_t iTest = 0; iTest < cbTests / sizeof(paTests[0]); iTest++)
             {
                 IEMSSERESULT Res; RT_ZERO(Res);
 
@@ -4838,7 +4968,7 @@ static void SseBinaryR32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R64_T, SSE_BINARY_TEST_T, PFNIEMAIMPLFPSSEF2U128);
 
-static const SSE_BINARY_R64_T g_aSseBinaryR64[] =
+static SSE_BINARY_R64_T g_aSseBinaryR64[] =
 {
     ENTRY_BIN(addpd_u128),
     ENTRY_BIN(mulpd_u128),
@@ -4980,7 +5110,7 @@ static void SseBinaryR64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR64[iFn]))
             continue;
 
         uint32_t const                  cTests  = *g_aSseBinaryR64[iFn].pcTests;
@@ -5026,7 +5156,7 @@ static void SseBinaryR64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_U128_R32_T, SSE_BINARY_U128_R32_TEST_T, PFNIEMAIMPLFPSSEF2U128R32);
 
-static const SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
+static SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
 {
     ENTRY_BIN(addss_u128_r32),
     ENTRY_BIN(mulss_u128_r32),
@@ -5168,7 +5298,7 @@ static void SseBinaryU128R32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryU128R32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryU128R32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryU128R32[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryU128R32[iFn].pcTests;
@@ -5217,7 +5347,7 @@ static void SseBinaryU128R32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_U128_R64_T, SSE_BINARY_U128_R64_TEST_T, PFNIEMAIMPLFPSSEF2U128R64);
 
-static const SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
+static SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
 {
     ENTRY_BIN(addsd_u128_r64),
     ENTRY_BIN(mulsd_u128_r64),
@@ -5354,7 +5484,7 @@ static void SseBinaryU128R64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryU128R64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryU128R64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryU128R64[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryU128R64[iFn].pcTests;
@@ -5399,7 +5529,7 @@ static void SseBinaryU128R64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_I32_R64_T, SSE_BINARY_I32_R64_TEST_T, PFNIEMAIMPLSSEF2I32U64);
 
-static const SSE_BINARY_I32_R64_T g_aSseBinaryI32R64[] =
+static SSE_BINARY_I32_R64_T g_aSseBinaryI32R64[] =
 {
     ENTRY_BIN(cvttsd2si_i32_r64),
     ENTRY_BIN(cvtsd2si_i32_r64),
@@ -5527,7 +5657,7 @@ static void SseBinaryI32R64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryI32R64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryI32R64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryI32R64[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryI32R64[iFn].pcTests;
@@ -5568,7 +5698,7 @@ static void SseBinaryI32R64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_I64_R64_T, SSE_BINARY_I64_R64_TEST_T, PFNIEMAIMPLSSEF2I64U64);
 
-static const SSE_BINARY_I64_R64_T g_aSseBinaryI64R64[] =
+static SSE_BINARY_I64_R64_T g_aSseBinaryI64R64[] =
 {
     ENTRY_BIN(cvttsd2si_i64_r64),
     ENTRY_BIN(cvtsd2si_i64_r64),
@@ -5696,7 +5826,7 @@ static void SseBinaryI64R64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryI64R64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryI64R64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryI64R64[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryI64R64[iFn].pcTests;
@@ -5737,7 +5867,7 @@ static void SseBinaryI64R64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_I32_R32_T, SSE_BINARY_I32_R32_TEST_T, PFNIEMAIMPLSSEF2I32U32);
 
-static const SSE_BINARY_I32_R32_T g_aSseBinaryI32R32[] =
+static SSE_BINARY_I32_R32_T g_aSseBinaryI32R32[] =
 {
     ENTRY_BIN(cvttss2si_i32_r32),
     ENTRY_BIN(cvtss2si_i32_r32),
@@ -5865,7 +5995,7 @@ static void SseBinaryI32R32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryI32R32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryI32R32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryI32R32[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryI32R32[iFn].pcTests;
@@ -5906,7 +6036,7 @@ static void SseBinaryI32R32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_I64_R32_T, SSE_BINARY_I64_R32_TEST_T, PFNIEMAIMPLSSEF2I64U32);
 
-static const SSE_BINARY_I64_R32_T g_aSseBinaryI64R32[] =
+static SSE_BINARY_I64_R32_T g_aSseBinaryI64R32[] =
 {
     ENTRY_BIN(cvttss2si_i64_r32),
     ENTRY_BIN(cvtss2si_i64_r32),
@@ -6034,7 +6164,7 @@ static void SseBinaryI64R32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryI64R32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryI64R32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryI64R32[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryI64R32[iFn].pcTests;
@@ -6075,7 +6205,7 @@ static void SseBinaryI64R32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R64_I32_T, SSE_BINARY_R64_I32_TEST_T, PFNIEMAIMPLSSEF2R64I32);
 
-static const SSE_BINARY_R64_I32_T g_aSseBinaryR64I32[] =
+static SSE_BINARY_R64_I32_T g_aSseBinaryR64I32[] =
 {
     ENTRY_BIN(cvtsi2sd_r64_i32)
 };
@@ -6193,7 +6323,7 @@ static void SseBinaryR64I32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR64I32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR64I32[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryR64I32[iFn].pcTests;
@@ -6234,7 +6364,7 @@ static void SseBinaryR64I32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R64_I64_T, SSE_BINARY_R64_I64_TEST_T, PFNIEMAIMPLSSEF2R64I64);
 
-static const SSE_BINARY_R64_I64_T g_aSseBinaryR64I64[] =
+static SSE_BINARY_R64_I64_T g_aSseBinaryR64I64[] =
 {
     ENTRY_BIN(cvtsi2sd_r64_i64),
 };
@@ -6352,7 +6482,7 @@ static void SseBinaryR64I64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR64I64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR64I64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR64I64[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryR64I64[iFn].pcTests;
@@ -6393,7 +6523,7 @@ static void SseBinaryR64I64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_I32_T, SSE_BINARY_R32_I32_TEST_T, PFNIEMAIMPLSSEF2R32I32);
 
-static const SSE_BINARY_R32_I32_T g_aSseBinaryR32I32[] =
+static SSE_BINARY_R32_I32_T g_aSseBinaryR32I32[] =
 {
     ENTRY_BIN(cvtsi2ss_r32_i32),
 };
@@ -6511,7 +6641,7 @@ static void SseBinaryR32I32Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR32I32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR32I32[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryR32I32[iFn].pcTests;
@@ -6552,7 +6682,7 @@ static void SseBinaryR32I32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_I64_T, SSE_BINARY_R32_I64_TEST_T, PFNIEMAIMPLSSEF2R32I64);
 
-static const SSE_BINARY_R32_I64_T g_aSseBinaryR32I64[] =
+static SSE_BINARY_R32_I64_T g_aSseBinaryR32I64[] =
 {
     ENTRY_BIN(cvtsi2ss_r32_i64),
 };
@@ -6670,7 +6800,7 @@ static void SseBinaryR32I64Test(void)
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseBinaryR32I64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseBinaryR32I64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseBinaryR32I64[iFn]))
             continue;
 
         uint32_t const                           cTests  = *g_aSseBinaryR32I64[iFn].pcTests;
@@ -6711,7 +6841,7 @@ static void SseBinaryR32I64Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R32_R32_T, SSE_COMPARE_EFL_R32_R32_TEST_T, PFNIEMAIMPLF2EFLMXCSR128);
 
-static const SSE_COMPARE_EFL_R32_R32_T g_aSseCompareEflR32R32[] =
+static SSE_COMPARE_EFL_R32_R32_T g_aSseCompareEflR32R32[] =
 {
     ENTRY_BIN(ucomiss_u128),
     ENTRY_BIN(comiss_u128),
@@ -6861,7 +6991,7 @@ static void SseCompareEflR32R32Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareEflR32R32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseCompareEflR32R32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareEflR32R32[iFn]))
             continue;
 
         uint32_t const                                  cTests  = *g_aSseCompareEflR32R32[iFn].pcTests;
@@ -6904,7 +7034,7 @@ static void SseCompareEflR32R32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R64_R64_T, SSE_COMPARE_EFL_R64_R64_TEST_T, PFNIEMAIMPLF2EFLMXCSR128);
 
-static const SSE_COMPARE_EFL_R64_R64_T g_aSseCompareEflR64R64[] =
+static SSE_COMPARE_EFL_R64_R64_T g_aSseCompareEflR64R64[] =
 {
     ENTRY_BIN(ucomisd_u128),
     ENTRY_BIN(comisd_u128),
@@ -7054,7 +7184,7 @@ static void SseCompareEflR64R64Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareEflR64R64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseCompareEflR64R64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareEflR64R64[iFn]))
             continue;
 
         uint32_t const                                  cTests  = *g_aSseCompareEflR64R64[iFn].pcTests;
@@ -7100,7 +7230,7 @@ static void SseCompareEflR64R64Test(void)
 
 TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_F2_XMM_IMM8_T, SSE_COMPARE_F2_XMM_IMM8_TEST_T, PFNIEMAIMPLMXCSRF2XMMIMM8);
 
-static const SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR32Imm8[] =
+static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR32Imm8[] =
 {
     ENTRY_BIN(cmpps_u128),
     ENTRY_BIN(cmpss_u128)
@@ -7259,7 +7389,7 @@ static void SseCompareF2XmmR32Imm8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR32Imm8); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseCompareF2XmmR32Imm8[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF2XmmR32Imm8[iFn]))
             continue;
 
         uint32_t const                                  cTests  = *g_aSseCompareF2XmmR32Imm8[iFn].pcTests;
@@ -7312,7 +7442,7 @@ static void SseCompareF2XmmR32Imm8Test(void)
 /*
  * Compare SSE operations on packed and single double-precision floating point values - outputting a mask.
  */
-static const SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR64Imm8[] =
+static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR64Imm8[] =
 {
     ENTRY_BIN(cmppd_u128),
     ENTRY_BIN(cmpsd_u128)
@@ -7463,7 +7593,7 @@ static void SseCompareF2XmmR64Imm8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR64Imm8); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseCompareF2XmmR64Imm8[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF2XmmR64Imm8[iFn]))
             continue;
 
         uint32_t const                                  cTests  = *g_aSseCompareF2XmmR64Imm8[iFn].pcTests;
@@ -7511,7 +7641,7 @@ static void SseCompareF2XmmR64Imm8Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_XMM_T, SSE_CONVERT_XMM_TEST_T, PFNIEMAIMPLFPSSEF2U128);
 
-static const SSE_CONVERT_XMM_T g_aSseConvertXmmI32R32[] =
+static SSE_CONVERT_XMM_T g_aSseConvertXmmI32R32[] =
 {
     ENTRY_BIN(cvtdq2ps_u128)
 };
@@ -7636,7 +7766,7 @@ static void SseConvertXmmI32R32Test(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmI32R32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmI32R32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmI32R32[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmI32R32[iFn].pcTests;
@@ -7685,7 +7815,7 @@ static void SseConvertXmmI32R32Test(void)
 /*
  * Convert SSE operations converting signed double-words to single-precision floating point values.
  */
-static const SSE_CONVERT_XMM_T g_aSseConvertXmmR32I32[] =
+static SSE_CONVERT_XMM_T g_aSseConvertXmmR32I32[] =
 {
     ENTRY_BIN(cvtps2dq_u128),
     ENTRY_BIN(cvttps2dq_u128)
@@ -7822,7 +7952,7 @@ static void SseConvertXmmR32I32Test(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmR32I32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmR32I32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmR32I32[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmR32I32[iFn].pcTests;
@@ -7871,7 +8001,7 @@ static void SseConvertXmmR32I32Test(void)
 /*
  * Convert SSE operations converting signed double-words to double-precision floating point values.
  */
-static const SSE_CONVERT_XMM_T g_aSseConvertXmmI32R64[] =
+static SSE_CONVERT_XMM_T g_aSseConvertXmmI32R64[] =
 {
     ENTRY_BIN(cvtdq2pd_u128)
 };
@@ -7996,7 +8126,7 @@ static void SseConvertXmmI32R64Test(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmI32R64); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmI32R64[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmI32R64[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmI32R64[iFn].pcTests;
@@ -8039,7 +8169,7 @@ static void SseConvertXmmI32R64Test(void)
 /*
  * Convert SSE operations converting signed double-words to double-precision floating point values.
  */
-static const SSE_CONVERT_XMM_T g_aSseConvertXmmR64I32[] =
+static SSE_CONVERT_XMM_T g_aSseConvertXmmR64I32[] =
 {
     ENTRY_BIN(cvtpd2dq_u128),
     ENTRY_BIN(cvttpd2dq_u128)
@@ -8172,7 +8302,7 @@ static void SseConvertXmmR64I32Test(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmR64I32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmR64I32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmR64I32[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmR64I32[iFn].pcTests;
@@ -8222,7 +8352,7 @@ static void SseConvertXmmR64I32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_MM_XMM_T, SSE_CONVERT_MM_XMM_TEST_T, PFNIEMAIMPLMXCSRU64U128);
 
-static const SSE_CONVERT_MM_XMM_T g_aSseConvertMmXmm[] =
+static SSE_CONVERT_MM_XMM_T g_aSseConvertMmXmm[] =
 {
     ENTRY_BIN(cvtpd2pi_u128),
     ENTRY_BIN(cvttpd2pi_u128)
@@ -8358,7 +8488,7 @@ static void SseConvertMmXmmTest(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertMmXmm); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertMmXmm[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertMmXmm[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertMmXmm[iFn].pcTests;
@@ -8400,7 +8530,7 @@ static void SseConvertMmXmmTest(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_XMM_R64_MM_T, SSE_CONVERT_XMM_MM_TEST_T, PFNIEMAIMPLMXCSRU128U64);
 
-static const SSE_CONVERT_XMM_R64_MM_T g_aSseConvertXmmR64Mm[] =
+static SSE_CONVERT_XMM_R64_MM_T g_aSseConvertXmmR64Mm[] =
 {
     ENTRY_BIN(cvtpi2pd_u128)
 };
@@ -8509,7 +8639,7 @@ static void SseConvertXmmR64MmTest(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmR64Mm); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmR64Mm[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmR64Mm[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmR64Mm[iFn].pcTests;
@@ -8552,7 +8682,7 @@ static void SseConvertXmmR64MmTest(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_XMM_R32_MM_T, SSE_CONVERT_XMM_MM_TEST_T, PFNIEMAIMPLMXCSRU128U64);
 
-static const SSE_CONVERT_XMM_R32_MM_T g_aSseConvertXmmR32Mm[] =
+static SSE_CONVERT_XMM_R32_MM_T g_aSseConvertXmmR32Mm[] =
 {
     ENTRY_BIN(cvtpi2ps_u128)
 };
@@ -8661,7 +8791,7 @@ static void SseConvertXmmR32MmTest(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertXmmR32Mm); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertXmmR32Mm[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertXmmR32Mm[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertXmmR32Mm[iFn].pcTests;
@@ -8704,7 +8834,7 @@ static void SseConvertXmmR32MmTest(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_CONVERT_MM_I32_XMM_R32_T, SSE_CONVERT_MM_R32_TEST_T, PFNIEMAIMPLMXCSRU64U64);
 
-static const SSE_CONVERT_MM_I32_XMM_R32_T g_aSseConvertMmI32XmmR32[] =
+static SSE_CONVERT_MM_I32_XMM_R32_T g_aSseConvertMmI32XmmR32[] =
 {
     ENTRY_BIN(cvtps2pi_u128),
     ENTRY_BIN(cvttps2pi_u128)
@@ -8844,7 +8974,7 @@ static void SseConvertMmI32XmmR32Test(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseConvertMmI32XmmR32); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSseConvertMmI32XmmR32[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseConvertMmI32XmmR32[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSseConvertMmI32XmmR32[iFn].pcTests;
@@ -8892,7 +9022,7 @@ static void SseConvertMmI32XmmR32Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_PCMPISTRI_T, SSE_PCMPISTRI_TEST_T, PFNIEMAIMPLPCMPISTRIU128IMM8);
 
-static const SSE_PCMPISTRI_T g_aSsePcmpistri[] =
+static SSE_PCMPISTRI_T g_aSsePcmpistri[] =
 {
     ENTRY_BIN_SSE_OPT(pcmpistri_u128),
 };
@@ -8976,7 +9106,7 @@ static void SseComparePcmpistriTest(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistri); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSsePcmpistri[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSsePcmpistri[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSsePcmpistri[iFn].pcTests;
@@ -9014,7 +9144,7 @@ static void SseComparePcmpistriTest(void)
 
 TYPEDEF_SUBTEST_TYPE(SSE_PCMPISTRM_T, SSE_PCMPISTRM_TEST_T, PFNIEMAIMPLPCMPISTRMU128IMM8);
 
-static const SSE_PCMPISTRM_T g_aSsePcmpistrm[] =
+static SSE_PCMPISTRM_T g_aSsePcmpistrm[] =
 {
     ENTRY_BIN_SSE_OPT(pcmpistrm_u128),
 };
@@ -9098,7 +9228,7 @@ static void SseComparePcmpistrmTest(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistrm); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSsePcmpistrm[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSsePcmpistrm[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSsePcmpistrm[iFn].pcTests;
@@ -9138,7 +9268,7 @@ static void SseComparePcmpistrmTest(void)
 
 TYPEDEF_SUBTEST_TYPE(SSE_PCMPESTRI_T, SSE_PCMPESTRI_TEST_T, PFNIEMAIMPLPCMPESTRIU128IMM8);
 
-static const SSE_PCMPESTRI_T g_aSsePcmpestri[] =
+static SSE_PCMPESTRI_T g_aSsePcmpestri[] =
 {
     ENTRY_BIN_SSE_OPT(pcmpestri_u128),
 };
@@ -9231,7 +9361,7 @@ static void SseComparePcmpestriTest(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestri); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSsePcmpestri[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSsePcmpestri[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSsePcmpestri[iFn].pcTests;
@@ -9273,7 +9403,7 @@ static void SseComparePcmpestriTest(void)
 
 TYPEDEF_SUBTEST_TYPE(SSE_PCMPESTRM_T, SSE_PCMPESTRM_TEST_T, PFNIEMAIMPLPCMPESTRMU128IMM8);
 
-static const SSE_PCMPESTRM_T g_aSsePcmpestrm[] =
+static SSE_PCMPESTRM_T g_aSsePcmpestrm[] =
 {
     ENTRY_BIN_SSE_OPT(pcmpestrm_u128),
 };
@@ -9366,7 +9496,7 @@ static void SseComparePcmpestrmTest(void)
 
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestrm); iFn++)
     {
-        if (!SubTestAndCheckIfEnabled(g_aSsePcmpestrm[iFn].pszName))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSsePcmpestrm[iFn]))
             continue;
 
         uint32_t const                          cTests  = *g_aSsePcmpestrm[iFn].pcTests;
