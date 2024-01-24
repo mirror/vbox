@@ -56,8 +56,10 @@ ifdef VBOX_WITH_PYTHON
  	sdk/bindings/xpcom/python/xpcom/server/policy.py
  VBOXINST_SDK_INSTALLER_PYTHON_FILES = \
  	sdk/installer/python/vboxapisetup.py \
- 	sdk/installer/python/vboxapi/__init__.py \
- 	sdk/installer/python/vboxapi/VirtualBox_constants.py
+ 	sdk/installer/python/vboxapi/setup.py \
+ 	sdk/installer/python/vboxapi/pyproject.toml \
+ 	sdk/installer/python/vboxapi/src/vboxapi/__init__.py \
+ 	sdk/installer/python/vboxapi/src/vboxapi/VirtualBox_constants.py
 endif
 
 
