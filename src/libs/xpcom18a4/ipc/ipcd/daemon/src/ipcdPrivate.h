@@ -38,6 +38,9 @@
 #ifndef ipcdPrivate_h__
 #define ipcdPrivate_h__
 
+#include <iprt/cdefs.h>
+#include <iprt/list.h>
+
 class ipcClient;
 
 //
@@ -46,11 +49,8 @@ class ipcClient;
 //
 #define IPC_MAX_CLIENTS 10000
 
-//
-// array of connected clients
-//
-extern ipcClient *ipcClients;
-extern int        ipcClientCount;
+/** List of connected IPC clients. */
+extern RTLISTANCHOR g_LstIpcClients;
 
 //
 // platform specific send message function, takes ownership of |msg|.

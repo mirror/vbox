@@ -38,6 +38,7 @@
 #ifndef ipcClientUnix_h__
 #define ipcClientUnix_h__
 
+#include <iprt/list.h>
 #include <iprt/socket.h>
 
 #include "ipcMessageQ.h"
@@ -55,6 +56,8 @@
 class ipcClient
 {
 public:
+    /** Node for the list of clients. */
+    RTLISTNODE NdClients;
     bool     m_fUsed;
     uint32_t m_idPoll;
     uint32_t m_fPollEvts;

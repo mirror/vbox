@@ -264,8 +264,8 @@ static void ShutdownDaemonDir()
 //
 // declared in ipcdPrivate.h
 //
-ipcClient *ipcClients = NULL;
-int        ipcClientCount = 0;
+DECL_HIDDEN_DATA(RTLISTANCHOR) g_LstIpcClients;
+static int                     ipcClientCount = 0;
 
 //
 // the first element of this array is always zero; this is done so that the
@@ -295,6 +295,7 @@ static int AddClient(RTPOLLSET hPollSet, RTSOCKET hSock)
             int vrc = RTPollSetAddSocket(hPollSet, hSock, RTPOLL_EVT_READ, i);
             if (RT_SUCCESS(vrc))
             {
+                RTListAppend(&g_LstIpcClients, &ipcClientArray[i].NdClients);
                 ipcClientCount++;
                 return 0;
             }
@@ -313,6 +314,7 @@ static int RemoveClient(RTPOLLSET hPollSet, uint32_t idClient)
     int vrc = RTPollSetRemove(hPollSet, idClient);
     AssertRC(vrc); RT_NOREF(vrc);
 
+    RTListNodeRemove(&ipcClientArray[idClient].NdClients);
     ipcClientArray[idClient].Finalize();
     --ipcClientCount;
     return 0;
@@ -322,7 +324,7 @@ static int RemoveClient(RTPOLLSET hPollSet, uint32_t idClient)
 
 static void PollLoop(RTPOLLSET hPollSet, int fdListen)
 {
-    ipcClients = ipcClientArray;
+    RTListInit(&g_LstIpcClients);
 
     for (;;)
     {

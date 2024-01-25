@@ -103,8 +103,11 @@ IPC_SendMsg(ipcClient *client, ipcMessage *msg)
         //
         // broadcast
         //
-        for (int i=0; i<ipcClientCount; ++i)
-            IPC_SendMsg(&ipcClients[i], msg->Clone());
+        ipcClient *pIt;
+        RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+        {
+            IPC_SendMsg(pIt, msg->Clone());
+        }
         delete msg;
         return PR_SUCCESS;
     }
@@ -127,9 +130,11 @@ IPC_NotifyClientUp(ipcClient *client)
 {
     Log(("IPC_NotifyClientUp: clientID=%d\n", client->ID()));
 
-    for (int i=0; i<ipcClientCount; ++i) {
-        if (&ipcClients[i] != client)
-            IPC_SendMsg(&ipcClients[i],
+    ipcClient *pIt;
+    RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+    {
+        if (pIt != client)
+            IPC_SendMsg(pIt,
                 new ipcmMessageClientState(client->ID(), IPCM_CLIENT_STATE_UP));
     }
 }
@@ -139,9 +144,11 @@ IPC_NotifyClientDown(ipcClient *client)
 {
     Log(("IPC_NotifyClientDown: clientID=%d\n", client->ID()));
 
-    for (int i=0; i<ipcClientCount; ++i) {
-        if (&ipcClients[i] != client)
-            IPC_SendMsg(&ipcClients[i],
+    ipcClient *pIt;
+    RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+    {
+        if (pIt != client)
+            IPC_SendMsg(pIt,
                 new ipcmMessageClientState(client->ID(), IPCM_CLIENT_STATE_DOWN));
     }
 }
@@ -160,9 +167,11 @@ ipcClient *
 IPC_GetClientByID(PRUint32 clientID)
 {
     // linear search OK since number of clients should be small
-    for (int i = 0; i < ipcClientCount; ++i) {
-        if (ipcClients[i].ID() == clientID)
-            return &ipcClients[i];
+    ipcClient *pIt;
+    RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+    {
+        if (pIt->ID() == clientID)
+            return pIt;
     }
     return NULL;
 }
@@ -171,9 +180,11 @@ ipcClient *
 IPC_GetClientByName(const char *name)
 {
     // linear search OK since number of clients should be small
-    for (int i = 0; i < ipcClientCount; ++i) {
-        if (ipcClients[i].HasName(name))
-            return &ipcClients[i];
+    ipcClient *pIt;
+    RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+    {
+        if (pIt->HasName(name))
+            return pIt;
     }
     return NULL;
 }
@@ -182,8 +193,10 @@ void
 IPC_EnumClients(ipcClientEnumFunc func, void *closure)
 {
     Assert(func);
-    for (int i = 0; i < ipcClientCount; ++i) {
-        if (func(closure, &ipcClients[i], ipcClients[i].ID()) == PR_FALSE)
+    ipcClient *pIt;
+    RTListForEachCpp(&g_LstIpcClients, pIt, ipcClient, NdClients)
+    {
+        if (func(closure, pIt, pIt->ID()) == PR_FALSE)
             break;
     }
 }
