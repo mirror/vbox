@@ -709,6 +709,52 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Online Documentation' action class. */
+class UIActionSimpleOnlineDocumentation : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleOnlineDocumentation(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png", true)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const RT_OVERRIDE
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const RT_OVERRIDE
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const RT_OVERRIDE
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("OnlineDocumentation");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Online Documentation..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user manual"));
+    }
+};
+
 /** Simple action extension, used as 'Web Site' action class. */
 class UIActionSimpleWebSite : public UIActionSimple
 {
@@ -847,7 +893,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Oracle' action class. */
 class UIActionSimpleOracle : public UIActionSimple
 {
@@ -891,53 +936,6 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Oracle Web Site..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the Oracle web site"));
-    }
-};
-
-
-/** Simple action extension, used as 'Online Documentation' action class. */
-class UIActionSimpleOnlineDocumentation : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleOnlineDocumentation(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_oracle_16px.png", ":/site_oracle_16px.png", true)
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const RT_OVERRIDE
-    {
-        return UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation;
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const RT_OVERRIDE
-    {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
-    }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const RT_OVERRIDE
-    {
-        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_OnlineDocumentation);
-    }
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("OnlineDocumentation");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE
-    {
-        setName(QApplication::translate("UIActionPool", "&Online Documentation..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user manual"));
     }
 };
 
@@ -3489,11 +3487,11 @@ void UIActionPool::preparePool()
     /* Create 'Help' actions: */
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
+    m_pool[UIActionIndex_Simple_OnlineDocumentation] = new UIActionSimpleOnlineDocumentation(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
     m_pool[UIActionIndex_Simple_BugTracker] = new UIActionSimpleBugTracker(this);
     m_pool[UIActionIndex_Simple_Forums] = new UIActionSimpleForums(this);
     m_pool[UIActionIndex_Simple_Oracle] = new UIActionSimpleOracle(this);
-    m_pool[UIActionIndex_Simple_OnlineDocumentation] = new UIActionSimpleOnlineDocumentation(this);
 #ifndef VBOX_WS_MAC
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 #endif
@@ -3624,8 +3622,10 @@ void UIActionPool::prepareConnections()
     connect(action(UIActionIndex_M_Application_S_ResetWarnings), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltResetSuppressedMessages, Qt::UniqueConnection);
 
-    /* 'Help' menu connections. Note that connections for UIActionIndex_Simple_Contents is done
-     *   in manager and runtime uis separately in their respective classes: */
+    /* 'Help' menu connections. Note that connections for UIActionIndex_Simple_Contents
+     * are done in manager and runtime UIs separately in their respective classes: */
+    connect(action(UIActionIndex_Simple_OnlineDocumentation), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowOnlineDocumentation, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_WebSite), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpWebDialog, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_BugTracker), &UIAction::triggered,
@@ -3634,8 +3634,6 @@ void UIActionPool::prepareConnections()
             &msgCenter(), &UIMessageCenter::sltShowForums, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_Oracle), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowOracle, Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_OnlineDocumentation), &UIAction::triggered,
-            &msgCenter(), &UIMessageCenter::sltShowOnlineDocumentation, Qt::UniqueConnection);
 #ifndef VBOX_WS_MAC
     connect(action(UIActionIndex_Simple_About), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
