@@ -425,7 +425,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
         {
             fContiguous = true;
             for (iPage = 0; iPage < cPages; iPage++)
-                pMemLnx->apPages[iPage] = &paPages[iPage];
+                *(pMemLnx->apPages + iPage) = &paPages[iPage];
         }
         else if (fContiguous)
         {
@@ -441,11 +441,11 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
          *        IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC. */
         for (iPage = 0; iPage < cPages; iPage++)
         {
-            pMemLnx->apPages[iPage] = alloc_page(fFlagsLnx | __GFP_NOWARN);
-            if (RT_UNLIKELY(!pMemLnx->apPages[iPage]))
+            *(pMemLnx->apPages + iPage) = alloc_page(fFlagsLnx | __GFP_NOWARN);
+            if (RT_UNLIKELY(!*(pMemLnx->apPages + iPage)))
             {
                 while (iPage-- > 0)
-                    __free_page(pMemLnx->apPages[iPage]);
+                    __free_page(*(pMemLnx->apPages + iPage));
                 rtR0MemObjDelete(&pMemLnx->Core);
                 return rcNoMem;
             }
@@ -622,7 +622,7 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
     {
         size_t iPage = pMemLnx->cPages;
         while (iPage-- > 0)
-            if (PageHighMem(pMemLnx->apPages[iPage]))
+            if (PageHighMem(*(pMemLnx->apPages + iPage)))
             {
                 fMustMap = true;
                 break;

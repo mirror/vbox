@@ -548,7 +548,7 @@ DECL_FORCE_INLINE(PRTLOGGERINTERNAL) rtLogCheckGroupFlagsWorker(PRTLOGGERINTERNA
         uint32_t const fFlags = RT_LO_U16(fFlagsAndGroup);
         uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
         if (   iGroup != UINT16_MAX
-            && (   (pLoggerInt->afGroups[iGroup < pLoggerInt->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
+            && (   (*(pLoggerInt->afGroups + (iGroup < pLoggerInt->cGroups ? iGroup : 0)) & (fFlags | RTLOGGRPFLAGS_ENABLED))
                 != (fFlags | RTLOGGRPFLAGS_ENABLED)))
             pLoggerInt = NULL;
     }
@@ -1555,7 +1555,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     pLoggerInt->fFlags |= RTLOGFLAGS_DISABLED;
     iGroup = pLoggerInt->cGroups;
     while (iGroup-- > 0)
-        pLoggerInt->afGroups[iGroup] = 0;
+        *(pLoggerInt->afGroups + iGroup) = 0;
 
     /*
      * Flush it.
@@ -1788,9 +1788,9 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszValue)
             for (i = 0; i < pLoggerInt->cGroups; i++)
             {
                 if (fEnabled)
-                    pLoggerInt->afGroups[i] |= fFlags;
+                    *(pLoggerInt->afGroups + i) |= fFlags;
                 else
-                    pLoggerInt->afGroups[i] &= ~fFlags;
+                    *(pLoggerInt->afGroups + i) &= ~fFlags;
             }
         }
         else
@@ -4158,7 +4158,7 @@ RTDECL(int) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, 
         || !pszFormat || !*pszFormat)
         return VINF_LOG_DISABLED;
     if (    iGroup != ~0U
-        &&  (pLoggerInt->afGroups[iGroup] & (fFlags | RTLOGGRPFLAGS_ENABLED)) != (fFlags | RTLOGGRPFLAGS_ENABLED))
+        &&  (*(pLoggerInt->afGroups + iGroup) & (fFlags | RTLOGGRPFLAGS_ENABLED)) != (fFlags | RTLOGGRPFLAGS_ENABLED))
         return VINF_LOG_DISABLED;
 
     /*
