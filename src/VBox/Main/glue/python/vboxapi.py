@@ -545,7 +545,7 @@ class PlatformMSCOM(PlatformBase):
         return 'MSCOM'
 
     def getArray(self, oInterface, sAttrib):
-        return getattr(oInterface, sAttrib)
+        return oInterface.__getattr__(sAttrib) # pylint: disable=unnecessary-dunder-call
 
     def setArray(self, oInterface, sAttrib, aoArray):
         #
@@ -565,7 +565,7 @@ class PlatformMSCOM(PlatformBase):
             aArgs, _aDefaultArgs = aPropMapPut[sComAttrib]
             aGetArgs             = aPropMapGet[sComAttrib]
         except KeyError: # fallback.
-            return setattr(oInterface, sAttrib, aoArray)
+            return oInterface.__setattr__(sAttrib, aoArray) # pylint: disable=unnecessary-dunder-call
 
         import pythoncom
         oOleObj.InvokeTypes(aArgs[0],                   # dispid
@@ -751,10 +751,10 @@ class PlatformXPCOM(PlatformBase):
         return 'XPCOM'
 
     def getArray(self, oInterface, sAttrib):
-        return getattr(oInterface, 'get' + comifyName(sAttrib));
+        return oInterface.__getattr__('get' + comifyName(sAttrib))() # pylint: disable=unnecessary-dunder-call
 
     def setArray(self, oInterface, sAttrib, aoArray):
-        return setattr(oInterface, 'set' + comifyName(sAttrib), aoArray)
+        return oInterface.__getattr__('set' + comifyName(sAttrib))(aoArray) # pylint: disable=unnecessary-dunder-call
 
     def initPerThread(self):
         import xpcom
@@ -879,10 +879,10 @@ class PlatformWEBSERVICE(PlatformBase):
         return True
 
     def getArray(self, oInterface, sAttrib):
-        return getattr(oInterface, sAttrib)
+        return oInterface.__getattr__(sAttrib) # pylint: disable=unnecessary-dunder-call
 
     def setArray(self, oInterface, sAttrib, aoArray):
-        return setattr(oInterface, sAttrib, aoArray)
+        return oInterface.__setattr__(sAttrib, aoArray) # pylint: disable=unnecessary-dunder-call
 
     def waitForEvents(self, _timeout):
         # Webservices cannot do that yet
