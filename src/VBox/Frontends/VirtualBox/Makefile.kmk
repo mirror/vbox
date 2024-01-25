@@ -1011,7 +1011,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/extensionpackmanager/UIExtensionPackManager.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
 	src/manager/UIVirtualMachineItemCloud.cpp \
-	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \
 	src/activity/overview/UIVMActivityOverviewWidget.cpp \
 	src/networkmanager/UINetworkManager.cpp \

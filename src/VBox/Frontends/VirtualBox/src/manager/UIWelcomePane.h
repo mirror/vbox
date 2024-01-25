@@ -40,6 +40,7 @@
 
 /* Forward declarations: */
 class QLabel;
+class QIRichTextLabel;
 
 /** QWidget subclass holding Welcome information about VirtualBox. */
 class UIWelcomePane : public QIWithRetranslateUI<QWidget>
@@ -61,14 +62,16 @@ protected:
 
 private slots:
 
-    /** Handles activated @a strLink. */
-    void sltHandleLinkActivated(const QString &strLink);
+    /** Handles activated @a urlLink. */
+    void sltHandleLinkActivated(const QUrl &urlLink);
 
 private:
 
     /** Prepares all. */
     void prepare();
 
+    /** Updates text labels. */
+    void updateTextLabels();
     /** Updates pixmap. */
     void updatePixmap();
 
@@ -76,9 +79,9 @@ private:
     QIcon  m_icon;
 
     /** Holds the greetings label instance. */
-    QLabel *m_pLabelGreetings;
+    QIRichTextLabel *m_pLabelGreetings;
     /** Holds the icon label instance. */
-    QLabel *m_pLabelIcon;
+    QLabel          *m_pLabelIcon;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIWelcomePane_h */

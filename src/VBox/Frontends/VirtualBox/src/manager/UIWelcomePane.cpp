@@ -30,94 +30,15 @@
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
+#include <QUrl>
 
 /* GUI includes */
+#include "QIRichTextLabel.h"
 #include "QIWithRetranslateUI.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIWelcomePane.h"
-
-
-/** Wrappable QLabel extension for tools pane of the desktop widget.
-  * The main idea behind this stuff is to allow dynamically calculate
-  * [minimum] size hint for changeable one-the-fly widget width.
-  * That's a "white unicorn" task for QLabel which never worked since
-  * the beginning, because out-of-the-box version just uses static
-  * hints calculation which is very stupid taking into account
-  * QLayout "eats it raw" and tries to be dynamical on it's basis. */
-class UIWrappableLabel : public QLabel
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs wrappable label passing @a pParent to the base-class. */
-    UIWrappableLabel(QWidget *pParent = 0);
-
-protected:
-
-    /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
-
-    /** Returns whether the widget's preferred height depends on its width. */
-    virtual bool hasHeightForWidth() const RT_OVERRIDE;
-
-    /** Holds the minimum widget size. */
-    virtual QSize minimumSizeHint() const RT_OVERRIDE;
-
-    /** Holds the preferred widget size. */
-    virtual QSize sizeHint() const RT_OVERRIDE;
-};
-
-
-/*********************************************************************************************************************************
-*   Class UIWrappableLabel implementation.                                                                                       *
-*********************************************************************************************************************************/
-
-UIWrappableLabel::UIWrappableLabel(QWidget *pParent /* = 0 */)
-    : QLabel(pParent)
-{
-}
-
-void UIWrappableLabel::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QLabel::resizeEvent(pEvent);
-
-    // WORKAROUND:
-    // That's not cheap procedure but we need it to
-    // make sure geometry is updated after width changed.
-    if (minimumWidth() > 0)
-        updateGeometry();
-}
-
-bool UIWrappableLabel::hasHeightForWidth() const
-{
-    // WORKAROUND:
-    // No need to panic, we do it ourselves in resizeEvent() and
-    // this 'false' here to prevent automatic layout fighting for it.
-    return   minimumWidth() > 0
-           ? false
-           : QLabel::hasHeightForWidth();
-}
-
-QSize UIWrappableLabel::minimumSizeHint() const
-{
-    // WORKAROUND:
-    // We should calculate hint height on the basis of width,
-    // keeping the hint width equal to minimum we have set.
-    return   minimumWidth() > 0
-           ? QSize(minimumWidth(), heightForWidth(width()))
-           : QLabel::minimumSizeHint();
-}
-
-QSize UIWrappableLabel::sizeHint() const
-{
-    // WORKAROUND:
-    // Keep widget always minimal.
-    return minimumSizeHint();
-}
 
 
 /*********************************************************************************************************************************
@@ -141,6 +62,7 @@ bool UIWelcomePane::event(QEvent *pEvent)
         case QEvent::ScreenChangeInternal:
         {
             /* Update pixmap: */
+            updateTextLabels();
             updatePixmap();
             break;
         }
@@ -166,9 +88,9 @@ void UIWelcomePane::retranslateUi()
                                   .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
 }
 
-void UIWelcomePane::sltHandleLinkActivated(const QString &strLink)
+void UIWelcomePane::sltHandleLinkActivated(const QUrl &urlLink)
 {
-    uiCommon().openURL(strLink);
+    uiCommon().openURL(urlLink.toString());
 }
 
 void UIWelcomePane::prepare()
@@ -188,16 +110,11 @@ void UIWelcomePane::prepare()
             pLayoutWelcome->setContentsMargins(iL, 0, 0, 0);
 
             /* Prepare greetings label: */
-            m_pLabelGreetings = new UIWrappableLabel(this);
+            m_pLabelGreetings = new QIRichTextLabel(this);
             if (m_pLabelGreetings)
             {
-                m_pLabelGreetings->setWordWrap(true);
-                m_pLabelGreetings->setMinimumWidth(160); /// @todo make dynamic
-                m_pLabelGreetings->setAlignment(Qt::AlignLeading | Qt::AlignTop);
                 m_pLabelGreetings->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-                connect(m_pLabelGreetings, &QLabel::linkActivated, this, &UIWelcomePane::sltHandleLinkActivated);
-
-                /* Add into layout: */
+                connect(m_pLabelGreetings, &QIRichTextLabel::sigLinkClicked, this, &UIWelcomePane::sltHandleLinkActivated);
                 pLayoutWelcome->addWidget(m_pLabelGreetings);
             }
 
@@ -225,8 +142,22 @@ void UIWelcomePane::prepare()
 
     /* Translate finally: */
     retranslateUi();
-    /* Update pixmap: */
+    /* Update stuff: */
+    updateTextLabels();
     updatePixmap();
+}
+
+void UIWelcomePane::updateTextLabels()
+{
+    /* For all the text-labels: */
+    QList<QIRichTextLabel*> labels = findChildren<QIRichTextLabel*>();
+    if (!labels.isEmpty())
+    {
+        /* Make sure their minimum width is around 20% of the screen width: */
+        const QSize screenGeometry = gpDesktop->screenGeometry(this).size();
+        foreach (QIRichTextLabel *pLabel, labels)
+            pLabel->setMinimumTextWidth(screenGeometry.width() * .2);
+    }
 }
 
 void UIWelcomePane::updatePixmap()
@@ -242,6 +173,3 @@ void UIWelcomePane::updatePixmap()
         m_pLabelIcon->setPixmap(m_icon.pixmap(defaultSize, fDevicePixelRatio));
     }
 }
-
-
-#include "UIWelcomePane.moc"
