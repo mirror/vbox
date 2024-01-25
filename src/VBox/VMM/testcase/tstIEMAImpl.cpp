@@ -58,36 +58,36 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define ENTRY(a_Name)       ENTRY_EX(a_Name, 0)
+#define ENTRY(a_Name)                           ENTRY_EX(a_Name, 0)
 #define ENTRY_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 
-#define ENTRY_FIX(a_Name)    ENTRY_FIX_EX(a_Name, 0)
+#define ENTRY_BIN_FIX(a_Name)                   ENTRY_BIN_FIX_EX(a_Name, 0)
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-# define ENTRY_FIX_EX(a_Name, a_uExtra) \
+# define ENTRY_BIN_FIX_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
-      g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
+      g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, \
-      false, false, RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
+      true /*fBinary*/, true /*fCompressed*/, RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
 #else
-# define ENTRY_FIX_EX(a_Name, a_uExtra) ENTRY_EX(a_Name, a_uExtra)
+# define ENTRY_BIN_FIX_EX(a_Name, a_uExtra)     ENTRY_BIN_EX(a_Name, a_uExtra)
 #endif
 
-#define ENTRY_PFN_CAST(a_Name, a_pfnType)  ENTRY_PFN_CAST_EX(a_Name, a_pfnType, 0)
-#define ENTRY_PFN_CAST_EX(a_Name, a_pfnType, a_uExtra) \
+#define ENTRY_BIN_PFN_CAST(a_Name, a_pfnType)   ENTRY_BIN_PFN_CAST_EX(a_Name, a_pfnType, 0)
+#define ENTRY_BIN_PFN_CAST_EX(a_Name, a_pfnType, a_uExtra) \
     { RT_XSTR(a_Name), (a_pfnType)iemAImpl_ ## a_Name, NULL, \
-      g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
-      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+      g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 
-#define ENTRY_BIN(a_Name)       ENTRY_EX_BIN(a_Name, 0)
-#define ENTRY_EX_BIN(a_Name, a_uExtra) \
+#define ENTRY_BIN(a_Name)                       ENTRY_BIN_EX(a_Name, 0)
+#define ENTRY_BIN_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 
-#define ENTRY_BIN_AVX(a_Name)       ENTRY_BIN_AVX_EX(a_Name, 0)
+#define ENTRY_BIN_AVX(a_Name)                   ENTRY_BIN_AVX_EX(a_Name, 0)
 #ifndef IEM_WITHOUT_ASSEMBLY
 # define ENTRY_BIN_AVX_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
@@ -100,7 +100,7 @@
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #endif
 
-#define ENTRY_BIN_SSE_OPT(a_Name)   ENTRY_BIN_SSE_OPT_EX(a_Name, 0)
+#define ENTRY_BIN_SSE_OPT(a_Name)               ENTRY_BIN_SSE_OPT_EX(a_Name, 0)
 #ifndef IEM_WITHOUT_ASSEMBLY
 # define ENTRY_BIN_SSE_OPT_EX(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
@@ -113,14 +113,25 @@
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, true /*fBinary*/, true /*fCompressed*/ }
 #endif
 
+#define ENTRY_BIN_INTEL(a_Name, a_fEflUndef)    ENTRY_BIN_INTEL_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_BIN_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { RT_XSTR(a_Name) "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
+      g_aTests_ ## a_Name ## _intel, &g_cbTests_ ## a_Name ## _intel, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_INTEL, true /*fBinary*/, true /*fCompressed*/  }
 
-#define ENTRY_INTEL(a_Name, a_fEflUndef) ENTRY_INTEL_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_BIN_AMD(a_Name, a_fEflUndef)      ENTRY_BIN_AMD_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_BIN_AMD_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { RT_XSTR(a_Name) "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
+      g_aTests_ ## a_Name ## _amd, &g_cbTests_ ## a_Name ## _amd, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_AMD, true /*fBinary*/, true /*fCompressed*/  }
+
+#define ENTRY_INTEL(a_Name, a_fEflUndef)        ENTRY_INTEL_EX(a_Name, a_fEflUndef, 0)
 #define ENTRY_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
     { RT_XSTR(a_Name) "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
       g_aTests_ ## a_Name ## _intel, &g_cTests_ ## a_Name ## _intel, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_INTEL }
 
-#define ENTRY_AMD(a_Name, a_fEflUndef)   ENTRY_AMD_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_AMD(a_Name, a_fEflUndef)          ENTRY_AMD_EX(a_Name, a_fEflUndef, 0)
 #define ENTRY_AMD_EX(a_Name, a_fEflUndef, a_uExtra) \
     { RT_XSTR(a_Name) "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
       g_aTests_ ## a_Name ## _amd, &g_cTests_ ## a_Name ## _amd, \
@@ -1683,7 +1694,7 @@ static void BinU ## a_cBits ## Test(void) \
         if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
             continue; \
         a_TestType const * const   paTests = a_aSubTests[iFn].paTests; \
-        uint32_t const             cTests  = *a_aSubTests[iFn].pcTests; \
+        uint32_t const             cTests  = *a_aSubTests[iFn].pcTests / sizeof(paTests[0]); \
         PFNIEMAIMPLBINU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         uint32_t const             cVars   = COUNT_VARIATIONS(a_aSubTests[iFn]); \
         if (!cTests) { RTTestSkipped(g_hTest, "no tests"); continue; } \
@@ -1733,22 +1744,22 @@ static void BinU ## a_cBits ## Test(void) \
  */
 static BINU8_T g_aBinU8[] =
 {
-    ENTRY(add_u8),
-    ENTRY(add_u8_locked),
-    ENTRY(adc_u8),
-    ENTRY(adc_u8_locked),
-    ENTRY(sub_u8),
-    ENTRY(sub_u8_locked),
-    ENTRY(sbb_u8),
-    ENTRY(sbb_u8_locked),
-    ENTRY(or_u8),
-    ENTRY(or_u8_locked),
-    ENTRY(xor_u8),
-    ENTRY(xor_u8_locked),
-    ENTRY(and_u8),
-    ENTRY(and_u8_locked),
-    ENTRY_PFN_CAST(cmp_u8,  PFNIEMAIMPLBINU8),
-    ENTRY_PFN_CAST(test_u8, PFNIEMAIMPLBINU8),
+    ENTRY_BIN(add_u8),
+    ENTRY_BIN(add_u8_locked),
+    ENTRY_BIN(adc_u8),
+    ENTRY_BIN(adc_u8_locked),
+    ENTRY_BIN(sub_u8),
+    ENTRY_BIN(sub_u8_locked),
+    ENTRY_BIN(sbb_u8),
+    ENTRY_BIN(sbb_u8_locked),
+    ENTRY_BIN(or_u8),
+    ENTRY_BIN(or_u8_locked),
+    ENTRY_BIN(xor_u8),
+    ENTRY_BIN(xor_u8_locked),
+    ENTRY_BIN(and_u8),
+    ENTRY_BIN(and_u8_locked),
+    ENTRY_BIN_PFN_CAST(cmp_u8,  PFNIEMAIMPLBINU8),
+    ENTRY_BIN_PFN_CAST(test_u8, PFNIEMAIMPLBINU8),
 };
 TEST_BINARY_OPS(8, uint8_t, "%#04x", BINU8_TEST_T, g_aBinU8)
 
@@ -1765,36 +1776,36 @@ static const BINU16_TEST_T g_aFixedTests_add_u16[] =
 #endif
 static BINU16_T g_aBinU16[] =
 {
-    ENTRY_FIX(add_u16),
-    ENTRY(add_u16_locked),
-    ENTRY(adc_u16),
-    ENTRY(adc_u16_locked),
-    ENTRY(sub_u16),
-    ENTRY(sub_u16_locked),
-    ENTRY(sbb_u16),
-    ENTRY(sbb_u16_locked),
-    ENTRY(or_u16),
-    ENTRY(or_u16_locked),
-    ENTRY(xor_u16),
-    ENTRY(xor_u16_locked),
-    ENTRY(and_u16),
-    ENTRY(and_u16_locked),
-    ENTRY_PFN_CAST(cmp_u16,   PFNIEMAIMPLBINU16),
-    ENTRY_PFN_CAST(test_u16,  PFNIEMAIMPLBINU16),
-    ENTRY_PFN_CAST_EX(bt_u16, PFNIEMAIMPLBINU16, 1),
-    ENTRY_EX(btc_u16, 1),
-    ENTRY_EX(btc_u16_locked, 1),
-    ENTRY_EX(btr_u16, 1),
-    ENTRY_EX(btr_u16_locked, 1),
-    ENTRY_EX(bts_u16, 1),
-    ENTRY_EX(bts_u16_locked, 1),
-    ENTRY_AMD(  bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY(arpl),
+    ENTRY_BIN_FIX(add_u16),
+    ENTRY_BIN(add_u16_locked),
+    ENTRY_BIN(adc_u16),
+    ENTRY_BIN(adc_u16_locked),
+    ENTRY_BIN(sub_u16),
+    ENTRY_BIN(sub_u16_locked),
+    ENTRY_BIN(sbb_u16),
+    ENTRY_BIN(sbb_u16_locked),
+    ENTRY_BIN(or_u16),
+    ENTRY_BIN(or_u16_locked),
+    ENTRY_BIN(xor_u16),
+    ENTRY_BIN(xor_u16_locked),
+    ENTRY_BIN(and_u16),
+    ENTRY_BIN(and_u16_locked),
+    ENTRY_BIN_PFN_CAST(cmp_u16,   PFNIEMAIMPLBINU16),
+    ENTRY_BIN_PFN_CAST(test_u16,  PFNIEMAIMPLBINU16),
+    ENTRY_BIN_PFN_CAST_EX(bt_u16, PFNIEMAIMPLBINU16, 1),
+    ENTRY_BIN_EX(btc_u16, 1),
+    ENTRY_BIN_EX(btc_u16_locked, 1),
+    ENTRY_BIN_EX(btr_u16, 1),
+    ENTRY_BIN_EX(btr_u16_locked, 1),
+    ENTRY_BIN_EX(bts_u16, 1),
+    ENTRY_BIN_EX(bts_u16_locked, 1),
+    ENTRY_BIN_AMD(  bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN(arpl),
 };
 TEST_BINARY_OPS(16, uint16_t, "%#06x", BINU16_TEST_T, g_aBinU16)
 
@@ -1811,37 +1822,37 @@ static const BINU32_TEST_T g_aFixedTests_add_u32[] =
 #endif
 static BINU32_T g_aBinU32[] =
 {
-    ENTRY_FIX(add_u32),
-    ENTRY(add_u32_locked),
-    ENTRY(adc_u32),
-    ENTRY(adc_u32_locked),
-    ENTRY(sub_u32),
-    ENTRY(sub_u32_locked),
-    ENTRY(sbb_u32),
-    ENTRY(sbb_u32_locked),
-    ENTRY(or_u32),
-    ENTRY(or_u32_locked),
-    ENTRY(xor_u32),
-    ENTRY(xor_u32_locked),
-    ENTRY(and_u32),
-    ENTRY(and_u32_locked),
-    ENTRY_PFN_CAST(cmp_u32,   PFNIEMAIMPLBINU32),
-    ENTRY_PFN_CAST(test_u32,  PFNIEMAIMPLBINU32),
-    ENTRY_PFN_CAST_EX(bt_u32, PFNIEMAIMPLBINU32, 1),
-    ENTRY_EX(btc_u32, 1),
-    ENTRY_EX(btc_u32_locked, 1),
-    ENTRY_EX(btr_u32, 1),
-    ENTRY_EX(btr_u32_locked, 1),
-    ENTRY_EX(bts_u32, 1),
-    ENTRY_EX(bts_u32_locked, 1),
-    ENTRY_AMD(  bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY(adcx_u32),
-    ENTRY(adox_u32),
+    ENTRY_BIN_FIX(add_u32),
+    ENTRY_BIN(add_u32_locked),
+    ENTRY_BIN(adc_u32),
+    ENTRY_BIN(adc_u32_locked),
+    ENTRY_BIN(sub_u32),
+    ENTRY_BIN(sub_u32_locked),
+    ENTRY_BIN(sbb_u32),
+    ENTRY_BIN(sbb_u32_locked),
+    ENTRY_BIN(or_u32),
+    ENTRY_BIN(or_u32_locked),
+    ENTRY_BIN(xor_u32),
+    ENTRY_BIN(xor_u32_locked),
+    ENTRY_BIN(and_u32),
+    ENTRY_BIN(and_u32_locked),
+    ENTRY_BIN_PFN_CAST(cmp_u32,   PFNIEMAIMPLBINU32),
+    ENTRY_BIN_PFN_CAST(test_u32,  PFNIEMAIMPLBINU32),
+    ENTRY_BIN_PFN_CAST_EX(bt_u32, PFNIEMAIMPLBINU32, 1),
+    ENTRY_BIN_EX(btc_u32, 1),
+    ENTRY_BIN_EX(btc_u32_locked, 1),
+    ENTRY_BIN_EX(btr_u32, 1),
+    ENTRY_BIN_EX(btr_u32_locked, 1),
+    ENTRY_BIN_EX(bts_u32, 1),
+    ENTRY_BIN_EX(bts_u32_locked, 1),
+    ENTRY_BIN_AMD(  bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN(adcx_u32),
+    ENTRY_BIN(adox_u32),
 };
 TEST_BINARY_OPS(32, uint32_t, "%#010RX32", BINU32_TEST_T, g_aBinU32)
 
@@ -1858,37 +1869,37 @@ static const BINU64_TEST_T g_aFixedTests_add_u64[] =
 #endif
 static BINU64_T g_aBinU64[] =
 {
-    ENTRY_FIX(add_u64),
-    ENTRY(add_u64_locked),
-    ENTRY(adc_u64),
-    ENTRY(adc_u64_locked),
-    ENTRY(sub_u64),
-    ENTRY(sub_u64_locked),
-    ENTRY(sbb_u64),
-    ENTRY(sbb_u64_locked),
-    ENTRY(or_u64),
-    ENTRY(or_u64_locked),
-    ENTRY(xor_u64),
-    ENTRY(xor_u64_locked),
-    ENTRY(and_u64),
-    ENTRY(and_u64_locked),
-    ENTRY_PFN_CAST(cmp_u64,   PFNIEMAIMPLBINU64),
-    ENTRY_PFN_CAST(test_u64,  PFNIEMAIMPLBINU64),
-    ENTRY_PFN_CAST_EX(bt_u64, PFNIEMAIMPLBINU64, 1),
-    ENTRY_EX(btc_u64, 1),
-    ENTRY_EX(btc_u64_locked, 1),
-    ENTRY_EX(btr_u64, 1),
-    ENTRY_EX(btr_u64_locked, 1),
-    ENTRY_EX(bts_u64, 1),
-    ENTRY_EX(bts_u64_locked, 1),
-    ENTRY_AMD(  bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_INTEL(bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
-    ENTRY_AMD(  imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-    ENTRY(adcx_u64),
-    ENTRY(adox_u64),
+    ENTRY_BIN_FIX(add_u64),
+    ENTRY_BIN(add_u64_locked),
+    ENTRY_BIN(adc_u64),
+    ENTRY_BIN(adc_u64_locked),
+    ENTRY_BIN(sub_u64),
+    ENTRY_BIN(sub_u64_locked),
+    ENTRY_BIN(sbb_u64),
+    ENTRY_BIN(sbb_u64_locked),
+    ENTRY_BIN(or_u64),
+    ENTRY_BIN(or_u64_locked),
+    ENTRY_BIN(xor_u64),
+    ENTRY_BIN(xor_u64_locked),
+    ENTRY_BIN(and_u64),
+    ENTRY_BIN(and_u64_locked),
+    ENTRY_BIN_PFN_CAST(cmp_u64,   PFNIEMAIMPLBINU64),
+    ENTRY_BIN_PFN_CAST(test_u64,  PFNIEMAIMPLBINU64),
+    ENTRY_BIN_PFN_CAST_EX(bt_u64, PFNIEMAIMPLBINU64, 1),
+    ENTRY_BIN_EX(btc_u64, 1),
+    ENTRY_BIN_EX(btc_u64_locked, 1),
+    ENTRY_BIN_EX(btr_u64, 1),
+    ENTRY_BIN_EX(btr_u64_locked, 1),
+    ENTRY_BIN_EX(bts_u64, 1),
+    ENTRY_BIN_EX(bts_u64_locked, 1),
+    ENTRY_BIN_AMD(  bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_INTEL(bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_BIN_AMD(  imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_BIN(adcx_u64),
+    ENTRY_BIN(adox_u64),
 };
 TEST_BINARY_OPS(64, uint64_t, "%#018RX64", BINU64_TEST_T, g_aBinU64)
 
@@ -1972,22 +1983,24 @@ static void XaddTest(void)
         typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU ## a_cBits, (a_Type *, a_Type *, uint32_t *)); \
         static struct \
         { \
-            const char                         *pszName; \
-            FNIEMAIMPLXADDU ## a_cBits         *pfn; \
+            const char * const                  pszName; \
+            FNIEMAIMPLXADDU ## a_cBits * const  pfn; \
+            bool                                fCompressed; \
+            bool                                fBinary; \
             BINU ## a_cBits ## _TEST_T const   *paTests; \
             uint32_t const                     *pcTests; \
-        } const s_aFuncs[] = \
+        } s_aFuncs[] = \
         { \
             { "xadd_u" # a_cBits,            iemAImpl_xadd_u ## a_cBits, \
-              g_aTests_add_u ## a_cBits, &g_cTests_add_u ## a_cBits }, \
+              true, true, g_aTests_add_u ## a_cBits, &g_cbTests_add_u ## a_cBits }, \
             { "xadd_u" # a_cBits "8_locked", iemAImpl_xadd_u ## a_cBits ## _locked, \
-              g_aTests_add_u ## a_cBits, &g_cTests_add_u ## a_cBits }, \
+              true, true, g_aTests_add_u ## a_cBits, &g_cbTests_add_u ## a_cBits }, \
         }; \
         for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
         { \
-            if (!SubTestAndCheckIfEnabled(s_aFuncs[iFn].pszName)) continue; \
-            uint32_t const                           cTests  = *s_aFuncs[iFn].pcTests; \
+            if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(s_aFuncs[iFn])) continue; \
             BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
+            uint32_t const                           cTests  = *s_aFuncs[iFn].pcTests / sizeof(paTests[0]); \
             if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
             for (uint32_t iTest = 0; iTest < cTests; iTest++) \
             { \
@@ -2022,23 +2035,25 @@ static void CmpXchgTest(void)
         typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHGU ## a_cBits, (a_Type *, a_Type *, a_Type, uint32_t *)); \
         static struct \
         { \
-            const char                         *pszName; \
-            FNIEMAIMPLCMPXCHGU ## a_cBits      *pfn; \
-            PFNIEMAIMPLBINU ## a_cBits          pfnSub; \
-            BINU ## a_cBits ## _TEST_T const   *paTests; \
-            uint32_t const                     *pcTests; \
-        } const s_aFuncs[] = \
+            const char * const                      pszName; \
+            FNIEMAIMPLCMPXCHGU ## a_cBits * const   pfn; \
+            PFNIEMAIMPLBINU ## a_cBits const        pfnSub; \
+            bool                                    fCompressed; \
+            bool                                    fBinary; \
+            BINU ## a_cBits ## _TEST_T const       *paTests; \
+            uint32_t const                         *pcTests; \
+        } s_aFuncs[] = \
         { \
             { "cmpxchg_u" # a_cBits,           iemAImpl_cmpxchg_u ## a_cBits, iemAImpl_sub_u ## a_cBits, \
-              g_aTests_cmp_u ## a_cBits, &g_cTests_cmp_u ## a_cBits }, \
+              true, true, g_aTests_cmp_u ## a_cBits, &g_cbTests_cmp_u ## a_cBits }, \
             { "cmpxchg_u" # a_cBits "_locked", iemAImpl_cmpxchg_u ## a_cBits ## _locked, iemAImpl_sub_u ## a_cBits, \
-              g_aTests_cmp_u ## a_cBits, &g_cTests_cmp_u ## a_cBits }, \
+              true, true, g_aTests_cmp_u ## a_cBits, &g_cbTests_cmp_u ## a_cBits }, \
         }; \
         for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
         { \
-            if (!SubTestAndCheckIfEnabled(s_aFuncs[iFn].pszName)) continue; \
+            if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(s_aFuncs[iFn])) continue; \
             BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
-            uint32_t const                           cTests  = *s_aFuncs[iFn].pcTests; \
+            uint32_t const                           cTests  = *s_aFuncs[iFn].pcTests / sizeof(paTests[0]); \
             if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
             for (uint32_t iTest = 0; iTest < cTests; iTest++) \
             { \
@@ -2276,10 +2291,10 @@ TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTDBLU ## a_cBits)
 \
 static a_SubTestType a_aSubTests[] = \
 { \
-    ENTRY_AMD(shld_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
-    ENTRY_INTEL(shld_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
-    ENTRY_AMD(shrd_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
-    ENTRY_INTEL(shrd_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_BIN_AMD(shld_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_BIN_INTEL(shld_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_BIN_AMD(shrd_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_BIN_INTEL(shrd_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
 }; \
 \
 GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
@@ -2292,7 +2307,7 @@ static void ShiftDblU ## a_cBits ## Test(void) \
             continue; \
         a_TestType const * const        paTests = a_aSubTests[iFn].paTests; \
         PFNIEMAIMPLSHIFTDBLU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
-        uint32_t const                  cTests  = *a_aSubTests[iFn].pcTests; \
+        uint32_t const                  cTests  = *a_aSubTests[iFn].pcTests / sizeof(paTests[0]); \
         uint32_t const                  cVars   = COUNT_VARIATIONS(a_aSubTests[iFn]); \
         if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
         for (uint32_t iVar = 0; iVar < cVars; iVar++) \
@@ -2408,14 +2423,14 @@ static RTEXITCODE UnaryU ## a_cBits ## DumpAll(const char * const * papszNameFmt
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLUNARYU ## a_cBits); \
 static a_SubTestType g_aUnaryU ## a_cBits [] = \
 { \
-    ENTRY(inc_u ## a_cBits), \
-    ENTRY(inc_u ## a_cBits ## _locked), \
-    ENTRY(dec_u ## a_cBits), \
-    ENTRY(dec_u ## a_cBits ## _locked), \
-    ENTRY(not_u ## a_cBits), \
-    ENTRY(not_u ## a_cBits ## _locked), \
-    ENTRY(neg_u ## a_cBits), \
-    ENTRY(neg_u ## a_cBits ## _locked), \
+    ENTRY_BIN(inc_u ## a_cBits), \
+    ENTRY_BIN(inc_u ## a_cBits ## _locked), \
+    ENTRY_BIN(dec_u ## a_cBits), \
+    ENTRY_BIN(dec_u ## a_cBits ## _locked), \
+    ENTRY_BIN(not_u ## a_cBits), \
+    ENTRY_BIN(not_u ## a_cBits ## _locked), \
+    ENTRY_BIN(neg_u ## a_cBits), \
+    ENTRY_BIN(neg_u ## a_cBits ## _locked), \
 }; \
 \
 GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
@@ -2427,7 +2442,7 @@ static void UnaryU ## a_cBits ## Test(void) \
         if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aUnaryU ## a_cBits[iFn])) \
             continue; \
         a_TestType const * const paTests = g_aUnaryU ## a_cBits[iFn].paTests; \
-        uint32_t const           cTests  = *g_aUnaryU ## a_cBits[iFn].pcTests; \
+        uint32_t const           cTests  = *g_aUnaryU ## a_cBits[iFn].pcTests / sizeof(paTests[0]); \
         if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
@@ -2554,20 +2569,20 @@ static RTEXITCODE ShiftU ## a_cBits ## DumpAll(const char * const * papszNameFmt
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTU ## a_cBits); \
 static a_SubTestType a_aSubTests[] = \
 { \
-    ENTRY_AMD(  rol_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_INTEL(rol_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_AMD(  ror_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_INTEL(ror_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_AMD(  rcl_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_INTEL(rcl_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_AMD(  rcr_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_INTEL(rcr_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_AMD(  shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
-    ENTRY_INTEL(shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
-    ENTRY_AMD(  shr_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
-    ENTRY_INTEL(shr_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
-    ENTRY_AMD(  sar_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
-    ENTRY_INTEL(sar_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_AMD(  rol_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_INTEL(rol_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_AMD(  ror_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_INTEL(ror_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_AMD(  rcl_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_INTEL(rcl_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_AMD(  rcr_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_INTEL(rcr_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_AMD(  shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_INTEL(shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_AMD(  shr_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_INTEL(shr_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_AMD(  sar_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
+    ENTRY_BIN_INTEL(sar_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
 }; \
 \
 GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
@@ -2580,7 +2595,7 @@ static void ShiftU ## a_cBits ## Test(void) \
             continue; \
         PFNIEMAIMPLSHIFTU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         a_TestType const * const     paTests = a_aSubTests[iFn].paTests; \
-        uint32_t const               cTests  = *a_aSubTests[iFn].pcTests; \
+        uint32_t const               cTests  = *a_aSubTests[iFn].pcTests / sizeof(paTests[0]); \
         uint32_t const               cVars   = COUNT_VARIATIONS(a_aSubTests[iFn]); \
         if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
         for (uint32_t iVar = 0; iVar < cVars; iVar++) \
@@ -2661,16 +2676,16 @@ static void ShiftTest(void)
 TYPEDEF_SUBTEST_TYPE(INT_MULDIV_U8_T, MULDIVU8_TEST_T, PFNIEMAIMPLMULDIVU8);
 static INT_MULDIV_U8_T g_aMulDivU8[] =
 {
-    ENTRY_AMD_EX(mul_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
-                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_INTEL_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
-    ENTRY_AMD_EX(imul_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
-                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_INTEL_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
-    ENTRY_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_INTEL_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_AMD_EX(mul_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                                X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_BIN_INTEL_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_BIN_AMD_EX(imul_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                                X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_BIN_INTEL_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_BIN_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_INTEL_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -2724,7 +2739,7 @@ static void MulDivU8Test(void)
         if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aMulDivU8[iFn])) \
             continue; \
         MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
-        uint32_t const                cTests  = *g_aMulDivU8[iFn].pcTests;
+        uint32_t const                cTests  = *g_aMulDivU8[iFn].pcTests / sizeof(paTests[0]);
         uint32_t const                fEflIgn = g_aMulDivU8[iFn].uExtra;
         PFNIEMAIMPLMULDIVU8           pfn     = g_aMulDivU8[iFn].pfn;
         uint32_t const                cVars   = COUNT_VARIATIONS(g_aMulDivU8[iFn]); \
@@ -2814,14 +2829,14 @@ static RTEXITCODE MulDivU ## a_cBits ## DumpAll(const char * const * papszNameFm
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLMULDIVU ## a_cBits); \
 static a_SubTestType a_aSubTests [] = \
 { \
-    ENTRY_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_INTEL_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_INTEL_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
 }; \
 \
 GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
@@ -2833,7 +2848,7 @@ static void MulDivU ## a_cBits ## Test(void) \
         if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
             continue; \
         a_TestType const * const      paTests = a_aSubTests[iFn].paTests; \
-        uint32_t const                cTests  = *a_aSubTests[iFn].pcTests; \
+        uint32_t const                cTests  = *a_aSubTests[iFn].pcTests / sizeof(paTests[0]); \
         uint32_t const                fEflIgn = a_aSubTests[iFn].uExtra; \
         PFNIEMAIMPLMULDIVU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
         uint32_t const                cVars   = COUNT_VARIATIONS(a_aSubTests[iFn]); \
