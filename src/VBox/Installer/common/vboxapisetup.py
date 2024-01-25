@@ -267,16 +267,12 @@ def main():
                 return 1
             setup(cmdclass={"install": setupInstallClass})
         else:
-            if sys.version_info >= (3, 3): # Starting with Python 3.3 we use pyproject.toml by using setup().
-                try:
-                    from distutils.core import setup # pylint: disable=deprecated-module
-                    setup(cmdclass={"install": setupInstallClass})
-                except ImportError:
-                    print("distutils[.core] package not installed/available, falling back to legacy setuptools ...")
-                    fInvokeSetupTools = True # Invoke setuptools as a last resort.
-            else: # Python 2.7.x + Python < 3.6 legacy cruft.
+            try:
                 from distutils.core import setup # pylint: disable=deprecated-module
                 fInvokeSetupTools = True
+            except ImportError:
+                print("ERROR: distutils.core package not installed/available, can't continue. Exiting.")
+                return 1
 
             if fInvokeSetupTools:
                 if g_fVerbose:
