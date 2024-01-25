@@ -1036,6 +1036,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                     AssertRC(rc);
                 }
             }
+            HM_REG_COUNTER(&pHmCpu->StatNestedExitACSplitLock, "/HM/CPU%u/ExitNestedGuest/Trap/#AC-split-lock", "Nested-guest triggered #AC due to split-lock being enabled on the host.");
         }
         else
         {

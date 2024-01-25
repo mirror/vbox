@@ -88,6 +88,14 @@
                                       | CPUMCTX_EXTRN_INHIBIT_NMI)
 
 /**
+ * Guest-CPU state required for split-lock \#AC handling VM-exits.
+ */
+#define HMVMX_CPUMCTX_XPCT_AC        (  CPUMCTX_EXTRN_CR0 \
+                                      | CPUMCTX_EXTRN_RFLAGS \
+                                      | CPUMCTX_EXTRN_SS \
+                                      | CPUMCTX_EXTRN_CS)
+
+/**
  * Exception bitmap mask for real-mode guests (real-on-v86).
  *
  * We need to intercept all exceptions manually except:
@@ -810,6 +818,24 @@ static uint64_t vmxHCGetFixedCr4Mask(PCVMCPUCC pVCpu)
 
 
 /**
+ * Checks whether an \#AC exception generated while executing a guest (or
+ * nested-guest) was due to a split-lock memory access.
+ *
+ * @returns @c true if split-lock triggered the \#AC, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECL_FORCE_INLINE(bool) vmxHCIsSplitLockAcXcpt(PVMCPU pVCpu)
+{
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
+    if (   !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)      /* 1. If 486-style alignment checks aren't enabled, this must be a split-lock #AC. */
+        || !(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_AC) /* 2. When the EFLAGS.AC != 0 this can only be a split-lock case. */
+        ||  CPUMGetGuestCPL(pVCpu) != 3)               /* 3. #AC cannot happen in rings 0-2 except for split-lock detection. */
+        return true;
+    return false;
+}
+
+
+/**
  * Adds one or more exceptions to the exception bitmap and commits it to the current
  * VMCS.
  *
@@ -1393,12 +1419,18 @@ static int vmxHCCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, boo
                         VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_PIN_EXEC,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
-    rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
-    AssertRC(rc);
-    AssertMsgReturnStmt(pVmcsInfo->u32ProcCtls == u32Val,
-                        ("%s proc controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls, u32Val),
-                        VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_PROC_EXEC,
-                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+    /** @todo Currently disabled for nested-guests because we run into bit differences
+     *        with for INT_WINDOW, RDTSC/P, see @bugref{10318}. Later try figure out
+     *        why and re-enable. */
+    if (!fIsNstGstVmcs)
+    {
+        rc = VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
+        AssertRC(rc);
+        AssertMsgReturnStmt(pVmcsInfo->u32ProcCtls == u32Val,
+                            ("%s proc controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls, u32Val),
+                            VCPU_2_VMXSTATE(pVCpu).u32HMError = VMX_VCI_CTRL_PROC_EXEC,
+                            VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+    }
 
     if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
     {
@@ -7127,6 +7159,90 @@ static VBOXSTRICTRC vmxHCExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
+ * VM-exit helper for split-lock access triggered \#AC exceptions.
+ */
+static VBOXSTRICTRC vmxHCHandleSplitLockAcXcpt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    /*
+     * Check for debug/trace events and import state accordingly.
+     */
+    if (!pVmxTransient->fIsNestedGuest)
+        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestACSplitLock);
+    else
+        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatNestedExitACSplitLock);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    if (   !DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK)
+#ifndef IN_NEM_DARWIN
+        && !VBOXVMM_VMX_SPLIT_LOCK_ENABLED()
+#endif
+        )
+    {
+        if (pVM->cCpus == 1)
+        {
+#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
+            int rc = vmxHCImportGuestState<IEM_CPUMCTX_EXTRN_MUST_MASK,
+                                           HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
+#else
+            int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL,
+                                           HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
+#endif
+            AssertRCReturn(rc, rc);
+        }
+    }
+    else
+    {
+        int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL,
+                                       HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
+        AssertRCReturn(rc, rc);
+
+        VBOXVMM_XCPT_DF(pVCpu, &pVCpu->cpum.GstCtx);
+
+        if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK))
+        {
+            VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, DBGFEVENT_VMX_SPLIT_LOCK, DBGFEVENTCTX_HM, 0);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
+    }
+
+    /*
+     * Emulate the instruction.
+     *
+     * We have to ignore the LOCK prefix here as we must not retrigger the
+     * detection on the host.  This isn't all that satisfactory, though...
+     */
+    if (pVM->cCpus == 1)
+    {
+        Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
+                  pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
+
+        /** @todo For SMP configs we should do a rendezvous here. */
+        VBOXSTRICTRC rcStrict = IEMExecOneIgnoreLock(pVCpu);
+        if (rcStrict == VINF_SUCCESS)
+#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged,
+                               HM_CHANGED_GUEST_RIP
+                             | HM_CHANGED_GUEST_RFLAGS
+                             | HM_CHANGED_GUEST_GPRS_MASK
+                             | HM_CHANGED_GUEST_CS
+                             | HM_CHANGED_GUEST_SS);
+#else
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
+#endif
+        else if (rcStrict == VINF_IEM_RAISED_XCPT)
+        {
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+            rcStrict = VINF_SUCCESS;
+        }
+        return rcStrict;
+    }
+    Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC -> VINF_EM_EMULATE_SPLIT_LOCK\n",
+              pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
+    return VINF_EM_EMULATE_SPLIT_LOCK;
+}
+
+
+/**
  * VM-exit exception handler for \#AC (Alignment-check exception).
  *
  * @remarks Requires all fields in HMVMX_READ_XCPT_INFO to be read from the VMCS.
@@ -7139,91 +7255,14 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
      * Detect #ACs caused by host having enabled split-lock detection.
      * Emulate such instructions.
      */
-#define VMX_HC_EXIT_XCPT_AC_INITIAL_REGS    (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_CS)
-    int rc = vmxHCImportGuestState<VMX_HC_EXIT_XCPT_AC_INITIAL_REGS>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
+    int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
     /** @todo detect split lock in cpu feature?   */
-    if (   /* 1. If 486-style alignment checks aren't enabled, then this must be a split-lock exception */
-           !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
-           /* 2. #AC cannot happen in rings 0-2 except for split-lock detection. */
-        || CPUMGetGuestCPL(pVCpu) != 3
-           /* 3. When the EFLAGS.AC != 0 this can only be a split-lock case. */
-        || !(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_AC) )
-    {
-        /*
-         * Check for debug/trace events and import state accordingly.
-         */
-        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestACSplitLock);
-        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-        if (   !DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK)
-#ifndef IN_NEM_DARWIN
-            && !VBOXVMM_VMX_SPLIT_LOCK_ENABLED()
-#endif
-            )
-        {
-            if (pVM->cCpus == 1)
-            {
-#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
-                rc = vmxHCImportGuestState<IEM_CPUMCTX_EXTRN_MUST_MASK,
-                                           VMX_HC_EXIT_XCPT_AC_INITIAL_REGS>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
-#else
-                rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL,
-                                           VMX_HC_EXIT_XCPT_AC_INITIAL_REGS>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
-#endif
-                AssertRCReturn(rc, rc);
-            }
-        }
-        else
-        {
-            rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL,
-                                       VMX_HC_EXIT_XCPT_AC_INITIAL_REGS>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
-            AssertRCReturn(rc, rc);
-
-            VBOXVMM_XCPT_DF(pVCpu, &pVCpu->cpum.GstCtx);
-
-            if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK))
-            {
-                VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, DBGFEVENT_VMX_SPLIT_LOCK, DBGFEVENTCTX_HM, 0);
-                if (rcStrict != VINF_SUCCESS)
-                    return rcStrict;
-            }
-        }
-
-        /*
-         * Emulate the instruction.
-         *
-         * We have to ignore the LOCK prefix here as we must not retrigger the
-         * detection on the host.  This isn't all that satisfactory, though...
-         */
-        if (pVM->cCpus == 1)
-        {
-            Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
-                      pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
-
-            /** @todo For SMP configs we should do a rendezvous here. */
-            VBOXSTRICTRC rcStrict = IEMExecOneIgnoreLock(pVCpu);
-            if (rcStrict == VINF_SUCCESS)
-#if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
-                ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged,
-                                   HM_CHANGED_GUEST_RIP
-                                 | HM_CHANGED_GUEST_RFLAGS
-                                 | HM_CHANGED_GUEST_GPRS_MASK
-                                 | HM_CHANGED_GUEST_CS
-                                 | HM_CHANGED_GUEST_SS);
-#else
-                ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
-#endif
-            else if (rcStrict == VINF_IEM_RAISED_XCPT)
-            {
-                ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
-                rcStrict = VINF_SUCCESS;
-            }
-            return rcStrict;
-        }
-        Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC -> VINF_EM_EMULATE_SPLIT_LOCK\n",
-                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
-        return VINF_EM_EMULATE_SPLIT_LOCK;
-    }
+    /** @todo r=ramshankar: is cpu feature detection really necessary since we are able
+     *        to detect the split-lock \#AC condition without it? More so since the
+     *        feature isn't cleanly detectable, see @bugref{10318#c125}. */
+    if (vmxHCIsSplitLockAcXcpt(pVCpu))
+        return vmxHCHandleSplitLockAcXcpt(pVCpu, pVmxTransient);
 
     STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestAC);
     Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 cpl=%d -> #AC\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
@@ -7775,7 +7814,6 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitIntWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    Assert(!pVmxTransient->fIsNestedGuest);
     vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
 
     /* Evaluate and deliver pending events and resume guest execution. */
@@ -10128,8 +10166,33 @@ HMVMX_EXIT_DECL vmxHCExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
                                  | HMVMX_READ_IDT_VECTORING_ERROR_CODE>(pVCpu, pVmxTransient);
 
             PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-            if (CPUMIsGuestVmxXcptInterceptSet(pCtx, VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo), pVmxTransient->uExitIntErrorCode))
+            uint8_t const uVector = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
+            if (CPUMIsGuestVmxXcptInterceptSet(pCtx, uVector, pVmxTransient->uExitIntErrorCode))
             {
+                /*
+                 * Split-lock triggered #ACs should not be injected into the nested-guest
+                 * since we don't support split-lock detection for nested-guests yet.
+                 */
+                if (   uVector == X86_XCPT_AC
+                    && uExitIntType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT)
+                {
+                    int const rc = vmxHCImportGuestState<HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
+                    AssertRCReturn(rc, rc);
+                    if (vmxHCIsSplitLockAcXcpt(pVCpu))
+                    {
+                        VBOXSTRICTRC rcStrict = vmxHCCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+                        if (    rcStrict == VINF_SUCCESS
+                            && !VCPU_2_VMXSTATE(pVCpu).Event.fPending)
+                            return vmxHCHandleSplitLockAcXcpt(pVCpu, pVmxTransient);
+                        if (rcStrict == VINF_HM_DOUBLE_FAULT)
+                        {
+                            Assert(VCPU_2_VMXSTATE(pVCpu).Event.fPending);
+                            rcStrict = VINF_SUCCESS;
+                        }
+                        return rcStrict;
+                    }
+                }
+
                 /* Exit qualification is required for debug and page-fault exceptions. */
                 vmxHCReadToTransient<HMVMX_READ_EXIT_QUALIFICATION>(pVCpu, pVmxTransient);
 

@@ -942,6 +942,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitReasonNpf;
 
     STAMCOUNTER             StatNestedExitReasonNpf;
+    STAMCOUNTER             StatNestedExitACSplitLock;
 
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;

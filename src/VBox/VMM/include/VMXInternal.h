@@ -249,6 +249,7 @@ typedef struct VMXSTATISTICS
     STAMCOUNTER             StatExitReasonNpf;
 
     STAMCOUNTER             StatNestedExitReasonNpf;
+    STAMCOUNTER             StatNestedExitACSplitLock;
 
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
