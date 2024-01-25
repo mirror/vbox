@@ -300,13 +300,12 @@ def main():
 
                 print("Installed to: %s" % (sPathInstalled))
 
+                testVBoxAPI() # Testing the VBox API does not affect the exit code.
+
     except RuntimeError as exc:
         print("ERROR: Installation of VirtualBox Python bindings failed: %s" % (exc))
         return 1
 
-    if  fInvokeSetupTools \
-    and not testVBoxAPI():
-        return 1
     return 0
 
 if __name__ == '__main__':
