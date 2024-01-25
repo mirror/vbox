@@ -275,6 +275,7 @@ def main():
                     print("distutils[.core] package not installed/available, falling back to legacy setuptools ...")
                     fInvokeSetupTools = True # Invoke setuptools as a last resort.
             else: # Python 2.7.x + Python < 3.6 legacy cruft.
+                from distutils.core import setup # pylint: disable=deprecated-module
                 fInvokeSetupTools = True
 
             if fInvokeSetupTools:
