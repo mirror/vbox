@@ -271,18 +271,18 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-and_u64.bin.gz \
 	tstIEMAImplDataInt-and_u64_locked.bin.gz \
 	tstIEMAImplDataInt-arpl.bin.gz \
-	tstIEMAImplDataInt-bsf_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsf_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-bsf_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsf_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-bsf_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsf_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-bsr_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsr_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-bsr_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsr_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-bsr_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-bsr_u64_intel-Intel.bin.gz \
+	tstIEMAImplDataInt-bsf_u16_amd.bin.gz \
+	tstIEMAImplDataInt-bsf_u16_intel.bin.gz \
+	tstIEMAImplDataInt-bsf_u32_amd.bin.gz \
+	tstIEMAImplDataInt-bsf_u32_intel.bin.gz \
+	tstIEMAImplDataInt-bsf_u64_amd.bin.gz \
+	tstIEMAImplDataInt-bsf_u64_intel.bin.gz \
+	tstIEMAImplDataInt-bsr_u16_amd.bin.gz \
+	tstIEMAImplDataInt-bsr_u16_intel.bin.gz \
+	tstIEMAImplDataInt-bsr_u32_amd.bin.gz \
+	tstIEMAImplDataInt-bsr_u32_intel.bin.gz \
+	tstIEMAImplDataInt-bsr_u64_amd.bin.gz \
+	tstIEMAImplDataInt-bsr_u64_intel.bin.gz \
 	tstIEMAImplDataInt-btc_u16.bin.gz \
 	tstIEMAImplDataInt-btc_u16_locked.bin.gz \
 	tstIEMAImplDataInt-btc_u32.bin.gz \
@@ -316,36 +316,36 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-dec_u32_locked.bin.gz \
 	tstIEMAImplDataInt-dec_u64.bin.gz \
 	tstIEMAImplDataInt-dec_u64_locked.bin.gz \
-	tstIEMAImplDataInt-div_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-div_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-div_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-div_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-div_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-div_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-div_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-div_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-idiv_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-idiv_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-idiv_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-idiv_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-idiv_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-idiv_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-idiv_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-idiv_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_two_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_two_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_two_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_two_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_two_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_two_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-imul_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-imul_u64_intel-Intel.bin.gz \
+	tstIEMAImplDataInt-div_u8_amd.bin.gz \
+	tstIEMAImplDataInt-div_u8_intel.bin.gz \
+	tstIEMAImplDataInt-div_u16_amd.bin.gz \
+	tstIEMAImplDataInt-div_u16_intel.bin.gz \
+	tstIEMAImplDataInt-div_u32_amd.bin.gz \
+	tstIEMAImplDataInt-div_u32_intel.bin.gz \
+	tstIEMAImplDataInt-div_u64_amd.bin.gz \
+	tstIEMAImplDataInt-div_u64_intel.bin.gz \
+	tstIEMAImplDataInt-idiv_u8_amd.bin.gz \
+	tstIEMAImplDataInt-idiv_u8_intel.bin.gz \
+	tstIEMAImplDataInt-idiv_u16_amd.bin.gz \
+	tstIEMAImplDataInt-idiv_u16_intel.bin.gz \
+	tstIEMAImplDataInt-idiv_u32_amd.bin.gz \
+	tstIEMAImplDataInt-idiv_u32_intel.bin.gz \
+	tstIEMAImplDataInt-idiv_u64_amd.bin.gz \
+	tstIEMAImplDataInt-idiv_u64_intel.bin.gz \
+	tstIEMAImplDataInt-imul_two_u16_amd.bin.gz \
+	tstIEMAImplDataInt-imul_two_u16_intel.bin.gz \
+	tstIEMAImplDataInt-imul_two_u32_amd.bin.gz \
+	tstIEMAImplDataInt-imul_two_u32_intel.bin.gz \
+	tstIEMAImplDataInt-imul_two_u64_amd.bin.gz \
+	tstIEMAImplDataInt-imul_two_u64_intel.bin.gz \
+	tstIEMAImplDataInt-imul_u8_amd.bin.gz \
+	tstIEMAImplDataInt-imul_u8_intel.bin.gz \
+	tstIEMAImplDataInt-imul_u16_amd.bin.gz \
+	tstIEMAImplDataInt-imul_u16_intel.bin.gz \
+	tstIEMAImplDataInt-imul_u32_amd.bin.gz \
+	tstIEMAImplDataInt-imul_u32_intel.bin.gz \
+	tstIEMAImplDataInt-imul_u64_amd.bin.gz \
+	tstIEMAImplDataInt-imul_u64_intel.bin.gz \
 	tstIEMAImplDataInt-inc_u8.bin.gz \
 	tstIEMAImplDataInt-inc_u8_locked.bin.gz \
 	tstIEMAImplDataInt-inc_u16.bin.gz \
@@ -354,14 +354,14 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-inc_u32_locked.bin.gz \
 	tstIEMAImplDataInt-inc_u64.bin.gz \
 	tstIEMAImplDataInt-inc_u64_locked.bin.gz \
-	tstIEMAImplDataInt-mul_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-mul_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-mul_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-mul_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-mul_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-mul_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-mul_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-mul_u64_intel-Intel.bin.gz \
+	tstIEMAImplDataInt-mul_u8_amd.bin.gz \
+	tstIEMAImplDataInt-mul_u8_intel.bin.gz \
+	tstIEMAImplDataInt-mul_u16_amd.bin.gz \
+	tstIEMAImplDataInt-mul_u16_intel.bin.gz \
+	tstIEMAImplDataInt-mul_u32_amd.bin.gz \
+	tstIEMAImplDataInt-mul_u32_intel.bin.gz \
+	tstIEMAImplDataInt-mul_u64_amd.bin.gz \
+	tstIEMAImplDataInt-mul_u64_intel.bin.gz \
 	tstIEMAImplDataInt-neg_u8.bin.gz \
 	tstIEMAImplDataInt-neg_u8_locked.bin.gz \
 	tstIEMAImplDataInt-neg_u16.bin.gz \
@@ -386,46 +386,46 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-or_u32_locked.bin.gz \
 	tstIEMAImplDataInt-or_u64.bin.gz \
 	tstIEMAImplDataInt-or_u64_locked.bin.gz \
-	tstIEMAImplDataInt-rcl_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcl_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcl_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcl_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcl_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcl_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcl_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcl_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcr_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcr_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcr_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcr_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcr_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcr_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rcr_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rcr_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rol_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rol_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rol_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rol_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rol_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rol_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-rol_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-rol_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-ror_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-ror_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-ror_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-ror_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-ror_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-ror_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-ror_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-ror_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-sar_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-sar_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-sar_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-sar_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-sar_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-sar_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-sar_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-sar_u64_intel-Intel.bin.gz \
+	tstIEMAImplDataInt-rcl_u8_amd.bin.gz \
+	tstIEMAImplDataInt-rcl_u8_intel.bin.gz \
+	tstIEMAImplDataInt-rcl_u16_amd.bin.gz \
+	tstIEMAImplDataInt-rcl_u16_intel.bin.gz \
+	tstIEMAImplDataInt-rcl_u32_amd.bin.gz \
+	tstIEMAImplDataInt-rcl_u32_intel.bin.gz \
+	tstIEMAImplDataInt-rcl_u64_amd.bin.gz \
+	tstIEMAImplDataInt-rcl_u64_intel.bin.gz \
+	tstIEMAImplDataInt-rcr_u8_amd.bin.gz \
+	tstIEMAImplDataInt-rcr_u8_intel.bin.gz \
+	tstIEMAImplDataInt-rcr_u16_amd.bin.gz \
+	tstIEMAImplDataInt-rcr_u16_intel.bin.gz \
+	tstIEMAImplDataInt-rcr_u32_amd.bin.gz \
+	tstIEMAImplDataInt-rcr_u32_intel.bin.gz \
+	tstIEMAImplDataInt-rcr_u64_amd.bin.gz \
+	tstIEMAImplDataInt-rcr_u64_intel.bin.gz \
+	tstIEMAImplDataInt-rol_u8_amd.bin.gz \
+	tstIEMAImplDataInt-rol_u8_intel.bin.gz \
+	tstIEMAImplDataInt-rol_u16_amd.bin.gz \
+	tstIEMAImplDataInt-rol_u16_intel.bin.gz \
+	tstIEMAImplDataInt-rol_u32_amd.bin.gz \
+	tstIEMAImplDataInt-rol_u32_intel.bin.gz \
+	tstIEMAImplDataInt-rol_u64_amd.bin.gz \
+	tstIEMAImplDataInt-rol_u64_intel.bin.gz \
+	tstIEMAImplDataInt-ror_u8_amd.bin.gz \
+	tstIEMAImplDataInt-ror_u8_intel.bin.gz \
+	tstIEMAImplDataInt-ror_u16_amd.bin.gz \
+	tstIEMAImplDataInt-ror_u16_intel.bin.gz \
+	tstIEMAImplDataInt-ror_u32_amd.bin.gz \
+	tstIEMAImplDataInt-ror_u32_intel.bin.gz \
+	tstIEMAImplDataInt-ror_u64_amd.bin.gz \
+	tstIEMAImplDataInt-ror_u64_intel.bin.gz \
+	tstIEMAImplDataInt-sar_u8_amd.bin.gz \
+	tstIEMAImplDataInt-sar_u8_intel.bin.gz \
+	tstIEMAImplDataInt-sar_u16_amd.bin.gz \
+	tstIEMAImplDataInt-sar_u16_intel.bin.gz \
+	tstIEMAImplDataInt-sar_u32_amd.bin.gz \
+	tstIEMAImplDataInt-sar_u32_intel.bin.gz \
+	tstIEMAImplDataInt-sar_u64_amd.bin.gz \
+	tstIEMAImplDataInt-sar_u64_intel.bin.gz \
 	tstIEMAImplDataInt-sbb_u8.bin.gz \
 	tstIEMAImplDataInt-sbb_u8_locked.bin.gz \
 	tstIEMAImplDataInt-sbb_u16.bin.gz \
@@ -434,34 +434,34 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-sbb_u32_locked.bin.gz \
 	tstIEMAImplDataInt-sbb_u64.bin.gz \
 	tstIEMAImplDataInt-sbb_u64_locked.bin.gz \
-	tstIEMAImplDataInt-shld_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shld_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shld_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shld_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shld_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shld_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shl_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shl_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shl_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shl_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shl_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shl_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shl_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shl_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shrd_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shrd_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shrd_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shrd_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shrd_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shrd_u64_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shr_u8_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shr_u8_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shr_u16_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shr_u16_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shr_u32_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shr_u32_intel-Intel.bin.gz \
-	tstIEMAImplDataInt-shr_u64_amd-Amd.bin.gz \
-	tstIEMAImplDataInt-shr_u64_intel-Intel.bin.gz \
+	tstIEMAImplDataInt-shld_u16_amd.bin.gz \
+	tstIEMAImplDataInt-shld_u16_intel.bin.gz \
+	tstIEMAImplDataInt-shld_u32_amd.bin.gz \
+	tstIEMAImplDataInt-shld_u32_intel.bin.gz \
+	tstIEMAImplDataInt-shld_u64_amd.bin.gz \
+	tstIEMAImplDataInt-shld_u64_intel.bin.gz \
+	tstIEMAImplDataInt-shl_u8_amd.bin.gz \
+	tstIEMAImplDataInt-shl_u8_intel.bin.gz \
+	tstIEMAImplDataInt-shl_u16_amd.bin.gz \
+	tstIEMAImplDataInt-shl_u16_intel.bin.gz \
+	tstIEMAImplDataInt-shl_u32_amd.bin.gz \
+	tstIEMAImplDataInt-shl_u32_intel.bin.gz \
+	tstIEMAImplDataInt-shl_u64_amd.bin.gz \
+	tstIEMAImplDataInt-shl_u64_intel.bin.gz \
+	tstIEMAImplDataInt-shrd_u16_amd.bin.gz \
+	tstIEMAImplDataInt-shrd_u16_intel.bin.gz \
+	tstIEMAImplDataInt-shrd_u32_amd.bin.gz \
+	tstIEMAImplDataInt-shrd_u32_intel.bin.gz \
+	tstIEMAImplDataInt-shrd_u64_amd.bin.gz \
+	tstIEMAImplDataInt-shrd_u64_intel.bin.gz \
+	tstIEMAImplDataInt-shr_u8_amd.bin.gz \
+	tstIEMAImplDataInt-shr_u8_intel.bin.gz \
+	tstIEMAImplDataInt-shr_u16_amd.bin.gz \
+	tstIEMAImplDataInt-shr_u16_intel.bin.gz \
+	tstIEMAImplDataInt-shr_u32_amd.bin.gz \
+	tstIEMAImplDataInt-shr_u32_intel.bin.gz \
+	tstIEMAImplDataInt-shr_u64_amd.bin.gz \
+	tstIEMAImplDataInt-shr_u64_intel.bin.gz \
 	tstIEMAImplDataInt-sub_u8.bin.gz \
 	tstIEMAImplDataInt-sub_u8_locked.bin.gz \
 	tstIEMAImplDataInt-sub_u16.bin.gz \

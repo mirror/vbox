@@ -34,6 +34,7 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
@@ -133,6 +134,7 @@
         a_TestType const * const    paFixedTests; \
         a_TestType const           *paTests; /**< The decompressed info. */ \
         uint32_t                    cTests;  /**< The decompressed info. */ \
+        IEMTESTENTRYINFO            Info; \
     } a_TypeName
 
 #define COUNT_VARIATIONS(a_SubTest) \
@@ -142,6 +144,32 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+typedef struct IEMBINARYHEADER
+{
+    char        szMagic[16];
+    uint32_t    cbEntry;
+    uint32_t    uSvnRev;
+    uint32_t    auUnused[6];
+    char        szCpuDesc[80];
+} IEMBINARYHEADER;
+AssertCompileSize(IEMBINARYHEADER, 128);
+
+                            // 01234567890123456
+#define IEMBINARYHEADER_MAGIC "IEMAImpl Bin v1"
+AssertCompile(sizeof(IEMBINARYHEADER_MAGIC) == 16);
+
+
+/** Fixed part of TYPEDEF_SUBTEST_TYPE and friends. */
+typedef struct IEMTESTENTRYINFO
+{
+    void       *pvUncompressed;
+    uint32_t    cbUncompressed;
+    const char *pszCpuDesc;
+    uint32_t    uSvnRev;
+} IEMTESTENTRYINFO;
+
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
 typedef struct IEMBINARYOUTPUT
 {
     /** The output file. */
@@ -156,6 +184,7 @@ typedef struct IEMBINARYOUTPUT
     char            szFilename[79];
 } IEMBINARYOUTPUT;
 typedef IEMBINARYOUTPUT *PIEMBINARYOUTPUT;
+#endif /* TSTIEMAIMPL_WITH_GENERATOR */
 
 
 /*********************************************************************************************************************************
@@ -185,6 +214,14 @@ static const char  *g_apszExcludeTestPatterns[64];
 static uint64_t     g_cPicoSecBenchmark = 0;
 
 static unsigned     g_cVerbosity = 0;
+
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+/** The SVN revision (for use in the binary headers). */
+static uint32_t     g_uSvnRev = 0;
+/** The CPU description (for use in the binary headers). */
+static char         g_szCpuDesc[80] = "";
+#endif
 
 
 /*********************************************************************************************************************************
@@ -995,7 +1032,19 @@ static void GenerateArrayEnd(PRTSTREAM pOut, const char *pszName)
 
 # endif  /* unused */
 
-static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName)
+static void GenerateBinaryWrite(PIEMBINARYOUTPUT pBinOut, const void *pvData, size_t cbData)
+{
+    if (RT_SUCCESS_NP(pBinOut->rcWrite))
+    {
+        pBinOut->rcWrite = RTVfsIoStrmWrite(pBinOut->hVfsUncompressed, pvData, cbData, true /*fBlocking*/, NULL);
+        if (RT_SUCCESS(pBinOut->rcWrite))
+            return;
+        RTMsgError("Error writing '%s': %Rrc", pBinOut->szFilename, pBinOut->rcWrite);
+    }
+}
+
+static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName,
+                               IEMTESTENTRYINFO const *pInfoToPreserve, uint32_t cbEntry)
 {
     pBinOut->hVfsFile         = NIL_RTVFSFILE;
     pBinOut->hVfsUncompressed = NIL_RTVFSIOSTREAM;
@@ -1018,6 +1067,21 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
                     if (RT_SUCCESS(pBinOut->rcWrite))
                     {
                         pBinOut->rcWrite = VINF_SUCCESS;
+
+                        /* Write the header if applicable. */
+                        if (   !pInfoToPreserve
+                            || (pInfoToPreserve->uSvnRev != 0 && *pInfoToPreserve->pszCpuDesc))
+                        {
+                            IEMBINARYHEADER Hdr;
+                            RT_ZERO(Hdr);
+                            memcpy(Hdr.szMagic, IEMBINARYHEADER_MAGIC, sizeof(IEMBINARYHEADER_MAGIC));
+                            Hdr.cbEntry = cbEntry;
+                            Hdr.uSvnRev = pInfoToPreserve ? pInfoToPreserve->uSvnRev : g_uSvnRev;
+                            RTStrCopy(Hdr.szCpuDesc, sizeof(Hdr.szCpuDesc),
+                                      pInfoToPreserve ? pInfoToPreserve->pszCpuDesc : g_szCpuDesc);
+                            GenerateBinaryWrite(pBinOut, &Hdr, sizeof(Hdr));
+                        }
+
                         return true;
                     }
 
@@ -1049,20 +1113,8 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
 }
 
 # define GENERATE_BINARY_OPEN(a_pBinOut, a_papszNameFmts, a_Entry) \
-        GenerateBinaryOpen((a_pBinOut), a_papszNameFmts[(a_Entry).idxCpuEflFlavour], (a_Entry).pszName)
-
-
-static void GenerateBinaryWrite(PIEMBINARYOUTPUT pBinOut, const void *pvData, size_t cbData)
-{
-    if (RT_SUCCESS_NP(pBinOut->rcWrite))
-    {
-        pBinOut->rcWrite = RTVfsIoStrmWrite(pBinOut->hVfsUncompressed, pvData, cbData, true /*fBlocking*/, NULL);
-        if (RT_SUCCESS(pBinOut->rcWrite))
-            return;
-        RTMsgError("Error writing '%s': %Rrc", pBinOut->szFilename, pBinOut->rcWrite);
-    }
-}
-
+        GenerateBinaryOpen((a_pBinOut), a_papszNameFmts[(a_Entry).idxCpuEflFlavour], (a_Entry).pszName, \
+                           NULL /*pInfo*/, sizeof((a_Entry).paTests[0]))
 
 static bool GenerateBinaryClose(PIEMBINARYOUTPUT pBinOut)
 {
@@ -1087,15 +1139,23 @@ static bool GenerateBinaryClose(PIEMBINARYOUTPUT pBinOut)
 }
 
 /* Helper for DumpAll. */
-# define DUMP_TEST_ENTRY(a_Entry, a_papszNameFmts) \
-    do { \
-        AssertReturn(DECOMPRESS_TESTS(a_Entry), RTEXITCODE_FAILURE); \
-        IEMBINARYOUTPUT BinOut; \
-        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, a_papszNameFmts, (a_Entry)), RTEXITCODE_FAILURE); \
-        GenerateBinaryWrite(&BinOut, (a_Entry).paTests, (a_Entry).cTests); \
-        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
-    } while (0)
-
+# define DUMP_ALL_FN(a_FnBaseName, a_aSubTests) \
+    static RTEXITCODE a_FnBaseName ## DumpAll(const char * const * papszNameFmts) \
+    { \
+        for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+        { \
+            AssertReturn(DECOMPRESS_TESTS(a_aSubTests[iFn]), RTEXITCODE_FAILURE); \
+            IEMBINARYOUTPUT BinOut; \
+            AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], \
+                                            a_aSubTests[iFn].pszName, &a_aSubTests[iFn].Info, \
+                                            sizeof(a_aSubTests[iFn].paTests[0])), \
+                         RTEXITCODE_FAILURE); \
+            GenerateBinaryWrite(&BinOut, a_aSubTests[iFn].paTests, a_aSubTests[iFn].cTests); \
+            FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
+            AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+        } \
+        return RTEXITCODE_SUCCESS; \
+    }
 #endif /* TSTIEMAIMPL_WITH_GENERATOR */
 
 
@@ -1135,9 +1195,13 @@ static bool SubTestAndCheckIfEnabled(const char *pszName)
 
 
 /** Decompresses test data before use as required. */
-static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed, size_t cbEntry,
-                                void **ppvTests, uint32_t *pcTests)
+static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed, size_t cbEntry, const char *pszWhat,
+                                void **ppvTests, uint32_t *pcTests, IEMTESTENTRYINFO *pInfo)
 {
+    /* Don't do it again. */
+    if (pInfo->pvUncompressed && *ppvTests)
+        return VINF_SUCCESS;
+
     /* Open a memory stream for the compressed binary data. */
     RTVFSIOSTREAM  hVfsIos      = NIL_RTVFSIOSTREAM;
     int rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvCompressed, cbCompressed, &hVfsIos);
@@ -1176,36 +1240,67 @@ static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed,
             }
             if (RT_SUCCESS(rc))
             {
-                if ((off % cbEntry) == 0)
+                /* Validate the header if present and subtract if from 'off'. */
+                IEMBINARYHEADER const *pHdr = NULL;
+                if (   off >= sizeof(IEMTESTENTRYINFO)
+                    && memcmp(pbDecompressed, IEMBINARYHEADER_MAGIC, sizeof(IEMBINARYHEADER_MAGIC)) == 0)
                 {
+                    pHdr = (IEMBINARYHEADER const *)pbDecompressed;
+                    if (pHdr->cbEntry != cbEntry)
+                    {
+                        RTTestIFailed("Test entry size differs for '%s': %#x (header r%u), expected %#zx (uncompressed size %#zx)",
+                                      pszWhat, pHdr->cbEntry, pHdr->uSvnRev, cbEntry, off);
+                        rc = VERR_IO_BAD_UNIT;
+                    }
+                    off -= sizeof(*pHdr);
+                }
+
+                /* Validate the decompressed size wrt entry size. */
+                if ((off % cbEntry) != 0 && RT_SUCCESS(rc))
+                {
+                    RTTestIFailed("Uneven decompressed data size for '%s': %#zx vs entry size %#zx -> %#zx",
+                                  pszWhat, off, cbEntry, off % cbEntry);
+                    rc = VERR_IO_BAD_LENGTH;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * We're good.
+                     */
+                    /* Reallocate the block if it's way to big. */
                     if (cbDecompressedAlloc - off > _512K)
                     {
                         void * const pvNew = RTMemRealloc(pbDecompressed, off);
                         if (pvNew)
+                        {
                             pbDecompressed = (uint8_t *)pvNew;
+                            if (pHdr)
+                                pHdr = (IEMBINARYHEADER const *)pbDecompressed;
+                        }
                     }
+                    RTMEM_MAY_LEAK(pbDecompressed);
 
-                    /* Done! */
-                    *pcTests      = (uint32_t)(off / cbEntry);
-                    *ppvTests     = pbDecompressed;
-                    RTMEM_WILL_LEAK(pbDecompressed);
+                    /* Fill in the info and other return values.  */
+                    pInfo->cbUncompressed = (uint32_t)off;
+                    pInfo->pvUncompressed = pbDecompressed;
+                    pInfo->pszCpuDesc     = pHdr ? pHdr->szCpuDesc : NULL;
+                    pInfo->uSvnRev        = pHdr ? pHdr->uSvnRev   : 0;
+                    *pcTests  = (uint32_t)(off / cbEntry);
+                    *ppvTests = pHdr ? (uint8_t *)(pHdr + 1) : pbDecompressed;
 
                     pbDecompressed = NULL;
                     rc = VINF_SUCCESS;
                 }
-                else
-                {
-                    RTTestIFailed("Uneven decompressed data size: %#zx vs entry size %#zx -> %#zx", off, cbEntry, off % cbEntry);
-                    rc = VERR_IO_BAD_LENGTH;
-                }
             }
             else
-                RTTestIFailed("Failed to decompress binary stream: %Rrc (off=%#zx, cbCompressed=%#x)", rc, off, cbCompressed);
+                RTTestIFailed("Failed to decompress binary stream '%s': %Rrc (off=%#zx, cbCompressed=%#x)",
+                              pszWhat, rc, off, cbCompressed);
             RTMemFree(pbDecompressed);
         }
         else
         {
-            RTTestIFailed("Out of memory decompressing test data");
+            RTTestIFailed("Out of memory decompressing test data '%s'", pszWhat);
             rc = VERR_NO_MEMORY;
         }
         RTVfsIoStrmRelease(hVfsIosDecomp);
@@ -1215,17 +1310,31 @@ static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed,
 }
 
 #define DECOMPRESS_TESTS(a_Entry) \
-    RT_SUCCESS(DecompressBinaryTest((a_Entry).pvCompressedTests, *(a_Entry).pcbCompressedTests, sizeof((a_Entry).paTests[0]), \
-                                    (void **)&(a_Entry).paTests, &(a_Entry).cTests))
+    RT_SUCCESS(DecompressBinaryTest((a_Entry).pvCompressedTests, *(a_Entry).pcbCompressedTests, \
+                                    sizeof((a_Entry).paTests[0]), (a_Entry).pszName, \
+                                    (void **)&(a_Entry).paTests, &(a_Entry).cTests, &(a_Entry).Info))
+
+/** Frees the decompressed test data. */
+static void FreeDecompressedTests(void **ppvTests, uint32_t *pcTests, IEMTESTENTRYINFO *pInfo)
+{
+    RTMemFree(pInfo->pvUncompressed);
+    pInfo->pvUncompressed = NULL;
+    pInfo->cbUncompressed = 0;
+    *ppvTests             = NULL;
+    *pcTests              = 0;
+}
+
+#define FREE_DECOMPRESSED_TESTS(a_Entry) \
+    FreeDecompressedTests((void **)&(a_Entry).paTests, &(a_Entry).cTests, &(a_Entry).Info)
 
 
-/** Decompresses test data before use as required. */
+/** Check if the test is enabled and decompresses test data. */
 static int SubTestAndCheckIfEnabledAndDecompress(const char *pszName, void const *pvCompressed, uint32_t cbCompressed,
-                                                 size_t cbEntry, void **ppvTests, uint32_t *pcTests)
+                                                 size_t cbEntry, void **ppvTests, uint32_t *pcTests, IEMTESTENTRYINFO *pInfo)
 {
     if (SubTestAndCheckIfEnabled(pszName))
     {
-        int const rc = DecompressBinaryTest(pvCompressed, cbCompressed, cbEntry, ppvTests, pcTests);
+        int const rc = DecompressBinaryTest(pvCompressed, cbCompressed, cbEntry, pszName, ppvTests, pcTests, pInfo);
         if (RT_SUCCESS(rc))
             return true;
     }
@@ -1234,7 +1343,8 @@ static int SubTestAndCheckIfEnabledAndDecompress(const char *pszName, void const
 
 #define SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_Entry) \
     SubTestAndCheckIfEnabledAndDecompress((a_Entry).pszName, (a_Entry).pvCompressedTests, *(a_Entry).pcbCompressedTests, \
-                                          sizeof((a_Entry).paTests[0]), (void **)&(a_Entry).paTests, &(a_Entry).cTests)
+                                          sizeof((a_Entry).paTests[0]), \
+                                          (void **)&(a_Entry).paTests, &(a_Entry).cTests, &(a_Entry).Info)
 
 
 static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
@@ -1602,13 +1712,7 @@ static RTEXITCODE BinU ## a_cBits ## Generate(uint32_t cTests, const char * cons
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-/* Temp for conversion. */ \
-static RTEXITCODE BinU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU ## a_cBits); iFn++) \
-        DUMP_TEST_ENTRY(g_aBinU ## a_cBits[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(BinU ## a_cBits, g_aBinU ## a_cBits)
 
 #else
 # define GEN_BINARY_TESTS(a_cBits, a_Fmt, a_TestType)
@@ -1708,6 +1812,7 @@ static void BinU ## a_cBits ## Test(void) \
             /* Next variation is native. */ \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -1962,6 +2067,7 @@ static void XaddTest(void)
             uint32_t const * const              pcbCompressedTests; \
             BINU ## a_cBits ## _TEST_T const   *paTests; \
             uint32_t                            cTests; \
+            IEMTESTENTRYINFO                    Info; \
         } s_aFuncs[] = \
         { \
             { "xadd_u" # a_cBits,            iemAImpl_xadd_u ## a_cBits, \
@@ -1989,6 +2095,7 @@ static void XaddTest(void)
                                  fEfl, *g_pu ## a_cBits, uSrc, paTests[iTest].fEflOut, paTests[iTest].uDstOut, paTests[iTest].uDstIn, \
                                  EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
             } \
+           FREE_DECOMPRESSED_TESTS(s_aFuncs[iFn]); \
         } \
     } while(0)
     TEST_XADD(8, uint8_t, "%#04x");
@@ -2015,6 +2122,7 @@ static void CmpXchgTest(void)
             uint32_t const * const                  pcbCompressedTests; \
             BINU ## a_cBits ## _TEST_T const       *paTests; \
             uint32_t                                cTests; \
+            IEMTESTENTRYINFO                        Info; \
         } s_aFuncs[] = \
         { \
             { "cmpxchg_u" # a_cBits,           iemAImpl_cmpxchg_u ## a_cBits, iemAImpl_sub_u ## a_cBits, \
@@ -2060,6 +2168,7 @@ static void CmpXchgTest(void)
                                  uNew, fEfl, *g_pu ## a_cBits, uA, fEflExpect, uNew, paTests[iTest].uDstIn, \
                                  EFlagsDiff(fEfl, fEflExpect)); \
             } \
+            FREE_DECOMPRESSED_TESTS(s_aFuncs[iFn]); \
         } \
     } while(0)
     TEST_CMPXCHG(8, uint8_t, "%#04RX8");
@@ -2237,12 +2346,7 @@ static RTEXITCODE ShiftDblU ## a_cBits ## Generate(uint32_t cTests, const char *
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE ShiftDblU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(ShiftDblU ## a_cBits, a_aSubTests)
 
 #else
 # define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests)
@@ -2297,6 +2401,7 @@ static void ShiftDblU ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 TEST_SHIFT_DBL(16, uint16_t, "%#06RX16",  BINU16_TEST_T, SHIFT_DBL_U16_T, g_aShiftDblU16)
@@ -2362,12 +2467,7 @@ static RTEXITCODE UnaryU ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE UnaryU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
-        DUMP_TEST_ENTRY(g_aUnaryU ## a_cBits[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(UnaryU ## a_cBits, g_aUnaryU ## a_cBits)
 #else
 # define GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType)
 #endif
@@ -2417,6 +2517,7 @@ static void UnaryU ## a_cBits ## Test(void) \
                  RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
             } \
         } \
+        FREE_DECOMPRESSED_TESTS(g_aUnaryU ## a_cBits[iFn]); \
     } \
 }
 TEST_UNARY(8,  uint8_t,  "%#04RX8",   BINU8_TEST_T,  INT_UNARY_U8_T)
@@ -2497,12 +2598,7 @@ static RTEXITCODE ShiftU ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE ShiftU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-            DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(ShiftU ## a_cBits, a_aSubTests)
 #else
 # define GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
@@ -2565,6 +2661,7 @@ static void ShiftU ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 TEST_SHIFT(8,  uint8_t,  "%#04RX8",   BINU8_TEST_T,  INT_BINARY_U8_T,  g_aShiftU8)
@@ -2631,6 +2728,7 @@ static INT_MULDIV_U8_T g_aMulDivU8[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
+DUMP_ALL_FN(MulDivU8, g_aMulDivU8)
 static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNameFmts)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
@@ -2653,12 +2751,6 @@ static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNa
         }
         AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
-    return RTEXITCODE_SUCCESS;
-}
-static RTEXITCODE MulDivU8DumpAll(const char * const * papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
-        DUMP_TEST_ENTRY(g_aMulDivU8[iFn], papszNameFmts);
     return RTEXITCODE_SUCCESS;
 }
 #endif
@@ -2704,11 +2796,13 @@ static void MulDivU8Test(void)
             }
             pfn = g_aMulDivU8[iFn].pfnNative;
         }
+        FREE_DECOMPRESSED_TESTS(g_aMulDivU8[iFn]); \
     }
 }
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
+DUMP_ALL_FN(MulDivU ## a_cBits, a_aSubTests) \
 static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
@@ -2734,14 +2828,7 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
         AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
     return RTEXITCODE_SUCCESS; \
-} \
-static RTEXITCODE MulDivU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
 }
-
 #else
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
@@ -2810,6 +2897,7 @@ static void MulDivU ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 TEST_MULDIV(16, uint16_t, "%#06RX16",  MULDIVU16_TEST_T, INT_MULDIV_U16_T, g_aMulDivU16)
@@ -2938,16 +3026,10 @@ static RTEXITCODE FpuLdConstGenerate(uint32_t cTests, const char * const *papszN
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuLdConstDumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdConst); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuLdConst[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuLdConst, g_aFpuLdConst)
 #endif
 
-static void FpuLoadConstTest(void)
+static void FpuLdConstTest(void)
 {
     /*
      * Inputs:
@@ -2988,6 +3070,8 @@ static void FpuLoadConstTest(void)
             }
             pfn = g_aFpuLdConst[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuLdConst[iFn]);
     }
 }
 
@@ -3024,12 +3108,7 @@ static RTEXITCODE FpuLdR ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuLdR ## a_cBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuLdR ## a_cBits, a_aSubTests)
 #else
 # define GEN_FPU_LOAD(a_cBits, a_rdTypeIn, a_aSubTests, a_TestType)
 #endif
@@ -3083,6 +3162,8 @@ static void FpuLdR ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -3152,12 +3233,7 @@ static RTEXITCODE FpuLdI ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuLdI ## a_cBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuLdI ## a_cBits, a_aSubTests)
 #else
 # define GEN_FPU_LOAD_INT(a_cBits, a_iTypeIn, a_szFmtIn, a_aSubTests, a_TestType)
 #endif
@@ -3210,6 +3286,7 @@ static void FpuLdI ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -3287,12 +3364,7 @@ static RTEXITCODE FpuLdD80Generate(uint32_t cTests, const char * const *papszNam
     }
     return RTEXITCODE_SUCCESS;
 }
-static RTEXITCODE FpuLdD80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdD80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuLdD80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuLdD80, g_aFpuLdD80)
 #endif
 
 static void FpuLdD80Test(void)
@@ -3333,6 +3405,8 @@ static void FpuLdD80Test(void)
             }
             pfn = g_aFpuLdD80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuLdD80[iFn]);
     }
 }
 
@@ -3401,12 +3475,7 @@ static RTEXITCODE FpuStR ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuStR ## a_cBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuStR ## a_cBits, a_aSubTests)
 #else
 # define GEN_FPU_STORE(a_cBits, a_rdType, a_aSubTests, a_TestType)
 #endif
@@ -3464,6 +3533,7 @@ static void FpuStR ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -3661,12 +3731,7 @@ static RTEXITCODE FpuStI ## a_cBits ## Generate(uint32_t cTests, const char * co
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuStI ## a_cBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuStI ## a_cBits, a_aSubTests)
 #else
 # define GEN_FPU_STORE_INT(a_cBits, a_iType, a_szFmt, a_aSubTests, a_TestType)
 #endif
@@ -3712,6 +3777,7 @@ static void FpuStI ## a_cBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -3815,13 +3881,7 @@ static RTEXITCODE FpuStD80Generate(uint32_t cTests, const char * const *papszNam
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuStD80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuStD80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuStD80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuStD80, g_aFpuStD80)
 #endif
 
 
@@ -3864,6 +3924,8 @@ static void FpuStD80Test(void)
             }
             pfn = g_aFpuStD80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuStD80[iFn]);
     }
 }
 
@@ -4094,13 +4156,7 @@ static RTEXITCODE FpuBinaryR80Generate(uint32_t cTests, const char * const *paps
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuBinaryR80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuBinaryR80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuBinaryR80, g_aFpuBinaryR80)
 #endif
 
 
@@ -4143,6 +4199,8 @@ static void FpuBinaryR80Test(void)
             }
             pfn = g_aFpuBinaryR80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuBinaryR80[iFn]);
     }
 }
 
@@ -4226,12 +4284,7 @@ static RTEXITCODE FpuBinary ## a_UpBits ## Generate(uint32_t cTests, const char 
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuBinary ## a_UpBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuBinary ## a_UpBits, a_aSubTests)
 #else
 # define GEN_FPU_BINARY_SMALL(a_fIntType, a_cBits, a_LoBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
 #endif
@@ -4290,6 +4343,7 @@ static void FpuBinary ## a_UpBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -4371,12 +4425,7 @@ static RTEXITCODE FpuBinaryFsw ## a_UpBits ## Generate(uint32_t cTests, const ch
     } \
     return RTEXITCODE_SUCCESS; \
 } \
-static RTEXITCODE FpuBinaryFsw ## a_UpBits ## DumpAll(const char * const *papszNameFmts) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
-        DUMP_TEST_ENTRY(a_aSubTests[iFn], papszNameFmts); \
-    return RTEXITCODE_SUCCESS; \
-}
+DUMP_ALL_FN(FpuBinaryFsw ## a_UpBits, a_aSubTests)
 #else
 # define GEN_FPU_BINARY_FSW(a_fIntType, a_cBits, a_UpBits, a_Type2, a_aSubTests, a_TestType)
 #endif
@@ -4427,6 +4476,7 @@ static void FpuBinaryFsw ## a_UpBits ## Test(void) \
             } \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
 
@@ -4496,13 +4546,7 @@ static RTEXITCODE FpuBinaryEflR80Generate(uint32_t cTests, const char * const *p
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuBinaryEflR80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryEflR80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuBinaryEflR80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuBinaryEflR80, g_aFpuBinaryEflR80)
 #endif /*TSTIEMAIMPL_WITH_GENERATOR*/
 
 static void FpuBinaryEflR80Test(void)
@@ -4543,6 +4587,8 @@ static void FpuBinaryEflR80Test(void)
             }
             pfn = g_aFpuBinaryEflR80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuBinaryEflR80[iFn]);
     }
 }
 
@@ -4586,6 +4632,7 @@ static bool FpuUnaryR80MayHaveRoundingError(PCRTFLOAT80U pr80Val, int enmKind)
     return false;
 }
 
+DUMP_ALL_FN(FpuUnaryR80, g_aFpuUnaryR80)
 static RTEXITCODE FpuUnaryR80Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     static RTFLOAT80U const s_aSpecials[] =
@@ -4702,13 +4749,6 @@ static RTEXITCODE FpuUnaryR80Generate(uint32_t cTests, const char * const *papsz
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuUnaryR80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryR80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuUnaryR80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
 #endif
 
 static bool FpuIsEqualFcwMaybeIgnoreRoundErr(uint16_t fFcw1, uint16_t fFcw2, bool fRndErrOk, bool *pfRndErr)
@@ -4797,6 +4837,7 @@ static void FpuUnaryR80Test(void)
         }
         if (cPossibleRndErrs > 0)
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "rounding errors: %u out of %u\n", cRndErrs, cPossibleRndErrs);
+        FREE_DECOMPRESSED_TESTS(g_aFpuUnaryR80[iFn]);
     }
 }
 
@@ -4883,13 +4924,7 @@ static RTEXITCODE FpuUnaryFswR80Generate(uint32_t cTests, const char * const *pa
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuUnaryFswR80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryFswR80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuUnaryFswR80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuUnaryFswR80, g_aFpuUnaryFswR80)
 #endif
 
 
@@ -4930,6 +4965,8 @@ static void FpuUnaryFswR80Test(void)
             }
             pfn = g_aFpuUnaryFswR80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuUnaryFswR80[iFn]);
     }
 }
 
@@ -5056,13 +5093,7 @@ static RTEXITCODE FpuUnaryTwoR80Generate(uint32_t cTests, const char * const *pa
     }
     return RTEXITCODE_SUCCESS;
 }
-
-static RTEXITCODE FpuUnaryTwoR80DumpAll(const char * const *papszNameFmts)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuUnaryTwoR80); iFn++)
-        DUMP_TEST_ENTRY(g_aFpuUnaryTwoR80[iFn], papszNameFmts);
-    return RTEXITCODE_SUCCESS;
-}
+DUMP_ALL_FN(FpuUnaryTwoR80, g_aFpuUnaryTwoR80)
 #endif
 
 
@@ -5106,6 +5137,8 @@ static void FpuUnaryTwoR80Test(void)
             }
             pfn = g_aFpuUnaryTwoR80[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aFpuUnaryTwoR80[iFn]);
     }
 }
 
@@ -5135,7 +5168,8 @@ static SSE_BINARY_R32_T g_aSseBinaryR32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR32, g_aSseBinaryR32)
+static RTEXITCODE SseBinaryR32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -5154,7 +5188,7 @@ static RTEXITCODE SseBinaryR32Generate(const char *pszDataFileFmt, uint32_t cTes
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseBinaryR32[iFn].pfnNative ? g_aSseBinaryR32[iFn].pfnNative : g_aSseBinaryR32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5299,6 +5333,8 @@ static void SseBinaryR32Test(void)
             }
             pfn = g_aSseBinaryR32[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR32[iFn]);
     }
 }
 
@@ -5324,7 +5360,8 @@ static SSE_BINARY_R64_T g_aSseBinaryR64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR64, g_aSseBinaryR32)
+static RTEXITCODE SseBinaryR64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -5343,7 +5380,7 @@ static RTEXITCODE SseBinaryR64Generate(const char *pszDataFileFmt, uint32_t cTes
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseBinaryR64[iFn].pfnNative ? g_aSseBinaryR64[iFn].pfnNative : g_aSseBinaryR64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR64[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5477,6 +5514,8 @@ static void SseBinaryR64Test(void)
             }
             pfn = g_aSseBinaryR64[iFn].pfnNative;
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR64[iFn]);
     }
 }
 
@@ -5499,7 +5538,8 @@ static SSE_BINARY_U128_R32_T g_aSseBinaryU128R32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryU128R32, g_aSseBinaryU128R32)
+static RTEXITCODE SseBinaryU128R32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -5517,7 +5557,7 @@ static RTEXITCODE SseBinaryU128R32Generate(const char *pszDataFileFmt, uint32_t 
         PFNIEMAIMPLFPSSEF2U128R32 const pfn = g_aSseBinaryU128R32[iFn].pfnNative ? g_aSseBinaryU128R32[iFn].pfnNative : g_aSseBinaryU128R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryU128R32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryU128R32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5658,6 +5698,8 @@ static void SseBinaryU128R32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryU128R32[iFn]);
     }
 }
 
@@ -5680,7 +5722,8 @@ static SSE_BINARY_U128_R64_T g_aSseBinaryU128R64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryU128R64, g_aSseBinaryU128R64)
+static RTEXITCODE SseBinaryU128R64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -5698,7 +5741,7 @@ static RTEXITCODE SseBinaryU128R64Generate(const char *pszDataFileFmt, uint32_t 
         PFNIEMAIMPLFPSSEF2U128R64 const pfn = g_aSseBinaryU128R64[iFn].pfnNative ? g_aSseBinaryU128R64[iFn].pfnNative : g_aSseBinaryU128R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryU128R64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryU128R64[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5830,6 +5873,8 @@ static void SseBinaryU128R64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryU128R64[iFn]);
     }
 }
 
@@ -5846,7 +5891,8 @@ static SSE_BINARY_I32_R64_T g_aSseBinaryI32R64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryI32R64, g_aSseBinaryI32R64)
+static RTEXITCODE SseBinaryI32R64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -5864,7 +5910,7 @@ static RTEXITCODE SseBinaryI32R64Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2I32U64 const pfn = g_aSseBinaryI32R64[iFn].pfnNative ? g_aSseBinaryI32R64[iFn].pfnNative : g_aSseBinaryI32R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI32R64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryI32R64[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -5989,6 +6035,8 @@ static void SseBinaryI32R64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryI32R64[iFn]);
     }
 }
 
@@ -6005,7 +6053,8 @@ static SSE_BINARY_I64_R64_T g_aSseBinaryI64R64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryI64R64, g_aSseBinaryI64R64)
+static RTEXITCODE SseBinaryI64R64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6023,7 +6072,7 @@ static RTEXITCODE SseBinaryI64R64Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2I64U64 const pfn = g_aSseBinaryI64R64[iFn].pfnNative ? g_aSseBinaryI64R64[iFn].pfnNative : g_aSseBinaryI64R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI64R64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryI64R64[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -6148,6 +6197,8 @@ static void SseBinaryI64R64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryI64R64[iFn]);
     }
 }
 
@@ -6164,7 +6215,8 @@ static SSE_BINARY_I32_R32_T g_aSseBinaryI32R32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryI32R32, g_aSseBinaryI32R32)
+static RTEXITCODE SseBinaryI32R32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6182,7 +6234,7 @@ static RTEXITCODE SseBinaryI32R32Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2I32U32 const pfn = g_aSseBinaryI32R32[iFn].pfnNative ? g_aSseBinaryI32R32[iFn].pfnNative : g_aSseBinaryI32R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI32R32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryI32R32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -6307,6 +6359,8 @@ static void SseBinaryI32R32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryI32R32[iFn]);
     }
 }
 
@@ -6323,7 +6377,8 @@ static SSE_BINARY_I64_R32_T g_aSseBinaryI64R32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryI64R32, g_aSseBinaryI64R32)
+static RTEXITCODE SseBinaryI64R32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6341,7 +6396,7 @@ static RTEXITCODE SseBinaryI64R32Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2I64U32 const pfn = g_aSseBinaryI64R32[iFn].pfnNative ? g_aSseBinaryI64R32[iFn].pfnNative : g_aSseBinaryI64R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryI64R32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryI64R32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -6466,6 +6521,8 @@ static void SseBinaryI64R32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryI64R32[iFn]);
     }
 }
 
@@ -6481,7 +6538,8 @@ static SSE_BINARY_R64_I32_T g_aSseBinaryR64I32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR64I32, g_aSseBinaryR64I32)
+static RTEXITCODE SseBinaryR64I32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6499,7 +6557,7 @@ static RTEXITCODE SseBinaryR64I32Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2R64I32 const pfn = g_aSseBinaryR64I32[iFn].pfnNative ? g_aSseBinaryR64I32[iFn].pfnNative : g_aSseBinaryR64I32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64I32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR64I32[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6615,6 +6673,8 @@ static void SseBinaryR64I32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR64I32[iFn]);
     }
 }
 
@@ -6630,7 +6690,8 @@ static SSE_BINARY_R64_I64_T g_aSseBinaryR64I64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR64I64, g_aSseBinaryR64I64)
+static RTEXITCODE SseBinaryR64I64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6648,7 +6709,7 @@ static RTEXITCODE SseBinaryR64I64Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2R64I64 const pfn = g_aSseBinaryR64I64[iFn].pfnNative ? g_aSseBinaryR64I64[iFn].pfnNative : g_aSseBinaryR64I64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR64I64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR64I64[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6764,6 +6825,8 @@ static void SseBinaryR64I64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR64I64[iFn]);
     }
 }
 
@@ -6779,7 +6842,8 @@ static SSE_BINARY_R32_I32_T g_aSseBinaryR32I32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR32I32, g_aSseBinaryR32I32)
+static RTEXITCODE SseBinaryR32I32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6797,7 +6861,7 @@ static RTEXITCODE SseBinaryR32I32Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2R32I32 const pfn = g_aSseBinaryR32I32[iFn].pfnNative ? g_aSseBinaryR32I32[iFn].pfnNative : g_aSseBinaryR32I32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32I32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR32I32[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -6913,6 +6977,8 @@ static void SseBinaryR32I32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR32I32[iFn]);
     }
 }
 
@@ -6928,7 +6994,8 @@ static SSE_BINARY_R32_I64_T g_aSseBinaryR32I64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseBinaryR32I64, g_aSseBinaryR32I64)
+static RTEXITCODE SseBinaryR32I64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -6946,7 +7013,7 @@ static RTEXITCODE SseBinaryR32I64Generate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLSSEF2R32I64 const pfn = g_aSseBinaryR32I64[iFn].pfnNative ? g_aSseBinaryR32I64[iFn].pfnNative : g_aSseBinaryR32I64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseBinaryR32I64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseBinaryR32I64[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -7062,6 +7129,8 @@ static void SseBinaryR32I64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn) );
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseBinaryR32I64[iFn]);
     }
 }
 
@@ -7080,7 +7149,8 @@ static SSE_COMPARE_EFL_R32_R32_T g_aSseCompareEflR32R32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseCompareEflR32R32, g_aSseCompareEflR32R32)
+static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7103,7 +7173,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR32R32[iFn].pfnNative ? g_aSseCompareEflR32R32[iFn].pfnNative : g_aSseCompareEflR32R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareEflR32R32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareEflR32R32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7245,6 +7315,8 @@ static void SseCompareEflR32R32Test(void)
                                  EFlagsDiff(fEFlags, paTests[iTest].fEflOut));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareEflR32R32[iFn]);
     }
 }
 
@@ -7263,7 +7335,8 @@ static SSE_COMPARE_EFL_R64_R64_T g_aSseCompareEflR64R64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseCompareEflR64R64, g_aSseCompareEflR64R64)
+static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7286,7 +7359,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR64R64[iFn].pfnNative ? g_aSseCompareEflR64R64[iFn].pfnNative : g_aSseCompareEflR64R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareEflR64R64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareEflR64R64[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7428,6 +7501,8 @@ static void SseCompareEflR64R64Test(void)
                                  EFlagsDiff(fEFlags, paTests[iTest].fEflOut));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareEflR64R64[iFn]);
     }
 }
 
@@ -7447,7 +7522,8 @@ static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR32Imm8[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseCompareF2XmmR32Imm8, g_aSseCompareF2XmmR32Imm8)
+static RTEXITCODE SseCompareF2XmmR32Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7470,7 +7546,7 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(const char *pszDataFileFmt, uin
         PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR32Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR32Imm8[iFn].pfnNative : g_aSseCompareF2XmmR32Imm8[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareF2XmmR32Imm8[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF2XmmR32Imm8[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7635,6 +7711,8 @@ static void SseCompareF2XmmR32Imm8Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareF2XmmR32Imm8[iFn]);
     }
 }
 
@@ -7649,7 +7727,8 @@ static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR64Imm8[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseCompareF2XmmR64Imm8, g_aSseCompareF2XmmR64Imm8)
+static RTEXITCODE SseCompareF2XmmR64Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7672,7 +7751,7 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(const char *pszDataFileFmt, uin
         PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR64Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR64Imm8[iFn].pfnNative : g_aSseCompareF2XmmR64Imm8[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseCompareF2XmmR64Imm8[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF2XmmR64Imm8[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -7822,6 +7901,8 @@ static void SseCompareF2XmmR64Imm8Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareF2XmmR64Imm8[iFn]);
     }
 }
 
@@ -7837,7 +7918,8 @@ static SSE_CONVERT_XMM_T g_aSseConvertXmmI32R32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmI32R32, g_aSseConvertXmmI32R32)
+static RTEXITCODE SseConvertXmmI32R32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7857,7 +7939,7 @@ static RTEXITCODE SseConvertXmmI32R32Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmI32R32[iFn].pfnNative ? g_aSseConvertXmmI32R32[iFn].pfnNative : g_aSseConvertXmmI32R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmI32R32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmI32R32[iFn]), RTEXITCODE_FAILURE);
 
         X86FXSTATE State;
         RT_ZERO(State);
@@ -7988,6 +8070,8 @@ static void SseConvertXmmI32R32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmI32R32[iFn]);
     }
 }
 
@@ -8002,7 +8086,8 @@ static SSE_CONVERT_XMM_T g_aSseConvertXmmR32I32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmR32I32, g_aSseConvertXmmR32I32)
+static RTEXITCODE SseConvertXmmR32I32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8023,7 +8108,7 @@ static RTEXITCODE SseConvertXmmR32I32Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmR32I32[iFn].pfnNative ? g_aSseConvertXmmR32I32[iFn].pfnNative : g_aSseConvertXmmR32I32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR32I32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmR32I32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8164,6 +8249,8 @@ static void SseConvertXmmR32I32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmR32I32[iFn]);
     }
 }
 
@@ -8177,7 +8264,8 @@ static SSE_CONVERT_XMM_T g_aSseConvertXmmI32R64[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmI32R64, g_aSseConvertXmmI32R64)
+static RTEXITCODE SseConvertXmmI32R64Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8197,7 +8285,7 @@ static RTEXITCODE SseConvertXmmI32R64Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmI32R64[iFn].pfnNative ? g_aSseConvertXmmI32R64[iFn].pfnNative : g_aSseConvertXmmI32R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmI32R64[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmI32R64[iFn]), RTEXITCODE_FAILURE);
 
         X86FXSTATE State;
         RT_ZERO(State);
@@ -8322,6 +8410,8 @@ static void SseConvertXmmI32R64Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmI32R64[iFn]);
     }
 }
 
@@ -8336,7 +8426,8 @@ static SSE_CONVERT_XMM_T g_aSseConvertXmmR64I32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmR64I32, g_aSseConvertXmmR64I32)
+static RTEXITCODE SseConvertXmmR64I32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8357,7 +8448,7 @@ static RTEXITCODE SseConvertXmmR64I32Generate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLFPSSEF2U128 const pfn = g_aSseConvertXmmR64I32[iFn].pfnNative ? g_aSseConvertXmmR64I32[iFn].pfnNative : g_aSseConvertXmmR64I32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR64I32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmR64I32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8493,6 +8584,8 @@ static void SseConvertXmmR64I32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmR64I32[iFn]);
     }
 }
 
@@ -8509,7 +8602,8 @@ static SSE_CONVERT_MM_XMM_T g_aSseConvertMmXmm[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertMmXmm, g_aSseConvertMmXmm)
+static RTEXITCODE SseConvertMmXmmGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8528,7 +8622,7 @@ static RTEXITCODE SseConvertMmXmmGenerate(const char *pszDataFileFmt, uint32_t c
         PFNIEMAIMPLMXCSRU64U128 const pfn = g_aSseConvertMmXmm[iFn].pfnNative ? g_aSseConvertMmXmm[iFn].pfnNative : g_aSseConvertMmXmm[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertMmXmm[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertMmXmm[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -8661,6 +8755,8 @@ static void SseConvertMmXmmTest(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertMmXmm[iFn]);
     }
 }
 
@@ -8676,7 +8772,8 @@ static SSE_CONVERT_XMM_R64_MM_T g_aSseConvertXmmR64Mm[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmR64Mm, g_aSseConvertXmmR64Mm)
+static RTEXITCODE SseConvertXmmR64MmGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8692,7 +8789,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(const char *pszDataFileFmt, uint32_
         PFNIEMAIMPLMXCSRU128U64 const pfn = g_aSseConvertXmmR64Mm[iFn].pfnNative ? g_aSseConvertXmmR64Mm[iFn].pfnNative : g_aSseConvertXmmR64Mm[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR64Mm[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmR64Mm[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -8803,6 +8900,8 @@ static void SseConvertXmmR64MmTest(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmR64Mm[iFn]);
     }
 }
 
@@ -8818,7 +8917,8 @@ static SSE_CONVERT_XMM_R32_MM_T g_aSseConvertXmmR32Mm[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertXmmR32Mm, g_aSseConvertXmmR32Mm)
+static RTEXITCODE SseConvertXmmR32MmGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8834,7 +8934,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(const char *pszDataFileFmt, uint32_
         PFNIEMAIMPLMXCSRU128U64 const pfn = g_aSseConvertXmmR32Mm[iFn].pfnNative ? g_aSseConvertXmmR32Mm[iFn].pfnNative : g_aSseConvertXmmR32Mm[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertXmmR32Mm[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertXmmR32Mm[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -8945,6 +9045,8 @@ static void SseConvertXmmR32MmTest(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertXmmR32Mm[iFn]);
     }
 }
 
@@ -8961,7 +9063,8 @@ static SSE_CONVERT_MM_I32_XMM_R32_T g_aSseConvertMmI32XmmR32[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseConvertMmI32XmmR32, g_aSseConvertMmI32XmmR32)
+static RTEXITCODE SseConvertMmI32XmmR32Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8980,7 +9083,7 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(const char *pszDataFileFmt, uint
         PFNIEMAIMPLMXCSRU64U64 const pfn = g_aSseConvertMmI32XmmR32[iFn].pfnNative ? g_aSseConvertMmI32XmmR32[iFn].pfnNative : g_aSseConvertMmI32XmmR32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSseConvertMmI32XmmR32[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseConvertMmI32XmmR32[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
@@ -9123,6 +9226,8 @@ static void SseConvertMmI32XmmR32Test(void)
                                  FormatMxcsr(paTests[iTest].fMxcsrIn));
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSseConvertMmI32XmmR32[iFn]);
     }
 }
 
@@ -9138,7 +9243,8 @@ static SSE_PCMPISTRI_T g_aSsePcmpistri[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseComparePcmpistri, g_aSsePcmpistri)
+static RTEXITCODE SseComparePcmpistriGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -9153,7 +9259,7 @@ static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLPCMPISTRIU128IMM8 const pfn = g_aSsePcmpistri[iFn].pfnNative ? g_aSsePcmpistri[iFn].pfnNative : g_aSsePcmpistri[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpistri[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSsePcmpistri[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9238,6 +9344,8 @@ static void SseComparePcmpistriTest(void)
                                  (u32EcxOut != paTests[iTest].u32EcxOut) ? " - val" : "");
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSsePcmpistri[iFn]);
     }
 }
 
@@ -9250,7 +9358,8 @@ static SSE_PCMPISTRM_T g_aSsePcmpistrm[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseComparePcmpistrm, g_aSsePcmpistrm)
+static RTEXITCODE SseComparePcmpistrmGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -9265,7 +9374,7 @@ static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLPCMPISTRMU128IMM8 const pfn = g_aSsePcmpistrm[iFn].pfnNative ? g_aSsePcmpistrm[iFn].pfnNative : g_aSsePcmpistrm[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpistrm[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSsePcmpistrm[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9352,6 +9461,8 @@ static void SseComparePcmpistrmTest(void)
                                   || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo) ? " - val" : "");
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSsePcmpistrm[iFn]);
     }
 }
 
@@ -9364,7 +9475,8 @@ static SSE_PCMPESTRI_T g_aSsePcmpestri[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseComparePcmpestri, g_aSsePcmpestri)
+static RTEXITCODE SseComparePcmpestriGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -9379,7 +9491,7 @@ static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLPCMPESTRIU128IMM8 const pfn = g_aSsePcmpestri[iFn].pfnNative ? g_aSsePcmpestri[iFn].pfnNative : g_aSsePcmpestri[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpestri[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSsePcmpestri[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9477,6 +9589,8 @@ static void SseComparePcmpestriTest(void)
                                  (u32EcxOut != paTests[iTest].u32EcxOut) ? " - val" : "");
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSsePcmpestri[iFn]);
     }
 }
 
@@ -9489,7 +9603,8 @@ static SSE_PCMPESTRM_T g_aSsePcmpestrm[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+DUMP_ALL_FN(SseComparePcmpestrm, g_aSsePcmpestrm)
+static RTEXITCODE SseComparePcmpestrmGenerate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -9504,7 +9619,7 @@ static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32
         PFNIEMAIMPLPCMPESTRMU128IMM8 const pfn = g_aSsePcmpestrm[iFn].pfnNative ? g_aSsePcmpestrm[iFn].pfnNative : g_aSsePcmpestrm[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GenerateBinaryOpen(&BinOut, pszDataFileFmt, g_aSsePcmpestrm[iFn].pszName), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSsePcmpestrm[iFn]), RTEXITCODE_FAILURE);
 
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -9604,6 +9719,8 @@ static void SseComparePcmpestrmTest(void)
                                   || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo) ? " - val" : "");
             }
         }
+
+        FREE_DECOMPRESSED_TESTS(g_aSsePcmpestrm[iFn]);
     }
 }
 
@@ -9632,16 +9749,17 @@ int main(int argc, char **argv)
      */
     enum { kModeNotSet, kModeTest, kModeGenerate, kModeDump }
                         enmMode       = kModeNotSet;
-    bool                fInt          = true;
-    bool                fFpuLdSt      = true;
-    bool                fFpuBinary1   = true;
-    bool                fFpuBinary2   = true;
-    bool                fFpuOther     = true;
+#define CATEGORY_INT            RT_BIT_32(0)
+#define CATEGORY_FPU_LD_ST      RT_BIT_32(1)
+#define CATEGORY_FPU_BINARY_1   RT_BIT_32(2)
+#define CATEGORY_FPU_BINARY_2   RT_BIT_32(3)
+#define CATEGORY_FPU_OTHER      RT_BIT_32(4)
+#define CATEGORY_SSE_FP_BINARY  RT_BIT_32(5)
+#define CATEGORY_SSE_FP_OTHER   RT_BIT_32(6)
+#define CATEGORY_SSE_PCMPXSTRX  RT_BIT_32(7)
+    uint32_t            fCategories   = UINT32_MAX;
     bool                fCpuData      = true;
     bool                fCommonData   = true;
-    bool                fSseFpBinary  = true;
-    bool                fSseFpOther   = true;
-    bool                fSsePcmpxstrx = true;
     uint32_t const      cDefaultTests = 96;
     uint32_t            cTests        = cDefaultTests;
     RTGETOPTDEF const   s_aOptions[]  =
@@ -9703,51 +9821,37 @@ int main(int argc, char **argv)
             case 'a':
                 fCpuData    = true;
                 fCommonData = true;
-                fInt        = true;
-                fFpuLdSt    = true;
-                fFpuBinary1 = true;
-                fFpuBinary2 = true;
-                fFpuOther   = true;
-                fSseFpBinary = true;
-                fSseFpOther  = true;
-                fSsePcmpxstrx = true;
+                fCategories = UINT32_MAX;
                 break;
             case 'z':
                 fCpuData    = false;
                 fCommonData = false;
-                fInt        = false;
-                fFpuLdSt    = false;
-                fFpuBinary1  = false;
-                fFpuBinary2  = false;
-                fFpuOther   = false;
-                fSseFpBinary = false;
-                fSseFpOther  = false;
-                fSsePcmpxstrx = false;
+                fCategories = 0;
                 break;
 
             case 'F':
-                fFpuLdSt    = true;
+                fCategories |= CATEGORY_FPU_LD_ST;
                 break;
             case 'O':
-                fFpuOther   = true;
+                fCategories |= CATEGORY_FPU_OTHER;
                 break;
             case 'B':
-                fFpuBinary1 = true;
+                fCategories |= CATEGORY_FPU_BINARY_1;
                 break;
             case 'P':
-                fFpuBinary2 = true;
+                fCategories |= CATEGORY_FPU_BINARY_2;
                 break;
             case 'S':
-                fSseFpBinary = true;
+                fCategories |= CATEGORY_SSE_FP_BINARY;
                 break;
             case 'T':
-                fSseFpOther  = true;
+                fCategories |= CATEGORY_SSE_FP_OTHER;
                 break;
             case 'C':
-                fSsePcmpxstrx = true;
+                fCategories |= CATEGORY_SSE_PCMPXSTRX;
                 break;
             case 'i':
-                fInt        = true;
+                fCategories |= CATEGORY_INT;
                 break;
 
             case 'I':
@@ -9837,6 +9941,102 @@ int main(int argc, char **argv)
         }
     }
 
+    static const struct
+    {
+        uint32_t        fCategory;
+        void          (*pfnTest)(void);
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+        const char     *pszFilenameFmt;
+        RTEXITCODE    (*pfnGenerate)(uint32_t cTests, const char * const *papszNameFmts);
+        RTEXITCODE    (*pfnDumpAll)(const char * const *papszNameFmts);
+        uint32_t        cMinTests;
+# define GROUP_ENTRY(a_fCategory, a_BaseNm, a_szFilenameFmt, a_cMinTests) \
+            { a_fCategory, a_BaseNm ## Test, a_szFilenameFmt, a_BaseNm ## Generate, a_BaseNm ## DumpAll, a_cMinTests }
+#else
+# define GROUP_ENTRY(a_fCategory, a_BaseNm, a_szFilenameFmt, a_cMinTests) \
+            { a_fCategory, a_BaseNm ## Test }
+#endif
+#define GROUP_ENTRY_MANUAL(a_fCategory, a_BaseNm) \
+            { a_fCategory, a_BaseNm ## Test }
+    } s_aGroups[] =
+    {
+        GROUP_ENTRY(CATEGORY_INT,           BinU8,                  "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           BinU16,                 "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           BinU32,                 "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           BinU64,                 "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           ShiftDbl,               "tstIEMAImplDataInt-%s.bin.gz", 128),
+        GROUP_ENTRY(CATEGORY_INT,           Unary,                  "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           Shift,                  "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_INT,           MulDiv,                 "tstIEMAImplDataInt-%s.bin.gz", 0),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    Xchg),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    Xadd),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    CmpXchg),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    CmpXchg8b),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    CmpXchg16b),
+        GROUP_ENTRY_MANUAL(CATEGORY_INT,    Bswap),
+
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuLdConst,             "tstIEMAImplDataFpuLdSt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuLdInt,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuLdD80,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuLdMem,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 384), /* needs better coverage */
+
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuStInt,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuStD80,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_LD_ST,     FpuStMem,               "tstIEMAImplDataFpuLdSt-%s.bin.gz", 384), /* needs better coverage */
+
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_1,  FpuBinaryR80,           "tstIEMAImplDataFpuBinary1-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_1,  FpuBinaryFswR80,        "tstIEMAImplDataFpuBinary1-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_1,  FpuBinaryEflR80,        "tstIEMAImplDataFpuBinary1-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryR64,           "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryR32,           "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryI32,           "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryI16,           "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryFswR64,        "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryFswR32,        "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryFswI32,        "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_BINARY_2,  FpuBinaryFswI16,        "tstIEMAImplDataFpuBinary2-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_FPU_OTHER,     FpuUnaryR80,            "tstIEMAImplDataFpuOther-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_OTHER,     FpuUnaryFswR80,         "tstIEMAImplDataFpuOther-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_FPU_OTHER,     FpuUnaryTwoR80,         "tstIEMAImplDataFpuOther-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR32,           "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR64,           "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryU128R32,       "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryU128R64,       "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryI32R64,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryI64R64,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryI32R32,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryI64R32,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR64I32,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR64I64,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR32I32,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_BINARY, SseBinaryR32I64,        "tstIEMAImplDataSseBinary-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareEflR32R32,    "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareEflR64R64,    "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF2XmmR32Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF2XmmR64Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmI32R32,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmR32I32,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmI32R64,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmR64I32,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertMmXmm,        "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmR32Mm,     "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmR64Mm,     "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertMmI32XmmR32,  "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
+
+        GROUP_ENTRY(CATEGORY_SSE_PCMPXSTRX, SseComparePcmpistri,    "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_PCMPXSTRX, SseComparePcmpistrm,    "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_PCMPXSTRX, SseComparePcmpestri,    "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_PCMPXSTRX, SseComparePcmpestrm,    "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz", 0),
+    };
+
     /*
      * Generate data?
      */
@@ -9848,200 +10048,30 @@ int main(int argc, char **argv)
         g_cZeroDstTests = RT_MIN(cTests / 16, 32);
         g_cZeroSrcTests = g_cZeroDstTests * 2;
 
-        if (fInt)
-        {
-            const char * const apszNameFmts[] =
+        RTMpGetDescription(NIL_RTCPUID, g_szCpuDesc, sizeof(g_szCpuDesc));
+
+        /* For the revision, use the highest for this file and VBoxRT. */
+        static const char s_szRev[] = "$Revision$";
+        const char *pszRev = s_szRev;
+        while (*pszRev && !RT_C_IS_DIGIT(*pszRev))
+            pszRev++;
+        g_uSvnRev = RTStrToUInt32(pszRev);
+        g_uSvnRev = RT_MAX(g_uSvnRev, RTBldCfgRevision());
+
+        /* Loop thru the groups and call the generate for any that's enabled. */
+        for (size_t i = 0; i < RT_ELEMENTS(s_aGroups); i++)
+            if ((s_aGroups[i].fCategory & fCategories) && s_aGroups[i].pfnGenerate)
             {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataInt-%s.bin.gz"       : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Intel.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Amd.bin.gz"   : NULL,
-            };
-            RTEXITCODE rcExit = BinU8Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU16Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU32Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU64Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = ShiftDblGenerate(RT_MAX(cTests, 128), apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = UnaryGenerate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = ShiftGenerate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = MulDivGenerate(cTests, apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuLdSt)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuLdConstGenerate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdIntGenerate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdD80Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStIntGenerate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStD80Generate(cTests, apszNameFmts);
-            uint32_t const cTests2 = RT_MAX(cTests, 384); /* need better coverage for the next ones. */
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdMemGenerate(cTests2, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStMemGenerate(cTests2, apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuBinary1)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuBinaryR80Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR80Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryEflR80Generate(cTests, apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuBinary2)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuBinaryR64Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryR32Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryI32Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryI16Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR64Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR32Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswI32Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswI16Generate(cTests, apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuOther)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuUnaryR80Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuUnaryFswR80Generate(cTests, apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuUnaryTwoR80Generate(cTests, apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fSseFpBinary)
-        {
-            const char * const pszDataFileFmt = fCommonData ? "tstIEMAImplDataSseBinary-%s.bin.gz" : NULL;
-
-            RTEXITCODE rcExit = SseBinaryR32Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryR64Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryU128R32Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryU128R64Generate(pszDataFileFmt, cTests);
-
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryI32R64Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryI64R64Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryI32R32Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryI64R32Generate(pszDataFileFmt, cTests);
-
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryR64I32Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryR64I64Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryR32I32Generate(pszDataFileFmt, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseBinaryR32I64Generate(pszDataFileFmt, cTests);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fSseFpOther)
-        {
-            const char * const pszDataFileFmtCmp  = fCommonData ? "tstIEMAImplDataSseCompare-%s.bin.gz" : NULL;
-            const char * const pszDataFileFmtConv = fCommonData ? "tstIEMAImplDataSseConvert-%s.bin.gz" : NULL;
-
-            RTEXITCODE rcExit = SseCompareEflR32R32Generate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseCompareEflR64R64Generate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseCompareF2XmmR32Imm8Generate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseCompareF2XmmR64Imm8Generate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmI32R32Generate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmR32I32Generate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmI32R64Generate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmR64I32Generate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertMmXmmGenerate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmR32MmGenerate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertXmmR64MmGenerate(pszDataFileFmtConv, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseConvertMmI32XmmR32Generate(pszDataFileFmtConv, cTests);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fSsePcmpxstrx)
-        {
-            const char * const pszDataFileFmtCmp = fCommonData ? "tstIEMAImplDataSsePcmpxstrx-%s.bin.gz" : NULL;
-
-            RTEXITCODE rcExit = SseComparePcmpistriGenerate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseComparePcmpistrmGenerate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseComparePcmpestriGenerate(pszDataFileFmtCmp, cTests);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = SseComparePcmpestrmGenerate(pszDataFileFmtCmp, cTests);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
+                const char * const apszNameFmts[] =
+                {
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? s_aGroups[i].pszFilenameFmt : NULL,
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? s_aGroups[i].pszFilenameFmt : NULL,
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? s_aGroups[i].pszFilenameFmt : NULL,
+                };
+                RTEXITCODE rcExit = s_aGroups[i].pfnGenerate(RT_MAX(cTests, s_aGroups[i].cMinTests), apszNameFmts);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+            }
         return RTEXITCODE_SUCCESS;
 #else
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
@@ -10049,124 +10079,25 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Dump tables.
+     * Dump tables (used for the conversion, mostly useless now).
      */
     if (enmMode == kModeDump)
     {
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-        if (fInt)
-        {
-            const char * const apszNameFmts[] =
+        /* Loop thru the groups and call the generate for any that's enabled. */
+        for (size_t i = 0; i < RT_ELEMENTS(s_aGroups); i++)
+            if ((s_aGroups[i].fCategory & fCategories) && s_aGroups[i].pfnDumpAll)
             {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataInt-%s.bin.gz"       : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Intel.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Amd.bin.gz"   : NULL,
-            };
-            RTEXITCODE rcExit = BinU8DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU16DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU32DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = BinU64DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = ShiftDblDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = UnaryDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = ShiftDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = MulDivDumpAll(apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuLdSt)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuLdSt-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuLdConstDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdIntDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdD80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStIntDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStD80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuLdMemDumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuStMemDumpAll(apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuBinary1)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuBinary1-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuBinaryR80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryEflR80DumpAll(apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuBinary2)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuBinary2-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuBinaryR64DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryR32DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryI32DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryI16DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR64DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswR32DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswI32DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuBinaryFswI16DumpAll(apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
-        if (fFpuOther)
-        {
-            const char * const apszNameFmts[] =
-            {
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataFpuOther-%s.bin.gz" : NULL,
-            };
-            RTEXITCODE rcExit = FpuUnaryR80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuUnaryFswR80DumpAll(apszNameFmts);
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = FpuUnaryTwoR80DumpAll(apszNameFmts);
-            if (rcExit != RTEXITCODE_SUCCESS)
-                return rcExit;
-        }
-
+                const char * const apszNameFmts[] =
+                {
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? s_aGroups[i].pszFilenameFmt : NULL,
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? s_aGroups[i].pszFilenameFmt : NULL,
+                    /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? s_aGroups[i].pszFilenameFmt : NULL,
+                };
+                RTEXITCODE rcExit = s_aGroups[i].pfnGenerate(RT_MAX(cTests, s_aGroups[i].cMinTests), apszNameFmts);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+            }
         return RTEXITCODE_SUCCESS;
 #else
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
@@ -10178,7 +10109,7 @@ int main(int argc, char **argv)
      * Do testing.  Currrently disabled by default as data needs to be checked
      * on both intel and AMD systems first.
      */
-    rc = RTTestCreate("tstIEMAimpl", &g_hTest);
+    rc = RTTestCreate("tstIEMAImpl", &g_hTest);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
     if (enmMode == kModeTest)
     {
@@ -10202,103 +10133,10 @@ int main(int argc, char **argv)
         ALLOC_GUARDED_VAR(g_pfEfl);
         if (RTTestErrorCount(g_hTest) == 0)
         {
-            if (fInt)
-            {
-                BinU8Test();
-                BinU16Test();
-                BinU32Test();
-                BinU64Test();
-                XchgTest();
-                XaddTest();
-                CmpXchgTest();
-                CmpXchg8bTest();
-                CmpXchg16bTest();
-                ShiftDblTest();
-                UnaryTest();
-                ShiftTest();
-                MulDivTest();
-                BswapTest();
-            }
-
-            if (fFpuLdSt)
-            {
-                FpuLoadConstTest();
-                FpuLdMemTest();
-                FpuLdIntTest();
-                FpuLdD80Test();
-                FpuStMemTest();
-                FpuStIntTest();
-                FpuStD80Test();
-            }
-
-            if (fFpuBinary1)
-            {
-                FpuBinaryR80Test();
-                FpuBinaryFswR80Test();
-                FpuBinaryEflR80Test();
-            }
-
-            if (fFpuBinary2)
-            {
-                FpuBinaryR64Test();
-                FpuBinaryR32Test();
-                FpuBinaryI32Test();
-                FpuBinaryI16Test();
-                FpuBinaryFswR64Test();
-                FpuBinaryFswR32Test();
-                FpuBinaryFswI32Test();
-                FpuBinaryFswI16Test();
-            }
-
-            if (fFpuOther)
-            {
-                FpuUnaryR80Test();
-                FpuUnaryFswR80Test();
-                FpuUnaryTwoR80Test();
-            }
-
-            if (fSseFpBinary)
-            {
-                SseBinaryR32Test();
-                SseBinaryR64Test();
-                SseBinaryU128R32Test();
-                SseBinaryU128R64Test();
-
-                SseBinaryI32R64Test();
-                SseBinaryI64R64Test();
-                SseBinaryI32R32Test();
-                SseBinaryI64R32Test();
-
-                SseBinaryR64I32Test();
-                SseBinaryR64I64Test();
-                SseBinaryR32I32Test();
-                SseBinaryR32I64Test();
-            }
-
-            if (fSseFpOther)
-            {
-                SseCompareEflR32R32Test();
-                SseCompareEflR64R64Test();
-                SseCompareEflR64R64Test();
-                SseCompareF2XmmR32Imm8Test();
-                SseCompareF2XmmR64Imm8Test();
-                SseConvertXmmI32R32Test();
-                SseConvertXmmR32I32Test();
-                SseConvertXmmI32R64Test();
-                SseConvertXmmR64I32Test();
-                SseConvertMmXmmTest();
-                SseConvertXmmR32MmTest();
-                SseConvertXmmR64MmTest();
-                SseConvertMmI32XmmR32Test();
-            }
-
-            if (fSsePcmpxstrx)
-            {
-                SseComparePcmpistriTest();
-                SseComparePcmpistrmTest();
-                SseComparePcmpestriTest();
-                SseComparePcmpestrmTest();
-            }
+            /* Loop thru the groups and call test function for anything that's enabled. */
+            for (size_t i = 0; i < RT_ELEMENTS(s_aGroups); i++)
+                if ((s_aGroups[i].fCategory & fCategories))
+                    s_aGroups[i].pfnTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
