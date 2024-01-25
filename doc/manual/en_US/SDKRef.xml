@@ -4197,6 +4197,12 @@ AuthResult AUTHCALL AuthEntry(
           Python virtual environments.</para>
         </listitem>
 
+        <listitem><para>The Windows host installer now uses the sub directory <computeroutput>installer</computeroutput>
+          instead of <computeroutput>install</computeroutput> for housing the bindings installers. This now matches
+          the directory layout for the other platforms. Please adapt your scripts if needed.</para>
+        </listitem>
+
+
         <listitem><para>Guest process creation requires a new parameter for specifying the current working directory for the new
           guest process. This is optional and can be empty.
           See <link linkend="IGuestSession__processCreate">IGuestSession::processCreate</link> and
