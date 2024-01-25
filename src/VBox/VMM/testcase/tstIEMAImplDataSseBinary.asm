@@ -43,18 +43,18 @@ BEGINCONST
 ; @param    2       The filename
 ;
 %macro IEM_TEST_DATA 2
-EXPORTEDNAME g_aTests_ %+ %1
+EXPORTEDNAME g_abTests_ %+ %1
         incbin %2
-g_aTests_ %+ %1 %+ _end:
+g_abTests_ %+ %1 %+ _end:
         align   4, db 0
 EXPORTEDNAME g_cbTests_ %+ %1
-        dd  g_aTests_ %+ %1 %+ _end - NAME(g_aTests_ %+ %1)
+        dd  g_abTests_ %+ %1 %+ _end - NAME(g_abTests_ %+ %1)
 
  %ifdef ASM_FORMAT_ELF
-size g_aTests_ %+ %1  g_aTests_ %+ %1 %+ _end - NAME(g_aTests_ %+ %1)
-type g_aTests_ %+ %1  object
-size g_cbTests_ %+ %1 4
-type g_cbTests_ %+ %1 object
+size g_abTests_ %+ %1   g_abTests_ %+ %1 %+ _end - NAME(g_abTests_ %+ %1)
+type g_abTests_ %+ %1   object
+size g_cbTests_ %+ %1   4
+type g_cbTests_ %+ %1   object
  %endif
 %endmacro
 
@@ -399,4 +399,98 @@ IEM_TEST_DATA xor_u32, "tstIEMAImplDataInt-xor_u32.bin.gz"
 IEM_TEST_DATA xor_u32_locked, "tstIEMAImplDataInt-xor_u32_locked.bin.gz"
 IEM_TEST_DATA xor_u64, "tstIEMAImplDataInt-xor_u64.bin.gz"
 IEM_TEST_DATA xor_u64_locked, "tstIEMAImplDataInt-xor_u64_locked.bin.gz"
+
+;
+; Floating point stuff.
+; dir tstIEMAImplDataFpu*bin.gz /b | sed -e 's/tstIEMAImplDataFpu\([^-]*\)-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \2, "tstIEMAImplDataFpu\1-\2.bin.gz"/'
+;
+IEM_TEST_DATA fadd_r80_by_r80, "tstIEMAImplDataFpuBinary1-fadd_r80_by_r80.bin.gz"
+IEM_TEST_DATA fcomi_r80_by_r80, "tstIEMAImplDataFpuBinary1-fcomi_r80_by_r80.bin.gz"
+IEM_TEST_DATA fcom_r80_by_r80, "tstIEMAImplDataFpuBinary1-fcom_r80_by_r80.bin.gz"
+IEM_TEST_DATA fdivr_r80_by_r80, "tstIEMAImplDataFpuBinary1-fdivr_r80_by_r80.bin.gz"
+IEM_TEST_DATA fdiv_r80_by_r80, "tstIEMAImplDataFpuBinary1-fdiv_r80_by_r80.bin.gz"
+IEM_TEST_DATA fmul_r80_by_r80, "tstIEMAImplDataFpuBinary1-fmul_r80_by_r80.bin.gz"
+IEM_TEST_DATA fpatan_r80_by_r80_amd, "tstIEMAImplDataFpuBinary1-fpatan_r80_by_r80_amd.bin.gz"
+IEM_TEST_DATA fpatan_r80_by_r80_intel, "tstIEMAImplDataFpuBinary1-fpatan_r80_by_r80_intel.bin.gz"
+IEM_TEST_DATA fprem1_r80_by_r80, "tstIEMAImplDataFpuBinary1-fprem1_r80_by_r80.bin.gz"
+IEM_TEST_DATA fprem_r80_by_r80, "tstIEMAImplDataFpuBinary1-fprem_r80_by_r80.bin.gz"
+IEM_TEST_DATA fscale_r80_by_r80, "tstIEMAImplDataFpuBinary1-fscale_r80_by_r80.bin.gz"
+IEM_TEST_DATA fsubr_r80_by_r80, "tstIEMAImplDataFpuBinary1-fsubr_r80_by_r80.bin.gz"
+IEM_TEST_DATA fsub_r80_by_r80, "tstIEMAImplDataFpuBinary1-fsub_r80_by_r80.bin.gz"
+IEM_TEST_DATA fucomi_r80_by_r80, "tstIEMAImplDataFpuBinary1-fucomi_r80_by_r80.bin.gz"
+IEM_TEST_DATA fucom_r80_by_r80, "tstIEMAImplDataFpuBinary1-fucom_r80_by_r80.bin.gz"
+IEM_TEST_DATA fyl2xp1_r80_by_r80_amd, "tstIEMAImplDataFpuBinary1-fyl2xp1_r80_by_r80_amd.bin.gz"
+IEM_TEST_DATA fyl2xp1_r80_by_r80_intel, "tstIEMAImplDataFpuBinary1-fyl2xp1_r80_by_r80_intel.bin.gz"
+IEM_TEST_DATA fyl2x_r80_by_r80_amd, "tstIEMAImplDataFpuBinary1-fyl2x_r80_by_r80_amd.bin.gz"
+IEM_TEST_DATA fyl2x_r80_by_r80_intel, "tstIEMAImplDataFpuBinary1-fyl2x_r80_by_r80_intel.bin.gz"
+IEM_TEST_DATA fadd_r80_by_r32, "tstIEMAImplDataFpuBinary2-fadd_r80_by_r32.bin.gz"
+IEM_TEST_DATA fadd_r80_by_r64, "tstIEMAImplDataFpuBinary2-fadd_r80_by_r64.bin.gz"
+IEM_TEST_DATA fcom_r80_by_r32, "tstIEMAImplDataFpuBinary2-fcom_r80_by_r32.bin.gz"
+IEM_TEST_DATA fcom_r80_by_r64, "tstIEMAImplDataFpuBinary2-fcom_r80_by_r64.bin.gz"
+IEM_TEST_DATA fdivr_r80_by_r32, "tstIEMAImplDataFpuBinary2-fdivr_r80_by_r32.bin.gz"
+IEM_TEST_DATA fdivr_r80_by_r64, "tstIEMAImplDataFpuBinary2-fdivr_r80_by_r64.bin.gz"
+IEM_TEST_DATA fdiv_r80_by_r32, "tstIEMAImplDataFpuBinary2-fdiv_r80_by_r32.bin.gz"
+IEM_TEST_DATA fdiv_r80_by_r64, "tstIEMAImplDataFpuBinary2-fdiv_r80_by_r64.bin.gz"
+IEM_TEST_DATA fiadd_r80_by_i16, "tstIEMAImplDataFpuBinary2-fiadd_r80_by_i16.bin.gz"
+IEM_TEST_DATA fiadd_r80_by_i32, "tstIEMAImplDataFpuBinary2-fiadd_r80_by_i32.bin.gz"
+IEM_TEST_DATA ficom_r80_by_i16, "tstIEMAImplDataFpuBinary2-ficom_r80_by_i16.bin.gz"
+IEM_TEST_DATA ficom_r80_by_i32, "tstIEMAImplDataFpuBinary2-ficom_r80_by_i32.bin.gz"
+IEM_TEST_DATA fidivr_r80_by_i16, "tstIEMAImplDataFpuBinary2-fidivr_r80_by_i16.bin.gz"
+IEM_TEST_DATA fidivr_r80_by_i32, "tstIEMAImplDataFpuBinary2-fidivr_r80_by_i32.bin.gz"
+IEM_TEST_DATA fidiv_r80_by_i16, "tstIEMAImplDataFpuBinary2-fidiv_r80_by_i16.bin.gz"
+IEM_TEST_DATA fidiv_r80_by_i32, "tstIEMAImplDataFpuBinary2-fidiv_r80_by_i32.bin.gz"
+IEM_TEST_DATA fimul_r80_by_i16, "tstIEMAImplDataFpuBinary2-fimul_r80_by_i16.bin.gz"
+IEM_TEST_DATA fimul_r80_by_i32, "tstIEMAImplDataFpuBinary2-fimul_r80_by_i32.bin.gz"
+IEM_TEST_DATA fisubr_r80_by_i16, "tstIEMAImplDataFpuBinary2-fisubr_r80_by_i16.bin.gz"
+IEM_TEST_DATA fisubr_r80_by_i32, "tstIEMAImplDataFpuBinary2-fisubr_r80_by_i32.bin.gz"
+IEM_TEST_DATA fisub_r80_by_i16, "tstIEMAImplDataFpuBinary2-fisub_r80_by_i16.bin.gz"
+IEM_TEST_DATA fisub_r80_by_i32, "tstIEMAImplDataFpuBinary2-fisub_r80_by_i32.bin.gz"
+IEM_TEST_DATA fmul_r80_by_r32, "tstIEMAImplDataFpuBinary2-fmul_r80_by_r32.bin.gz"
+IEM_TEST_DATA fmul_r80_by_r64, "tstIEMAImplDataFpuBinary2-fmul_r80_by_r64.bin.gz"
+IEM_TEST_DATA fsubr_r80_by_r32, "tstIEMAImplDataFpuBinary2-fsubr_r80_by_r32.bin.gz"
+IEM_TEST_DATA fsubr_r80_by_r64, "tstIEMAImplDataFpuBinary2-fsubr_r80_by_r64.bin.gz"
+IEM_TEST_DATA fsub_r80_by_r32, "tstIEMAImplDataFpuBinary2-fsub_r80_by_r32.bin.gz"
+IEM_TEST_DATA fsub_r80_by_r64, "tstIEMAImplDataFpuBinary2-fsub_r80_by_r64.bin.gz"
+IEM_TEST_DATA fild_r80_from_i16, "tstIEMAImplDataFpuLdSt-fild_r80_from_i16.bin.gz"
+IEM_TEST_DATA fild_r80_from_i32, "tstIEMAImplDataFpuLdSt-fild_r80_from_i32.bin.gz"
+IEM_TEST_DATA fild_r80_from_i64, "tstIEMAImplDataFpuLdSt-fild_r80_from_i64.bin.gz"
+IEM_TEST_DATA fistt_r80_to_i16_amd, "tstIEMAImplDataFpuLdSt-fistt_r80_to_i16_amd.bin.gz"
+IEM_TEST_DATA fistt_r80_to_i16_intel, "tstIEMAImplDataFpuLdSt-fistt_r80_to_i16_intel.bin.gz"
+IEM_TEST_DATA fistt_r80_to_i32, "tstIEMAImplDataFpuLdSt-fistt_r80_to_i32.bin.gz"
+IEM_TEST_DATA fistt_r80_to_i64, "tstIEMAImplDataFpuLdSt-fistt_r80_to_i64.bin.gz"
+IEM_TEST_DATA fist_r80_to_i16, "tstIEMAImplDataFpuLdSt-fist_r80_to_i16.bin.gz"
+IEM_TEST_DATA fist_r80_to_i32, "tstIEMAImplDataFpuLdSt-fist_r80_to_i32.bin.gz"
+IEM_TEST_DATA fist_r80_to_i64, "tstIEMAImplDataFpuLdSt-fist_r80_to_i64.bin.gz"
+IEM_TEST_DATA fld1, "tstIEMAImplDataFpuLdSt-fld1.bin.gz"
+IEM_TEST_DATA fldl2e, "tstIEMAImplDataFpuLdSt-fldl2e.bin.gz"
+IEM_TEST_DATA fldl2t, "tstIEMAImplDataFpuLdSt-fldl2t.bin.gz"
+IEM_TEST_DATA fldlg2, "tstIEMAImplDataFpuLdSt-fldlg2.bin.gz"
+IEM_TEST_DATA fldln2, "tstIEMAImplDataFpuLdSt-fldln2.bin.gz"
+IEM_TEST_DATA fldpi, "tstIEMAImplDataFpuLdSt-fldpi.bin.gz"
+IEM_TEST_DATA fldz, "tstIEMAImplDataFpuLdSt-fldz.bin.gz"
+IEM_TEST_DATA fld_r80_from_d80, "tstIEMAImplDataFpuLdSt-fld_r80_from_d80.bin.gz"
+IEM_TEST_DATA fld_r80_from_r32, "tstIEMAImplDataFpuLdSt-fld_r80_from_r32.bin.gz"
+IEM_TEST_DATA fld_r80_from_r64, "tstIEMAImplDataFpuLdSt-fld_r80_from_r64.bin.gz"
+IEM_TEST_DATA fld_r80_from_r80, "tstIEMAImplDataFpuLdSt-fld_r80_from_r80.bin.gz"
+IEM_TEST_DATA fst_r80_to_d80, "tstIEMAImplDataFpuLdSt-fst_r80_to_d80.bin.gz"
+IEM_TEST_DATA fst_r80_to_r32, "tstIEMAImplDataFpuLdSt-fst_r80_to_r32.bin.gz"
+IEM_TEST_DATA fst_r80_to_r64, "tstIEMAImplDataFpuLdSt-fst_r80_to_r64.bin.gz"
+IEM_TEST_DATA fst_r80_to_r80, "tstIEMAImplDataFpuLdSt-fst_r80_to_r80.bin.gz"
+IEM_TEST_DATA f2xm1_r80_amd, "tstIEMAImplDataFpuOther-f2xm1_r80_amd.bin.gz"
+IEM_TEST_DATA f2xm1_r80_intel, "tstIEMAImplDataFpuOther-f2xm1_r80_intel.bin.gz"
+IEM_TEST_DATA fabs_r80, "tstIEMAImplDataFpuOther-fabs_r80.bin.gz"
+IEM_TEST_DATA fchs_r80, "tstIEMAImplDataFpuOther-fchs_r80.bin.gz"
+IEM_TEST_DATA fcos_r80_amd, "tstIEMAImplDataFpuOther-fcos_r80_amd.bin.gz"
+IEM_TEST_DATA fcos_r80_intel, "tstIEMAImplDataFpuOther-fcos_r80_intel.bin.gz"
+IEM_TEST_DATA fptan_r80_r80_amd, "tstIEMAImplDataFpuOther-fptan_r80_r80_amd.bin.gz"
+IEM_TEST_DATA fptan_r80_r80_intel, "tstIEMAImplDataFpuOther-fptan_r80_r80_intel.bin.gz"
+IEM_TEST_DATA frndint_r80, "tstIEMAImplDataFpuOther-frndint_r80.bin.gz"
+IEM_TEST_DATA fsincos_r80_r80_amd, "tstIEMAImplDataFpuOther-fsincos_r80_r80_amd.bin.gz"
+IEM_TEST_DATA fsincos_r80_r80_intel, "tstIEMAImplDataFpuOther-fsincos_r80_r80_intel.bin.gz"
+IEM_TEST_DATA fsin_r80_amd, "tstIEMAImplDataFpuOther-fsin_r80_amd.bin.gz"
+IEM_TEST_DATA fsin_r80_intel, "tstIEMAImplDataFpuOther-fsin_r80_intel.bin.gz"
+IEM_TEST_DATA fsqrt_r80, "tstIEMAImplDataFpuOther-fsqrt_r80.bin.gz"
+IEM_TEST_DATA ftst_r80, "tstIEMAImplDataFpuOther-ftst_r80.bin.gz"
+IEM_TEST_DATA fxam_r80, "tstIEMAImplDataFpuOther-fxam_r80.bin.gz"
+IEM_TEST_DATA fxtract_r80_r80, "tstIEMAImplDataFpuOther-fxtract_r80_r80.bin.gz"
 
