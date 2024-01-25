@@ -70,7 +70,7 @@
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */, \
-      RT_ELEMENTS(g_aFixedTests_ ## a_Name), false, false, g_aFixedTests_ ## a_Name }
+      false, false, RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
 #else
 # define ENTRY_FIX_EX(a_Name, a_uExtra) ENTRY_EX(a_Name, a_uExtra)
 #endif
@@ -1000,15 +1000,14 @@ static void GenerateArrayEnd(PRTSTREAM pOut, const char *pszName)
 }
 
 
-static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName,
-                               const char *pszCpuType = NULL)
+static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName)
 {
     pBinOut->hVfsFile         = NIL_RTVFSFILE;
     pBinOut->hVfsUncompressed = NIL_RTVFSIOSTREAM;
     if (pszFilenameFmt)
     {
         pBinOut->fNull = false;
-        if (RTStrPrintf2(pBinOut->szFilename, sizeof(pBinOut->szFilename), pszFilenameFmt, pszName, pszCpuType) > 0)
+        if (RTStrPrintf2(pBinOut->szFilename, sizeof(pBinOut->szFilename), pszFilenameFmt, pszName) > 0)
         {
             RTMsgInfo("GenerateBinaryOpen: %s...\n", pBinOut->szFilename);
             pBinOut->rcWrite = RTVfsFileOpenNormal(pBinOut->szFilename,
@@ -1042,7 +1041,7 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
         }
         else
         {
-            RTMsgError("filename too long: %s + %s + %s", pszFilenameFmt, pszName, pszCpuType);
+            RTMsgError("filename too long: %s + %s", pszFilenameFmt, pszName);
             pBinOut->rcWrite = VERR_BUFFER_OVERFLOW;
         }
         return false;
@@ -1219,6 +1218,10 @@ static int DecompressBinaryTest(bool *pfCompressed, void **ppvTests, uint32_t co
     RTVfsIoStrmRelease(hVfsIos);
     return rc;
 }
+
+#define DECOMPRESS_TESTS(a_Entry) \
+    RT_SUCCESS(DecompressBinaryTest(&(a_Entry).fCompressed, (void **)&(a_Entry).paTests, &(a_Entry).pcTests, \
+                                    sizeof((a_Entry).paTests[0]), (a_Entry).fBinary))
 
 
 /** Decompresses test data before use as required. */
@@ -1562,21 +1565,18 @@ TYPEDEF_SUBTEST_TYPE(BINU64_T, BINU64_TEST_T, PFNIEMAIMPLBINU64);
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_BINARY_TESTS(a_cBits, a_Fmt, a_TestType) \
-static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests) \
+static RTEXITCODE BinU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU ## a_cBits); iFn++) \
     { \
         PFNIEMAIMPLBINU ## a_cBits const pfn    = g_aBinU ## a_cBits[iFn].pfnNative \
                                                 ? g_aBinU ## a_cBits[iFn].pfnNative : g_aBinU ## a_cBits[iFn].pfn; \
-        PRTSTREAM                        pOutFn = pOut; \
-        if (g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE) \
-        { \
-            if (g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
-                continue; \
-            pOutFn = pOutCpu; \
-        } \
-        \
-        GenerateArrayStart(pOutFn, g_aBinU ## a_cBits[iFn].pszName, #a_TestType); \
+        IEMBINARYOUTPUT                  BinOut; \
+        if (   g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[g_aBinU ## a_cBits[iFn].idxCpuEflFlavour], \
+                                        g_aBinU ## a_cBits[iFn].pszName), RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -1589,8 +1589,7 @@ static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint3
                 Test.uSrcIn &= a_cBits - 1; /* Restrict bit index according to operand width */ \
             Test.uMisc     = 0; \
             pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
-            RTStrmPrintf(pOutFn, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %#x }, /* #%u */\n", \
-                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
         for (uint32_t iTest = 0; iTest < g_aBinU ## a_cBits[iFn].cFixedTests; iTest++ ) \
         { \
@@ -1603,12 +1602,30 @@ static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint3
             Test.uSrcIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uSrcIn; \
             Test.uMisc     = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uMisc; \
             pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
-            RTStrmPrintf(pOutFn, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %#x }, /* fixed #%u */\n", \
-                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
-        GenerateArrayEnd(pOutFn, g_aBinU ## a_cBits[iFn].pszName); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
+    return RTEXITCODE_SUCCESS; \
+} \
+/* Temp for conversion. */ \
+static RTEXITCODE BinU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU ## a_cBits); iFn++) \
+    { \
+        AssertReturn(DECOMPRESS_TESTS(g_aBinU ## a_cBits[iFn]), RTEXITCODE_FAILURE); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[g_aBinU ## a_cBits[iFn].idxCpuEflFlavour], \
+                                        g_aBinU ## a_cBits[iFn].pszName), RTEXITCODE_FAILURE); \
+        size_t cbTests = g_aBinU ## a_cBits[iFn].pcTests[0]; \
+        if (!g_aBinU ## a_cBits[iFn].fBinary) \
+            cbTests *= sizeof(g_aBinU ## a_cBits[iFn].paTests[0]); \
+        GenerateBinaryWrite(&BinOut, g_aBinU ## a_cBits[iFn].paTests, cbTests); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+    } \
+    return RTEXITCODE_SUCCESS; \
 }
+
 #else
 # define GEN_BINARY_TESTS(a_cBits, a_Fmt, a_TestType)
 #endif
@@ -2207,14 +2224,16 @@ static void CmpXchg16bTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
-static void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static RTEXITCODE ShiftDblU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
             && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
             continue; \
-        GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -2225,12 +2244,29 @@ static void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
             Test.uMisc     = RandU8() & (a_cBits * 4 - 1); /* need to go way beyond the a_cBits limit */ \
             a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, Test.uMisc, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
-                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
-        GenerateArrayEnd(pOut, a_aSubTests[iFn].pszName); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
+    return RTEXITCODE_SUCCESS; \
+} \
+static RTEXITCODE ShiftDblU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        AssertReturn(DECOMPRESS_TESTS(a_aSubTests[iFn]), RTEXITCODE_FAILURE); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
+        size_t cbTests = a_aSubTests[iFn].pcTests[0]; \
+        if (!a_aSubTests[iFn].fBinary) \
+            cbTests *= sizeof(a_aSubTests[iFn].paTests[0]); \
+        GenerateBinaryWrite(&BinOut, a_aSubTests[iFn].paTests, cbTests); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+    } \
+    return RTEXITCODE_SUCCESS; \
 }
+
 #else
 # define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
@@ -2291,11 +2327,24 @@ TEST_SHIFT_DBL(32, uint32_t, "%#010RX32", BINU32_TEST_T, SHIFT_DBL_U32_T, g_aShi
 TEST_SHIFT_DBL(64, uint64_t, "%#018RX64", BINU64_TEST_T, SHIFT_DBL_U64_T, g_aShiftDblU64)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void ShiftDblGenerate(PRTSTREAM pOut, uint32_t cTests)
+static RTEXITCODE ShiftDblGenerate(uint32_t cTests, const char * const * papszNameFmts)
 {
-    ShiftDblU16Generate(pOut, cTests);
-    ShiftDblU32Generate(pOut, cTests);
-    ShiftDblU64Generate(pOut, cTests);
+    RTEXITCODE rcExit = ShiftDblU16Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftDblU32Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftDblU64Generate(cTests, papszNameFmts);
+    return rcExit;
+}
+
+static RTEXITCODE ShiftDblDumpAll(const char * const * papszNameFmts)
+{
+    RTEXITCODE rcExit = ShiftDblU16DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftDblU32DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftDblU64DumpAll(papszNameFmts);
+    return rcExit;
 }
 #endif
 
@@ -2314,11 +2363,12 @@ static void ShiftDblTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
-static void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static RTEXITCODE UnaryU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
     { \
-        GenerateArrayStart(pOut, g_aUnaryU ## a_cBits[iFn].pszName, #a_TestType); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[0], g_aUnaryU ## a_cBits[iFn].pszName), RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -2329,11 +2379,26 @@ static void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             Test.uSrcIn    = 0; \
             Test.uMisc     = 0; \
             g_aUnaryU ## a_cBits[iFn].pfn(&Test.uDstOut, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, 0 }, /* #%u */\n", \
-                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
-        GenerateArrayEnd(pOut, g_aUnaryU ## a_cBits[iFn].pszName); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
+    return RTEXITCODE_SUCCESS; \
+} \
+static RTEXITCODE UnaryU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
+    { \
+        AssertReturn(DECOMPRESS_TESTS(g_aUnaryU ## a_cBits[iFn]), RTEXITCODE_FAILURE); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[0], g_aUnaryU ## a_cBits[iFn].pszName), RTEXITCODE_FAILURE); \
+        uint32_t cbTests = g_aUnaryU ## a_cBits[iFn].pcTests[0]; \
+        if (!g_aUnaryU ## a_cBits[iFn].fBinary) \
+            cbTests *= sizeof(g_aUnaryU ## a_cBits[iFn].paTests[0]); \
+        GenerateBinaryWrite(&BinOut, g_aUnaryU ## a_cBits[iFn].paTests, cbTests); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+    } \
+    return RTEXITCODE_SUCCESS; \
 }
 #else
 # define GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType)
@@ -2392,12 +2457,28 @@ TEST_UNARY(32, uint32_t, "%#010RX32", BINU32_TEST_T, INT_UNARY_U32_T)
 TEST_UNARY(64, uint64_t, "%#018RX64", BINU64_TEST_T, INT_UNARY_U64_T)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void UnaryGenerate(PRTSTREAM pOut, uint32_t cTests)
+static RTEXITCODE UnaryGenerate(uint32_t cTests, const char * const * papszNameFmts)
 {
-    UnaryU8Generate(pOut, cTests);
-    UnaryU16Generate(pOut, cTests);
-    UnaryU32Generate(pOut, cTests);
-    UnaryU64Generate(pOut, cTests);
+    RTEXITCODE rcExit = UnaryU8Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU16Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU32Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU64Generate(cTests, papszNameFmts);
+    return rcExit;
+}
+
+static RTEXITCODE UnaryDumpAll(const char * const * papszNameFmts)
+{
+    RTEXITCODE rcExit = UnaryU8DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU16DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU32DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = UnaryU64DumpAll(papszNameFmts);
+    return rcExit;
 }
 #endif
 
@@ -2417,14 +2498,16 @@ static void UnaryTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
-static void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static RTEXITCODE ShiftU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
             && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
             continue; \
-        GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -2435,18 +2518,33 @@ static void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             Test.uSrcIn    = 0; \
             Test.uMisc     = RandU8() & (a_cBits * 4 - 1); /* need to go way beyond the a_cBits limit */ \
             a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uMisc, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u */\n", \
-                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
             \
             Test.fEflIn    = (~Test.fEflIn & X86_EFL_LIVE_MASK) | X86_EFL_RA1_MASK; \
             Test.fEflOut   = Test.fEflIn; \
             Test.uDstOut   = Test.uDstIn; \
             a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uMisc, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u b */\n", \
-                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
-        GenerateArrayEnd(pOut, a_aSubTests[iFn].pszName); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
+    return RTEXITCODE_SUCCESS; \
+} \
+static RTEXITCODE ShiftU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        AssertReturn(DECOMPRESS_TESTS(a_aSubTests[iFn]), RTEXITCODE_FAILURE); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
+        uint32_t cbTests = a_aSubTests[iFn].pcTests[0]; \
+        if (!a_aSubTests[iFn].fBinary) \
+            cbTests *= sizeof(a_aSubTests[iFn].paTests[0]); \
+        GenerateBinaryWrite(&BinOut, a_aSubTests[iFn].paTests, cbTests); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+    } \
+    return RTEXITCODE_SUCCESS; \
 }
 #else
 # define GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests)
@@ -2518,12 +2616,28 @@ TEST_SHIFT(32, uint32_t, "%#010RX32", BINU32_TEST_T, INT_BINARY_U32_T, g_aShiftU
 TEST_SHIFT(64, uint64_t, "%#018RX64", BINU64_TEST_T, INT_BINARY_U64_T, g_aShiftU64)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void ShiftGenerate(PRTSTREAM pOut, uint32_t cTests)
+static RTEXITCODE ShiftGenerate(uint32_t cTests, const char * const * papszNameFmts)
 {
-    ShiftU8Generate(pOut, cTests);
-    ShiftU16Generate(pOut, cTests);
-    ShiftU32Generate(pOut, cTests);
-    ShiftU64Generate(pOut, cTests);
+    RTEXITCODE rcExit = ShiftU8Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU16Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU32Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU64Generate(cTests, papszNameFmts);
+    return rcExit;
+}
+
+static RTEXITCODE ShiftDumpAll(const char * const * papszNameFmts)
+{
+    RTEXITCODE rcExit = ShiftU8DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU16DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU32DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ShiftU64DumpAll(papszNameFmts);
+    return rcExit;
 }
 #endif
 
@@ -2560,14 +2674,16 @@ static INT_MULDIV_U8_T g_aMulDivU8[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void MulDivU8Generate(PRTSTREAM pOut, uint32_t cTests)
+static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNameFmts)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
         if (   g_aMulDivU8[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE
             && g_aMulDivU8[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour)
             continue;
-        GenerateArrayStart(pOut, g_aMulDivU8[iFn].pszName, "MULDIVU8_TEST_T"); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[g_aMulDivU8[iFn].idxCpuEflFlavour], g_aMulDivU8[iFn].pszName),
+                     RTEXITCODE_FAILURE);
         for (uint32_t iTest = 0; iTest < cTests; iTest++ )
         {
             MULDIVU8_TEST_T Test;
@@ -2577,11 +2693,27 @@ static void MulDivU8Generate(PRTSTREAM pOut, uint32_t cTests)
             Test.uDstOut   = Test.uDstIn;
             Test.uSrcIn    = RandU8Src(iTest);
             Test.rc        = g_aMulDivU8[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, %#06RX16, %#06RX16, %#04RX8, %d }, /* #%u */\n",
-                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.rc, iTest);
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test));
         }
-        GenerateArrayEnd(pOut, g_aMulDivU8[iFn].pszName);
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
     }
+    return RTEXITCODE_SUCCESS;
+}
+static RTEXITCODE MulDivU8DumpAll(const char * const * papszNameFmts)
+{
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
+    {
+        AssertReturn(DECOMPRESS_TESTS(g_aMulDivU8[iFn]), RTEXITCODE_FAILURE);
+        IEMBINARYOUTPUT BinOut;
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[g_aMulDivU8[iFn].idxCpuEflFlavour], g_aMulDivU8[iFn].pszName),
+                     RTEXITCODE_FAILURE);
+        uint32_t cbTests = g_aMulDivU8[iFn].pcTests[0];
+        if (!g_aMulDivU8[iFn].fBinary)
+            cbTests *= sizeof(g_aMulDivU8[iFn].paTests[0]);
+        GenerateBinaryWrite(&BinOut, g_aMulDivU8[iFn].paTests, cbTests);
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
+    }
+    return RTEXITCODE_SUCCESS;
 }
 #endif
 
@@ -2631,14 +2763,16 @@ static void MulDivU8Test(void)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
-void MulDivU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
             && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
             continue; \
-        GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -2650,12 +2784,27 @@ void MulDivU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             Test.uDst2Out  = Test.uDst2In; \
             Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
             Test.rc        = a_aSubTests[iFn].pfnNative(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", %d }, /* #%u */\n", \
-                        Test.fEflIn, Test.fEflOut, Test.uDst1In, Test.uDst1Out, Test.uDst2In, Test.uDst2Out, Test.uSrcIn, \
-                        Test.rc, iTest); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
-        GenerateArrayEnd(pOut, a_aSubTests[iFn].pszName); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
     } \
+    return RTEXITCODE_SUCCESS; \
+} \
+static RTEXITCODE MulDivU ## a_cBits ## DumpAll(const char * const * papszNameFmts) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        AssertReturn(DECOMPRESS_TESTS(a_aSubTests[iFn]), RTEXITCODE_FAILURE); \
+        IEMBINARYOUTPUT BinOut; \
+        AssertReturn(GenerateBinaryOpen(&BinOut, papszNameFmts[a_aSubTests[iFn].idxCpuEflFlavour], a_aSubTests[iFn].pszName), \
+                     RTEXITCODE_FAILURE); \
+        uint32_t cbTests = a_aSubTests[iFn].pcTests[0]; \
+        if (!a_aSubTests[iFn].fBinary) \
+            cbTests *= sizeof(a_aSubTests[iFn].paTests[0]); \
+        GenerateBinaryWrite(&BinOut, a_aSubTests[iFn].paTests, cbTests); \
+        AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
+    } \
+    return RTEXITCODE_SUCCESS; \
 }
 #else
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests)
@@ -2732,12 +2881,28 @@ TEST_MULDIV(32, uint32_t, "%#010RX32", MULDIVU32_TEST_T, INT_MULDIV_U32_T, g_aMu
 TEST_MULDIV(64, uint64_t, "%#018RX64", MULDIVU64_TEST_T, INT_MULDIV_U64_T, g_aMulDivU64)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void MulDivGenerate(PRTSTREAM pOut, uint32_t cTests)
+static RTEXITCODE MulDivGenerate(uint32_t cTests, const char * const * papszNameFmts)
 {
-    MulDivU8Generate(pOut, cTests);
-    MulDivU16Generate(pOut, cTests);
-    MulDivU32Generate(pOut, cTests);
-    MulDivU64Generate(pOut, cTests);
+    RTEXITCODE rcExit = MulDivU8Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU16Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU32Generate(cTests, papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU64Generate(cTests, papszNameFmts);
+    return rcExit;
+}
+
+static RTEXITCODE MulDivDumpAll(const char * const * papszNameFmts)
+{
+    RTEXITCODE rcExit = MulDivU8DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU16DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU32DumpAll(papszNameFmts);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = MulDivU64DumpAll(papszNameFmts);
+    return rcExit;
 }
 #endif
 
@@ -9390,7 +9555,7 @@ int main(int argc, char **argv)
     /*
      * Parse arguments.
      */
-    enum { kModeNotSet, kModeTest, kModeGenerate }
+    enum { kModeNotSet, kModeTest, kModeGenerate, kModeDump }
                         enmMode       = kModeNotSet;
     bool                fInt          = true;
     bool                fFpuLdSt      = true;
@@ -9408,6 +9573,7 @@ int main(int argc, char **argv)
     {
         // mode:
         { "--generate",             'g', RTGETOPT_REQ_NOTHING },
+        { "--dump",                 'G', RTGETOPT_REQ_NOTHING },
         { "--test",                 't', RTGETOPT_REQ_NOTHING },
         { "--benchmark",            'b', RTGETOPT_REQ_NOTHING },
         // test selection (both)
@@ -9444,6 +9610,10 @@ int main(int argc, char **argv)
         {
             case 'g':
                 enmMode                 = kModeGenerate;
+                g_cPicoSecBenchmark     = 0;
+                break;
+            case 'G':
+                enmMode                 = kModeDump;
                 g_cPicoSecBenchmark     = 0;
                 break;
             case 't':
@@ -9614,25 +9784,27 @@ int main(int argc, char **argv)
 
         if (fInt)
         {
-            const char *pszDataFile    = fCommonData ? "tstIEMAImplDataInt.cpp" : pszBitBucket;
-            PRTSTREAM   pStrmData      = GenerateOpenWithHdr(pszDataFile, szCpuDesc, NULL);
-            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
-                                       ? "tstIEMAImplDataInt-Amd.cpp" : "tstIEMAImplDataInt-Intel.cpp";
-            PRTSTREAM   pStrmDataCpu   = GenerateOpenWithHdr(pszDataCpuFile, szCpuDesc, pszCpuType);
-            if (!pStrmData || !pStrmDataCpu)
-                return RTEXITCODE_FAILURE;
-
-            BinU8Generate( pStrmData, pStrmDataCpu, cTests);
-            BinU16Generate(pStrmData, pStrmDataCpu, cTests);
-            BinU32Generate(pStrmData, pStrmDataCpu, cTests);
-            BinU64Generate(pStrmData, pStrmDataCpu, cTests);
-            ShiftDblGenerate(pStrmDataCpu, RT_MAX(cTests, 128));
-            UnaryGenerate(pStrmData, cTests);
-            ShiftGenerate(pStrmDataCpu, cTests);
-            MulDivGenerate(pStrmDataCpu, cTests);
-
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, RTEXITCODE_SUCCESS));
+            const char * const apszNameFmts[] =
+            {
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataInt-%s.bin.gz"       : NULL,
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Intel.bin.gz" : NULL,
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Amd.bin.gz"   : NULL,
+            };
+            RTEXITCODE rcExit = BinU8Generate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU16Generate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU32Generate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU64Generate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = ShiftDblGenerate(RT_MAX(cTests, 128), apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = UnaryGenerate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = ShiftGenerate(cTests, apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = MulDivGenerate(cTests, apszNameFmts);
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
         }
@@ -9812,6 +9984,46 @@ int main(int argc, char **argv)
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
 #endif
     }
+
+    /*
+     * Dump tables.
+     */
+    if (enmMode == kModeDump)
+    {
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+        if (fInt)
+        {
+            const char * const apszNameFmts[] =
+            {
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_NATIVE] =*/ fCommonData ? "tstIEMAImplDataInt-%s.bin.gz"       : NULL,
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_INTEL]  =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Intel.bin.gz" : NULL,
+                /*[IEMTARGETCPU_EFL_BEHAVIOR_AMD]    =*/ fCpuData    ? "tstIEMAImplDataInt-%s-Amd.bin.gz"   : NULL,
+            };
+            RTEXITCODE rcExit = BinU8DumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU16DumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU32DumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = BinU64DumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = ShiftDblDumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = UnaryDumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = ShiftDumpAll(apszNameFmts);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = MulDivDumpAll(apszNameFmts);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+
+        return RTEXITCODE_SUCCESS;
+#else
+        return RTMsgErrorExitFailure("Test data generator not compiled in!");
+#endif
+    }
+
 
     /*
      * Do testing.  Currrently disabled by default as data needs to be checked
