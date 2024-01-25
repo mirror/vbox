@@ -77,15 +77,17 @@ bool UIWelcomePane::event(QEvent *pEvent)
 void UIWelcomePane::retranslateUi()
 {
     /* Translate greetings text: */
-    m_pLabelGreetings->setText(tr("<h3>Welcome to VirtualBox!</h3>"
-                                  "<p>The left part of application window contains global tools and "
-                                  "lists all virtual machines and virtual machine groups on your computer. "
-                                  "You can import, add and create new VMs using corresponding toolbar buttons. "
-                                  "You can popup a tools of currently selected element using corresponding element button.</p>"
-                                  "<p>You can press the <b>%1</b> key to get instant help, or visit "
-                                  "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-                                  "for more information and latest news.</p>")
-                                  .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+    if (m_pLabelGreetings)
+        m_pLabelGreetings->setText(tr("<h3>Welcome to VirtualBox!</h3>"
+                                      "<p>The left part of application window contains global tools and "
+                                      "lists all virtual machines and virtual machine groups on your computer. "
+                                      "You can import, add and create new VMs using corresponding toolbar buttons. "
+                                      "You can popup a tools of currently selected element using corresponding element "
+                                      "button.</p>"
+                                      "<p>You can press the <b>%1</b> key to get instant help, or visit "
+                                      "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+                                      "for more information and latest news.</p>")
+                                      .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
 }
 
 void UIWelcomePane::sltHandleLinkActivated(const QUrl &urlLink)
@@ -99,15 +101,21 @@ void UIWelcomePane::prepare()
     m_icon = UIIconPool::iconSet(":/tools_banner_global_200px.png");
 
     /* Prepare main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     if (pMainLayout)
     {
         /* Prepare welcome layout: */
-        QHBoxLayout *pLayoutWelcome = new QHBoxLayout;
+        QVBoxLayout *pLayoutWelcome = new QVBoxLayout;
         if (pLayoutWelcome)
         {
             const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+#ifdef VBOX_WS_MAC
+            const int iSpacing = 20;
+#else
+            const int iSpacing = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
+#endif
             pLayoutWelcome->setContentsMargins(iL, 0, 0, 0);
+            pLayoutWelcome->setSpacing(iSpacing);
 
             /* Prepare greetings label: */
             m_pLabelGreetings = new QIRichTextLabel(this);
@@ -118,23 +126,23 @@ void UIWelcomePane::prepare()
                 pLayoutWelcome->addWidget(m_pLabelGreetings);
             }
 
-            /* Prepare icon label: */
-            m_pLabelIcon = new QLabel(this);
-            if (m_pLabelIcon)
-            {
-                m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-                /* Add into layout: */
-                pLayoutWelcome->addWidget(m_pLabelIcon);
-                pLayoutWelcome->setAlignment(m_pLabelIcon, Qt::AlignHCenter | Qt::AlignTop);
-            }
+            /* Add stretch: */
+            pLayoutWelcome->addStretch();
 
             /* Add into layout: */
             pMainLayout->addLayout(pLayoutWelcome);
         }
 
-        /* Add stretch: */
-        pMainLayout->addStretch();
+        /* Prepare icon label: */
+        m_pLabelIcon = new QLabel(this);
+        if (m_pLabelIcon)
+        {
+            m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabelIcon);
+            pMainLayout->setAlignment(m_pLabelIcon, Qt::AlignHCenter | Qt::AlignTop);
+        }
     }
 
     /* Assign Help keyword: */
@@ -163,7 +171,7 @@ void UIWelcomePane::updateTextLabels()
 void UIWelcomePane::updatePixmap()
 {
     /* Assign corresponding icon: */
-    if (!m_icon.isNull())
+    if (!m_icon.isNull() && m_pLabelIcon)
     {
         /* Check which size goes as the default one: */
         const QList<QSize> sizes = m_icon.availableSizes();
