@@ -43,16 +43,16 @@
     .globl  NAME(g_abTests_\a_Instr)
 NAME(g_abTests_\a_Instr):
     .incbin "\a_szDataFile"
-NAME(g_aTests_end_\a_Instr):
+NAME(g_abTests_end_\a_Instr):
 #ifdef ASM_FORMAT_ELF
-    .size   NAME(g_abTests_\a_Instr), . - NAME(g_aTests_\a_Instr)
+    .size   NAME(g_abTests_\a_Instr), . - NAME(g_abTests_\a_Instr)
     .type   NAME(g_abTests_\a_Instr), object
 #endif
 
     .p2align 2
     .globl  NAME(g_cbTests_\a_Instr)
 NAME(g_cbTests_\a_Instr):
-    .int    NAME(g_abTests_end_\a_Instr) - NAME(g_aTests_\a_Instr)
+    .int    NAME(g_abTests_end_\a_Instr) - NAME(g_abTests_\a_Instr)
 #ifdef ASM_FORMAT_ELF
     .size   NAME(g_cbTests_\a_Instr), 4
     .type   NAME(g_cbTests_\a_Instr), object
