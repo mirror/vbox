@@ -56,7 +56,7 @@ PYTHON_BINARIES="\
 if [ -e "$PYTHON_INSTALLER_PATH/vboxapisetup.py" ]; then
     for PYTHON_BIN in $PYTHON_BINARIES; do
         # Install the python bindings if python is in the path
-        if [ "`\${PYTHON_BIN} -c 'print "test"' 2> /dev/null`" = "test" ]; then
+        if [ "`\${PYTHON_BIN} -c 'print("test")' 2> /dev/null`" = "test" ]; then
             echo  1>&2 "Python found: ${PYTHON_BIN}, installing bindings..."
             # Pass install path via environment
             export VBOX_INSTALL_PATH
