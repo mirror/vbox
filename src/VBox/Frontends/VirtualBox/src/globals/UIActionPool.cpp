@@ -3900,6 +3900,7 @@ void UIActionPool::updateMenuHelp()
     /* 'Oracle' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Oracle)) || fSeparator;
 
+#ifndef VBOX_WS_MAC
     /* Separator? */
     if (fSeparator)
     {
@@ -3907,7 +3908,6 @@ void UIActionPool::updateMenuHelp()
         fSeparator = false;
     }
 
-#ifndef VBOX_WS_MAC
     /* 'About' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About)) || fSeparator;
 #endif
