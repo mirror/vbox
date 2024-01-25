@@ -63,11 +63,11 @@ if [ -e "$PYTHON_INSTALLER_PATH/vboxapisetup.py" ]; then
             # Check if python has working distutils
             "$PYTHON_BIN" -c "from distutils.core import setup" > /dev/null 2>&1
             if test "$?" -ne 0; then
-                echo 1>&2 "Python $PYTHON_VER does not have package 'distutils', checking for 'setuptools'..."
+                echo 1>&2 "$PYTHON_BIN does not have package 'distutils', checking for 'setuptools'..."
                 # Since Python 3.12 there are no distutils anymore. See PEP632.
                 "$PYTHON_BIN" -c "from setuptools import setup" > /dev/null 2>&1
                 if test "$?" -ne 0; then
-                    echo 1>&2 "Python $PYTHON_VER also does not have package 'setuptools'. Skipping installation."
+                    echo 1>&2 "$PYTHON_BIN also does not have package 'setuptools'. Skipping installation."
                     return 0
                 fi
                 # When we reach here, we have to use 'pip' in order to install our bindings (Python >= 3.12).
@@ -87,6 +87,8 @@ if [ -e "$PYTHON_INSTALLER_PATH/vboxapisetup.py" ]; then
             fi
         fi
     done
+else
+    echo 1>&2 "vboxapisetup.py not found, skipping Python bindings installation."
 fi
 
 #
