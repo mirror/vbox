@@ -473,8 +473,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
 
         path->u16Length = 1;
         path->u16Size = 2;
-        path->String.utf8[0] = '/';
-        path->String.utf8[1] = 0;
+        RTStrCopy(path->String.utf8, path->u16Size, "/");
 
         /*
          * Stat the root directory (for inode info).

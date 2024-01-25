@@ -1047,9 +1047,9 @@ static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
         RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[0], d_name, d_len + 1);
     else {
         RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[0], p_name, p_len);
-        tmp->String.utf8[p_len] = '/';
-        RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[p_len + 1], d_name, d_len);
-        tmp->String.utf8[p_len + 1 + d_len] = '\0';
+        *(tmp->String.utf8 + p_len) = '/';
+        RT_BCOPY_UNFORTIFIED(tmp->String.utf8 + p_len + 1, d_name, d_len);
+        *(tmp->String.utf8 + p_len + 1 + d_len) = '\0';
     }
 
     *result = tmp;

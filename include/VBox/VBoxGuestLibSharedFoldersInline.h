@@ -1505,7 +1505,7 @@ DECLINLINE(int) VbglR0SfHostReqReadLinkContigSimple(SHFLROOT idRoot, const char 
             pReq->StrPath.u16Length = (uint16_t)cchPath;
             pReq->StrPath.u16Size   = (uint16_t)cchPath + 1;
             RT_BCOPY_UNFORTIFIED(pReq->StrPath.String.ach, pszPath, cchPath);
-            pReq->StrPath.String.ach[cchPath] = '\0';
+            *(pReq->StrPath.String.ach + cchPath) = '\0';
 
             {
                 int vrc = VbglR0SfHostReqReadLinkContig(idRoot, pvBuf, PhysBuffer, cbBuffer, pReq);
