@@ -30,20 +30,13 @@
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
-#include <QWindow>
 
 /* GUI includes */
 #include "QIWithRetranslateUI.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIWelcomePane.h"
-
-/* Forward declarations: */
-class QEvent;
-class QHBoxLayout;
-class QString;
-class QResizeEvent;
-class QVBoxLayout;
 
 
 /** Wrappable QLabel extension for tools pane of the desktop widget.
@@ -133,10 +126,9 @@ QSize UIWrappableLabel::sizeHint() const
 
 UIWelcomePane::UIWelcomePane(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pLabelText(0)
+    , m_pLabelGreetings(0)
     , m_pLabelIcon(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -162,16 +154,16 @@ bool UIWelcomePane::event(QEvent *pEvent)
 
 void UIWelcomePane::retranslateUi()
 {
-    /* Translate welcome text: */
-    m_pLabelText->setText(tr("<h3>Welcome to VirtualBox!</h3>"
-                             "<p>The left part of application window contains global tools and "
-                             "lists all virtual machines and virtual machine groups on your computer. "
-                             "You can import, add and create new VMs using corresponding toolbar buttons. "
-                             "You can popup a tools of currently selected element using corresponding element button.</p>"
-                             "<p>You can press the <b>%1</b> key to get instant help, or visit "
-                             "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-                             "for more information and latest news.</p>")
-                             .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+    /* Translate greetings text: */
+    m_pLabelGreetings->setText(tr("<h3>Welcome to VirtualBox!</h3>"
+                                  "<p>The left part of application window contains global tools and "
+                                  "lists all virtual machines and virtual machine groups on your computer. "
+                                  "You can import, add and create new VMs using corresponding toolbar buttons. "
+                                  "You can popup a tools of currently selected element using corresponding element button.</p>"
+                                  "<p>You can press the <b>%1</b> key to get instant help, or visit "
+                                  "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+                                  "for more information and latest news.</p>")
+                                  .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
 }
 
 void UIWelcomePane::sltHandleLinkActivated(const QString &strLink)
@@ -184,38 +176,35 @@ void UIWelcomePane::prepare()
     /* Prepare default welcome icon: */
     m_icon = UIIconPool::iconSet(":/tools_banner_global_200px.png");
 
-    /* Create main layout: */
+    /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create welcome layout: */
+        /* Prepare welcome layout: */
         QHBoxLayout *pLayoutWelcome = new QHBoxLayout;
         if (pLayoutWelcome)
         {
-            /* Configure layout: */
             const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
             pLayoutWelcome->setContentsMargins(iL, 0, 0, 0);
 
-            /* Create welcome text label: */
-            m_pLabelText = new UIWrappableLabel;
-            if (m_pLabelText)
+            /* Prepare greetings label: */
+            m_pLabelGreetings = new UIWrappableLabel(this);
+            if (m_pLabelGreetings)
             {
-                /* Configure label: */
-                m_pLabelText->setWordWrap(true);
-                m_pLabelText->setMinimumWidth(160); /// @todo make dynamic
-                m_pLabelText->setAlignment(Qt::AlignLeading | Qt::AlignTop);
-                m_pLabelText->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-                connect(m_pLabelText, &QLabel::linkActivated, this, &UIWelcomePane::sltHandleLinkActivated);
+                m_pLabelGreetings->setWordWrap(true);
+                m_pLabelGreetings->setMinimumWidth(160); /// @todo make dynamic
+                m_pLabelGreetings->setAlignment(Qt::AlignLeading | Qt::AlignTop);
+                m_pLabelGreetings->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+                connect(m_pLabelGreetings, &QLabel::linkActivated, this, &UIWelcomePane::sltHandleLinkActivated);
 
                 /* Add into layout: */
-                pLayoutWelcome->addWidget(m_pLabelText);
+                pLayoutWelcome->addWidget(m_pLabelGreetings);
             }
 
-            /* Create welcome picture label: */
-            m_pLabelIcon = new QLabel;
+            /* Prepare icon label: */
+            m_pLabelIcon = new QLabel(this);
             if (m_pLabelIcon)
             {
-                /* Configure label: */
                 m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
                 /* Add into layout: */
@@ -231,6 +220,7 @@ void UIWelcomePane::prepare()
         pMainLayout->addStretch();
     }
 
+    /* Assign Help keyword: */
     uiCommon().setHelpKeyword(this, "intro-starting");
 
     /* Translate finally: */
@@ -244,10 +234,12 @@ void UIWelcomePane::updatePixmap()
     /* Assign corresponding icon: */
     if (!m_icon.isNull())
     {
+        /* Check which size goes as the default one: */
         const QList<QSize> sizes = m_icon.availableSizes();
-        const QSize firstOne = sizes.isEmpty() ? QSize(200, 200) : sizes.first();
-        const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
-        m_pLabelIcon->setPixmap(m_icon.pixmap(QSize(firstOne.width(), firstOne.height()), fDevicePixelRatio));
+        const QSize defaultSize = sizes.isEmpty() ? QSize(200, 200) : sizes.first();
+        /* Acquire device-pixel ratio: */
+        const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(this);
+        m_pLabelIcon->setPixmap(m_icon.pixmap(defaultSize, fDevicePixelRatio));
     }
 }
 

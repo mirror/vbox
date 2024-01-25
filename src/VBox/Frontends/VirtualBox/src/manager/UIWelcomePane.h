@@ -75,8 +75,8 @@ private:
     /** Holds the icon instance. */
     QIcon  m_icon;
 
-    /** Holds the text label instance. */
-    QLabel *m_pLabelText;
+    /** Holds the greetings label instance. */
+    QLabel *m_pLabelGreetings;
     /** Holds the icon label instance. */
     QLabel *m_pLabelIcon;
 };
