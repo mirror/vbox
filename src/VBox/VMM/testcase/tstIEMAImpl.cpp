@@ -797,6 +797,7 @@ static RTPBCD80U RandD80Src(uint32_t iTest)
     return d80;
 }
 
+# if 0 /* unused */
 
 static const char *GenFormatR80(PCRTFLOAT80U plrd)
 {
@@ -864,12 +865,12 @@ static const char *GenFormatI64(int64_t i64)
     return pszBuf;
 }
 
-#if 0 /* unused */
+#  if 0 /* unused */
 static const char *GenFormatI64(int64_t const *pi64)
 {
     return GenFormatI64(*pi64);
 }
-#endif
+#  endif
 
 static const char *GenFormatI32(int32_t i32)
 {
@@ -992,6 +993,7 @@ static void GenerateArrayEnd(PRTSTREAM pOut, const char *pszName)
                  pszName, pszName);
 }
 
+# endif  /* unused */
 
 static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName)
 {
