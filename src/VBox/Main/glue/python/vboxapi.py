@@ -347,7 +347,7 @@ class PlatformBase(object):
         """
         Returns the COM status code from the VBox API given exception.
         """
-        raise AttributeError
+        return None
 
     def xcptIsDeadInterface(self, _oXcpt):
         """
@@ -366,7 +366,7 @@ class PlatformBase(object):
         Will not raise any exception as long as hrStatus and self are not bad.
         """
         try:
-            hrXcpt = self.xcptGetStatus(oXcpt)
+            hrXcpt = self.xcptGetStatus(oXcpt) # pylint: disable=assignment-from-none
         except AttributeError:
             return False
         if hrXcpt == hrStatus:
