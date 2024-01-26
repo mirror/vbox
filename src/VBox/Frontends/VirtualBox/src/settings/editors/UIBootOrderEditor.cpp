@@ -348,22 +348,10 @@ QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int iRow)
 
 UIBootItemDataList UIBootDataTools::loadBootItems(const CMachine &comMachine)
 {
-    /* Gather a list of all possible boot items.
-     * Currently, it seems, we are supporting only 4 possible boot device types:
-     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
-     * But maximum boot devices count supported by machine should be retrieved
-     * through the ISystemProperties getter.  Moreover, possible boot device
-     * types are not listed in some separate Main vector, so we should get them
-     * (randomely?) from the list of all device types.  Until there will be a
-     * separate Main getter for list of supported boot device types, this list
-     * will be hard-coded here... */
-    QVector<KDeviceType> possibleBootItems = QVector<KDeviceType>() << KDeviceType_Floppy
-                                                                    << KDeviceType_DVD
-                                                                    << KDeviceType_HardDisk
-                                                                    << KDeviceType_Network;
     CPlatform comPlatform = comMachine.GetPlatform();
     const KPlatformArchitecture comArch = comPlatform.GetArchitecture();
     const CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(comArch);
+    QVector<KDeviceType> possibleBootItems = comProperties.GetSupportedBootDevices();
     const int iPossibleBootListSize = qMin((ULONG)4, comProperties.GetMaxBootPosition());
     possibleBootItems.resize(iPossibleBootListSize);
 
