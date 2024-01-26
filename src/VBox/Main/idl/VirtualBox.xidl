@@ -7344,8 +7344,8 @@
     <const name="NotSet"            value="0">
       <desc>
         Has not yet been set (try again later), for reading the actual used execution
-        engine from <link to="IMachineDebugger::VMExecutionEngine"/>.
-        This can not be set through <link to="IMachine::executionEngine"/>.
+        engine from <link to="IMachineDebugger::executionEngine"/>.
+        This can not be set through <link to="IMachine::VMExecutionEngine"/>.
       </desc>
     </const>
     <const name="Default"           value="1">
