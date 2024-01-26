@@ -572,7 +572,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataFpuOther-ftst_r80.bin.gz \
 	tstIEMAImplDataFpuOther-fxam_r80.bin.gz \
 	tstIEMAImplDataFpuOther-fxtract_r80_r80.bin.gz \
-       \
+	\
 	tstIEMAImplDataSseBinary-addps_u128.bin.gz \
 	tstIEMAImplDataSseBinary-mulps_u128.bin.gz \
 	tstIEMAImplDataSseBinary-subps_u128.bin.gz \
