@@ -1757,16 +1757,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log('Verbose logging for VBoxService not supported for this guest yet');
 
             if fRestartVBoxService:
+                # Wait for VBoxService to start up properly so, we can shut it down again and restart.
+                fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
+                                                vboxcon.AdditionsFacilityStatus_Active);
+                if not fRc:
+                    reporter.log('VBoxService didn\'t startup in time');
+                    return False;
+
                 self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
                 self.oTstDrv.sleep(5);
                 self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
-            else:
-                reporter.testStart('Waiting for VBoxService to get started');
-                fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
-                                                vboxcon.AdditionsFacilityStatus_Active);
-                reporter.testDone();
-                if not fRc:
-                    return False;
+
+        # Wait for VBoxService to start up in any case.
+        reporter.testStart('Waiting for VBoxService to get started');
+        fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
+                                        vboxcon.AdditionsFacilityStatus_Active);
+        reporter.testDone();
+        if not fRc:
+            return False;
 
         #
         # Generate and upload some random files and dirs to the guest.
