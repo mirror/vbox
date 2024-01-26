@@ -120,6 +120,29 @@
       g_abTests_ ## a_Name ## _amd, &g_cbTests_ ## a_Name ## _amd, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_AMD  }
 
+#define ENTRY_BIN_FIX_INTEL(a_Name, a_fEflUndef) ENTRY_BIN_FIX_INTEL_EX(a_Name, a_fEflUndef, 0)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define ENTRY_BIN_FIX_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { RT_XSTR(a_Name) "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
+      g_abTests_ ## a_Name ## _intel, &g_cbTests_ ## a_Name ## _intel, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_INTEL, \
+      RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
+#else
+# define ENTRY_BIN_FIX_INTEL_EX(a_Name, a_fEflUndef, a_uExtra)  ENTRY_BIN_INTEL_EX(a_Name, a_fEflUndef, a_uExtra)
+#endif
+
+#define ENTRY_BIN_FIX_AMD(a_Name, a_fEflUndef)                  ENTRY_BIN_FIX_AMD_EX(a_Name, a_fEflUndef, 0)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define ENTRY_BIN_FIX_AMD_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { RT_XSTR(a_Name) "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
+      g_abTests_ ## a_Name ## _amd, &g_cbTests_ ## a_Name ## _amd, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_AMD, \
+      RT_ELEMENTS(g_aFixedTests_ ## a_Name), g_aFixedTests_ ## a_Name }
+#else
+# define ENTRY_BIN_FIX_AMD_EX(a_Name, a_fEflUndef, a_uExtra)    ENTRY_BIN_AMD_EX(a_Name, a_fEflUndef, a_uExtra)
+#endif
+
+
 #define TYPEDEF_SUBTEST_TYPE(a_TypeName, a_TestType, a_FunctionPtrType) \
     typedef struct a_TypeName \
     { \
@@ -2712,19 +2735,27 @@ static void ShiftTest(void)
  */
 
 /* U8 */
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const MULDIVU8_TEST_T g_aFixedTests_idiv_u8[] =
+{
+    /* efl in, efl out, uDstIn, uDstOut, uSrcIn,  rc */
+    { UINT32_MAX,    0, 0x8000,        0 , 0xc7,  -1 }, /* -32768 / -57 = #DE (574.8771929824...)  */
+    { UINT32_MAX,    0, 0x8000,        0 , 0xdd,  -1 }, /* -32768 / -35 = #DE (936.2285714285...) */
+};
+#endif
 TYPEDEF_SUBTEST_TYPE(INT_MULDIV_U8_T, MULDIVU8_TEST_T, PFNIEMAIMPLMULDIVU8);
 static INT_MULDIV_U8_T g_aMulDivU8[] =
 {
-    ENTRY_BIN_AMD_EX(mul_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
-                                X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_BIN_INTEL_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
-    ENTRY_BIN_AMD_EX(imul_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
-                                X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_BIN_INTEL_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
-    ENTRY_BIN_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_BIN_INTEL_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_BIN_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_BIN_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_AMD_EX(mul_u8,        X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                                    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_BIN_INTEL_EX(mul_u8,      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_BIN_AMD_EX(imul_u8,       X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                                    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_BIN_INTEL_EX(imul_u8,     X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_BIN_AMD_EX(div_u8,        X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_INTEL_EX(div_u8,      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_FIX_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_BIN_FIX_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
@@ -2746,6 +2777,18 @@ static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNa
             Test.uDstIn    = RandU16Dst(iTest);
             Test.uDstOut   = Test.uDstIn;
             Test.uSrcIn    = RandU8Src(iTest);
+            Test.rc        = g_aMulDivU8[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test));
+        }
+        for (uint32_t iTest = 0; iTest < g_aMulDivU8[iFn].cFixedTests; iTest++)
+        {
+            MULDIVU8_TEST_T Test;
+            Test.fEflIn    = g_aMulDivU8[iFn].paFixedTests[iTest].fEflIn == UINT32_MAX ? RandEFlags()
+                           : g_aMulDivU8[iFn].paFixedTests[iTest].fEflIn;
+            Test.fEflOut   = Test.fEflIn;
+            Test.uDstIn    = g_aMulDivU8[iFn].paFixedTests[iTest].uDstIn;
+            Test.uDstOut   = Test.uDstIn;
+            Test.uSrcIn    = g_aMulDivU8[iFn].paFixedTests[iTest].uSrcIn;
             Test.rc        = g_aMulDivU8[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
             GenerateBinaryWrite(&BinOut, &Test, sizeof(Test));
         }
@@ -2834,6 +2877,8 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
 #endif
 
 #define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
+/** @todo fixed tests like u8 with INT16_MIN, INT32_MIN & INT64_MIN and \
+ *        divisors. */ \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLMULDIVU ## a_cBits); \
 static a_SubTestType a_aSubTests [] = \
 { \
