@@ -1381,7 +1381,9 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
             {
                 VMExecutionEngine_Default,
 #ifdef RT_ARCH_AMD64
+# ifndef VBOX_WITH_DRIVERLESS_FORCED
                 VMExecutionEngine_HwVirt,
+# endif
 # ifdef VBOX_WITH_NATIVE_NEM
                 VMExecutionEngine_NativeApi,
 # endif
