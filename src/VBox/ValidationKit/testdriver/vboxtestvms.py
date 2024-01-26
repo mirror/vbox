@@ -1880,6 +1880,8 @@ class TestVmSet(object):
         """
         Removes unsupported virtualization modes for the given VM.
         """
+
+        # pylint: disable=line-too-long
         if oTestDrv.fpApiVer >= 7.1:
             enmCpuArch = None;
             if oVm.sPlatformArchitecture == 'x86':
@@ -1940,6 +1942,7 @@ class TestVmSet(object):
                 reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
                 asVirtModesWanted.remove('raw');
 
+        # pylint: enable=line-too-long
         return asVirtModesWanted;
 
     def actionExecute(self, oTestDrv, fnCallback): # pylint: disable=too-many-locals
