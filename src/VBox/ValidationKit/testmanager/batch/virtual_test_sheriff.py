@@ -658,10 +658,12 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_DiskFull                             = ( 'Host',              'Host disk full' );
     ktReason_Host_DoubleFreeHeap                       = ( 'Host',              'Double free or corruption' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
-    ktReason_Host_win32com_gen_py                      = ( 'Host',              'win32com.gen_py' );
+    ktReason_Host_win32com_gen_py_not_found            = ( 'Host',              'win32com.gen_py not found' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
     ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
+    ktReason_Host_Python_vboxapi_not_found             = ( 'Host',              'Python API (vboxapi) not found' );
+    ktReason_Host_Python_xpcom_not_found               = ( 'Host',              'Python API (xpcom) not found' );
     ktReason_Host_TSTInfo_Accuracy_OOR                 = ( 'Host',              'TSTInfo accuracy out of range' );
     ktReason_Host_UninstallationFailed                 = ( 'Host',              'Uninstallation failed' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
@@ -1130,8 +1132,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ## This we search a main log for to figure out why something went bust.
     katSimpleMainLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
-        ( False, ktReason_Host_win32com_gen_py,                     'ModuleNotFoundError: No module named \'win32com.gen_py' ),
-
+        ( False, ktReason_Host_win32com_gen_py_not_found,           'ModuleNotFoundError: No module named \'win32com.gen_py' ),
+        ( False, ktReason_Host_Python_vboxapi_not_found,            'ImportError: No module named vboxapi' ),
+        ( False, ktReason_Host_Python_xpcom_not_found,              'ImportError: No module named xpcom' ),
     ];
 
     ## This we search a VM log  for to figure out why something went bust.
@@ -1644,10 +1647,21 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
 
         #
+        # Python bindings installation problem.
+        #
+        if sMainLog.find('ImportError: No module named vboxapi') > 0:
+            oCaseFile.noteReason(self.ktReason_Host_Python_vboxapi_not_found);
+            return self.caseClosed(oCaseFile);
+
+        if sMainLog.find('ImportError: No module named xpcom') > 0:
+            oCaseFile.noteReason(self.ktReason_Host_Python_xpcom_not_found);
+            return self.caseClosed(oCaseFile);
+
+        #
         # Windows python/com screwup.
         #
         if sMainLog.find('ModuleNotFoundError: No module named \'win32com.gen_py') > 0:
-            oCaseFile.noteReason(self.ktReason_Host_win32com_gen_py);
+            oCaseFile.noteReason(self.ktReason_Host_win32com_gen_py_not_found);
             return self.caseClosed(oCaseFile);
 
         #
