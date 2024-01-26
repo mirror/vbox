@@ -1485,6 +1485,7 @@ struct MachineUserData
     com::Utf8Str            strTeleporterPassword;
     IconBlob                ovIcon;
     VMProcPriority_T        enmVMPriority;
+    VMExecutionEngine_T     enmExecEngine;
 };
 
 
