@@ -70,18 +70,6 @@ class IemTestVm(vboxtestvms.BootSectorTestVm):
                                               asVirtModesSup,
                                               f64BitRequired);
 
-    def _childVmReconfig(self, oTestDrv, oVM, oSession):
-        _ = oTestDrv;
-
-        fRc = oSession.setExtraData('VBoxInternal/EM/IemExecutesAll', '1');
-        if fRc:
-            if oVM.platform.x86.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging):
-                fRc = oSession.setExtraData('VBoxInternal/EM/IemRecompiled', '1');
-            else:
-                fRc = oSession.setExtraData('VBoxInternal/EM/IemRecompiled', '0');
-
-        return fRc;
-
 class tdCpuIemInstr1(vbox.TestDriver):
     """
     CPU IEM instruction testcase #1.
@@ -90,14 +78,8 @@ class tdCpuIemInstr1(vbox.TestDriver):
     def __init__(self):
         vbox.TestDriver.__init__(self);
 
-        #
-        # There is no official IEM support in the virt modes yet, so hwvirt is interpreted IEM
-        # and hwvirt-np is recompiled IEM for now (gets configured in the IemTestVm class).
-        #
-        asVirtModesSup = [ 'hwvirt', 'hwvirt-np' ];
-
         kaTestVMs = (
-            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-2', asVirtModesSup),
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-2'),
 
             # @todo r=aeichner Image can not be found (probably it is too large for a floppy weighing in at 16MiB)
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3', asVirtModesSup),
@@ -108,14 +90,14 @@ class tdCpuIemInstr1(vbox.TestDriver):
             # @todo r=aeichner Fails and hangs in 'lm64' / aaa
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-generated-1', asVirtModesSup),
 
-            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-2', asVirtModesSup),
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-2'),
 
             # @todo r=aeichner Fails with IEM currently.
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-3' asVirtModesSup),
 
-            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-state64-1', asVirtModesSup),
-            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1', asVirtModesSup),
-            IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1', asVirtModesSup)
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-state64-1'),
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1'),
+            IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1')
         );
 
         for oTestVm in kaTestVMs:
