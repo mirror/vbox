@@ -3025,7 +3025,6 @@ static void MulDivU ## a_cBits ## Test(void) \
                     || uDst2 != paTests[iTest].uDst2Out \
                     || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)\
                     || rc    != paTests[iTest].rc) \
-                { __debugbreak(); \
                     RTTestFailed(g_hTest, "#%04u%s: efl=%#010x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
                                            "      -> efl=%#010x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
                                            "    expected %#010x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
@@ -3036,7 +3035,6 @@ static void MulDivU ## a_cBits ## Test(void) \
                                  EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn), \
                                  uDst1 != paTests[iTest].uDst1Out ? " dst1" : "", uDst2 != paTests[iTest].uDst2Out ? " dst2" : "", \
                                  (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn) ? " eflags" : ""); \
-                } \
                 else \
                 { \
                      *g_pu ## a_cBits        = paTests[iTest].uDst1In; \
