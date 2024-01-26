@@ -1509,8 +1509,11 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
     QString strExecutionEngine;
     switch (enmEngine)
     {
-        case KVMExecutionEngine_Emulated:
-            strExecutionEngine = "IEM";         /* no translation */
+        case KVMExecutionEngine_Interpreter:
+            strExecutionEngine = "IEM (Interpreter)"; /* no translation */
+            break;
+        case KVMExecutionEngine_Recompiler:
+            strExecutionEngine = "IEM (Recompiler)"; /* no translation */
             break;
         case KVMExecutionEngine_HwVirt:
             strExecutionEngine = "VT-x/AMD-V";  /* no translation */

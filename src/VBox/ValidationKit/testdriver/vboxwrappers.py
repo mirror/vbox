@@ -2785,6 +2785,18 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def setExecutionEngine(self, iVmExecEngine):
+        """
+        Sets a VM execution engine.
+        Returns the True on success, False on failure (logged).
+        """
+        try:
+            self.o.machine.VMExecutionEngine = iVmExecEngine;
+        except:
+            reporter.errorXcpt('Unable to set VM execution engine "%s"' % (iVmExecEngine,))
+            return False;
+        return True;
+
     #
     # IConsole wrappers.
     #

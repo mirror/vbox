@@ -742,7 +742,8 @@ public:
          * might want to get something different for KVMExecutionEngine_Emulated or reuse the
          * vm_execution_engine_native_api_16px.png one... @bugref{9898} */
         setStateIcon(KVMExecutionEngine_NotSet, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
-        setStateIcon(KVMExecutionEngine_Emulated, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(KVMExecutionEngine_Interpreter, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(KVMExecutionEngine_Recompiler, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
         /* Configure connection: */

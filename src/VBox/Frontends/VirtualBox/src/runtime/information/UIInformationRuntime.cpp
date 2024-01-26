@@ -365,13 +365,16 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
     switch (enmExecutionEngineType)
     {
         case KVMExecutionEngine_HwVirt:
-            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+            strExecutionEngine = "VT-x/AMD-V";        /* no translation */
             break;
-        case KVMExecutionEngine_Emulated:
-            strExecutionEngine = "IEM";         /* no translation */
+        case KVMExecutionEngine_Interpreter:
+            strExecutionEngine = "IEM (Interpreter)"; /* no translation */
+            break;
+        case KVMExecutionEngine_Recompiler:
+            strExecutionEngine = "IEM (Recompiler)";  /* no translation */
             break;
         case KVMExecutionEngine_NativeApi:
-            strExecutionEngine = "native API";  /* no translation */
+            strExecutionEngine = "native API";        /* no translation */
             break;
         default:
             AssertFailed();

@@ -434,9 +434,18 @@ HRESULT MachineDebugger::getExecutionEngine(VMExecutionEngine_T *apenmEngine)
             switch (bEngine)
             {
                 case VM_EXEC_ENGINE_NOT_SET:    *apenmEngine = VMExecutionEngine_NotSet; break;
-                case VM_EXEC_ENGINE_IEM:        *apenmEngine = VMExecutionEngine_Emulated; break;
                 case VM_EXEC_ENGINE_HW_VIRT:    *apenmEngine = VMExecutionEngine_HwVirt; break;
                 case VM_EXEC_ENGINE_NATIVE_API: *apenmEngine = VMExecutionEngine_NativeApi; break;
+                case VM_EXEC_ENGINE_IEM:
+                {
+                    bool fForced = false;
+                    vrc = ptrVM.vtable()->pfnEMR3QueryExecutionPolicy(ptrVM.rawUVM(), EMEXECPOLICY_IEM_RECOMPILED, &fForced);
+                    if (RT_SUCCESS(vrc) && fForced)
+                        *apenmEngine = VMExecutionEngine_Recompiler;
+                    else
+                        *apenmEngine = VMExecutionEngine_Interpreter;
+                    break;
+                }
                 default: AssertMsgFailed(("bEngine=%d\n", bEngine));
             }
     }

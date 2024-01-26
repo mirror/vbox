@@ -274,6 +274,15 @@ time on documenting it. -->
           <arg choice="plain">normal</arg>
           <arg choice="plain">high</arg>
         </group></arg>
+      <arg>--vm-execution-engine=<group choice="plain">
+          <arg choice="plain">default</arg>
+          <arg choice="plain">hm</arg>
+          <arg choice="plain">hwvirt</arg>
+          <arg choice="plain">nem</arg>
+          <arg choice="plain">native-api</arg>
+          <arg choice="plain">interpreter</arg>
+          <arg choice="plain">recompiler</arg>
+        </group></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-networking">

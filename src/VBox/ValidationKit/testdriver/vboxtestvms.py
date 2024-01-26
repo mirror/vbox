@@ -56,15 +56,16 @@ from testdriver import vboxcon;
 
 
 # All virtualization modes.
-g_asVirtModes      = ['hwvirt', 'hwvirt-np', 'raw',];
-# All virtualization modes except for raw-mode.
-g_asVirtModesNoRaw = ['hwvirt', 'hwvirt-np',];
+g_asVirtModes      = ['hwvirt', 'hwvirt-np', 'raw', 'native-api', 'interpreter', 'recompiler'];
 # Dictionary mapping the virtualization mode mnemonics to a little less cryptic
 # strings used in test descriptions.
 g_dsVirtModeDescs  = {
-    'raw'       : 'Raw-mode',
-    'hwvirt'    : 'HwVirt',
-    'hwvirt-np' : 'NestedPaging'
+    'raw'         : 'Raw-mode',
+    'hwvirt'      : 'HwVirt',
+    'hwvirt-np'   : 'NestedPaging',
+    'native-api'  : 'NativeApi',
+    'interpreter' : 'Interpreter',
+    'recompiler'  : 'Recompiler'
 };
 
 ## @name VM grouping flags
@@ -551,7 +552,18 @@ class BaseTestVm(object):
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
-                        fRc =         oSession.enableVirtExX86(sVirtMode != 'raw');
+                        if oSession.fpApiVer >= 7.1:
+                            adVmExecEngines = {
+                                'hwvirt'                   : vboxcon.VMExecutionEngine_HwVirt,
+                                'hwvirt-np'                : vboxcon.VMExecutionEngine_HwVirt,
+                                'native-api'               : vboxcon.VMExecutionEngine_NativeApi,
+                                'interpreter'              : vboxcon.VMExecutionEngine_Interpreter,
+                                'recompiler'               : vboxcon.VMExecutionEngine_Recompiler,
+                            };
+                            fRc = oSession.setExecutionEngine(adVmExecEngines[sVirtMode]);
+                        else:
+                            fRc = oSession.enableVirtExX86(sVirtMode != 'raw');
+
                         fRc = fRc and oSession.enableNestedPagingX86(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
                         if cCpus > 1:
@@ -1271,7 +1283,18 @@ class TestVm(object):
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
-                        fRc =         oSession.enableVirtExX86(sVirtMode != 'raw');
+                        if oSession.fpApiVer >= 7.1:
+                            adVmExecEngines = {
+                                'hwvirt'                   : vboxcon.VMExecutionEngine_HwVirt,
+                                'hwvirt-np'                : vboxcon.VMExecutionEngine_HwVirt,
+                                'native-api'               : vboxcon.VMExecutionEngine_NativeApi,
+                                'interpreter'              : vboxcon.VMExecutionEngine_Interpreter,
+                                'recompiler'               : vboxcon.VMExecutionEngine_Recompiler,
+                            };
+                            fRc = oSession.setExecutionEngine(adVmExecEngines[sVirtMode]);
+                        else:
+                            fRc = oSession.enableVirtExX86(sVirtMode != 'raw');
+
                         fRc = fRc and oSession.enableNestedPagingX86(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
                         if cCpus > 1:
@@ -1853,23 +1876,71 @@ class TestVmSet(object):
 
         return True;
 
-    def _removeUnsupportedVirtModes(self, oTestDrv):
+    def _removeUnsupportedVirtModes(self, oTestDrv, oVm, asVirtModesWanted):
         """
-        Removes unsupported virtualization modes.
+        Removes unsupported virtualization modes for the given VM.
         """
-        if 'hwvirt' in self.asVirtModes and not oTestDrv.hasHostHwVirt():
-            reporter.log('Hardware assisted virtualization is not available on the host, skipping it.');
-            self.asVirtModes.remove('hwvirt');
+        if oTestDrv.fpApiVer >= 7.1:
+            enmCpuArch = None;
+            if oVm.sPlatformArchitecture == 'x86':
+                if oVm.is64bitRequired():
+                    enmCpuArch = vboxcon.CPUArchitecture_AMD64;
+                else:
+                    enmCpuArch = vboxcon.CPUArchitecture_x86;
+            elif oVm.sPlatformArchitecture == 'ARM':
+                if oVm.is64bitRequired():
+                    enmCpuArch = vboxcon.CPUArchitecture_ARMv8_64;
+                else:
+                    enmCpuArch = vboxcon.CPUArchitecture_ARMv8_32;
 
-        if 'hwvirt-np' in self.asVirtModes and not oTestDrv.hasHostNestedPaging():
-            reporter.log('Nested paging not supported by the host, skipping it.');
-            self.asVirtModes.remove('hwvirt-np');
+            try:
+                aenmExecEngines = oTestDrv.oVBox.systemProperties.getExecutionEnginesForVmCpuArchitecture(enmCpuArch);
 
-        if 'raw' in self.asVirtModes and not oTestDrv.hasRawModeSupport():
-            reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
-            self.asVirtModes.remove('raw');
+                if 'raw' in asVirtModesWanted and not oTestDrv.hasRawModeSupport():
+                    reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
+                    asVirtModesWanted.remove('raw');
 
-        return True;
+                if 'hwvirt' in asVirtModesWanted and not vboxcon.VMExecutionEngine_HwVirt in aenmExecEngines:
+                    reporter.log('Hardware assisted virtualization is not available on the host, skipping it.');
+                    asVirtModesWanted.remove('hwvirt');
+
+                if 'hwvirt-np' in asVirtModesWanted and (   not vboxcon.VMExecutionEngine_HwVirt in aenmExecEngines \
+                                                         or not oTestDrv.hasHostNestedPaging()):
+                    reporter.log('Nested paging not supported by the host, skipping it.');
+                    asVirtModesWanted.remove('hwvirt-np');
+
+                if 'native-api' in asVirtModesWanted and not vboxcon.VMExecutionEngine_NativeApi in aenmExecEngines:
+                    reporter.log('Native API (aka NEM) virtualization is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
+                    asVirtModesWanted.remove('native-api');
+
+                if 'interpreter' in asVirtModesWanted and not vboxcon.VMExecutionEngine_Interpreter in aenmExecEngines:
+                    reporter.log('IEM interpreter is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
+                    asVirtModesWanted.remove('iem-interpreted');
+
+                if 'recompiler' in asVirtModesWanted and not vboxcon.VMExecutionEngine_Recompiler in aenmExecEngines:
+                    reporter.log('IEM recompiler is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
+                    asVirtModesWanted.remove('iem-recompiled');
+            except:
+                reporter.errorXcpt('failed to query supported execution engines for "%s"' % (oVm.sVmName, ));
+                asVirtModesWanted = [];
+        else:
+            asVirtModesWanted.remove('native-api');
+            asVirtModesWanted.remove('interpreter');
+            asVirtModesWanted.remove('recompiler');
+
+            if 'hwvirt' in asVirtModesWanted and not oTestDrv.hasHostHwVirt():
+                reporter.log('Hardware assisted virtualization is not available on the host, skipping it.');
+                asVirtModesWanted.remove('hwvirt');
+
+            if 'hwvirt-np' in asVirtModesWanted and not oTestDrv.hasHostNestedPaging():
+                reporter.log('Nested paging not supported by the host, skipping it.');
+                asVirtModesWanted.remove('hwvirt-np');
+
+            if 'raw' in asVirtModesWanted and not oTestDrv.hasRawModeSupport():
+                reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
+                asVirtModesWanted.remove('raw');
+
+        return asVirtModesWanted;
 
     def actionExecute(self, oTestDrv, fnCallback): # pylint: disable=too-many-locals
         """
@@ -1883,7 +1954,6 @@ class TestVmSet(object):
         test is skipped.  (True is for success, False is for failure.)
         """
 
-        self._removeUnsupportedVirtModes(oTestDrv);
         cMaxCpus = oTestDrv.getHostCpuCount();
 
         #
@@ -1901,6 +1971,9 @@ class TestVmSet(object):
 
             # Intersect the supported modes and the ones being testing.
             asVirtModesSup = [sMode for sMode in oTestVm.asVirtModesSup if sMode in self.asVirtModes];
+
+            # Filter out what the host doesn't support.
+            asVirtModesSup = self._removeUnsupportedVirtModes(oTestDrv, oTestVm, asVirtModesSup);
 
             # Ditto for CPUs.
             acCpusSup      = [cCpus for cCpus in oTestVm.acCpusSup      if cCpus in self.acCpus];

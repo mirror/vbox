@@ -310,6 +310,7 @@ public:
         ULONG               mCpuExecutionCap;
         uint32_t            mCpuIdPortabilityLevel;
         Utf8Str             mCpuProfile;
+        VMExecutionEngine_T mExecEngine;
 
         BOOL                mCPUAttached[SchemaDefs::MaxCPUCount];
 
@@ -1026,6 +1027,8 @@ private:
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
     HRESULT getVMProcessPriority(VMProcPriority_T *aVMProcessPriority);
     HRESULT setVMProcessPriority(VMProcPriority_T aVMProcessPriority);
+    HRESULT getVMExecutionEngine(VMExecutionEngine_T *aVMExecutionEngine);
+    HRESULT setVMExecutionEngine(VMExecutionEngine_T aVMExecutionEngine);
     HRESULT getStateKeyId(com::Utf8Str &aKeyId);
     HRESULT getStateKeyStore(com::Utf8Str &aKeyStore);
     HRESULT getLogKeyId(com::Utf8Str &aKeyId);

@@ -6716,6 +6716,31 @@ HRESULT Machine::setVMProcessPriority(VMProcPriority_T aVMProcessPriority)
     return hrc;
 }
 
+HRESULT Machine::getVMExecutionEngine(VMExecutionEngine_T *aVMExecutionEngine)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aVMExecutionEngine = mUserData->s.enmExecEngine;
+
+    return S_OK;
+}
+
+HRESULT Machine::setVMExecutionEngine(VMExecutionEngine_T aVMExecutionEngine)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_checkStateDependency(MutableOrSavedStateDep);
+    if (SUCCEEDED(hrc))
+    {
+        hrc = mUserData.backupEx();
+        if (SUCCEEDED(hrc))
+        {
+            i_setModified(IsModified_MachineData);
+            mUserData->s.enmExecEngine = aVMExecutionEngine;
+        }
+    }
+    return hrc;
+}
+
 HRESULT Machine::cloneTo(const ComPtr<IMachine> &aTarget, CloneMode_T aMode, const std::vector<CloneOptions_T> &aOptions,
                          ComPtr<IProgress> &aProgress)
 {

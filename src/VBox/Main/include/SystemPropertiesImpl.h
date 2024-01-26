@@ -150,6 +150,8 @@ private:
                                                          BOOL *aEnabled) RT_OVERRIDE;
     HRESULT getCPUProfiles(CPUArchitecture_T aArchitecture, const com::Utf8Str &aNamePattern,
                            std::vector<ComPtr<ICPUProfile> > &aProfiles) RT_OVERRIDE;
+    HRESULT getExecutionEnginesForVmCpuArchitecture(CPUArchitecture_T aCpuArchitecture,
+                                                    std::vector<VMExecutionEngine_T> &aExecutionEngines) RT_OVERRIDE;
 
     HRESULT i_getUserHomeDirectory(Utf8Str &strPath);
     HRESULT i_setDefaultMachineFolder(const Utf8Str &strPath);

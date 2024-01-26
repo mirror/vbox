@@ -158,6 +158,16 @@
   </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:simpleType name="TVMExecEngine">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Default"/>
+    <xsd:enumeration value="HwVirt"/>
+    <xsd:enumeration value="NativeApi"/>
+    <xsd:enumeration value="Interpreter"/>
+    <xsd:enumeration value="Recompiler"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
 <xsd:simpleType name="TMonitorCount">
   <xsd:restriction base="xsd:unsignedInt">
     <xsd:minInclusive value="1"/>
@@ -1588,6 +1598,7 @@
   <xsd:attribute name="currentStateModified" type="xsd:boolean" default="true"/>
   <xsd:attribute name="version" type="xsd:string" default="1.15"/> <!-- Used for OVF files only, must not be present in normal settings files. The default corresponds to settings created by 5.0, which covers many older versions but not newer ones. -->
   <xsd:attribute name="VMProcessPriority" type="TVMProcPriority"/>
+  <xsd:attribute name="executionEngine" type="TVMExecEngine"/> <!-- new since v1.20. -->
 </xsd:complexType>
 
 <xsd:complexType name="TSnapshot">

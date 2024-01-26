@@ -241,6 +241,7 @@ enum
 #endif
     MODIFYVM_DEFAULTFRONTEND,
     MODIFYVM_VMPROC_PRIORITY,
+    MODIFYVM_VMEXEC_ENGINE,
     MODIFYVM_TESTING_ENABLED,
     MODIFYVM_TESTING_MMIO,
     MODIFYVM_TESTING_CFG_DWORD,
@@ -476,6 +477,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #endif
     OPT2("--default-frontend",              "--defaultfrontend",        MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING),
     OPT1("--vm-process-priority",                                       MODIFYVM_VMPROC_PRIORITY,           RTGETOPT_REQ_STRING),
+    OPT1("--vm-execution-engine",                                       MODIFYVM_VMEXEC_ENGINE,             RTGETOPT_REQ_STRING),
     OPT1("--testing-enabled",                                           MODIFYVM_TESTING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--testing-mmio",                                              MODIFYVM_TESTING_MMIO,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--testing-cfg-dword",                                         MODIFYVM_TESTING_CFG_DWORD,         RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX),
@@ -671,6 +673,24 @@ VMProcPriority_T nameToVMProcPriority(const char *pszName)
         return VMProcPriority_High;
 
     return VMProcPriority_Invalid;
+}
+
+static VMExecutionEngine_T nameToVMExecEngine(const char *pszName)
+{
+    if (!RTStrICmp(pszName, "default"))
+        return VMExecutionEngine_Default;
+    if (   !RTStrICmp(pszName, "hwvirt")
+        || !RTStrICmp(pszName, "hm"))
+        return VMExecutionEngine_HwVirt;
+    if (   !RTStrICmp(pszName, "nem")
+        || !RTStrICmp(pszName, "native-api"))
+        return VMExecutionEngine_NativeApi;
+    if (!RTStrICmp(pszName, "interpreter"))
+        return VMExecutionEngine_Interpreter;
+    if (   !RTStrICmp(pszName, "recompiler"))
+        return VMExecutionEngine_Recompiler;
+
+    return VMExecutionEngine_NotSet;
 }
 
 /**
@@ -3608,6 +3628,21 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     CHECK_ERROR(sessionMachine, COMSETTER(VMProcessPriority)(enmPriority));
+                }
+                break;
+            }
+
+            case MODIFYVM_VMEXEC_ENGINE:
+            {
+                VMExecutionEngine_T enmExecEngine = nameToVMExecEngine(ValueUnion.psz);
+                if (enmExecEngine == VMExecutionEngine_NotSet)
+                {
+                    errorArgument(ModifyVM::tr("Invalid --vm-execution-engine '%s'"), ValueUnion.psz);
+                    hrc = E_FAIL;
+                }
+                else
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(VMExecutionEngine)(enmExecEngine));
                 }
                 break;
             }

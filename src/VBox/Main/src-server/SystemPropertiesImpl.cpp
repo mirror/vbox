@@ -1369,6 +1369,63 @@ HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverTy
     return S_OK;
 }
 
+HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitecture_T aCpuArchitecture,
+                                                                  std::vector<VMExecutionEngine_T> &aExecutionEngines)
+{
+    switch (aCpuArchitecture)
+    {
+        case CPUArchitecture_x86:
+        case CPUArchitecture_AMD64:
+        {
+            static const VMExecutionEngine_T aExecEngines[] =
+            {
+                VMExecutionEngine_Default,
+#ifdef RT_ARCH_AMD64
+                VMExecutionEngine_HwVirt,
+# ifdef VBOX_WITH_NATIVE_NEM
+                VMExecutionEngine_NativeApi,
+# endif
+#endif
+                VMExecutionEngine_Interpreter,
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+                VMExecutionEngine_Recompiler,
+#endif
+            };
+            aExecutionEngines.assign(aExecEngines,
+                                     aExecEngines + RT_ELEMENTS(aExecEngines));
+            break;
+        }
+
+        case CPUArchitecture_ARMv8_32:
+            aExecutionEngines.clear(); /* Currently not supported at all. */
+            break;
+
+        case CPUArchitecture_ARMv8_64:
+        {
+#ifdef VBOX_WITH_VIRT_ARMV8
+            static const VMExecutionEngine_T aExecEngines[] =
+            {
+                VMExecutionEngine_Default,
+# ifdef VBOX_WITH_NATIVE_NEM
+                VMExecutionEngine_NativeApi,
+# endif
+            };
+            aExecutionEngines.assign(aExecEngines,
+                                     aExecEngines + RT_ELEMENTS(aExecEngines));
+#else
+            aExecutionEngines.clear();
+#endif
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aExecutionEngines.clear());
+            break;
+    }
+
+    return S_OK;
+}
+
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////

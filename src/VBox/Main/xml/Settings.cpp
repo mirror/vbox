@@ -4408,7 +4408,8 @@ MachineUserData::MachineUserData() :
     fNameSync(true),
     fTeleporterEnabled(false),
     uTeleporterPort(0),
-    enmVMPriority(VMProcPriority_Default)
+    enmVMPriority(VMProcPriority_Default),
+    enmExecEngine(VMExecutionEngine_Default)
 {
     llGroups.push_back("/");
 }
@@ -4433,7 +4434,8 @@ bool MachineUserData::operator==(const MachineUserData &c) const
             && strTeleporterAddress       == c.strTeleporterAddress
             && strTeleporterPassword      == c.strTeleporterPassword
             && ovIcon                     == c.ovIcon
-            && enmVMPriority              == c.enmVMPriority);
+            && enmVMPriority              == c.enmVMPriority
+            && enmExecEngine              == c.enmExecEngine);
 }
 
 
@@ -7018,6 +7020,23 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             }
         }
 
+        {
+            Utf8Str strExecEngine;
+            if (elmMachine.getAttributeValue("executionEngine", strExecEngine))
+            {
+                if (strExecEngine == "HwVirt")
+                    machineUserData.enmExecEngine = VMExecutionEngine_HwVirt;
+                else if (strExecEngine == "NativeApi")
+                    machineUserData.enmExecEngine = VMExecutionEngine_NativeApi;
+                else if (strExecEngine == "Interpreter")
+                    machineUserData.enmExecEngine = VMExecutionEngine_Interpreter;
+                else if (strExecEngine == "Recompiler")
+                    machineUserData.enmExecEngine = VMExecutionEngine_Recompiler;
+                else
+                    machineUserData.enmExecEngine = VMExecutionEngine_Default;
+            }
+        }
+
         str.setNull();
         elmMachine.getAttributeValue("icon", str);
         parseBase64(machineUserData.ovIcon, str, &elmMachine);
@@ -9205,6 +9224,26 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         default:
             break;
     }
+
+    switch (machineUserData.enmExecEngine)
+    {
+        case VMExecutionEngine_HwVirt:
+            elmMachine.setAttribute("executionEngine", "HwVirt");
+            break;
+        case VMExecutionEngine_NativeApi:
+            elmMachine.setAttribute("executionEngine", "NativeApi");
+            break;
+        case VMExecutionEngine_Interpreter:
+            elmMachine.setAttribute("executionEngine", "Interpreter");
+            break;
+        case VMExecutionEngine_Recompiler:
+            elmMachine.setAttribute("executionEngine", "Recompiler");
+            break;
+        case VMExecutionEngine_Default:
+        default:
+            break;
+    }
+
     // Please keep the icon last so that one doesn't have to check if there
     // is anything in the line after this very long attribute in the XML.
     if (machineUserData.ovIcon.size())
@@ -9484,7 +9523,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 7.1 (settings v1.20) adds support for different VM platforms and the QEMU RAM based framebuffer device.
         if (   (   hardwareMachine.platformSettings.architectureType != PlatformArchitecture_None
                 && hardwareMachine.platformSettings.architectureType != PlatformArchitecture_x86)
-            || hardwareMachine.graphicsAdapter.graphicsControllerType == GraphicsControllerType_QemuRamFB)
+            || hardwareMachine.graphicsAdapter.graphicsControllerType == GraphicsControllerType_QemuRamFB
+            || machineUserData.enmExecEngine != VMExecutionEngine_Default)
         {
             /* Note: The new chipset type ARMv8Virtual implies setting the platform architecture type to ARM. */
             m->sv = SettingsVersion_v1_20;

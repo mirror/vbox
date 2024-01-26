@@ -550,6 +550,9 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     ULONG ulCpuExecutionCap = 100;
     hrc = pMachine->COMGETTER(CPUExecutionCap)(&ulCpuExecutionCap);                         H();
 
+    VMExecutionEngine_T enmExecEngine = VMExecutionEngine_NotSet;
+    hrc = pMachine->COMGETTER(VMExecutionEngine)(&enmExecEngine);                           H();
+
     LogRel(("Guest architecture: x86\n"));
 
     Bstr osTypeId;
@@ -838,6 +841,41 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             }
         }
 
+        /*
+         * Set VM execution engine.
+         */
+        /** @todo: r=aeichner Maybe provide a better VMM API for this instead of the different CFGM knobs. */
+        LogRel(("Using execution engine %u\n", enmExecEngine));
+        switch (enmExecEngine)
+        {
+            case VMExecutionEngine_HwVirt:
+                InsertConfigInteger(pEM, "IemExecutesAll", 0);
+                InsertConfigInteger(pEM, "IemRecompiled",  0);
+                InsertConfigInteger(pHM, "UseNEMInstead",  0);
+                InsertConfigInteger(pHM, "FallbackToNEM",  0);
+                InsertConfigInteger(pHM, "FallbackToIEM",  0);
+                break;
+            case VMExecutionEngine_NativeApi:
+                InsertConfigInteger(pEM, "IemExecutesAll", 0);
+                InsertConfigInteger(pEM, "IemRecompiled",  0);
+                InsertConfigInteger(pHM, "UseNEMInstead",  1);
+                InsertConfigInteger(pHM, "FallbackToNEM",  1);
+                InsertConfigInteger(pHM, "FallbackToIEM",  0);
+                break;
+            case VMExecutionEngine_Interpreter:
+            case VMExecutionEngine_Recompiler:
+                InsertConfigInteger(pEM, "IemExecutesAll", 1);
+                InsertConfigInteger(pEM, "IemRecompiled",  enmExecEngine == VMExecutionEngine_Recompiler);
+                InsertConfigInteger(pHM, "UseNEMInstead",  0);
+                InsertConfigInteger(pHM, "FallbackToNEM",  0);
+                InsertConfigInteger(pHM, "FallbackToIEM",  1);
+                break;
+            case VMExecutionEngine_Default:
+                break; /* Nothing to do, let VMM decide. */
+            default:
+                AssertLogRelFailed();
+        }
+
         /* HWVirtEx exclusive mode */
         BOOL fHMExclusive = true;
         hrc = platformProperties->COMGETTER(ExclusiveHwVirt)(&fHMExclusive);                  H();
@@ -903,10 +941,17 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         if (mfTurnResetIntoPowerOff)
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
 
-        /* Use NEM rather than HM. */
-        BOOL fUseNativeApi = false;
-        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
-        InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
+        /** @todo This is a bit redundant but in order to avoid forcing setting version bumps later on
+         * and don't magically change behavior of old VMs we have to keep this for now. As soon as the user sets
+         * the execution to anything else than Default the execution engine setting takes precedence.
+         */
+        if (enmExecEngine == VMExecutionEngine_Default)
+        {
+            /* Use NEM rather than HM. */
+            BOOL fUseNativeApi = false;
+            hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
+            InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
+        }
 
         /* Enable workaround for missing TLB flush for OS/2 guests, see ticketref:20625. */
         if (fOs2Guest)

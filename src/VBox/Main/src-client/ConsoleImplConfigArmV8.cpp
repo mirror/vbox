@@ -168,6 +168,16 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     ULONG ulCpuExecutionCap = 100;
     hrc = pMachine->COMGETTER(CPUExecutionCap)(&ulCpuExecutionCap);                         H();
 
+    VMExecutionEngine_T enmExecEngine = VMExecutionEngine_NotSet;
+    hrc = pMachine->COMGETTER(VMExecutionEngine)(&enmExecEngine);                           H();
+
+    if (   enmExecEngine != VMExecutionEngine_Default
+        && enmExecEngine != VMExecutionEngine_NativeApi)
+    {
+        return pVMM->pfnVMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                     N_("The ARM backend doesn't support any other execution engine than 'default' or 'native-api' right now."));
+    }
+
     LogRel(("Guest architecture: ARM\n"));
 
     Bstr osTypeId;

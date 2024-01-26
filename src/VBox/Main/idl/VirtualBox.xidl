@@ -7334,9 +7334,43 @@
 
   </interface>
 
+  <enum
+    name="VMExecutionEngine"
+    uuid="69485f52-5cd3-40c9-946f-ae7d5c50798b"
+    >
+    <desc>
+      The main execution engine of a VM.
+    </desc>
+    <const name="NotSet"            value="0">
+      <desc>
+        Has not yet been set (try again later), for reading the actual used execution
+        engine from <link to="IMachineDebugger::executionEngine"/>.
+        This can not be set through <link to="IMachine::executionEngine"/>.
+      </desc>
+    </const>
+    <const name="Default"           value="1">
+      <desc>
+        Use the default/best available option for the host.
+        This will never be returned by <link to="IMachineDebugger::executionEngine"/>.
+      </desc>
+    </const>
+    <const name="HwVirt"            value="2">
+      <desc>Hardware assisted virtualization through HM. Only for x86-based hosts.</desc>
+    </const>
+    <const name="NativeApi"         value="3">
+      <desc>Hardware assisted virtualization thru native API (NEM).</desc>
+    </const>
+    <const name="Interpreter"    value="4">
+      <desc>CPU emulation using the interpreter.</desc>
+    </const>
+    <const name="Recompiler"     value="5">
+      <desc>CPU emulation using the recompiler.</desc>
+    </const>
+  </enum>
+
   <interface
     name="IMachine" extends="$unknown"
-    uuid="8161d51b-17b4-4598-add2-eb1fe1de6230"
+    uuid="e36a5081-a82a-40bd-9e4e-42a44d6ce50f"
     wsmap="managed"
     rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
@@ -8042,6 +8076,16 @@
         <result name="E_NOTIMPL">
           This attribute is currently not implemented.
         </result>
+      </desc>
+    </attribute>
+
+    <attribute name="VMExecutionEngine" type="VMExecutionEngine">
+      <desc>
+        The configured VM execution engine. It is a VM setting which can
+        be changed both before starting the VM and when a VM is saved.
+
+        The default value is 'Default', which selects the default
+        aka best available execution engine available on the host.
       </desc>
     </attribute>
 
@@ -13135,7 +13179,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="bed5b0ec-e866-401b-ac32-fd63aa67954b"
+    uuid="c61e666e-34ab-403a-8160-78bd4512ca86"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -13619,6 +13663,20 @@
       </param>
       <param name="profiles" type="ICPUProfile" safearray="yes" dir="return">
         <desc>The matching CPU profiles.</desc>
+      </param>
+    </method>
+
+    <method name="getExecutionEnginesForVmCpuArchitecture">
+      <desc>Returns the possible <link to="VMExecutionEngine"/> enum values
+        for a given VM CPU architecture.</desc>
+
+      <param name="cpuArchitecture" type="CPUArchitecture" dir="in">
+        <desc>The CPU architecture type to get the values for.</desc>
+      </param>
+
+      <param name="executionEngine" type="VMExecutionEngine" safearray="yes" dir="return">
+        <desc>The enum values (sorted by what should be a sensible decreasing
+        importance of the type) which are valid.</desc>
       </param>
     </method>
   </interface>
@@ -22590,27 +22648,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   // IMachineDebugger
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <enum
-    name="VMExecutionEngine"
-    uuid="6e3f78f9-2dfe-4ed7-863d-67cad351e9d8"
-    >
-    <desc>
-      The main execution engine of a VM.
-    </desc>
-    <const name="NotSet"            value="0">
-      <desc>Has not yet been set (try again later).</desc>
-    </const>
-    <const name="Emulated"          value="1">
-      <desc>Emulated thru IEM.</desc>
-    </const>
-    <const name="HwVirt"            value="2">
-      <desc>Hardware assisted virtualization thru HM. Only for x86-based hosts.</desc>
-    </const>
-    <const name="NativeApi"         value="3">
-      <desc>Hardware assisted virtualization thru native API (NEM).</desc>
-    </const>
-  </enum>
 
   <interface
     name="IMachineDebugger" extends="$unknown"
