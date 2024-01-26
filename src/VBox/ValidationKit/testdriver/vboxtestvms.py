@@ -2191,8 +2191,9 @@ class TestVmManager(object):
         # ARM
         #
         TestVm('tst-ol-9_2-arm64',          kfGrpStdSmoke,        sHd = '7.1/smoketests/ol-9_2-arm64-txs.vdi',
-               sKind = 'Oracle_arm64', acCpusSup = range(1, 33), sHddControllerType='VirtIO SCSI Controller',
-               sDvdControllerType = 'SATA Controller', sGraphicsControllerType = 'QemuRamFb', sPlatformArchitecture = 'ARM'),
+               sKind = 'Oracle_arm64', acCpusSup = range(1, 33), sChipsetType = 'armv8virtual', \
+               sHddControllerType='VirtIO SCSI Controller', sDvdControllerType = 'SATA Controller', \
+               sGraphicsControllerType = 'QemuRamFb', sPlatformArchitecture = 'ARM'),
     );
 
 
