@@ -164,7 +164,10 @@ void UIWelcomePane::updateTextLabels()
         /* Make sure their minimum width is around 20% of the screen width: */
         const QSize screenGeometry = gpDesktop->screenGeometry(this).size();
         foreach (QIRichTextLabel *pLabel, labels)
+        {
             pLabel->setMinimumTextWidth(screenGeometry.width() * .2);
+            pLabel->resize(pLabel->minimumSizeHint());
+        }
     }
 }
 
