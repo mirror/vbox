@@ -53,7 +53,6 @@ sys.path.append(g_ksValidationKitDir);
 # Validation Kit imports.
 from testdriver import reporter;
 from testdriver import vbox;
-from testdriver import vboxcon;
 from testdriver import vboxtestvms;
 
 
