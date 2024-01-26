@@ -7470,7 +7470,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
 /** @} */
 
 
-/** @defgroup grp_inline_bits   Bit Operations
+/** @defgroup grp_inline_bits   Bitmap Operations
  * @{
  */
 
