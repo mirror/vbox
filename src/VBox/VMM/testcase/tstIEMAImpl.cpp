@@ -182,6 +182,18 @@ AssertCompileSize(IEMBINARYHEADER, 128);
 AssertCompile(sizeof(IEMBINARYHEADER_MAGIC) == 16);
 
 
+typedef struct IEMBINARYFOOTER
+{
+    char        szMagic[24];
+    uint32_t    cbEntry;
+    uint32_t    cEntries;
+} IEMBINARYFOOTER;
+AssertCompileSize(IEMBINARYFOOTER, 32);
+                             // 012345678901234567890123
+#define IEMBINARYFOOTER_MAGIC "\nIEMAImpl Bin Footer v1"
+AssertCompile(sizeof(IEMBINARYFOOTER_MAGIC) == 24);
+
+
 /** Fixed part of TYPEDEF_SUBTEST_TYPE and friends. */
 typedef struct IEMTESTENTRYINFO
 {
@@ -199,12 +211,18 @@ typedef struct IEMBINARYOUTPUT
     RTVFSFILE       hVfsFile;
     /** The stream we write uncompressed binary test data to. */
     RTVFSIOSTREAM   hVfsUncompressed;
+    /** The number of bytes written (ignoring write failures). */
+    size_t          cbWritten;
+    /** The entry size. */
+    uint32_t        cbEntry;
     /** Write status. */
     int             rcWrite;
     /** Set if NULL. */
     bool            fNull;
+    /** Set if we wrote a header and should write a footer as well. */
+    bool            fWroteHeader;
     /** Filename.   */
-    char            szFilename[79];
+    char            szFilename[94];
 } IEMBINARYOUTPUT;
 typedef IEMBINARYOUTPUT *PIEMBINARYOUTPUT;
 #endif /* TSTIEMAIMPL_WITH_GENERATOR */
@@ -1057,6 +1075,7 @@ static void GenerateArrayEnd(PRTSTREAM pOut, const char *pszName)
 
 static void GenerateBinaryWrite(PIEMBINARYOUTPUT pBinOut, const void *pvData, size_t cbData)
 {
+    pBinOut->cbWritten += cbData; /* ignore errors - makes entry calculation simpler */
     if (RT_SUCCESS_NP(pBinOut->rcWrite))
     {
         pBinOut->rcWrite = RTVfsIoStrmWrite(pBinOut->hVfsUncompressed, pvData, cbData, true /*fBlocking*/, NULL);
@@ -1069,6 +1088,8 @@ static void GenerateBinaryWrite(PIEMBINARYOUTPUT pBinOut, const void *pvData, si
 static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilenameFmt, const char *pszName,
                                IEMTESTENTRYINFO const *pInfoToPreserve, uint32_t cbEntry)
 {
+    pBinOut->cbEntry          = cbEntry;
+    pBinOut->cbWritten        = 0;
     pBinOut->hVfsFile         = NIL_RTVFSFILE;
     pBinOut->hVfsUncompressed = NIL_RTVFSIOSTREAM;
     if (pszFilenameFmt)
@@ -1089,7 +1110,8 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
                     RTVfsIoStrmRelease(hVfsIoFile);
                     if (RT_SUCCESS(pBinOut->rcWrite))
                     {
-                        pBinOut->rcWrite = VINF_SUCCESS;
+                        pBinOut->rcWrite      = VINF_SUCCESS;
+                        pBinOut->fWroteHeader = false;
 
                         /* Write the header if applicable. */
                         if (   !pInfoToPreserve
@@ -1103,6 +1125,7 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
                             RTStrCopy(Hdr.szCpuDesc, sizeof(Hdr.szCpuDesc),
                                       pInfoToPreserve ? pInfoToPreserve->pszCpuDesc : g_szCpuDesc);
                             GenerateBinaryWrite(pBinOut, &Hdr, sizeof(Hdr));
+                            pBinOut->fWroteHeader = true;
                         }
 
                         return true;
@@ -1131,6 +1154,7 @@ static bool GenerateBinaryOpen(PIEMBINARYOUTPUT pBinOut, const char *pszFilename
     RTMsgInfo("GenerateBinaryOpen: %s -> /dev/null\n", pszName);
     pBinOut->rcWrite       = VERR_IGNORED;
     pBinOut->fNull         = true;
+    pBinOut->fWroteHeader  = false;
     pBinOut->szFilename[0] = '\0';
     return true;
 }
@@ -1143,6 +1167,18 @@ static bool GenerateBinaryClose(PIEMBINARYOUTPUT pBinOut)
 {
     if (!pBinOut->fNull)
     {
+        /* Write footer if we've written a header. */
+        if (pBinOut->fWroteHeader)
+        {
+            IEMBINARYFOOTER Ftr;
+            RT_ZERO(Ftr);
+            memcpy(Ftr.szMagic, IEMBINARYFOOTER_MAGIC, sizeof(IEMBINARYFOOTER_MAGIC));
+            Ftr.cbEntry  = pBinOut->cbEntry;
+            Ftr.cEntries = (uint32_t)((pBinOut->cbWritten - sizeof(IEMBINARYHEADER)) / pBinOut->cbEntry);
+            Assert(Ftr.cEntries * pBinOut->cbEntry + sizeof(IEMBINARYHEADER) == pBinOut->cbWritten);
+            GenerateBinaryWrite(pBinOut, &Ftr, sizeof(Ftr));
+        }
+
         /* This is rather jovial about rcWrite. */
         int const rc1 = RTVfsIoStrmFlush(pBinOut->hVfsUncompressed);
         RTVfsIoStrmRelease(pBinOut->hVfsUncompressed);
@@ -1263,19 +1299,30 @@ static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed,
             }
             if (RT_SUCCESS(rc))
             {
-                /* Validate the header if present and subtract if from 'off'. */
+                size_t          const  cbUncompressed = off;
+
+                /* Validate the header and footer if present and subtract them from 'off'. */
                 IEMBINARYHEADER const *pHdr = NULL;
                 if (   off >= sizeof(IEMTESTENTRYINFO)
                     && memcmp(pbDecompressed, IEMBINARYHEADER_MAGIC, sizeof(IEMBINARYHEADER_MAGIC)) == 0)
                 {
                     pHdr = (IEMBINARYHEADER const *)pbDecompressed;
+                    IEMBINARYFOOTER const *pFtr = (IEMBINARYFOOTER const *)&pbDecompressed[off - sizeof(IEMBINARYFOOTER)];
+
+                    off -= sizeof(*pHdr) + sizeof(*pFtr);
+                    rc = VERR_IO_BAD_UNIT;
                     if (pHdr->cbEntry != cbEntry)
-                    {
                         RTTestIFailed("Test entry size differs for '%s': %#x (header r%u), expected %#zx (uncompressed size %#zx)",
-                                      pszWhat, pHdr->cbEntry, pHdr->uSvnRev, cbEntry, off);
-                        rc = VERR_IO_BAD_UNIT;
-                    }
-                    off -= sizeof(*pHdr);
+                                      pszWhat, pHdr->cbEntry, pHdr->uSvnRev, cbEntry, off + sizeof(*pHdr) + sizeof(*pFtr));
+                    else if (memcmp(pFtr->szMagic, IEMBINARYFOOTER_MAGIC, sizeof(IEMBINARYFOOTER_MAGIC)) != 0)
+                        RTTestIFailed("Wrong footer magic for '%s': %.*Rhxs\n", pszWhat, sizeof(pFtr->szMagic), pFtr->szMagic);
+                    else if (pFtr->cbEntry != cbEntry)
+                        RTTestIFailed("Wrong footer entry size for '%s': %#x, expected %#x\n", pszWhat, pFtr->cbEntry, cbEntry);
+                    else if (pFtr->cEntries != off / cbEntry)
+                        RTTestIFailed("Wrong footer entry count for '%s': %#x, expected %#x\n",
+                                      pszWhat, pFtr->cEntries, off / cbEntry);
+                    else
+                        rc = VINF_SUCCESS;
                 }
 
                 /* Validate the decompressed size wrt entry size. */
@@ -1292,9 +1339,9 @@ static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed,
                      * We're good.
                      */
                     /* Reallocate the block if it's way to big. */
-                    if (cbDecompressedAlloc - off > _512K)
+                    if (cbDecompressedAlloc - cbUncompressed > _512K)
                     {
-                        void * const pvNew = RTMemRealloc(pbDecompressed, off);
+                        void * const pvNew = RTMemRealloc(pbDecompressed, cbUncompressed);
                         if (pvNew)
                         {
                             pbDecompressed = (uint8_t *)pvNew;
@@ -1305,7 +1352,7 @@ static int DecompressBinaryTest(void const *pvCompressed, uint32_t cbCompressed,
                     RTMEM_MAY_LEAK(pbDecompressed);
 
                     /* Fill in the info and other return values.  */
-                    pInfo->cbUncompressed = (uint32_t)off;
+                    pInfo->cbUncompressed = (uint32_t)cbUncompressed;
                     pInfo->pvUncompressed = pbDecompressed;
                     pInfo->pszCpuDesc     = pHdr ? pHdr->szCpuDesc : NULL;
                     pInfo->uSvnRev        = pHdr ? pHdr->uSvnRev   : 0;
@@ -2738,9 +2785,14 @@ static void ShiftTest(void)
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static const MULDIVU8_TEST_T g_aFixedTests_idiv_u8[] =
 {
-    /* efl in, efl out, uDstIn, uDstOut, uSrcIn,  rc */
-    { UINT32_MAX,    0, 0x8000,        0 , 0xc7,  -1 }, /* -32768 / -57 = #DE (574.8771929824...)  */
-    { UINT32_MAX,    0, 0x8000,        0 , 0xdd,  -1 }, /* -32768 / -35 = #DE (936.2285714285...) */
+    /* efl in, efl out, uDstIn, uDstOut, uSrcIn,  rc (0 or -1 for actual; -128 for auto) */
+    { UINT32_MAX,    0, 0x8000,        0,  0xc7,  -1   }, /* -32768 / -57 = #DE (574.8771929824...)  */
+    { UINT32_MAX,    0, 0x8000,        0,  0xdd,  -128 }, /* -32768 / -35 = #DE (936.2285714285...) */
+    { UINT32_MAX,    0, 0x7f00,        0,  0x7f,  -1   }, /* 0x7f00 / 0x7f = #DE (0x100)  */
+    { UINT32_MAX,    0, 0x3f80,        0,  0x7f,  -1   }, /* 0x3F80 / 0x7f = #DE (0x80)  */
+    { UINT32_MAX,    0, 0x3f7f,        0,  0x7f,   0   }, /* 0x3F7F / 0x7f = 127.992125984... */
+    { UINT32_MAX,    0, 0xc000,        0,  0x80,  -1   }, /* -16384 / -128 = #DE (0x80) */
+    { UINT32_MAX,    0, 0xc001,        0,  0x80,   0   }, /* -16383 / -128 =  127.9921875 */
 };
 #endif
 TYPEDEF_SUBTEST_TYPE(INT_MULDIV_U8_T, MULDIVU8_TEST_T, PFNIEMAIMPLMULDIVU8);
@@ -2790,6 +2842,8 @@ static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNa
             Test.uDstOut   = Test.uDstIn;
             Test.uSrcIn    = g_aMulDivU8[iFn].paFixedTests[iTest].uSrcIn;
             Test.rc        = g_aMulDivU8[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            if (g_aMulDivU8[iFn].paFixedTests[iTest].rc == 0 || g_aMulDivU8[iFn].paFixedTests[iTest].rc == -1)
+                Test.rc = g_aMulDivU8[iFn].paFixedTests[iTest].rc;
             GenerateBinaryWrite(&BinOut, &Test, sizeof(Test));
         }
         AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE);
@@ -2844,6 +2898,45 @@ static void MulDivU8Test(void)
 }
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const MULDIVU16_TEST_T g_aFixedTests_idiv_u16[] =
+{
+    /*                     low         high  */
+    /* --- eflags ---, -- uDst1 --, -- uDst2 --, */
+    /*        in, out,    in , out,    in , out, uSrcIn,  rc (0 or -1 for actual; -128 for auto) */
+    { UINT32_MAX,   0, 0x0000,   0, 0x8000,   0, 0xc004,  -1   }, /* -2147483648 /-16380 = #DE (131104.00781...) */
+    { UINT32_MAX,   0, 0xffff,   0, 0x7fff,   0, 0x7fff,  -1   }, /*  2147483647 / 32767 = #DE (65538.000030...) */
+    { UINT32_MAX,   0, 0x8000,   0, 0x3fff,   0, 0x7fff,  -1   }, /* 0x3fff8000 / 0x7fff = #DE (0x8000) */
+    { UINT32_MAX,   0, 0x7fff,   0, 0x3fff,   0, 0x7fff,   0   }, /* 0x3fff7fff / 0x7fff = 32767.99996948... */
+    { UINT32_MAX,   0, 0x0000,   0, 0xc000,   0, 0x8000,  -1   }, /* -1073741824 / -32768 = #DE (0x8000) */
+    { UINT32_MAX,   0, 0x0001,   0, 0xc000,   0, 0x8000,   0   }, /* -1073741823 / -32768 =  32767.999969482421875 */
+};
+
+static const MULDIVU32_TEST_T g_aFixedTests_idiv_u32[] =
+{
+    /*                       low              high  */
+    /* --- eflags ---, ---- uDst1 ----, ---- uDst2 ----, */
+    /*        in, out,        in , out,        in , out,     uSrcIn,  rc (0 or -1 for actual; -128 for auto) */
+    { UINT32_MAX,   0, 0x00000000,   0, 0x80000000,   0, 0xc0000004,  -1   },
+    { UINT32_MAX,   0, 0xffffffff,   0, 0x7fffffff,   0, 0x7fffffff,  -1   },
+    { UINT32_MAX,   0, 0x80000000,   0, 0x3fffffff,   0, 0x7fffffff,  -1   },
+    { UINT32_MAX,   0, 0x7fffffff,   0, 0x3fffffff,   0, 0x7fffffff,   0   },
+    { UINT32_MAX,   0, 0x00000000,   0, 0xc0000000,   0, 0x80000000,  -1   },
+    { UINT32_MAX,   0, 0x00000001,   0, 0xc0000000,   0, 0x80000000,   0   },
+};
+
+static const MULDIVU64_TEST_T g_aFixedTests_idiv_u64[] =
+{
+    /*                       low              high  */
+    /* --- eflags ---, -------- uDst1 --------, -------- uDst2 --------, */
+    /*        in, out,                in , out,                in , out,             uSrcIn,  rc (0 or -1 for actual; -128 for auto) */
+    { UINT32_MAX,   0, 0x0000000000000000,   0, 0x8000000000000000,   0, 0xc000000000000004,  -1   },
+    { UINT32_MAX,   0, 0xffffffffffffffff,   0, 0x7fffffffffffffff,   0, 0x7fffffffffffffff,  -1   },
+    { UINT32_MAX,   0, 0x8000000000000000,   0, 0x3fffffffffffffff,   0, 0x7fffffffffffffff,  -1   },
+    { UINT32_MAX,   0, 0x7fffffffffffffff,   0, 0x3fffffffffffffff,   0, 0x7fffffffffffffff,   0   },
+    { UINT32_MAX,   0, 0x0000000000000000,   0, 0xc000000000000000,   0, 0x8000000000000000,  -1   },
+    { UINT32_MAX,   0, 0x0000000000000001,   0, 0xc000000000000000,   0, 0x8000000000000000,   0   },
+};
+
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
 DUMP_ALL_FN(MulDivU ## a_cBits, a_aSubTests) \
 static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * const * papszNameFmts) \
@@ -2854,10 +2947,11 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
             && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
             continue; \
         IEMBINARYOUTPUT BinOut; \
+        a_TestType      Test; \
+        RT_ZERO(Test); /* 64-bit variant contains alignment padding */ \
         AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, a_aSubTests[iFn]), RTEXITCODE_FAILURE); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
-            a_TestType Test; \
             Test.fEflIn    = RandEFlags(); \
             Test.fEflOut   = Test.fEflIn; \
             Test.uDst1In   = RandU ## a_cBits ## Dst(iTest); \
@@ -2866,6 +2960,21 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
             Test.uDst2Out  = Test.uDst2In; \
             Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
             Test.rc        = a_aSubTests[iFn].pfnNative(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
+            GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
+        } \
+        for (uint32_t iTest = 0; iTest < a_aSubTests[iFn].cFixedTests; iTest++ ) \
+        { \
+            Test.fEflIn    = a_aSubTests[iFn].paFixedTests[iTest].fEflIn == UINT32_MAX ? RandEFlags() \
+                           : a_aSubTests[iFn].paFixedTests[iTest].fEflIn; \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDst1In   = a_aSubTests[iFn].paFixedTests[iTest].uDst1In; \
+            Test.uDst1Out  = Test.uDst1In; \
+            Test.uDst2In   = a_aSubTests[iFn].paFixedTests[iTest].uDst2In; \
+            Test.uDst2Out  = Test.uDst2In; \
+            Test.uSrcIn    = a_aSubTests[iFn].paFixedTests[iTest].uSrcIn; \
+            Test.rc        = a_aSubTests[iFn].pfnNative(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
+            if (a_aSubTests[iFn].paFixedTests[iTest].rc == 0 || a_aSubTests[iFn].paFixedTests[iTest].rc == -1) \
+                Test.rc = a_aSubTests[iFn].paFixedTests[iTest].rc; \
             GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
         AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
@@ -2877,19 +2986,17 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
 #endif
 
 #define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
-/** @todo fixed tests like u8 with INT16_MIN, INT32_MIN & INT64_MIN and \
- *        divisors. */ \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLMULDIVU ## a_cBits); \
 static a_SubTestType a_aSubTests [] = \
 { \
-    ENTRY_BIN_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_BIN_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_BIN_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_BIN_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_BIN_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_BIN_INTEL_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_BIN_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_BIN_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_AMD_EX(mul_u ## a_cBits,        X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_INTEL_EX(mul_u ## a_cBits,      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_AMD_EX(imul_u ## a_cBits,       X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_INTEL_EX(imul_u ## a_cBits,     X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_BIN_AMD_EX(div_u ## a_cBits,        X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_INTEL_EX(div_u ## a_cBits,      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_FIX_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_BIN_FIX_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
 }; \
 \
 GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
@@ -2918,16 +3025,18 @@ static void MulDivU ## a_cBits ## Test(void) \
                     || uDst2 != paTests[iTest].uDst2Out \
                     || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)\
                     || rc    != paTests[iTest].rc) \
-                    RTTestFailed(g_hTest, "#%02u%s: efl=%#08x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
-                                           "  -> efl=%#08x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
-                                           "expected %#08x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
-                                 iTest, iVar == 0 ? "" : "/n", \
+                { __debugbreak(); \
+                    RTTestFailed(g_hTest, "#%04u%s: efl=%#010x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
+                                           "      -> efl=%#010x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
+                                           "    expected %#010x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
+                                 iTest, iVar == 0 ? "  " : "/n", \
                                  paTests[iTest].fEflIn, paTests[iTest].uDst1In, paTests[iTest].uDst2In, paTests[iTest].uSrcIn, \
                                  fEfl, uDst1, uDst2, rc, \
                                  paTests[iTest].fEflOut, paTests[iTest].uDst1Out, paTests[iTest].uDst2Out, paTests[iTest].rc, \
                                  EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn), \
                                  uDst1 != paTests[iTest].uDst1Out ? " dst1" : "", uDst2 != paTests[iTest].uDst2Out ? " dst2" : "", \
                                  (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn) ? " eflags" : ""); \
+                } \
                 else \
                 { \
                      *g_pu ## a_cBits        = paTests[iTest].uDst1In; \
@@ -2944,7 +3053,7 @@ static void MulDivU ## a_cBits ## Test(void) \
         } \
         FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
-}
+}                   //1068553096 = 0x3FB0D388 (1068553096)
 TEST_MULDIV(16, uint16_t, "%#06RX16",  MULDIVU16_TEST_T, INT_MULDIV_U16_T, g_aMulDivU16)
 TEST_MULDIV(32, uint32_t, "%#010RX32", MULDIVU32_TEST_T, INT_MULDIV_U32_T, g_aMulDivU32)
 TEST_MULDIV(64, uint64_t, "%#018RX64", MULDIVU64_TEST_T, INT_MULDIV_U64_T, g_aMulDivU64)

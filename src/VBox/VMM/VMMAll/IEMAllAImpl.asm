@@ -2217,7 +2217,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8 %+ %5, 12
         PROLOGUE_3_ARGS
 
         ; div by chainsaw check.
-        test    A1_8, A1_8
+        and     A1_32, 0xff             ; Ensure it's zero extended to 16-bits for the idiv range check.
         jz      .div_zero
 
         ; Overflow check - unsigned division is simple to verify, haven't
@@ -2226,17 +2226,17 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8 %+ %5, 12
         cmp     [A0 + 1], A1_8
         jae     .div_overflow
  %else
-        mov     T0_16, [A0]             ; T0 = dividend
+        movzx   T0_32, word [A0]        ; T0 = dividend (zero extending to full register to simplify register aliasing)
         mov     T1, A1                  ; T1 = saved divisor (because of missing T1_8 in 32-bit)
         test    A1_8, A1_8
         js      .divisor_negative
         test    T0_16, T0_16
         jns     .both_positive
         neg     T0_16
-.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+.one_of_each:                           ; OK range is 2^(result-width - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shr     T0_16, 7
-        cmp     T0_8, A1_8
+        cmp     T0_16, A1_16            ; 16-bit compare, since T0_16=0x8000 >> 7 --> T0_16=0x0100. (neg 0x8000 = 0x8000)
         pop     T0
         jb      .div_no_overflow
         ja      .div_overflow
@@ -2252,7 +2252,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8 %+ %5, 12
         neg     T0_16
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shr     T0_16, 7
-        cmp     T0_8, A1_8
+        cmp     T0_16, A1_16            ; 16-bit compare, since T0_16=0x8000 >> 7 --> T0_16=0x0100. (neg 0x8000 = 0x8000)
         jae     .div_overflow
 .div_no_overflow:
         mov     A1, T1                  ; restore divisor
@@ -2282,7 +2282,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %5, 16
         PROLOGUE_4_ARGS
 
         ; div by chainsaw check.
-        test    A2_16, A2_16
+        and     A2_16, 0xffff            ; Zero extend it for simpler sign overflow checks (see below).
         jz      .div_zero
 
         ; Overflow check - unsigned division is simple to verify, haven't
@@ -2291,7 +2291,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %5, 16
         cmp     [A1], A2_16
         jae     .div_overflow
  %else
-        mov     T0_16, [A1]
+        movzx   T0_32, word [A1]         ; Zero extend to simplify register aliasing by clobbing the whole register.
         shl     T0_32, 16
         mov     T0_16, [A0]              ; T0 = dividend
         mov     T1, A2                   ; T1 = divisor
@@ -2300,10 +2300,10 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %5, 16
         test    T0_32, T0_32
         jns     .both_positive
         neg     T0_32
-.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+.one_of_each:                           ; OK range is 2^(result-width - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shr     T0_32, 15
-        cmp     T0_16, T1_16
+        cmp     T0_32, T1_32            ; 32-bit compares, because 0x80000000 >> 15 = 0x10000 (65536) which doesn't fit in 16 bits.
         pop     T0
         jb      .div_no_overflow
         ja      .div_overflow
@@ -2319,7 +2319,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %5, 16
         neg     T0_32
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shr     T0_32, 15
-        cmp     T0_16, T1_16
+        cmp     T0_32, T1_32            ; 32-bit compares, because 0x80000000 >> 15 = 0x10000 (65536) which doesn't fit in 16 bits.
         jae     .div_overflow
 .div_no_overflow:
  %endif
@@ -2372,12 +2372,14 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ %5, 16
         push    A2                      ; save A2 so we modify it (we out of regs on x86).
         mov     T0_32, [A0]             ; T0 = dividend low
         mov     T1_32, [A1]             ; T1 = dividend high
-        test    A2_32, A2_32
+        ;test    A2_32, A2_32 - we did this 5 instructions ago.
         js      .divisor_negative
         test    T1_32, T1_32
         jns     .both_positive
         call    NAME(iemAImpl_negate_T0_T1_u32)
-.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+.one_of_each:                           ; OK range is 2^(result-width - 1) + (divisor - 1).
+        test    T1_32, 0x80000000       ; neg 0x8000000000000000 = 0x8000000000000000
+        jnz     .div_overflow
         push    T0                      ; Start off like unsigned below.
         shl     T1_32, 1
         shr     T0_32, 31
@@ -2397,6 +2399,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ %5, 16
         jns     .one_of_each
         call    NAME(iemAImpl_negate_T0_T1_u32)
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        test    T1_32, 0x80000000       ; neg 0x8000000000000000 = 0x8000000000000000
+        jnz     .div_overflow
         shl     T1_32, 1
         shr     T0_32, 31
         or      T1_32, T0_32
@@ -2455,12 +2459,14 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ %5, 20
         push    A2                      ; save A2 so we modify it (we out of regs on x86).
         mov     T0, [A0]                ; T0 = dividend low
         mov     T1, [A1]                ; T1 = dividend high
-        test    A2, A2
+        ;test    A2, A2 - we did this five instructions above.
         js      .divisor_negative
         test    T1, T1
         jns     .both_positive
         call    NAME(iemAImpl_negate_T0_T1_u64)
-.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+.one_of_each:                           ; OK range is 2^(result-width - 1) + (divisor - 1).
+        bt      T1, 63                  ; neg 0x8000000000000000'0000000000000000 = same
+        jc      .div_overflow
         push    T0                      ; Start off like unsigned below.
         shl     T1, 1
         shr     T0, 63
@@ -2481,6 +2487,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ %5, 20
         jns     .one_of_each
         call    NAME(iemAImpl_negate_T0_T1_u64)
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        bt      T1, 63                  ; neg 0x8000000000000000'0000000000000000 = same
+        jc      .div_overflow
         shl     T1, 1
         shr     T0, 63
         or      T1, T0
@@ -2532,6 +2540,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64 %+ %5
 IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,       , 0
 IEMIMPL_DIV_OP div,  0, 0,                                                                             0, _intel, 1
 IEMIMPL_DIV_OP div,  0, 0,                                                                             0, _amd,   2
+;; @todo overflows with AX=0x8000 DL=0xc7 IDIV DL
 IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1,       , 0
 IEMIMPL_DIV_OP idiv, 0, 0,                                                                             1, _intel, 1
 IEMIMPL_DIV_OP idiv, 0, 0,                                                                             1, _amd,   2
