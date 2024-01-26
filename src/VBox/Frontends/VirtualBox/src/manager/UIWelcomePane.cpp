@@ -26,8 +26,10 @@
  */
 
 /* Qt includes: */
+#include <QButtonGroup>
 #include <QGridLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QStyle>
 #include <QUrl>
 
@@ -36,6 +38,7 @@
 #include "QIWithRetranslateUI.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIWelcomePane.h"
 
@@ -47,6 +50,7 @@
 UIWelcomePane::UIWelcomePane(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pLabelGreetings(0)
+    , m_pLabelMode(0)
     , m_pLabelIcon(0)
 {
     prepare();
@@ -87,11 +91,45 @@ void UIWelcomePane::retranslateUi()
                                       "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
                                       "for more information and latest news.</p>")
                                       .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+
+    /* Translate experience mode stuff: */
+    if (m_pLabelMode)
+        m_pLabelMode->setText(tr("<h3>Please choose Experience Mode!</h3>"
+                                 "By default, the VirtualBox GUI is hiding some options, tools and wizards. "
+                                 "<p>The <b>Basic Mode</b> is intended for a users who are not interested in advanced "
+                                 "functionality and prefer a simpler, cleaner interface.</p>"
+                                 "<p>The <b>Expert Mode</b> is intended for experienced users who wish to utilize all "
+                                 "VirtualBox functionality.</p>"
+                                 "<p>You can choose whether you are a beginner or experienced user by selecting required "
+                                 "option at the right. This choice can always be changed in Global Preferences or Machine "
+                                 "Settings windows.</p>"));
+    if (m_buttons.contains(false))
+        m_buttons.value(false)->setText(tr("Basic Mode"));
+    if (m_buttons.contains(true))
+        m_buttons.value(true)->setText(tr("Expert Mode"));
 }
 
 void UIWelcomePane::sltHandleLinkActivated(const QUrl &urlLink)
 {
     uiCommon().openURL(urlLink.toString());
+}
+
+void UIWelcomePane::sltHandleButtonClicked(QAbstractButton *pButton)
+{
+    /* Make sure one of buttons was really pressed: */
+    AssertReturnVoid(m_buttons.contains(pButton));
+
+    /* Hide everything related to experience mode: */
+    if (m_pLabelMode)
+        m_pLabelMode->hide();
+    if (m_buttons.contains(false))
+        m_buttons.value(false)->hide();
+    if (m_buttons.contains(true))
+        m_buttons.value(true)->hide();
+
+    /* Check which button was pressed actually and save the value: */
+    const bool fExpertMode = m_buttons.key(pButton, false);
+    gEDataManager->setSettingsInExpertMode(fExpertMode);
 }
 
 void UIWelcomePane::prepare()
@@ -114,7 +152,7 @@ void UIWelcomePane::prepare()
 #endif
         pMainLayout->setContentsMargins(iL, iT, iR, iB);
         pMainLayout->setSpacing(iSpacing);
-        pMainLayout->setRowStretch(1, 1);
+        pMainLayout->setRowStretch(2, 1);
 
         /* Prepare greetings label: */
         m_pLabelGreetings = new QIRichTextLabel(this);
@@ -131,6 +169,54 @@ void UIWelcomePane::prepare()
         {
             m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             pMainLayout->addWidget(m_pLabelIcon, 0, 1);
+        }
+
+        /* This block for the case if experienced mode is NOT defined yet: */
+        if (gEDataManager->extraDataString(UIExtraDataDefs::GUI_Settings_ExpertMode).isNull())
+        {
+            /* Prepare experience mode label: */
+            m_pLabelMode = new QIRichTextLabel(this);
+            if (m_pLabelMode)
+            {
+                m_pLabelMode->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+                pMainLayout->addWidget(m_pLabelMode, 1, 0);
+            }
+
+            /* Prepare button layout: */
+            QVBoxLayout *pLayoutButton = new QVBoxLayout;
+            if (pLayoutButton)
+            {
+                pLayoutButton->setSpacing(iSpacing / 2);
+
+                /* Prepare button group: */
+                QButtonGroup *pButtonGroup = new QButtonGroup(this);
+                if (pButtonGroup)
+                {
+                    /* Prepare Basic button ('false' means 'not Expert'): */
+                    m_buttons[false] = new QPushButton(this);
+                    QAbstractButton *pButtonBasic = m_buttons.value(false);
+                    if (pButtonBasic)
+                    {
+                        pButtonGroup->addButton(pButtonBasic);
+                        pLayoutButton->addWidget(pButtonBasic);
+                    }
+
+                    /* Prepare Expert button ('true' means 'is Expert'): */
+                    m_buttons[true] = new QPushButton(this);
+                    QAbstractButton *pButtonExpert = m_buttons[true];
+                    if (pButtonExpert)
+                    {
+                        pButtonGroup->addButton(pButtonExpert);
+                        pLayoutButton->addWidget(pButtonExpert);
+                    }
+
+                    connect(pButtonGroup, &QButtonGroup::buttonClicked,
+                            this, &UIWelcomePane::sltHandleButtonClicked);
+                }
+
+                pLayoutButton->addStretch();
+                pMainLayout->addLayout(pLayoutButton, 1, 1);
+            }
         }
     }
 
