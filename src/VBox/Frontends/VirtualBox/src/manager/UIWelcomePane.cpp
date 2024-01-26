@@ -26,10 +26,9 @@
  */
 
 /* Qt includes: */
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QStyle>
-#include <QVBoxLayout>
 #include <QUrl>
 
 /* GUI includes */
@@ -101,36 +100,29 @@ void UIWelcomePane::prepare()
     m_icon = UIIconPool::iconSet(":/tools_banner_global_200px.png");
 
     /* Prepare main layout: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
     {
-        /* Prepare welcome layout: */
-        QVBoxLayout *pLayoutWelcome = new QVBoxLayout;
-        if (pLayoutWelcome)
-        {
-            const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+        const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+        const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+        const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+        const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
 #ifdef VBOX_WS_MAC
-            const int iSpacing = 20;
+        const int iSpacing = 20;
 #else
-            const int iSpacing = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
+        const int iSpacing = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
 #endif
-            pLayoutWelcome->setContentsMargins(iL, 0, 0, 0);
-            pLayoutWelcome->setSpacing(iSpacing);
+        pMainLayout->setContentsMargins(iL, iT, iR, iB);
+        pMainLayout->setSpacing(iSpacing);
+        pMainLayout->setRowStretch(1, 1);
 
-            /* Prepare greetings label: */
-            m_pLabelGreetings = new QIRichTextLabel(this);
-            if (m_pLabelGreetings)
-            {
-                m_pLabelGreetings->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-                connect(m_pLabelGreetings, &QIRichTextLabel::sigLinkClicked, this, &UIWelcomePane::sltHandleLinkActivated);
-                pLayoutWelcome->addWidget(m_pLabelGreetings);
-            }
-
-            /* Add stretch: */
-            pLayoutWelcome->addStretch();
-
-            /* Add into layout: */
-            pMainLayout->addLayout(pLayoutWelcome);
+        /* Prepare greetings label: */
+        m_pLabelGreetings = new QIRichTextLabel(this);
+        if (m_pLabelGreetings)
+        {
+            m_pLabelGreetings->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+            connect(m_pLabelGreetings, &QIRichTextLabel::sigLinkClicked, this, &UIWelcomePane::sltHandleLinkActivated);
+            pMainLayout->addWidget(m_pLabelGreetings, 0, 0);
         }
 
         /* Prepare icon label: */
@@ -138,10 +130,7 @@ void UIWelcomePane::prepare()
         if (m_pLabelIcon)
         {
             m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pLabelIcon);
-            pMainLayout->setAlignment(m_pLabelIcon, Qt::AlignHCenter | Qt::AlignTop);
+            pMainLayout->addWidget(m_pLabelIcon, 0, 1);
         }
     }
 
