@@ -1926,9 +1926,12 @@ class TestVmSet(object):
                 reporter.errorXcpt('failed to query supported execution engines for "%s"' % (oVm.sVmName, ));
                 asVirtModesWanted = [];
         else:
-            asVirtModesWanted.remove('native-api');
-            asVirtModesWanted.remove('interpreter');
-            asVirtModesWanted.remove('recompiler');
+            if 'native-api' in asVirtModesWanted:
+                asVirtModesWanted.remove('native-api');
+            if 'interpreter' in asVirtModesWanted:
+                asVirtModesWanted.remove('interpreter');
+            if 'recompiler' in asVirtModesWanted:
+                asVirtModesWanted.remove('recompiler');
 
             if 'hwvirt' in asVirtModesWanted and not oTestDrv.hasHostHwVirt():
                 reporter.log('Hardware assisted virtualization is not available on the host, skipping it.');
