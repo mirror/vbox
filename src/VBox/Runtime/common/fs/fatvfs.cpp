@@ -925,11 +925,9 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
     int      rc      = VINF_SUCCESS;
     uint64_t off     = UINT64_MAX;
     uint64_t offEdge = UINT64_MAX;
-    RTSGSEG  aSgSegs[8];
-    RT_ZERO(aSgSegs); /* Initialization required for GCC >= 11. */
-    RTSGBUF  SgBuf;
-    RTSgBufInit(&SgBuf, aSgSegs, RT_ELEMENTS(aSgSegs));
-    SgBuf.cSegs = 0; /** @todo RTSgBuf API is stupid, make it smarter. */
+    unsigned cSegs   = 0;
+    RTSGSEG  aSgSegs[8] /* Initialization required for GCC >= 11. */
+        = { { NULL, 0 }, { NULL, 0 }, { NULL, 0 }, { NULL, 0 },  { NULL, 0 }, { NULL, 0 }, { NULL, 0 }, { NULL, 0 }, };
 
     for (uint32_t iFatCopy = 0; iFatCopy < pThis->cFats; iFatCopy++)
     {
@@ -954,10 +952,10 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                         if (   offDirtyLine == offEdge
                             && offEntry)
                         {
-                            Assert(SgBuf.cSegs > 0);
-                            Assert(   (uintptr_t)aSgSegs[SgBuf.cSegs - 1].pvSeg + aSgSegs[SgBuf.cSegs - 1].cbSeg
+                            Assert(cSegs > 0);
+                            Assert(   (uintptr_t)aSgSegs[cSegs - 1].pvSeg + aSgSegs[cSegs - 1].cbSeg
                                    == (uintptr_t)&pFatCache->aEntries[iEntry].pbData[offEntry]);
-                            aSgSegs[SgBuf.cSegs - 1].cbSeg += pFatCache->cbDirtyLine;
+                            aSgSegs[cSegs - 1].cbSeg += pFatCache->cbDirtyLine;
                             offEdge += pFatCache->cbDirtyLine;
                         }
                         else
@@ -966,24 +964,25 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
                             if (off == UINT64_MAX)
                             {
                                 off = offDirtyLine;
-                                Assert(SgBuf.cSegs == 0);
+                                Assert(cSegs == 0);
                             }
                             /* flush if not adjacent or if we're out of segments. */
                             else if (   offDirtyLine != offEdge
-                                     || SgBuf.cSegs >= RT_ELEMENTS(aSgSegs))
+                                     || cSegs >= RT_ELEMENTS(aSgSegs))
                             {
-                                RTSgBufReset(&SgBuf);
+                                RTSGBUF SgBuf;
+                                RTSgBufInit(&SgBuf, aSgSegs, cSegs);
                                 int rc2 = RTVfsFileSgWrite(pThis->hVfsBacking, off, &SgBuf, true /*fBlocking*/, NULL);
                                 if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                                     rc = rc2;
-                                SgBuf.cSegs = 0;
-                                off = offDirtyLine;
+                                cSegs = 0;
+                                off   = offDirtyLine;
                             }
 
                             /* Append segment. */
-                            aSgSegs[SgBuf.cSegs].cbSeg = pFatCache->cbDirtyLine;
-                            aSgSegs[SgBuf.cSegs].pvSeg = &pFatCache->aEntries[iEntry].pbData[offEntry];
-                            SgBuf.cSegs++;
+                            aSgSegs[cSegs].cbSeg = pFatCache->cbDirtyLine;
+                            aSgSegs[cSegs].pvSeg = &pFatCache->aEntries[iEntry].pbData[offEntry];
+                            cSegs++;
                             offEdge = offDirtyLine + pFatCache->cbDirtyLine;
                         }
 
@@ -1002,9 +1001,10 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
     /*
      * Final flush job.
      */
-    if (SgBuf.cSegs > 0)
+    if (cSegs > 0)
     {
-        RTSgBufReset(&SgBuf);
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, aSgSegs, cSegs);
         int rc2 = RTVfsFileSgWrite(pThis->hVfsBacking, off, &SgBuf, true /*fBlocking*/, NULL);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
