@@ -277,9 +277,9 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                                        'Note', 'Script', 'Python', 'Group',
                                        'OS', 'CPU', 'Features', 'CPUs', 'RAM', 'Scratch',
                                        'Actions' ]);
-        self._asColumnAttribs.extend([ 'align="center"', 'align="center"', 'align="center"', 'align="center"'
-                                       'align="center"', 'align="center"', 'align="center"', 'align="center"',
-                                       '', '', '', 'align="left"', 'align="right"', 'align="right"', 'align="right"',
+        self._asColumnAttribs.extend([ 'align="center"', 'align="center"', 'align="center"', 'align="center"',
+                                       'align="center"', 'align="center"', 'align="center"', '',
+                                       '', '', '', 'align="left"', 'align="right"', 'align="right"',
                                        'align="center"' ]);
         self._aaiColumnSorting.extend([
             (TestBoxLogic.kiSortColumn_sName,),
