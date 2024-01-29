@@ -285,8 +285,8 @@ public:
     void resetDebugger();
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
+    void setMachineState(KMachineState enmState);
 
-    KMachineState m_enmMachineState;
     quint64  m_uCPUVMMLoad;
 
     quint64 m_uVMExitRate;
@@ -298,6 +298,7 @@ private:
 
     CSession m_comSession;
     CGuest   m_comGuest;
+    KMachineState m_enmMachineState;
 };
 
 /*********************************************************************************************************************************
@@ -375,8 +376,7 @@ public:
     const QMap<int, int> dataLengths() const;
     QUuid itemUid(int iIndex);
     int itemIndex(const QUuid &uid);
-    /* Return the state of the machine represented by the item at @rowIndex. */
-    KMachineState machineState(int rowIndex) const;
+    bool isVMRunning(int rowIndex) const;
     void setDefaultViewFont(const QFont &font);
     void setDefaultViewFontColor(const QColor &color);
 
@@ -396,7 +396,7 @@ private:
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
 
-    QVector<UIActivityOverviewItemLocal> m_itemList;
+    QVector<UIActivityOverviewItem*> m_itemList;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
@@ -981,6 +981,11 @@ bool UIActivityOverviewItemLocal::isCloudVM() const
     return false;
 }
 
+void UIActivityOverviewItemLocal::setMachineState(KMachineState enmState)
+{
+    m_enmMachineState = enmState;
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewProxyModel implementation.                                                                         *
@@ -1018,16 +1023,16 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
     UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
     if (pModel)
     {
-        KMachineState enmLeftState = pModel->machineState(sourceLeftIndex.row());
-        KMachineState enmRightState = pModel->machineState(sourceRightIndex.row());
-        if ((enmLeftState == KMachineState_Running) && (enmRightState != KMachineState_Running))
+        bool fLeftRunning = pModel->isVMRunning(sourceLeftIndex.row());
+        bool fRightRunning = pModel->isVMRunning(sourceRightIndex.row());
+        if (fLeftRunning && fRightRunning)
         {
             if (sortOrder() == Qt::AscendingOrder)
                 return true;
             else
                 return false;
         }
-        if ((enmLeftState != KMachineState_Running) && (enmRightState == KMachineState_Running))
+        if (!fLeftRunning && fRightRunning)
         {
             if (sortOrder() == Qt::AscendingOrder)
                 return false;
@@ -1047,7 +1052,7 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
     UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
     if (!pModel)
         return true;
-    if (pModel->machineState(iSourceRow) != KMachineState_Running)
+    if (!pModel->isVMRunning(iSourceRow))
         return false;
     return true;
 }
@@ -1110,26 +1115,28 @@ const QMap<int, int> UIActivityOverviewModel::dataLengths() const
 
 QUuid UIActivityOverviewModel::itemUid(int iIndex)
 {
-    if (iIndex >= m_itemList.size())
+    if (iIndex >= m_itemList.size() || !m_itemList[iIndex])
         return QUuid();
-    return m_itemList[iIndex].m_VMuid;
+    return m_itemList[iIndex]->m_VMuid;
 }
 
 int UIActivityOverviewModel::itemIndex(const QUuid &uid)
 {
     for (int i = 0; i < m_itemList.size(); ++i)
     {
-        if (m_itemList[i].m_VMuid == uid)
+        if (!m_itemList[i])
+            continue;
+        if (m_itemList[i]->m_VMuid == uid)
             return i;
     }
     return -1;
 }
 
-KMachineState UIActivityOverviewModel::machineState(int rowIndex) const
+bool UIActivityOverviewModel::isVMRunning(int rowIndex) const
 {
-    if (rowIndex >= m_itemList.size() || rowIndex < 0)
-        return KMachineState_Null;
-    return m_itemList[rowIndex].m_enmMachineState;
+    if (rowIndex >= m_itemList.size() || rowIndex < 0 || !m_itemList[rowIndex])
+        return false;
+    return m_itemList[rowIndex]->isRunning();
 }
 
 void UIActivityOverviewModel::setDefaultViewFont(const QFont &font)
@@ -1144,6 +1151,10 @@ void UIActivityOverviewModel::setDefaultViewFontColor(const QColor &color)
 
 QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
+    Q_UNUSED(index);
+    Q_UNUSED(role);
+    return QVariant();
+#if 0
     if (machineState(index.row()) != KMachineState_Running)
     {
         if (role == Qt::FontRole)
@@ -1162,6 +1173,7 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
     if (m_itemList[index.row()].m_enmMachineState != KMachineState_Running)
         return gpConverter->toString(m_itemList[index.row()].m_enmMachineState);
     return m_itemList[index.row()].m_columnData[index.column()];
+#endif
 }
 
 void UIActivityOverviewModel::clearData()
@@ -1169,6 +1181,7 @@ void UIActivityOverviewModel::clearData()
     /* We have a request to detach COM stuff,
      * first of all we are removing all the items,
      * this will detach COM wrappers implicitly: */
+    qDeleteAll(m_itemList);
     m_itemList.clear();
     /* Detaching perf. collector finally,
      * please do not use it after all: */
@@ -1202,9 +1215,13 @@ void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMa
     int iIndex = itemIndex(uId);
     if (iIndex != -1 && iIndex < m_itemList.size())
     {
-        m_itemList[iIndex].m_enmMachineState = state;
-        if (state == KMachineState_Running)
-            m_itemList[iIndex].resetDebugger();
+        UIActivityOverviewItemLocal *pItem = dynamic_cast<UIActivityOverviewItemLocal*>(m_itemList[iIndex]);
+        if (pItem)
+        {
+            pItem->setMachineState(state);
+            if (state == KMachineState_Running)
+                pItem->resetDebugger();
+        }
     }
 }
 
@@ -1230,6 +1247,7 @@ void UIActivityOverviewModel::getHostRAMStats()
 
 void UIActivityOverviewModel::sltTimeout()
 {
+#if 0
     ULONG aPctExecuting;
     ULONG aPctHalted;
     ULONG aPctVMM;
@@ -1348,6 +1366,7 @@ void UIActivityOverviewModel::sltTimeout()
             if (m_columnDataMaxLength.value(i, 0) < m_itemList[j].m_columnData[i].length())
                 m_columnDataMaxLength[i] = m_itemList[j].m_columnData[i].length();
     }
+#endif
     emit sigDataUpdate();
     emit sigHostStatsUpdate(m_hostStats);
 }
@@ -1372,6 +1391,7 @@ void UIActivityOverviewModel::setupPerformanceCollector()
 
 void UIActivityOverviewModel::queryPerformanceCollector()
 {
+#if 0
     QVector<QString>  aReturnNames;
     QVector<CUnknown>  aReturnObjects;
     QVector<QString>  aReturnUnits;
@@ -1455,13 +1475,14 @@ void UIActivityOverviewModel::queryPerformanceCollector()
         if (m_itemList[i].m_uTotalRAM != 0)
             m_itemList[i].m_fRAMUsagePercentage = 100.f * (m_itemList[i].m_uUsedRAM / (float)m_itemList[i].m_uTotalRAM);
     }
+#endif
 }
 
 void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    UIActivityOverviewItemLocal newItem(uMachineId, strMachineName);
-    newItem.m_enmMachineState = enmState;
-    m_itemList.append(newItem);
+    UIActivityOverviewItemLocal *pItem = new UIActivityOverviewItemLocal(uMachineId, strMachineName);
+    pItem->setMachineState(enmState);
+    m_itemList.append(pItem);
 }
 
 void UIActivityOverviewModel::removeItem(const QUuid& uMachineId)
@@ -1469,6 +1490,7 @@ void UIActivityOverviewModel::removeItem(const QUuid& uMachineId)
     int iIndex = itemIndex(uMachineId);
     if (iIndex == -1)
         return;
+    delete m_itemList[iIndex];
     m_itemList.remove(iIndex);
 }
 
@@ -1803,7 +1825,7 @@ void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelec
         return;
     }
     int iMachineIndex = m_pProxyModel->mapToSource(selected.indexes()[0]).row();
-    if (m_pModel->machineState(iMachineIndex) != KMachineState_Running)
+    if (!m_pModel->isVMRunning(iMachineIndex))
     {
         m_pVMActivityMonitorAction->setEnabled(false);
         return;
