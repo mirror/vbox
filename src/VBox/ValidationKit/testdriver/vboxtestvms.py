@@ -1917,11 +1917,11 @@ class TestVmSet(object):
 
                 if 'interpreter' in asVirtModesWanted and not vboxcon.VMExecutionEngine_Interpreter in aenmExecEngines:
                     reporter.log('IEM interpreter is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
-                    asVirtModesWanted.remove('iem-interpreted');
+                    asVirtModesWanted.remove('interpreter');
 
                 if 'recompiler' in asVirtModesWanted and not vboxcon.VMExecutionEngine_Recompiler in aenmExecEngines:
                     reporter.log('IEM recompiler is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
-                    asVirtModesWanted.remove('iem-recompiled');
+                    asVirtModesWanted.remove('recompiler');
             except:
                 reporter.errorXcpt('failed to query supported execution engines for "%s"' % (oVm.sVmName, ));
                 asVirtModesWanted = [];
