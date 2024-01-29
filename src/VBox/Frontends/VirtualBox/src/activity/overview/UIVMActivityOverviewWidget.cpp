@@ -221,10 +221,10 @@ private:
     QMap<int, int> m_minimumColumnWidths;
 };
 
-/** Each instance of UIVMActivityOverviewItem corresponds to a running vm whose stats are displayed.
+/** Each instance of UIActivityOverviewItem corresponds to a running vm whose stats are displayed.
   * they are owned my the model. */
 /*********************************************************************************************************************************
- *   Class UIVMActivityOverviewItem definition.                                                                           *
+ *   Class UIActivityOverviewItem definition.                                                                           *
  *********************************************************************************************************************************/
 class UIActivityOverviewItem
 {
@@ -267,10 +267,8 @@ private:
 
 Q_DECLARE_METATYPE(UIActivityOverviewItem);
 
-/** Each instance of UIVMActivityOverviewItem corresponds to a running vm whose stats are displayed.
-  * they are owned my the model. */
 /*********************************************************************************************************************************
- *   Class UIVMActivityOverviewItem definition.                                                                           *
+ *   Class UIActivityOverviewItemLocal definition.                                                                           *
  *********************************************************************************************************************************/
 class UIActivityOverviewItemLocal : public UIActivityOverviewItem
 {
@@ -296,53 +294,20 @@ public:
     CGuest   m_comGuest;
 };
 
-
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewItem implementation.                                                                               *
-*********************************************************************************************************************************/
-UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName)
-    : UIActivityOverviewItem(uid, strVMName)
-    , m_uCPUVMMLoad(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
+ *   Class UIActivityOverviewItemCloud definition.                                                                           *
+ *********************************************************************************************************************************/
+class UIActivityOverviewItemCloud : public UIActivityOverviewItem
 {
-    if (m_enmMachineState == KMachineState_Running)
-        resetDebugger();
-}
 
-UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
-    : m_uCPUVMMLoad(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
-{
-}
+public:
 
-UIActivityOverviewItemLocal::~UIActivityOverviewItemLocal()
-{
-    if (!m_comSession.isNull())
-        m_comSession.UnlockMachine();
-}
+    UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName);
 
-bool UIActivityOverviewItemLocal::isWithGuestAdditions()
-{
-    if (m_comGuest.isNull())
-        return false;
-    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
-}
+    UIActivityOverviewItemCloud();
+    ~UIActivityOverviewItemCloud();
 
-void UIActivityOverviewItemLocal::resetDebugger()
-{
-    m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
-    if (!m_comSession.isNull())
-    {
-        CConsole comConsole = m_comSession.GetConsole();
-        if (!comConsole.isNull())
-        {
-            m_comGuest = comConsole.GetGuest();
-            m_comDebugger = comConsole.GetDebugger();
-        }
-    }
-}
+};
 
 
 /*********************************************************************************************************************************
@@ -850,7 +815,7 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewItem implementation.                                                                               *
+*   Class UIActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
 UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
@@ -916,6 +881,69 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 {
 }
 
+/*********************************************************************************************************************************
+ *   Class UIActivityOverviewItemCloud implementation.                                                                           *
+ *********************************************************************************************************************************/
+
+UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName)
+    : UIActivityOverviewItem(uid, strVMName)
+{
+}
+
+UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
+{
+}
+
+UIActivityOverviewItemCloud::~UIActivityOverviewItemCloud()
+{
+}
+
+/*********************************************************************************************************************************
+*   Class UIActivityOverviewItemLocal implementation.                                                                               *
+*********************************************************************************************************************************/
+UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName)
+    : UIActivityOverviewItem(uid, strVMName)
+    , m_uCPUVMMLoad(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
+{
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
+}
+
+UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
+    : m_uCPUVMMLoad(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
+{
+}
+
+UIActivityOverviewItemLocal::~UIActivityOverviewItemLocal()
+{
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+}
+
+bool UIActivityOverviewItemLocal::isWithGuestAdditions()
+{
+    if (m_comGuest.isNull())
+        return false;
+    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+}
+
+void UIActivityOverviewItemLocal::resetDebugger()
+{
+    m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
+    if (!m_comSession.isNull())
+    {
+        CConsole comConsole = m_comSession.GetConsole();
+        if (!comConsole.isNull())
+        {
+            m_comGuest = comConsole.GetGuest();
+            m_comDebugger = comConsole.GetDebugger();
+        }
+    }
+}
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewProxyModel implementation.                                                                         *
