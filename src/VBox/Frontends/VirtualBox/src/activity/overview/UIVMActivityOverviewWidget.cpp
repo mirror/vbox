@@ -231,44 +231,31 @@ class UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, bool fIsCloudVM = false);
+    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
 
     UIActivityOverviewItem();
     ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
-    bool isWithGuestAdditions();
-    void resetDebugger();
 
     QUuid         m_VMuid;
     QString       m_strVMName;
-    bool          m_fIsCloudVM;
-
-    KMachineState m_enmMachineState;
 
     quint64  m_uCPUGuestLoad;
-    quint64  m_uCPUVMMLoad;
-
     quint64  m_uTotalRAM;
     quint64  m_uFreeRAM;
     quint64  m_uUsedRAM;
     float    m_fRAMUsagePercentage;
-
-    quint64 m_uNetworkDownRate;
-    quint64 m_uNetworkUpRate;
-    quint64 m_uNetworkDownTotal;
-    quint64 m_uNetworkUpTotal;
+    quint64  m_uNetworkDownRate;
+    quint64  m_uNetworkUpRate;
+    quint64  m_uNetworkDownTotal;
+    quint64  m_uNetworkUpTotal;
 
     quint64 m_uDiskWriteRate;
     quint64 m_uDiskReadRate;
     quint64 m_uDiskWriteTotal;
     quint64 m_uDiskReadTotal;
 
-    quint64 m_uVMExitRate;
-    quint64 m_uVMExitTotal;
 
-    CSession m_comSession;
-    CMachineDebugger m_comDebugger;
-    CGuest   m_comGuest;
     /** The strings of each column for the item. We update this during performance query
       * instead of model's data function to know the string length earlier. */
     QMap<int, QString> m_columnData;
@@ -279,6 +266,83 @@ private:
 };
 
 Q_DECLARE_METATYPE(UIActivityOverviewItem);
+
+/** Each instance of UIVMActivityOverviewItem corresponds to a running vm whose stats are displayed.
+  * they are owned my the model. */
+/*********************************************************************************************************************************
+ *   Class UIVMActivityOverviewItem definition.                                                                           *
+ *********************************************************************************************************************************/
+class UIActivityOverviewItemLocal : public UIActivityOverviewItem
+{
+
+public:
+
+    UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName);
+
+    UIActivityOverviewItemLocal();
+    ~UIActivityOverviewItemLocal();
+
+    bool isWithGuestAdditions();
+    void resetDebugger();
+
+    KMachineState m_enmMachineState;
+    quint64  m_uCPUVMMLoad;
+
+    quint64 m_uVMExitRate;
+    quint64 m_uVMExitTotal;
+
+    CSession m_comSession;
+    CMachineDebugger m_comDebugger;
+    CGuest   m_comGuest;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIVMActivityOverviewItem implementation.                                                                               *
+*********************************************************************************************************************************/
+UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName)
+    : UIActivityOverviewItem(uid, strVMName)
+    , m_uCPUVMMLoad(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
+{
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
+}
+
+UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
+    : m_uCPUVMMLoad(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
+{
+}
+
+UIActivityOverviewItemLocal::~UIActivityOverviewItemLocal()
+{
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+}
+
+bool UIActivityOverviewItemLocal::isWithGuestAdditions()
+{
+    if (m_comGuest.isNull())
+        return false;
+    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+}
+
+void UIActivityOverviewItemLocal::resetDebugger()
+{
+    m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
+    if (!m_comSession.isNull())
+    {
+        CConsole comConsole = m_comSession.GetConsole();
+        if (!comConsole.isNull())
+        {
+            m_comGuest = comConsole.GetGuest();
+            m_comDebugger = comConsole.GetDebugger();
+        }
+    }
+}
 
 
 /*********************************************************************************************************************************
@@ -345,7 +409,6 @@ private slots:
     void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
     void sltMachineRegistered(const QUuid &uId, bool fRegistered);
     void sltTimeout();
-    void sltCloudUpdateTimeout();
 
 private:
 
@@ -356,13 +419,10 @@ private:
     void addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
-    QVector<CCloudClient> obtainCloudClientList();
-    QVector<CCloudMachine> obtainCloudMachineList();
 
-    QVector<UIActivityOverviewItem> m_itemList;
+    QVector<UIActivityOverviewItemLocal> m_itemList;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
-    QTimer *m_pCloudUpdateTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
        QVector<QString> m_nameList;
@@ -792,12 +852,10 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, bool fIsCloudVM /* = false */)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
-    , m_fIsCloudVM(fIsCloudVM)
     , m_uCPUGuestLoad(0)
-    , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
     , m_uUsedRAM(0)
@@ -810,18 +868,12 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
 {
-    if (m_enmMachineState == KMachineState_Running)
-        resetDebugger();
 }
 
 UIActivityOverviewItem::UIActivityOverviewItem()
     : m_VMuid(QUuid())
-    , m_fIsCloudVM(false)
     , m_uCPUGuestLoad(0)
-    , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
@@ -833,29 +885,12 @@ UIActivityOverviewItem::UIActivityOverviewItem()
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
 {
 }
 
-void UIActivityOverviewItem::resetDebugger()
-{
-    m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
-    if (!m_comSession.isNull())
-    {
-        CConsole comConsole = m_comSession.GetConsole();
-        if (!comConsole.isNull())
-        {
-            m_comGuest = comConsole.GetGuest();
-            m_comDebugger = comConsole.GetDebugger();
-        }
-    }
-}
 
 UIActivityOverviewItem::~UIActivityOverviewItem()
 {
-    if (!m_comSession.isNull())
-        m_comSession.UnlockMachine();
 }
 
 bool UIActivityOverviewItem::operator==(const UIActivityOverviewItem& other) const
@@ -863,13 +898,6 @@ bool UIActivityOverviewItem::operator==(const UIActivityOverviewItem& other) con
     if (m_VMuid == other.m_VMuid)
         return true;
     return false;
-}
-
-bool UIActivityOverviewItem::isWithGuestAdditions()
-{
-    if (m_comGuest.isNull())
-        return false;
-    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
 }
 
 
@@ -966,7 +994,6 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
 UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
-    , m_pCloudUpdateTimer(new QTimer(this))
 {
     initialize();
 }
@@ -985,12 +1012,6 @@ void UIActivityOverviewModel::initialize()
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltTimeout);
         m_pTimer->start(1000);
-    }
-
-    if (m_pCloudUpdateTimer)
-    {
-        connect(m_pCloudUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltCloudUpdateTimeout);
-        m_pCloudUpdateTimer->start(10 * 1000);
     }
 }
 
@@ -1014,13 +1035,6 @@ void UIActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
             m_pTimer->start();
         else
             m_pTimer->stop();
-    }
-    if (m_pCloudUpdateTimer)
-    {
-        if (fShouldUpdate)
-            m_pCloudUpdateTimer->start();
-        else
-            m_pCloudUpdateTimer->stop();
     }
 }
 
@@ -1273,94 +1287,6 @@ void UIActivityOverviewModel::sltTimeout()
     emit sigHostStatsUpdate(m_hostStats);
 }
 
-QVector<CCloudMachine> UIActivityOverviewModel::obtainCloudMachineList()
-{
-    QVector<CCloudMachine> cloudMachineList;
-    QVector<CCloudClient> cloudClientList = obtainCloudClientList();
-    foreach (const CCloudClient &comClient, cloudClientList)
-    {
-        cloudMachineList << comClient.GetCloudMachineList();
-    }
-    return cloudMachineList;
-}
-
-QVector<CCloudClient> UIActivityOverviewModel::obtainCloudClientList()
-{
-    QVector<CCloudClient> comCloudClients;
-    /* Acquire Cloud Profile Manager restrictions: */
-    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
-
-    foreach (CCloudProvider comCloudProvider, listCloudProviders())
-    {
-        /* Skip if we have nothing to populate: */
-        if (comCloudProvider.isNull())
-            continue;
-
-        /* Acquire provider id: */
-        QUuid uProviderId;
-        if (!cloudProviderId(comCloudProvider, uProviderId))
-            continue;
-
-        /* Acquire provider short name: */
-        QString strProviderShortName;
-        if (!cloudProviderShortName(comCloudProvider, strProviderShortName))
-            continue;
-
-        /* Make sure this provider isn't restricted: */
-        const QString strProviderPath = QString("/%1").arg(strProviderShortName);
-        if (restrictions.contains(strProviderPath))
-            continue;
-
-        /* Acquire list of profiles: */
-        const QVector<CCloudProfile> profiles = listCloudProfiles(comCloudProvider);
-        if (profiles.isEmpty())
-            continue;
-
-        foreach (CCloudProfile comCloudProfile, profiles)
-        {
-            /* Skip if we have nothing to populate: */
-            if (comCloudProfile.isNull())
-                continue;
-
-            /* Acquire profile name: */
-            QString strProfileName;
-            if (!cloudProfileName(comCloudProfile, strProfileName))
-                continue;
-
-            /* Make sure this profile isn't restricted: */
-            const QString strProfilePath = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-            if (restrictions.contains(strProfilePath))
-                continue;
-
-
-            QString strErrorMessage;
-            /* Create read cloud machine list task: */
-            const UICloudEntityKey cloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
-            CCloudClient comCloudClient = cloudClientByName(cloudProfileKey.m_strProviderShortName,
-                                                            cloudProfileKey.m_strProfileName,
-                                                            strErrorMessage);
-            if (strErrorMessage.isEmpty() && comCloudClient.isOk())
-                comCloudClients << comCloudClient;
-        }
-    }
-    return comCloudClients;
-}
-
-void UIActivityOverviewModel::sltCloudUpdateTimeout()
-{
-    /* Update the m_items list: This is necessary as we dont have add/remove/change events for cloud machines: */
-    QVector<CCloudMachine> cloudMachines = obtainCloudMachineList();
-    foreach (const CCloudMachine &comMachine, cloudMachines)
-    {
-        if (!comMachine.isOk())
-            continue;
-        UIActivityOverviewItem cloudVMItem(comMachine.GetId(), comMachine.GetName(), true /* cloud vm*/);
-        if (m_itemList.contains(cloudVMItem))
-            continue;
-        m_itemList << cloudVMItem;
-    }
-}
-
 void UIActivityOverviewModel::setupPerformanceCollector()
 {
     m_nameList.clear();
@@ -1468,7 +1394,7 @@ void UIActivityOverviewModel::queryPerformanceCollector()
 
 void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    UIActivityOverviewItem newItem(uMachineId, strMachineName);
+    UIActivityOverviewItemLocal newItem(uMachineId, strMachineName);
     newItem.m_enmMachineState = enmState;
     m_itemList.append(newItem);
 }
