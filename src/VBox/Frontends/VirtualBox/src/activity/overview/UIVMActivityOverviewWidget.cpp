@@ -234,9 +234,10 @@ public:
     UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
 
     UIActivityOverviewItem();
-    ~UIActivityOverviewItem();
+    virtual ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
-
+    virtual bool isRunning() const = 0;
+    virtual bool isCloudVM() const = 0;
     QUuid         m_VMuid;
     QString       m_strVMName;
 
@@ -282,6 +283,8 @@ public:
 
     bool isWithGuestAdditions();
     void resetDebugger();
+    virtual bool isRunning() const override;
+    virtual bool isCloudVM() const override;
 
     KMachineState m_enmMachineState;
     quint64  m_uCPUVMMLoad;
@@ -289,8 +292,11 @@ public:
     quint64 m_uVMExitRate;
     quint64 m_uVMExitTotal;
 
-    CSession m_comSession;
     CMachineDebugger m_comDebugger;
+
+private:
+
+    CSession m_comSession;
     CGuest   m_comGuest;
 };
 
@@ -302,11 +308,16 @@ class UIActivityOverviewItemCloud : public UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName);
+    UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
 
     UIActivityOverviewItemCloud();
     ~UIActivityOverviewItemCloud();
+    virtual bool isRunning() const override;
+    virtual bool isCloudVM() const override;
 
+private:
+
+    CCloudMachine m_comCloudMachine;
 };
 
 
@@ -886,8 +897,9 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 *   Class UIActivityOverviewItemCloud implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName)
+UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
     : UIActivityOverviewItem(uid, strVMName)
+    , m_comCloudMachine(comCloudMachine)
 {
 }
 
@@ -897,6 +909,18 @@ UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
 
 UIActivityOverviewItemCloud::~UIActivityOverviewItemCloud()
 {
+}
+
+bool UIActivityOverviewItemCloud::isRunning() const
+{
+    if (!m_comCloudMachine.isOk())
+        return false;
+    return m_comCloudMachine.GetState() == KCloudMachineState_Running;
+}
+
+bool UIActivityOverviewItemCloud::isCloudVM() const
+{
+    return true;
 }
 
 
@@ -945,6 +969,16 @@ void UIActivityOverviewItemLocal::resetDebugger()
             m_comDebugger = comConsole.GetDebugger();
         }
     }
+}
+
+bool UIActivityOverviewItemLocal::isRunning() const
+{
+    return m_enmMachineState == KMachineState_Running;
+}
+
+bool UIActivityOverviewItemLocal::isCloudVM() const
+{
+    return false;
 }
 
 
