@@ -3403,9 +3403,9 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                               enmExecEngine == VMExecutionEngine_NotSet      ? "NotSet"
                             : enmExecEngine == VMExecutionEngine_Default     ? "Default"
                             : enmExecEngine == VMExecutionEngine_HwVirt      ? "HM"
-                            : enmExecEngine == VMExecutionEngine_NativeApi   ? "NEM" : "UNK"
+                            : enmExecEngine == VMExecutionEngine_NativeApi   ? "NEM"
                             : enmExecEngine == VMExecutionEngine_Interpreter ? "Interpreter"
-                            : enmExecEngine == VMExecutionEngine_Recompiler  ? "Recompiler");
+                            : enmExecEngine == VMExecutionEngine_Recompiler  ? "Recompiler" : "UNK");
                 char *psz = strchr(szTitle, '\0');
                 if (virtualTimeRate != 100)
                     RTStrPrintf(psz, &szTitle[sizeof(szTitle)] - psz, " WD=%d%%]", virtualTimeRate);
