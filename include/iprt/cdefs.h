@@ -2984,11 +2984,11 @@
 #  pragma warning(disable:4815) /* -wd4815 does not work with VS2019 */
 # endif
 #elif defined(__STDC_VERSION__)
-# if __STDC_VERSION__ >= 1999901L
+# if __STDC_VERSION__ >= 199901L
 #  define RT_FLEXIBLE_ARRAY
-# else
+# else /* __STDC_VERSION__ < 199901L */
 #  define RT_FLEXIBLE_ARRAY                     1
-# endif
+# endif /* __STDC_VERSION__ < 199901L */
 #else
 # define RT_FLEXIBLE_ARRAY                      1
 #endif
