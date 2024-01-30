@@ -211,15 +211,16 @@ main(int argc, char **argv)
             return 1;
         }
 
-        in = fopen(name, "rb");
-        if (!in) {
-            perror("FAILED: fopen");
-            return 1;
-        }
-
         whole = XPT_MALLOC(arena, flen);
         if (!whole) {
             perror("FAILED: XPT_MALLOC for whole");
+            return 1;
+        }
+
+        in = fopen(name, "rb");
+        if (!in) {
+            perror("FAILED: fopen");
+            XPT_FREE(arena, whole);
             return 1;
         }
         
@@ -227,10 +228,13 @@ main(int argc, char **argv)
             size_t rv = fread(whole, 1, flen, in);
             if (rv < flen) {
                 fprintf(stderr, "short read (%zd vs %zd)! ouch!\n", rv, flen);
+                fclose(in);
+                XPT_FREE(arena, whole);
                 return 1;
             }
             if (ferror(in) != 0 || fclose(in) != 0) {
                 perror("FAILED: Unable to read typelib file.\n");
+                XPT_FREE(arena, whole);
                 return 1;
             }
             
