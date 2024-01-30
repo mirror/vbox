@@ -2526,6 +2526,7 @@ ifdef VBOX_WITH_PARFAIT
 	 -o $(PATH_OUT)/report.txt \
 	 -g $(PATH_OUT)/html \
 	 -c $(PATH_ROOT)/webtools/tinderbox/client/parfait-vbox.conf \
+	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
 	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
@@ -2540,6 +2541,7 @@ ifdef VBOX_WITH_PARFAIT
 	 -o $(PATH_OUT)/report_2.txt \
 	 -g $(PATH_OUT)/html_2 \
 	 -c $(PATH_ROOT)/webtools/tinderbox/client/parfait-vbox.conf \
+	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
 	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
