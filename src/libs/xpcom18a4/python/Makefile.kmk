@@ -700,7 +700,7 @@ ifndef VBOX_ONLY_SDK
   # TODO: ASSUMING that we don't need a different headers for pymalloc
   #       ('m' builds < 3.8) and CRT malloc.
   #
-  VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 38 39 310 311 312   34 33 \
+  VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 37 38 39 310 311 312   34 33 \
   			,$(if-expr defined(VBOX_PYTHON$(ver)_INC),$(ver),)$(if-expr defined(VBOX_PYTHON$(ver)M_INC),$(ver)M,)))
   ifneq ($(VBOX_PYTHON_LIMITED_API_VER),)
    DLLS += VBoxPython3
