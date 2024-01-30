@@ -99,11 +99,6 @@ static Status AcquireDaemonLock(const char *baseDir)
             + 1                 // "/"
             + sizeof(lockName); // "lock"
 
-    char *lockFile = (char *) malloc(len);
-    memcpy(lockFile, baseDir, dirLen);
-    lockFile[dirLen] = '/';
-    memcpy(lockFile + dirLen + 1, lockName, sizeof(lockName));
-
 #ifdef VBOX
     //
     // Security checks for the directory
@@ -137,6 +132,11 @@ static Status AcquireDaemonLock(const char *baseDir)
         return ELockFileOwner;
     }
 #endif
+
+    char *lockFile = (char *) malloc(len);
+    memcpy(lockFile, baseDir, dirLen);
+    lockFile[dirLen] = '/';
+    memcpy(lockFile + dirLen + 1, lockName, sizeof(lockName));
 
     //
     // open lock file.  it remains open until we shutdown.
