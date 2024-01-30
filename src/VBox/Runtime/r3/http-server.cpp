@@ -744,7 +744,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
     {
         RTHTTPHEADERLIST HdrLst;
         rc = RTHttpHeaderListInit(&HdrLst);
-        AssertRCReturn(rc, rc);
+        AssertRCBreak(rc);
 
         char szVal[16];
 
@@ -752,12 +752,12 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
          *       of the body data for the directory listing. */
 
         ssize_t cch = RTStrPrintf2(szVal, sizeof(szVal), "%RU64", fsObj.cbObject);
-        AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
+        AssertBreakStmt(cch, rc = VERR_BUFFER_OVERFLOW);
         rc = RTHttpHeaderListAdd(HdrLst, "Content-Length", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
         AssertRCBreak(rc);
 
         cch = RTStrPrintf2(szVal, sizeof(szVal), "identity");
-        AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
+        AssertBreakStmt(cch, rc = VERR_BUFFER_OVERFLOW);
         rc = RTHttpHeaderListAdd(HdrLst, "Content-Encoding", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
         AssertRCBreak(rc);
 
@@ -783,9 +783,9 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
             pClient->State.msKeepAlive = 5000;
 #endif
             cch = RTStrPrintf2(szVal, sizeof(szVal), "timeout=%RU64", pClient->State.msKeepAlive / RT_MS_1SEC); /** @todo No pipelining support here yet. */
-            AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
+            AssertBreakStmt(cch, rc = VERR_BUFFER_OVERFLOW);
             rc = RTHttpHeaderListAdd(HdrLst, "Keep-Alive", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
-            AssertRCReturn(rc, rc);
+            AssertRCBreak(rc);
         }
 
         rc = rtHttpServerSendResponseEx(pClient, enmStsResponse, &HdrLst);
@@ -795,7 +795,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
         if (rc == VERR_BROKEN_PIPE) /* Could happen on fast reloads. */
             break;
-        AssertRCReturn(rc, rc);
+        AssertRCBreak(rc);
 
         size_t cbToRead  = fsObj.cbObject;
         size_t cbRead    = 0; /* Shut up GCC. */
