@@ -373,7 +373,7 @@ static DECLCALLBACK(int) platformR3Destruct(PPDMDEVINS pDevIns)
  */
 static int platformR3LoadRoms(PPDMDEVINS pDevIns, PDEVPLATFORM pThis)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     PDEVPLATFORMRESOURCE pIt;
     RTListForEach(&pThis->LstResourcesRom, pIt, DEVPLATFORMRESOURCE, NdLst)
