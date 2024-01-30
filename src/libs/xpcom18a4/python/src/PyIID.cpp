@@ -323,7 +323,7 @@ Py_nsIID::PyTypeMethod_richcompare(PyObject *self, PyObject *other, int op)
     nsIID iid;
     if (!Py_nsIID::IIDFromPyObject(other, &iid))
     {
-        /* Can't do comparison betsides equality/inequalityif the other object does not contain an IID. */
+        /* Can't do comparison besides equality/inequality if the other object does not contain an IID. */
         if (op == Py_EQ)
             Py_RETURN_FALSE;
         else if (op == Py_NE)
