@@ -148,7 +148,10 @@ static Status AcquireDaemonLock(const char *baseDir)
 #endif
 
     if (ipcLockFD == -1)
+    {
+        free(lockFile);
         return ELockFileOpen;
+    }
 
 #ifdef VBOX
     //
