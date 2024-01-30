@@ -236,9 +236,13 @@ public:
     UIActivityOverviewItem();
     virtual ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
+    virtual QString machineStateString() const = 0;
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
     virtual void updateColumnData() = 0;
+
+    QString columnData(int iColumnIndex) const;
+
     QUuid         m_VMuid;
     QString       m_strVMName;
 
@@ -289,14 +293,8 @@ public:
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
     virtual void updateColumnData() override;
+    virtual QString machineStateString() const override;
     void setMachineState(KMachineState enmState);
-
-    quint64  m_uCPUVMMLoad;
-
-    quint64 m_uVMExitRate;
-    quint64 m_uVMExitTotal;
-
-    CMachineDebugger m_comDebugger;
 
 protected:
 
@@ -307,6 +305,11 @@ private:
     CSession m_comSession;
     CGuest   m_comGuest;
     KMachineState m_enmMachineState;
+
+    quint64  m_uCPUVMMLoad;
+    quint64 m_uVMExitRate;
+    quint64 m_uVMExitTotal;
+    CMachineDebugger m_comDebugger;
 };
 
 /*********************************************************************************************************************************
@@ -324,6 +327,7 @@ public:
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
     virtual void updateColumnData() override;
+    virtual QString machineStateString() const override;
 
 protected:
 
@@ -397,7 +401,8 @@ private slots:
 
     void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
     void sltMachineRegistered(const QUuid &uId, bool fRegistered);
-    void sltTimeout();
+    void sltLocalUpdateTimeout();
+    void sltCloudUpdateTimeout();
 
 private:
 
@@ -411,7 +416,8 @@ private:
 
     QVector<UIActivityOverviewItem*> m_itemList;
     QMap<int, QString> m_columnTitles;
-    QTimer *m_pTimer;
+    QTimer *m_pLocalUpdateTimer;
+    QTimer *m_pCloudUpdateTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
        QVector<QString> m_nameList;
@@ -889,6 +895,11 @@ bool UIActivityOverviewItem::operator==(const UIActivityOverviewItem& other) con
     return false;
 }
 
+QString UIActivityOverviewItem::columnData(int iColumnIndex) const
+{
+    return m_columnData.value(iColumnIndex, QString());
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewHostStats implementation.                                                                          *
@@ -942,6 +953,13 @@ void UIActivityOverviewItemCloud::updateMetricData()
 
 void UIActivityOverviewItemCloud::updateColumnData()
 {
+}
+
+QString UIActivityOverviewItemCloud::machineStateString() const
+{
+    if (!m_comCloudMachine.isOk())
+        return QString();
+    return gpConverter->toString(m_comCloudMachine.GetState());
 }
 
 
@@ -1005,6 +1023,8 @@ bool UIActivityOverviewItemLocal::isCloudVM() const
 void UIActivityOverviewItemLocal::setMachineState(KMachineState enmState)
 {
     m_enmMachineState = enmState;
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
 }
 
 
@@ -1098,6 +1118,11 @@ void UIActivityOverviewItemLocal::updateColumnData()
         arg(UITranslator::addMetricSuffixToNumber(m_uVMExitTotal));
 }
 
+QString UIActivityOverviewItemLocal::machineStateString() const
+{
+    return gpConverter->toString(m_enmMachineState);
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewProxyModel implementation.                                                                         *
@@ -1175,7 +1200,8 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
 *********************************************************************************************************************************/
 UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
-    , m_pTimer(new QTimer(this))
+    , m_pLocalUpdateTimer(new QTimer(this))
+    , m_pCloudUpdateTimer(new QTimer(this))
 {
     initialize();
 }
@@ -1190,10 +1216,15 @@ void UIActivityOverviewModel::initialize()
             this, &UIActivityOverviewModel::sltMachineStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
             this, &UIActivityOverviewModel::sltMachineRegistered);
-    if (m_pTimer)
+    if (m_pLocalUpdateTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltTimeout);
-        m_pTimer->start(1000);
+        connect(m_pLocalUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltLocalUpdateTimeout);
+        m_pLocalUpdateTimer->start(1000);
+    }
+    if (m_pCloudUpdateTimer)
+    {
+        connect(m_pCloudUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltCloudUpdateTimeout);
+        m_pCloudUpdateTimer->start(60 * 1000);
     }
 }
 
@@ -1211,12 +1242,12 @@ int UIActivityOverviewModel::columnCount(const QModelIndex &parent /* = QModelIn
 
 void UIActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
 {
-    if (m_pTimer)
+    if (m_pLocalUpdateTimer)
     {
         if (fShouldUpdate)
-            m_pTimer->start();
+            m_pLocalUpdateTimer->start();
         else
-            m_pTimer->stop();
+            m_pLocalUpdateTimer->stop();
     }
 }
 
@@ -1263,11 +1294,7 @@ void UIActivityOverviewModel::setDefaultViewFontColor(const QColor &color)
 
 QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
-    Q_UNUSED(index);
-    Q_UNUSED(role);
-    return QVariant();
-#if 0
-    if (machineState(index.row()) != KMachineState_Running)
+    if (!isVMRunning(index.row()))
     {
         if (role == Qt::FontRole)
         {
@@ -1280,12 +1307,17 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
     }
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
+
+    UIActivityOverviewItem *pItem = m_itemList[index.row()];
+    AssertPtrReturn(pItem, QVariant());
+
     if (index.column() == VMActivityOverviewColumn_Name)
-        return m_itemList[index.row()].m_columnData[index.column()];
-    if (m_itemList[index.row()].m_enmMachineState != KMachineState_Running)
-        return gpConverter->toString(m_itemList[index.row()].m_enmMachineState);
-    return m_itemList[index.row()].m_columnData[index.column()];
-#endif
+        return pItem->columnData(index.column());
+
+    if (!pItem->isRunning())
+        return pItem->machineStateString();
+
+    return pItem->columnData(index.column());
 }
 
 void UIActivityOverviewModel::clearData()
@@ -1357,10 +1389,12 @@ void UIActivityOverviewModel::getHostRAMStats()
     m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
 
-void UIActivityOverviewModel::sltTimeout()
+void UIActivityOverviewModel::sltCloudUpdateTimeout()
 {
+}
 
-
+void UIActivityOverviewModel::sltLocalUpdateTimeout()
+{
     /* Host's RAM usage is obtained from IHost not from IPerformanceCollector: */
     getHostRAMStats();
 
