@@ -33,10 +33,10 @@
 #include <QLabel>
 #include <QMenu>
 #include <QStyleOptionFrame>
-#include <QWindow>
 
 /* GUI includes: */
 #include "QILineEdit.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 
 /* Other VBox includes: */
@@ -241,14 +241,12 @@ void UIMarkableLineEdit::setPlaceholderText(const QString &strText)
 
 void UIMarkableLineEdit::mark(bool fError, const QString &strErrorMessage /* = QString() */)
 {
+    AssertPtrReturnVoid(m_pIconLabel);
     m_pIconLabel->setVisible(true);
-    AssertReturnVoid(m_pIconLabel);
+    const QIcon icon = fError ? UIIconPool::iconSet(":/status_error_16px.png") : UIIconPool::iconSet(":/status_check_16px.png");
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
-    if (fError)
-        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
-    else
-        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_check_16px.png").pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
+    const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pIconLabel);
+    m_pIconLabel->setPixmap(icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
     m_pIconLabel->setToolTip(strErrorMessage);
 }
 

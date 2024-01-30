@@ -28,12 +28,15 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QDir>
+#include <QStyle>
 #include <QRegularExpression>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIIconPool.h"
 #include "UINameAndSystemEditor.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVMNameOSTypePage.h"
@@ -566,7 +569,11 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
                                                                   "The install will start after this wizard is closed."));
     }
 
-    m_pInfoLabel->setText(QString("<img src=\":/session_info_16px.png\" style=\"vertical-align:top\"> %1").arg(strMessage));
+    const QIcon icon = UIIconPool::iconSet(":/session_info_16px.png");
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pInfoLabel);
+    m_pInfoLabel->registerPixmap(icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio), "wizard://info");
+    m_pInfoLabel->setText(QString("<img src='wizard://info' style=\"vertical-align:top\"> %1").arg(strMessage));
 }
 
 void UIWizardNewVMNameOSTypePage::initializePage()

@@ -31,12 +31,12 @@
 #include <QPainter>
 #include <QStyle>
 #include <QVBoxLayout>
-#include <QWindow>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIToolBox.h"
 
@@ -295,9 +295,9 @@ void UIToolBoxPage::setTitleIcon(const QIcon &icon, const QString &strToolTip)
         m_pIconLabel->setPixmap(QPixmap());
         return;
     }
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
-    m_pIconLabel->setPixmap(icon.pixmap(QSize(iMetric, iMetric), fDevicePixelRatio));
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pIconLabel);
+    m_pIconLabel->setPixmap(icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
     m_pIconLabel->setToolTip(strToolTip);
 }
 
