@@ -287,7 +287,7 @@ Q_DECLARE_METATYPE(UIActivityOverviewItem);
  *********************************************************************************************************************************/
 class UIActivityOverviewItemLocal : public UIActivityOverviewItem
 {
-
+    Q_OBJECT;
 public:
 
     UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
@@ -324,7 +324,7 @@ private:
  *********************************************************************************************************************************/
 class UIActivityOverviewItemCloud : public UIActivityOverviewItem
 {
-
+    Q_OBJECT;
 public:
 
     UIActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
@@ -340,8 +340,12 @@ protected:
 
     virtual void updateMetricData() override;
 
+private slots:
+
+    void sltTimeout();
+
 private:
-    QTimer m_pTimer;
+    QTimer *m_pTimer;
     CCloudMachine m_comCloudMachine;
 };
 
@@ -945,14 +949,14 @@ UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const
     : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_comCloudMachine(comCloudMachine)
 {
-    /*    m_pTimer = new QTimer(this);
+    m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewItemCloud::sltTimeout);
         m_pTimer->setInterval(60 * 1000);
     }
     if (isRunning() && m_pTimer)
-    m_pTimer->start();*/
+    m_pTimer->start();
 }
 
 UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
@@ -993,6 +997,10 @@ QString UIActivityOverviewItemCloud::machineStateString() const
     if (!m_comCloudMachine.isOk())
         return QString();
     return gpConverter->toString(m_comCloudMachine.GetState());
+}
+
+void UIActivityOverviewItemCloud::sltTimeout()
+{
 }
 
 
@@ -1430,7 +1438,7 @@ void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMa
     int iIndex = itemIndex(uId);
     if (iIndex != -1 && iIndex < m_itemList.size())
     {
-        UIActivityOverviewItemLocal *pItem = dynamic_cast<UIActivityOverviewItemLocal*>(m_itemList[iIndex]);
+        UIActivityOverviewItemLocal *pItem = qobject_cast<UIActivityOverviewItemLocal*>(m_itemList[iIndex]);
         if (pItem)
         {
             pItem->setMachineState(state);
