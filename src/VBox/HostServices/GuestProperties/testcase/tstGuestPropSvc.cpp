@@ -83,7 +83,7 @@ static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
  * service
  * @param  pTable the table to initialise
  */
-void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
+static void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
     RT_ZERO(*pHelpers);
     pHelpers->pfnCallComplete   = callComplete;
