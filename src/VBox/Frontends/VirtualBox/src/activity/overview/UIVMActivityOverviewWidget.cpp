@@ -237,6 +237,9 @@ public:
     virtual ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
     int columnLength(int iColumnIndex) const;
+    const QUuid &machineId() const;
+
+
     virtual QString machineStateString() const = 0;
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
@@ -244,8 +247,6 @@ public:
 
     QString columnData(int iColumnIndex) const;
 
-    QUuid         m_VMuid;
-    QString       m_strVMName;
 
     ULONG  m_uCPUGuestLoad;
     quint64  m_uTotalRAM;
@@ -263,6 +264,9 @@ public:
     quint64 m_uDiskReadTotal;
 
 protected:
+
+    QUuid         m_VMuid;
+    QString       m_strVMName;
 
     virtual void updateMetricData() = 0;
 
@@ -397,6 +401,7 @@ public:
     bool isVMRunning(int rowIndex) const;
     void setDefaultViewFont(const QFont &font);
     void setDefaultViewFontColor(const QColor &color);
+    void setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems);
 
 private slots:
 
@@ -849,9 +854,7 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 *   Class UIActivityOverviewItem implementation.                                                                                 *
 *********************************************************************************************************************************/
 UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
-    : m_VMuid(uid)
-    , m_strVMName(strVMName)
-    , m_uCPUGuestLoad(0)
+    : m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
     , m_uUsedRAM(0)
@@ -864,12 +867,13 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
+    , m_VMuid(uid)
+    , m_strVMName(strVMName)
 {
 }
 
 UIActivityOverviewItem::UIActivityOverviewItem()
-    : m_VMuid(QUuid())
-    , m_uCPUGuestLoad(0)
+    : m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
@@ -881,6 +885,7 @@ UIActivityOverviewItem::UIActivityOverviewItem()
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
+    , m_VMuid(QUuid())
 {
 }
 
@@ -903,6 +908,11 @@ QString UIActivityOverviewItem::columnData(int iColumnIndex) const
 int UIActivityOverviewItem::columnLength(int iColumnIndex) const
 {
     return m_columnData.value(iColumnIndex, QString()).length();
+}
+
+const QUuid &UIActivityOverviewItem::machineId() const
+{
+    return m_VMuid;
 }
 
 
@@ -958,6 +968,11 @@ void UIActivityOverviewItemCloud::updateMetricData()
 
 void UIActivityOverviewItemCloud::updateColumnData()
 {
+    updateMetricData();
+
+    //int iDecimalCount = 2;
+
+    m_columnData[VMActivityOverviewColumn_Name] = m_strVMName;
 }
 
 QString UIActivityOverviewItemCloud::machineStateString() const
@@ -1258,7 +1273,7 @@ QUuid UIActivityOverviewModel::itemUid(int iIndex)
 {
     if (iIndex >= m_itemList.size() || !m_itemList[iIndex])
         return QUuid();
-    return m_itemList[iIndex]->m_VMuid;
+    return m_itemList[iIndex]->machineId();
 }
 
 int UIActivityOverviewModel::itemIndex(const QUuid &uid)
@@ -1267,7 +1282,7 @@ int UIActivityOverviewModel::itemIndex(const QUuid &uid)
     {
         if (!m_itemList[i])
             continue;
-        if (m_itemList[i]->m_VMuid == uid)
+        if (m_itemList[i]->machineId() == uid)
             return i;
     }
     return -1;
@@ -1288,6 +1303,51 @@ void UIActivityOverviewModel::setDefaultViewFont(const QFont &font)
 void UIActivityOverviewModel::setDefaultViewFontColor(const QColor &color)
 {
     m_defaultViewFontColor = color;
+}
+
+void UIActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
+{
+    QVector<QUuid> newIds;
+    foreach (const UIVirtualMachineItemCloud* pItem, cloudItems)
+    {
+        if (!pItem)
+            continue;
+        QUuid id = pItem->machineId();
+        if (id.isNull())
+            continue;
+        newIds << id;
+    }
+
+    /* Remove m_itemList items that are not in @cloudItems: */
+    QMutableVectorIterator<UIActivityOverviewItem*> iterator(m_itemList);
+    while (iterator.hasNext())
+    {
+        UIActivityOverviewItem *pItem = iterator.next();
+        if (!pItem->isCloudVM())
+            continue;
+        if (pItem && !newIds.contains(pItem->machineId()))
+            iterator.remove();
+    }
+
+    /* Add items that are not in m_itemList: */
+    foreach (const UIVirtualMachineItemCloud* pItem, cloudItems)
+    {
+        if (!pItem)
+            continue;
+        CCloudMachine comMachine = pItem->machine();
+        if (!comMachine.isOk())
+            continue;
+        QUuid id = comMachine.GetId();
+        /* Linearly search for the vm with th same id. I cannot make QVector::contain work since we store pointers: */
+        bool fFound = false;
+        for (int i = 0; i < m_itemList.size() && !fFound; ++i)
+        {
+            if (m_itemList[i] && m_itemList[i]->machineId() == id)
+                fFound = true;
+        }
+        if (!fFound)
+            m_itemList.append(new UIActivityOverviewItemCloud(id, comMachine.GetName(), comMachine));
+    }
 }
 
 QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
@@ -1389,6 +1449,12 @@ void UIActivityOverviewModel::getHostRAMStats()
 
 void UIActivityOverviewModel::sltCloudUpdateTimeout()
 {
+    for (int i = 0; i < m_itemList.size(); ++i)
+    {
+        if (!m_itemList[i] && !m_itemList[i]->isCloudVM() && !m_itemList[i]->isRunning())
+            continue;
+        m_itemList[i]->updateColumnData();
+    }
 }
 
 void UIActivityOverviewModel::sltLocalUpdateTimeout()
@@ -1599,7 +1665,8 @@ void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
 
 void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
-    Q_UNUSED(cloudItems);
+    if (m_pModel)
+        m_pModel->setCloudMachineItems(cloudItems);
 }
 
 void UIVMActivityOverviewWidget::retranslateUi()

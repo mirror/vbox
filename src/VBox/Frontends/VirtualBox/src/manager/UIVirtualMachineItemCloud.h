@@ -72,6 +72,7 @@ public:
       * @{ */
         /** Returns cached machine state. */
         KCloudMachineState machineState() const { return m_enmMachineState; }
+        QUuid machineId() const { return m_comCloudMachine.isOk() ? m_comCloudMachine.GetId() : QUuid(); }
 
         /** Defines fake cloud item @a enmState. */
         void setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState);
