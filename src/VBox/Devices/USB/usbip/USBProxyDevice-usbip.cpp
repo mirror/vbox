@@ -1277,7 +1277,7 @@ static int usbProxyUsbIpUrbsQueuePending(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
  * @param   pProxyDevUsbIp    The USB/IP proxy device data.
  * @param   bReason           The wakeup reason.
  */
-static char usbProxyReaperKick(PUSBPROXYDEVUSBIP pProxyDevUsbIp, char bReason)
+static int usbProxyReaperKick(PUSBPROXYDEVUSBIP pProxyDevUsbIp, char bReason)
 {
     int rc = VINF_SUCCESS;
     size_t cbWritten = 0;
