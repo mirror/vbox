@@ -1198,7 +1198,12 @@ void UIVirtualBoxManagerWidget::handleCurrentToolTypeChange(UIToolType enmType)
          * start unconditionally updating all cloud VMs,
          * if Activity Overview tool currently chosen (even if VMs are not selected): */
         if (UIToolStuff::isTypeOfClass(enmType, UIToolClass_Global))
-            m_pPaneChooser->setKeepCloudNodesUpdated(enmType == UIToolType_VMActivityOverview);
+        {
+            bool fActivityOverviewActive = enmType == UIToolType_VMActivityOverview;
+            m_pPaneChooser->setKeepCloudNodesUpdated(fActivityOverviewActive);
+            if (fActivityOverviewActive)
+                m_pPaneToolsGlobal->setCloudMachineItems(m_pPaneChooser->cloudMachineItems());
+        }
     }
     /* If Machine tools currently chosen: */
     else

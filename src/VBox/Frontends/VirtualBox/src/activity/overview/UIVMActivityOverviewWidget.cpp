@@ -226,12 +226,14 @@ private:
 /*********************************************************************************************************************************
  *   Class UIActivityOverviewItem definition.                                                                           *
  *********************************************************************************************************************************/
-class UIActivityOverviewItem
+class UIActivityOverviewItem : public QObject
 {
+
+    Q_OBJECT;
 
 public:
 
-    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
+    UIActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName);
 
     UIActivityOverviewItem();
     virtual ~UIActivityOverviewItem();
@@ -288,7 +290,7 @@ class UIActivityOverviewItemLocal : public UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName);
+    UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
 
     UIActivityOverviewItemLocal();
     ~UIActivityOverviewItemLocal();
@@ -325,7 +327,7 @@ class UIActivityOverviewItemCloud : public UIActivityOverviewItem
 
 public:
 
-    UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
+    UIActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
 
     UIActivityOverviewItemCloud();
     ~UIActivityOverviewItemCloud();
@@ -339,7 +341,7 @@ protected:
     virtual void updateMetricData() override;
 
 private:
-
+    QTimer m_pTimer;
     CCloudMachine m_comCloudMachine;
 };
 
@@ -853,8 +855,9 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewItem implementation.                                                                                 *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
-    : m_uCPUGuestLoad(0)
+UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName)
+    : QObject(pParent)
+    , m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
     , m_uUsedRAM(0)
@@ -870,10 +873,12 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
     , m_VMuid(uid)
     , m_strVMName(strVMName)
 {
+    m_columnData[VMActivityOverviewColumn_Name] = m_strVMName;
 }
 
 UIActivityOverviewItem::UIActivityOverviewItem()
-    : m_uCPUGuestLoad(0)
+    : QObject()
+    , m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
@@ -936,10 +941,18 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 *   Class UIActivityOverviewItemCloud implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
-    : UIActivityOverviewItem(uid, strVMName)
+UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
+    : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_comCloudMachine(comCloudMachine)
 {
+    /*    m_pTimer = new QTimer(this);
+    if (m_pTimer)
+    {
+        connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewItemCloud::sltTimeout);
+        m_pTimer->setInterval(60 * 1000);
+    }
+    if (isRunning() && m_pTimer)
+    m_pTimer->start();*/
 }
 
 UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
@@ -972,7 +985,7 @@ void UIActivityOverviewItemCloud::updateColumnData()
 
     //int iDecimalCount = 2;
 
-    m_columnData[VMActivityOverviewColumn_Name] = m_strVMName;
+
 }
 
 QString UIActivityOverviewItemCloud::machineStateString() const
@@ -986,8 +999,8 @@ QString UIActivityOverviewItemCloud::machineStateString() const
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewItemLocal implementation.                                                                            *
 *********************************************************************************************************************************/
-UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(const QUuid &uid, const QString &strVMName)
-    : UIActivityOverviewItem(uid, strVMName)
+UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
+    : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_uCPUVMMLoad(0)
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
@@ -1083,7 +1096,6 @@ void UIActivityOverviewItemLocal::updateColumnData()
 
     int iDecimalCount = 2;
 
-    m_columnData[VMActivityOverviewColumn_Name] = m_strVMName;
     m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
         QString("%1%").arg(QString::number(m_uCPUGuestLoad));
     m_columnData[VMActivityOverviewColumn_CPUVMMLoad] =
@@ -1317,6 +1329,7 @@ void UIActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineI
             continue;
         newIds << id;
     }
+    QVector<UIActivityOverviewItem*> originalItemList = m_itemList;
 
     /* Remove m_itemList items that are not in @cloudItems: */
     QMutableVectorIterator<UIActivityOverviewItem*> iterator(m_itemList);
@@ -1346,7 +1359,7 @@ void UIActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineI
                 fFound = true;
         }
         if (!fFound)
-            m_itemList.append(new UIActivityOverviewItemCloud(id, comMachine.GetName(), comMachine));
+            m_itemList.append(new UIActivityOverviewItemCloud(this, id, comMachine.GetName(), comMachine));
     }
 }
 
@@ -1592,7 +1605,7 @@ void UIActivityOverviewModel::queryPerformanceCollector()
 
 void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    UIActivityOverviewItemLocal *pItem = new UIActivityOverviewItemLocal(uMachineId, strMachineName);
+    UIActivityOverviewItemLocal *pItem = new UIActivityOverviewItemLocal(this, uMachineId, strMachineName);
     pItem->setMachineState(enmState);
     m_itemList.append(pItem);
 }
