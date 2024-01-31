@@ -355,6 +355,7 @@ static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTP
 
         Assert(pSrvTx->hObj != NIL_SHCLOBJHANDLE);
         *ppvHandle = &pSrvTx->hObj;
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
