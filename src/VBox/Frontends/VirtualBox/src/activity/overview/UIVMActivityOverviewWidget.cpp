@@ -346,11 +346,16 @@ protected:
 private slots:
 
     void sltTimeout();
-
+    void sltMetricNameListingComplete(QVector<QString> metricNameList);
+    void sltMetricDataReceived(KMetricType enmMetricType,
+                               const QVector<QString> &data, const QVector<QString> &timeStamps);
 private:
+
+    void getMetricList();
     QTimer *m_pTimer;
     CCloudMachine m_comCloudMachine;
     KCloudMachineState m_enmMachineState;
+    QVector<KMetricType> m_availableMetricTypes;
 };
 
 
@@ -953,15 +958,13 @@ UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const
     : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_comCloudMachine(comCloudMachine)
 {
-    m_enmMachineState = comCloudMachine.GetState();
+    updateMachineState();
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewItemCloud::sltTimeout);
         m_pTimer->setInterval(60 * 1000);
     }
-    if (isRunning() && m_pTimer)
-    m_pTimer->start();
 }
 
 UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
@@ -1010,6 +1013,26 @@ QString UIActivityOverviewItemCloud::machineStateString() const
 
 void UIActivityOverviewItemCloud::sltTimeout()
 {
+    int iDataSize = 1;
+    foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
+    {
+        UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comCloudMachine,
+                                                                                                       enmMetricType, iDataSize);
+        connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
+                this, &UIActivityOverviewItemCloud::sltMetricDataReceived);
+        pTask->start();
+    }
+}
+
+void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricType,
+                                                        const QVector<QString> &data, const QVector<QString> &timeStamps)
+{
+    Q_UNUSED(enmMetricType);
+    Q_UNUSED(data);
+    Q_UNUSED(timeStamps);
+    // if (!data.isEmpty())
+    //     printf("%d %lld %s\n", enmMetricType, data.size(), qPrintable(data[0]));
+    sender()->deleteLater();
 }
 
 void UIActivityOverviewItemCloud::setMachineState(int iState)
@@ -1020,6 +1043,46 @@ void UIActivityOverviewItemCloud::setMachineState(int iState)
     if (m_enmMachineState == enmState)
         return;
     m_enmMachineState = enmState;
+    if (isRunning())
+        getMetricList();
+    else
+    {
+        if (m_pTimer)
+            m_pTimer->stop();
+    }
+}
+
+void UIActivityOverviewItemCloud::getMetricList()
+{
+    if (!isRunning())
+        return;
+    UIProgressTaskReadCloudMachineMetricList *pReadListProgressTask =
+        new UIProgressTaskReadCloudMachineMetricList(this, m_comCloudMachine);
+    AssertPtrReturnVoid(pReadListProgressTask);
+    connect(pReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
+            this, &UIActivityOverviewItemCloud::sltMetricNameListingComplete);
+    pReadListProgressTask->start();
+}
+
+void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
+{
+    AssertReturnVoid(m_pTimer);
+    m_availableMetricTypes.clear();
+    foreach (const QString &strName, metricNameList)
+        m_availableMetricTypes << gpConverter->fromInternalString<KMetricType>(strName);
+
+    if (!m_availableMetricTypes.isEmpty())
+    {
+        /* Dont wait 60 secs: */
+        sltTimeout();
+        m_pTimer->start();
+    }
+    else
+        m_pTimer->stop();
+
+    if (sender())
+        sender()->deleteLater();
+
 }
 
 
