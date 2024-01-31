@@ -537,7 +537,7 @@ static void vgsvcTimeSyncSet(PCRTTIMESPEC pDrift)
 /**
  * @interface_method_impl{VBOXSERVICE,pfnWorker}
  */
-DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
+static DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
 {
     RTTIME Time;
     int rc = VINF_SUCCESS;

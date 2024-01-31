@@ -111,6 +111,7 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 #include "VBoxServicePropCache.h"
+#include "VBoxServiceVMInfo.h"
 
 
 /** Structure containing information about a location awarness
@@ -154,7 +155,7 @@ static uint64_t                 g_LAClientAttachedTS = 0;
 static VBOXSERVICELACLIENTINFO  g_LAClientInfo;
 /** User idle threshold (in ms). This specifies the minimum time a user is considered
  *  as being idle and then will be reported to the host. Default is 5s. */
-uint32_t                        g_uVMInfoUserIdleThresholdMS = 5 * 1000;
+DECL_HIDDEN_DATA(uint32_t)      g_uVMInfoUserIdleThresholdMS = 5 * 1000;
 
 
 /*********************************************************************************************************************************
@@ -428,8 +429,8 @@ static void vgsvcFreeLAClientInfo(PVBOXSERVICELACLIENTINFO pClient)
  * @param   pszValueFormat          Guest property value to set. Pass NULL for deleting
  *                                  the property.
  */
-int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
-                     const char *pszKey, const char *pszValueFormat, ...)
+DECLHIDDEN(int) VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                 const char *pszKey, const char *pszValueFormat, ...)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
@@ -493,8 +494,8 @@ int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const 
  * @param   pszFormat               Format string to set. Pass NULL for deleting the property.
  * @param   va                      Format arguments.
  */
-int VGSvcUserUpdateV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
-                     const char *pszKey, const char *pszFormat, va_list va)
+DECLHIDDEN(int) VGSvcUserUpdateV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                 const char *pszKey, const char *pszFormat, va_list va)
 {
     char *psz = NULL;
     if (pszFormat) /* Might be NULL to delete a property. */

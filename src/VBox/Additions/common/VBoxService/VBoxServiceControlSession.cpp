@@ -1728,7 +1728,7 @@ typedef VGSVCMOUNTPOINTENUMCTX *PVGSVCMOUNTPOINTENUMCTX;
  * @param   pszMountpoint       Mount point to handle.
  * @param   pvUser              Pointer of type PVGSVCMOUNTPOINTENUMCTX.
  */
-DECLCALLBACK(int) vgsvcGstCtrlSessionHandleMountPointsEnumCallback(const char *pszMountpoint, void *pvUser)
+static DECLCALLBACK(int) vgsvcGstCtrlSessionHandleMountPointsEnumCallback(const char *pszMountpoint, void *pvUser)
 {
     PVGSVCMOUNTPOINTENUMCTX pCtx = (PVGSVCMOUNTPOINTENUMCTX)pvUser;
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -3731,7 +3731,7 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBGLR3GUESTCTRLS
  * @param   uTimeoutMS              Waiting timeout (in ms).
  * @param   fFlags                  Closing flags.
  */
-int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t uTimeoutMS, uint32_t fFlags)
+static int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t uTimeoutMS, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);

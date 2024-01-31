@@ -632,7 +632,7 @@ static void vgsvcVMStatsReport(void)
 /**
  * @interface_method_impl{VBOXSERVICE,pfnWorker}
  */
-DECLCALLBACK(int) vgsvcVMStatsWorker(bool volatile *pfShutdown)
+static DECLCALLBACK(int) vgsvcVMStatsWorker(bool volatile *pfShutdown)
 {
     int rc = VINF_SUCCESS;
 
