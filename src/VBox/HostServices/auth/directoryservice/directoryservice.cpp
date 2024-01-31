@@ -37,7 +37,7 @@
 /* Globals */
 static const size_t s_cBufferSize = 32 * 1024;
 
-tDirStatus defaultSearchNodePath(tDirReference pDirRef, tDataListPtr *pdsNodePath)
+static tDirStatus defaultSearchNodePath(tDirReference pDirRef, tDataListPtr *pdsNodePath)
 {
     tDirStatus dsErr = eDSNoErr;
     /* Create a buffer for the resulting nodes */
@@ -67,7 +67,7 @@ tDirStatus defaultSearchNodePath(tDirReference pDirRef, tDataListPtr *pdsNodePat
     return dsErr;
 }
 
-tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const char *pszUsername, tDataListPtr *ppAuthNodeListOut)
+static tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const char *pszUsername, tDataListPtr *ppAuthNodeListOut)
 {
     tDirStatus dsErr = eDSNoErr;
     tDirStatus dsCleanErr = eDSNoErr;
@@ -203,7 +203,7 @@ tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const
     return dsErr;
 }
 
-tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const char *pszUsername, const char *pszPassword)
+static tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const char *pszUsername, const char *pszPassword)
 {
     tDirStatus dsErr = eDSNoErr;
     /* Open the authentication node. */
