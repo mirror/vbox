@@ -51,7 +51,7 @@ struct TSTCTX
     int rc;
 } TestCtx = { 42, VINF_SUCCESS };
 
-DECLCALLBACK(int) mountpointsEnumCallback(const char *pszMountpoint, void *pvUser)
+static DECLCALLBACK(int) mountpointsEnumCallback(const char *pszMountpoint, void *pvUser)
 {
     TSTCTX *pCtx = (TSTCTX *)pvUser;
     RTTESTI_CHECK(pCtx->var == 42);

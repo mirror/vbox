@@ -69,7 +69,7 @@
  * allocating a string or something after the main structure.  When you
  * encounter this, please fix the allocation to RTMemAllocVar or RTMemAllocZVar.
  */
-#if 0
+#if defined(RT_ARCH_ARM64)
 # define RTALLOC_EFENCE_ALIGNMENT       (ARCH_BITS / 8)
 #else
 # define RTALLOC_EFENCE_ALIGNMENT       1

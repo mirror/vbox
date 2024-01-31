@@ -80,7 +80,7 @@ struct RTSEMMUTEXINTERNAL
 /**
  * This function is a crude approximation of pthread_mutex_timedlock.
  */
-int rtSemFallbackPthreadMutexTimedlock(pthread_mutex_t *mutex, RTMSINTERVAL cMillies)
+static int rtSemFallbackPthreadMutexTimedlock(pthread_mutex_t *mutex, RTMSINTERVAL cMillies)
 {
     struct timespec ts;
     int rc;

@@ -53,7 +53,7 @@
 static unsigned g_cVerbosity = 0;
 
 
-const char *tobin(uint64_t uValue, unsigned cchWidth, char *pszBuf)
+static const char *tobin(uint64_t uValue, unsigned cchWidth, char *pszBuf)
 {
     char *psz = pszBuf;
     while (cchWidth-- > 0)
@@ -114,7 +114,7 @@ static unsigned BinarySearchU64(uint64_t uValue, uint64_t const *pauEntries, uns
 }
 
 
-void tstLogicalMask32(void)
+static void tstLogicalMask32(void)
 {
     RTTestISub("32-bit logical masks");
     static uint32_t s_auValidMasks[1312];
@@ -193,7 +193,7 @@ void tstLogicalMask32(void)
 }
 
 
-void tstLogicalMask64(void)
+static void tstLogicalMask64(void)
 {
     RTTestISub("64-bit logical masks");
     static uint64_t s_auValidMasks[5376];
