@@ -704,8 +704,8 @@ static VMExecutionEngine_T nameToVMExecEngine(const char *pszName)
  * @param   sessionMachine      Session machine to use.
  * @param   platformX86         x86-specific platform object to use.
  */
-HRESULT handleModifyVM_x86(PRTGETOPTSTATE pGetOptState, int c, PRTGETOPTUNION pValueUnion,
-                           ComPtr<IMachine> &sessionMachine, ComPtr<IPlatformX86> &platformX86)
+static HRESULT handleModifyVM_x86(PRTGETOPTSTATE pGetOptState, int c, PRTGETOPTUNION pValueUnion,
+                                  ComPtr<IMachine> &sessionMachine, ComPtr<IPlatformX86> &platformX86)
 {
     RT_NOREF(sessionMachine);
 

@@ -444,6 +444,7 @@ static void HandleSignal(int sig)
 
 # ifdef RT_OS_DARWIN
 
+#if 0 /* unused */
 /* For debugging. */
 uint32_t GetSignalMask(void)
 {
@@ -458,6 +459,7 @@ uint32_t GetSignalMask(void)
         if (sigismember(&Sigs, i)) RTMsgInfo("debug: sig %2d blocked: %s\n", i, strsignal(i));
     return *(uint32_t const *)&Sigs;
 }
+#endif
 
 /**
  * Blocks or unblocks the signals we handle.
