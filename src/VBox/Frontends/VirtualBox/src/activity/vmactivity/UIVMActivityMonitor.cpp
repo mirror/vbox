@@ -43,7 +43,6 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "UIProgressTask.h"
 #include "UITranslator.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -55,7 +54,6 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
-#include "CStringArray.h"
 #include "CRangedIntegerFormValue.h"
 #include <iprt/string.h>
 #include <VBox/com/VirtualBox.h>
@@ -71,67 +69,6 @@ const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
 const int g_iBackgroundTint = 104;
 const quint64 uInvalidValueSentinel = ~0U;
-
-
-/*********************************************************************************************************************************
-*   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
-*********************************************************************************************************************************/
-
-class UIProgressTaskReadCloudMachineMetricList : public UIProgressTask
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigMetricListReceived(QVector<QString> metricNamesList);
-
-public:
-
-    UIProgressTaskReadCloudMachineMetricList(QObject *pParent, CCloudMachine comCloudMachine);
-
-protected:
-
-    virtual CProgress createProgress() RT_OVERRIDE;
-    virtual void handleProgressFinished(CProgress &comProgress) RT_OVERRIDE;
-
-private:
-
-    CCloudMachine m_comCloudMachine;
-    CStringArray m_metricNamesArray;
-};
-
-
-/*********************************************************************************************************************************
-*   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
-*********************************************************************************************************************************/
-
-class UIProgressTaskReadCloudMachineMetricData : public UIProgressTask
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps);
-
-public:
-
-    UIProgressTaskReadCloudMachineMetricData(QObject *pParent, CCloudMachine comCloudMachine,
-                                             KMetricType enmMetricType, ULONG uDataPointsCount);
-
-protected:
-
-    virtual CProgress createProgress() RT_OVERRIDE;
-    virtual void handleProgressFinished(CProgress &comProgress) RT_OVERRIDE;
-
-private:
-
-    CCloudMachine m_comCloudMachine;
-    CStringArray m_metricData;
-    CStringArray m_timeStamps;
-    KMetricType m_enmMetricType;
-    ULONG m_uDataPointsCount;
-};
-
 
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                                          *
@@ -253,65 +190,6 @@ private:
     int m_iMaximumQueueSize;
     QLabel *m_pMouseOverLabel;
 };
-
-
-/*********************************************************************************************************************************
-*   UIProgressTaskReadCloudMachineMetricList implementation.                                                                     *
-*********************************************************************************************************************************/
-
-UIProgressTaskReadCloudMachineMetricList::UIProgressTaskReadCloudMachineMetricList(QObject *pParent, CCloudMachine comCloudMachine)
-    :UIProgressTask(pParent)
-    , m_comCloudMachine(comCloudMachine)
-{
-}
-
-CProgress UIProgressTaskReadCloudMachineMetricList::createProgress()
-{
-    if (!m_comCloudMachine.isOk())
-        return CProgress();
-    return m_comCloudMachine.ListMetricNames(m_metricNamesArray);
-}
-
-void UIProgressTaskReadCloudMachineMetricList::handleProgressFinished(CProgress &comProgress)
-{
-    if (!comProgress.isOk())
-        return;
-    emit sigMetricListReceived(m_metricNamesArray.GetValues());
-}
-
-
-/*********************************************************************************************************************************
-*   UIProgressTaskReadCloudMachineMetricData implementation.                                                                     *
-*********************************************************************************************************************************/
-
-UIProgressTaskReadCloudMachineMetricData::UIProgressTaskReadCloudMachineMetricData(QObject *pParent,
-                                                                                   CCloudMachine comCloudMachine,
-                                                                                   KMetricType enmMetricType,
-                                                                                   ULONG uDataPointsCount)
-    :UIProgressTask(pParent)
-    , m_comCloudMachine(comCloudMachine)
-    , m_enmMetricType(enmMetricType)
-    , m_uDataPointsCount(uDataPointsCount)
-{
-}
-
-CProgress UIProgressTaskReadCloudMachineMetricData::createProgress()
-{
-    if (!m_comCloudMachine.isOk())
-        return CProgress();
-
-    CStringArray aUnit;
-    return m_comCloudMachine.EnumerateMetricData(m_enmMetricType, m_uDataPointsCount, m_metricData, m_timeStamps, aUnit);
-}
-
-
-void UIProgressTaskReadCloudMachineMetricData::handleProgressFinished(CProgress &comProgress)
-{
-    if (!comProgress.isOk())
-        return;
-    if (m_metricData.isOk() && m_timeStamps.isOk())
-        emit sigMetricDataReceived(m_enmMetricType, m_metricData.GetValues(), m_timeStamps.GetValues());
-}
 
 /*********************************************************************************************************************************
 *   UIChart implementation.                                                                                     *
