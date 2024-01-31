@@ -167,7 +167,7 @@ typedef struct UsbIpReqImport
     /** Command code. */
     uint16_t     u16Cmd;
     /** Status field, unused. */
-    int32_t      u32Status;
+    int32_t      i32Status;
     /** Bus Id of the device as zero terminated string. */
     char         aszBusId[32];
 } UsbIpReqImport;
@@ -190,7 +190,7 @@ typedef struct UsbIpRetImport
     /** Command code. */
     uint16_t     u16Cmd;
     /** Status field, unused. */
-    int32_t      u32Status;
+    int32_t      i32Status;
 } UsbIpRetImport;
 /** Pointer to a import reply. */
 typedef UsbIpRetImport *PUsbIpRetImport;
@@ -253,7 +253,7 @@ typedef struct UsbIpRetSubmit
     /** The reply header. */
     UsbIpReqRetHdr Hdr;
     /** Status code. */
-    int32_t        u32Status;
+    int32_t        i32Status;
     /** Actual length of the reply buffer. */
     uint32_t       u32ActualLength;
     /** The actual selected frame for a isochronous transmit. */
@@ -297,7 +297,7 @@ typedef struct UsbIpRetUnlink
     /** The reply header. */
     UsbIpReqRetHdr Hdr;
     /** Status of the request. */
-    int32_t        u32Status;
+    int32_t        i32Status;
     /** Padding - unused. */
     uint8_t        abPadding[24];
 } UsbIpRetUnlink;
@@ -504,7 +504,7 @@ DECLINLINE(void) usbProxyUsbIpReqSubmitH2N(PUsbIpReqSubmit pReqSubmit)
 DECLINLINE(void) usbProxyUsbIpRetSubmitN2H(PUsbIpRetSubmit pRetSubmit)
 {
     usbProxyUsbIpReqRetHdrN2H(&pRetSubmit->Hdr);
-    pRetSubmit->u32Status       = RT_N2H_U32(pRetSubmit->u32Status);
+    pRetSubmit->i32Status       = RT_N2H_S32(pRetSubmit->i32Status);
     pRetSubmit->u32ActualLength = RT_N2H_U32(pRetSubmit->u32ActualLength);
     pRetSubmit->u32StartFrame   = RT_N2H_U32(pRetSubmit->u32StartFrame);
     pRetSubmit->u32NumIsocPkts  = RT_N2H_U32(pRetSubmit->u32NumIsocPkts);
@@ -556,7 +556,7 @@ DECLINLINE(void) usbProxyUsbIpReqUnlinkH2N(PUsbIpReqUnlink pReqUnlink)
 DECLINLINE(void) usbProxyUsbIpRetUnlinkN2H(PUsbIpRetUnlink pRetUnlink)
 {
     usbProxyUsbIpReqRetHdrN2H(&pRetUnlink->Hdr);
-    pRetUnlink->u32Status = RT_N2H_U32(pRetUnlink->u32Status);
+    pRetUnlink->i32Status = RT_N2H_S32(pRetUnlink->i32Status);
 }
 
 /**
@@ -746,7 +746,7 @@ static int usbProxyUsbIpConnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
         UsbIpReqImport ReqImport;
         ReqImport.u16Version = RT_H2N_U16(USBIP_VERSION);
         ReqImport.u16Cmd     = RT_H2N_U16(USBIP_INDICATOR_REQ | USBIP_REQ_RET_IMPORT);
-        ReqImport.u32Status  = RT_H2N_U32(USBIP_STATUS_SUCCESS);
+        ReqImport.i32Status  = RT_H2N_S32(USBIP_STATUS_SUCCESS);
         rc = RTStrCopy(&ReqImport.aszBusId[0], sizeof(ReqImport.aszBusId), pProxyDevUsbIp->pszBusId);
         if (rc == VINF_SUCCESS)
         {
@@ -760,10 +760,10 @@ static int usbProxyUsbIpConnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
                 {
                     RetImport.u16Version = RT_N2H_U16(RetImport.u16Version);
                     RetImport.u16Cmd     = RT_N2H_U16(RetImport.u16Cmd);
-                    RetImport.u32Status  = RT_N2H_U32(RetImport.u32Status);
+                    RetImport.i32Status  = RT_N2H_S32(RetImport.i32Status);
                     if (   RetImport.u16Version == USBIP_VERSION
                         && RetImport.u16Cmd == USBIP_REQ_RET_IMPORT
-                        && RetImport.u32Status == USBIP_STATUS_SUCCESS)
+                        && RetImport.i32Status == USBIP_STATUS_SUCCESS)
                     {
                         /* Read the device data. */
                         UsbIpExportedDevice Device;
@@ -786,7 +786,7 @@ static int usbProxyUsbIpConnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
                         else if (RetImport.u16Cmd != USBIP_REQ_RET_IMPORT)
                             LogRel(("UsbIp: Unexpected reply code received from host (%#x vs. %#x)\n",
                                     RetImport.u16Cmd, USBIP_REQ_RET_IMPORT));
-                        else if (RetImport.u32Status != 0)
+                        else if (RetImport.i32Status != 0)
                             LogRel(("UsbIp: Claiming the device has failed on the host with an unspecified error\n"));
                         else
                             AssertMsgFailed(("Something went wrong with if condition\n"));
@@ -971,7 +971,7 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                                 usbProxyUsbIpRetSubmitN2H(&pProxyDevUsbIp->BufRet.RetSubmit);
 
                                 /* We still have to receive the transfer buffer, even in case of an error. */
-                                pProxyDevUsbIp->pUrbUsbIp->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetSubmit.u32Status);
+                                pProxyDevUsbIp->pUrbUsbIp->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetSubmit.i32Status);
                                 if (pProxyDevUsbIp->pUrbUsbIp->enmDir == VUSBDIRECTION_IN)
                                 {
                                     uint8_t *pbData = NULL;
@@ -1039,7 +1039,7 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                             {
                                 usbProxyUsbIpRetUnlinkN2H(&pProxyDevUsbIp->BufRet.RetUnlink);
                                 pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
-                                pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetUnlink.u32Status);
+                                pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetUnlink.i32Status);
                             }
                             /* else: Probably received the data for the URB and is complete already. */
 
