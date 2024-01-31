@@ -154,7 +154,7 @@ class tdUnitTest1(vbox.TestDriver):
     kdTestCasesBlackList = {
         'testcase/tstClipboardX11Smoke': '',            # (Old naming, deprecated) Needs X, not available on all test boxes.
         'testcase/tstClipboardGH-X11Smoke': '',         # (New name) Ditto.
-        'tstClipboardHttpServerX11': '',                # Ditto.
+        'testcase/tstClipboardHttpServerX11': '',       # Ditto.
         'testcase/tstClipboardMockHGCM': '',            # Ditto.
         'tstClipboardQt': '',                           # Is interactive and needs Qt, needed for Qt clipboard bugfixing.
         'testcase/tstClipboardQt': '',                  # In case it moves here.
