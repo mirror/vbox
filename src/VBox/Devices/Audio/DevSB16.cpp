@@ -110,6 +110,8 @@ typedef struct SB16STATE *PSB16STATE;
  */
 typedef struct SB16STREAMSTATE
 {
+    /** Critical section for this stream. */
+    RTCRITSECT              CritSect;
     /** Flag indicating whether this stream is in enabled state or not. */
     bool                    fEnabled;
     /** Set if we've registered the asynchronous update job. */
@@ -335,6 +337,8 @@ static int  sb16StreamEnable(PSB16STATE pThis, PSB16STREAM pStream, bool fEnable
 static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream);
 static int  sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream);
 static void sb16StreamClose(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStream);
+DECLINLINE(void) sb16StreamLock(PSB16STREAM pStream);
+DECLINLINE(void) sb16StreamUnlock(PSB16STREAM pStream);
 DECLINLINE(PAUDMIXSINK) sb16StreamIndexToSink(PSB16STATE pThis, uint8_t uIdx);
 static void sb16StreamTransferScheduleNext(PSB16STATE pThis, PSB16STREAM pStream, uint32_t cSamples);
 static int  sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDmaChan, uint32_t offDma, uint32_t cbDma, uint32_t cbToRead, uint32_t *pcbRead);
@@ -1923,12 +1927,27 @@ static void sb16RemoveDrv(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16DRIVER pDrv
 *   Stream handling                                                                                                              *
 *********************************************************************************************************************************/
 
+/**
+ * Reads DMA output data into the internal DMA buffer.
+ *
+ * @returns VBox status code.
+ * @param   pStream     The SB16 stream to read DMA output data from.
+ * @param   uDmaChan    DMA channel to read from.
+ * @param   offDma      DMA offset (in bytes) to start reading from.
+ * @param   cbDma       DMA area size in bytes.
+ * @param   cbToRead    How much bytes to read in total.
+ * @param   pcbRead     Where to return the DMA bytes read.
+ *
+ * @thread  µEMT
+ */
 static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDmaChan, uint32_t offDma, uint32_t cbDma,
                                  uint32_t cbToRead, uint32_t *pcbRead)
 {
     uint32_t cbFree = (uint32_t)RTCircBufFree(pStream->State.pCircBuf);
     //Assert(cbToRead <= cbFree); /** @todo Add statistics for overflows. */
     cbToRead = RT_MIN(cbToRead, cbFree);
+
+    sb16StreamLock(pStream);
 
     uint32_t cbReadTotal = 0;
     while (cbToRead)
@@ -1948,6 +1967,8 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDma
             if (cbReadTotal > 0)
                 break;
             *pcbRead = 0;
+
+            sb16StreamUnlock(pStream);
             return rc;
         }
 
@@ -1956,7 +1977,11 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDma
         else
             AudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, pv, cbRead);
 
+        Log3Func(("Writing %#RX32 bytes to DMA buffer\n", cbRead));
+
         RTCircBufReleaseWriteBlock(pStream->State.pCircBuf, cbRead);
+
+        Log3Func(("Now %#RX32 bytes in buffer\n", RTCircBufUsed(pStream->State.pCircBuf)));
 
         Assert(cbToRead >= cbRead);
         pStream->State.offWrite += cbRead;
@@ -1970,6 +1995,9 @@ static int sb16StreamDoDmaOutput(PSB16STATE pThis, PSB16STREAM pStream, int uDma
     /* Update buffer stats. */
     pStream->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
 
+    Log3Func(("[SD%RU8] cbCircBufUsed=%#RX64\n", pStream->uIdx, RTCircBufUsed(pStream->State.pCircBuf)));
+
+    sb16StreamUnlock(pStream);
     return VINF_SUCCESS;
 }
 
@@ -2011,8 +2039,19 @@ static int sb16StreamEnable(PSB16STATE pThis, PSB16STREAM pStream, bool fEnable,
     }
     else
     {
-        rc = AudioMixerSinkDrainAndStop(pSink, pStream->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStream->State.pCircBuf) : 0);
+        /* We need to lock the stream here in order to synchronize the amount of bytes we have to drain
+         * here with the mixer's async I/O thread.  See @bugref{10354}. */
+        sb16StreamLock(pStream);
+
+        uint32_t const cbToDrain = pStream->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStream->State.pCircBuf) : 0;
+        Log3Func(("cbToDrain=%#RX32\n", cbToDrain));
+
+        sb16StreamUnlock(pStream);
+
+        rc = AudioMixerSinkDrainAndStop(pSink, cbToDrain);
         AssertRCReturn(rc, rc);
+
+
     }
 
     pStream->State.fEnabled = fEnable;
@@ -2068,6 +2107,9 @@ static int sb16StreamCreate(PSB16STATE pThis, PSB16STREAM pStream, uint8_t uIdx)
 {
     LogFlowFuncEnter();
 
+    int rc = RTCritSectInit(&pStream->State.CritSect);
+    AssertRCReturn(rc, rc);
+
     pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
 
     if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
@@ -2110,6 +2152,9 @@ static int sb16StreamDestroy(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM p
             AudioMixerSinkRemoveUpdateJob(pSink, sb16StreamUpdateAsyncIoJob, pStream);
         pStream->State.fRegisteredAsyncUpdateJob = false;
     }
+
+    int rc2 = RTCritSectDelete(&pStream->State.CritSect);
+    AssertRC(rc2);
 
     if (pStream->State.pCircBuf)
     {
@@ -2177,6 +2222,28 @@ static void sb16StreamReset(PSB16STATE pThis, PSB16STREAM pStream)
 }
 
 /**
+ * Locks a SB16 stream for serialized access.
+ *
+ * @param   pStream             The SB16 stream to lock.
+ */
+DECLINLINE(void) sb16StreamLock(PSB16STREAM pStream)
+{
+    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
+    AssertRC(rc2);
+}
+
+/**
+ * Unlocks a formerly locked SB16 stream.
+ *
+ * @param   pStream             The SB16 stream to unlock.
+ */
+DECLINLINE(void) sb16StreamUnlock(PSB16STREAM pStream)
+{
+    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
+    AssertRC(rc2);
+}
+
+/**
  * Opens a SB16 stream with its current mixer settings.
  *
  * @returns VBox status code.
@@ -2209,47 +2276,59 @@ static int sb16StreamOpen(PPDMDEVINS pDevIns, PSB16STATE pThis, PSB16STREAM pStr
              PDMAudioPropsChannels(&pStream->Cfg.Props), pStream->Cfg.Props.fSigned ? "S" : "U",
              PDMAudioPropsSampleBits(&pStream->Cfg.Props)));
 
-    /* (Re-)create the stream's internal ring buffer. */
-    if (pStream->State.pCircBuf)
-    {
-        RTCircBufDestroy(pStream->State.pCircBuf);
-        pStream->State.pCircBuf = NULL;
-    }
-
     /** @todo r=bird: two DMA periods is probably too little. */
     const uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props,
                                                          (RT_MS_1SEC / pStream->uTimerHz) * 2 /* Use double buffering here */);
+    int rc = VINF_SUCCESS;
 
-    int rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBuf);
-    AssertRCReturn(rc, rc);
-    pStream->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStream->State.pCircBuf);
-
-    /* Set scheduling hint. */
-    pStream->Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / RT_MIN(pStream->uTimerHz, 1);
-
-    PAUDMIXSINK pMixerSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
-    AssertPtrReturn(pMixerSink, VERR_INVALID_POINTER);
-
-    sb16RemoveDrvStreams(pDevIns, pThis,
-                         sb16StreamIndexToSink(pThis, pStream->uIdx), pStream->Cfg.enmDir, pStream->Cfg.enmPath);
-
-    rc = sb16AddDrvStreams(pDevIns, pThis, pMixerSink, &pStream->Cfg);
-    if (RT_SUCCESS(rc))
+    /**
+     * Note: Only re-create the DMA buffer if the size actually has changed.
+     *
+     *       Otherwise do *not* reset the stream's circular buffer here, as the audio mixer still relies on
+     *       previously announced DMA data (via AudioMixerSinkDrainAndStop()) and processes it asynchronously.
+     *       Resetting the buffer here will cause a race condition.  See @bugref{10354}. */
+    if (pStream->State.StatDmaBufSize != cbCircBuf)
     {
-        if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
-        { /* likely */ }
-        else
-        {
-            /* Make sure to close + delete a former debug file, as the PCM format has changed (e.g. U8 -> S16). */
-            if (AudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMA))
-            {
-                AudioHlpFileClose(pStream->Dbg.Runtime.pFileDMA);
-                AudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMA);
-            }
+        Log3Func(("Re-creating ring buffer (%#RX32 -> %#RX32)\n", pStream->State.StatDmaBufSize, cbCircBuf));
 
-            int rc2 = AudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                       &pStream->Cfg.Props);
-            AssertRC(rc2);
+        /* (Re-)create the stream's internal ring buffer. */
+        if (pStream->State.pCircBuf)
+        {
+            RTCircBufDestroy(pStream->State.pCircBuf);
+            pStream->State.pCircBuf = NULL;
+        }
+
+        rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBuf);
+        AssertRCReturn(rc, rc);
+        pStream->State.StatDmaBufSize = (uint32_t)RTCircBufSize(pStream->State.pCircBuf);
+
+        /* Set scheduling hint. */
+        pStream->Cfg.Device.cMsSchedulingHint = RT_MS_1SEC / RT_MIN(pStream->uTimerHz, 1);
+
+        PAUDMIXSINK pMixerSink = sb16StreamIndexToSink(pThis, pStream->uIdx);
+        AssertPtrReturn(pMixerSink, VERR_INVALID_POINTER);
+
+        sb16RemoveDrvStreams(pDevIns, pThis,
+                             sb16StreamIndexToSink(pThis, pStream->uIdx), pStream->Cfg.enmDir, pStream->Cfg.enmPath);
+
+        rc = sb16AddDrvStreams(pDevIns, pThis, pMixerSink, &pStream->Cfg);
+        if (RT_SUCCESS(rc))
+        {
+            if (RT_LIKELY(!pStream->Dbg.Runtime.fEnabled))
+            { /* likely */ }
+            else
+            {
+                /* Make sure to close + delete a former debug file, as the PCM format has changed (e.g. U8 -> S16). */
+                if (AudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMA))
+                {
+                    AudioHlpFileClose(pStream->Dbg.Runtime.pFileDMA);
+                    AudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMA);
+                }
+
+                int rc2 = AudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                           &pStream->Cfg.Props);
+                AssertRC(rc2);
+            }
         }
     }
 
@@ -2302,11 +2381,18 @@ static void sb16StreamTransferScheduleNext(PSB16STATE pThis, PSB16STREAM pStream
  *
  * @param   pStream         The SB16 stream.
  * @param   pSink           The mixer sink to push to.
+ *
+ * @thread  MixAIO-n
+ *
+ * @note    Takes the stream's lock.
  */
 static void sb16StreamPushToMixer(PSB16STREAM pStream, PAUDMIXSINK pSink)
 {
+    sb16StreamLock(pStream);
+
 #ifdef LOG_ENABLED
     uint64_t const offReadOld = pStream->State.offRead;
+    Log3Func(("[SD%RU8] cbCircBufUsed=%#RX64\n", pStream->uIdx, RTCircBufUsed(pStream->State.pCircBuf)));
 #endif
     pStream->State.offRead = AudioMixerSinkTransferFromCircBuf(pSink,
                                                                pStream->State.pCircBuf,
@@ -2315,11 +2401,13 @@ static void sb16StreamPushToMixer(PSB16STREAM pStream, PAUDMIXSINK pSink)
                                                                /** @todo pStream->Dbg.Runtime.fEnabled
                                                                ? pStream->Dbg.Runtime.pFileStream :*/ NULL);
 
-    Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64\n", pStream->uIdx,
-              pStream->State.offRead - offReadOld, pStream->State.offRead));
+    Log3Func(("[SD%RU8] transferred=%#RX64 bytes -> @%#RX64 (cbCircBufUsed=%#RX64)\n", pStream->uIdx,
+              pStream->State.offRead - offReadOld, pStream->State.offRead, RTCircBufUsed(pStream->State.pCircBuf)));
 
     /* Update buffer stats. */
     pStream->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
+
+    sb16StreamUnlock(pStream);
 }
 
 
@@ -2327,8 +2415,10 @@ static void sb16StreamPushToMixer(PSB16STREAM pStream, PAUDMIXSINK pSink)
  * @callback_method_impl{FNAUDMIXSINKUPDATE}
  *
  * For output streams this moves data from the internal DMA buffer (in which
- * ichac97R3StreamUpdateDma put it), thru the mixer and to the various backend
+ * sb16StreamDoDmaOutput put it), thru the mixer and to the various backend
  * audio devices.
+ *
+ * @thread  MixAIO-n
  */
 static DECLCALLBACK(void) sb16StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK pSink, void *pvUser)
 {

@@ -2011,6 +2011,9 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
     Assert(pSink->enmDir == PDMAUDIODIR_OUT);
     RT_NOREF(idStream);
 
+    int rc = RTCritSectEnter(&pSink->CritSect);
+    AssertRCReturn(rc, rc);
+
     /*
      * Figure how much that we can push down.
      */
@@ -2022,7 +2025,8 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
 
     Log3Func(("idStream=%u: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32 @%#RX64\n",
               idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer, offStream));
-    AssertMsg(!(pSink->fStatus & AUDMIXSINK_STS_DRAINING) || cbCircBufReadable == pSink->cbDmaLeftToDrain,
+    /* Note: There now can be more data in the DMA buffer than initially announced.  See @bugref{10354}. */
+    AssertMsg(!(pSink->fStatus & AUDMIXSINK_STS_DRAINING) || cbCircBufReadable >= pSink->cbDmaLeftToDrain,
               ("cbCircBufReadable=%#x cbDmaLeftToDrain=%#x\n", cbCircBufReadable, pSink->cbDmaLeftToDrain));
 
     /*
@@ -2080,6 +2084,11 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
     else
         Assert(cbToTransfer2 == 0);
 
+    Log3Func(("idStream=%u: cbCircBufUsed=%RX32 left\n", idStream, (uint32_t)RTCircBufUsed(pCircBuf)));
+
+    RTCritSectLeave(&pSink->CritSect);
+
+    LogFlowFuncLeave();
     return offStream;
 }
 

@@ -797,18 +797,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      * Set up internal ring buffer.
      */
 
-    /* (Re-)Allocate the stream's internal DMA buffer,
-     * based on the timing *and* PCM properties we just got above. */
-    if (pStreamR3->State.pCircBuf)
-    {
-        RTCircBufDestroy(pStreamR3->State.pCircBuf);
-        pStreamR3->State.pCircBuf = NULL;
-        pStreamR3->State.StatDmaBufSize = 0;
-        pStreamR3->State.StatDmaBufUsed = 0;
-    }
-    pStreamShared->State.offWrite = 0;
-    pStreamShared->State.offRead  = 0;
-
     /*
      * The default internal ring buffer size must be:
      *
@@ -857,16 +845,37 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                                  rc = VERR_INVALID_PARAMETER);
     if (RT_SUCCESS(rc))
     {
-        rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
-        if (RT_SUCCESS(rc))
+        /**
+         * Note: Only re-create the DMA buffer if the size actually has changed.
+         *
+         *       Otherwise do *not* reset the stream's circular buffer here, as the audio mixer still relies on
+         *       previously announced DMA data (via AudioMixerSinkDrainAndStop()) and processes it asynchronously.
+         *       Resetting the buffer here will cause a race condition.  See @bugref{10354}. */
+        if (pStreamR3->State.StatDmaBufSize != cbCircBuf)
         {
-            pStreamR3->State.StatDmaBufSize = cbCircBuf;
+            /* (Re-)Allocate the stream's internal DMA buffer,
+             * based on the timing *and* PCM properties we just got above. */
+            if (pStreamR3->State.pCircBuf)
+            {
+                RTCircBufDestroy(pStreamR3->State.pCircBuf);
+                pStreamR3->State.pCircBuf = NULL;
+                pStreamR3->State.StatDmaBufSize = 0;
+                pStreamR3->State.StatDmaBufUsed = 0;
+            }
+            pStreamShared->State.offWrite = 0;
+            pStreamShared->State.offRead  = 0;
 
-            /*
-             * Forward the timer frequency hint to TM as well for better accuracy on
-             * systems w/o preemption timers (also good for 'info timers').
-             */
-            PDMDevHlpTimerSetFrequencyHint(pDevIns, pStreamShared->hTimer, uTransferHz);
+            rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
+            if (RT_SUCCESS(rc))
+            {
+                pStreamR3->State.StatDmaBufSize = cbCircBuf;
+
+                /*
+                 * Forward the timer frequency hint to TM as well for better accuracy on
+                 * systems w/o preemption timers (also good for 'info timers').
+                 */
+                PDMDevHlpTimerSetFrequencyHint(pDevIns, pStreamShared->hTimer, uTransferHz);
+            }
         }
     }
 
@@ -1003,10 +1012,9 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     pStreamShared->State.idxScheduleLoop   = 0;
     pStreamShared->State.fInputPreBuffered = false;
 
-    if (pStreamR3->State.pCircBuf)
-        RTCircBufReset(pStreamR3->State.pCircBuf);
-    pStreamShared->State.offWrite = 0;
-    pStreamShared->State.offRead  = 0;
+    /* Note: Do *not* reset the stream's circular buffer here, as the audio mixer still relies on
+     *       previously announced DMA data (via AudioMixerSinkDrainAndStop()) and processes it asynchronously.
+     *       Resetting the buffer here will cause a race condition.  See @bugref{10354}. */
 
     /* Report that we're done resetting this stream. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0;
@@ -1041,6 +1049,8 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
     PAUDMIXSINK const pSink = pStreamR3->pMixSink ? pStreamR3->pMixSink->pMixSink : NULL;
     if (pSink)
     {
+        AudioMixerSinkLock(pSink);
+
         if (fEnable)
         {
             if (pStreamR3->State.pAioRegSink != pSink)
@@ -1060,6 +1070,8 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
         else
             rc = AudioMixerSinkDrainAndStop(pSink,
                                             pStreamR3->State.pCircBuf ? (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf) : 0);
+
+        AudioMixerSinkUnlock(pSink);
     }
     if (   RT_SUCCESS(rc)
         && fEnable
