@@ -215,7 +215,10 @@ new_input_data(const char *filename, IncludePathEntry *include_path)
         buffer = realloc(buffer, buffer_size + 1); /* +1 for trailing nul */
         just_read = fread(buffer + offset, 1, buffer_size - offset, inputfile);
         if (ferror(inputfile))
+        {
+            free(buffer);
             return NULL;
+        }
 
         if (just_read < buffer_size - offset || just_read == 0) {
             /* Done reading. */
@@ -472,8 +475,10 @@ FindSpecial(input_data *data, char **startp, int *lenp)
     *lenp = point - data->point;
 }
 
+#ifndef VBOX
 /* set this with a debugger to see exactly what libIDL sees */
 static FILE *tracefile = NULL;
+#endif
 
 static int
 input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
@@ -610,8 +615,10 @@ input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
         memcpy(cb_data->fill.buffer, start, copy);
         data->point = start + copy;
 
+#ifndef VBOX
         if (tracefile)
             fwrite(cb_data->fill.buffer, copy, 1, tracefile);
+#endif
 
         return copy;
 
@@ -716,6 +723,7 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
         } else {
             g_warning("Parse of %s failed", filename);
         }
+        free(outname);
         return 0;
     }
 
@@ -761,6 +769,7 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
         state.file = fopen(real_outname, fopen_mode);
         if (!state.file) {
             perror("error opening output file");
+            free(outname);
             return 0;
         }
     } else {
