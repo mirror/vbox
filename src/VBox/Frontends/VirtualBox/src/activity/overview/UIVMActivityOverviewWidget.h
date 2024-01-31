@@ -73,7 +73,6 @@ public:
 
     bool isCurrentTool() const;
     void setIsCurrentTool(bool fIsCurrentTool);
-
     void setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems);
 
 #ifdef VBOX_WS_MAC

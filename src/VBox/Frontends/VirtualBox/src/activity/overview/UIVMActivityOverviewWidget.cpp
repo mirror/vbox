@@ -246,6 +246,7 @@ public:
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
     virtual void updateColumnData() = 0;
+    virtual void setMachineState(int iState) = 0;
 
     QString columnData(int iColumnIndex) const;
 
@@ -301,7 +302,7 @@ public:
     virtual bool isCloudVM() const override;
     virtual void updateColumnData() override;
     virtual QString machineStateString() const override;
-    void setMachineState(KMachineState enmState);
+    virtual void setMachineState(int iState) override;
 
 protected:
 
@@ -331,10 +332,12 @@ public:
 
     UIActivityOverviewItemCloud();
     ~UIActivityOverviewItemCloud();
+    void updateMachineState();
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
     virtual void updateColumnData() override;
     virtual QString machineStateString() const override;
+    virtual void setMachineState(int iState) override;
 
 protected:
 
@@ -347,6 +350,7 @@ private slots:
 private:
     QTimer *m_pTimer;
     CCloudMachine m_comCloudMachine;
+    KCloudMachineState m_enmMachineState;
 };
 
 
@@ -949,6 +953,7 @@ UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const
     : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_comCloudMachine(comCloudMachine)
 {
+    m_enmMachineState = comCloudMachine.GetState();
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
@@ -967,11 +972,15 @@ UIActivityOverviewItemCloud::~UIActivityOverviewItemCloud()
 {
 }
 
+void UIActivityOverviewItemCloud::updateMachineState()
+{
+    if (m_comCloudMachine.isOk())
+        setMachineState(m_comCloudMachine.GetState());
+}
+
 bool UIActivityOverviewItemCloud::isRunning() const
 {
-    if (!m_comCloudMachine.isOk())
-        return false;
-    return m_comCloudMachine.GetState() == KCloudMachineState_Running;
+    return m_enmMachineState == KCloudMachineState_Running;
 }
 
 bool UIActivityOverviewItemCloud::isCloudVM() const
@@ -1001,6 +1010,16 @@ QString UIActivityOverviewItemCloud::machineStateString() const
 
 void UIActivityOverviewItemCloud::sltTimeout()
 {
+}
+
+void UIActivityOverviewItemCloud::setMachineState(int iState)
+{
+    if (iState <= KCloudMachineState_Invalid || iState >= KCloudMachineState_Max)
+        return;
+    KCloudMachineState enmState = static_cast<KCloudMachineState>(iState);
+    if (m_enmMachineState == enmState)
+        return;
+    m_enmMachineState = enmState;
 }
 
 
@@ -1061,13 +1080,17 @@ bool UIActivityOverviewItemLocal::isCloudVM() const
     return false;
 }
 
-void UIActivityOverviewItemLocal::setMachineState(KMachineState enmState)
+void UIActivityOverviewItemLocal::setMachineState(int iState)
 {
+    if (iState <= KMachineState_Null || iState >= KMachineState_Max)
+        return;
+    KMachineState enmState = static_cast<KMachineState>(iState);
+    if (m_enmMachineState == enmState)
+        return;
     m_enmMachineState = enmState;
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
 }
-
 
 void UIActivityOverviewItemLocal::updateMetricData()
 {
@@ -1368,6 +1391,17 @@ void UIActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineI
         }
         if (!fFound)
             m_itemList.append(new UIActivityOverviewItemCloud(this, id, comMachine.GetName(), comMachine));
+    }
+
+    /* Update cloud machine states: */
+    for (int i = 0; i < m_itemList.size(); ++i)
+    {
+        if (!m_itemList[i] || !m_itemList[i]->isCloudVM())
+            continue;
+        UIActivityOverviewItemCloud *pItem = qobject_cast<UIActivityOverviewItemCloud*>(m_itemList[i]);
+        if (!pItem)
+            continue;
+        pItem->updateMachineState();
     }
 }
 
