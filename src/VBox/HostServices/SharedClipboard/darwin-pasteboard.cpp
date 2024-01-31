@@ -44,6 +44,7 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 
+#include "darwin-pasteboard.h"
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -64,7 +65,7 @@ RT_GCC_NO_WARN_DEPRECATED_BEGIN /* Much here is deprecated since 12.0 */
  *
  * @returns IPRT status code.
  */
-int initPasteboard(PasteboardRef *pPasteboardRef)
+DECLHIDDEN(int) initPasteboard(PasteboardRef *pPasteboardRef)
 {
     int rc = VINF_SUCCESS;
 
@@ -79,7 +80,7 @@ int initPasteboard(PasteboardRef *pPasteboardRef)
  *
  * @param pPasteboardRef Reference to the global pasteboard.
  */
-void destroyPasteboard(PasteboardRef *pPasteboardRef)
+DECLHIDDEN(void) destroyPasteboard(PasteboardRef *pPasteboardRef)
 {
     CFRelease(*pPasteboardRef);
     *pPasteboardRef = NULL;
@@ -100,8 +101,8 @@ void destroyPasteboard(PasteboardRef *pPasteboardRef)
  *
  * @returns VINF_SUCCESS.
  */
-int queryNewPasteboardFormats(PasteboardRef hPasteboard, uint64_t idOwnership, void *hStrOwnershipFlavor,
-                              uint32_t *pfFormats, bool *pfChanged)
+DECLHIDDEN(int) queryNewPasteboardFormats(PasteboardRef hPasteboard, uint64_t idOwnership, void *hStrOwnershipFlavor,
+                                          uint32_t *pfFormats, bool *pfChanged)
 {
     OSStatus orc;
 
@@ -217,7 +218,7 @@ int queryNewPasteboardFormats(PasteboardRef hPasteboard, uint64_t idOwnership, v
  *
  * @returns IPRT status code.
  */
-int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual)
+DECLHIDDEN(int) readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     Log(("readFromPasteboard: fFormat = %02X\n", fFormat));
 
@@ -473,8 +474,8 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
  *          without needing to request any data first.  That might help on
  *          flavor priority.
  */
-int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership, const char *pszOwnershipFlavor,
-                            const char *pszOwnershipValue, void **phStrOwnershipFlavor)
+DECLHIDDEN(int) takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership, const char *pszOwnershipFlavor,
+                                        const char *pszOwnershipValue, void **phStrOwnershipFlavor)
 {
     /*
      * Release the old string.
@@ -542,7 +543,7 @@ int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership, con
  *
  * @returns IPRT status code.
  */
-int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const void *pv, uint32_t cb, uint32_t fFormat)
+DECLHIDDEN(int) writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const void *pv, uint32_t cb, uint32_t fFormat)
 {
     int       rc;
     OSStatus  orc;
