@@ -56,7 +56,7 @@ static unsigned  g_uVerbosity = 0;
  *
  * @note    The source configuration file will not be modified (i.e. written to disk).
  */
-void tstFileSingle(const Utf8Str &strFileSrc)
+static void tstFileSingle(const Utf8Str &strFileSrc)
 {
     RTTestIPrintf(RTTESTLVL_ALWAYS, "Testing file: %s\n", strFileSrc.c_str());
 
