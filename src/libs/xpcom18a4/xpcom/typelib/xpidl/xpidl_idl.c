@@ -814,32 +814,3 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
 
     return ok;
 }
-
-/*
- * Our own version of IDL_tree_warning, which we use when IDL_tree_warning
- * would crash on us.
- */
-void
-xpidl_tree_warning(IDL_tree p, int level, const char *fmt, ...)
-{
-    va_list ap;
-    char *msg, *file;
-    int lineno;
-
-    /* XXX need to check against __IDL_max_msg_level, no accessor */
-    va_start(ap, fmt);
-    msg = g_strdup_vprintf(fmt, ap);
-
-    if (p) {
-        file = p->_file;
-        lineno = p->_line;
-    } else {
-        file = NULL;
-        lineno = 0;
-    }
-
-    /* call our message callback, like IDL_tree_warning would */
-    msg_callback(level, 0, lineno, file, msg);
-    g_free(msg);
-    va_end(ap);
-}

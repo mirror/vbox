@@ -113,24 +113,21 @@ public:
   const EntityNode* mNode;
 };
 
-PLDHashOperator
-nsTEnumGo(EntityToUnicodeEntry* aEntry, void* userArg) {
+static PLDHashOperator nsTEnumGo(EntityToUnicodeEntry* aEntry, void* userArg) {
   printf("  enumerated \"%s\" = %u\n",
          aEntry->mNode->mStr, aEntry->mNode->mUnicode);
 
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsTEnumStop(EntityToUnicodeEntry* aEntry, void* userArg) {
+static PLDHashOperator nsTEnumStop(EntityToUnicodeEntry* aEntry, void* userArg) {
   printf("  enumerated \"%s\" = %u\n",
          aEntry->mNode->mStr, aEntry->mNode->mUnicode);
 
   return PL_DHASH_REMOVE;
 }
 
-void
-testTHashtable(nsTHashtable<EntityToUnicodeEntry>& hash, PRUint32 numEntries) {
+static void testTHashtable(nsTHashtable<EntityToUnicodeEntry>& hash, PRUint32 numEntries) {
   printf("Filling hash with %d entries.\n", numEntries);
 
   PRUint32 i;
@@ -189,27 +186,23 @@ testTHashtable(nsTHashtable<EntityToUnicodeEntry>& hash, PRUint32 numEntries) {
   }
 }
 
-PLDHashOperator
-nsDEnumRead(const PRUint32& aKey, const char* aData, void* userArg) {
+static PLDHashOperator nsDEnumRead(const PRUint32& aKey, const char* aData, void* userArg) {
   printf("  enumerated %u = \"%s\"\n", aKey, aData);
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsDEnum(const PRUint32& aKey, const char*& aData, void* userArg) {
+static PLDHashOperator nsDEnum(const PRUint32& aKey, const char*& aData, void* userArg) {
   printf("  enumerated %u = \"%s\"\n", aKey, aData);
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsCEnumRead(const nsACString& aKey, TestUniChar* aData, void* userArg) {
+static PLDHashOperator nsCEnumRead(const nsACString& aKey, TestUniChar* aData, void* userArg) {
   printf("  enumerated \"%s\" = %u\n",
          PromiseFlatCString(aKey).get(), aData->GetChar());
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsCEnum(const nsACString& aKey, nsAutoPtr<TestUniChar>& aData, void* userArg) {
+static PLDHashOperator nsCEnum(const nsACString& aKey, nsAutoPtr<TestUniChar>& aData, void* userArg) {
     printf("  enumerated \"%s\" = %u\n",
            PromiseFlatCString(aKey).get(), aData->GetChar());
   return PL_DHASH_NEXT;
@@ -345,8 +338,7 @@ IFoo::GetString(nsACString& aString)
   return NS_OK;
 }
 
-nsresult
-CreateIFoo( IFoo** result )
+static nsresult CreateIFoo( IFoo** result )
     // a typical factory function (that calls AddRef)
   {
     printf("    >>CreateIFoo() --> ");
@@ -360,8 +352,7 @@ CreateIFoo( IFoo** result )
     return 0;
   }
 
-PLDHashOperator
-nsIEnumRead(const PRUint32& aKey, IFoo* aFoo, void* userArg) {
+static PLDHashOperator nsIEnumRead(const PRUint32& aKey, IFoo* aFoo, void* userArg) {
   nsCAutoString str;
   aFoo->GetString(str);
 
@@ -369,8 +360,7 @@ nsIEnumRead(const PRUint32& aKey, IFoo* aFoo, void* userArg) {
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsIEnum(const PRUint32& aKey, nsCOMPtr<IFoo>& aData, void* userArg) {
+static PLDHashOperator nsIEnum(const PRUint32& aKey, nsCOMPtr<IFoo>& aData, void* userArg) {
   nsCAutoString str;
   aData->GetString(str);
 
@@ -378,8 +368,7 @@ nsIEnum(const PRUint32& aKey, nsCOMPtr<IFoo>& aData, void* userArg) {
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsIEnum2Read(nsISupports* aKey, PRUint32 aData, void* userArg) {
+static PLDHashOperator nsIEnum2Read(nsISupports* aKey, PRUint32 aData, void* userArg) {
   nsCAutoString str;
   nsCOMPtr<IFoo> foo = do_QueryInterface(aKey);
   foo->GetString(str);
@@ -389,8 +378,7 @@ nsIEnum2Read(nsISupports* aKey, PRUint32 aData, void* userArg) {
   return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsIEnum2(nsISupports* aKey, PRUint32& aData, void* userArg) {
+static PLDHashOperator nsIEnum2(nsISupports* aKey, PRUint32& aData, void* userArg) {
   nsCAutoString str;
   nsCOMPtr<IFoo> foo = do_QueryInterface(aKey);
   foo->GetString(str);

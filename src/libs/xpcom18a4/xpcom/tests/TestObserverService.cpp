@@ -67,7 +67,7 @@ static void testResult( nsresult rv ) {
 }
 #endif
 
-void printString(nsString &str) {
+static void printString(nsString &str) {
 #ifdef VBOX  /* asan complains about mixing different allocators */
     char *cstr = ToNewCString(str);
     printf("%s", cstr);

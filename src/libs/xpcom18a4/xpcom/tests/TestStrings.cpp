@@ -40,12 +40,12 @@
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 
-void test_assign_helper(const nsACString& in, nsACString &_retval)
+static void test_assign_helper(const nsACString& in, nsACString &_retval)
   {
     _retval = in;
   }
 
-PRBool test_assign()
+static PRBool test_assign()
   {
     nsCString result;
     test_assign_helper(NS_LITERAL_CSTRING("a") + NS_LITERAL_CSTRING("b"), result);
@@ -55,7 +55,7 @@ PRBool test_assign()
     return r;
   }
 
-PRBool test_assign_c()
+static PRBool test_assign_c()
   {
     nsCString c; c.Assign('c');
     PRBool r = strcmp(c.get(), "c") == 0;
@@ -64,7 +64,7 @@ PRBool test_assign_c()
     return r;
   }
 
-PRBool test1()
+static PRBool test1()
   {
     NS_NAMED_LITERAL_STRING(empty, "");
     const nsAString& aStr = empty;
@@ -84,7 +84,7 @@ PRBool test1()
     return n == kNotFound;
   }
 
-PRBool test2()
+static PRBool test2()
   {
     nsCString data("hello world");
     const nsACString& aStr = data;
@@ -98,7 +98,7 @@ PRBool test2()
     return r;
   }
 
-PRBool test_find()
+static PRBool test_find()
   {
     nsCString src("<!DOCTYPE blah blah blah>");
 
@@ -110,7 +110,7 @@ PRBool test_find()
     return PR_FALSE;
   }
 
-PRBool test_rfind()
+static PRBool test_rfind()
   {
     const char text[] = "<!DOCTYPE blah blah blah>";
     const char term[] = "bLaH";
@@ -148,7 +148,7 @@ PRBool test_rfind()
     return PR_TRUE;
   }
 
-PRBool test_rfind_2()
+static PRBool test_rfind_2()
   {
     const char text[] = "<!DOCTYPE blah blah blah>";
     nsCString src(text);
@@ -160,7 +160,7 @@ PRBool test_rfind_2()
     return PR_FALSE;
   }
 
-PRBool test_rfind_3()
+static PRBool test_rfind_3()
   {
     const char text[] = "urn:mozilla:locale:en-US:necko";
     nsCAutoString value(text);
@@ -172,7 +172,7 @@ PRBool test_rfind_3()
     return PR_FALSE;
   }
 
-PRBool test_rfind_4()
+static PRBool test_rfind_4()
   {
     nsCString value("a.msf");
     PRInt32 i = value.RFind(".msf");
@@ -185,7 +185,7 @@ PRBool test_rfind_4()
     return PR_TRUE;
   }
 
-PRBool test_distance()
+static PRBool test_distance()
   {
     const char text[] = "abc-xyz";
     nsCString s(text);
@@ -199,7 +199,7 @@ PRBool test_distance()
     return r;
   }
 
-PRBool test_length()
+static PRBool test_length()
   {
     const char text[] = "abc-xyz";
     nsCString s(text);
@@ -210,7 +210,7 @@ PRBool test_length()
     return r;
   }
 
-PRBool test_trim()
+static PRBool test_trim()
   {
     const char text[] = " a\t    $   ";
     const char set[] = " \t$";
@@ -223,7 +223,7 @@ PRBool test_trim()
     return r;
   }
 
-PRBool test_replace_substr()
+static PRBool test_replace_substr()
   {
     const char text[] = "abc-ppp-qqq-ppp-xyz";
     nsCString s(text);
@@ -266,7 +266,7 @@ PRBool test_replace_substr()
     return PR_TRUE;
   }
 
-PRBool test_replace_substr_2()
+static PRBool test_replace_substr_2()
   {
     const char *oldName = nsnull;
     const char *newName = "user";
@@ -287,7 +287,7 @@ PRBool test_replace_substr_2()
     return PR_TRUE;
   }
 
-PRBool test_strip_ws()
+static PRBool test_strip_ws()
   {
     const char text[] = " a    $   ";
     nsCString s(text);
@@ -298,7 +298,7 @@ PRBool test_strip_ws()
     return r;
   }
 
-PRBool test_equals_ic()
+static PRBool test_equals_ic()
   {
     nsCString s;
     PRBool r = s.LowerCaseEqualsLiteral("view-source");
@@ -307,7 +307,7 @@ PRBool test_equals_ic()
     return !r;
   }
 
-PRBool test_fixed_string()
+static PRBool test_fixed_string()
   {
     char buf[256] = "hello world";
 
@@ -326,7 +326,7 @@ PRBool test_fixed_string()
     return PR_TRUE;
   }
 
-PRBool test_concat()
+static PRBool test_concat()
   {
     nsCString bar("bar");
     const nsACString& barRef = bar;
@@ -342,7 +342,7 @@ PRBool test_concat()
     return PR_FALSE;
   }
 
-PRBool test_concat_2()
+static PRBool test_concat_2()
   {
     nsCString fieldTextStr("xyz");
     nsCString text("text");
@@ -369,7 +369,7 @@ PRBool test_concat_3()
   }
 #endif
 
-PRBool test_xpidl_string()
+static PRBool test_xpidl_string()
   {
     nsXPIDLCString a, b;
     a = b;
@@ -421,7 +421,7 @@ PRBool test_xpidl_string()
     return PR_TRUE;
   }
 
-PRBool test_empty_assign()
+static PRBool test_empty_assign()
   {
     nsCString a;
     a.AssignLiteral("");
@@ -433,7 +433,7 @@ PRBool test_empty_assign()
     return PR_TRUE;
   }
 
-PRBool test_set_length()
+static PRBool test_set_length()
   {
     const char kText[] = "Default Plugin";
     nsCString buf;
@@ -445,7 +445,7 @@ PRBool test_set_length()
     return PR_TRUE;
   }
 
-PRBool test_substring()
+static PRBool test_substring()
   {
     nsCString super("hello world"), sub("hello");
 
@@ -464,7 +464,7 @@ PRBool test_substring()
     return PR_TRUE;
   }
 
-PRBool test_appendint64()
+static PRBool test_appendint64()
   {
     nsCString str;
 
@@ -515,7 +515,7 @@ PRBool test_appendint64()
     return PR_TRUE;
   }
 
-PRBool test_findcharinset()
+static PRBool test_findcharinset()
   {
     nsCString buf("hello, how are you?");
 
@@ -534,7 +534,7 @@ PRBool test_findcharinset()
     return PR_TRUE;
   }
 
-PRBool test_rfindcharinset()
+static PRBool test_rfindcharinset()
   {
     nsCString buf("hello, how are you?");
 

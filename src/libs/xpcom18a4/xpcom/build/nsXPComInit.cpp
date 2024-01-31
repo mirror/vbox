@@ -453,12 +453,6 @@ NS_GetMainThread(RTTHREAD *phThreadMain)
     return NS_OK;
 }
 
-nsresult NS_COM NS_InitXPCOM(nsIServiceManager* *result,
-                             nsIFile* binDirectory)
-{
-    return NS_InitXPCOM2(result, binDirectory, nsnull);
-}
-
 nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                               nsIFile* binDirectory,
                               nsIDirectoryServiceProvider* appFileLocationProvider)

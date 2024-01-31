@@ -69,16 +69,14 @@ struct TestData {
 } input = { 0xdeadbeef, 0xcafe, {0xba, 0xbe}, "foobar", &in_str},
   output = {0, 0, {0, 0}, NULL, NULL };
 
-void
-dump_struct(char *label, struct TestData *str)
+static void dump_struct(char *label, struct TestData *str)
 {
     fprintf(stderr, "%s: {%#08x, %#04x, {%#02x, %#02x}, %s, %d/%s}\n",
 	    label, str->bit32, str->bit16, str->bit8[0], str->bit8[1],
 	    str->cstr, str->str->length, str->str->bytes);
 }
 
-PRBool
-XDR(XPTArena *arena, XPTCursor *cursor, struct TestData *str)
+static PRBool XDR(XPTArena *arena, XPTCursor *cursor, struct TestData *str)
 {
     TRY("Do32", XPT_Do32(cursor, &str->bit32));
     TRY("Do16", XPT_Do16(cursor, &str->bit16));

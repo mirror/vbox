@@ -57,25 +57,7 @@
 
 #include <xpt_struct.h>
 
-/*
- * IDL_tree_warning bombs on libIDL version 6.5, and I don't want to not write
- * warnings... so I define a versioned one here.  Thanks to Mike Shaver for the
- * this solution, which allows us to pass through varargs calls.
- */
-#if !(LIBIDL_MAJOR_VERSION == 0 && LIBIDL_MINOR_VERSION == 6 && \
-      LIBIDL_MICRO_VERSION == 5) && !defined(DEBUG_shaver)
-/*
- * This turns a varargs call to XPIDL_WARNING directly into a varargs
- * call to IDL_tree_warning or xpidl_tree_warning as appropriate.  The
- * only tricky bit is that you must call XPIDL_WARNING with extra
- * parens, e.g. XPIDL_WARNING((foo, bar, "sil"))
- *
- * Probably best removed when we leave 6.5.  */
 #define XPIDL_WARNING(x) IDL_tree_warning x
-#else
-extern void xpidl_tree_warning(IDL_tree p, int level, const char *fmt, ...);
-#define XPIDL_WARNING(x) xpidl_tree_warning x
-#endif
 
 /*
  * Internal operation flags.

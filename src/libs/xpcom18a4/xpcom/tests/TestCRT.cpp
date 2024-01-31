@@ -42,7 +42,7 @@
 
 // The return from strcmp etc is only defined to be postive, zero or
 // negative. The magnitude of a non-zero return is irrelevant.
-PRIntn sign(PRIntn val) {
+static PRIntn sign(PRIntn val) {
     if (val == 0)
 	return 0;
     else {

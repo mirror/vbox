@@ -14,12 +14,12 @@
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
 
-void Passed();
-void Failed(const char* explanation = nsnull);
-void Inspect();
-void Banner(const char* bannerString);
+static void Passed();
+static void Failed(const char* explanation = nsnull);
+static void Inspect();
+static void Banner(const char* bannerString);
 
-void VerifyResult(nsresult rv)
+static void VerifyResult(nsresult rv)
 {
     if (NS_FAILED(rv))
     {
@@ -28,7 +28,7 @@ void VerifyResult(nsresult rv)
     }
 }
 //----------------------------------------------------------------------------
-void Banner(const char* bannerString)
+static void Banner(const char* bannerString)
 //----------------------------------------------------------------------------
 {
     printf("---------------------------\n");
@@ -37,14 +37,14 @@ void Banner(const char* bannerString)
 }
 
 //----------------------------------------------------------------------------
-void Passed()
+static void Passed()
 //----------------------------------------------------------------------------
 {
     printf("Test passed.");
 }
 
 //----------------------------------------------------------------------------
-void Failed(const char* explanation)
+static void Failed(const char* explanation)
 //----------------------------------------------------------------------------
 {
     printf("ERROR : Test failed.\n");
@@ -52,13 +52,13 @@ void Failed(const char* explanation)
 }
 
 //----------------------------------------------------------------------------
-void Inspect()
+static void Inspect()
 //----------------------------------------------------------------------------
 {
     printf("^^^^^^^^^^ PLEASE INSPECT OUTPUT FOR ERRORS\n");
 }
 
-void GetPaths(nsILocalFile* file)
+static void GetPaths(nsILocalFile* file)
 {
     nsresult rv;
     nsCAutoString pathName;
@@ -71,7 +71,7 @@ void GetPaths(nsILocalFile* file)
     printf("filepath: %s\n", pathName.get());
 }
 
-void InitTest(const char* creationPath, const char* appendPath)
+static void InitTest(const char* creationPath, const char* appendPath)
 {
     nsILocalFile* file = nsnull;
     nsresult rv = CallCreateInstance(NS_LOCAL_FILE_CONTRACTID, &file);
@@ -122,8 +122,8 @@ void InitTest(const char* creationPath, const char* appendPath)
 }
 
 
-void CreationTest(const char* creationPath, const char* appendPath,
-		  PRInt32 whatToCreate, PRInt32 perm)
+static void CreationTest(const char* creationPath, const char* appendPath,
+		                 PRInt32 whatToCreate, PRInt32 perm)
 {
     nsresult rv;
     nsCOMPtr<nsILocalFile> file =
@@ -171,8 +171,8 @@ void CreationTest(const char* creationPath, const char* appendPath,
 
 }
 
-void CreateUniqueTest(const char* creationPath, const char* appendPath,
-                 PRInt32 whatToCreate, PRInt32 perm)
+static void CreateUniqueTest(const char* creationPath, const char* appendPath,
+                             PRInt32 whatToCreate, PRInt32 perm)
 {
     nsresult rv;
     nsCOMPtr<nsILocalFile> file =
@@ -221,8 +221,7 @@ void CreateUniqueTest(const char* creationPath, const char* appendPath,
 }
 
 
-void
-CopyTest(const char *testFile, const char *targetDir)
+static void CopyTest(const char *testFile, const char *targetDir)
 {
   printf("start copy test\n");
 
@@ -257,8 +256,7 @@ CopyTest(const char *testFile, const char *targetDir)
   printf("end copy test\n");
 }
 
-void
-DeletionTest(const char* creationPath, const char* appendPath, PRBool recursive)
+static void DeletionTest(const char* creationPath, const char* appendPath, PRBool recursive)
 {
     nsresult rv;
     nsCOMPtr<nsILocalFile> file =
@@ -304,8 +302,7 @@ DeletionTest(const char* creationPath, const char* appendPath, PRBool recursive)
 
 }
 
-void
-MoveTest(const char *testFile, const char *targetDir)
+static void MoveTest(const char *testFile, const char *targetDir)
 {
   Banner("Move Test");
 
@@ -344,9 +341,8 @@ MoveTest(const char *testFile, const char *targetDir)
 }
 
 // move up the number of directories in moveUpCount, then append "foo/bar"
-void
-NormalizeTest(const char *testPath, int moveUpCount,
-	      const char *expected)
+static void NormalizeTest(const char *testPath, int moveUpCount,
+                          const char *expected)
 {
   Banner("Normalize Test");
 
