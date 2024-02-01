@@ -183,6 +183,7 @@ class TestBoxScript(object):
             constants.tbreq.SIGNON_PARAM_HAS_NESTED_PAGING:{ self.VALUE: self._hasHostNestedPaging(),  self.FN: None },
             constants.tbreq.SIGNON_PARAM_HAS_64_BIT_GUEST: { self.VALUE: self._can64BitGuest(),        self.FN: None },
             constants.tbreq.SIGNON_PARAM_HAS_IOMMU:        { self.VALUE: self._hasHostIoMmu(),         self.FN: None },
+            constants.tbreq.SIGNON_PARAM_HAS_NATIVE_API:   { self.VALUE: self._hasHostNativeApi(),     self.FN: None },
             #constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE:    { self.VALUE: self._withRawModeSupport(),   self.FN: None },
             constants.tbreq.SIGNON_PARAM_SCRIPT_REV:       { self.VALUE: self._getScriptRev(),         self.FN: None },
             constants.tbreq.SIGNON_PARAM_REPORT:           { self.VALUE: self._getHostReport(),        self.FN: None },
@@ -558,6 +559,14 @@ class TestBoxScript(object):
             ## @todo Any way to figure this one out on any host OS?
             self._oOptions.fHasIoMmu = False;
         return self._oOptions.fHasIoMmu;
+
+    def _hasHostNativeApi(self):
+        """
+        Check if the host supports the native API/NEM mode.
+        """
+        if self._oOptions.fHasNativeApi is None:
+            self._oOptions.fHasNativeApi = self._getHelperOutput('nativeapi');
+        return self._oOptions.fHasNativeApi;
 
     def _withRawModeSupport(self):
         """
@@ -1004,6 +1013,12 @@ class TestBoxScript(object):
         parser.add_option("--no-64-bit-guest",
                           dest="fCan64BitGuest", action="store_false", default=None,
                           help="Host cannot execute 64-bit guests");
+        parser.add_option("--native-api",
+                          dest="fHasNativeApi", action="store_true", default=None,
+                          help="Native API virtualization is available");
+        parser.add_option("--no-native-api",
+                          dest="fHasNativeApi", action="store_false", default=None,
+                          help="Native API virtualization is not available");
         parser.add_option("--io-mmu",
                           dest="fHasIoMmu", action="store_true", default=None,
                           help="I/O MMU available");
