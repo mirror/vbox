@@ -49,14 +49,10 @@
 
 /* COM includes: */
 #include "CConsole.h"
-#include "CForm.h"
-#include "CFormValue.h"
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
-#include "CRangedIntegerFormValue.h"
 #include <iprt/string.h>
-#include <VBox/com/VirtualBox.h>
 
 /* External includes: */
 #include <math.h>
@@ -1813,7 +1809,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     m_metricTypeDict[KMetricType_NetworksBytesOut]  = Metric_Type_Network_Out;
 
     setMachine(machine);
-    determineTotalRAMAmount();
+    m_iTotalRAM = UIMonitorCommon::determineTotalRAMAmount(m_comMachine);
 
     m_pMachineStateUpdateTimer = new QTimer(this);
     if (m_pMachineStateUpdateTimer)
@@ -1832,43 +1828,6 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
 
     /* Start the timer: */
     start();
-}
-
-void UIVMActivityMonitorCloud::determineTotalRAMAmount()
-{
-    CForm comForm = m_comMachine.GetDetailsForm();
-    /* Ignore cloud machine errors: */
-    if (m_comMachine.isOk())
-    {
-        /* Common anchor for all fields: */
-        const QString strAnchorType = "cloud";
-
-        /* For each form value: */
-        const QVector<CFormValue> values = comForm.GetValues();
-        foreach (const CFormValue &comIteratedValue, values)
-        {
-            /* Ignore invisible values: */
-            if (!comIteratedValue.GetVisible())
-                continue;
-
-            /* Acquire label: */
-            const QString strLabel = comIteratedValue.GetLabel();
-            if (strLabel != "RAM")
-                continue;
-
-            AssertReturnVoid((comIteratedValue.GetType() == KFormValueType_RangedInteger));
-
-            CRangedIntegerFormValue comValue(comIteratedValue);
-            m_iTotalRAM = comValue.GetInteger();
-            QString strRAMUnit = comValue.GetSuffix();
-            if (strRAMUnit.compare("gb", Qt::CaseInsensitive) == 0)
-                m_iTotalRAM *= _1G / _1K;
-            else if (strRAMUnit.compare("mb", Qt::CaseInsensitive) == 0)
-                m_iTotalRAM *= _1M / _1K;
-            if (!comValue.isOk())
-                m_iTotalRAM = 0;
-        }
-    }
 }
 
 void UIVMActivityMonitorCloud::setMachine(const CCloudMachine &comMachine)

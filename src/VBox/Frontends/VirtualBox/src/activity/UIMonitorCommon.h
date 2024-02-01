@@ -130,6 +130,8 @@ public:
         static void drawDoughnutChart(QPainter &painter, quint64 iMaximum, quint64 data,
                                       const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha, const QColor &color);
 
+        static quint64 determineTotalRAMAmount(CCloudMachine &comCloudMachine);
+
 private:
 
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */

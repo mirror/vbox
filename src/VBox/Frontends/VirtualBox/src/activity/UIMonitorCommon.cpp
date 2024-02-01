@@ -37,9 +37,12 @@
 #include "UIMonitorCommon.h"
 
 /* COM includes: */
+#include "CForm.h"
+#include "CFormValue.h"
+#include "CRangedIntegerFormValue.h"
 #include "CMachineDebugger.h"
 #include "CPerformanceCollector.h"
-
+#include <VBox/com/VirtualBox.h>
 
 
 /*********************************************************************************************************************************
@@ -307,4 +310,44 @@ void UIMonitorCommon::drawDoughnutChart(QPainter &painter, quint64 iMaximum, qui
     float fAngle = 360.f * data / (float)iMaximum;
     painter.setBrush(color);
     painter.drawPath(UIMonitorCommon::doughnutSlice(chartRect, innerRect, 90, fAngle));
+}
+
+/* static */
+quint64 UIMonitorCommon::determineTotalRAMAmount(CCloudMachine &comCloudMachine)
+{
+    quint64 iTotalRAM = 0;
+    CForm comForm = comCloudMachine.GetDetailsForm();
+    /* Ignore cloud machine errors: */
+    if (comCloudMachine.isOk())
+    {
+        /* Common anchor for all fields: */
+        const QString strAnchorType = "cloud";
+
+        /* For each form value: */
+        const QVector<CFormValue> values = comForm.GetValues();
+        foreach (const CFormValue &comIteratedValue, values)
+        {
+            /* Ignore invisible values: */
+            if (!comIteratedValue.GetVisible())
+                continue;
+
+            /* Acquire label: */
+            const QString strLabel = comIteratedValue.GetLabel();
+            if (strLabel != "RAM")
+                continue;
+
+            AssertReturn((comIteratedValue.GetType() == KFormValueType_RangedInteger), 0);
+
+            CRangedIntegerFormValue comValue(comIteratedValue);
+            iTotalRAM = comValue.GetInteger();
+            QString strRAMUnit = comValue.GetSuffix();
+            if (strRAMUnit.compare("gb", Qt::CaseInsensitive) == 0)
+                iTotalRAM *= _1G / _1K;
+            else if (strRAMUnit.compare("mb", Qt::CaseInsensitive) == 0)
+                iTotalRAM *= _1M / _1K;
+            if (!comValue.isOk())
+                iTotalRAM = 0;
+        }
+    }
+    return iTotalRAM;
 }

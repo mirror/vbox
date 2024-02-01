@@ -352,7 +352,6 @@ private:
 
     bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
     void prepareMetrics();
-    void determineTotalRAMAmount();
 
     CCloudMachine m_comMachine;
     QPointer<UIProgressTaskReadCloudMachineMetricList> m_ReadListProgressTask;
