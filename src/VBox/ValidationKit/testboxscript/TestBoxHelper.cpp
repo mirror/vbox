@@ -533,7 +533,7 @@ static bool isNativeApiSupported(void)
         close(fdKvm);
         fSupported = true;
     }
-#endif  
+#endif
 
     return fSupported;
 }
