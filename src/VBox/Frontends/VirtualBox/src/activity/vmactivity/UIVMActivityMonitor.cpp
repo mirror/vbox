@@ -1809,7 +1809,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     m_metricTypeDict[KMetricType_NetworksBytesOut]  = Metric_Type_Network_Out;
 
     setMachine(machine);
-    m_iTotalRAM = UIMonitorCommon::determineTotalRAMAmount(m_comMachine);
+    m_uTotalRAM = UIMonitorCommon::determineTotalRAMAmount(m_comMachine);
 
     m_pMachineStateUpdateTimer = new QTimer(this);
     if (m_pMachineStateUpdateTimer)
@@ -1960,12 +1960,12 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType,
             updateDiskIOWrittenChart(newData[i], newTimeStamps[i]);
         else if (enmMetricType == KMetricType_MemoryUtilization)
         {
-            if (m_iTotalRAM != 0)
+            if (m_uTotalRAM != 0)
             {
                 /* calculate used RAM amount in kb: */
                 if (newData[i] != uInvalidValueSentinel)
                 {
-                    quint64 iUsedRAM = newData[i] * (m_iTotalRAM / 100.f);
+                    quint64 iUsedRAM = newData[i] * (m_uTotalRAM / 100.f);
                     updateRAMChart(iUsedRAM, newTimeStamps[i]);
                 }
                 else
@@ -2173,7 +2173,7 @@ void UIVMActivityMonitorCloud::updateDiskIOReadChart(quint64 uReadRate, const QS
 void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &strLabel)
 {
     UIMetric &RAMMetric = m_metrics[Metric_Type_RAM];
-    RAMMetric.setMaximum(m_iTotalRAM);
+    RAMMetric.setMaximum(m_uTotalRAM);
     RAMMetric.addData(0, iUsedRAM, strLabel);
 
     if (m_infoLabels.contains(Metric_Type_RAM)  && m_infoLabels[Metric_Type_RAM])
@@ -2181,8 +2181,8 @@ void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &s
         QString strInfo;
         strInfo = QString("<b>%1</b><br/>%2: %3<br/><font color=\"%4\">%5: %6</font><br/><font color=\"%7\">%8: %9</font>")
             .arg(m_strRAMInfoLabelTitle)
-            .arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * m_iTotalRAM, g_iDecimalCount))
-            .arg(dataColorString(Metric_Type_RAM, 1)).arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (m_iTotalRAM - iUsedRAM), g_iDecimalCount))
+            .arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * m_uTotalRAM, g_iDecimalCount))
+            .arg(dataColorString(Metric_Type_RAM, 1)).arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (m_uTotalRAM - iUsedRAM), g_iDecimalCount))
             .arg(dataColorString(Metric_Type_RAM, 0)).arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * iUsedRAM, g_iDecimalCount));
         m_infoLabels[Metric_Type_RAM]->setText(strInfo);
     }
@@ -2212,7 +2212,7 @@ bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &m
 void UIVMActivityMonitorCloud::prepareMetrics()
 {
     /* RAM Metric: */
-    if (m_iTotalRAM != 0)
+    if (m_uTotalRAM != 0)
     {
         UIMetric ramMetric("kb", m_iMaximumQueueSize);
         ramMetric.setDataSeriesName(0, "Used");

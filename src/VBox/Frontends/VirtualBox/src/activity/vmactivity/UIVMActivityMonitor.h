@@ -361,7 +361,7 @@ private:
     QHash<KMetricType, Metric_Type> m_metricTypeDict;
 
     /** Total amount of RAM in kb. */
-    quint64 m_iTotalRAM;
+    quint64 m_uTotalRAM;
     QTimer *m_pMachineStateUpdateTimer;
     KCloudMachineState m_enmMachineState;
 

@@ -999,13 +999,29 @@ void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricTyp
         return;
 
     int iDecimalCount = 2;
-
+    QLocale locale;
     if (enmMetricType == KMetricType_CpuUtilization)
+    {
+        //QString QLocale::toString(double i, char f = 'g', int prec = 6) const
+
+        // m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
+        //     QString("%1%").arg(QString::number(data[0].toFloat(), 'f', iDecimalCount));
+
         m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
-            QString::number(data[0].toFloat(), 'f', iDecimalCount);
+            QString("%1%").arg(locale.toString(data[0].toFloat(), 'f', iDecimalCount));
+}
     else if (enmMetricType == KMetricType_MemoryUtilization)
-        m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
-            QString::number(data[0].toFloat(), 'f', iDecimalCount);
+    {
+         if (m_uTotalRAM != 0)
+         {
+             quint64 uUsedRAM = (quint64)data[0].toFloat() * (m_uTotalRAM / 100.f);
+             m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] =
+                 QString("%1/%2").arg(UITranslator::formatSize(_1K * uUsedRAM, iDecimalCount)).
+                 arg(UITranslator::formatSize(_1K * m_uTotalRAM, iDecimalCount));
+         }
+         m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
+             QString("%1%").arg(QString::number(data[0].toFloat(), 'f', iDecimalCount));
+    }
     else if (enmMetricType == KMetricType_NetworksBytesOut)
         m_columnData[VMActivityOverviewColumn_NetworkUpRate] =
             UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount);
@@ -1031,7 +1047,11 @@ void UIActivityOverviewItemCloud::setMachineState(int iState)
         return;
     m_enmMachineState = enmState;
     if (isRunning())
+    {
         getMetricList();
+        if (m_uTotalRAM == 0)
+            m_uTotalRAM = UIMonitorCommon::determineTotalRAMAmount(m_comCloudMachine);
+    }
     else
     {
         if (m_pTimer)
