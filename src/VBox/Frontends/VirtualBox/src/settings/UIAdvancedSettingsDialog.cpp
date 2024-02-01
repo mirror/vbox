@@ -69,14 +69,6 @@
 # include "VBoxUtils.h"
 #endif
 
-#ifdef VBOX_WS_MAC
-//# define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-#endif
-
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-# include "QIToolBar.h"
-#endif
-
 
 /** QCheckBox subclass used as mode checkbox. */
 class UIModeCheckBox : public QCheckBox
@@ -782,10 +774,6 @@ void UIAdvancedSettingsDialog::reject()
 
 void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
 {
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    setWindowTitle(title());
-#endif
-
     /* Cache current page ID for reusing: */
     m_iPageId = cId;
 
@@ -1353,21 +1341,6 @@ void UIAdvancedSettingsDialog::prepare()
 
 void UIAdvancedSettingsDialog::prepareSelector()
 {
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    /* Prepare modern tool-bar selector: */
-    m_pSelector = new UISettingsSelectorToolBar(this);
-    if (m_pSelector)
-    {
-        static_cast<QIToolBar*>(m_pSelector->widget())->enableMacToolbar();
-        addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
-    }
-
-    /* No title in this mode, we change the title of the window: */
-    m_pLayoutMain->setColumnMinimumWidth(0, 0);
-    m_pLayoutMain->setHorizontalSpacing(0);
-
-#else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-
     /* Make sure there is a serious spacing between selector and pages: */
     m_pLayoutMain->setColumnMinimumWidth(1, 20);
     m_pLayoutMain->setRowStretch(1, 1);
@@ -1400,11 +1373,10 @@ void UIAdvancedSettingsDialog::prepareSelector()
                 this, &UIAdvancedSettingsDialog::sltApplyFilteringRules);
         m_pLayoutMain->addWidget(m_pEditorFilter, 0, 2);
     }
-#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
     /* Configure selector created above: */
     if (m_pSelector)
-        connect(m_pSelector, &UISettingsSelectorTreeWidget::sigCategoryChanged,
+        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged,
                 this, &UIAdvancedSettingsDialog::sltCategoryChanged);
 }
 

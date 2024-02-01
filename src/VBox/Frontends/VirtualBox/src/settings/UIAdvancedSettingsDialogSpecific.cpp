@@ -70,10 +70,6 @@
 #include "CPlatform.h"
 #include "CUSBController.h"
 
-#ifdef VBOX_WS_MAC
-//# define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-#endif
-
 
 /*********************************************************************************************************************************
 *   Class UIAdvancedSettingsDialogGlobal implementation.                                                                         *
@@ -177,11 +173,7 @@ void UIAdvancedSettingsDialogGlobal::save()
 
 QString UIAdvancedSettingsDialogGlobal::titleExtension() const
 {
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    return m_pSelector->itemText(m_pSelector->currentId());
-#else
     return tr("Preferences");
-#endif
 }
 
 QString UIAdvancedSettingsDialogGlobal::title() const
@@ -492,11 +484,7 @@ void UIAdvancedSettingsDialogMachine::save()
 
 QString UIAdvancedSettingsDialogMachine::titleExtension() const
 {
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    return m_pSelector->itemText(m_pSelector->currentId());
-#else
     return tr("Settings");
-#endif
 }
 
 QString UIAdvancedSettingsDialogMachine::title() const
