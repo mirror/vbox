@@ -30,47 +30,18 @@
 #include <QHash>
 
 /* GUI includes: */
-#include "UIConverterBackend.h"
+#include "UIConverter.h"
 #include "UIIconPool.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
-/* Determines if <Object of type X> can be converted to object of other type.
- * These functions returns 'true' for all allowed conversions. */
-template<> bool canConvert<KCloudMachineState>() { return true; }
-template<> bool canConvert<KMachineState>() { return true; }
-template<> bool canConvert<KSessionState>() { return true; }
-template<> bool canConvert<KParavirtProvider>() { return true; }
-template<> bool canConvert<KDeviceType>() { return true; }
-template<> bool canConvert<KClipboardMode>() { return true; }
-template<> bool canConvert<KDnDMode>() { return true; }
-template<> bool canConvert<KPointingHIDType>() { return true; }
-template<> bool canConvert<KGraphicsControllerType>() { return true; }
-template<> bool canConvert<KMediumType>() { return true; }
-template<> bool canConvert<KMediumVariant>() { return true; }
-template<> bool canConvert<KNetworkAttachmentType>() { return true; }
-template<> bool canConvert<KNetworkAdapterType>() { return true; }
-template<> bool canConvert<KNetworkAdapterPromiscModePolicy>() { return true; }
-template<> bool canConvert<KPortMode>() { return true; }
-template<> bool canConvert<KUSBControllerType>() { return true; }
-template<> bool canConvert<KUSBDeviceState>() { return true; }
-template<> bool canConvert<KUSBDeviceFilterAction>() { return true; }
-template<> bool canConvert<KAudioDriverType>() { return true; }
-template<> bool canConvert<KAudioControllerType>() { return true; }
-template<> bool canConvert<KAuthType>() { return true; }
-template<> bool canConvert<KStorageBus>() { return true; }
-template<> bool canConvert<KStorageControllerType>() { return true; }
-template<> bool canConvert<KChipsetType>() { return true; }
-template<> bool canConvert<KTpmType>() { return true; }
-template<> bool canConvert<KNATProtocol>() { return true; }
-template<> bool canConvert<KGuestSessionStatus>() { return true; }
-template<> bool canConvert<KProcessStatus>() { return true; }
-template<> bool canConvert<KMetricType>() { return true; }
 
 /* QIcon <= KCloudMachineState: */
-template<> QIcon toIcon(const KCloudMachineState &state)
+template<> SHARED_LIBRARY_STUFF QIcon UIConverter::toIcon(const KCloudMachineState &state) const
 {
     switch (state)
     {
@@ -88,7 +59,7 @@ template<> QIcon toIcon(const KCloudMachineState &state)
 }
 
 /* QString <= KCloudMachineState: */
-template<> QString toString(const KCloudMachineState &state)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KCloudMachineState &state) const
 {
     switch (state)
     {
@@ -106,7 +77,7 @@ template<> QString toString(const KCloudMachineState &state)
 }
 
 /* QColor <= KMachineState: */
-template<> QColor toColor(const KMachineState &state)
+template<> SHARED_LIBRARY_STUFF QColor UIConverter::toColor(const KMachineState &state) const
 {
     switch (state)
     {
@@ -143,7 +114,7 @@ template<> QColor toColor(const KMachineState &state)
 }
 
 /* QIcon <= KMachineState: */
-template<> QIcon toIcon(const KMachineState &state)
+template<> SHARED_LIBRARY_STUFF QIcon UIConverter::toIcon(const KMachineState &state) const
 {
     switch (state)
     {
@@ -180,7 +151,7 @@ template<> QIcon toIcon(const KMachineState &state)
 }
 
 /* QString <= KMachineState: */
-template<> QString toString(const KMachineState &state)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KMachineState &state) const
 {
     switch (state)
     {
@@ -217,7 +188,7 @@ template<> QString toString(const KMachineState &state)
 }
 
 /* QString <= KSessionState: */
-template<> QString toString(const KSessionState &state)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KSessionState &state) const
 {
     switch (state)
     {
@@ -231,7 +202,7 @@ template<> QString toString(const KSessionState &state)
 }
 
 /* QString <= KParavirtProvider: */
-template<> QString toString(const KParavirtProvider &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KParavirtProvider &type) const
 {
     switch (type)
     {
@@ -247,7 +218,7 @@ template<> QString toString(const KParavirtProvider &type)
 }
 
 /* QString <= KDeviceType: */
-template<> QString toString(const KDeviceType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KDeviceType &type) const
 {
     switch (type)
     {
@@ -264,7 +235,7 @@ template<> QString toString(const KDeviceType &type)
 }
 
 /* QString <= KClipboardMode: */
-template<> QString toString(const KClipboardMode &mode)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KClipboardMode &mode) const
 {
     switch (mode)
     {
@@ -278,7 +249,7 @@ template<> QString toString(const KClipboardMode &mode)
 }
 
 /* QString <= KDnDMode: */
-template<> QString toString(const KDnDMode &mode)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KDnDMode &mode) const
 {
     switch (mode)
     {
@@ -292,7 +263,7 @@ template<> QString toString(const KDnDMode &mode)
 }
 
 /* QString <= KPointingHIDType: */
-template<> QString toString(const KPointingHIDType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KPointingHIDType &type) const
 {
     switch (type)
     {
@@ -309,7 +280,7 @@ template<> QString toString(const KPointingHIDType &type)
 }
 
 /* QString <= KGraphicsControllerType: */
-template<> QString toString(const KGraphicsControllerType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KGraphicsControllerType &type) const
 {
     switch (type)
     {
@@ -324,7 +295,7 @@ template<> QString toString(const KGraphicsControllerType &type)
 }
 
 /* KGraphicsControllerType <= QString: */
-template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KGraphicsControllerType UIConverter::fromString<KGraphicsControllerType>(const QString &strType) const
 {
     QHash<QString, KGraphicsControllerType> list;
     list.insert(QApplication::translate("UICommon", "None",      "GraphicsControllerType"), KGraphicsControllerType_Null);
@@ -340,7 +311,7 @@ template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QSt
 }
 
 /* QString <= KMediumType: */
-template<> QString toString(const KMediumType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KMediumType &type) const
 {
     switch (type)
     {
@@ -356,7 +327,7 @@ template<> QString toString(const KMediumType &type)
 }
 
 /* QString <= KMediumVariant: */
-template<> QString toString(const KMediumVariant &variant)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KMediumVariant &variant) const
 {
     /* Note: KMediumVariant_Diff and KMediumVariant_Fixed are so far mutually exclusive: */
     switch ((int)variant)
@@ -390,7 +361,7 @@ template<> QString toString(const KMediumVariant &variant)
 }
 
 /* QString <= KNetworkAttachmentType: */
-template<> QString toString(const KNetworkAttachmentType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNetworkAttachmentType &type) const
 {
     switch (type)
     {
@@ -415,7 +386,7 @@ template<> QString toString(const KNetworkAttachmentType &type)
 }
 
 /* QString <= KNetworkAdapterType: */
-template<> QString toString(const KNetworkAdapterType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNetworkAdapterType &type) const
 {
     switch (type)
     {
@@ -438,7 +409,7 @@ template<> QString toString(const KNetworkAdapterType &type)
 }
 
 /* QString <= KNetworkAdapterPromiscModePolicy: */
-template<> QString toString(const KNetworkAdapterPromiscModePolicy &policy)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNetworkAdapterPromiscModePolicy &policy) const
 {
     switch (policy)
     {
@@ -455,7 +426,7 @@ template<> QString toString(const KNetworkAdapterPromiscModePolicy &policy)
 }
 
 /* QString <= KPortMode: */
-template<> QString toString(const KPortMode &mode)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KPortMode &mode) const
 {
     switch (mode)
     {
@@ -470,7 +441,7 @@ template<> QString toString(const KPortMode &mode)
 }
 
 /* KPortMode <= QString: */
-template<> KPortMode fromString<KPortMode>(const QString &strMode)
+template<> SHARED_LIBRARY_STUFF KPortMode UIConverter::fromString<KPortMode>(const QString &strMode) const
 {
     QHash<QString, KPortMode> list;
     list.insert(QApplication::translate("UICommon", "Disconnected", "PortMode"), KPortMode_Disconnected);
@@ -486,7 +457,7 @@ template<> KPortMode fromString<KPortMode>(const QString &strMode)
 }
 
 /* QString <= KUSBControllerType: */
-template<> QString toString(const KUSBControllerType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KUSBControllerType &type) const
 {
     switch (type)
     {
@@ -499,7 +470,7 @@ template<> QString toString(const KUSBControllerType &type)
 }
 
 /* QString <= KUSBDeviceState: */
-template<> QString toString(const KUSBDeviceState &state)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KUSBDeviceState &state) const
 {
     switch (state)
     {
@@ -515,7 +486,7 @@ template<> QString toString(const KUSBDeviceState &state)
 }
 
 /* QString <= KUSBDeviceFilterAction: */
-template<> QString toString(const KUSBDeviceFilterAction &action)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KUSBDeviceFilterAction &action) const
 {
     switch (action)
     {
@@ -527,7 +498,7 @@ template<> QString toString(const KUSBDeviceFilterAction &action)
 }
 
 /* KUSBDeviceFilterAction <= QString: */
-template<> KUSBDeviceFilterAction fromString<KUSBDeviceFilterAction>(const QString &strAction)
+template<> SHARED_LIBRARY_STUFF KUSBDeviceFilterAction UIConverter::fromString<KUSBDeviceFilterAction>(const QString &strAction) const
 {
     QHash<QString, KUSBDeviceFilterAction> list;
     list.insert(QApplication::translate("UICommon", "Ignore", "USBDeviceFilterAction"), KUSBDeviceFilterAction_Ignore);
@@ -540,7 +511,7 @@ template<> KUSBDeviceFilterAction fromString<KUSBDeviceFilterAction>(const QStri
 }
 
 /* QString <= KAudioDriverType: */
-template<> QString toString(const KAudioDriverType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioDriverType &type) const
 {
     switch (type)
     {
@@ -561,7 +532,7 @@ template<> QString toString(const KAudioDriverType &type)
 }
 
 /* KAudioDriverType <= QString: */
-template<> KAudioDriverType fromString<KAudioDriverType>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KAudioDriverType UIConverter::fromString<KAudioDriverType>(const QString &strType) const
 {
     QHash<QString, KAudioDriverType> list;
     list.insert(QApplication::translate("UICommon", "Default", "AudioDriverType"),              KAudioDriverType_Default);
@@ -583,7 +554,7 @@ template<> KAudioDriverType fromString<KAudioDriverType>(const QString &strType)
 }
 
 /* QString <= KAudioControllerType: */
-template<> QString toString(const KAudioControllerType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioControllerType &type) const
 {
     switch (type)
     {
@@ -597,7 +568,7 @@ template<> QString toString(const KAudioControllerType &type)
 }
 
 /* KAudioControllerType <= QString: */
-template<> KAudioControllerType fromString<KAudioControllerType>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KAudioControllerType UIConverter::fromString<KAudioControllerType>(const QString &strType) const
 {
     QHash<QString, KAudioControllerType> list;
     list.insert(QApplication::translate("UICommon", "ICH AC97", "AudioControllerType"),        KAudioControllerType_AC97);
@@ -612,7 +583,7 @@ template<> KAudioControllerType fromString<KAudioControllerType>(const QString &
 }
 
 /* QString <= KAuthType: */
-template<> QString toString(const KAuthType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAuthType &type) const
 {
     switch (type)
     {
@@ -625,7 +596,7 @@ template<> QString toString(const KAuthType &type)
 }
 
 /* KAuthType <= QString: */
-template<> KAuthType fromString<KAuthType>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KAuthType UIConverter::fromString<KAuthType>(const QString &strType) const
 {
     QHash<QString, KAuthType> list;
     list.insert(QApplication::translate("UICommon", "Null", "AuthType"),     KAuthType_Null);
@@ -639,7 +610,7 @@ template<> KAuthType fromString<KAuthType>(const QString &strType)
 }
 
 /* QString <= KStorageBus: */
-template<> QString toString(const KStorageBus &bus)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageBus &bus) const
 {
     switch (bus)
     {
@@ -657,7 +628,7 @@ template<> QString toString(const KStorageBus &bus)
 }
 
 /* KStorageBus <= QString: */
-template<> KStorageBus fromString<KStorageBus>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KStorageBus UIConverter::fromString<KStorageBus>(const QString &strType) const
 {
     QHash<QString, KStorageBus> list;
     list.insert(QApplication::translate("UICommon", "IDE", "StorageBus"),         KStorageBus_IDE);
@@ -676,7 +647,7 @@ template<> KStorageBus fromString<KStorageBus>(const QString &strType)
 }
 
 /* QString <= KStorageControllerType: */
-template<> QString toString(const KStorageControllerType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageControllerType &type) const
 {
     switch (type)
     {
@@ -697,7 +668,7 @@ template<> QString toString(const KStorageControllerType &type)
 }
 
 /* KStorageControllerType <= QString: */
-template<> KStorageControllerType fromString<KStorageControllerType>(const QString &strType)
+template<> SHARED_LIBRARY_STUFF KStorageControllerType UIConverter::fromString<KStorageControllerType>(const QString &strType) const
 {
     QHash<QString, KStorageControllerType> list;
     list.insert(QApplication::translate("UICommon", "LsiLogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
@@ -719,7 +690,7 @@ template<> KStorageControllerType fromString<KStorageControllerType>(const QStri
 }
 
 /* QString <= KChipsetType: */
-template<> QString toString(const KChipsetType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KChipsetType &type) const
 {
     switch (type)
     {
@@ -732,7 +703,7 @@ template<> QString toString(const KChipsetType &type)
 }
 
 /* QString <= KTpmType: */
-template<> QString toString(const KTpmType &type)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KTpmType &type) const
 {
     switch (type)
     {
@@ -747,7 +718,7 @@ template<> QString toString(const KTpmType &type)
 }
 
 /* QString <= KNATProtocol: */
-template<> QString toString(const KNATProtocol &protocol)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNATProtocol &protocol) const
 {
     switch (protocol)
     {
@@ -759,7 +730,7 @@ template<> QString toString(const KNATProtocol &protocol)
 }
 
 /* QString <= KNATProtocol: */
-template<> QString toInternalString(const KNATProtocol &protocol)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toInternalString(const KNATProtocol &protocol) const
 {
     QString strResult;
     switch (protocol)
@@ -772,7 +743,7 @@ template<> QString toInternalString(const KNATProtocol &protocol)
 }
 
 /* KNATProtocol <= QString: */
-template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol)
+template<> SHARED_LIBRARY_STUFF KNATProtocol UIConverter::fromInternalString<KNATProtocol>(const QString &strProtocol) const
 {
     if (strProtocol.compare("udp", Qt::CaseInsensitive) == 0)
         return KNATProtocol_UDP;
@@ -782,7 +753,7 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
 }
 
 /* QString <= KGuestSessionStatus: */
-template<> QString toString(const KGuestSessionStatus &status)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KGuestSessionStatus &status) const
 {
     switch (status)
     {
@@ -801,7 +772,7 @@ template<> QString toString(const KGuestSessionStatus &status)
 }
 
 /* KGuestSessionStatus <= QString: */
-template<> KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &strStatus)
+template<> SHARED_LIBRARY_STUFF KGuestSessionStatus UIConverter::fromString<KGuestSessionStatus>(const QString &strStatus) const
 {
     QHash<QString, KGuestSessionStatus> list;
     list.insert(QApplication::translate("UICommon", "Undefined", "GuestSessionStatus"),              KGuestSessionStatus_Undefined);
@@ -821,7 +792,7 @@ template<> KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &st
 }
 
 /* QString <= KProcessStatus: */
-template<> QString toString(const KProcessStatus &status)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KProcessStatus &status) const
 {
     switch (status)
     {
@@ -843,7 +814,7 @@ template<> QString toString(const KProcessStatus &status)
 }
 
 /* KProcessStatus <= QString: */
-template<> KProcessStatus fromString<KProcessStatus>(const QString &strStatus)
+template<> SHARED_LIBRARY_STUFF KProcessStatus UIConverter::fromString<KProcessStatus>(const QString &strStatus) const
 {
     QHash<QString, KProcessStatus> list;
     list.insert(QApplication::translate("UICommon", "Undefined", "ProcessStatus"),               KProcessStatus_Undefined);
@@ -866,7 +837,7 @@ template<> KProcessStatus fromString<KProcessStatus>(const QString &strStatus)
 }
 
 /* QString <= KMetricType: */
-template<> QString toInternalString(const KMetricType &metricType)
+template<> SHARED_LIBRARY_STUFF QString UIConverter::toInternalString(const KMetricType &metricType) const
 {
     QString strResult;
     switch (metricType)
@@ -884,7 +855,7 @@ template<> QString toInternalString(const KMetricType &metricType)
 }
 
 /* KMetricType <= QString: */
-template<> KMetricType fromInternalString<KMetricType>(const QString &strMetricType)
+template<> SHARED_LIBRARY_STUFF KMetricType UIConverter::fromInternalString<KMetricType>(const QString &strMetricType) const
 {
     if (strMetricType.compare("Invalid", Qt::CaseInsensitive) == 0)
         return KMetricType_Invalid;

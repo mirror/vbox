@@ -38,6 +38,9 @@
 #include "UIConverter.h"
 #include "UIUSBFilterDetailsEditor.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 UIUSBFilterDetailsEditor::UIUSBFilterDetailsEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)

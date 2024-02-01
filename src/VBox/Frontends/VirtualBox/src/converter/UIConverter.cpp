@@ -28,6 +28,9 @@
 /* GUI includes: */
 #include "UIConverter.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 /* static */
 UIConverter* UIConverter::s_pInstance = 0;
