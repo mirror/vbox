@@ -245,24 +245,18 @@ public:
     virtual QString machineStateString() const = 0;
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
-    virtual void updateColumnData() = 0;
     virtual void setMachineState(int iState) = 0;
 
     QString columnData(int iColumnIndex) const;
 
-
-    ULONG  m_uCPUGuestLoad;
     quint64  m_uTotalRAM;
     quint64  m_uFreeRAM;
     quint64  m_uUsedRAM;
     float    m_fRAMUsagePercentage;
-    quint64  m_uNetworkDownRate;
-    quint64  m_uNetworkUpRate;
+
     quint64  m_uNetworkDownTotal;
     quint64  m_uNetworkUpTotal;
 
-    quint64 m_uDiskWriteRate;
-    quint64 m_uDiskReadRate;
     quint64 m_uDiskWriteTotal;
     quint64 m_uDiskReadTotal;
 
@@ -270,8 +264,6 @@ protected:
 
     QUuid         m_VMuid;
     QString       m_strVMName;
-
-    virtual void updateMetricData() = 0;
 
     /** The strings of each column for the item. We update this during performance query
       * instead of model's data function to know the string length earlier. */
@@ -298,15 +290,16 @@ public:
 
     bool isWithGuestAdditions();
     void resetDebugger();
+    void updateColumnData();
+
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
-    virtual void updateColumnData() override;
     virtual QString machineStateString() const override;
     virtual void setMachineState(int iState) override;
 
 protected:
 
-    virtual void updateMetricData() override;
+    void updateMetricData();
 
 private:
 
@@ -314,8 +307,6 @@ private:
     CGuest   m_comGuest;
     KMachineState m_enmMachineState;
 
-    ULONG   m_uCPUVMMLoad;
-    quint64 m_uVMExitRate;
     quint64 m_uVMExitTotal;
     CMachineDebugger m_comDebugger;
 };
@@ -335,13 +326,10 @@ public:
     void updateMachineState();
     virtual bool isRunning() const override;
     virtual bool isCloudVM() const override;
-    virtual void updateColumnData() override;
     virtual QString machineStateString() const override;
     virtual void setMachineState(int iState) override;
 
 protected:
-
-    virtual void updateMetricData() override;
 
 private slots:
 
@@ -352,6 +340,8 @@ private slots:
 private:
 
     void getMetricList();
+    void resetColumData();
+
     QTimer *m_pTimer;
     CCloudMachine m_comCloudMachine;
     KCloudMachineState m_enmMachineState;
@@ -422,8 +412,7 @@ private slots:
 
     void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
     void sltMachineRegistered(const QUuid &uId, bool fRegistered);
-    void sltLocalUpdateTimeout();
-    void sltCloudUpdateTimeout();
+    void sltLocalVMUpdateTimeout();
 
 private:
 
@@ -437,8 +426,8 @@ private:
 
     QVector<UIActivityOverviewItem*> m_itemList;
     QMap<int, QString> m_columnTitles;
-    QTimer *m_pLocalUpdateTimer;
-    QTimer *m_pCloudUpdateTimer;
+    QTimer *m_pLocalVMUpdateTimer;
+
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
        QVector<QString> m_nameList;
@@ -870,17 +859,12 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 *********************************************************************************************************************************/
 UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : QObject(pParent)
-    , m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
-    , m_uNetworkDownRate(0)
-    , m_uNetworkUpRate(0)
     , m_uNetworkDownTotal(0)
     , m_uNetworkUpTotal(0)
-    , m_uDiskWriteRate(0)
-    , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
     , m_VMuid(uid)
@@ -891,16 +875,11 @@ UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &ui
 
 UIActivityOverviewItem::UIActivityOverviewItem()
     : QObject()
-    , m_uCPUGuestLoad(0)
     , m_uTotalRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
-    , m_uNetworkDownRate(0)
-    , m_uNetworkUpRate(0)
     , m_uNetworkDownTotal(0)
     , m_uNetworkUpTotal(0)
-    , m_uDiskWriteRate(0)
-    , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
     , m_VMuid(QUuid())
@@ -965,6 +944,7 @@ UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const
         connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewItemCloud::sltTimeout);
         m_pTimer->setInterval(60 * 1000);
     }
+    resetColumData();
 }
 
 UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
@@ -989,19 +969,6 @@ bool UIActivityOverviewItemCloud::isRunning() const
 bool UIActivityOverviewItemCloud::isCloudVM() const
 {
     return true;
-}
-
-void UIActivityOverviewItemCloud::updateMetricData()
-{
-}
-
-void UIActivityOverviewItemCloud::updateColumnData()
-{
-    updateMetricData();
-
-    //int iDecimalCount = 2;
-
-
 }
 
 QString UIActivityOverviewItemCloud::machineStateString() const
@@ -1030,8 +997,19 @@ void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricTyp
     Q_UNUSED(enmMetricType);
     Q_UNUSED(data);
     Q_UNUSED(timeStamps);
-    // if (!data.isEmpty())
-    //     printf("%d %lld %s\n", enmMetricType, data.size(), qPrintable(data[0]));
+    AssertReturnVoid(!data.isEmpty());
+
+    if (enmMetricType == KMetricType_CpuUtilization)
+    {
+        m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
+            QString("%1%").arg(QString::number(data[0].toFloat(), 'f', 2));
+    }
+    else if (enmMetricType == KMetricType_MemoryUtilization)
+    {
+        m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
+            QString("%1%").arg(QString::number(data[0].toFloat(), 'f', 2));
+    }
+
     sender()->deleteLater();
 }
 
@@ -1050,6 +1028,13 @@ void UIActivityOverviewItemCloud::setMachineState(int iState)
         if (m_pTimer)
             m_pTimer->stop();
     }
+}
+
+void UIActivityOverviewItemCloud::resetColumData()
+{
+    for (int i = (int) VMActivityOverviewColumn_CPUGuestLoad;
+         i < (int)VMActivityOverviewColumn_Max; ++i)
+        m_columnData[i] = UIVMActivityOverviewWidget::tr("N/A");
 }
 
 void UIActivityOverviewItemCloud::getMetricList()
@@ -1078,7 +1063,10 @@ void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> 
         m_pTimer->start();
     }
     else
+    {
         m_pTimer->stop();
+        resetColumData();
+    }
 
     if (sender())
         sender()->deleteLater();
@@ -1091,8 +1079,6 @@ void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> 
 *********************************************************************************************************************************/
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : UIActivityOverviewItem(pParent, uid, strVMName)
-    , m_uCPUVMMLoad(0)
-    , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
     if (m_enmMachineState == KMachineState_Running)
@@ -1100,9 +1086,7 @@ UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const
 }
 
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
-    : m_uCPUVMMLoad(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
+    : m_uVMExitTotal(0)
 {
 }
 
@@ -1157,44 +1141,28 @@ void UIActivityOverviewItemLocal::setMachineState(int iState)
 
 void UIActivityOverviewItemLocal::updateMetricData()
 {
-    if (!m_comDebugger.isOk())
-        return;
 
-    /* CPU Load: */
-    ULONG aPctHalted;
-    m_comDebugger.GetCPULoad(0x7fffffff, m_uCPUGuestLoad, aPctHalted, m_uCPUVMMLoad);
 
-    /* Network rate: */
-    quint64 uPrevDownTotal = m_uNetworkDownTotal;
-    quint64 uPrevUpTotal = m_uNetworkUpTotal;
-    UIMonitorCommon::getNetworkLoad(m_comDebugger, m_uNetworkDownTotal, m_uNetworkUpTotal);
-    m_uNetworkDownRate = m_uNetworkDownTotal - uPrevDownTotal;
-    m_uNetworkUpRate = m_uNetworkUpTotal - uPrevUpTotal;
-
-    /* IO rate: */
-    quint64 uPrevWriteTotal = m_uDiskWriteTotal;
-    quint64 uPrevReadTotal = m_uDiskReadTotal;
-    UIMonitorCommon::getDiskLoad(m_comDebugger, m_uDiskWriteTotal, m_uDiskReadTotal);
-    m_uDiskWriteRate = m_uDiskWriteTotal - uPrevWriteTotal;
-    m_uDiskReadRate = m_uDiskReadTotal - uPrevReadTotal;
-
-    /* VM Exits: */
-    quint64 uPrevVMExitsTotal = m_uVMExitTotal;
-    UIMonitorCommon::getVMMExitCount(m_comDebugger, m_uVMExitTotal);
-    m_uVMExitRate = m_uVMExitTotal - uPrevVMExitsTotal;
 }
 
 void UIActivityOverviewItemLocal::updateColumnData()
 {
+    AssertReturnVoid(m_comDebugger.isOk());
     updateMetricData();
 
     int iDecimalCount = 2;
 
+    /* CPU Load: */
+    ULONG aPctHalted;
+    ULONG  uCPUGuestLoad;
+    ULONG uCPUVMMLoad;
+    m_comDebugger.GetCPULoad(0x7fffffff, uCPUGuestLoad, aPctHalted, uCPUVMMLoad);
     m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
-        QString("%1%").arg(QString::number(m_uCPUGuestLoad));
+        QString("%1%").arg(QString::number(uCPUGuestLoad));
     m_columnData[VMActivityOverviewColumn_CPUVMMLoad] =
-        QString("%1%").arg(QString::number(m_uCPUVMMLoad));
+        QString("%1%").arg(QString::number(uCPUVMMLoad));
 
+    /* RAM Utilization: */
     if (isWithGuestAdditions())
         m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] =
             QString("%1/%2").arg(UITranslator::formatSize(_1K * m_uUsedRAM, iDecimalCount)).
@@ -1202,38 +1170,50 @@ void UIActivityOverviewItemLocal::updateColumnData()
     else
         m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] = UIVMActivityOverviewWidget::tr("N/A");
 
+    /* RAM Utilization %: */
     if (isWithGuestAdditions())
         m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
             QString("%1%").arg(QString::number(m_fRAMUsagePercentage, 'f', 2));
     else
         m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] = UIVMActivityOverviewWidget::tr("N/A");
 
+    /* Network rate: */
+    quint64 uPrevDownTotal = m_uNetworkDownTotal;
+    quint64 uPrevUpTotal = m_uNetworkUpTotal;
+    UIMonitorCommon::getNetworkLoad(m_comDebugger, m_uNetworkDownTotal, m_uNetworkUpTotal);
+    quint64 uNetworkDownRate = m_uNetworkDownTotal - uPrevDownTotal;
+    quint64 uNetworkUpRate = m_uNetworkUpTotal - uPrevUpTotal;
     m_columnData[VMActivityOverviewColumn_NetworkUpRate] =
-        QString("%1").arg(UITranslator::formatSize(m_uNetworkUpRate, iDecimalCount));
-
+        QString("%1").arg(UITranslator::formatSize(uNetworkUpRate, iDecimalCount));
     m_columnData[VMActivityOverviewColumn_NetworkDownRate] =
-        QString("%1").arg(UITranslator::formatSize(m_uNetworkDownRate, iDecimalCount));
-
+        QString("%1").arg(UITranslator::formatSize(uNetworkDownRate, iDecimalCount));
     m_columnData[VMActivityOverviewColumn_NetworkUpTotal] =
         QString("%1").arg(UITranslator::formatSize(m_uNetworkUpTotal, iDecimalCount));
-
     m_columnData[VMActivityOverviewColumn_NetworkDownTotal] =
         QString("%1").arg(UITranslator::formatSize(m_uNetworkDownTotal, iDecimalCount));
 
+
+    /* IO rate: */
+    quint64 uPrevWriteTotal = m_uDiskWriteTotal;
+    quint64 uPrevReadTotal = m_uDiskReadTotal;
+    UIMonitorCommon::getDiskLoad(m_comDebugger, m_uDiskWriteTotal, m_uDiskReadTotal);
+    quint64 uDiskWriteRate = m_uDiskWriteTotal - uPrevWriteTotal;
+    quint64 uDiskReadRate = m_uDiskReadTotal - uPrevReadTotal;
     m_columnData[VMActivityOverviewColumn_DiskIOReadRate] =
-        QString("%1").arg(UITranslator::formatSize(m_uDiskReadRate, iDecimalCount));
-
+        QString("%1").arg(UITranslator::formatSize(uDiskReadRate, iDecimalCount));
     m_columnData[VMActivityOverviewColumn_DiskIOWriteRate] =
-        QString("%1").arg(UITranslator::formatSize(m_uDiskWriteRate, iDecimalCount));
-
+        QString("%1").arg(UITranslator::formatSize(uDiskWriteRate, iDecimalCount));
     m_columnData[VMActivityOverviewColumn_DiskIOReadTotal] =
         QString("%1").arg(UITranslator::formatSize(m_uDiskReadTotal, iDecimalCount));
-
     m_columnData[VMActivityOverviewColumn_DiskIOWriteTotal] =
         QString("%1").arg(UITranslator::formatSize(m_uDiskWriteTotal, iDecimalCount));
 
+    /* VM Exits: */
+    quint64 uPrevVMExitsTotal = m_uVMExitTotal;
+    UIMonitorCommon::getVMMExitCount(m_comDebugger, m_uVMExitTotal);
+    quint64 uVMExitRate = m_uVMExitTotal - uPrevVMExitsTotal;
     m_columnData[VMActivityOverviewColumn_VMExits] =
-        QString("%1/%2").arg(UITranslator::addMetricSuffixToNumber(m_uVMExitRate)).
+        QString("%1/%2").arg(UITranslator::addMetricSuffixToNumber(uVMExitRate)).
         arg(UITranslator::addMetricSuffixToNumber(m_uVMExitTotal));
 }
 
@@ -1319,8 +1299,7 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
 *********************************************************************************************************************************/
 UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
-    , m_pLocalUpdateTimer(new QTimer(this))
-    , m_pCloudUpdateTimer(new QTimer(this))
+    , m_pLocalVMUpdateTimer(new QTimer(this))
 {
     initialize();
 }
@@ -1335,15 +1314,10 @@ void UIActivityOverviewModel::initialize()
             this, &UIActivityOverviewModel::sltMachineStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
             this, &UIActivityOverviewModel::sltMachineRegistered);
-    if (m_pLocalUpdateTimer)
+    if (m_pLocalVMUpdateTimer)
     {
-        connect(m_pLocalUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltLocalUpdateTimeout);
-        m_pLocalUpdateTimer->start(1000);
-    }
-    if (m_pCloudUpdateTimer)
-    {
-        connect(m_pCloudUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltCloudUpdateTimeout);
-        m_pCloudUpdateTimer->start(60 * 1000);
+        connect(m_pLocalVMUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltLocalVMUpdateTimeout);
+        m_pLocalVMUpdateTimer->start(1000);
     }
 }
 
@@ -1361,12 +1335,12 @@ int UIActivityOverviewModel::columnCount(const QModelIndex &parent /* = QModelIn
 
 void UIActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
 {
-    if (m_pLocalUpdateTimer)
+    if (m_pLocalVMUpdateTimer)
     {
         if (fShouldUpdate)
-            m_pLocalUpdateTimer->start();
+            m_pLocalVMUpdateTimer->start();
         else
-            m_pLocalUpdateTimer->stop();
+            m_pLocalVMUpdateTimer->stop();
     }
 }
 
@@ -1565,17 +1539,7 @@ void UIActivityOverviewModel::getHostRAMStats()
     m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
 
-void UIActivityOverviewModel::sltCloudUpdateTimeout()
-{
-    for (int i = 0; i < m_itemList.size(); ++i)
-    {
-        if (!m_itemList[i] && !m_itemList[i]->isCloudVM() && !m_itemList[i]->isRunning())
-            continue;
-        m_itemList[i]->updateColumnData();
-    }
-}
-
-void UIActivityOverviewModel::sltLocalUpdateTimeout()
+void UIActivityOverviewModel::sltLocalVMUpdateTimeout()
 {
     /* Host's RAM usage is obtained from IHost not from IPerformanceCollector: */
     getHostRAMStats();
@@ -1585,8 +1549,10 @@ void UIActivityOverviewModel::sltLocalUpdateTimeout()
 
     for (int i = 0; i < m_itemList.size(); ++i)
     {
-        if (m_itemList[i] && !m_itemList[i]->isCloudVM())
-            m_itemList[i]->updateColumnData();
+        UIActivityOverviewItemLocal *pItem = qobject_cast<UIActivityOverviewItemLocal*>(m_itemList[i]);
+        if (!pItem || !pItem->isRunning())
+            continue;
+        pItem->updateColumnData();
     }
 
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
