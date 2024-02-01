@@ -65,7 +65,45 @@ using namespace guestControl;
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Set if GUEST_MSG_PEEK_WAIT and friends are supported. */
-static int g_fVbglR3GuestCtrlHavePeekGetCancel = -1;
+static int      g_fVbglR3GuestCtrlHavePeekGetCancel = -1;
+/** Represents the currently cached host features 0.
+ *  Set to 0 if not available / not cached yet. */
+static uint64_t g_fVbglR3GuestCtrlHostFeatures0 = 0;
+
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static int vbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures0, uint64_t *pfHostFeatures1);
+
+
+/**
+ * Invalidates the internal state of the Guest Control API.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ */
+static int vbglR3GuestCtrlInvalidate(uint32_t idClient)
+{
+    uint64_t fVbglR3GuestCtrlHostFeatures0 = 0;
+    int const rc2 = vbglR3GuestCtrlQueryFeatures(idClient,
+                                                 &fVbglR3GuestCtrlHostFeatures0, NULL /* pfHostFeatures1, unused */);
+    if (RT_SUCCESS(rc2))
+    {
+        /* Check if the host's feature set has changed. This might happen on a VM restore. */
+        if (   g_fVbglR3GuestCtrlHostFeatures0
+            && g_fVbglR3GuestCtrlHostFeatures0 != fVbglR3GuestCtrlHostFeatures0)
+            LogRelFunc(("Host feature set has changed (%#x -> %#x)\n",
+                        g_fVbglR3GuestCtrlHostFeatures0, fVbglR3GuestCtrlHostFeatures0));
+
+        g_fVbglR3GuestCtrlHostFeatures0 = fVbglR3GuestCtrlHostFeatures0;
+    }
+    else
+        LogRelFunc(("Querying host features not supported, rc=%Rrc\n", rc2));
+    /* Note: Very old hosts don't know about querying host features, so this isn't fatal for the caller. */
+
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -77,7 +115,13 @@ static int g_fVbglR3GuestCtrlHavePeekGetCancel = -1;
  */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient)
 {
-    return VbglR3HGCMConnect("VBoxGuestControlSvc", pidClient);
+    AssertPtrReturn(pidClient, VERR_INVALID_POINTER);
+
+    int rc = VbglR3HGCMConnect("VBoxGuestControlSvc", pidClient);
+    if (RT_SUCCESS(rc))
+        rc = vbglR3GuestCtrlInvalidate(*pidClient);
+
+    return rc;
 }
 
 
@@ -323,7 +367,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMakeMeMaster(uint32_t idClient)
 
 
 /**
- * Reports features to the host and retrieve host feature set.
+ * Reports features to the host and retrieve host features set.
  *
  * @returns VBox status code.
  * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
@@ -363,13 +407,16 @@ VBGLR3DECL(int) VbglR3GuestCtrlReportFeatures(uint32_t idClient, uint64_t fGuest
 
 
 /**
- * Query the host features.
+ * Queries the host features, internal version.
  *
  * @returns VBox status code.
- * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
- * @param   pfHostFeatures  Where to store the host feature, VBOX_GUESTCTRL_HF_XXX.
+ * @param   idClient         The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   pfHostFeatures0  Where to store the host features, VBOX_GUESTCTRL_HF_0_XXX.
+ *                           Optional and can be NULL.
+ * @param   pfHostFeatures1  Where to store the host features, VBOX_GUESTCTRL_HF_1_XXX.
+ *                           Currently unused. Optional and can be NULL.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures)
+static int vbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures0, uint64_t *pfHostFeatures1)
 {
     int rc;
     do
@@ -391,13 +438,30 @@ VBGLR3DECL(int) VbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHost
             Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
             if (Msg.f64Features1.u.value64 & RT_BIT_64(63))
                 rc = VERR_NOT_SUPPORTED;
-            else if (pfHostFeatures)
-                *pfHostFeatures = Msg.f64Features0.u.value64;
+            else
+            {
+                if (pfHostFeatures0)
+                    *pfHostFeatures0 = Msg.f64Features0.u.value64;
+                if (pfHostFeatures1)
+                    *pfHostFeatures1 = Msg.f64Features1.u.value64;
+            }
             break;
         }
     } while (rc == VERR_INTERRUPTED);
     return rc;
+}
 
+
+/**
+ * Queries the host features.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   pfHostFeatures  Where to store the host features, VBOX_GUESTCTRL_HF_0_XXX. Optional and can be NULL.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures)
+{
+    return vbglR3GuestCtrlQueryFeatures(idClient, pfHostFeatures, NULL /* pfHostFeatures1, unused */);
 }
 
 
@@ -1673,24 +1737,31 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         VbglHGCMParmUInt32Set(&Msg.num_env, 0);
         VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
         VbglHGCMParmPtrSet(&Msg.env, pStartupInfo->pszEnv, pStartupInfo->cbEnv);
-        if (pCtx->uProtocol < 2)
+        if (pCtx->uProtocol < 2) /* Protocol v1, deprecated. */
         {
             VbglHGCMParmPtrSet(&Msg.u.v1.username, pStartupInfo->pszUser, pStartupInfo->cbUser);
             VbglHGCMParmPtrSet(&Msg.u.v1.password, pStartupInfo->pszPassword, pStartupInfo->cbPassword);
             VbglHGCMParmUInt32Set(&Msg.u.v1.timeout, 0);
         }
-        else
+        else /* Protocol v2. */
         {
             VbglHGCMParmUInt32Set(&Msg.u.v2.timeout, 0);
             VbglHGCMParmUInt32Set(&Msg.u.v2.priority, 0);
             VbglHGCMParmUInt32Set(&Msg.u.v2.num_affinity, 0);
             VbglHGCMParmPtrSet(&Msg.u.v2.affinity, pStartupInfo->uAffinity, sizeof(pStartupInfo->uAffinity));
-            /* v2.cwd was added in 7.1.  If the host is older, the Msg struct it sends is
-             * shorter and these fields are zero-filled, which equals 'no cwd requested'. */
-            VbglHGCMParmPtrSet(&Msg.u.v2.cwd, pStartupInfo->pszCwd, pStartupInfo->cbCwd);
         }
 
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        /* CWD support was added in VBox 7.1. Otherwise just skip setting it. */
+        if (g_fVbglR3GuestCtrlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_CWD)
+            VbglHGCMParmPtrSet(&Msg.cwd, pStartupInfo->pszCwd, pStartupInfo->cbCwd);
+
+        /*
+         * We need to calculate the data size ourselves here and not rely on sizeof(),
+         * as sizeof(Msg) might be different to what the host expects.
+         *
+         * This first was needed when excluding the CWD support for hosts running VBox < 7.1.
+         */
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(VBGLIOCHGCMCALL) + pCtx->uNumParms * sizeof(HGCMFunctionParameter));
         if (RT_FAILURE(rc))
         {
             LogRel(("VbglR3GuestCtrlProcGetStart: 1 - %Rrc (retry %u, cbCmd=%RU32, cbCwd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",

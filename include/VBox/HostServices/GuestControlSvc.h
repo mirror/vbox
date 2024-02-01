@@ -866,11 +866,11 @@ enum GUEST_FILE_SEEKTYPE
 #define VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET      RT_BIT_64(0)
 /** Host supports process passing arguments starting at argv[0] rather than
  * argv[1], when the guest additions reports VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0.
- * @since 6.1.6  */
+ * @since 6.1.6 */
 #define VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0           RT_BIT_64(1)
 /** Host sends the working directory for run / start, if guest
  * reports VBOX_GUESTCTRL_GF_0_PROCESS_CWD.
- * @since 6.1.20 ??  */
+ * @since 7.1 */
 #define VBOX_GUESTCTRL_HF_0_PROCESS_CWD             RT_BIT_64(2)
 /** @} */
 
@@ -1289,11 +1289,12 @@ typedef struct HGCMMsgProcExec
             HGCMFunctionParameter num_affinity;
             /** Pointer to process affinity blocks (uint64_t). */
             HGCMFunctionParameter affinity;
-            /** Working directory request, filled if guest
-             *  reports VBOX_GUESTCTRL_GF_0_PROCESS_CWD. */
-            HGCMFunctionParameter cwd;
         } v2;
     } u;
+    /** Working directory request, filled if guest
+     *  reports VBOX_GUESTCTRL_GF_0_PROCESS_CWD.
+     *  @since 7.1 */
+    HGCMFunctionParameter cwd;
 } HGCMMsgProcExec;
 
 /**
