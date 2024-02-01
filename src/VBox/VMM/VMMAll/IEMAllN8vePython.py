@@ -285,9 +285,6 @@ class NativeRecompFunctionVariation(object):
                 dVars[oStmt.sVarName] = oInfo;
                 asVarsInScope.append(oStmt.sVarName);
 
-            elif oStmt.sName == 'IEM_MC_REF_LOCAL':
-                dVars[oStmt.asParams[0]].makeReference(dVars[oStmt.asParams[1]], self);
-
         #
         # Now work the statements backwards and look for the last reference to
         # each of the variables in dVars.  We remove the variables from the

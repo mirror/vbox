@@ -2714,19 +2714,18 @@ class McBlock(object):
             if not oStmt.isCppStmt():
                 offRef = oStmt.sName.find("_REF_");
                 if offRef > 0:
-                    if oStmt.sName not in ('IEM_MC_REF_LOCAL', ):
-                        if oStmt.sName in ('IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80',
-                                           'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80',
-                                           'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST',):
-                            sClass = 'FPUREG';
+                    if oStmt.sName in ('IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80',
+                                       'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80',
+                                       'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST',):
+                        sClass = 'FPUREG';
+                    else:
+                        offUnderscore = oStmt.sName.find('_', offRef + 5);
+                        if offUnderscore > 0:
+                            assert offUnderscore > offRef;
+                            sClass = oStmt.sName[offRef + 5 : offUnderscore];
                         else:
-                            offUnderscore = oStmt.sName.find('_', offRef + 5);
-                            if offUnderscore > 0:
-                                assert offUnderscore > offRef;
-                                sClass = oStmt.sName[offRef + 5 : offUnderscore];
-                            else:
-                                sClass = oStmt.sName[offRef + 5];
-                        asRegRefClasses[sClass] = True;
+                            sClass = oStmt.sName[offRef + 5];
+                    asRegRefClasses[sClass] = True;
                 else:
                     offFetch = oStmt.sName.find("_FETCH_");
                     if offFetch > 0:
@@ -3106,7 +3105,6 @@ g_dMcStmtParsers = {
     'IEM_MC_REF_GREG_U64_CONST':                                 (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_REF_GREG_U8':                                        (McBlock.parseMcGeneric,           False, False, False, ), # threaded
     'IEM_MC_REF_GREG_U8_CONST':                                  (McBlock.parseMcGeneric,           False, False, False, ), # threaded
-    'IEM_MC_REF_LOCAL':                                          (McBlock.parseMcGeneric,           False, False, False, ), # eliminate!
     'IEM_MC_REF_MREG_U32_CONST':                                 (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_REF_MREG_U64':                                       (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_REF_MREG_U64_CONST':                                 (McBlock.parseMcGeneric,           False, False, False, ),
