@@ -74,14 +74,6 @@ namespace UIDefs
 #endif
     };
 
-    /** Size formatting types. */
-    enum FormatSize
-    {
-        FormatSize_Round,
-        FormatSize_RoundDown,
-        FormatSize_RoundUp
-    };
-
     /** Default guest additions image name. */
     SHARED_LIBRARY_STUFF extern const char* GUI_GuestAdditionsName;
     /** Default extension pack name. */

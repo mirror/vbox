@@ -45,6 +45,14 @@ class SHARED_LIBRARY_STUFF UITranslator : public QTranslator
 
 public:
 
+    /** Size formatting types. */
+    enum FormatSize
+    {
+        FormatSize_Round,
+        FormatSize_RoundDown,
+        FormatSize_RoundUp
+    };
+
     /** Loads the language by language ID.
       * @param  strLangId  Brings the language ID in in form of xx_YY.
       *                    QString() means the system default language. */
