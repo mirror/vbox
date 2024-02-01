@@ -2012,7 +2012,7 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
     RT_NOREF(idStream);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
-    AssertRCReturn(rc, rc);
+    AssertRCReturn(rc, offStream);
 
     /*
      * Figure how much that we can push down.
