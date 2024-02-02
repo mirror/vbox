@@ -1329,7 +1329,7 @@ static const VKATCMD * const g_apCommands[] =
 /**
  * Shows tool usage text.
  */
-RTEXITCODE audioTestUsage(PRTSTREAM pStrm, PCVKATCMD pOnlyCmd)
+static RTEXITCODE audioTestUsage(PRTSTREAM pStrm, PCVKATCMD pOnlyCmd)
 {
     RTStrmPrintf(pStrm, "usage: %s [global options] <command> [command-options]\n", RTProcShortName());
     RTStrmPrintf(pStrm,
@@ -1398,7 +1398,7 @@ static RTEXITCODE audioTestListCommands(PRTSTREAM pStrm)
 /**
  * Shows tool version.
  */
-RTEXITCODE audioTestVersion(void)
+static RTEXITCODE audioTestVersion(void)
 {
     RTPrintf("%s\n", RTBldCfgRevisionStr());
     return RTEXITCODE_SUCCESS;
@@ -1409,7 +1409,7 @@ RTEXITCODE audioTestVersion(void)
  *
  * @param   pStream             Output stream to show logo on.
  */
-void audioTestShowLogo(PRTSTREAM pStream)
+static void audioTestShowLogo(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream, VBOX_PRODUCT " VKAT (Validation Kit Audio Test) Version " VBOX_VERSION_STRING " - r%s\n"
                  "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n", RTBldCfgRevisionStr());
@@ -1647,3 +1647,4 @@ int main(int argc, char **argv)
     audioTestListCommands(g_pStdErr);
     return RTEXITCODE_SYNTAX;
 }
+
