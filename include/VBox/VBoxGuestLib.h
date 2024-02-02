@@ -1109,7 +1109,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsObjGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, ch
 VBGLR3DECL(int) VbglR3GuestCtrlGetShutdown(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfAction);
 /* Guest process execution. */
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
-VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo, size_t cbCmd, size_t cbArgs, size_t cbEnv, size_t cbUser, size_t cbPassword, size_t cbDomain);
+VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo, size_t cbCmd, size_t cbArgs, size_t cbEnv, size_t cbCwd, size_t cbUser, size_t cbPassword, size_t cbDomain);
 VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoDestroy(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
 VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoFree(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
 VBGLR3DECL(PVBGLR3GUESTCTRLPROCSTARTUPINFO) VbglR3GuestCtrlProcStartupInfoDup(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
