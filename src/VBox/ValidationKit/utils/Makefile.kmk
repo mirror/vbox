@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2023 Oracle and/or its affiliates.
+# Copyright (C) 2010-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -42,6 +42,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 include $(PATH_SUB_CURRENT)/TestExecServ/Makefile.kmk
 include $(PATH_SUB_CURRENT)/audio/Makefile.kmk
+include $(PATH_SUB_CURRENT)/guestcontrol/Makefile.kmk
 ifeq ($(KBUILD_TARGET),win)
  include $(PATH_SUB_CURRENT)/clipboard/Makefile.kmk
 endif
@@ -75,4 +76,3 @@ ValidationKitOs2LibC_SOURCES = \
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

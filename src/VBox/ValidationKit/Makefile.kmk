@@ -216,6 +216,10 @@ define def_vbox_validationkit_common_files
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vkat$(TMP_SUFF_EXE)
   endif
+  if1of ($(os), win) ## must match utils/guestcontrol/Makefile.kmk
+   VBOX_VALIDATIONKIT_FILESPEC += \
+   	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/VBoxGuestControlHelper$(TMP_SUFF_EXE)
+  endif
   ifn1of ($(arch), arm64)
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/exceptionsR3$(TMP_SUFF_EXE) \
