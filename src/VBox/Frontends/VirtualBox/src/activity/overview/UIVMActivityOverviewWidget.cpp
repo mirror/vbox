@@ -1281,9 +1281,10 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
     UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
     if (pModel)
     {
+        /* Keep running vm always on top of the list: */
         bool fLeftRunning = pModel->isVMRunning(sourceLeftIndex.row());
         bool fRightRunning = pModel->isVMRunning(sourceRightIndex.row());
-        if (fLeftRunning && fRightRunning)
+        if (fLeftRunning && !fRightRunning)
         {
             if (sortOrder() == Qt::AscendingOrder)
                 return true;
@@ -1297,7 +1298,6 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
             else
                 return true;
         }
-
     }
     return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
 }
@@ -1475,7 +1475,14 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
             return font;
         }
         if (role == Qt::ForegroundRole)
-            return m_defaultViewFontColor.lighter(250);
+        {
+            /* For some reason QColor::lighter(..) is not working here: */
+            QColor color = qApp->palette().color(QPalette::Active, QPalette::WindowText);
+            int h, s, l;
+            color.getHsl(&h, &s, &l);
+            l = 100;
+            return QColor::fromHsl(h, s, l);
+        }
     }
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
@@ -1861,6 +1868,7 @@ void UIVMActivityOverviewWidget::prepareWidgets()
         layout()->addWidget(m_pTableView);
         m_pProxyModel->setSourceModel(m_pModel);
         m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+        m_pProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
         m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -1878,7 +1886,7 @@ void UIVMActivityOverviewWidget::prepareWidgets()
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         /* Store the default font and its color of the table on the view. They are used in ::data(..): */
         m_pModel->setDefaultViewFont(m_pTableView->font());
-        m_pModel->setDefaultViewFontColor(m_pTableView->palette().color(QPalette::WindowText));
+        m_pModel->setDefaultViewFontColor(m_pTableView->palette().color(QPalette::Active, QPalette::WindowText));
 
         connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
