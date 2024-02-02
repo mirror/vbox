@@ -213,7 +213,9 @@ bool UIMachineSettingsSystem::isNestedPagingSupported() const
 
 bool UIMachineSettingsSystem::isNestedPagingEnabled() const
 {
-    return m_pEditorAccelerationFeatures->isEnabledNestedPaging();
+    return   m_pEditorAccelerationFeatures
+           ? m_pEditorAccelerationFeatures->isEnabledNestedPaging()
+           : m_pCache->base().m_fEnabledNestedPaging;
 }
 
 bool UIMachineSettingsSystem::isNestedHWVirtExSupported() const
@@ -646,9 +648,12 @@ void UIMachineSettingsSystem::polishPage()
 
     /* Polish 'Acceleration' availability: */
     m_pEditorParavirtProvider->setEnabled(isMachineOffline());
-    m_pEditorAccelerationFeatures->setEnabled(isMachineOffline());
-    m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   (systemData.m_fSupportedNestedPaging && isMachineOffline())
-                                                                  || (systemData.m_fEnabledNestedPaging && isMachineOffline()));
+    if (m_pEditorAccelerationFeatures)
+    {
+        m_pEditorAccelerationFeatures->setEnabled(isMachineOffline());
+        m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   (systemData.m_fSupportedNestedPaging && isMachineOffline())
+                                                                      || (systemData.m_fEnabledNestedPaging && isMachineOffline()));
+    }
 }
 
 void UIMachineSettingsSystem::prepare()
@@ -835,7 +840,9 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             }
 
             /* Prepare acceleration features editor: */
+#ifndef VBOX_WITH_VIRT_ARMV8
             m_pEditorAccelerationFeatures = new UIAccelerationFeaturesEditor(m_pTabAcceleration);
+#endif
             if (m_pEditorAccelerationFeatures)
             {
                 m_pTabAcceleration->addEditor(m_pEditorAccelerationFeatures);
@@ -871,8 +878,9 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */
-    connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
-            this, &UIMachineSettingsSystem::revalidate);
+    if (m_pEditorAccelerationFeatures)
+        connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
+                this, &UIMachineSettingsSystem::revalidate);
 }
 
 void UIMachineSettingsSystem::cleanup()
