@@ -106,9 +106,9 @@ private:
     quint64 m_iData0;
     quint64 m_iData1;
     quint64 m_iDataMaximum;
-    int m_iMargin;
-    QColor m_color0;
-    QColor m_color1;
+    int     m_iMargin;
+    QColor  m_color0;
+    QColor  m_color1;
     /** If not empty this text is drawn at the center of the doughnut chart. */
     QString m_strCenter;
 };
@@ -402,6 +402,7 @@ public:
     QUuid itemUid(int iIndex);
     int itemIndex(const QUuid &uid);
     bool isVMRunning(int rowIndex) const;
+    bool isCloudVM(int rowIndex) const;
     void setDefaultViewFont(const QFont &font);
     void setDefaultViewFontColor(const QColor &color);
     void setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems);
@@ -1305,12 +1306,15 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
 bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);
-    if (m_fShowNotRunningVMs)
+    if (m_fShowNotRunningVMs && m_fShowCloudVMs)
         return true;
     UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
     if (!pModel)
         return true;
-    if (!pModel->isVMRunning(iSourceRow))
+
+    if (!m_fShowNotRunningVMs && !pModel->isVMRunning(iSourceRow))
+        return false;
+    if (!m_fShowCloudVMs && pModel->isCloudVM(iSourceRow))
         return false;
     return true;
 }
@@ -1395,6 +1399,13 @@ bool UIActivityOverviewModel::isVMRunning(int rowIndex) const
     if (rowIndex >= m_itemList.size() || rowIndex < 0 || !m_itemList[rowIndex])
         return false;
     return m_itemList[rowIndex]->isRunning();
+}
+
+bool UIActivityOverviewModel::isCloudVM(int rowIndex) const
+{
+    if (rowIndex >= m_itemList.size() || rowIndex < 0 || !m_itemList[rowIndex])
+        return false;
+    return m_itemList[rowIndex]->isCloudVM();
 }
 
 void UIActivityOverviewModel::setDefaultViewFont(const QFont &font)
@@ -1749,7 +1760,7 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_fIsCurrentTool(true)
     , m_iSortIndicatorWidth(0)
     , m_fShowNotRunningVMs(false)
-    , m_fShowCloudVMs(false)
+    , m_fShowCloudVMs(true)
 {
     prepare();
 }
@@ -1837,6 +1848,7 @@ void UIVMActivityOverviewWidget::prepare()
             this, &UIVMActivityOverviewWidget::sltSaveSettings);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
             this, &UIVMActivityOverviewWidget::sltClearCOMData);
+    sltCloudVMVisibility(m_fShowCloudVMs);
 }
 
 void UIVMActivityOverviewWidget::prepareWidgets()
