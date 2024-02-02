@@ -979,4 +979,17 @@ PyXPCOM_ATTR_INTERFACE_DECLARE(Py_nsIClassInfo, nsIClassInfo, PyMethods_IClassIn
 PyXPCOM_ATTR_INTERFACE_DECLARE(Py_nsIVariant, nsIVariant, PyMethods_IVariant)
 // deprecated, but retained for backward compatibility:
 PyXPCOM_INTERFACE_DECLARE(Py_nsIComponentManagerObsolete, nsIComponentManagerObsolete, PyMethods_IComponentManagerObsolete)
+
+
+/* VariantUtils.cpp. */
+DECLHIDDEN(PyObject *) PyObject_FromVariantArray( Py_nsISupports *parent, nsIVariant *v);
+
+/* PyGModule.cpp */
+DECLHIDDEN(PyG_Base *) MakePyG_nsIComponentLoader(PyObject *instance);
+DECLHIDDEN(PyG_Base *) MakePyG_nsIModule(PyObject *instance);
+
+/* PyGInputStream.cpp */
+DECLHIDDEN(PyG_Base *) MakePyG_nsIInputStream(PyObject *instance);
+
+
 #endif // __PYXPCOM_H__

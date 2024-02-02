@@ -161,8 +161,6 @@ static PyObject *GetAsISupports(PyObject *self, PyObject *args) {
 	return Py_nsISupports::PyObjectFromInterface(p, *iid);
 }
 
-extern PyObject *PyObject_FromVariantArray( Py_nsISupports*, nsIVariant *v);
-
 static PyObject *GetAsArray(PyObject *self, PyObject *args) {
 	nsIVariant *pI = GetI(self);
 	if (pI==NULL) return NULL;

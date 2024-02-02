@@ -59,10 +59,6 @@ uint32_t _PyXPCOM_GetGatewayCount(void)
 	return cGateways;
 }
 
-extern PyG_Base *MakePyG_nsIModule(PyObject *);
-extern PyG_Base *MakePyG_nsIComponentLoader(PyObject *instance);
-extern PyG_Base *MakePyG_nsIInputStream(PyObject *instance);
-
 static char *PyXPCOM_szDefaultGatewayAttributeName = (char*)"_com_instance_default_gateway_";
 PyG_Base *GetDefaultGateway(PyObject *instance);
 void AddDefaultGateway(PyObject *instance, nsISupports *gateway);

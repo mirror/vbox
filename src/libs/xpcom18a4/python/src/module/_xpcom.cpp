@@ -520,7 +520,7 @@ PyXPCOMMethod_GetVariantValue(PyObject *self, PyObject *args)
 	return PyObject_FromVariant(parent, var);
 }
 
-PyObject *PyGetSpecialDirectory(PyObject *self, PyObject *args)
+static PyObject *PyGetSpecialDirectory(PyObject *self, PyObject *args)
 {
 	char *dirname;
 	if (!PyArg_ParseTuple(args, "s:GetSpecialDirectory", &dirname))
@@ -533,7 +533,7 @@ PyObject *PyGetSpecialDirectory(PyObject *self, PyObject *args)
 	return Py_nsISupports::PyObjectFromInterface(file, NS_GET_IID(nsIFile));
 }
 
-PyObject *AllocateBuffer(PyObject *self, PyObject *args)
+static PyObject *AllocateBuffer(PyObject *self, PyObject *args)
 {
 	int bufSize;
 	if (!PyArg_ParseTuple(args, "i", &bufSize))

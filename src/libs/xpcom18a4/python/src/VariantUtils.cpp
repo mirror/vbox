@@ -58,14 +58,14 @@
 // nsString utilities
 // ------------------------------------------------------------------------
 // one day we may know what they look like.
-inline
+static inline
 PRBool
 IsNullDOMString( const nsAString& aString )
 {
 	return PR_FALSE;
 }
 
-inline
+static inline
 PRBool
 IsNullDOMString( const nsACString& aString )
 {
@@ -321,7 +321,7 @@ GetArrayElementIID(Py_nsISupports*   self,
 }
 
 
-void FreeSingleArray(void *array_ptr, PRUint32 sequence_size, PRUint8 array_type)
+static void FreeSingleArray(void *array_ptr, PRUint32 sequence_size, PRUint8 array_type)
 {
 	// Free each array element - NOT the array itself
 	// Thus, we only need to free arrays or pointers.
@@ -371,8 +371,8 @@ void FreeSingleArray(void *array_ptr, PRUint32 sequence_size, PRUint8 array_type
 #define BREAK_FALSE {rc=PR_FALSE;break;}
 
 
-PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence_size,
-                       PRUint32 array_element_size, PRUint8 array_type, nsIID *pIID)
+static PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence_size,
+                              PRUint32 array_element_size, PRUint8 array_type, nsIID *pIID)
 {
 	PRUint8 *pthis = (PRUint8 *)array_ptr;
 	NS_ABORT_IF_FALSE(pthis, "Don't have a valid array to fill!");
@@ -924,7 +924,7 @@ static PyObject *MyBool_FromBool(PRBool v)
 	break; \
 }
 
-PyObject *PyObject_FromVariantArray( Py_nsISupports *parent, nsIVariant *v)
+DECLHIDDEN(PyObject *) PyObject_FromVariantArray( Py_nsISupports *parent, nsIVariant *v)
 {
 	nsresult nr;
 	NS_PRECONDITION(v, "NULL variant!");

@@ -128,7 +128,7 @@ void PyXPCOM_DLLRelease(void)
 	ASMAtomicDecU32(&g_cLockCount);
 }
 
-void pyxpcom_construct(void)
+static void pyxpcom_construct(void)
 {
     int vrc = RTSemFastMutexCreate(&g_lockMain);
     if (RT_FAILURE(vrc))
@@ -137,7 +137,7 @@ void pyxpcom_construct(void)
     return; // PR_TRUE;
 }
 
-void pyxpcom_destruct(void)
+static void pyxpcom_destruct(void)
 {
     RTSemFastMutexDestroy(g_lockMain);
 }

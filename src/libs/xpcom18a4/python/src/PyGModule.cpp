@@ -64,7 +64,7 @@ public:
 	NS_DECL_NSIMODULE
 };
 
-PyG_Base *MakePyG_nsIModule(PyObject *instance)
+DECLHIDDEN(PyG_Base *) MakePyG_nsIModule(PyObject *instance)
 {
 	return new PyG_nsIModule(instance);
 }
@@ -168,7 +168,7 @@ public:
 	NS_DECL_NSICOMPONENTLOADER
 };
 
-PyG_Base *MakePyG_nsIComponentLoader(PyObject *instance)
+DECLHIDDEN(PyG_Base *) MakePyG_nsIComponentLoader(PyObject *instance)
 {
 	return new PyG_nsIComponentLoader(instance);
 }

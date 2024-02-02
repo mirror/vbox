@@ -63,7 +63,7 @@ public:
 };
 
 
-PyG_Base *MakePyG_nsIInputStream(PyObject *instance)
+DECLHIDDEN (PyG_Base *) MakePyG_nsIInputStream(PyObject *instance)
 {
 	return new PyG_nsIInputStream(instance);
 }

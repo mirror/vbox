@@ -82,7 +82,7 @@ static const char *LOGGER_ERROR = "error";
 static const char *LOGGER_DEBUG = "debug";
 
 // Our "normal" error logger - calls back to the logging module.
-void DoLogMessage(const char *methodName, const char *pszMessageText)
+static void DoLogMessage(const char *methodName, const char *pszMessageText)
 {
 	// We use the logging module now.  Originally this code called
 	// the logging module directly by way of the C API's
@@ -130,7 +130,7 @@ void DoLogMessage(const char *methodName, const char *pszMessageText)
 	PyErr_Restore(exc_typ, exc_val, exc_tb);
 }
 
-void LogMessage(const char *methodName, const char *pszMessageText)
+static void LogMessage(const char *methodName, const char *pszMessageText)
 {
 	// Be careful to save and restore the Python exception state
 	// before calling back to Python, or we lose the original error.
@@ -141,7 +141,7 @@ void LogMessage(const char *methodName, const char *pszMessageText)
 }
 
 
-void LogMessage(const char *methodName, nsACString &text)
+static void LogMessage(const char *methodName, nsACString &text)
 {
 	char *c = ToNewCString(text);
 	LogMessage(methodName, c);
