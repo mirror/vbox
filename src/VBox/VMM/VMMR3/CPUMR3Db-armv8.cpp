@@ -232,7 +232,7 @@ static PCPUMSYSREGRANGE cpumR3SysRegRangesEnsureSpace(PVM pVM, PCPUMSYSREGRANGE 
  *                          if using the hyper heap.
  * @param   pNewRange       The new range.
  */
-int cpumR3SysRegRangesInsert(PVM pVM, PCPUMSYSREGRANGE *ppaSysRegRanges, uint32_t *pcSysRegRanges, PCCPUMSYSREGRANGE pNewRange)
+static int cpumR3SysRegRangesInsert(PVM pVM, PCPUMSYSREGRANGE *ppaSysRegRanges, uint32_t *pcSysRegRanges, PCCPUMSYSREGRANGE pNewRange)
 {
     Assert(pNewRange->uLast >= pNewRange->uFirst);
     Assert(pNewRange->enmRdFn > kCpumSysRegRdFn_Invalid && pNewRange->enmRdFn < kCpumSysRegRdFn_End);
