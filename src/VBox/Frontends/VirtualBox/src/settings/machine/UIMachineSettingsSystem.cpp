@@ -236,7 +236,9 @@ bool UIMachineSettingsSystem::isHIDEnabled() const
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
 {
-    return m_pEditorChipset->value();
+    return   m_pEditorChipset
+           ? m_pEditorChipset->value()
+           : m_pCache->base().m_chipsetType;
 }
 
 void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
@@ -404,18 +406,16 @@ void UIMachineSettingsSystem::putToCache()
         newSystemData.m_iMemorySize = m_pEditorBaseMemory->value();
     if (m_pEditorBootOrder)
         newSystemData.m_bootItems = m_pEditorBootOrder->value();
-    if (m_pEditorChipset)
-        newSystemData.m_chipsetType = m_pEditorChipset->value();
+    newSystemData.m_chipsetType = chipsetType();
     if (m_pEditorTpm)
         newSystemData.m_tpmType = m_pEditorTpm->value();
     if (m_pEditorPointingHID)
         newSystemData.m_pointingHIDType = m_pEditorPointingHID->value();
     if (   m_pEditorMotherboardFeatures
-        && m_pEditorVCPU
-        && m_pEditorChipset)
+        && m_pEditorVCPU)
         newSystemData.m_fEnabledIoApic =    m_pEditorMotherboardFeatures->isEnabledIoApic()
                                          || m_pEditorVCPU->value() > 1
-                                         || m_pEditorChipset->value() == KChipsetType_ICH9;
+                                         || chipsetType() == KChipsetType_ICH9;
     if (m_pEditorMotherboardFeatures)
         newSystemData.m_fEnabledEFI = m_pEditorMotherboardFeatures->isEnabledEfi();
     if (m_pEditorMotherboardFeatures)
@@ -493,7 +493,8 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Chipset type vs IO-APIC test: */
-        if (m_pEditorChipset->value() == KChipsetType_ICH9 && !m_pEditorMotherboardFeatures->isEnabledIoApic())
+        if (   chipsetType() == KChipsetType_ICH9
+            && !m_pEditorMotherboardFeatures->isEnabledIoApic())
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
@@ -633,7 +634,8 @@ void UIMachineSettingsSystem::polishPage()
     /* Polish 'Motherboard' availability: */
     m_pEditorBaseMemory->setEnabled(isMachineOffline());
     m_pEditorBootOrder->setEnabled(isMachineOffline());
-    m_pEditorChipset->setEnabled(isMachineOffline());
+    if (m_pEditorChipset)
+        m_pEditorChipset->setEnabled(isMachineOffline());
     m_pEditorTpm->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
     m_pEditorMotherboardFeatures->setEnabled(isMachineOffline());
@@ -726,7 +728,9 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             }
 
             /* Prepare chipset editor: */
+#ifndef VBOX_WITH_VIRT_ARMV8
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
+#endif
             if (m_pEditorChipset)
             {
                 m_pTabMotherboard->addEditor(m_pEditorChipset);
@@ -858,8 +862,9 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
 void UIMachineSettingsSystem::prepareConnections()
 {
     /* Configure 'Motherboard' connections: */
-    connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
-            this, &UIMachineSettingsSystem::revalidate);
+    if (m_pEditorChipset)
+        connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
+                this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorTpm, &UITpmEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorPointingHID, &UIPointingHIDEditor::sigValueChanged,
