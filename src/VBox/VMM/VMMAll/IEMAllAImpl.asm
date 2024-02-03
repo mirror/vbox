@@ -4425,9 +4425,51 @@ IEMIMPL_MEDIA_OPT_F3 vpaddusb
 IEMIMPL_MEDIA_OPT_F3 vpaddusw
 IEMIMPL_MEDIA_OPT_F3 vpaddsb
 IEMIMPL_MEDIA_OPT_F3 vpaddsw
-IEMIMPL_MEDIA_OPT_F3 vpsllw
-IEMIMPL_MEDIA_OPT_F3 vpslld
-IEMIMPL_MEDIA_OPT_F3 vpsllq
+
+;;
+; Media instruction working on one full sized source register, one full sized destination
+; register, and one no-larger-than-XMM register (in the vps{ll,ra,rl}[dwq] instructions,
+; this is actually used to retrieve a 128-bit load, from which a 64-bit shift length is
+; extracted; if the 64-bit unsigned value is larger than the permissible max shift size
+; of either 16, 32, or 64, it acts like the max shift size)
+;
+; @param    1       The instruction
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      Pointer to the second source media register size operand (input).
+;
+%macro IEMIMPL_SHIFT_OPT_F3 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  xmm0, [A1]
+        vmovdqu  xmm1, [A2]
+        %1       xmm0, xmm0, xmm1
+        vmovdqu  [A0], xmm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        vmovdqu  xmm1, [A2]
+        %1       ymm0, ymm0, xmm1
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_PROLOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_ %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_SHIFT_OPT_F3 vpsllw
+IEMIMPL_SHIFT_OPT_F3 vpslld
+IEMIMPL_SHIFT_OPT_F3 vpsllq
 
 
 ;;

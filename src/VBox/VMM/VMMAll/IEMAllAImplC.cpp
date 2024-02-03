@@ -10342,6 +10342,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_u128_fallback,(PRTUINT128U puDst, PCRTUI
     iemAImpl_vpsllw_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsllw_imm_u128_fallback(puDst, puSrc1, uShift);
+}
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
 {
     RTUINT256U uSrc1 = *puSrc1;
@@ -10377,6 +10382,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u256_fallback,(PRTUINT256U puDst, PC
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
     iemAImpl_vpsllw_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsllw_imm_u256_fallback(puDst, puSrc1, uShift);
 }
 
 /*
@@ -10639,6 +10649,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u128_fallback,(PRTUINT128U puDst, PC
     }
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpslld_imm_u128_fallback(puDst, puSrc1, uShift);
+}
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
     iemAImpl_vpslld_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
@@ -10671,6 +10686,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u256_fallback,(PRTUINT256U puDst, PC
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
     iemAImpl_vpslld_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpslld_imm_u256_fallback(puDst, puSrc1, uShift);
 }
 
 
@@ -10844,6 +10864,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_u128_fallback,(PRTUINT128U puDst, PCRTUI
     iemAImpl_vpsllq_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsllq_imm_u128_fallback(puDst, puSrc1, uShift);
+}
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
 {
     RTUINT256U uSrc1 = *puSrc1;
@@ -10867,6 +10892,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256_fallback,(PRTUINT256U puDst, PC
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
     iemAImpl_vpsllq_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsllq_imm_u256_fallback(puDst, puSrc1, uShift);
 }
 
 
