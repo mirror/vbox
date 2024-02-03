@@ -411,6 +411,9 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
     'VEX_VM':       ( 'VEX.ModR/M', [ 'vvvv', 'rm' ],        '',            ),
     'VEX_VM_REG':   ( 'VEX.ModR/M', [ 'vvvv', 'rm' ],        '11 mr/reg',   ),
     'VEX_VM_MEM':   ( 'VEX.ModR/M', [ 'vvvv', 'rm' ],        '!11 mr/reg',  ),
+    'VEX_VMI':      ( 'VEX.ModR/M', [ 'vvvv', 'rm', 'imm' ], '',            ),
+    'VEX_VMI_REG':  ( 'VEX.ModR/M', [ 'vvvv', 'rm', 'imm' ], '11 mr/reg',   ),
+    'VEX_VMI_MEM':  ( 'VEX.ModR/M', [ 'vvvv', 'rm', 'imm' ], '!11 mr/reg',  ),
 
     'FIXED':        ( 'fixed',      None,                    '',            ),
 };

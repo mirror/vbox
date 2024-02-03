@@ -2141,6 +2141,12 @@ typedef struct IEM
 #define IEMOPFORM_VEX_VM_REG    (IEMOPFORM_VEX_VM | IEMOPFORM_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m (memory) */
 #define IEMOPFORM_VEX_VM_MEM    (IEMOPFORM_VEX_VM | IEMOPFORM_NOT_MOD3)
+/** VEX+ModR/M+/n: vvvv, r/m, imm8 */
+#define IEMOPFORM_VEX_VMI       17
+/** VEX+ModR/M+/n: vvvv, r/m, imm8 (register) */
+#define IEMOPFORM_VEX_VMI_REG   (IEMOPFORM_VEX_VMI | IEMOPFORM_MOD3)
+/** VEX+ModR/M+/n: vvvv, r/m, imm8 (memory) */
+#define IEMOPFORM_VEX_VMI_MEM   (IEMOPFORM_VEX_VMI | IEMOPFORM_NOT_MOD3)
 
 /** Fixed register instruction, no R/M. */
 #define IEMOPFORM_FIXED         32
@@ -3091,6 +3097,9 @@ FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpaddusb_u128,   iemAImpl_vpaddusb_u128_fallba
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpaddusw_u128,   iemAImpl_vpaddusw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpaddsb_u128,    iemAImpl_vpaddsb_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpaddsw_u128,    iemAImpl_vpaddsw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsllw_u128,     iemAImpl_vpsllw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpslld_u128,     iemAImpl_vpslld_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsllq_u128,     iemAImpl_vpsllq_u128_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsb_u128,     iemAImpl_vpabsb_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsw_u128,     iemAImpl_vpabsd_u128_fallback;
@@ -3162,6 +3171,9 @@ FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpaddusb_u256,   iemAImpl_vpaddusb_u256_fallba
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpaddusw_u256,   iemAImpl_vpaddusw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpaddsb_u256,    iemAImpl_vpaddsb_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpaddsw_u256,    iemAImpl_vpaddsw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsllw_u256,     iemAImpl_vpsllw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpslld_u256,     iemAImpl_vpslld_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsllq_u256,     iemAImpl_vpsllq_u256_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsb_u256,     iemAImpl_vpabsb_u256_fallback;
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsw_u256,     iemAImpl_vpabsw_u256_fallback;
@@ -3485,6 +3497,13 @@ FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpclmulqdq_u128, iemAImpl_vpclmulqdq_u128_
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_mpsadbw_u128, iemAImpl_mpsadbw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vmpsadbw_u128, iemAImpl_vmpsadbw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vmpsadbw_u256, iemAImpl_vmpsadbw_u256_fallback;
+
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsllw_imm_u128, iemAImpl_vpsllw_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsllw_imm_u256, iemAImpl_vpsllw_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpslld_imm_u128, iemAImpl_vpslld_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpslld_imm_u256, iemAImpl_vpslld_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsllq_imm_u128, iemAImpl_vpsllq_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsllq_imm_u256, iemAImpl_vpsllq_imm_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends
