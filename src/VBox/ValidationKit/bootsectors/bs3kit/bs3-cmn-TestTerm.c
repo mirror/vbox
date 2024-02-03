@@ -71,7 +71,7 @@ BS3_DECL(void) bs3TestSubCleanup(void)
             else
             {
                 g_cusBs3SubTestsFailed++;
-                Bs3Printf("FAILED (%u errors)\n", g_szBs3SubTest, cErrors);
+                Bs3Printf("FAILED (%u errors)\n", cErrors);
             }
         }
 
