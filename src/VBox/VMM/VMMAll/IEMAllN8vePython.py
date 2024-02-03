@@ -435,7 +435,7 @@ class NativeRecompFunctionVariation(object):
                     freeVariable(aoStmts, len(aoStmts) - 1, dVars[sVarName], dFreedVars, dVars);
         return dFreedVars;
 
-    def __morphStatements(self, aoStmts):
+    def __morphStatements(self, aoStmts, fForLiveness):
         """
         Morphs the given statement list into something more suitable for
         native recompilation.
@@ -449,6 +449,7 @@ class NativeRecompFunctionVariation(object):
 
         Returns a new list of statements.
         """
+        _ = fForLiveness;
 
         #
         # We can skip IEM_MC_DEFER_TO_CIMPL_x_RET stuff.
@@ -497,11 +498,12 @@ class NativeRecompFunctionVariation(object):
         return aoStmts;
 
 
-    def renderCode(self, cchIndent):
+    def renderCode(self, cchIndent, fForLiveness = False):
         """
         Returns the native recompiler function body for this threaded variant.
         """
-        return iai.McStmt.renderCodeForList(self.__morphStatements(self.oVariation.aoStmtsForThreadedFunction), cchIndent);
+        return iai.McStmt.renderCodeForList(self.__morphStatements(self.oVariation.aoStmtsForThreadedFunction, fForLiveness),
+                                            cchIndent);
 
     @staticmethod
     def checkStatements(aoStmts, sHostArch):

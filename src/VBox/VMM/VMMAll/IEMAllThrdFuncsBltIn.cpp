@@ -433,7 +433,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
  */
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLim)
 {
-    uint32_t const cbInstr = (uint32_t)uParam0;
+    uint32_t const cbInstr = (uint8_t)uParam0;
     RT_NOREF(uParam1, uParam2);
     BODY_CHECK_CS_LIM(cbInstr);
     return VINF_SUCCESS;
@@ -447,7 +447,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLim)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     BODY_CHECK_CS_LIM(cbInstr);
@@ -463,7 +463,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodes)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
@@ -478,7 +478,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodes)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesConsiderCsLim)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
@@ -500,7 +500,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesConsiderCsLim)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -521,7 +521,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -542,7 +542,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodes)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodesConsiderCsLim)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -566,7 +566,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodesConsiderCsLi
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -590,7 +590,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTl
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -613,7 +613,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const cbInstr  = (uint8_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -643,7 +643,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlbConside
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     uint32_t const offRange1   = (uint32_t)uParam2;
@@ -669,7 +669,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPag
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     uint32_t const offRange1   = (uint32_t)uParam2;
@@ -695,7 +695,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoading
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     uint32_t const offRange1   = (uint32_t)uParam2;
@@ -719,7 +719,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoading
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     //uint32_t const offRange1   = (uint32_t)uParam2;
@@ -743,7 +743,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPag
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     //uint32_t const offRange1   = (uint32_t)uParam2;
@@ -766,7 +766,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoading
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
     uint32_t const idxRange1   = (uint32_t)uParam1;
     //uint32_t const offRange1   = (uint32_t)uParam2;
@@ -788,7 +788,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoading
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
     RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_CHECK_CS_LIM(cbInstr);
@@ -808,7 +808,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPage
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
     RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
@@ -828,7 +828,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingT
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbInstr     = (uint8_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
     RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);

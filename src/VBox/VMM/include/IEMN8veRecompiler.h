@@ -43,6 +43,12 @@
 # define IEMNATIVE_WITH_TB_DEBUG_INFO
 #endif
 
+/** @def IEMNATIVE_WITH_LIVENESS_ANALYSIS
+ * Enables liveness analysis.  */
+#if 1 || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_LIVENESS_ANALYSIS
+#endif
+
 #ifdef VBOX_WITH_STATISTICS
 /** Always count instructions for now. */
 # define IEMNATIVE_WITH_INSTRUCTION_COUNTING
@@ -375,25 +381,205 @@ typedef struct IEMNATIVEFIXUP
 typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 
 
+typedef union IEMLIVENESSPART1
+{
+    uint64_t        bm64;
+    RT_GCC_EXTENSION struct
+    {                                     /*   bit no */
+        uint64_t    bmGprs      : 32;   /**< 0x00 /  0: The 16 general purpose registers. */
+        uint64_t    u2UnusedPc  : 2;    /**< 0x20 / 32: (PC in ) */
+        uint64_t    u6Padding   : 6;    /**< 0x22 / 34: */
+        uint64_t    bmSegBase   : 12;   /**< 0x28 / 40: */
+        uint64_t    bmSegAttrib : 12;   /**< 0x34 / 52: */
+    };
+} IEMLIVENESSPART1;
+AssertCompileSize(IEMLIVENESSPART1, 8);
+
+typedef union IEMLIVENESSPART2
+{
+    uint64_t        bm64;
+    RT_GCC_EXTENSION struct
+    {                                     /*   bit no */
+        uint64_t    bmSegLimit  : 12;   /**< 0x40 / 64: */
+        uint64_t    bmSegSel    : 12;   /**< 0x4c / 76: */
+        uint64_t    u2EflOther  : 2;    /**< 0x58 / 88: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). */
+        uint64_t    u2EflCf     : 2;    /**< 0x5a / 90: Carry flag          (X86_EFL_CF / 0). */
+        uint64_t    u2EflPf     : 2;    /**< 0x5c / 92: Parity flag         (X86_EFL_PF / 2). */
+        uint64_t    u2EflAf     : 2;    /**< 0x5e / 94: Auxilary carry flag (X86_EFL_AF / 4). */
+        uint64_t    u2EflZf     : 2;    /**< 0x60 / 96: Zero flag           (X86_EFL_ZF / 6). */
+        uint64_t    u2EflSf     : 2;    /**< 0x62 / 98: Signed flag         (X86_EFL_SF / 7). */
+        uint64_t    u2EflOf     : 2;    /**< 0x64 /100: Overflow flag       (X86_EFL_OF / 12). */
+        uint64_t    u24Unused   : 24;     /* 0x66 /102 -> 0x80/128 */
+    };
+} IEMLIVENESSPART2;
+AssertCompileSize(IEMLIVENESSPART2, 8);
+
+/**
+ * A liveness state entry.
+ *
+ * The first 128 bits runs parallel to kIemNativeGstReg_xxx for the most part.
+ * Once we add a SSE register shadowing, we'll add another 64-bit element for
+ * that.
+ */
+typedef union IEMLIVENESSENTRY
+{
+    uint64_t        bm64[16 / 8];
+    uint16_t        bm32[16 / 4];
+    uint16_t        bm16[16 / 2];
+    uint8_t         bm8[16 / 1];
+    RT_GCC_EXTENSION struct
+    {
+        IEMLIVENESSPART1 s1;
+        IEMLIVENESSPART2 s2;
+    };
+} IEMLIVENESSENTRY;
+AssertCompileSize(IEMLIVENESSENTRY, 16);
+/** Pointer to a liveness state entry. */
+typedef IEMLIVENESSENTRY *PIEMLIVENESSENTRY;
+/** Pointer to a const liveness state entry. */
+typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
+
+/** @name 64-bit value masks for IEMLIVENESSENTRY.
+ * @{ */                                      /*         0xzzzzyyyyxxxxwwww */
+#define IEMLIVENESSPART1_MASK                   UINT64_C(0xffffff00ffffffff)
+#define IEMLIVENESSPART2_MASK                   UINT64_C(0x0000003fffffffff)
+
+#define IEMLIVENESSPART1_XCPT_OR_CALL           UINT64_C(0xaaaaaa00aaaaaaaa)
+#define IEMLIVENESSPART2_XCPT_OR_CALL           UINT64_C(0x0000002aaaaaaaaa)
+
+#define IEMLIVENESSPART1_ALL_UNUSED             UINT64_C(0x5555550055555555)
+#define IEMLIVENESSPART2_ALL_UNUSED             UINT64_C(0x0000001555555555)
+
+#define IEMLIVENESSPART1_ALL_EFL_MASK           UINT64_C(0x0000000000000000)
+#define IEMLIVENESSPART2_ALL_EFL_MASK           UINT64_C(0x0000003fff000000)
+
+#define IEMLIVENESSPART1_ALL_EFL_INPUT          IEMLIVENESSPART1_ALL_EFL_MASK
+#define IEMLIVENESSPART2_ALL_EFL_INPUT          IEMLIVENESSPART2_ALL_EFL_MASK
+/** @} */
+
+
+/** @name The liveness state for a register.
+ *
+ * The state values have been picked to with state accumulation in mind (what
+ * the iemNativeLivenessFunc_xxxx functions does), as that is the most
+ * performance critical work done with the values.
+ *
+ * This is a compressed state that only requires 2 bits per register.
+ * When accumulating state, we'll be using three IEMLIVENESSENTRY copies:
+ *      1. the incoming state from the following call,
+ *      2. the outgoing state for this call,
+ *      3. mask of the entries set in the 2nd.
+ *
+ * The mask entry (3rd one above) will be used both when updating the outgoing
+ * state and when merging in incoming state for registers not touched by the
+ * current call.
+ *
+ * @{ */
+/** The register will be clobbered and the current value thrown away.
+ *
+ * When this is applied to the state (2) we'll simply be AND'ing it with the
+ * (old) mask (3) and adding the register to the mask.   This way we'll
+ * preserve the high priority IEMLIVENESS_STATE_XCPT_OR_CALL and
+ * IEMLIVENESS_STATE_INPUT states. */
+#define IEMLIVENESS_STATE_CLOBBERED     0
+/** The register is unused in the remainder of the TB.
+ *
+ * This is an initial state and can not be set by any of the
+ * iemNativeLivenessFunc_xxxx callbacks. */
+#define IEMLIVENESS_STATE_UNUSED        1
+/** The register value is required in a potential call or exception.
+ *
+ * This means that the register value must be calculated and is best written to
+ * the state, but that any shadowing registers can be flushed thereafter as it's
+ * not used again.  This state has lower priority than IEMLIVENESS_STATE_INPUT.
+ *
+ * It is typically applied across the board, but we preserve incoming
+ * IEMLIVENESS_STATE_INPUT values.  This latter means we have to do some extra
+ * trickery to filter out IEMLIVENESS_STATE_UNUSED:
+ *      1. r0 = old & ~mask;
+ *      2. r0 = t1 & (t1 >> 1)'
+ *      3. state |= r0 | 0b10;
+ *      4. mask = ~0;
+ */
+#define IEMLIVENESS_STATE_XCPT_OR_CALL  2
+/** The register value is used as input.
+ *
+ * This means that the register value must be calculated and it is best to keep
+ * it in a register.  It does not need to be writtent out as such.  This is the
+ * highest priority state.
+ *
+ * Whether the call modifies the register or not isn't relevant to earlier
+ * calls, so that's not recorded.
+ *
+ * When applying this state we just or in the value in the outgoing state and
+ * mask. */
+#define IEMLIVENESS_STATE_INPUT         3
+/** Mask of the state bits.   */
+#define IEMLIVENESS_STATE_MASK          3
+/** The number of bits per state.   */
+#define IEMLIVENESS_STATE_BIT_COUNT     2
+/** @} */
+
+/** @name Liveness helpers for builtin functions and similar.
+ *
+ * These are not used by IEM_MC_BEGIN/END blocks, IEMAllN8veLiveness.cpp has its
+ * own set of manimulator macros for those.
+ *
+ * @{ */
+/** Initializing the outgoing state with a potnetial xcpt or call state.
+ * This only works when all changes will be IEMLIVENESS_STATE_INPUT. */
+#define IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(a_pOutgoing, a_pIncoming) \
+    do { \
+        uint64_t uTmp1 = (a_pIncoming)->s1.bm64; \
+        uTmp1 = uTmp1 & (uTmp1 >> 1); \
+        (a_pOutgoing)->s1.bm64 = uTmp1 | IEMLIVENESSPART1_XCPT_OR_CALL; \
+        \
+        uint64_t uTmp2 = (a_pIncoming)->s2.bm64; \
+        uTmp2 = uTmp2 & (uTmp1 >> 1); \
+        (a_pOutgoing)->s2.bm64 = uTmp2 | IEMLIVENESSPART2_XCPT_OR_CALL; \
+    } while (0)
+
+/** Adds a segment base register as input to the outgoing state. */
+#define IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, a_iSReg) \
+    (a_pOutgoing)->s1.bmSegBase   |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
+
+/** Adds a segment attribute register as input to the outgoing state. */
+#define IEM_LIVENESS_RAW_SEG_ATTRIB_INPUT(a_pOutgoing, a_iSReg) \
+    (a_pOutgoing)->s1.bmSegAttrib |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
+
+/** Adds a segment limit register as input to the outgoing state. */
+#define IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, a_iSReg) \
+    (a_pOutgoing)->s2.bmSegLimit  |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
+/** @} */
+
 /**
  * Guest registers that can be shadowed in GPRs.
+ *
+ * This runs parallel to the first 128-bits of liveness state.  To avoid having
+ * the SegLimitXxxx range cross from the 1st 64-bit word to the 2nd,
+ * we've inserted some padding.  The EFlags must be placed last, as the liveness
+ * state tracks it as 7 subcomponents and we don't want to waste space here.
  */
 typedef enum IEMNATIVEGSTREG : uint8_t
 {
     kIemNativeGstReg_GprFirst      = 0,
     kIemNativeGstReg_GprLast       = kIemNativeGstReg_GprFirst + 15,
     kIemNativeGstReg_Pc,
-    kIemNativeGstReg_EFlags,            /**< 32-bit, includes internal flags.  */
-    kIemNativeGstReg_SegSelFirst,
-    kIemNativeGstReg_SegSelLast    = kIemNativeGstReg_SegSelFirst + 5,
+    kIemNativeGstReg_LivenessPadding17,
+    kIemNativeGstReg_LivenessPadding18,
+    kIemNativeGstReg_LivenessPadding19,
     kIemNativeGstReg_SegBaseFirst,
     kIemNativeGstReg_SegBaseLast   = kIemNativeGstReg_SegBaseFirst + 5,
-    kIemNativeGstReg_SegLimitFirst,
-    kIemNativeGstReg_SegLimitLast  = kIemNativeGstReg_SegLimitFirst + 5,
     kIemNativeGstReg_SegAttribFirst,
     kIemNativeGstReg_SegAttribLast = kIemNativeGstReg_SegAttribFirst + 5,
+    kIemNativeGstReg_SegLimitFirst,
+    kIemNativeGstReg_SegLimitLast  = kIemNativeGstReg_SegLimitFirst + 5,
+    kIemNativeGstReg_SegSelFirst,
+    kIemNativeGstReg_SegSelLast    = kIemNativeGstReg_SegSelFirst + 5,
+    kIemNativeGstReg_EFlags,            /**< 32-bit, includes internal flags - last! */
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;
+AssertCompile((int)kIemNativeGstReg_SegLimitFirst == 32);
 
 /** @name Helpers for converting register numbers to IEMNATIVEGSTREG values.
  * @{  */
@@ -682,6 +868,18 @@ typedef struct IEMRECOMPILERSTATE
     PIEMTBDBG                   pDbgInfo;
 #endif
 
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+    /** The current call index (liveness array and threaded calls in TB). */
+    uint32_t                    idxCurCall;
+    /** Number of liveness entries allocated. */
+    uint32_t                    cLivenessEntriesAlloc;
+    /** Liveness entries for all the calls in the TB begin recompiled.
+     * The entry for idxCurCall contains the info for what the next call will
+     * require wrt registers.  (Which means the last entry is the initial liveness
+     * state.) */
+    PIEMLIVENESSENTRY           paLivenessEntries;
+#endif
+
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
     /** The VMCPU structure of the EMT. */
@@ -804,6 +1002,28 @@ typedef FNIEMNATIVERECOMPFUNC *PFNIEMNATIVERECOMPFUNC;
 #define IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(a_Name) FNIEMNATIVERECOMPFUNC a_Name
 
 
+/**
+ * Native recompiler liveness analysis worker for a threaded function.
+ *
+ * @param   pCallEntry  The threaded call entry.
+ * @param   pIncoming   The incoming liveness state entry.
+ * @param   pOutgoing   The outgoing liveness state entry.
+ */
+typedef DECLCALLBACKTYPE(void, FNIEMNATIVELIVENESSFUNC, (PCIEMTHRDEDCALLENTRY pCallEntry,
+                                                         PCIEMLIVENESSENTRY pIncoming, PIEMLIVENESSENTRY pOutgoing));
+/** Pointer to a native recompiler liveness analysis worker for a threaded function. */
+typedef FNIEMNATIVELIVENESSFUNC *PFNIEMNATIVELIVENESSFUNC;
+
+/** Defines a native recompiler liveness analysis worker for a threaded function.
+ * @see FNIEMNATIVELIVENESSFUNC  */
+#define IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(a_Name) \
+    DECLCALLBACK(void) a_Name(PCIEMTHRDEDCALLENTRY pCallEntry, PCIEMLIVENESSENTRY pIncoming, PIEMLIVENESSENTRY pOutgoing)
+
+/** Prototypes a native recompiler liveness analysis function for a threaded function.
+ * @see FNIEMNATIVELIVENESSFUNC  */
+#define IEM_DECL_IEMNATIVELIVENESSFUNC_PROTO(a_Name) FNIEMNATIVELIVENESSFUNC a_Name
+
+
 /** Define a native recompiler helper function, safe to call from the TB code. */
 #define IEM_DECL_NATIVE_HLP_DEF(a_RetType, a_Name, a_ArgList) \
     DECL_HIDDEN_THROW(a_RetType) VBOXCALL a_Name a_ArgList
@@ -865,31 +1085,6 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative
                                                    uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                       PCIEMTHRDEDCALLENTRY pCallEntry);
-
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_Nop);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_LogCpuState);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_DeferToCImpl0);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckIrq);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckMode);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodes);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpcodes);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesConsiderCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb);
-IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim);
 
 extern DECL_HIDDEN_DATA(const char * const) g_apszIemNativeHstRegNames[];
 

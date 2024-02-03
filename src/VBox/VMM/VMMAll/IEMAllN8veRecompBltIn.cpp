@@ -118,6 +118,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_Nop)
     return off;
 }
 
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_Nop)
+{
+    *pOutgoing = *pIncoming;
+    RT_NOREF(pCallEntry);
+}
+
 
 /**
  * Emits for for LogCpuState.
@@ -158,6 +164,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_LogCpuState)
     return off;
 }
 
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_LogCpuState)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
+}
+
 
 /**
  * Built-in function that calls a C-implemention function taking zero arguments.
@@ -168,6 +180,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
     uint8_t const      cbInstr      = (uint8_t)pCallEntry->auParams[1];
     uint64_t const     fGstShwFlush = pCallEntry->auParams[2];
     return iemNativeEmitCImplCall(pReNative, off, pCallEntry->idxInstr, fGstShwFlush, (uintptr_t)pfnCImpl, cbInstr, 0, 0, 0, 0);
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_DeferToCImpl0)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
 }
 
 
@@ -260,6 +278,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     return off;
 }
 
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckIrq)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
+}
+
 
 /**
  * Built-in function checks if IEMCPU::fExec has the expected value.
@@ -278,6 +302,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
     /* Maintain the recompiler fExec state. */
     pReNative->fExec = fExpectedExec & IEMTB_F_IEM_F_MASK;
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckMode)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
 }
 
 
@@ -305,6 +335,9 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
  */
 #define BODY_CHECK_CS_LIM(a_cbInstr) \
     off = iemNativeEmitBltInCheckCsLim(pReNative, off, (a_cbInstr))
+
+#define LIVENESS_CHECK_CS_LIM(a_pOutgoing) \
+    IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, X86_SREG_CS)
 
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
@@ -410,6 +443,10 @@ iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltInConsiderLimChecking(pReNative, off)
 
+#define LIVENESS_CONSIDER_CS_LIM_CHECKING(a_pOutgoing) \
+    IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, X86_SREG_CS); \
+    IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, X86_SREG_CS)
+
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
@@ -489,6 +526,8 @@ iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #define BODY_CHECK_OPCODES(a_pTb, a_idxRange, a_offRange, a_cbInstr) \
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltInCheckOpcodes(pReNative, off, (a_pTb), (a_idxRange), (a_offRange))
+
+#define LIVENESS_CHECK_OPCODES(a_pOutgoing) ((void)0)
 
 #if 0 /* debugging aid */
 bool g_fBpOnObsoletion = false;
@@ -1005,6 +1044,11 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltInCheckPcAfterBranch(pReNative, off, a_pTb, a_idxRange, a_offRange)
 
+#define LIVENESS_CHECK_PC_AFTER_BRANCH(a_pOutgoing, a_pCallEntry) \
+    if (!IEM_F_MODE_X86_IS_FLAT((uint32_t)(a_pCallEntry)->auParams[0] >> 8))  \
+        IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, X86_SREG_CS); \
+    else do { } while (0)
+
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb,
                                      uint8_t idxRange, uint16_t offRange)
@@ -1182,6 +1226,11 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltLoadTlbForNewPage(pReNative, off, pTb, a_idxRange, a_offInstr)
 
+#define LIVENESS_LOAD_TLB_FOR_NEW_PAGE(a_pOutgoing, a_pCallEntry) \
+    if (!IEM_F_MODE_X86_IS_FLAT((uint32_t)(a_pCallEntry)->auParams[0] >> 8)) \
+        IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, X86_SREG_CS); \
+    else do { } while (0)
+
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange, uint8_t offInstr)
 {
@@ -1289,6 +1338,11 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
 #define BODY_LOAD_TLB_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) \
     RT_NOREF(a_cbInstr); \
     off = iemNativeEmitBltLoadTlbAfterBranch(pReNative, off, pTb, a_idxRange)
+
+#define LIVENESS_LOAD_TLB_AFTER_BRANCH(a_pOutgoing, a_pCallEntry) \
+    if (!IEM_F_MODE_X86_IS_FLAT((uint32_t)(a_pCallEntry)->auParams[0] >> 8)) \
+        IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, X86_SREG_CS); \
+    else do { } while (0)
 
 DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTB pTb, uint8_t idxRange)
@@ -1584,11 +1638,18 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
  */
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLim)
 {
-    uint32_t const cbInstr = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr = (uint8_t)pCallEntry->auParams[0];
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_CS_LIM(cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1601,7 +1662,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLim)
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
@@ -1609,6 +1670,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes)
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndOpcodes)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1621,13 +1690,20 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodes)
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodes)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1640,7 +1716,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodes)
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderCsLim)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     BODY_SET_CUR_INSTR();
@@ -1648,6 +1724,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderC
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1666,7 +1750,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesConsiderC
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1677,6 +1761,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpc
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndPcAndOpcodes)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_CHECK_PC_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1691,7 +1784,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndPcAndOpc
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1701,6 +1794,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes)
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckPcAndOpcodes)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_PC_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1716,7 +1817,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodes)
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesConsiderCsLim)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1727,6 +1828,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesCons
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckPcAndOpcodesConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_CHECK_PC_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1744,7 +1854,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckPcAndOpcodesCons
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1756,6 +1866,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesL
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_LOAD_TLB_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1773,7 +1892,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesL
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1784,6 +1903,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_LOAD_TLB_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1801,7 +1928,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb      = pReNative->pTbOrg;
-    uint32_t const cbInstr  = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr  = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange = (uint32_t)pCallEntry->auParams[2];
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
@@ -1813,6 +1940,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_LOAD_TLB_AFTER_BRANCH(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1836,7 +1972,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesLoadingTl
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
@@ -1848,6 +1984,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesA
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1866,7 +2011,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesA
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
@@ -1877,6 +2022,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1896,7 +2049,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
@@ -1908,6 +2061,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1924,7 +2086,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesAcrossPag
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     //uint32_t const offRange1   = (uint32_t)uParam2;
@@ -1935,6 +2097,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1951,7 +2122,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
@@ -1961,6 +2132,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -1977,7 +2156,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const cbStartPage = (uint32_t)(pCallEntry->auParams[0] >> 32);
     uint32_t const idxRange1   = (uint32_t)pCallEntry->auParams[1];
     //uint32_t const offRange1   = (uint32_t)pCallEntry->auParams[2];
@@ -1988,6 +2167,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -2002,7 +2190,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNextPag
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
@@ -2011,6 +2199,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CHECK_CS_LIM(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -2025,7 +2222,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckCsLimAndOpcodesO
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
@@ -2033,6 +2230,14 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPage
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 
@@ -2048,7 +2253,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPage
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim)
 {
     PCIEMTB const  pTb         = pReNative->pTbOrg;
-    uint32_t const cbInstr     = (uint32_t)pCallEntry->auParams[0];
+    uint32_t const cbInstr     = (uint8_t)pCallEntry->auParams[0];
     uint32_t const idxRange    = (uint32_t)pCallEntry->auParams[1];
     BODY_SET_CUR_INSTR();
     BODY_FLUSH_PENDING_WRITES();
@@ -2057,6 +2262,15 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckOpcodesOnNewPage
     //Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
     return off;
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    LIVENESS_CONSIDER_CS_LIM_CHECKING(pOutgoing);
+    LIVENESS_LOAD_TLB_FOR_NEW_PAGE(pOutgoing, pCallEntry);
+    LIVENESS_CHECK_OPCODES(pOutgoing);
+    RT_NOREF(pCallEntry);
 }
 #endif
 

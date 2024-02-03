@@ -3484,31 +3484,34 @@ static struct
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x14] = */  { CPUMCTX_OFF_AND_SIZE(r14),                "r14", },
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
     /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
-    /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
-    /* [kIemNativeGstReg_SegSelFirst + 0] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Sel),      "es", },
-    /* [kIemNativeGstReg_SegSelFirst + 1] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Sel),      "cs", },
-    /* [kIemNativeGstReg_SegSelFirst + 2] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Sel),      "ss", },
-    /* [kIemNativeGstReg_SegSelFirst + 3] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Sel),      "ds", },
-    /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
-    /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
+    /* [kIemNativeGstReg_LivenessPadding17] = */        { UINT32_MAX / 4, 0,                        "pad17", },
+    /* [kIemNativeGstReg_LivenessPadding18] = */        { UINT32_MAX / 4, 0,                        "pad18", },
+    /* [kIemNativeGstReg_LivenessPadding19] = */        { UINT32_MAX / 4, 0,                        "pad19", },
     /* [kIemNativeGstReg_SegBaseFirst + 0] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u64Base),  "es_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 1] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u64Base),  "cs_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 2] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u64Base),  "ss_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 3] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u64Base),  "ds_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 4] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u64Base),  "fs_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 5] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u64Base),  "gs_base", },
-    /* [kIemNativeGstReg_SegLimitFirst + 0] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u32Limit), "es_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 1] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u32Limit), "cs_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 2] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u32Limit), "ss_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 3] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u32Limit), "ds_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 4] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u32Limit), "fs_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 5] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u32Limit), "gs_limit", },
     /* [kIemNativeGstReg_SegAttribFirst + 0] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Attr.u),   "es_attrib", },
     /* [kIemNativeGstReg_SegAttribFirst + 1] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Attr.u),   "cs_attrib", },
     /* [kIemNativeGstReg_SegAttribFirst + 2] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Attr.u),   "ss_attrib", },
     /* [kIemNativeGstReg_SegAttribFirst + 3] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Attr.u),   "ds_attrib", },
     /* [kIemNativeGstReg_SegAttribFirst + 4] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Attr.u),   "fs_attrib", },
     /* [kIemNativeGstReg_SegAttribFirst + 5] = */       { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Attr.u),   "gs_attrib", },
+    /* [kIemNativeGstReg_SegLimitFirst + 0] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u32Limit), "es_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 1] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u32Limit), "cs_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 2] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u32Limit), "ss_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 3] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u32Limit), "ds_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 4] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u32Limit), "fs_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 5] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u32Limit), "gs_limit", },
+    /* [kIemNativeGstReg_SegSelFirst + 0] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Sel),      "es", },
+    /* [kIemNativeGstReg_SegSelFirst + 1] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Sel),      "cs", },
+    /* [kIemNativeGstReg_SegSelFirst + 2] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Sel),      "ss", },
+    /* [kIemNativeGstReg_SegSelFirst + 3] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Sel),      "ds", },
+    /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
+    /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
+    /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
 #undef CPUMCTX_OFF_AND_SIZE
 };
 AssertCompile(RT_ELEMENTS(g_aGstShadowInfo) == kIemNativeGstReg_End);
@@ -7034,6 +7037,9 @@ iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uin
 #else
 # define IEM_CIMPL_HIDDEN_ARGS 2
 #endif
+
+#define IEM_MC_NOREF(a_Name) \
+    RT_NOREF_PV(a_Name)
 
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg) \
     uint8_t const a_Name = iemNativeArgAlloc(pReNative, (a_iArg), sizeof(a_Type))
@@ -13358,6 +13364,53 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
         AssertReturn(pReNative, pTb);
     }
 
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+    /*
+     * First do liveness analysis.  This is done backwards.
+     */
+    {
+        uint32_t idxCall = pTb->Thrd.cCalls;
+        if (idxCall <= pReNative->cLivenessEntriesAlloc)
+        { /* likely */ }
+        else
+        {
+            uint32_t cAlloc = RT_MAX(pReNative->cLivenessEntriesAlloc, _4K);
+            while (idxCall > cAlloc)
+                cAlloc *= 2;
+            void *pvNew = RTMemRealloc(pReNative->paLivenessEntries, sizeof(pReNative->paLivenessEntries[0]) * cAlloc);
+            AssertReturn(pvNew, pTb);
+            pReNative->paLivenessEntries     = (PIEMLIVENESSENTRY)pvNew;
+            pReNative->cLivenessEntriesAlloc = cAlloc;
+        }
+        AssertReturn(idxCall > 0, pTb);
+        PIEMLIVENESSENTRY const paLivenessEntries = pReNative->paLivenessEntries;
+
+        /* The initial (final) entry. */
+        idxCall--;
+        paLivenessEntries[idxCall].s1.bm64 = IEMLIVENESSPART1_ALL_UNUSED;
+        paLivenessEntries[idxCall].s2.bm64 = IEMLIVENESSPART2_ALL_UNUSED;
+
+        /* Loop backwards thru the calls and fill in the other entries. */
+        PCIEMTHRDEDCALLENTRY pCallEntry = &pTb->Thrd.paCalls[idxCall];
+        while (idxCall > 0)
+        {
+            PFNIEMNATIVELIVENESSFUNC const pfnLiveness = g_apfnIemNativeLivenessFunctions[pCallEntry->enmFunction];
+            if (pfnLiveness)
+                pfnLiveness(pCallEntry, &paLivenessEntries[idxCall - 1], &paLivenessEntries[idxCall]);
+            else
+                IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(&paLivenessEntries[idxCall - 1], &paLivenessEntries[idxCall]);
+            pCallEntry--;
+            idxCall--;
+        }
+
+# ifdef VBOX_WITH_STATISTICS
+        /* Check if there are any EFLAGS optimization to be had here.  This requires someone settings them
+           to 'clobbered' rather that 'input'.  */
+        /** @todo */
+# endif
+    }
+#endif
+
     /*
      * Recompiling and emitting code is done using try/throw/catch or setjmp/longjmp
      * for aborting if an error happens.
@@ -13385,11 +13438,17 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
         uint32_t             cThreadedCalls   = 0;
         uint32_t             cRecompiledCalls = 0;
 #endif
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+        uint32_t             idxCurCall       = 0;
+#endif
         PCIEMTHRDEDCALLENTRY pCallEntry       = pTb->Thrd.paCalls;
         pReNative->fExec                      = pTb->fFlags & IEMTB_F_IEM_F_MASK;
         while (cCallsLeft-- > 0)
         {
             PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+            pReNative->idxCurCall                 = idxCurCall;
+#endif
 
             /*
              * Debug info and assembly markup.
@@ -13412,8 +13471,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 #endif
 #if defined(VBOX_STRICT)
             off = iemNativeEmitMarker(pReNative, off,
-                                      RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
-                                                  pCallEntry->enmFunction));
+                                      RT_MAKE_U32(idxCurCall | (pfnRecom ? 0x8000 : 0), pCallEntry->enmFunction));
 #endif
 #if defined(VBOX_STRICT)
             iemNativeRegAssertSanity(pReNative);
@@ -13422,8 +13480,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             /*
              * Actual work.
              */
-            Log2(("%u[%u]: %s%s\n", pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr,
-                  g_apszIemThreadedFunctions[pCallEntry->enmFunction], pfnRecom ? "(recompiled)" : "(todo)"));
+            Log2(("%u[%u]: %s%s\n", idxCurCall, pCallEntry->idxInstr, g_apszIemThreadedFunctions[pCallEntry->enmFunction],
+                  pfnRecom ? "(recompiled)" : "(todo)"));
             if (pfnRecom) /** @todo stats on this.   */
             {
                 off = pfnRecom(pReNative, off, pCallEntry);
@@ -13441,6 +13499,9 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
              * Advance.
              */
             pCallEntry++;
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+            idxCurCall++;
+#endif
         }
 
         STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatNativeCallsRecompiled, cRecompiledCalls);

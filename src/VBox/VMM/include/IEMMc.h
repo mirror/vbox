@@ -198,6 +198,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
 #define IEM_MC_LOCAL_ASSIGN(a_Type, a_Name, a_Value)    a_Type a_Name = (a_Value)
 #define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value)
+#define IEM_MC_NOREF(a_Name)                            RT_NOREF_PV(a_Name) /* NOP/liveness hack */
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)       a_Type const a_Name = (a_Value)
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg)   a_Type const a_Name = &(a_Local)
@@ -3078,8 +3079,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     if (iemFpuStRegNotEmpty(pVCpu, (a_iSt)) != VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
     if (iemFpuStRegNotEmpty(pVCpu, (a_iSt)) == VINF_SUCCESS) {
-#define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt) \
-    if (iemFpuStRegNotEmpty(pVCpu, (a_iSt)) != VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
     if (iemFpuStRegNotEmptyRef(pVCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(a_pr80Dst0, a_iSt0, a_pr80Dst1, a_iSt1) \
