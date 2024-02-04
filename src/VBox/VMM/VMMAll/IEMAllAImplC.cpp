@@ -134,8 +134,8 @@ RT_C_DECLS_END
  * Updates the status bits (CF, PF, AF, ZF, SF, and OF) after a logical op.
  *
  * CF and OF are defined to be 0 by logical operations.  AF on the other hand is
- * undefined.  We do not set AF, as that seems to make the most sense (which
- * probably makes it the most wrong in real life).
+ * undefined.  We clear AF, as that seems to make the most sense and also seems
+ * to be the correct behavior on current CPUs.
  *
  * @returns Status bits.
  * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
@@ -143,7 +143,7 @@ RT_C_DECLS_END
  * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
  * @param   a_fExtra        Additional bits to set.
  */
-#define IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(a_pfEFlags, a_uResult, a_cBitsWidth, a_fExtra) \
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(a_pfEFlags, a_uResult, a_cBitsWidth, a_fExtra) \
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS; \
@@ -868,7 +868,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_or_u64,(uint64_t *puDst, uint64_t uSrc, uint32_
 {
     uint64_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -877,7 +877,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_or_u32,(uint32_t *puDst, uint32_t uSrc, uint32_
 {
     uint32_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
 }
 
 
@@ -885,7 +885,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_or_u16,(uint16_t *puDst, uint16_t uSrc, uint32_
 {
     uint16_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
 }
 
 
@@ -893,7 +893,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_or_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *
 {
     uint8_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -906,7 +906,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 {
     uint64_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -915,7 +915,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u32,(uint32_t *puDst, uint32_t uSrc, uint32
 {
     uint32_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
 }
 
 
@@ -923,7 +923,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u16,(uint16_t *puDst, uint16_t uSrc, uint32
 {
     uint16_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
 }
 
 
@@ -931,7 +931,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
 {
     uint8_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -944,7 +944,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_and_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 {
     uint64_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -953,7 +953,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_and_u32,(uint32_t *puDst, uint32_t uSrc, uint32
 {
     uint32_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
 }
 
 
@@ -961,7 +961,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_and_u16,(uint16_t *puDst, uint16_t uSrc, uint32
 {
     uint16_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
 }
 
 
@@ -969,7 +969,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_and_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
 {
     uint8_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -983,7 +983,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u64_fallback,(uint64_t *puDst, uint64_t uS
 {
     uint64_t const uResult = ~uSrc1 & uSrc2;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
 }
 
 
@@ -991,7 +991,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u32_fallback,(uint32_t *puDst, uint32_t uS
 {
     uint32_t const uResult = ~uSrc1 & uSrc2;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
 }
 
 
@@ -1053,7 +1053,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t const *puDst, uint8_t uSrc, uin
 IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     uint64_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -1061,21 +1061,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t const *puDst, uint64_t uSrc,
 IEM_DECL_IMPL_DEF(void, iemAImpl_test_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     uint32_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_test_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     uint16_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_test_u8,(uint8_t const *puDst, uint8_t uSrc, uint32_t *pfEFlags))
 {
     uint8_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -17960,8 +17960,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_ucomisd_u128,(uint32_t *pfMxcsr, uint32_t *pfEF
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
 
         RTFLOAT64U r64Src1, r64Src2;
-        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, *pfMxcsr, &puSrc1->ar64[0]);
-                 fDe |= iemSsePrepareValueR64(&r64Src2, *pfMxcsr, &puSrc2->ar64[0]);
+        uint32_t fDe = iemSsePrepareValueR64(&r64Src1, *pfMxcsr, &puSrc1->ar64[0])
+                     | iemSsePrepareValueR64(&r64Src2, *pfMxcsr, &puSrc2->ar64[0]);
 
         float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
         float64_t f64Src2 = iemFpSoftF64FromIprt(&r64Src2);
@@ -18003,8 +18003,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_comiss_u128,(uint32_t *pfMxcsr, uint32_t *pfEFl
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(*pfMxcsr);
 
         RTFLOAT32U r32Src1, r32Src2;
-        uint32_t fDe  = iemSsePrepareValueR32(&r32Src1, *pfMxcsr, &puSrc1->ar32[0]);
-                 fDe |= iemSsePrepareValueR32(&r32Src2, *pfMxcsr, &puSrc2->ar32[0]);
+        uint32_t fDe = iemSsePrepareValueR32(&r32Src1, *pfMxcsr, &puSrc1->ar32[0])
+                     | iemSsePrepareValueR32(&r32Src2, *pfMxcsr, &puSrc2->ar32[0]);
 
         float32_t f32Src1 = iemFpSoftF32FromIprt(&r32Src1);
         float32_t f32Src2 = iemFpSoftF32FromIprt(&r32Src2);
