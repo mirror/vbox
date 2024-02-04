@@ -13776,8 +13776,8 @@ FNIEMOP_DEF(iemOp_cmc)
 
 
 /**
- * @opmaps  grp3_f6
- * @opcode  /0
+ * @opmaps      grp3_f6
+ * @opcode      /0
  * @opflclass   logical
  * @todo also /1
  */
