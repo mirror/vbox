@@ -2278,7 +2278,12 @@ FNIEMOP_STUB(iemOp_vcvtss2si_Gy_Wss);
 FNIEMOP_STUB(iemOp_vcvtsd2si_Gy_Wsd);
 
 
-/** Opcode VEX.0F 0x2e - vucomiss Vss, Wss */
+/**
+ * @opcode      0x2e
+ * @oppfx       none
+ * @opflmodify  cf,pf,af,zf,sf,ov
+ * @opflclear   af,sf,of
+ */
 FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
 {
     IEMOP_MNEMONIC2(VEX_RM, VUCOMISS, vucomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
@@ -2349,7 +2354,12 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
 }
 
 
-/** Opcode VEX.66.0F 0x2e - vucomisd Vsd, Wsd */
+/**
+ * @opcode      0x2e
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,ov
+ * @opflclear   af,sf,of
+ */
 FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
 {
     IEMOP_MNEMONIC2(VEX_RM, VUCOMISD, vucomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
@@ -2423,7 +2433,12 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
 /*  Opcode VEX.F3.0F 0x2e - invalid */
 /*  Opcode VEX.F2.0F 0x2e - invalid */
 
-/** Opcode VEX.0F 0x2f - vcomiss Vss, Wss */
+/**
+ * @opcode      0x2f
+ * @oppfx       none
+ * @opflmodify  cf,pf,af,zf,sf,ov
+ * @opflclear   af,sf,of
+ */
 FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
 {
     IEMOP_MNEMONIC2(VEX_RM, VCOMISS, vcomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
@@ -2494,7 +2509,12 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
 }
 
 
-/** Opcode VEX.66.0F 0x2f - vcomisd Vsd, Wsd */
+/**
+ * @opcode      0x2f
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,ov
+ * @opflclear   af,sf,of
+ */
 FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
 {
     IEMOP_MNEMONIC2(VEX_RM, VCOMISD, vcomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);

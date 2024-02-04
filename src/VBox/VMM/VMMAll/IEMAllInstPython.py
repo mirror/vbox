@@ -420,10 +420,11 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
 
 ## \@oppfx values.
 g_kdPrefixes = {
-    'none': [],
-    '0x66': [],
-    '0xf3': [],
-    '0xf2': [],
+    'none':  [],
+    '0x66':  [],
+    '0xf3':  [],
+    '0xf2':  [],
+    '!0xf3': [], # special case for bsf/tzcnt
 };
 
 ## Special \@opcode tag values.
@@ -455,6 +456,8 @@ g_kdSubOpcodes = {
     '11 mr/reg vex.l=1':    [ '11 mr/reg vex.l=1',  'L1',       ],
     '!11 mr/reg vex.l=0':   [ '!11 mr/reg vex.l=0', 'L0',       ],
     '!11 mr/reg vex.l=1':   [ '!11 mr/reg vex.l=1', 'L1',       ],
+    '!11 mr/reg rex.w=0':   [ '!11 mr/reg rex.w=0', '',         ],
+    '!11 mr/reg rex.w=1':   [ '!11 mr/reg rex.w=1', '',         ],
 };
 
 ## Valid values for \@openc
@@ -3525,11 +3528,18 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             '@opcode':      self.parseTagOpcode,
             '@opcodesub':   self.parseTagOpcodeSub,
             '@openc':       self.parseTagOpEnc,
+            #@opfltest:     Lists all flags that will be used as input in some way.
             '@opfltest':    self.parseTagOpEFlags,
+            #@opflmodify:   Lists all EFLAGS modified. Includes @opflset, @opflcleared and @opflundef (if applicable).
             '@opflmodify':  self.parseTagOpEFlags,
-            '@opflundef':   self.parseTagOpEFlags,
+            #@opflclear:    Lists all flags that will be set (set to 1).
             '@opflset':     self.parseTagOpEFlags,
+            #@opflclear:    Lists all flags that will be cleared (set to 0).
             '@opflclear':   self.parseTagOpEFlags,
+            #@opflundef:    List of flag documented as undefined.
+            '@opflundef':   self.parseTagOpEFlags,
+            #@opflclass:    Shorthand for defining flag behaviour (@opfltest, @opfmodify, @opflset, @opflclear, @opflundef).
+            '@opflclass':   self.parseTagOpEFlagsClass,
             '@ophints':     self.parseTagOpHints,
             '@opdisenum':   self.parseTagOpDisEnum,
             '@opmincpu':    self.parseTagOpMinCpu,
@@ -4117,7 +4127,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
     def parseTagOpPfx(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        @oppfx
-        Value:      n/a|none|0x66|0xf3|0xf2
+        Value:      n/a|none|0x66|0xf3|0xf2|!0xf3
 
         Required prefix for the instruction.  (In a (E)VEX context this is the
         value of the 'pp' field rather than an actual prefix.)
@@ -4139,7 +4149,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             if len(sPrefix) == 2:
                 sPrefix = '0x' + sPrefix;
             if not _isValidOpcodeByte(sPrefix):
-                return self.errorComment(iTagLine, '%s: invalid prefix: %s' % (sTag, sPrefix,));
+                if sPrefix != '!0xf3':
+                    return self.errorComment(iTagLine, '%s: invalid prefix: %s' % (sTag, sPrefix,));
 
         if sPrefix is not None and sPrefix not in g_kdPrefixes:
             return self.errorComment(iTagLine, '%s: invalid prefix: %s (valid %s)' % (sTag, sPrefix, g_kdPrefixes,));
@@ -4187,6 +4198,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         Tag:        @opcodesub
         Value:      none | 11 mr/reg | !11 mr/reg | rex.w=0 | rex.w=1 | vex.l=0 | vex.l=1
                     | 11 mr/reg vex.l=0 | 11 mr/reg vex.l=1 | !11 mr/reg vex.l=0 | !11 mr/reg vex.l=1
+                    | !11 rex.w=0 | !11 mr/reg rex.w=0
+                    | !11 rex.w=1 | !11 mr/reg rex.w=1
 
         This is a simple way of dealing with encodings where the mod=3 and mod!=3
         represents exactly two different instructions.  The more proper way would
@@ -4197,7 +4210,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         # Flatten and validate the value.
         sSubOpcode = self.flattenAllSections(aasSections);
         if sSubOpcode not in g_kdSubOpcodes:
-            return self.errorComment(iTagLine, '%s: invalid sub opcode: %s  (valid: 11, !11, none)' % (sTag, sSubOpcode,));
+            return self.errorComment(iTagLine, '%s: invalid sub opcode: %s  (valid: %s)'
+                                     % (sTag, sSubOpcode, ', '.join(sorted(g_kdSubOpcodes.keys())),));
         sSubOpcode = g_kdSubOpcodes[sSubOpcode][0];
 
         # Set it.
@@ -4270,12 +4284,97 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         # Set them.
         asOld = getattr(oInstr, self.kdOpFlagToAttr[sTag]);
-        if asOld is not None:
+        if asOld is not None and len(asOld) > 0:
             return self.errorComment(iTagLine, '%s: attempting to overwrite "%s" with "%s"' % ( sTag, asOld, asFlags,));
         setattr(oInstr, self.kdOpFlagToAttr[sTag], asFlags);
 
         _ = iEndLine;
         return True;
+
+    ## EFLAGS class definitions with their attribute lists.
+    kdEFlagsClasses = {
+        'arithmetic': { # add, sub, ...
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+        'arithmetic_carry': { # adc, sbb, ...
+            'asFlTest':         [ 'cf', ],
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+        'incdec': {
+            'asFlTest':         [],
+            'asFlModify':       [ 'pf', 'af', 'zf', 'sf', 'of', ], # leaves CF alone
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+        'division': { ## @todo specify intel/amd differences...
+            'asFlTest':         [ 'pf', 'af', 'zf', 'sf', ], # Intel leaves all flags unchanged.
+            'asFlModify':       [ 'pf', 'af', 'zf', 'sf', ], # While AMD sets AF and clears PF, ZF & SF, leaving CF and OF alone.
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+        },
+        'multiply': { ## @todo specify intel/amd differences...
+            'asFlTest':         [ 'pf', 'af', 'zf', 'sf', ], # AMD leaves these unchanged, so we have to delcare them as inputs.
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of' ], # Intel always modifies all flags, but how differs
+            'asFlClear':        [],                                     # between IMUL and MUL.
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'pf', 'af', 'zf', 'sf', ],
+        },
+        'logical': { # and, or, xor, ...
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+            'asFlClear':        [ 'cf', 'af', 'of', ], # 'af' is undefined, but tstIEMAImpl indicates that it is cleared.
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'af', ],
+        },
+        'bitmap': { # bt, btc, btr, btc
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'pf', 'af', 'zf', 'sf', 'of', ], # tstIEMAImpl indicates that they aren't modified.
+        },
+        'unchanged': {
+            'asFlTest':         [],
+            'asFlModify':       [],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+    }
+    def parseTagOpEFlagsClass(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tags:   @opflclass
+        Value:  arithmetic, logical
+
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        # Flatten and validate the value.
+        sClass = self.flattenAllSections(aasSections);
+        kdAttribs = self.kdEFlagsClasses.get(sClass);
+        if not kdAttribs:
+            return self.errorComment(iTagLine, '%s: Unknown EFLAGS class: %s' % ( sTag, sClass,));
+
+        # Set the attributes.
+        for sAttrib, asFlags in kdAttribs.items():
+            asOld = getattr(oInstr, sAttrib);
+            if asOld is not None:
+                return self.errorComment(iTagLine, '%s: attempting to overwrite "%s" with "%s" for %s'
+                                         % ( sTag, asOld, asFlags, sAttrib));
+            setattr(oInstr, sAttrib, asFlags);
+
+        _ = iEndLine;
+        return True;
+
 
     def parseTagOpHints(self, sTag, aasSections, iTagLine, iEndLine):
         """

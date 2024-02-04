@@ -1982,8 +1982,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
     (void)0
 
 /** Body for SARX, SHLX, SHRX; assumes VEX.L must be 0. */
-#define IEMOP_BODY_Gy_Ey_By_NoEflags(a_Instr, a_fFeatureMember, a_fUndefFlags) \
-    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
+#define IEMOP_BODY_Gy_Ey_By_NoEflags(a_Instr, a_fFeatureMember) \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
@@ -2065,7 +2064,14 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
     } \
     (void)0
 
-/** Opcode VEX.0F38 0xf5 (vex only). */
+/**
+ * @opcode      0xf5
+ * @oppfx       none
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   of
+ * @opflundef   pf,af
+ * @note        VEX only
+ */
 FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, BZHI, bzhi, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -2183,7 +2189,11 @@ FNIEMOP_DEF(iemOp_pdep_Gy_By_Ey)
 /*  Opcode VEX.F3.0F38 0xf6 - invalid (legacy only). */
 
 
-/** Opcode VEX.F2.0F38 0xf6 (vex only) */
+/**
+ * @opcode      0xf6
+ * @oppfx       0xf2
+ * @opflclass   unchanged
+ */
 FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
 {
     IEMOP_MNEMONIC4(VEX_RVM, MULX, mulx, Gy, By, Ey, rDX, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -2291,7 +2301,7 @@ FNIEMOP_DEF(iemOp_bextr_Gy_Ey_By)
 FNIEMOP_DEF(iemOp_shlx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SHLX, shlx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
-    IEMOP_BODY_Gy_Ey_By_NoEflags(shlx, fBmi2, 0);
+    IEMOP_BODY_Gy_Ey_By_NoEflags(shlx, fBmi2);
 }
 
 
@@ -2299,7 +2309,7 @@ FNIEMOP_DEF(iemOp_shlx_Gy_Ey_By)
 FNIEMOP_DEF(iemOp_sarx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SARX, sarx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
-    IEMOP_BODY_Gy_Ey_By_NoEflags(sarx, fBmi2, 0);
+    IEMOP_BODY_Gy_Ey_By_NoEflags(sarx, fBmi2);
 }
 
 
@@ -2307,7 +2317,7 @@ FNIEMOP_DEF(iemOp_sarx_Gy_Ey_By)
 FNIEMOP_DEF(iemOp_shrx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SHRX, shrx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
-    IEMOP_BODY_Gy_Ey_By_NoEflags(shrx, fBmi2, 0);
+    IEMOP_BODY_Gy_Ey_By_NoEflags(shrx, fBmi2);
 }
 
 /*  Opcode VEX.0F38 0xf8 - invalid. */

@@ -714,7 +714,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @op2         reg:Gb
  * @opmaps      one
  * @openc       ModR/M
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @ophints     harmless ignores_op_sizes
  * @opstats     add_Eb_Gb
  * @opgroup     og_gen_arith_bin
@@ -733,7 +733,7 @@ FNIEMOP_DEF(iemOp_add_Eb_Gb)
 /**
  * @opcode      0x01
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @optest               op1=1  op2=1  -> op1=2  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
@@ -750,7 +750,7 @@ FNIEMOP_DEF(iemOp_add_Ev_Gv)
 /**
  * @opcode      0x02
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
@@ -763,7 +763,7 @@ FNIEMOP_DEF(iemOp_add_Gb_Eb)
 /**
  * @opcode      0x03
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @opcopytests iemOp_add_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_add_Gv_Ev)
@@ -776,7 +776,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
 /**
  * @opcode      0x04
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
@@ -789,7 +789,7 @@ FNIEMOP_DEF(iemOp_add_Al_Ib)
 /**
  * @opcode      0x05
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
  * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
@@ -836,9 +836,7 @@ FNIEMOP_DEF(iemOp_pop_ES)
 /**
  * @opcode      0x08
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @optest                  op1=7 op2=12 -> op1=15   efl&|=nc,po,na,nz,pl,nv
  * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
  * @optest            op1=0xee op2=0x11  -> op1=0xff efl&|=nc,po,na,nz,ng,nv
@@ -855,15 +853,14 @@ FNIEMOP_DEF(iemOp_or_Eb_Gb)
 /*
  * @opcode      0x09
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
  * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
  * @optest      op1=-2 op2=1  -> op1=-1 efl&|=nc,po,na,nz,ng,nv
  * @optest      o16 / op1=0x5a5a             op2=0xa5a5             -> op1=-1 efl&|=nc,po,na,nz,ng,nv
  * @optest      o32 / op1=0x5a5a5a5a         op2=0xa5a5a5a5         -> op1=-1 efl&|=nc,po,na,nz,ng,nv
  * @optest      o64 / op1=0x5a5a5a5a5a5a5a5a op2=0xa5a5a5a5a5a5a5a5 -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @note        AF is documented as undefined, but both modern AMD and Intel CPUs clears it.
  */
 FNIEMOP_DEF(iemOp_or_Ev_Gv)
 {
@@ -877,9 +874,7 @@ FNIEMOP_DEF(iemOp_or_Ev_Gv)
 /**
  * @opcode      0x0a
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @opcopytests iemOp_or_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_or_Gb_Eb)
@@ -893,9 +888,7 @@ FNIEMOP_DEF(iemOp_or_Gb_Eb)
 /**
  * @opcode      0x0b
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @opcopytests iemOp_or_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_or_Gv_Ev)
@@ -909,9 +902,7 @@ FNIEMOP_DEF(iemOp_or_Gv_Ev)
 /**
  * @opcode      0x0c
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @opcopytests iemOp_or_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_or_Al_Ib)
@@ -925,9 +916,7 @@ FNIEMOP_DEF(iemOp_or_Al_Ib)
 /**
  * @opcode      0x0d
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
  * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
  * @optest      op1=-2 op2=1  -> op1=-1 efl&|=nc,po,na,nz,ng,nv
@@ -1005,8 +994,7 @@ FNIEMOP_DEF(iemOp_2byteEscape)
 /**
  * @opcode      0x10
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
  * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
  * @optest      op1=0xff op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
@@ -1023,8 +1011,7 @@ FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 /**
  * @opcode      0x11
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
  * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
  * @optest      op1=-1 op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
@@ -1042,8 +1029,7 @@ FNIEMOP_DEF(iemOp_adc_Ev_Gv)
 /**
  * @opcode      0x12
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @opcopytests iemOp_adc_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_adc_Gb_Eb)
@@ -1056,8 +1042,7 @@ FNIEMOP_DEF(iemOp_adc_Gb_Eb)
 /**
  * @opcode      0x13
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @opcopytests iemOp_adc_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_adc_Gv_Ev)
@@ -1070,8 +1055,7 @@ FNIEMOP_DEF(iemOp_adc_Gv_Ev)
 /**
  * @opcode      0x14
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @opcopytests iemOp_adc_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_adc_Al_Ib)
@@ -1084,8 +1068,7 @@ FNIEMOP_DEF(iemOp_adc_Al_Ib)
 /**
  * @opcode      0x15
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  * @opcopytests iemOp_adc_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_adc_eAX_Iz)
@@ -1108,9 +1091,6 @@ FNIEMOP_DEF(iemOp_push_SS)
 
 /**
  * @opcode      0x17
- * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_pop_SS)
 {
@@ -1130,8 +1110,7 @@ FNIEMOP_DEF(iemOp_pop_SS)
 /**
  * @opcode      0x18
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
 {
@@ -1143,8 +1122,7 @@ FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
 /**
  * @opcode      0x19
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
 {
@@ -1157,8 +1135,7 @@ FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
 /**
  * @opcode      0x1a
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
 {
@@ -1170,8 +1147,7 @@ FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
 /**
  * @opcode      0x1b
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 {
@@ -1183,8 +1159,7 @@ FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 /**
  * @opcode      0x1c
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 {
@@ -1196,8 +1171,7 @@ FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 /**
  * @opcode      0x1d
  * @opgroup     og_gen_arith_bin
- * @opfltest    cf
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF(iemOp_sbb_eAX_Iz)
 {
@@ -1240,9 +1214,7 @@ FNIEMOP_DEF(iemOp_pop_DS)
 /**
  * @opcode      0x20
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_Eb_Gb)
 {
@@ -1255,9 +1227,7 @@ FNIEMOP_DEF(iemOp_and_Eb_Gb)
 /**
  * @opcode      0x21
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_Ev_Gv)
 {
@@ -1271,9 +1241,7 @@ FNIEMOP_DEF(iemOp_and_Ev_Gv)
 /**
  * @opcode      0x22
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_Gb_Eb)
 {
@@ -1286,9 +1254,7 @@ FNIEMOP_DEF(iemOp_and_Gb_Eb)
 /**
  * @opcode      0x23
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_Gv_Ev)
 {
@@ -1301,9 +1267,7 @@ FNIEMOP_DEF(iemOp_and_Gv_Ev)
 /**
  * @opcode      0x24
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_Al_Ib)
 {
@@ -1316,9 +1280,7 @@ FNIEMOP_DEF(iemOp_and_Al_Ib)
 /**
  * @opcode      0x25
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_and_eAX_Iz)
 {
@@ -1367,7 +1329,7 @@ FNIEMOP_DEF(iemOp_daa)
 /**
  * @opcode      0x28
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 {
@@ -1379,7 +1341,7 @@ FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 /**
  * @opcode      0x29
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 {
@@ -1392,7 +1354,7 @@ FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 /**
  * @opcode      0x2a
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 {
@@ -1404,7 +1366,7 @@ FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 /**
  * @opcode      0x2b
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 {
@@ -1416,7 +1378,7 @@ FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 /**
  * @opcode      0x2c
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_Al_Ib)
 {
@@ -1428,7 +1390,7 @@ FNIEMOP_DEF(iemOp_sub_Al_Ib)
 /**
  * @opcode      0x2d
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_sub_eAX_Iz)
 {
@@ -1476,9 +1438,7 @@ FNIEMOP_DEF(iemOp_das)
 /**
  * @opcode      0x30
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_Eb_Gb)
 {
@@ -1491,9 +1451,7 @@ FNIEMOP_DEF(iemOp_xor_Eb_Gb)
 /**
  * @opcode      0x31
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_Ev_Gv)
 {
@@ -1507,9 +1465,7 @@ FNIEMOP_DEF(iemOp_xor_Ev_Gv)
 /**
  * @opcode      0x32
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_Gb_Eb)
 {
@@ -1522,9 +1478,7 @@ FNIEMOP_DEF(iemOp_xor_Gb_Eb)
 /**
  * @opcode      0x33
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_Gv_Ev)
 {
@@ -1537,9 +1491,7 @@ FNIEMOP_DEF(iemOp_xor_Gv_Ev)
 /**
  * @opcode      0x34
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_Al_Ib)
 {
@@ -1552,9 +1504,7 @@ FNIEMOP_DEF(iemOp_xor_Al_Ib)
 /**
  * @opcode      0x35
  * @opgroup     og_gen_arith_bin
- * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   af
- * @opflclear   of,cf
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_xor_eAX_Iz)
 {
@@ -1586,7 +1536,7 @@ FNIEMOP_DEF(iemOp_seg_SS)
 
 /**
  * @opcode      0x37
- * @opfltest    af,cf
+ * @opfltest    af
  * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   pf,zf,sf,of
  * @opgroup     og_gen_arith_dec
@@ -1635,6 +1585,7 @@ FNIEMOP_DEF(iemOp_aaa)
 
 /**
  * @opcode      0x38
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_Eb_Gb)
 {
@@ -1645,6 +1596,7 @@ FNIEMOP_DEF(iemOp_cmp_Eb_Gb)
 
 /**
  * @opcode      0x39
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_Ev_Gv)
 {
@@ -1655,6 +1607,7 @@ FNIEMOP_DEF(iemOp_cmp_Ev_Gv)
 
 /**
  * @opcode      0x3a
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_Gb_Eb)
 {
@@ -1665,6 +1618,7 @@ FNIEMOP_DEF(iemOp_cmp_Gb_Eb)
 
 /**
  * @opcode      0x3b
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_Gv_Ev)
 {
@@ -1675,6 +1629,7 @@ FNIEMOP_DEF(iemOp_cmp_Gv_Ev)
 
 /**
  * @opcode      0x3c
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 {
@@ -1685,6 +1640,7 @@ FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 
 /**
  * @opcode      0x3d
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF(iemOp_cmp_eAX_Iz)
 {
@@ -1709,7 +1665,7 @@ FNIEMOP_DEF(iemOp_seg_DS)
 
 /**
  * @opcode      0x3f
- * @opfltest    af,cf
+ * @opfltest    af
  * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   pf,zf,sf,of
  * @opgroup     og_gen_arith_dec
@@ -1798,6 +1754,7 @@ FNIEMOP_DEF(iemOp_aas)
 
 /**
  * @opcode      0x40
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eAX)
 {
@@ -1820,6 +1777,7 @@ FNIEMOP_DEF(iemOp_inc_eAX)
 
 /**
  * @opcode      0x41
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eCX)
 {
@@ -1843,6 +1801,7 @@ FNIEMOP_DEF(iemOp_inc_eCX)
 
 /**
  * @opcode      0x42
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eDX)
 {
@@ -1867,6 +1826,7 @@ FNIEMOP_DEF(iemOp_inc_eDX)
 
 /**
  * @opcode      0x43
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eBX)
 {
@@ -1891,6 +1851,7 @@ FNIEMOP_DEF(iemOp_inc_eBX)
 
 /**
  * @opcode      0x44
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eSP)
 {
@@ -1914,6 +1875,7 @@ FNIEMOP_DEF(iemOp_inc_eSP)
 
 /**
  * @opcode      0x45
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eBP)
 {
@@ -1938,6 +1900,7 @@ FNIEMOP_DEF(iemOp_inc_eBP)
 
 /**
  * @opcode      0x46
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eSI)
 {
@@ -1962,6 +1925,7 @@ FNIEMOP_DEF(iemOp_inc_eSI)
 
 /**
  * @opcode      0x47
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_inc_eDI)
 {
@@ -1987,6 +1951,7 @@ FNIEMOP_DEF(iemOp_inc_eDI)
 
 /**
  * @opcode      0x48
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eAX)
 {
@@ -2010,6 +1975,7 @@ FNIEMOP_DEF(iemOp_dec_eAX)
 
 /**
  * @opcode      0x49
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eCX)
 {
@@ -2034,6 +2000,7 @@ FNIEMOP_DEF(iemOp_dec_eCX)
 
 /**
  * @opcode      0x4a
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eDX)
 {
@@ -2058,6 +2025,7 @@ FNIEMOP_DEF(iemOp_dec_eDX)
 
 /**
  * @opcode      0x4b
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eBX)
 {
@@ -2083,6 +2051,7 @@ FNIEMOP_DEF(iemOp_dec_eBX)
 
 /**
  * @opcode      0x4c
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eSP)
 {
@@ -2107,6 +2076,7 @@ FNIEMOP_DEF(iemOp_dec_eSP)
 
 /**
  * @opcode      0x4d
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eBP)
 {
@@ -2132,6 +2102,7 @@ FNIEMOP_DEF(iemOp_dec_eBP)
 
 /**
  * @opcode      0x4e
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eSI)
 {
@@ -2157,6 +2128,7 @@ FNIEMOP_DEF(iemOp_dec_eSI)
 
 /**
  * @opcode      0x4f
+ * @opflclass   incdec
  */
 FNIEMOP_DEF(iemOp_dec_eDI)
 {
@@ -2639,7 +2611,11 @@ FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
 }
 
 
-/** Opcode 0x63 - non-64-bit modes. */
+/**
+ * @opcode      0x63
+ * @opflmodify  zf
+ * @note        non-64-bit modes.
+ */
 FNIEMOP_DEF(iemOp_arpl_Ew_Gw)
 {
     IEMOP_MNEMONIC(arpl_Ew_Gw, "arpl Ew,Gw");
@@ -2876,6 +2852,7 @@ FNIEMOP_DEF(iemOp_push_Iz)
 
 /**
  * @opcode      0x69
+ * @opflclass   multiply
  */
 FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
 {
@@ -3077,6 +3054,7 @@ FNIEMOP_DEF(iemOp_push_Ib)
 
 /**
  * @opcode      0x6b
+ * @opflclass   multiply
  */
 FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
 {
@@ -3240,6 +3218,7 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
 
 /**
  * @opcode      0x6c
+ * @opfltest    iopl,df
  */
 FNIEMOP_DEF(iemOp_insb_Yb_DX)
 {
@@ -3293,6 +3272,7 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
 
 /**
  * @opcode      0x6d
+ * @opfltest    iopl,df
  */
 FNIEMOP_DEF(iemOp_inswd_Yv_DX)
 {
@@ -3399,6 +3379,7 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
 
 /**
  * @opcode      0x6e
+ * @opfltest    iopl,df
  */
 FNIEMOP_DEF(iemOp_outsb_Yb_DX)
 {
@@ -3452,6 +3433,7 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
 
 /**
  * @opcode      0x6f
+ * @opfltest    iopl,df
  */
 FNIEMOP_DEF(iemOp_outswd_Yv_DX)
 {
@@ -3558,6 +3540,7 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
 
 /**
  * @opcode      0x70
+ * @opfltest    of
  */
 FNIEMOP_DEF(iemOp_jo_Jb)
 {
@@ -3578,6 +3561,7 @@ FNIEMOP_DEF(iemOp_jo_Jb)
 
 /**
  * @opcode      0x71
+ * @opfltest    of
  */
 FNIEMOP_DEF(iemOp_jno_Jb)
 {
@@ -3597,6 +3581,7 @@ FNIEMOP_DEF(iemOp_jno_Jb)
 
 /**
  * @opcode      0x72
+ * @opfltest    cf
  */
 FNIEMOP_DEF(iemOp_jc_Jb)
 {
@@ -3617,6 +3602,7 @@ FNIEMOP_DEF(iemOp_jc_Jb)
 
 /**
  * @opcode      0x73
+ * @opfltest    cf
  */
 FNIEMOP_DEF(iemOp_jnc_Jb)
 {
@@ -3637,6 +3623,7 @@ FNIEMOP_DEF(iemOp_jnc_Jb)
 
 /**
  * @opcode      0x74
+ * @opfltest    zf
  */
 FNIEMOP_DEF(iemOp_je_Jb)
 {
@@ -3657,6 +3644,7 @@ FNIEMOP_DEF(iemOp_je_Jb)
 
 /**
  * @opcode      0x75
+ * @opfltest    zf
  */
 FNIEMOP_DEF(iemOp_jne_Jb)
 {
@@ -3677,6 +3665,7 @@ FNIEMOP_DEF(iemOp_jne_Jb)
 
 /**
  * @opcode      0x76
+ * @opfltest    cf,zf
  */
 FNIEMOP_DEF(iemOp_jbe_Jb)
 {
@@ -3697,6 +3686,7 @@ FNIEMOP_DEF(iemOp_jbe_Jb)
 
 /**
  * @opcode      0x77
+ * @opfltest    cf,zf
  */
 FNIEMOP_DEF(iemOp_jnbe_Jb)
 {
@@ -3717,6 +3707,7 @@ FNIEMOP_DEF(iemOp_jnbe_Jb)
 
 /**
  * @opcode      0x78
+ * @opfltest    sf
  */
 FNIEMOP_DEF(iemOp_js_Jb)
 {
@@ -3737,6 +3728,7 @@ FNIEMOP_DEF(iemOp_js_Jb)
 
 /**
  * @opcode      0x79
+ * @opfltest    sf
  */
 FNIEMOP_DEF(iemOp_jns_Jb)
 {
@@ -3757,6 +3749,7 @@ FNIEMOP_DEF(iemOp_jns_Jb)
 
 /**
  * @opcode      0x7a
+ * @opfltest    pf
  */
 FNIEMOP_DEF(iemOp_jp_Jb)
 {
@@ -3777,6 +3770,7 @@ FNIEMOP_DEF(iemOp_jp_Jb)
 
 /**
  * @opcode      0x7b
+ * @opfltest    pf
  */
 FNIEMOP_DEF(iemOp_jnp_Jb)
 {
@@ -3797,6 +3791,7 @@ FNIEMOP_DEF(iemOp_jnp_Jb)
 
 /**
  * @opcode      0x7c
+ * @opfltest    sf,of
  */
 FNIEMOP_DEF(iemOp_jl_Jb)
 {
@@ -3817,6 +3812,7 @@ FNIEMOP_DEF(iemOp_jl_Jb)
 
 /**
  * @opcode      0x7d
+ * @opfltest    sf,of
  */
 FNIEMOP_DEF(iemOp_jnl_Jb)
 {
@@ -3837,6 +3833,7 @@ FNIEMOP_DEF(iemOp_jnl_Jb)
 
 /**
  * @opcode      0x7e
+ * @opfltest    zf,sf,of
  */
 FNIEMOP_DEF(iemOp_jle_Jb)
 {
@@ -3857,6 +3854,7 @@ FNIEMOP_DEF(iemOp_jle_Jb)
 
 /**
  * @opcode      0x7f
+ * @opfltest    zf,sf,of
  */
 FNIEMOP_DEF(iemOp_jnle_Jb)
 {
@@ -4009,6 +4007,7 @@ FNIEMOP_DEF(iemOp_jnle_Jb)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /0
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_add_Eb_Ib, uint8_t, bRm)
 {
@@ -4021,6 +4020,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_add_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /1
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_or_Eb_Ib, uint8_t, bRm)
 {
@@ -4033,6 +4033,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_or_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /2
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_adc_Eb_Ib, uint8_t, bRm)
 {
@@ -4045,6 +4046,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_adc_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /3
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sbb_Eb_Ib, uint8_t, bRm)
 {
@@ -4057,6 +4059,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sbb_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /4
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_and_Eb_Ib, uint8_t, bRm)
 {
@@ -4069,6 +4072,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_and_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /5
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sub_Eb_Ib, uint8_t, bRm)
 {
@@ -4081,6 +4085,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sub_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /6
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_xor_Eb_Ib, uint8_t, bRm)
 {
@@ -4093,6 +4098,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_xor_Eb_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_80,grp1_83
  * @opcode      /7
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_cmp_Eb_Ib, uint8_t, bRm)
 {
@@ -4525,6 +4531,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
 /**
  * @opmaps      grp1_81
  * @opcode      /0
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_add_Ev_Iz, uint8_t, bRm)
 {
@@ -4537,6 +4544,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_add_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /1
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_or_Ev_Iz, uint8_t, bRm)
 {
@@ -4549,6 +4557,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_or_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /2
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_adc_Ev_Iz, uint8_t, bRm)
 {
@@ -4561,6 +4570,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_adc_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /3
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sbb_Ev_Iz, uint8_t, bRm)
 {
@@ -4573,6 +4583,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sbb_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /4
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_and_Ev_Iz, uint8_t, bRm)
 {
@@ -4585,6 +4596,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_and_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /5
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sub_Ev_Iz, uint8_t, bRm)
 {
@@ -4597,6 +4609,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sub_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /6
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_xor_Ev_Iz, uint8_t, bRm)
 {
@@ -4609,6 +4622,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_xor_Ev_Iz, uint8_t, bRm)
 /**
  * @opmaps      grp1_81
  * @opcode      /7
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_cmp_Ev_Iz, uint8_t, bRm)
 {
@@ -5025,6 +5039,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
 /**
  * @opmaps      grp1_83
  * @opcode      /0
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_add_Ev_Ib, uint8_t, bRm)
 {
@@ -5037,6 +5052,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_add_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /1
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_or_Ev_Ib, uint8_t, bRm)
 {
@@ -5049,6 +5065,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_or_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /2
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_adc_Ev_Ib, uint8_t, bRm)
 {
@@ -5061,6 +5078,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_adc_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /3
+ * @opflclass   arithmetic_carry
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sbb_Ev_Ib, uint8_t, bRm)
 {
@@ -5073,6 +5091,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sbb_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /4
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_and_Ev_Ib, uint8_t, bRm)
 {
@@ -5085,6 +5104,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_and_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /5
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_sub_Ev_Ib, uint8_t, bRm)
 {
@@ -5097,6 +5117,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_sub_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /6
+ * @opflclass   logical
  */
 FNIEMOP_DEF_1(iemOp_Grp1_xor_Ev_Ib, uint8_t, bRm)
 {
@@ -5109,6 +5130,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_xor_Ev_Ib, uint8_t, bRm)
 /**
  * @opmaps      grp1_83
  * @opcode      /7
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_Grp1_cmp_Ev_Ib, uint8_t, bRm)
 {
@@ -5143,6 +5165,7 @@ FNIEMOP_DEF(iemOp_Grp1_Ev_Ib)
 
 /**
  * @opcode      0x84
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_test_Eb_Gb)
 {
@@ -5154,6 +5177,7 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
 
 /**
  * @opcode      0x85
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_test_Ev_Gv)
 {
@@ -6692,6 +6716,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 
 /**
  * @opcode      0xa4
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
 {
@@ -6742,6 +6767,7 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
 
 /**
  * @opcode      0xa5
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 {
@@ -6898,6 +6924,8 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 
 /**
  * @opcode      0xa6
+ * @opflclass   arithmetic
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
 {
@@ -6976,6 +7004,8 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
 
 /**
  * @opcode      0xa7
+ * @opflclass   arithmetic
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
 {
@@ -7176,6 +7206,7 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
 
 /**
  * @opcode      0xa8
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_test_AL_Ib)
 {
@@ -7187,6 +7218,7 @@ FNIEMOP_DEF(iemOp_test_AL_Ib)
 
 /**
  * @opcode      0xa9
+ * @opflclass   logical
  */
 FNIEMOP_DEF(iemOp_test_eAX_Iz)
 {
@@ -7396,6 +7428,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
 
 /**
  * @opcode      0xac
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
 {
@@ -7446,6 +7479,7 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
 
 /**
  * @opcode      0xad
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 {
@@ -7594,6 +7628,8 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 
 /**
  * @opcode      0xae
+ * @opflclass   arithmetic
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_scasb_AL_Xb)
 {
@@ -7665,6 +7701,8 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
 
 /**
  * @opcode      0xaf
+ * @opflclass   arithmetic
+ * @opfltest    df
  */
 FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 {
@@ -9142,9 +9180,12 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 
 /**
  * @opcode      0xd4
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflundef   cf,af,of
  */
 FNIEMOP_DEF(iemOp_aam_Ib)
 {
+/** @todo testcase: aam   */
     IEMOP_MNEMONIC(aam_Ib, "aam Ib");
     uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -9157,9 +9198,12 @@ FNIEMOP_DEF(iemOp_aam_Ib)
 
 /**
  * @opcode      0xd5
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflundef   cf,af,of
  */
 FNIEMOP_DEF(iemOp_aad_Ib)
 {
+/** @todo testcase: aad?   */
     IEMOP_MNEMONIC(aad_Ib, "aad Ib");
     uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -12412,6 +12456,7 @@ FNIEMOP_DEF(iemOp_EscF7)
 
 /**
  * @opcode      0xe0
+ * @opfltest    zf
  */
 FNIEMOP_DEF(iemOp_loopne_Jb)
 {
@@ -12467,6 +12512,7 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
 
 /**
  * @opcode      0xe1
+ * @opfltest    zf
  */
 FNIEMOP_DEF(iemOp_loope_Jb)
 {
@@ -12664,7 +12710,10 @@ FNIEMOP_DEF(iemOp_jecxz_Jb)
 }
 
 
-/** Opcode 0xe4 */
+/**
+ * @opcode      0xe4
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_in_AL_Ib)
 {
     IEMOP_MNEMONIC(in_AL_Ib, "in AL,Ib");
@@ -12675,7 +12724,10 @@ FNIEMOP_DEF(iemOp_in_AL_Ib)
 }
 
 
-/** Opcode 0xe5 */
+/**
+ * @opcode      0xe5
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_in_eAX_Ib)
 {
     IEMOP_MNEMONIC(in_eAX_Ib, "in eAX,Ib");
@@ -12687,7 +12739,10 @@ FNIEMOP_DEF(iemOp_in_eAX_Ib)
 }
 
 
-/** Opcode 0xe6 */
+/**
+ * @opcode      0xe6
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_out_Ib_AL)
 {
     IEMOP_MNEMONIC(out_Ib_AL, "out Ib,AL");
@@ -12698,7 +12753,10 @@ FNIEMOP_DEF(iemOp_out_Ib_AL)
 }
 
 
-/** Opcode 0xe7 */
+/**
+ * @opcode      0xe7
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_out_Ib_eAX)
 {
     IEMOP_MNEMONIC(out_Ib_eAX, "out Ib,eAX");
@@ -12815,7 +12873,10 @@ FNIEMOP_DEF(iemOp_jmp_Jb)
 }
 
 
-/** Opcode 0xec */
+/**
+ * @opcode      0xec
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_in_AL_DX)
 {
     IEMOP_MNEMONIC(in_AL_DX, "in  AL,DX");
@@ -12826,7 +12887,10 @@ FNIEMOP_DEF(iemOp_in_AL_DX)
 }
 
 
-/** Opcode 0xed */
+/**
+ * @opcode      0xed
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_in_eAX_DX)
 {
     IEMOP_MNEMONIC(in_eAX_DX, "in  eAX,DX");
@@ -12838,7 +12902,10 @@ FNIEMOP_DEF(iemOp_in_eAX_DX)
 }
 
 
-/** Opcode 0xee */
+/**
+ * @opcode      0xee
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_out_DX_AL)
 {
     IEMOP_MNEMONIC(out_DX_AL, "out DX,AL");
@@ -12848,7 +12915,10 @@ FNIEMOP_DEF(iemOp_out_DX_AL)
 }
 
 
-/** Opcode 0xef */
+/**
+ * @opcode      0xef
+ * @opfltest    iopl
+ */
 FNIEMOP_DEF(iemOp_out_DX_eAX)
 {
     IEMOP_MNEMONIC(out_DX_eAX, "out DX,eAX");
@@ -12940,6 +13010,7 @@ FNIEMOP_DEF(iemOp_hlt)
 
 /**
  * @opcode      0xf5
+ * @opflmodify  cf
  */
 FNIEMOP_DEF(iemOp_cmc)
 {
@@ -13208,6 +13279,7 @@ FNIEMOP_DEF(iemOp_cmc)
 /**
  * @opmaps  grp3_f6
  * @opcode  /0
+ * @opflclass   logical
  * @todo also /1
  */
 FNIEMOP_DEF_1(iemOp_grp3_test_Eb, uint8_t, bRm)
@@ -13482,19 +13554,22 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
 
 
 /**
- * @opmaps  grp3_f6
- * @opcode  /2
+ * @opmaps      grp3_f6
+ * @opcode      /2
+ * @opflclass   unchanged
  */
 FNIEMOP_DEF_1(iemOp_grp3_not_Eb, uint8_t, bRm)
 {
+/** @todo does not modify EFLAGS. */
     IEMOP_MNEMONIC(not_Eb, "not Eb");
     IEMOP_BODY_UNARY_Eb(bRm, iemAImpl_not_u8, iemAImpl_not_u8_locked);
 }
 
 
 /**
- * @opmaps  grp3_f6
- * @opcode  /3
+ * @opmaps      grp3_f6
+ * @opcode      /3
+ * @opflclass   arithmetic
  */
 FNIEMOP_DEF_1(iemOp_grp3_neg_Eb, uint8_t, bRm)
 {
@@ -13516,18 +13591,42 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
         case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Eb, bRm);
         case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Eb, bRm);
         case 4:
+            /**
+             * @opdone
+             * @opmaps      grp3_f6
+             * @opcode      /4
+             * @opflclass   multiply
+             */
             IEMOP_MNEMONIC(mul_Eb, "mul Eb");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEb, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_u8_eflags));
         case 5:
+            /**
+             * @opdone
+             * @opmaps      grp3_f6
+             * @opcode      /5
+             * @opflclass   multiply
+             */
             IEMOP_MNEMONIC(imul_Eb, "imul Eb");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEb, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_u8_eflags));
         case 6:
+            /**
+             * @opdone
+             * @opmaps      grp3_f6
+             * @opcode      /6
+             * @opflclass   division
+             */
             IEMOP_MNEMONIC(div_Eb, "div Eb");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEb, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_u8_eflags));
         case 7:
+            /**
+             * @opdone
+             * @opmaps      grp3_f6
+             * @opcode      /7
+             * @opflclass   division
+             */
             IEMOP_MNEMONIC(idiv_Eb, "idiv Eb");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEb, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_u8_eflags));
@@ -13536,7 +13635,11 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
 }
 
 
-/** Opcode 0xf7 /0. */
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /0
+ * @opflclass   logical
+ */
 FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(test_Ev_Iv, "test Ev,Iv");
@@ -13673,16 +13776,25 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
 }
 
 
-/** Opcode 0xf7 /2. */
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /2
+ * @opflclass   unchanged
+ */
 FNIEMOP_DEF_1(iemOp_grp3_not_Ev, uint8_t, bRm)
 {
+/** @todo does not modify EFLAGS  */
     IEMOP_MNEMONIC(not_Ev, "not Ev");
     IEMOP_BODY_UNARY_Ev(       iemAImpl_not_u16,        iemAImpl_not_u32,        iemAImpl_not_u64);
     IEMOP_BODY_UNARY_Ev_LOCKED(iemAImpl_not_u16_locked, iemAImpl_not_u32_locked, iemAImpl_not_u64_locked);
 }
 
 
-/** Opcode 0xf7 /3. */
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /3
+ * @opflclass   arithmetic
+ */
 FNIEMOP_DEF_1(iemOp_grp3_neg_Ev, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(neg_Ev, "neg Ev");
@@ -13704,18 +13816,42 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
         case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Ev, bRm);
         case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Ev, bRm);
         case 4:
+            /**
+             * @opdone
+             * @opmaps      grp3_f7
+             * @opcode      /4
+             * @opflclass   multiply
+             */
             IEMOP_MNEMONIC(mul_Ev, "mul Ev");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEv, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_eflags));
         case 5:
+            /**
+             * @opdone
+             * @opmaps      grp3_f7
+             * @opcode      /5
+             * @opflclass   multiply
+             */
             IEMOP_MNEMONIC(imul_Ev, "imul Ev");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEv, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_eflags));
         case 6:
+            /**
+             * @opdone
+             * @opmaps      grp3_f7
+             * @opcode      /6
+             * @opflclass   division
+             */
             IEMOP_MNEMONIC(div_Ev, "div Ev");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEv, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_eflags));
         case 7:
+            /**
+             * @opdone
+             * @opmaps      grp3_f7
+             * @opcode      /7
+             * @opflclass   division
+             */
             IEMOP_MNEMONIC(idiv_Ev, "idiv Ev");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             return FNIEMOP_CALL_2(iemOpCommonGrp3MulDivEv, bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_eflags));
@@ -13726,6 +13862,8 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
 
 /**
  * @opcode      0xf8
+ * @opflmodify  cf
+ * @opflclear   cf
  */
 FNIEMOP_DEF(iemOp_clc)
 {
@@ -13740,6 +13878,8 @@ FNIEMOP_DEF(iemOp_clc)
 
 /**
  * @opcode      0xf9
+ * @opflmodify  cf
+ * @opflset     cf
  */
 FNIEMOP_DEF(iemOp_stc)
 {
@@ -13754,6 +13894,8 @@ FNIEMOP_DEF(iemOp_stc)
 
 /**
  * @opcode      0xfa
+ * @opfltest    iopl,vm
+ * @opflmodify  if,vif
  */
 FNIEMOP_DEF(iemOp_cli)
 {
@@ -13763,6 +13905,11 @@ FNIEMOP_DEF(iemOp_cli)
 }
 
 
+/**
+ * @opcode      0xfb
+ * @opfltest    iopl,vm
+ * @opflmodify  if,vif
+ */
 FNIEMOP_DEF(iemOp_sti)
 {
     IEMOP_MNEMONIC(sti, "sti");
@@ -13774,6 +13921,8 @@ FNIEMOP_DEF(iemOp_sti)
 
 /**
  * @opcode      0xfc
+ * @opflmodify  df
+ * @opflclear   df
  */
 FNIEMOP_DEF(iemOp_cld)
 {
@@ -13788,6 +13937,8 @@ FNIEMOP_DEF(iemOp_cld)
 
 /**
  * @opcode      0xfd
+ * @opflmodify  df
+ * @opflset     df
  */
 FNIEMOP_DEF(iemOp_std)
 {
@@ -13801,8 +13952,9 @@ FNIEMOP_DEF(iemOp_std)
 
 
 /**
- * @opmaps  grp4
- * @opcode  /0
+ * @opmaps      grp4
+ * @opcode      /0
+ * @opflclass   incdec
  */
 FNIEMOP_DEF_1(iemOp_Grp4_inc_Eb, uint8_t, bRm)
 {
@@ -13812,8 +13964,9 @@ FNIEMOP_DEF_1(iemOp_Grp4_inc_Eb, uint8_t, bRm)
 
 
 /**
- * @opmaps  grp4
- * @opcode  /1
+ * @opmaps      grp4
+ * @opcode      /1
+ * @opflclass   incdec
  */
 FNIEMOP_DEF_1(iemOp_Grp4_dec_Eb, uint8_t, bRm)
 {
@@ -13839,7 +13992,11 @@ FNIEMOP_DEF(iemOp_Grp4)
     }
 }
 
-/** Opcode 0xff /0. */
+/**
+ * @opmaps      grp5
+ * @opcode      /0
+ * @opflclass   incdec
+ */
 FNIEMOP_DEF_1(iemOp_Grp5_inc_Ev, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(inc_Ev, "inc Ev");
@@ -13848,7 +14005,11 @@ FNIEMOP_DEF_1(iemOp_Grp5_inc_Ev, uint8_t, bRm)
 }
 
 
-/** Opcode 0xff /1. */
+/**
+ * @opmaps      grp5
+ * @opcode      /1
+ * @opflclass   incdec
+ */
 FNIEMOP_DEF_1(iemOp_Grp5_dec_Ev, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(dec_Ev, "dec Ev");
