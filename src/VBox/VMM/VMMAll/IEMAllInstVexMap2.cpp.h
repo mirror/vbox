@@ -2297,7 +2297,11 @@ FNIEMOP_DEF(iemOp_bextr_Gy_Ey_By)
 }
 
 
-/** Opcode VEX.66.0F38 0xf7 (vex only). */
+/**
+ * @opcode      0xf7
+ * @oppfx       0x66
+ * @opflclass   unchanged
+ */
 FNIEMOP_DEF(iemOp_shlx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SHLX, shlx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -2305,7 +2309,11 @@ FNIEMOP_DEF(iemOp_shlx_Gy_Ey_By)
 }
 
 
-/** Opcode VEX.F3.0F38 0xf7 (vex only). */
+/**
+ * @opcode      0xf7
+ * @oppfx       0xf3
+ * @opflclass   unchanged
+ */
 FNIEMOP_DEF(iemOp_sarx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SARX, sarx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -2313,7 +2321,11 @@ FNIEMOP_DEF(iemOp_sarx_Gy_Ey_By)
 }
 
 
-/** Opcode VEX.F2.0F38 0xf7 (vex only). */
+/**
+ * @opcode      0xf7
+ * @oppfx       0xf2
+ * @opflclass   unchanged
+ */
 FNIEMOP_DEF(iemOp_shrx_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, SHRX, shrx, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);

@@ -201,6 +201,7 @@ g_kdOpLocations = {
     'AL':       [],
     'rAX':      [],
     'rDX':      [],
+    'CL':       [],
     'rSI':      [],
     'rDI':      [],
     'rFLAGS':   [],
@@ -210,6 +211,9 @@ g_kdOpLocations = {
     'FS':       [],
     'GS':       [],
     'SS':       [],
+
+    # fixed valures.
+    '1':        [],
 };
 
 ## \@op[1-4] types
@@ -352,6 +356,7 @@ g_kdOpTypes = {
 
     # Fixed registers.
     'AL':           ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  '',      ),
+    'REG_CL':       ( 'IDX_ParseFixedReg',  'CL',     'cl',   'REG_CL',  '',      ),
     'rAX':          ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', '',      ),
     'rDX':          ( 'IDX_ParseFixedReg',  'rDX',    '%eDX', 'REG_EDX', '',      ),
     'CS':           ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  '',      ), # 8086: push CS
@@ -360,6 +365,9 @@ g_kdOpTypes = {
     'FS':           ( 'IDX_ParseFixedReg',  'FS',     'fs',   'REG_FS',  '',      ),
     'GS':           ( 'IDX_ParseFixedReg',  'GS',     'gs',   'REG_GS',  '',      ),
     'SS':           ( 'IDX_ParseFixedReg',  'SS',     'ss',   'REG_SS',  '',      ),
+
+    # Fixed values.
+    '1':            ( '',                   '1',      '1',    '1',       '',      ),
 };
 
 # IDX_ParseFixedReg
@@ -383,6 +391,11 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
     'M':            ( 'ModR/M',     [ 'rm', ],               '',            ),
     'M_REG':        ( 'ModR/M',     [ 'rm', ],               '',            ),
     'M_MEM':        ( 'ModR/M',     [ 'rm', ],               '',            ),
+    'M1':           ( 'ModR/M',     [ 'rm', '1' ],           '',            ),
+    'M_CL':         ( 'ModR/M',     [ 'rm', 'CL' ],          '',            ), # shl/rcl/ror/++
+    'MI':           ( 'ModR/M',     [ 'rm', 'imm' ],         '',            ),
+    'MI_REG':       ( 'ModR/M',     [ 'rm', 'imm' ],         '11 mr/reg',   ),
+    'MI_MEM':       ( 'ModR/M',     [ 'rm', 'imm' ],         '!11 mr/reg',  ),
     'R':            ( 'ModR/M',     [ 'reg', ],              '',            ),
 
     'VEX_RM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ],         '',            ),
@@ -4335,6 +4348,48 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             'asFlSet':          [],
             'asFlUndefined':    [ 'af', ],
         },
+        'rotate_1': { # rol and ror with fixed 1 shift count
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+        'rotate_count': { # rol and ror w/o fixed 1 shift count
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'of', ],
+        },
+        'rotate_carry_1': { # rcl and rcr with fixed 1 shift count
+            'asFlTest':         [ 'cf', ],
+            'asFlModify':       [ 'cf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [],
+        },
+        'rotate_carry_count': { # rcl and rcr w/o fixed 1 shift count
+            'asFlTest':         [ 'cf', ],
+            'asFlModify':       [ 'cf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'of', ],
+        },
+        'shift_1': { # shl, shr or sar with fixed 1 count.
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'af', ],
+        },
+        'shift_count': { # shl, shr or sar w/o fixed 1 shift count
+            'asFlTest':         [],
+            'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
+            'asFlClear':        [],
+            'asFlSet':          [],
+            'asFlUndefined':    [ 'af', 'of', ],
+        },
         'bitmap': { # bt, btc, btr, btc
             'asFlTest':         [],
             'asFlModify':       [ 'cf', ],
@@ -4349,11 +4404,11 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             'asFlSet':          [],
             'asFlUndefined':    [],
         },
-    }
+    };
     def parseTagOpEFlagsClass(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tags:   @opflclass
-        Value:  arithmetic, logical
+        Value:  arithmetic, logical, ...
 
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
