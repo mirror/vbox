@@ -55,6 +55,8 @@ LOCK TABLE TestBoxes            IN ACCESS EXCLUSIVE MODE;
 -- Rename the original table, drop constrains and foreign key references so we
 -- get the right name automatic when creating the new one.
 --
+\d+ TestBoxes;
+
 ALTER TABLE TestBoxes RENAME TO OldTestBoxes;
 
 ALTER TABLE OldTestBoxes    DROP CONSTRAINT testboxes_ccpus_check;
@@ -294,7 +296,7 @@ DROP TABLE OldTestBoxes;
 
 COMMIT;
 
-\d TestBoxes;
+\d+ TestBoxes;
 
 
 --
