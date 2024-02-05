@@ -8449,6 +8449,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
         {
             IEMOP_MNEMONIC2(MI, SHL, shl, Ev, Ib, DISOPTYPE_HARMLESS, 0);
             GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
+            break;
         }
         /**
          * @opdone
