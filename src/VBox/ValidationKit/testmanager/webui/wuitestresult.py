@@ -691,6 +691,7 @@ class WuiTestResult(WuiContentBase):
         asFeatures = [ oTestBox.sCpuVendor, ];
         if oTestBox.fCpuHwVirt is True:         asFeatures.append(u'HW\u2011Virt');
         if oTestBox.fCpuNestedPaging is True:   asFeatures.append(u'Nested\u2011Paging');
+        if oTestBox.fNativeApi is True:         asFeatures.append(u'Native\u2011API');
         if oTestBox.fCpu64BitGuest is True:     asFeatures.append(u'64\u2011bit\u2011Guest');
         if oTestBox.fChipsetIoMmu is True:      asFeatures.append(u'I/O\u2011MMU');
         aoTestBoxRows += [
@@ -903,6 +904,7 @@ class WuiGroupedResultList(WuiListContentBase):
             else:
                 asFeatures.append(u'HW\u2011Virt(VT\u2011x)');
         if oEntry.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
+        if oEntry.fNativeApi       is True: asFeatures.append(u'Native\u2011API');
         if oEntry.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
         #if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
         sTestBoxTitle += u'CPU features:\t' + u', '.join(asFeatures);

@@ -371,6 +371,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
         fCpu64BitGuest      = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_64_BIT_GUEST, fDefValue = True);
         fChipsetIoMmu       = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_IOMMU);
         fRawMode            = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE, fDefValue = None);
+        fNativeApi          = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_NATIVE_API, fDefValue = None);
         cMbMemory           = self._getLongParam(  constants.tbreq.SIGNON_PARAM_MEM_SIZE,     8, 1073741823); # 8MB..1PB
         cMbScratch          = self._getLongParam(  constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE, 0, 1073741823); # 0..1PB
         sReport             = self._getStringParam(constants.tbreq.SIGNON_PARAM_REPORT, fStrip = True, sDefValue = '');   # new
@@ -422,6 +423,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
           or fCpu64BitGuest     != oTestBox.fCpu64BitGuest \
           or fChipsetIoMmu      != oTestBox.fChipsetIoMmu \
           or fRawMode           != oTestBox.fRawMode \
+          or fNativeApi         != oTestBox.fNativeApi \
           or cMbMemory          != oTestBox.cMbMemory \
           or abs(cPctScratchDiff) >= min(4 + cMbScratch / 10240, 12) \
           or sReport            != oTestBox.sReport \
@@ -442,6 +444,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
                                          fCpu64BitGuest    = fCpu64BitGuest,
                                          fChipsetIoMmu     = fChipsetIoMmu,
                                          fRawMode          = fRawMode,
+                                         fNativeApi        = fNativeApi,
                                          cMbMemory         = cMbMemory,
                                          cMbScratch        = cMbScratch,
                                          sReport           = sReport,

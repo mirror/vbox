@@ -620,6 +620,9 @@ COMMENT ON COLUMN TestBoxes.fChipsetIoMmu IS
 COMMENT ON COLUMN TestBoxes.fRawMode IS
   'Set if the test box does raw-mode tests.';
 
+COMMENT ON COLUMN TestBoxes.fNativeApi IS
+  'Set if the test box does native API (NEM) tests.';
+
 COMMENT ON COLUMN TestBoxes.cMbMemory IS
   'The (approximate) memory size in megabytes (rounded down to nearest 4 MB).';
 
@@ -932,6 +935,27 @@ COMMENT ON COLUMN VcsRevisions.sAuthor IS
 
 COMMENT ON COLUMN VcsRevisions.sMessage IS
   'The commit message.';
+
+COMMENT ON TABLE VcsBugReferences IS
+  'This is for relating commits to a bug and vice versa.
+
+This feature isn''t so much for the test manager as a cheap way of extending
+bug trackers without VCS integration.  We just need to parse the commit
+messages when inserting them into the VcsRevisions table.
+
+Same input, updating and history considerations as VcsRevisions.';
+
+COMMENT ON COLUMN VcsBugReferences.sRepository IS
+  'The version control tree name.';
+
+COMMENT ON COLUMN VcsBugReferences.iRevision IS
+  'The version control tree revision number.';
+
+COMMENT ON COLUMN VcsBugReferences.sBugTracker IS
+  'The bug tracker identifier - see g_kdBugTrackers in config.py.';
+
+COMMENT ON COLUMN VcsBugReferences.lBugNo IS
+  'The bug number in the bug tracker.';
 
 COMMENT ON TABLE TestResultStrTab IS
   'String table for the test results.

@@ -758,6 +758,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         if oTestBox.fCpuNestedPaging:   sHtml += u', np';
         elif oTestBox.fCpuHwVirt:       sHtml += u', hw';
         else:                           sHtml += u', raw';
+        if oTestBox.fNativeApi:         sHtml += u', nem';
         if oTestBox.fCpu64BitGuest:     sHtml += u', 64';
         sHtml += u'</td>';
         return sHtml;

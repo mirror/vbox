@@ -111,6 +111,7 @@ class WuiTestBoxDetailsLink(WuiTestBoxDetailsLinkById):
             else:
                 asFeatures.append(u'HW\u2011Virt(VT\u2011x)');
         if oTestBox.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
+        if oTestBox.fNativeApi       is True: asFeatures.append(u'Native\u2011API');
         if oTestBox.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
         if oTestBox.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
         aasTestBoxTitle.append((u'CPU\u00a0features:',      u',\u00a0'.join(asFeatures),));
@@ -233,6 +234,7 @@ class WuiTestBox(WuiFormContentBase):
         oForm.addIntRO(      TestBoxData.ksParam_cCpus,             oData.cCpus, 'Number of CPUs, cores and threads');
         oForm.addCheckBoxRO( TestBoxData.ksParam_fCpuHwVirt,        oData.fCpuHwVirt, 'VT-x or AMD-V supported');
         oForm.addCheckBoxRO( TestBoxData.ksParam_fCpuNestedPaging,  oData.fCpuNestedPaging, 'Nested paging supported');
+        oForm.addCheckBoxRO( TestBoxData.ksParam_fNativeApi,        oData.fNativeApi, 'Native API supported');
         oForm.addCheckBoxRO( TestBoxData.ksParam_fCpu64BitGuest,    oData.fCpu64BitGuest, '64-bit guest supported');
         oForm.addCheckBoxRO( TestBoxData.ksParam_fChipsetIoMmu,     oData.fChipsetIoMmu, 'I/O MMU supported');
         oForm.addMultilineTextRO(TestBoxData.ksParam_sReport,       oData.sReport, 'Hardware/software report');
@@ -438,6 +440,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         asFeatures = []
         if oEntry.fCpuHwVirt       is True: asFeatures.append(u'HW\u2011Virt');
         if oEntry.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
+        if oEntry.fNativeApi       is True: asFeatures.append(u'Native\u2011API');
         if oEntry.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
         if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
         sFeatures = u' '.join(asFeatures) if asFeatures else u'';

@@ -763,6 +763,8 @@ class TestResultFilter(ModelFilterBase):
     kiTbMisc_NoHwVirt         =  7;
     kiTbMisc_IoMmu            =  8;
     kiTbMisc_NoIoMmu          =  9;
+    kiTbMisc_NativeApi        = 10;
+    kiTbMisc_NoNativeApi      = 11;
 
     def __init__(self):
         ModelFilterBase.__init__(self);
@@ -872,6 +874,8 @@ class TestResultFilter(ModelFilterBase):
             FilterCriterionValueAndDescription(self.kiTbMisc_No64BitGuest,      "w/o 64-bit guests"),
             FilterCriterionValueAndDescription(self.kiTbMisc_HwVirt,            "req VT-x / AMD-V"),
             FilterCriterionValueAndDescription(self.kiTbMisc_NoHwVirt,          "w/o VT-x / AMD-V"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_NativeApi,         "req NEM"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_NoNativeApi,       "w/o NEM"),
             #FilterCriterionValueAndDescription(self.kiTbMisc_IoMmu,             "req I/O MMU"), - not implemented yet.
             #FilterCriterionValueAndDescription(self.kiTbMisc_NoIoMmu,           "w/o I/O MMU"), - not implemented yet.
         ];
@@ -894,6 +898,8 @@ class TestResultFilter(ModelFilterBase):
         kiTbMisc_NoNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging IS FALSE',
         kiTbMisc_RawMode:         'TestBoxesWithStrings.fRawMode IS TRUE',
         kiTbMisc_NoRawMode:       'TestBoxesWithStrings.fRawMode IS NOT TRUE',
+        kiTbMisc_NativeApi:       'TestBoxesWithStrings.fNativeApi IS TRUE',
+        kiTbMisc_NoNativeApi:     'TestBoxesWithStrings.fNativeApi IS NOT TRUE',
         kiTbMisc_64BitGuest:      'TestBoxesWithStrings.fCpu64BitGuest IS TRUE',
         kiTbMisc_No64BitGuest:    'TestBoxesWithStrings.fCpu64BitGuest IS FALSE',
         kiTbMisc_HwVirt:          'TestBoxesWithStrings.fCpuHwVirt IS TRUE',

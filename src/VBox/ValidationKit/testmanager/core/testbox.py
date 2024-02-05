@@ -227,6 +227,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attribute
     ksParam_fCpu64BitGuest      = 'TestBox_fCpu64BitGuest';
     ksParam_fChipsetIoMmu       = 'TestBox_fChipsetIoMmu';
     ksParam_fRawMode            = 'TestBox_fRawMode';
+    ksParam_fNativeApi          = 'TestBox_fNativeApi';
     ksParam_cMbMemory           = 'TestBox_cMbMemory';
     ksParam_cMbScratch          = 'TestBox_cMbScratch';
     ksParam_sReport             = 'TestBox_sReport';
@@ -238,7 +239,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attribute
                                     'idStrCpuArch', 'idStrCpuName', 'idStrReport', ];
     kasMachineSettableOnly      = [ 'sOs', 'sOsVersion', 'sCpuVendor', 'sCpuArch', 'sCpuName', 'lCpuRevision', 'cCpus',
                                     'fCpuHwVirt', 'fCpuNestedPaging', 'fCpu64BitGuest', 'fChipsetIoMmu', 'fRawMode',
-                                    'cMbMemory', 'cMbScratch', 'sReport', 'iTestBoxScriptRev', 'iPythonHexVersion', ];
+                                    'fNativeApi', 'cMbMemory', 'cMbScratch', 'sReport', 'iTestBoxScriptRev',
+                                    'iPythonHexVersion', ];
     kasAllowNullAttributes      = ['idTestBox', 'tsEffective', 'tsExpire', 'uidAuthor', 'idGenTestBox', 'sDescription',
                                    'ipLom', 'sComment', ] + kasMachineSettableOnly + kasInternalAttributes;
 
@@ -248,7 +250,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attribute
     kiMax_pctScaleTimeout       = 19999;
     kcchMax_sReport             = 65535;
 
-    kcDbColumns                 = 40; # including the 7 string joins columns
+    kcDbColumns                 = 41; # including the 7 string joins columns
 
 
     def __init__(self):
@@ -284,6 +286,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attribute
         self.fCpu64BitGuest      = False;
         self.fChipsetIoMmu       = False;
         self.fRawMode            = None;
+        self.fNativeApi          = None;
         self.cMbMemory           = 1;
         self.cMbScratch          = 0;
         self.idStrReport         = None;
@@ -335,23 +338,24 @@ class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attribute
         self.fCpu64BitGuest      = aoRow[23];
         self.fChipsetIoMmu       = aoRow[24];
         self.fRawMode            = aoRow[25];
-        self.cMbMemory           = aoRow[26];
-        self.cMbScratch          = aoRow[27];
-        self.idStrReport         = aoRow[28];
-        self.iTestBoxScriptRev   = aoRow[29];
-        self.iPythonHexVersion   = aoRow[30];
-        self.enmPendingCmd       = aoRow[31];
+        self.fNativeApi          = aoRow[26];
+        self.cMbMemory           = aoRow[27];
+        self.cMbScratch          = aoRow[28];
+        self.idStrReport         = aoRow[29];
+        self.iTestBoxScriptRev   = aoRow[30];
+        self.iPythonHexVersion   = aoRow[31];
+        self.enmPendingCmd       = aoRow[32];
 
         # String table values.
-        if len(aoRow) > 32:
-            self.sDescription    = aoRow[32];
-            self.sComment        = aoRow[33];
-            self.sOs             = aoRow[34];
-            self.sOsVersion      = aoRow[35];
-            self.sCpuVendor      = aoRow[36];
-            self.sCpuArch        = aoRow[37];
-            self.sCpuName        = aoRow[38];
-            self.sReport         = aoRow[39];
+        if len(aoRow) > 33:
+            self.sDescription    = aoRow[33];
+            self.sComment        = aoRow[34];
+            self.sOs             = aoRow[35];
+            self.sOsVersion      = aoRow[36];
+            self.sCpuVendor      = aoRow[37];
+            self.sCpuArch        = aoRow[38];
+            self.sCpuName        = aoRow[39];
+            self.sReport         = aoRow[40];
 
         return self;
 
@@ -746,13 +750,14 @@ class TestBoxLogic(ModelLogicBase):
     kiSortColumn_cMbMemory          =  8;
     kiSortColumn_cMbScratch         =  9;
     kiSortColumn_fCpuNestedPaging   = 10;
-    kiSortColumn_iTestBoxScriptRev  = 11;
-    kiSortColumn_iPythonHexVersion  = 12;
-    kiSortColumn_enmPendingCmd      = 13;
-    kiSortColumn_fEnabled           = 14;
-    kiSortColumn_enmState           = 15;
-    kiSortColumn_tsUpdated          = 16;
-    kcMaxSortColumns                = 17;
+    kiSortColumn_fNativeApi         = 11;
+    kiSortColumn_iTestBoxScriptRev  = 12;
+    kiSortColumn_iPythonHexVersion  = 13;
+    kiSortColumn_enmPendingCmd      = 14;
+    kiSortColumn_fEnabled           = 15;
+    kiSortColumn_enmState           = 16;
+    kiSortColumn_tsUpdated          = 17;
+    kcMaxSortColumns                = 18;
     kdSortColumnMap                 = {
         0:                               'TestBoxesWithStrings.sName',
         kiSortColumn_sName:              "regexp_replace(TestBoxesWithStrings.sName,'[0-9]*', '', 'g'), " \
@@ -777,6 +782,8 @@ class TestBoxLogic(ModelLogicBase):
         -kiSortColumn_cMbScratch:        'TestBoxesWithStrings.cMbScratch DESC',
         kiSortColumn_fCpuNestedPaging:   'TestBoxesWithStrings.fCpuNestedPaging',
         -kiSortColumn_fCpuNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging DESC',
+        kiSortColumn_fNativeApi:         'TestBoxesWithStrings.fNativeApi',
+        -kiSortColumn_fNativeApi:        'TestBoxesWithStrings.fNativeApi DESC',
         kiSortColumn_iTestBoxScriptRev:  'TestBoxesWithStrings.iTestBoxScriptRev',
         -kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev DESC',
         kiSortColumn_iPythonHexVersion:  'TestBoxesWithStrings.iPythonHexVersion',
@@ -1114,7 +1121,7 @@ ORDER BY ''' + ', '.join(asSortColumns), (tsNow, tsNow, idSchedGroup, tsNow, tsN
 
     def updateOnSignOn(self, idTestBox, idGenTestBox, sTestBoxAddr, sOs, sOsVersion, # pylint: disable=too-many-arguments,too-many-locals
                        sCpuVendor, sCpuArch, sCpuName, lCpuRevision, cCpus, fCpuHwVirt, fCpuNestedPaging, fCpu64BitGuest,
-                       fChipsetIoMmu, fRawMode, cMbMemory, cMbScratch, sReport, iTestBoxScriptRev, iPythonHexVersion):
+                       fChipsetIoMmu, fRawMode, fNativeApi, cMbMemory, cMbScratch, sReport, iTestBoxScriptRev, iPythonHexVersion):
         """
         Update the testbox attributes automatically on behalf of the testbox script.
         Returns the new generation id on success, raises an exception on failure.
@@ -1135,6 +1142,7 @@ ORDER BY ''' + ', '.join(asSortColumns), (tsNow, tsNow, idSchedGroup, tsNow, tsN
                                fCpu64BitGuest,
                                fChipsetIoMmu,
                                fRawMode,
+                               fNativeApi,
                                cMbMemory,
                                cMbScratch,
                                sReport,
