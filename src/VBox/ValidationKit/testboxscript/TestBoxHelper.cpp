@@ -667,20 +667,18 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
 }
 
 
-/** Print the 'true' if long mode guests are supported, 'false' if not and
+/** Print the 'true' if 64-bits guests are supported, 'false' if not and
  * 'dunno' if we cannot tell. */
-static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
+static RTEXITCODE handlerCpu64BitGuest(int argc, char **argv)
 {
     NOREF(argc); NOREF(argv);
-    HWVIRTTYPE  enmHwVirt  = isHwVirtSupported();
-    bool        fNativeApi = isNativeApiSupported();
-    int         fSupported = 0;
+    int fSupported = 0;
 
-    if (   enmHwVirt != HWVIRTTYPE_NONE
-        || fNativeApi)
+    if (   isHwVirtSupported() != HWVIRTTYPE_NONE
+        || isNativeApiSupported())
     {
-#if defined(RT_ARCH_AMD64)
-        fSupported = 1; /* We're running long mode, so it must be supported. */
+#if ARCH_BITS == 64
+        fSupported = 1; /* We're running in 64-bit mode, so it must be supported. */
 
 #elif defined(RT_ARCH_X86)
 # ifdef RT_OS_DARWIN
@@ -715,8 +713,6 @@ static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
                 }
             }
         }
-#elif defined(RT_ARCH_ARM64)
-        fSupported = 1; /** @todo LongMode is a misnomer here but in general means 64-bit guest capable. */
 #endif
     }
 
@@ -816,7 +812,8 @@ int main(int argc, char **argv)
         { "cpurevision",    handlerCpuRevision,     true },
         { "cpuhwvirt",      handlerCpuHwVirt,       true },
         { "nestedpaging",   handlerCpuNestedPaging, true },
-        { "longmode",       handlerCpuLongMode,     true },
+        { "64bitguest",     handlerCpu64BitGuest,   true },
+        { "longmode",       handlerCpu64BitGuest,   true }, /* legacy name */
         { "nativeapi",      handlerNativeApi,       true },
         { "memsize",        handlerMemSize,         true },
         { "report",         handlerReport,          true },
