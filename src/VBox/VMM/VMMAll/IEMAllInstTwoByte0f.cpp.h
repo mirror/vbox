@@ -1302,50 +1302,55 @@ FNIEMOPRM_DEF(iemOp_Grp6_ltr)
 }
 
 
-/** Opcode 0x0f 0x00 /3. */
-FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, bool, fWrite)
-{
-    IEMOP_HLP_MIN_286();
-    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+/* Need to associate flag info with the blocks, so duplicate the code. */
+#define IEMOP_BODY_GRP6_VERX(bRm, fWrite) \
+        IEMOP_HLP_MIN_286(); \
+        IEMOP_HLP_NO_REAL_OR_V86_MODE(); \
+        \
+        if (IEM_IS_MODRM_REG_MODE(bRm)) \
+        { \
+            IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286, 0); \
+            IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP); \
+            IEM_MC_ARG(uint16_t,    u16Sel,            0); \
+            IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1); \
+            IEM_MC_FETCH_GREG_U16(u16Sel, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_STATUS_FLAGS, 0, iemCImpl_VerX, u16Sel, fWriteArg); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            IEM_MC_BEGIN(2, 1, IEM_MC_F_MIN_286, 0); \
+            IEM_MC_ARG(uint16_t,    u16Sel,            0); \
+            IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1); \
+            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP); \
+            IEM_MC_FETCH_MEM_U16(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_STATUS_FLAGS, 0, iemCImpl_VerX, u16Sel, fWriteArg); \
+            IEM_MC_END(); \
+        } (void)0
 
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286, 0);
-        IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_ARG(uint16_t,    u16Sel,            0);
-        IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
-        IEM_MC_FETCH_GREG_U16(u16Sel, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_STATUS_FLAGS, 0, iemCImpl_VerX, u16Sel, fWriteArg);
-        IEM_MC_END();
-    }
-    else
-    {
-        IEM_MC_BEGIN(2, 1, IEM_MC_F_MIN_286, 0);
-        IEM_MC_ARG(uint16_t,    u16Sel,            0);
-        IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_FETCH_MEM_U16(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_STATUS_FLAGS, 0, iemCImpl_VerX, u16Sel, fWriteArg);
-        IEM_MC_END();
-    }
-}
-
-
-/** Opcode 0x0f 0x00 /4. */
+/**
+ * @opmaps      grp6
+ * @opcode      /4
+ * @opflmodify  zf
+ */
 FNIEMOPRM_DEF(iemOp_Grp6_verr)
 {
     IEMOP_MNEMONIC(verr, "verr Ew");
-    return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, false);
+    IEMOP_BODY_GRP6_VERX(bRm, false);
 }
 
 
-/** Opcode 0x0f 0x00 /5. */
+/**
+ * @opmaps      grp6
+ * @opcode      /5
+ * @opflmodify  zf
+ */
 FNIEMOPRM_DEF(iemOp_Grp6_verw)
 {
     IEMOP_MNEMONIC(verw, "verw Ew");
-    return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, true);
+    IEMOP_BODY_GRP6_VERX(bRm, true);
 }
 
 
@@ -11838,7 +11843,10 @@ FNIEMOP_DEF(iemOp_movsx_Gv_Ew)
 }
 
 
-/** Opcode 0x0f 0xc0. */
+/**
+ * @opcode      0xc0
+ * @opflclass   arithmetic
+ */
 FNIEMOP_DEF(iemOp_xadd_Eb_Gb)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -11904,7 +11912,10 @@ FNIEMOP_DEF(iemOp_xadd_Eb_Gb)
 }
 
 
-/** Opcode 0x0f 0xc1. */
+/**
+ * @opcode      0xc1
+ * @opflclass   arithmetic
+ */
 FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
 {
     IEMOP_MNEMONIC(xadd_Ev_Gv, "xadd Ev,Gv");

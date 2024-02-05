@@ -4417,14 +4417,15 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         sClass = self.flattenAllSections(aasSections);
         kdAttribs = self.kdEFlagsClasses.get(sClass);
         if not kdAttribs:
-            return self.errorComment(iTagLine, '%s: Unknown EFLAGS class: %s' % ( sTag, sClass,));
+            return self.errorComment(iTagLine, '%s: Unknown EFLAGS class: %s (valid: %s)'
+                                     % (sTag, sClass, ', '.join(sorted(self.kdEFlagsClasses.keys())),));
 
         # Set the attributes.
         for sAttrib, asFlags in kdAttribs.items():
             asOld = getattr(oInstr, sAttrib);
             if asOld is not None:
                 return self.errorComment(iTagLine, '%s: attempting to overwrite "%s" with "%s" for %s'
-                                         % ( sTag, asOld, asFlags, sAttrib));
+                                         % (sTag, asOld, asFlags, sAttrib));
             setattr(oInstr, sAttrib, asFlags);
 
         _ = iEndLine;
