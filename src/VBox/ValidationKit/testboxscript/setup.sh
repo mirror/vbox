@@ -672,7 +672,7 @@ import sys;\
 x = sys.version_info[0] == 3 or (sys.version_info[0] == 2 and (sys.version_info[1] >= 6 or (sys.version_info[1] == 5 and sys.version_info[2] >= 1)));\
 sys.exit(not x);\
 ";
-    for python in python2.7 python2.6 python2.5 python;
+    for python in python[2:3].[0:]  #python3.11 python3.10 python3.9 python2.6 python2.5 python;
     do
         python=`which ${python} 2> /dev/null`
         if [ -n "${python}" -a -x "${python}" ]; then
