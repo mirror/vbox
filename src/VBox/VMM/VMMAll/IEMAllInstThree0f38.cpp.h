@@ -774,7 +774,12 @@ FNIEMOP_DEF(iemOp_blendvpd_Vdq_Wdq)
 /*  Opcode      0x0f 0x38 0x17 - invalid */
 
 
-/** Opcode 0x66 0x0f 0x38 0x17 - invalid */
+/**
+ * @opcode      0x17
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af,sf,of
+ */
 FNIEMOP_DEF(iemOp_ptest_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PTEST, ptest, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
@@ -2142,7 +2147,13 @@ FNIEMOP_DEF(iemOp_crc32_Gv_Ev)
         } \
     } while(0)
 
-/** Opcode 0x66 0x0f 0x38 0xf6. */
+
+/**
+ * @opcode      0xf6
+ * @oppfx       0x66
+ * @opfltest    cf
+ * @opflmodify  cf
+ */
 FNIEMOP_DEF(iemOp_adcx_Gy_Ey)
 {
     IEMOP_MNEMONIC2(RM, ADCX, adcx, Gy, Ey, DISOPTYPE_HARMLESS, 0);
@@ -2150,7 +2161,12 @@ FNIEMOP_DEF(iemOp_adcx_Gy_Ey)
 }
 
 
-/** Opcode 0xf3 0x0f 0x38 0xf6. */
+/**
+ * @opcode      0xf6
+ * @oppfx       0xf3
+ * @opfltest    of
+ * @opflmodify  of
+ */
 FNIEMOP_DEF(iemOp_adox_Gy_Ey)
 {
     IEMOP_MNEMONIC2(RM, ADOX, adox, Gy, Ey, DISOPTYPE_HARMLESS, 0);

@@ -209,7 +209,12 @@ FNIEMOP_STUB(iemOp_vpermps_Vqq_Hqq_Wqq);
 /*  Opcode VEX.0F38 0x17 - invalid */
 
 
-/** Opcode VEX.66.0F38 0x17 - invalid */
+/**
+ * @opcode      0x17
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af,sf,of
+ */
 FNIEMOP_DEF(iemOp_vptest_Vx_Wx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1631,7 +1636,14 @@ FNIEMOP_STUB(iemOp_vaesdeclast_Vdq_Wdq);
 /*  Opcode VEX.F3.0F38 0xf1 - invalid. */
 /*  Opcode VEX.F2.0F38 0xf1 - invalid (legacy only). */
 
-/** Opcode VEX.0F38 0xf2 - ANDN (vex only). */
+/**
+ * @opcode      0xf2
+ * @oppfx       none
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   cf,of
+ * @opflundef   pf,af
+ * @note        VEX only
+ */
 FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 {
     IEMOP_MNEMONIC3(VEX_RVM, ANDN, andn, Gy, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -1819,9 +1831,13 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
     (void)0
 
 
-/*  Opcode VEX.F3.0F38 0xf3 /1. */
-/** @opcode  /1
- *  @opmaps  vexgrp17 */
+/**
+ * @opmaps      vexgrp17
+ * @opcode      /1
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   of
+ * @opflundef   pf,af
+ */
 FNIEMOP_DEF_1(iemOp_VGrp17_blsr_By_Ey, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2(VEX_VM, BLSR, blsr, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -1829,9 +1845,13 @@ FNIEMOP_DEF_1(iemOp_VGrp17_blsr_By_Ey, uint8_t, bRm)
 }
 
 
-/*  Opcode VEX.F3.0F38 0xf3 /2. */
-/** @opcode  /2
- *  @opmaps  vexgrp17 */
+/**
+ * @opmaps      vexgrp17
+ * @opcode      /2
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   zf,of
+ * @opflundef   pf,af
+ */
 FNIEMOP_DEF_1(iemOp_VGrp17_blsmsk_By_Ey, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2(VEX_VM, BLSMSK, blsmsk, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -1839,9 +1859,13 @@ FNIEMOP_DEF_1(iemOp_VGrp17_blsmsk_By_Ey, uint8_t, bRm)
 }
 
 
-/*  Opcode VEX.F3.0F38 0xf3 /3. */
-/** @opcode  /3
- *  @opmaps  vexgrp17 */
+/**
+ * @opmaps      vexgrp17
+ * @opcode      /3
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   of
+ * @opflundef   pf,af
+ */
 FNIEMOP_DEF_1(iemOp_VGrp17_blsi_By_Ey, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2(VEX_VM, BLSI, blsi, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
@@ -2289,7 +2313,13 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
 }
 
 
-/** Opcode VEX.0F38 0xf7 (vex only). */
+/**
+ * @opcode      0xf7
+ * @oppfx       none
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   cf,of
+ * @opflundef   pf,af,sf
+ */
 FNIEMOP_DEF(iemOp_bextr_Gy_Ey_By)
 {
     IEMOP_MNEMONIC3(VEX_RMV, BEXTR, bextr, Gy, Ey, By, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);

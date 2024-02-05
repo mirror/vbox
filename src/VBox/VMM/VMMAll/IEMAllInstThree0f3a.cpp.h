@@ -1119,7 +1119,12 @@ FNIEMOP_DEF(iemOp_pclmulqdq_Vdq_Wdq_Ib)
 /*  Opcode 0x66 0x0f 0x5f - invalid */
 
 
-/** Opcode 0x66 0x0f 0x60. */
+/**
+ * @opcode      0x60
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af
+ */
 FNIEMOP_DEF(iemOp_pcmpestrm_Vdq_Wdq_Ib)
 {
     IEMOP_MNEMONIC3(RMI, PCMPESTRM, pcmpestrm, Vdq, Wdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
@@ -1244,7 +1249,12 @@ FNIEMOP_DEF(iemOp_pcmpestrm_Vdq_Wdq_Ib)
 }
 
 
-/** Opcode 0x66 0x0f 0x61, */
+/**
+ * @opcode      0x61
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af
+ */
 FNIEMOP_DEF(iemOp_pcmpestri_Vdq_Wdq_Ib)
 {
     IEMOP_MNEMONIC3(RMI, PCMPESTRI, pcmpestri, Vdq, Wdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
@@ -1373,7 +1383,12 @@ FNIEMOP_DEF(iemOp_pcmpestri_Vdq_Wdq_Ib)
 }
 
 
-/** Opcode 0x66 0x0f 0x62. */
+/**
+ * @opcode      0x62
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af
+ */
 FNIEMOP_DEF(iemOp_pcmpistrm_Vdq_Wdq_Ib)
 {
     IEMOP_MNEMONIC3(RMI, PCMPISTRM, pcmpistrm, Vdq, Wdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
@@ -1436,7 +1451,12 @@ FNIEMOP_DEF(iemOp_pcmpistrm_Vdq_Wdq_Ib)
 }
 
 
-/** Opcode 0x66 0x0f 0x63*/
+/**
+ * @opcode      0x63
+ * @oppfx       0x66
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflclear   pf,af
+ */
 FNIEMOP_DEF(iemOp_pcmpistri_Vdq_Wdq_Ib)
 {
     IEMOP_MNEMONIC3(RMI, PCMPISTRI, pcmpistri, Vdq, Wdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
