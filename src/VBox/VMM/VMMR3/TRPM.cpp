@@ -113,7 +113,8 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** TRPM saved state version. */
-#define TRPM_SAVED_STATE_VERSION                10
+#define TRPM_SAVED_STATE_VERSION                11
+#define TRPM_SAVED_STATE_VERSION_PRE_NMI        10  /* NMI TRPM event type bumped the version */
 #define TRPM_SAVED_STATE_VERSION_PRE_ICEBP      9   /* INT1/ICEBP support bumped the version */
 #define TRPM_SAVED_STATE_VERSION_UNI            8   /* SMP support bumped the version */
 
@@ -282,6 +283,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
      * Validate version.
      */
     if (    uVersion != TRPM_SAVED_STATE_VERSION
+        &&  uVersion != TRPM_SAVED_STATE_VERSION_PRE_NMI
         &&  uVersion != TRPM_SAVED_STATE_VERSION_PRE_ICEBP
         &&  uVersion != TRPM_SAVED_STATE_VERSION_UNI)
     {
@@ -289,7 +291,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    if (uVersion == TRPM_SAVED_STATE_VERSION)
+    if (uVersion >= TRPM_SAVED_STATE_VERSION_PRE_NMI)
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
@@ -349,6 +351,24 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
          * With the removal of raw-mode support, we no longer need these.
          */
         SSMR3SkipToEndOfUnit(pSSM);
+    }
+
+    /*
+     * For saved-state verions prior to introducing NMI as a separate type, convert
+     * traps with vector 2 as NMI since the rest of VirtualBox code now expects this.
+     */
+    if (uVersion <= TRPM_SAVED_STATE_VERSION_PRE_NMI)
+    {
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
+            AssertLogRelMsgReturn(pTrpmCpu->enmActiveType != TRPM_NMI,
+                                  ("TRPM event type (%#RX32) invalid for saved-state version %u!",
+                                   pTrpmCpu->enmActiveType, uVersion), VERR_SSM_ENUM_VALUE_OUT_OF_RANGE);
+            if (   pTrpmCpu->uActiveVector == X86_XCPT_NMI
+                && pTrpmCpu->enmActiveType == TRPM_TRAP)
+                pTrpmCpu->enmActiveType = TRPM_NMI;
+        }
     }
 
     return VINF_SUCCESS;

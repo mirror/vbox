@@ -1192,6 +1192,10 @@ VMM_INT_DECL(TRPMEVENT) HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo)
            break;
 
         case VMX_IDT_VECTORING_INFO_TYPE_NMI:
+            Assert(uVector == X86_XCPT_NMI); NOREF(uVector);
+            enmTrapType = TRPM_NMI;
+            break;
+
         case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
             enmTrapType = TRPM_TRAP;
             break;
@@ -1237,10 +1241,6 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
         Assert(!fIcebp);
         switch (uVector)
         {
-            case X86_XCPT_NMI:
-                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_NMI << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
-                break;
-
             case X86_XCPT_BP:
             case X86_XCPT_OF:
                 uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
@@ -1288,6 +1288,8 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
                 break;
         }
     }
+    else if (enmTrpmEvent == TRPM_NMI)
+        uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_NMI << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
     else
         AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
     return uIntInfoType;

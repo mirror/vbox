@@ -1849,7 +1849,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     else
 # endif
                     {
-                        rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_TRAP);
+                        rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_NMI);
                         if (rc2 == VINF_SUCCESS)
                         {
                             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);

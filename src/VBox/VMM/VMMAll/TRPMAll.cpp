@@ -226,6 +226,9 @@ VMMDECL(int) TRPMAssertTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
         return VERR_TRPM_ACTIVE_TRAP;
     }
 
+    /* NMI TRPM type must specify the vector as 2 (NMI). */
+    Assert(enmType != TRPM_NMI || u8TrapNo == X86_XCPT_NMI);
+
     pVCpu->trpm.s.uActiveVector               = u8TrapNo;
     pVCpu->trpm.s.enmActiveType               = enmType;
     pVCpu->trpm.s.uActiveErrorCode            = ~0U;

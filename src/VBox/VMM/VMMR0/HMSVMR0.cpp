@@ -3415,12 +3415,6 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPUCC pVCpu)
         Event.n.u3Type = SVM_EVENT_EXCEPTION;
         switch (uVector)
         {
-            case X86_XCPT_NMI:
-            {
-                Event.n.u3Type = SVM_EVENT_NMI;
-                break;
-            }
-
             case X86_XCPT_BP:
             case X86_XCPT_OF:
                 AssertMsgFailed(("Invalid TRPM vector %d for event type %d\n", uVector, enmTrpmEvent));
@@ -3444,6 +3438,8 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPUCC pVCpu)
         Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         Event.n.u3Type = SVM_EVENT_SOFTWARE_INT;
+    else if (enmTrpmEvent == TRPM_NMI)
+        Event.n.u3Type = SVM_EVENT_NMI;
     else
         AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
 

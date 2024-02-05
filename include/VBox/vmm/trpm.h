@@ -57,6 +57,7 @@ typedef enum
     TRPM_TRAP         = 0,
     TRPM_HARDWARE_INT = 1,
     TRPM_SOFTWARE_INT = 2,
+    TRPM_NMI          = 3,
     /** The usual 32-bit paranoia. */
     TRPM_32BIT_HACK   = 0x7fffffff
 } TRPMEVENT;

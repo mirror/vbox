@@ -316,7 +316,7 @@ VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent, uint8_t uVe
     {
         case SVM_EVENT_EXTERNAL_IRQ:    return TRPM_HARDWARE_INT;
         case SVM_EVENT_SOFTWARE_INT:    return TRPM_SOFTWARE_INT;
-        case SVM_EVENT_NMI:             return TRPM_TRAP;
+        case SVM_EVENT_NMI:             return TRPM_NMI;
         case SVM_EVENT_EXCEPTION:
         {
             if (   uVector == X86_XCPT_BP
