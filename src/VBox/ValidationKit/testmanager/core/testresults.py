@@ -686,7 +686,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-
         self.iRevisionTestSuite      = aoRow[32];
 
         self.aoFailureReasons         = [];
-        for i, _ in enumerate(aoRow[31]):
+        for i, _ in enumerate(aoRow[33]):
             if   aoRow[33][i] is not None \
               or aoRow[34][i] is not None \
               or aoRow[35][i] is not None \
