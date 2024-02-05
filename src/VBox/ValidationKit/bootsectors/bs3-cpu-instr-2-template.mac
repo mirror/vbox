@@ -712,6 +712,69 @@ BS3_PROC_END_CMN            bs3CpuInstr2_adox_RAX_qword_FSxBX_icebp
 
 
 ;
+; CMPXCHG8B
+;
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_lock_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        lock cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_lock_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        o16 cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_lock_o16_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        db 0f0h, 066h
+        cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_lock_o16_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_repz_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        repz cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_repz_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_lock_repz_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        db 0f0h, 0f3h
+        cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_lock_repz_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_repnz_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        repnz cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_repnz_cmpxchg8b_FSxDI_icebp
+
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_lock_repnz_cmpxchg8b_FSxDI_icebp, BS3_PBC_NEAR
+        db 0f0h, 0f2h
+        cmpxchg8b [fs:xDI]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_lock_repnz_cmpxchg8b_FSxDI_icebp
+
+
+;
 ; CMPXCHG16B
 ;
  %if TMPL_BITS == 64

@@ -226,6 +226,15 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_EAX_dword_FSxBX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_RAX_RBX_icebp);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_RAX_qword_FSxBX_icebp);
 
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg8b_FSxDI_icebp);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg8b_FSxDI_icebp);
+
 # if ARCH_BITS == 64
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2);
@@ -2952,6 +2961,135 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adcx_adox)(uint8_t bMode)
             }
         }
         Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
+    }
+
+    return 0;
+}
+
+
+
+/*
+ * CMPXCHG8B
+ */
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b)(uint8_t bMode)
+{
+
+    BS3REGCTX       Ctx;
+    BS3REGCTX       ExpectCtx;
+    BS3TRAPFRAME    TrapFrame;
+    RTUINT64U       au64[3];
+    PRTUINT64U      pau64       = RT_ALIGN_PT(&au64[0], sizeof(RTUINT64U), PRTUINT64U);
+    bool const      fSupportCX8 = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_CX8);
+    unsigned        iFlags;
+    unsigned        offBuf;
+    unsigned        iMatch;
+    unsigned        iWorker;
+    static struct
+    {
+        bool        fLocked;
+        uint8_t     offIcebp;
+        FNBS3FAR   *pfnWorker;
+    } const s_aWorkers[] =
+    {
+        {   false,  5,  BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b_FSxDI_icebp)            },
+#if TMPL_MODE == BS3_MODE_RM || TMPL_MODE == BS3_MODE_PP16
+        {   false,  5,  BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp)        },
+#else
+        {   false,  6,  BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp)        },
+#endif
+        {   false,  6,  BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg8b_FSxDI_icebp)       },
+        {   false,  6,  BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg8b_FSxDI_icebp)      },
+        {   true, 1+5,  BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg8b_FSxDI_icebp)       },
+        {   true, 1+6,  BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg8b_FSxDI_icebp)   },
+        {   true, 1+6,  BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg8b_FSxDI_icebp)  },
+        {   true, 1+6,  BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg8b_FSxDI_icebp) },
+    };
+
+    /* Ensure the structures are allocated before we sample the stack pointer. */
+    Bs3MemSet(&Ctx, 0, sizeof(Ctx));
+    Bs3MemSet(&ExpectCtx, 0, sizeof(ExpectCtx));
+    Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
+    Bs3MemSet(pau64, 0, sizeof(pau64[0]) * 2);
+
+    /*
+     * Create test context.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 512);
+    if (!fSupportCX8)
+        Bs3TestPrintf("Note! CMPXCHG8B is not supported by the CPU!\n");
+
+    /*
+     * One loop with the normal variant and one with the locked one
+     */
+    g_usBs3TestStep = 0;
+    for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
+    {
+        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
+
+        /*
+         * One loop with all status flags set, and one with them clear.
+         */
+        Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+        for (iFlags = 0; iFlags < 2; iFlags++)
+        {
+            Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
+
+            for (offBuf = 0; offBuf < sizeof(RTUINT64U); offBuf++)
+            {
+#  define CX8_OLD_LO       UINT32_C(0xcc9c4bbd)
+#  define CX8_OLD_HI       UINT32_C(0x749549ab)
+#  define CX8_MISMATCH_LO  UINT32_C(0x90f18981)
+#  define CX8_MISMATCH_HI  UINT32_C(0xfd5b4000)
+#  define CX8_STORE_LO     UINT32_C(0x51f6559b)
+#  define CX8_STORE_HI     UINT32_C(0xd1b54963)
+
+                PRTUINT64U pBuf = (PRTUINT64U)&pau64->au8[offBuf];
+
+                ExpectCtx.rax.u = Ctx.rax.u = CX8_MISMATCH_LO;
+                ExpectCtx.rdx.u = Ctx.rdx.u = CX8_MISMATCH_HI;
+
+                Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rdi, &Ctx.fs, pBuf);
+                Bs3RegCtxSetGrpSegFromCurPtr(&ExpectCtx, &ExpectCtx.rdi, &ExpectCtx.fs, pBuf);
+
+                for (iMatch = 0; iMatch < 2; iMatch++)
+                {
+                    uint8_t bExpectXcpt;
+                    pBuf->s.Lo = CX8_OLD_LO;
+                    pBuf->s.Hi = CX8_OLD_HI;
+
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+                    g_usBs3TestStep++;
+                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
+                    bExpectXcpt = X86_XCPT_DB;
+                    if (fSupportCX8)
+                    {
+                        ExpectCtx.rax.u = CX8_OLD_LO;
+                        ExpectCtx.rdx.u = CX8_OLD_HI;
+                        if (iMatch & 1)
+                            ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
+                        else
+                            ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
+                        ExpectCtx.rip.u = Ctx.rip.u + s_aWorkers[iWorker].offIcebp;
+
+                        /** @todo r=aeichner RF (Resume Flag) gets always cleared on my i7-6700K. */
+                        ExpectCtx.rflags.u32 &= ~X86_EFL_RF;
+                    }
+                    if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
+                                                 0 /*fExtraEfl*/, "mode", 0 /*idTestStep*/)
+                        || TrapFrame.bXcpt != bExpectXcpt)
+                    {
+                        if (TrapFrame.bXcpt != bExpectXcpt)
+                            Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
+                        Bs3TestFailedF("^^^ iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n", iWorker, iFlags, offBuf, iMatch);
+                        ASMHalt();
+                    }
+
+                    ExpectCtx.rax.u = Ctx.rax.u = CX8_OLD_LO;
+                    ExpectCtx.rdx.u = Ctx.rdx.u = CX8_OLD_HI;
+                }
+            }
+            Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
+        }
     }
 
     return 0;
