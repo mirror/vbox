@@ -550,7 +550,7 @@ static RTEXITCODE handlerNativeApi(int argc, char **argv)
 
 
 typedef enum { HWVIRTTYPE_NONE, HWVIRTTYPE_VTX, HWVIRTTYPE_AMDV, HVIRTTYPE_ARMV8 } HWVIRTTYPE;
-static HWVIRTTYPE isHwVirtSupported(void)
+static HWVIRTTYPE getHwVirtSupport(void)
 {
     /* No native virtualization supported on macOS anymore (for the VBox versions we care about). */
 #if !defined RT_OS_DARWIN
@@ -584,7 +584,7 @@ static HWVIRTTYPE isHwVirtSupported(void)
 static RTEXITCODE handlerCpuHwVirt(int argc, char **argv)
 {
     NOREF(argc); NOREF(argv);
-    int cch = RTPrintf(isHwVirtSupported() != HWVIRTTYPE_NONE ? "true\n" : "false\n");
+    int cch = RTPrintf(getHwVirtSupport() != HWVIRTTYPE_NONE ? "true\n" : "false\n");
     return cch > 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
@@ -594,9 +594,9 @@ static RTEXITCODE handlerCpuHwVirt(int argc, char **argv)
 static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
 {
     NOREF(argc); NOREF(argv);
-    int         fSupported = -1;
+    int               fSupported = -1;
 
-    HWVIRTTYPE  enmHwVirt  = isHwVirtSupported();
+    HWVIRTTYPE  const enmHwVirt  = getHwVirtSupport();
     if (enmHwVirt == HWVIRTTYPE_NONE)
         fSupported = 0;
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
@@ -672,9 +672,10 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
 static RTEXITCODE handlerCpu64BitGuest(int argc, char **argv)
 {
     NOREF(argc); NOREF(argv);
-    int fSupported = 0;
+    int              fSupported    = 0;
 
-    if (   isHwVirtSupported() != HWVIRTTYPE_NONE
+    HWVIRTTYPE const enmHwVirt = getHwVirtSupport();
+    if (   enmHwVirt != HWVIRTTYPE_NONE
         || isNativeApiSupported())
     {
 #if ARCH_BITS == 64
