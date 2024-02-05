@@ -52,6 +52,7 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
+#include <iprt/path.h>
 #include <iprt/string.h>
 
 /* External includes: */
@@ -1143,7 +1144,7 @@ void UIVMActivityMonitor::sltTimeout()
 void UIVMActivityMonitor::sltExportMetricsToFile()
 {
     QString strStartFileName = QString("%1/%2_%3").
-        arg(QFileInfo(defaultMachineFolder()).absolutePath()).
+        arg(defaultMachineFolder()).
         arg(machineName()).
         arg(QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss"));
     QString strFileName = QIFileDialog::getSaveFileName(strStartFileName,"",this,
@@ -1151,6 +1152,7 @@ void UIVMActivityMonitor::sltExportMetricsToFile()
                                                                                 "Export activity data of the machine \"%1\"")
                                                                                 .arg(machineName()));
     QFile dataFile(strFileName);
+
     if (dataFile.open(QFile::WriteOnly | QFile::Truncate))
     {
         QTextStream stream(&dataFile);
@@ -1411,7 +1413,7 @@ void UIVMActivityMonitorLocal::sltMachineStateChange(const QUuid &uId)
 QString UIVMActivityMonitorLocal::defaultMachineFolder() const
 {
     if (m_comMachine.isOk())
-        return m_comMachine.GetSettingsFilePath();
+        return m_comMachine.GetLogFolder();
     else
         return QString();
 }
@@ -2035,9 +2037,13 @@ void UIVMActivityMonitorCloud::obtainDataAndUpdate()
 
 QString UIVMActivityMonitorCloud::defaultMachineFolder() const
 {
-    /** @todo */
-    return QString();
+    char szPath[RTPATH_MAX];
+    int rc = RTPathUserDocuments(szPath, sizeof(szPath));
+    if (RT_SUCCESS(rc))
+        return QString(szPath);
+    return uiCommon().virtualBox().GetHomeFolder();
 }
+
 void UIVMActivityMonitorCloud::reset()
 {
     setEnabled(false);

@@ -113,13 +113,11 @@ private:
     QString m_strCenter;
 };
 
-/** A simple container to store host related performance values. */
-
 
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewHostStats definition.                                                                              *
 *********************************************************************************************************************************/
-
+/** A simple container to store host related performance values. */
 class UIVMActivityOverviewHostStats
 {
 
@@ -221,11 +219,11 @@ private:
     QMap<int, int> m_minimumColumnWidths;
 };
 
-/** Each instance of UIActivityOverviewItem corresponds to a running vm whose stats are displayed.
-  * they are owned my the model. */
+
 /*********************************************************************************************************************************
  *   Class UIActivityOverviewItem definition.                                                                           *
  *********************************************************************************************************************************/
+/** Each instance of UIActivityOverviewItem corresponds to a vm. they are owned my the model. */
 class UIActivityOverviewItem : public QObject
 {
 
@@ -241,7 +239,6 @@ public:
     int columnLength(int iColumnIndex) const;
     const QUuid &machineId() const;
 
-
     virtual QString machineStateString() const = 0;
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
@@ -254,12 +251,6 @@ public:
     quint64  m_uUsedRAM;
     float    m_fRAMUsagePercentage;
 
-    quint64  m_uNetworkDownTotal;
-    quint64  m_uNetworkUpTotal;
-
-    quint64 m_uDiskWriteTotal;
-    quint64 m_uDiskReadTotal;
-
 protected:
 
     QUuid         m_VMuid;
@@ -268,9 +259,6 @@ protected:
     /** The strings of each column for the item. We update this during performance query
       * instead of model's data function to know the string length earlier. */
     QMap<int, QString> m_columnData;
-
-private:
-
 };
 
 Q_DECLARE_METATYPE(UIActivityOverviewItem);
@@ -278,13 +266,13 @@ Q_DECLARE_METATYPE(UIActivityOverviewItem);
 /*********************************************************************************************************************************
  *   Class UIActivityOverviewItemLocal definition.                                                                           *
  *********************************************************************************************************************************/
+/* A UIActivityOverviewItem derivation to show local vms in the table view: */
 class UIActivityOverviewItemLocal : public UIActivityOverviewItem
 {
     Q_OBJECT;
 public:
 
     UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
-
     UIActivityOverviewItemLocal();
     ~UIActivityOverviewItemLocal();
 
@@ -297,21 +285,23 @@ public:
     virtual QString machineStateString() const override;
     virtual void setMachineState(int iState) override;
 
-protected:
-
 private:
 
-    CSession m_comSession;
-    CGuest   m_comGuest;
-    KMachineState m_enmMachineState;
-
-    quint64 m_uVMExitTotal;
+    CSession         m_comSession;
+    CGuest           m_comGuest;
+    KMachineState    m_enmMachineState;
+    quint64          m_uVMExitTotal;
+    quint64          m_uDiskWriteTotal;
+    quint64          m_uDiskReadTotal;
+    quint64          m_uNetworkDownTotal;
+    quint64          m_uNetworkUpTotal;
     CMachineDebugger m_comDebugger;
 };
 
 /*********************************************************************************************************************************
  *   Class UIActivityOverviewItemCloud definition.                                                                           *
  *********************************************************************************************************************************/
+/* A UIActivityOverviewItem derivation to show cloud vms in the table view: */
 class UIActivityOverviewItemCloud : public UIActivityOverviewItem
 {
     Q_OBJECT;
@@ -403,8 +393,6 @@ public:
     int itemIndex(const QUuid &uid);
     bool isVMRunning(int rowIndex) const;
     bool isCloudVM(int rowIndex) const;
-    void setDefaultViewFont(const QFont &font);
-    void setDefaultViewFontColor(const QColor &color);
     void setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems);
 
 private slots:
@@ -435,8 +423,6 @@ private:
     CPerformanceCollector m_performanceCollector;
     QMap<int, bool> m_columnVisible;
     UIVMActivityOverviewHostStats m_hostStats;
-    QFont m_defaultViewFont;
-    QColor m_defaultViewFontColor;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
 };
@@ -862,10 +848,6 @@ UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &ui
     , m_uFreeRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
-    , m_uNetworkDownTotal(0)
-    , m_uNetworkUpTotal(0)
-    , m_uDiskWriteTotal(0)
-    , m_uDiskReadTotal(0)
     , m_VMuid(uid)
     , m_strVMName(strVMName)
 {
@@ -877,10 +859,6 @@ UIActivityOverviewItem::UIActivityOverviewItem()
     , m_uTotalRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
-    , m_uNetworkDownTotal(0)
-    , m_uNetworkUpTotal(0)
-    , m_uDiskWriteTotal(0)
-    , m_uDiskReadTotal(0)
     , m_VMuid(QUuid())
 {
 }
@@ -1110,6 +1088,10 @@ void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> 
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : UIActivityOverviewItem(pParent, uid, strVMName)
     , m_uVMExitTotal(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
 {
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
@@ -1117,6 +1099,10 @@ UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const
 
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
     : m_uVMExitTotal(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
 {
 }
 
@@ -1408,16 +1394,6 @@ bool UIActivityOverviewModel::isCloudVM(int rowIndex) const
     return m_itemList[rowIndex]->isCloudVM();
 }
 
-void UIActivityOverviewModel::setDefaultViewFont(const QFont &font)
-{
-    m_defaultViewFont = font;
-}
-
-void UIActivityOverviewModel::setDefaultViewFontColor(const QColor &color)
-{
-    m_defaultViewFontColor = color;
-}
-
 void UIActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
     QVector<QUuid> newIds;
@@ -1481,7 +1457,7 @@ QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
     {
         if (role == Qt::FontRole)
         {
-            QFont font(m_defaultViewFont);
+            QFont font = qApp->font();
             font.setItalic(true);
             return font;
         }
@@ -1635,14 +1611,14 @@ void UIActivityOverviewModel::queryPerformanceCollector()
     QVector<ULONG>  aReturnDataLengths;
 
     QVector<LONG> returnData = m_performanceCollector.QueryMetricsData(m_nameList,
-                                                                     m_objectList,
-                                                                     aReturnNames,
-                                                                     aReturnObjects,
-                                                                     aReturnUnits,
-                                                                     aReturnScales,
-                                                                     aReturnSequenceNumbers,
-                                                                     aReturnDataIndices,
-                                                                     aReturnDataLengths);
+                                                                       m_objectList,
+                                                                       aReturnNames,
+                                                                       aReturnObjects,
+                                                                       aReturnUnits,
+                                                                       aReturnScales,
+                                                                       aReturnSequenceNumbers,
+                                                                       aReturnDataIndices,
+                                                                       aReturnDataLengths);
     /* Parse the result we get from CPerformanceCollector to get respective values: */
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
@@ -1896,9 +1872,6 @@ void UIVMActivityOverviewWidget::prepareWidgets()
         m_pTableView->setAlternatingRowColors(true);
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
-        /* Store the default font and its color of the table on the view. They are used in ::data(..): */
-        m_pModel->setDefaultViewFont(m_pTableView->font());
-        m_pModel->setDefaultViewFontColor(m_pTableView->palette().color(QPalette::Active, QPalette::WindowText));
 
         connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
