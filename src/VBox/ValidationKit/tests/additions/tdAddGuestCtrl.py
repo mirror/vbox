@@ -1625,8 +1625,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         for sCurPath in asPaths:
             reporter.log2('Checking for \"%s\" ...' % (sCurPath));
-            if self.oTstDrv.txsIsFile(oSession, oTxsSession, sCurPath, fIgnoreErrors = True):
-                return (True, sCurPath);
+            if oTxsSession.syncIsFile(sCurPath, fIgnoreErrors = True):
+                return (True, oTxsSession.syncExpandString(sCurPath));
         reporter.error('Unable to find guest binary in any of these places:\n%s' % ('\n'.join(asPaths),));
         return (False, "");
 
@@ -2387,7 +2387,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oProcess is None:
             return reporter.error('oProcess is None! (%s)' % (asArgs,));
 
-        fRc = True;
+        fRc         = True;
+        uExitStatus = vboxcon.ProcessStatus_Undefined;
+        iExitCode   = -1;
+        cbStdOut    = 0;
+        cbStdErr    = 0;
+        sBufOut     = '';
 
         #time.sleep(5); # try this if you want to see races here.
 
