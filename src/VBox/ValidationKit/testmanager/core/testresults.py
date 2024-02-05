@@ -617,6 +617,8 @@ class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-
         self.fCpuHwVirt              = None;
         self.fCpuNestedPaging        = None;
         self.fCpu64BitGuest          = None;
+        self.fChipsetIoMmu           = None;
+        self.fNativeApi              = None;
         self.idTestBox               = None
         self.sTestBoxName            = None
 
@@ -664,36 +666,38 @@ class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-
         self.fCpuHwVirt              = aoRow[15];
         self.fCpuNestedPaging        = aoRow[16];
         self.fCpu64BitGuest          = aoRow[17];
-        self.idTestBox               = aoRow[18];
-        self.sTestBoxName            = aoRow[19];
+        self.fChipsetIoMmu           = aoRow[18];
+        self.fNativeApi              = aoRow[19];
+        self.idTestBox               = aoRow[20];
+        self.sTestBoxName            = aoRow[21];
 
-        self.tsCreated               = aoRow[20];
-        self.tsElapsed               = aoRow[21];
-        self.enmStatus               = aoRow[22];
-        self.cErrors                 = aoRow[23];
+        self.tsCreated               = aoRow[22];
+        self.tsElapsed               = aoRow[23];
+        self.enmStatus               = aoRow[24];
+        self.cErrors                 = aoRow[25];
 
-        self.idTestCase              = aoRow[24];
-        self.sTestCaseName           = aoRow[25];
-        self.sBaseCmd                = aoRow[26];
-        self.sArgs                   = aoRow[27];
-        self.sSubName                = aoRow[28];
+        self.idTestCase              = aoRow[26];
+        self.sTestCaseName           = aoRow[27];
+        self.sBaseCmd                = aoRow[28];
+        self.sArgs                   = aoRow[29];
+        self.sSubName                = aoRow[30];
 
-        self.idBuildTestSuite        = aoRow[29];
-        self.iRevisionTestSuite      = aoRow[30];
+        self.idBuildTestSuite        = aoRow[31];
+        self.iRevisionTestSuite      = aoRow[32];
 
         self.aoFailureReasons         = [];
         for i, _ in enumerate(aoRow[31]):
-            if   aoRow[31][i] is not None \
-              or aoRow[32][i] is not None \
-              or aoRow[33][i] is not None \
-              or aoRow[34][i] is not None:
+            if   aoRow[33][i] is not None \
+              or aoRow[34][i] is not None \
+              or aoRow[35][i] is not None \
+              or aoRow[36][i] is not None:
                 oReason = self.FailureReasonListingData();
-                if aoRow[31][i] is not None:
-                    oReason.oFailureReason      = oFailureReasonLogic.cachedLookup(aoRow[31][i]);
-                if aoRow[32][i] is not None:
-                    oReason.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[32][i]);
-                oReason.tsFailureReasonAssigned = aoRow[33][i];
-                oReason.sFailureReasonComment   = aoRow[34][i];
+                if aoRow[33][i] is not None:
+                    oReason.oFailureReason      = oFailureReasonLogic.cachedLookup(aoRow[33][i]);
+                if aoRow[34][i] is not None:
+                    oReason.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[34][i]);
+                oReason.tsFailureReasonAssigned = aoRow[35][i];
+                oReason.sFailureReasonComment   = aoRow[36][i];
                 self.aoFailureReasons.append(oReason);
 
         return self
@@ -1313,6 +1317,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                   '       TestBoxesWithStrings.fCpuHwVirt,\n' \
                   '       TestBoxesWithStrings.fCpuNestedPaging,\n' \
                   '       TestBoxesWithStrings.fCpu64BitGuest,\n' \
+                  '       TestBoxesWithStrings.fChipsetIoMmu,\n' \
+                  '       TestBoxesWithStrings.fNativeApi,\n' \
                   '       TestBoxesWithStrings.idTestBox,\n' \
                   '       TestBoxesWithStrings.sName,\n' \
                   '       TestResults.tsCreated,\n' \
@@ -1420,6 +1426,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                   '         TestBoxesWithStrings.fCpuHwVirt,\n' \
                   '         TestBoxesWithStrings.fCpuNestedPaging,\n' \
                   '         TestBoxesWithStrings.fCpu64BitGuest,\n' \
+                  '         TestBoxesWithStrings.fChipsetIoMmu,\n' \
+                  '         TestBoxesWithStrings.fNativeApi,\n' \
                   '         TestBoxesWithStrings.idTestBox,\n' \
                   '         TestBoxesWithStrings.sName,\n' \
                   '         TestResults.tsCreated,\n' \
