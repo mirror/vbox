@@ -2539,7 +2539,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-    def executeGstCtlHelper(self, oSession, oTxsSession, oGuestSession, asArgs, asEnv = None, sCwd = '', timeoutMS = 30 * 1000):
+    def executeGstCtlHelper(self, oTxsSession, oGuestSession, asArgs, asEnv = None, sCwd = '', timeoutMS = 30 * 1000):
         """
         Wrapper to invoke the Guest Control Helper on the guest.
 
