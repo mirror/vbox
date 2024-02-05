@@ -1742,7 +1742,7 @@ VMMR3DECL(int) DBGFR3FlowTraceReportQueryFiltered(DBGFFLOWTRACEREPORT hFlowTrace
 
     int rc = VINF_SUCCESS;
     PDBGFFLOWTRACEREPORTINT pReportFiltered = dbgfR3FlowTraceReportCreate(pReport->pUVM, pReport->cRecords);
-    if (RT_LIKELY(pReport))
+    if (RT_LIKELY(pReportFiltered))
     {
         uint32_t idxFiltered = 0;
 
