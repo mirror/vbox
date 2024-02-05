@@ -1625,7 +1625,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         for sCurPath in asPaths:
             reporter.log2('Checking for \"%s\" ...' % (sCurPath));
-            if self.txsIsFile(oSession, oTxsSession, sCurPath, fIgnoreErrors = True):
+            if self.oTstDrv.txsIsFile(oSession, oTxsSession, sCurPath, fIgnoreErrors = True):
                 return (True, sCurPath);
         reporter.error('Unable to find guest binary in any of these places:\n%s' % ('\n'.join(asPaths),));
         return (False, "");
@@ -2534,7 +2534,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-    def executeGstCtlHelper(self, oSession, oTxsSession, oGuestSession, asArgs, asEnv = [], sCwd = '', timeoutMS = 30 * 1000):
+    def executeGstCtlHelper(self, oSession, oTxsSession, oGuestSession, asArgs, asEnv = None, sCwd = '', timeoutMS = 30 * 1000):
         """
         Wrapper to invoke the Guest Control Helper on the guest.
 
@@ -2557,6 +2557,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 asArgs2 = [ self.sGstCtlHelperExe ];
                 asArgs2.append(asArgs); # Always set argv0.
+                if not asEnv:
+                    asEnv = [];
                 aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, \
                               vboxcon.ProcessWaitForFlag_StdOut, \
                               vboxcon.ProcessWaitForFlag_StdErr ];
@@ -2713,7 +2715,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.testStart('Windows guest processes in session >= 1');
             # Test in which Windows session Guest Control processes are being started.
             # We don't want them to be started in session 0, as this would prevent desktop interaction and other stuff.
-            fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf = \
+            fRc, eExitStatus, iExitCode, _, _, _ = \
                 self.executeGstCtlHelper(oSession, oTxsSession, oGuestSession, [ "show", "win-session-id" ]);
             if  fRc \
             and eExitStatus == vboxcon.TerminatedNormally:
