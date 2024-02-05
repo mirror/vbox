@@ -1425,6 +1425,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'update_additions',
             '3d'
         ];
+
+        # Possible paths for the Guest Control Helper binary.
+        self.asGstCtlHelperPaths   = [
+            # Debugging stuff (SCP'd over to the guest).
+            '/tmp/VBoxGuestControlHelper',
+            'C:\\Temp\\VBoxGuestControlHelper',
+            # Validation Kit .ISO.
+            '${CDROM}/vboxvalidationkit/${OS/ARCH}/VBoxGuestControlHelper${EXESUFF}',
+            '${CDROM}/${OS/ARCH}/VBoxGuestControlHelper${EXESUFF}',
+            # Test VMs.
+            '/opt/apps/VBoxGuestControlHelper',
+            '/opt/apps/VBoxGuestControlHelper',
+            '/apps/VBoxGuestControlHelper',
+            'C:\\Apps\\VBoxGuestControlHelper${EXESUFF}'
+        ];
+        # Full path to the Guest Control Helper binary we're going to use. Only gets resolved once.
+        self.sGstCtlHelperExe       = '';
+
         self.asTests                = self.asTestsDef;
         self.fSkipKnownBugs         = False;
         self.oTestFiles             = None # type: vboxtestfileset.TestFileSet
@@ -1598,6 +1616,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return reporter.errorXcpt('Unable to prepare for debugging');
 
         return True;
+
+    def locateGstBinary(self, oSession, oTxsSession, asPaths):
+        """
+        Locates a guest binary on the guest by checking the paths in \a asPaths.
+
+        Returns a tuple (success, path).
+        """
+        for sCurPath in asPaths:
+            reporter.log2('Checking for \"%s\" ...' % (sCurPath));
+            if self.txsIsFile(oSession, oTxsSession, sCurPath, fIgnoreErrors = True):
+                return (True, sCurPath);
+        reporter.error('Unable to find guest binary in any of these places:\n%s' % ('\n'.join(asPaths),));
+        return (False, "");
 
     #
     # VBoxService handling.
@@ -2338,6 +2369,141 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                    aEnv, afFlags, timeoutMS);
         return oProcess;
 
+    def processExecute(self, oGuestSession, sCmd, asArgs, sCwd, aEnv, afFlags, timeoutMS, fIsError = True):
+        """
+        Executes a process on the guest and deals with input/output + waiting flags.
+
+        Returns tuple (success, exit status, exit code, stdout len, stderr len, stdout / stderr output).
+        """
+
+        #
+        # Start the process:
+        #
+        try:
+            oProcess = self.processCreateWrapper(oGuestSession, sCmd, asArgs, sCwd, aEnv, afFlags, timeoutMS);
+        except:
+            reporter.maybeErrXcpt(fIsError, 'type=%s, asArgs=%s' % (type(asArgs), asArgs,));
+            return False;
+        if oProcess is None:
+            return reporter.error('oProcess is None! (%s)' % (asArgs,));
+
+        fRc = True;
+
+        #time.sleep(5); # try this if you want to see races here.
+
+        # Wait for the process to start properly:
+        reporter.log2('Process start requested, waiting for start (%dms) ...' % (timeoutMS,));
+        iPid = -1;
+        aeWaitFor = [ vboxcon.ProcessWaitForFlag_Start, ];
+        try:
+            eWaitResult = oProcess.waitForArray(aeWaitFor, timeoutMS);
+        except:
+            reporter.maybeErrXcpt(fIsError, 'waitforArray failed for asArgs=%s' % (asArgs,));
+            fRc = False;
+        else:
+            try:
+                eStatus = oProcess.status;
+                iPid    = oProcess.PID;
+            except:
+                fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
+            else:
+                reporter.log2('Wait result returned: %d, current process status is: %d' % (eWaitResult, eStatus,));
+
+                #
+                # Wait for the process to run to completion if necessary.
+                #
+                # Note! The above eWaitResult return value can be ignored as it will
+                #       (mostly) reflect the process status anyway.
+                #
+                if eStatus == vboxcon.ProcessStatus_Started:
+
+                    # What to wait for:
+                    aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, ];
+                    if vboxcon.ProcessCreateFlag_WaitForStdOut in afFlags:
+                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
+                    if vboxcon.ProcessCreateFlag_WaitForStdErr in afFlags:
+                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
+                    ## @todo Add vboxcon.ProcessWaitForFlag_StdIn.
+
+                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), aeWaitFor=%s ...'
+                                  % (iPid, timeoutMS, aeWaitFor));
+                    acbFdOut = [0,0,0];
+                    while True:
+                        try:
+                            eWaitResult = oProcess.waitForArray(aeWaitFor, timeoutMS);
+                        except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
+                            reporter.error('Process (PID %d) execution interrupted' % (iPid,));
+                            try: oProcess.close();
+                            except: pass;
+                            break;
+                        except:
+                            fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
+                            break;
+                        #reporter.log2('Wait returned: %d' % (eWaitResult,));
+
+                        # Process output:
+                        for eFdResult, iFd, sFdNm in [ (vboxcon.ProcessWaitResult_StdOut, 1, 'stdout'),
+                                                       (vboxcon.ProcessWaitResult_StdErr, 2, 'stderr'), ]:
+                            if eWaitResult in (eFdResult, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
+                                try:
+                                    abBuf = oProcess.read(iFd, 64 * 1024, timeoutMS);
+                                except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
+                                    reporter.error('Process (PID %d) execution interrupted' % (iPid,));
+                                    try: oProcess.close();
+                                    except: pass;
+                                except:
+                                    reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (asArgs,));
+                                else:
+                                    if abBuf:
+                                        reporter.log2('Process (PID %d) got %d bytes of %s data (type: %s)'
+                                                      % (iPid, len(abBuf), sFdNm, type(abBuf)));
+                                        if reporter.getVerbosity() >= 4:
+                                            sBufOut = '';
+                                            if sys.version_info >= (2, 7):
+                                                if isinstance(abBuf, memoryview): ## @todo Why is this happening?
+                                                    abBuf   = abBuf.tobytes();
+                                                    sBufOut = abBuf.decode("utf-8");
+                                            if sys.version_info <= (2, 7):
+                                                if isinstance(abBuf, buffer):   # (for 3.0+) pylint: disable=undefined-variable
+                                                    sBufOut = str(abBuf);
+                                            for sLine in sBufOut.splitlines():
+                                                reporter.log4('%s: %s' % (sFdNm, sLine));
+                                        acbFdOut[iFd] += len(abBuf);
+                                        sBufOut = abBuf; ## @todo Figure out how to uniform + append!
+
+                        ## Process input (todo):
+                        #if eWaitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
+                        #    reporter.log2('Process (PID %d) needs stdin data' % (iPid,));
+
+                        # Termination or error?
+                        if eWaitResult in (vboxcon.ProcessWaitResult_Terminate,
+                                           vboxcon.ProcessWaitResult_Error,
+                                           vboxcon.ProcessWaitResult_Timeout,):
+                            try:    eStatus = oProcess.status;
+                            except: fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
+                            reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
+                                          % (iPid, eWaitResult, eStatus,));
+                            break;
+
+                    # End of the wait loop.
+                    _, cbStdOut, cbStdErr = acbFdOut;
+
+                    try:    eStatus = oProcess.status;
+                    except: fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
+                    reporter.log2('Final process status (PID %d) is: %d' % (iPid, eStatus));
+                    reporter.log2('Process (PID %d) %d stdout, %d stderr' % (iPid, cbStdOut, cbStdErr));
+
+        #
+        # Get the final status and exit code of the process.
+        #
+        try:
+            uExitStatus = oProcess.status;
+            iExitCode   = oProcess.exitCode;
+        except:
+            fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
+        reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, iExitCode, uExitStatus));
+        return fRc, uExitStatus, iExitCode, cbStdOut, cbStdErr, sBufOut;
+
     def gctrlExecute(self, oTest, oGuestSession, fIsError):                     # pylint: disable=too-many-statements
         """
         Helper function to execute a program on a guest, specified in the current test.
@@ -2362,133 +2528,49 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except:
             return reporter.errorXcpt();
 
-        #
-        # Start the process:
-        #
+        fRc, oTest.uExitStatus, oTest.iExitCode, oTest.cbStdOut, oTest.cbStdErr, oTest.sBuf = \
+            self.processExecute(oGuestSession, oTest.sCmd, oTest.asArgs, oTest.sCwd,
+                                oTest.aEnv, oTest.afFlags, oTest.timeoutMS, fIsError);
 
-        try:
-            oProcess = self.processCreateWrapper(oGuestSession, oTest.sCmd, oTest.asArgs, oTest.sCwd,
-                                                 oTest.aEnv, oTest.afFlags, oTest.timeoutMS);
-        except:
-            reporter.maybeErrXcpt(fIsError, 'type=%s, asArgs=%s' % (type(oTest.asArgs), oTest.asArgs,));
-            return False;
-        if oProcess is None:
-            return reporter.error('oProcess is None! (%s)' % (oTest.asArgs,));
-
-        #time.sleep(5); # try this if you want to see races here.
-
-        # Wait for the process to start properly:
-        reporter.log2('Process start requested, waiting for start (%dms) ...' % (oTest.timeoutMS,));
-        iPid = -1;
-        aeWaitFor = [ vboxcon.ProcessWaitForFlag_Start, ];
-        try:
-            eWaitResult = oProcess.waitForArray(aeWaitFor, oTest.timeoutMS);
-        except:
-            reporter.maybeErrXcpt(fIsError, 'waitforArray failed for asArgs=%s' % (oTest.asArgs,));
-            fRc = False;
-        else:
-            try:
-                eStatus = oProcess.status;
-                iPid    = oProcess.PID;
-            except:
-                fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
-            else:
-                reporter.log2('Wait result returned: %d, current process status is: %d' % (eWaitResult, eStatus,));
-
-                #
-                # Wait for the process to run to completion if necessary.
-                #
-                # Note! The above eWaitResult return value can be ignored as it will
-                #       (mostly) reflect the process status anyway.
-                #
-                if eStatus == vboxcon.ProcessStatus_Started:
-
-                    # What to wait for:
-                    aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, ];
-                    if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.afFlags:
-                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
-                    if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.afFlags:
-                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
-                    ## @todo Add vboxcon.ProcessWaitForFlag_StdIn.
-
-                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), aeWaitFor=%s ...'
-                                  % (iPid, oTest.timeoutMS, aeWaitFor));
-                    acbFdOut = [0,0,0];
-                    while True:
-                        try:
-                            eWaitResult = oProcess.waitForArray(aeWaitFor, oTest.timeoutMS);
-                        except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
-                            reporter.error('Process (PID %d) execution interrupted' % (iPid,));
-                            try: oProcess.close();
-                            except: pass;
-                            break;
-                        except:
-                            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
-                            break;
-                        #reporter.log2('Wait returned: %d' % (eWaitResult,));
-
-                        # Process output:
-                        for eFdResult, iFd, sFdNm in [ (vboxcon.ProcessWaitResult_StdOut, 1, 'stdout'),
-                                                       (vboxcon.ProcessWaitResult_StdErr, 2, 'stderr'), ]:
-                            if eWaitResult in (eFdResult, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
-                                try:
-                                    abBuf = oProcess.read(iFd, 64 * 1024, oTest.timeoutMS);
-                                except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
-                                    reporter.error('Process (PID %d) execution interrupted' % (iPid,));
-                                    try: oProcess.close();
-                                    except: pass;
-                                except:
-                                    reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (oTest.asArgs,));
-                                else:
-                                    if abBuf:
-                                        reporter.log2('Process (PID %d) got %d bytes of %s data (type: %s)'
-                                                      % (iPid, len(abBuf), sFdNm, type(abBuf)));
-                                        if reporter.getVerbosity() >= 4:
-                                            sBuf = '';
-                                            if sys.version_info >= (2, 7):
-                                                if isinstance(abBuf, memoryview): ## @todo Why is this happening?
-                                                    abBuf = abBuf.tobytes();
-                                                    sBuf  = abBuf.decode("utf-8");
-                                            if sys.version_info <= (2, 7):
-                                                if isinstance(abBuf, buffer):   # (for 3.0+) pylint: disable=undefined-variable
-                                                    sBuf = str(abBuf);
-                                            for sLine in sBuf.splitlines():
-                                                reporter.log4('%s: %s' % (sFdNm, sLine));
-                                        acbFdOut[iFd] += len(abBuf);
-                                        oTest.sBuf     = abBuf; ## @todo Figure out how to uniform + append!
-
-                        ## Process input (todo):
-                        #if eWaitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
-                        #    reporter.log2('Process (PID %d) needs stdin data' % (iPid,));
-
-                        # Termination or error?
-                        if eWaitResult in (vboxcon.ProcessWaitResult_Terminate,
-                                           vboxcon.ProcessWaitResult_Error,
-                                           vboxcon.ProcessWaitResult_Timeout,):
-                            try:    eStatus = oProcess.status;
-                            except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
-                            reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
-                                          % (iPid, eWaitResult, eStatus,));
-                            break;
-
-                    # End of the wait loop.
-                    _, oTest.cbStdOut, oTest.cbStdErr = acbFdOut;
-
-                    try:    eStatus = oProcess.status;
-                    except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
-                    reporter.log2('Final process status (PID %d) is: %d' % (iPid, eStatus));
-                    reporter.log2('Process (PID %d) %d stdout, %d stderr' % (iPid, oTest.cbStdOut, oTest.cbStdErr));
-
-        #
-        # Get the final status and exit code of the process.
-        #
-        try:
-            oTest.uExitStatus = oProcess.status;
-            oTest.iExitCode   = oProcess.exitCode;
-        except:
-            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
-        reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, oTest.iExitCode, oTest.uExitStatus));
         return fRc;
+
+    def executeGstCtlHelper(self, oSession, oTxsSession, oGuestSession, asArgs, asEnv = [], sCwd = '', timeoutMS = 30 * 1000):
+        """
+        Wrapper to invoke the Guest Control Helper on the guest.
+
+        Returns tuple (success, exit status, exit code, stdout len, stderr len, stdout / stderr output).
+        """
+        fRc         = True;
+        eExitStatus = vboxcon.ProcessStatus_Undefined;
+        iExitCode   = -1;
+        cbStdOut    = 0;
+        cbStdErr    = 0;
+        sBuf        = '';
+
+        if not self.sGstCtlHelperExe:
+            fRc, self.sGstCtlHelperExe = self.locateGstBinary(oSession, oTxsSession, self.asGstCtlHelperPaths);
+            if fRc:
+                reporter.log('Using VBoxGuestControlHelper on guest at \"%s\"' % (self.sGstCtlHelperExe));
+
+        if fRc \
+        and self.sGstCtlHelperExe:
+            try:
+                asArgs2 = [ self.sGstCtlHelperExe ];
+                asArgs2.append(asArgs); # Always set argv0.
+                aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, \
+                              vboxcon.ProcessWaitForFlag_StdOut, \
+                              vboxcon.ProcessWaitForFlag_StdErr ];
+
+                fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf = \
+                    self.processExecute(oGuestSession, self.sGstCtlHelperExe, asArgs2, sCwd,
+                                        asEnv, aeWaitFor, timeoutMS);
+                if eExitStatus != vboxcon.TerminatedNormally:
+                    reporter.log('VBoxGuestControlHelper failed to run; got exit status %d' % (eExitStatus,));
+                    fRc = False;
+            except:
+                reporter.errorXcpt();
+
+        return fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf;
 
     def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
@@ -2607,7 +2689,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
-    def testGuestCtrlSessionSimple(self, oSession, oTestVm):
+    def testGuestCtrlSessionSimple(self, oSession, oTxsSession, oTestVm):
         """
         Tests simple session-based API calls.
         """
@@ -2626,7 +2708,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.logXcpt('Starting session for session-based API calls failed');
             return False;
 
-        fRc = True;
+        if  self.oTstDrv.fpApiVer >= 7.1 \
+        and oTestVm.isWindows():
+            reporter.testStart('Windows guest processes in session >= 1');
+            # Test in which Windows session Guest Control processes are being started.
+            # We don't want them to be started in session 0, as this would prevent desktop interaction and other stuff.
+            fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf = \
+                self.executeGstCtlHelper(oSession, oTxsSession, oGuestSession, [ "show", "win-session-id" ]);
+            if  fRc \
+            and eExitStatus == vboxcon.TerminatedNormally:
+                if iExitCode >= 1000: # We report 1000 + <session ID> as exit code.
+                    uSessionId = iExitCode - 1000;
+                    if uSessionId == 0:
+                        reporter.log('Guest processes start in session %d, good' % (uSessionId));
+                    else:
+                        reporter.error('Guest processes start in session %d, expected session 0' % (uSessionId));
+                else:
+                    reporter.error('Guest Control Helper returned error %d (exit code)' % (iExitCode));
+            reporter.testDone();
 
         # User home.
         if self.oTstDrv.fpApiVer >= 7.0:
@@ -2804,7 +2903,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         ## @todo Test session timeouts.
 
-        fRc2 = self.testGuestCtrlSessionSimple(oSession, oTestVm);
+        fRc2 = self.testGuestCtrlSessionSimple(oSession, oTxsSession, oTestVm);
         if fRc:
             fRc = fRc2;
 
