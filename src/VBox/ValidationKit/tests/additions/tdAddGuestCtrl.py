@@ -1617,7 +1617,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return True;
 
-    def locateGstBinary(self, oSession, oTxsSession, asPaths):
+    def locateGstBinary(self, oTxsSession, asPaths):
         """
         Locates a guest binary on the guest by checking the paths in \a asPaths.
 
@@ -2553,7 +2553,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sBuf        = '';
 
         if not self.sGstCtlHelperExe:
-            fRc, self.sGstCtlHelperExe = self.locateGstBinary(oSession, oTxsSession, self.asGstCtlHelperPaths);
+            fRc, self.sGstCtlHelperExe = self.locateGstBinary(oTxsSession, self.asGstCtlHelperPaths);
             if fRc:
                 reporter.log('Using VBoxGuestControlHelper on guest at \"%s\"' % (self.sGstCtlHelperExe));
 
