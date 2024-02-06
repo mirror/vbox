@@ -2011,7 +2011,8 @@ class McBlock(object):
     kiMacroExp_Partial = 2; ##< Partial/mixed (cmpxchg16b), safe to assume single block.
     ## @}
 
-    def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None, fDeferToCImpl = False):
+    def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction,
+                 oInstruction = None, cchIndent = None, fDeferToCImpl = False):
         ## Set if IEM_MC_DEFER_TO_CIMPL_0_RET and friends, clear if IEM_MC_BEGIN/END block.
         self.fDeferToCImpl = fDeferToCImpl;
         ## The source file containing the block.
@@ -2032,8 +2033,11 @@ class McBlock(object):
         self.sFunction    = oFunction.sName;
         ## The block number within the function.
         self.iInFunction  = iInFunction;
+        ## The instruction this block is associated with - can be None.
+        self.oInstruction = oInstruction;
+        ## Indentation level of the block.
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
-        ##< The raw lines the block is made up of.
+        ## The raw lines the block is made up of.
         self.asLines      = []              # type: List[str]
         ## Indicates whether the block includes macro expansion parts (kiMacroExp_None,
         ## kiMacroExp_Entrie, kiMacroExp_Partial).
@@ -4431,7 +4435,6 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         _ = iEndLine;
         return True;
 
-
     def parseTagOpHints(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        @ophints
@@ -5304,8 +5307,9 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         # Start a new block.
         # But don't add it to the list unless the context matches the host architecture.
-        self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
-                                   self.oCurFunction, self.iMcBlockInFunc, cchIndent);
+        self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine, self.oCurFunction, self.iMcBlockInFunc,
+                                   oInstruction = self.aoCurInstrs[-1] if self.aoCurInstrs else None,
+                                   cchIndent = cchIndent);
         try:
             if (   not self.aoCppCondStack
                 or not self.sHostArch
@@ -5441,8 +5445,9 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.oCurFunction.sName));
 
         # Start a new block.
-        oMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
-                           self.oCurFunction, self.iMcBlockInFunc, cchIndent, fDeferToCImpl = True);
+        oMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine, self.oCurFunction, self.iMcBlockInFunc,
+                           oInstruction = self.aoCurInstrs[-1] if self.aoCurInstrs else None,
+                           cchIndent = cchIndent, fDeferToCImpl = True);
 
         # Parse the statment.
         asArgs, offAfter, cLines = self.findAndParseMacroInvocationEx(sCode, sStmt, offBeginStatementInCodeStr);
@@ -6009,6 +6014,12 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                    % (self.cTotalStubs * 100 // max(self.cTotalInstr, 1), self.cTotalStubs, self.cTotalInstr,
                       self.cTotalMcBlocks, os.path.basename(self.sSrcFile),));
         return self.printErrors();
+
+# Some sanity checking.
+for sClass, dLists in SimpleParser.kdEFlagsClasses.items():
+    for sAttrib, asFlags in dLists.items():
+        for sFlag in asFlags:
+            assert sFlag in g_kdEFlagsMnemonics, 'sClass=%s sAttrib=%s sFlag=%s' % (sClass, sAttrib, sFlag,);
 
 ## The parsed content of IEMAllInstCommonBodyMacros.h.
 g_oParsedCommonBodyMacros = None # type: SimpleParser

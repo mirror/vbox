@@ -1539,6 +1539,10 @@ class ThreadedFunction(object):
         """ Raises a problem. """
         raise Exception('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
 
+    def error(self, sMessage, oGenerator):
+        """ Emits an error via the generator object, causing it to fail. """
+        oGenerator.rawError('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
+
     def warning(self, sMessage):
         """ Emits a warning. """
         print('%s:%s: warning: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
@@ -1561,7 +1565,7 @@ class ThreadedFunction(object):
                 #    raise Exception('Variables/arguments defined in conditional branches!');
         return True;
 
-    def analyzeCodeOperation(self, aoStmts: List[iai.McStmt], fSeenConditional = False) -> bool:
+    def analyzeCodeOperation(self, aoStmts: List[iai.McStmt], dEflStmts, fSeenConditional = False) -> bool:
         """
         Analyzes the code looking clues as to additional side-effects.
 
@@ -1615,15 +1619,26 @@ class ThreadedFunction(object):
                 assert sAnnotation is None;
                 sAnnotation = g_ksFinishAnnotation_DeferToCImpl;
 
+            # Collect MCs working on EFLAGS.  Caller will check this.
+            if oStmt.sName in ('IEM_MC_FETCH_EFLAGS', 'IEM_MC_FETCH_EFLAGS_U8', 'IEM_MC_COMMIT_EFLAGS', 'IEM_MC_REF_EFLAGS',
+                               'IEM_MC_ARG_LOCAL_EFLAGS', ):
+                dEflStmts[oStmt.sName] = oStmt;
+            elif isinstance(oStmt, iai.McStmtCall):
+                if oStmt.sName in ('IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1', 'IEM_MC_CALL_CIMPL_2',
+                                   'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5',):
+                    if (   oStmt.asParams[0].find('IEM_CIMPL_F_RFLAGS')       >= 0
+                        or oStmt.asParams[0].find('IEM_CIMPL_F_STATUS_FLAGS') >= 0):
+                        dEflStmts[oStmt.sName] = oStmt;
+
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
-                oStmt.oIfBranchAnnotation = self.analyzeCodeOperation(oStmt.aoIfBranch, True);
+                oStmt.oIfBranchAnnotation = self.analyzeCodeOperation(oStmt.aoIfBranch, dEflStmts, True);
                 if oStmt.aoElseBranch:
-                    oStmt.oElseBranchAnnotation = self.analyzeCodeOperation(oStmt.aoElseBranch, True);
+                    oStmt.oElseBranchAnnotation = self.analyzeCodeOperation(oStmt.aoElseBranch, dEflStmts, True);
 
         return sAnnotation;
 
-    def analyze(self):
+    def analyze(self, oGenerator):
         """
         Analyzes the code, identifying the number of parameters it requires and such.
 
@@ -1644,11 +1659,48 @@ class ThreadedFunction(object):
 
         # Scan the code for IEM_CIMPL_F_ and other clues.
         self.dsCImplFlags = self.oMcBlock.dsCImplFlags.copy();
-        self.analyzeCodeOperation(aoStmts);
+        dEflStmts         = {};
+        self.analyzeCodeOperation(aoStmts, dEflStmts);
         if (   ('IEM_CIMPL_F_CALLS_CIMPL' in self.dsCImplFlags)
              + ('IEM_CIMPL_F_CALLS_AIMPL' in self.dsCImplFlags)
              + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE' in self.dsCImplFlags) > 1):
-            self.raiseProblem('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE calls');
+            self.error('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE calls', oGenerator);
+
+        # Analyse EFLAGS related MCs and @opflmodify and friends.
+        if dEflStmts:
+            oInstruction = self.oMcBlock.oInstruction; # iai.Instruction
+            if (   oInstruction is None
+                or (oInstruction.asFlTest is None and oInstruction.asFlModify is None)):
+                sMcNames = '+'.join(dEflStmts.keys());
+                if len(dEflStmts) != 1 or not sMcNames.startswith('IEM_MC_CALL_CIMPL_'): # Hack for far calls
+                    self.error('Uses %s but has no @opflmodify, @opfltest or @opflclass with details!' % (sMcNames,), oGenerator);
+            elif 'IEM_MC_COMMIT_EFLAGS' in dEflStmts:
+                if not oInstruction.asFlModify:
+                    if oInstruction.sMnemonic not in [ 'not', ]:
+                        self.error('Uses IEM_MC_COMMIT_EFLAGS but has no flags in @opflmodify!', oGenerator);
+            elif (   'IEM_MC_CALL_CIMPL_0' in dEflStmts
+                  or 'IEM_MC_CALL_CIMPL_1' in dEflStmts
+                  or 'IEM_MC_CALL_CIMPL_2' in dEflStmts
+                  or 'IEM_MC_CALL_CIMPL_3' in dEflStmts
+                  or 'IEM_MC_CALL_CIMPL_4' in dEflStmts
+                  or 'IEM_MC_CALL_CIMPL_5' in dEflStmts ):
+                if not oInstruction.asFlModify:
+                    self.error('Uses IEM_MC_CALL_CIMPL_x or IEM_MC_DEFER_TO_CIMPL_5_RET with IEM_CIMPL_F_STATUS_FLAGS '
+                               'or IEM_CIMPL_F_RFLAGS but has no flags in @opflmodify!', oGenerator);
+            elif 'IEM_MC_REF_EFLAGS' not in dEflStmts:
+                if not oInstruction.asFlTest:
+                    if oInstruction.sMnemonic not in [ 'not', ]:
+                        self.error('Expected @opfltest!', oGenerator);
+            if oInstruction and oInstruction.asFlSet:
+                for sFlag in oInstruction.asFlSet:
+                    if sFlag not in oInstruction.asFlModify:
+                        self.error('"%s" in  @opflset but missing from @opflmodify (%s)!'
+                                   % (sFlag, ', '.join(oInstruction.asFlModify)), oGenerator);
+            if oInstruction and oInstruction.asFlClear:
+                for sFlag in oInstruction.asFlClear:
+                    if sFlag not in oInstruction.asFlModify:
+                        self.error('"%s" in  @opflclear but missing from @opflmodify (%s)!'
+                                   % (sFlag, ', '.join(oInstruction.asFlModify)), oGenerator);
 
         # Create variations as needed.
         if iai.McStmt.findStmtByNames(aoStmts,
@@ -2129,6 +2181,17 @@ class IEMThreadedGenerator(object):
         self.oOptions        = None     # type: argparse.Namespace
         self.aoParsers       = []       # type: List[IEMAllInstPython.SimpleParser]
         self.aidxFirstFunctions = []    # type: List[int] ##< Runs parallel to aoParser giving the index of the first function.
+        self.cErrors         = 0;
+
+    #
+    # Error reporting.
+    #
+
+    def rawError(self, sCompleteMessage):
+        """ Output a raw error and increment the error counter. """
+        print(sCompleteMessage, file = sys.stderr);
+        self.cErrors += 1;
+        return False;
 
     #
     # Processing.
@@ -2149,7 +2212,7 @@ class IEMThreadedGenerator(object):
         dRawParamCounts = {};
         dMinParamCounts = {};
         for oThreadedFunction in self.aoThreadedFuncs:
-            oThreadedFunction.analyze();
+            oThreadedFunction.analyze(self);
             for oVariation in oThreadedFunction.aoVariations:
                 dRawParamCounts[len(oVariation.dParamRefs)] = dRawParamCounts.get(len(oVariation.dParamRefs), 0) + 1;
                 dMinParamCounts[oVariation.cMinParams]      = dMinParamCounts.get(oVariation.cMinParams,      0) + 1;
@@ -2210,6 +2273,10 @@ class IEMThreadedGenerator(object):
         print('debug: max vars+args: %u bytes / %u; max vars: %u bytes / %u; max args: %u bytes / %u'
               % (cbMaxVarsAndArgs, cMaxVarsAndArgs, cbMaxVars, cMaxVars, cbMaxArgs, cMaxArgs,), file = sys.stderr);
 
+        if self.cErrors > 0:
+            print('fatal error: %u error%s during processing. Details above.'
+                  % (self.cErrors, 's' if self.cErrors > 1 else '',), file = sys.stderr);
+            return False;
         return True;
 
     #
