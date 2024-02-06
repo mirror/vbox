@@ -120,7 +120,7 @@ class tdSerial1(vbox.TestDriver):
             for s in self.asSerialTests:
                 if s not in self.asSerialTestsDef:
                     reporter.log('warning: The "--serial-tests" value "%s" is not a valid serial port test.' % (s));
-        elif asArgs[iArg] == '--aurts':
+        elif asArgs[iArg] == '--uarts':
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--uarts" takes a colon separated list of uarts to test');
