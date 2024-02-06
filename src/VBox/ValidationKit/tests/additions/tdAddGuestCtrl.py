@@ -2715,8 +2715,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.logXcpt('Starting session for session-based API calls failed');
             return False;
 
+        fRc = True;
+
         if  self.oTstDrv.fpApiVer >= 7.1 \
-        and oTestVm.isWindows():
+        and oTestVm.isWindows() \
+        and oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
             reporter.testStart('Windows guest processes in session >= 1');
             # Test in which Windows session Guest Control processes are being started.
             # We don't want them to be started in session 0, as this would prevent desktop interaction and other stuff.
