@@ -231,6 +231,7 @@ class TestBoxScript(object):
         os.environ['TESTBOX_HAS_HW_VIRT']       = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_HAS_HW_VIRT);
         os.environ['TESTBOX_HAS_NESTED_PAGING'] = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_HAS_NESTED_PAGING);
         os.environ['TESTBOX_HAS_IOMMU']         = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_HAS_IOMMU);
+        os.environ['TESTBOX_HAS_NATIVE_API']    = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_HAS_NATIVE_API);
         os.environ['TESTBOX_SCRIPT_REV']        = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_SCRIPT_REV);
         os.environ['TESTBOX_CPU_COUNT']         = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_CPU_COUNT);
         os.environ['TESTBOX_MEM_SIZE']          = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_MEM_SIZE);
