@@ -334,7 +334,7 @@ class Bs3Cg1Instruction(object):
                 self.sEncoding = 'BS3CG1ENC_VEX_MODRM';
 
         self.asFlags            = [];
-        if 'invalid_64' in oInstr.dHints:
+        if 'x86_invalid_64' in oInstr.dHints:
             self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT');
         if oInstr.fUnused:
             self.asFlags.append('BS3CG1INSTR_F_UNUSED');
