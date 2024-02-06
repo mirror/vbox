@@ -81,18 +81,17 @@ class tdCpuIemInstr1(vbox.TestDriver):
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-2'),
 
             # @todo r=aeichner Image can not be found (probably it is too large for a floppy weighing in at 16MiB)
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3', asVirtModesSup),
+            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3'),
 
             # @todo r=aeichner Fails currently in IEM
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-decoding-1', asVirtModesSup),
+            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-decoding-1'),
 
-            # @todo r=aeichner Fails and hangs in 'lm64' / aaa
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-generated-1', asVirtModesSup),
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-generated-1'),
 
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-2'),
 
             # @todo r=aeichner Fails with IEM currently.
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-3' asVirtModesSup),
+            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-3'),
 
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-state64-1'),
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1'),
