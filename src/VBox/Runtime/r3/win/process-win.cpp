@@ -730,7 +730,7 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
             for (size_t i = 0; papszNames[i] && !fFound; i++)
             {
                 PROCESSENTRY32W ProcEntry;
-                ProcEntry.dwSize = sizeof(PROCESSENTRY32W);
+                ProcEntry.dwSize = sizeof(ProcEntry);
                 ProcEntry.szExeFile[0] = '\0';
                 if (g_pfnProcess32FirstW(hSnap, &ProcEntry))
                 {
