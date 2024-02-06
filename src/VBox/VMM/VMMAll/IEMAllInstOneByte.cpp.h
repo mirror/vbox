@@ -14084,11 +14084,16 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        case 0: return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
-        case 1: return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
-        case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Eb, bRm);
-        case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Eb, bRm);
+        case 0:
+            return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
+        case 1:
+            return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
+        case 2:
+            return FNIEMOP_CALL_1(iemOp_grp3_not_Eb, bRm);
+        case 3:
+            return FNIEMOP_CALL_1(iemOp_grp3_neg_Eb, bRm);
         case 4:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f6
@@ -14099,7 +14104,9 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             IEMOP_GRP3_MUL_DIV_EB(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_u8_eflags));
             break;
+        }
         case 5:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f6
@@ -14110,7 +14117,9 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             IEMOP_GRP3_MUL_DIV_EB(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_u8_eflags));
             break;
+        }
         case 6:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f6
@@ -14121,7 +14130,9 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             IEMOP_GRP3_MUL_DIV_EB(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_u8_eflags));
             break;
+        }
         case 7:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f6
@@ -14132,6 +14143,7 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             IEMOP_GRP3_MUL_DIV_EB(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_u8_eflags));
             break;
+        }
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
@@ -14313,11 +14325,16 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        case 0: return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
-        case 1: return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
-        case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Ev, bRm);
-        case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Ev, bRm);
+        case 0:
+            return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
+        case 1:
+            return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
+        case 2:
+            return FNIEMOP_CALL_1(iemOp_grp3_not_Ev, bRm);
+        case 3:
+            return FNIEMOP_CALL_1(iemOp_grp3_neg_Ev, bRm);
         case 4:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f7
@@ -14328,7 +14345,9 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_eflags));
             break;
+        }
         case 5:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f7
@@ -14339,7 +14358,9 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
             IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_eflags));
             break;
+        }
         case 6:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f7
@@ -14350,7 +14371,9 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_eflags));
             break;
+        }
         case 7:
+        {
             /**
              * @opdone
              * @opmaps      grp3_f7
@@ -14361,6 +14384,7 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
             IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_eflags));
             break;
+        }
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
