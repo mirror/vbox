@@ -5615,7 +5615,6 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
     if (pThis->fWorkExtCtx)
         Bs3TestPrintf("xcr0=%RX64\n", pThis->pResultExtCtx->fXcr0Saved);
     Bs3TestPrintf("\n");
-ASMHalt();
     return false;
 }
 
