@@ -2974,16 +2974,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adcx_adox)(uint8_t bMode)
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b)(uint8_t bMode)
 {
 
-    BS3REGCTX       Ctx;
-    BS3REGCTX       ExpectCtx;
-    BS3TRAPFRAME    TrapFrame;
-    RTUINT64U       au64[3];
-    PRTUINT64U      pau64       = RT_ALIGN_PT(&au64[0], sizeof(RTUINT64U), PRTUINT64U);
-    bool const      fSupportCX8 = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_CX8);
-    unsigned        iFlags;
-    unsigned        offBuf;
-    unsigned        iMatch;
-    unsigned        iWorker;
+    BS3REGCTX                   Ctx;
+    BS3REGCTX                   ExpectCtx;
+    BS3TRAPFRAME                TrapFrame;
+    RTUINT64U                   au64[3];
+    PRTUINT64U                  pau64       = RT_ALIGN_PT(&au64[0], sizeof(RTUINT64U), PRTUINT64U);
+    bool const                  fSupportCX8 = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_CX8);
+    const char BS3_FAR * const  pszMode     = Bs3GetModeName(bMode);
+    uint8_t                     bRing       = BS3_MODE_IS_V86(bMode) ? 3 : 0;
+    unsigned                    iFlags;
+    unsigned                    offBuf;
+    unsigned                    iMatch;
+    unsigned                    iWorker;
     static struct
     {
         bool        fLocked;
@@ -3019,23 +3021,46 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b)(uint8_t bMode)
         Bs3TestPrintf("Note! CMPXCHG8B is not supported by the CPU!\n");
 
     /*
-     * One loop with the normal variant and one with the locked one
+     * Run the tests in all rings since alignment issues may behave
+     * differently in ring-3 compared to ring-0.
      */
-    g_usBs3TestStep = 0;
-    for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
+    for (;;)
     {
-        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
-
         /*
-         * One loop with all status flags set, and one with them clear.
+         * One loop with alignment checks disabled and one with enabled.
          */
-        Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
-        for (iFlags = 0; iFlags < 2; iFlags++)
+        unsigned iCfg;
+        for (iCfg = 0; iCfg < 2; iCfg++)
         {
-            Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
-
-            for (offBuf = 0; offBuf < sizeof(RTUINT64U); offBuf++)
+            if (iCfg)
             {
+                Ctx.rflags.u32 |= X86_EFL_AC;
+                Ctx.cr0.u32    |= X86_CR0_AM;
+            }
+            else
+            {
+                Ctx.rflags.u32 &= ~X86_EFL_AC;
+                Ctx.cr0.u32    &= ~X86_CR0_AM;
+            }
+
+            /*
+             * One loop with the normal variant and one with the locked one
+             */
+            g_usBs3TestStep = 0;
+            for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
+            {
+                Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
+
+                /*
+                 * One loop with all status flags set, and one with them clear.
+                 */
+                Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+                for (iFlags = 0; iFlags < 2; iFlags++)
+                {
+                    Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
+
+                    for (offBuf = 0; offBuf < sizeof(RTUINT64U); offBuf++)
+                    {
 #  define CX8_OLD_LO       UINT32_C(0xcc9c4bbd)
 #  define CX8_OLD_HI       UINT32_C(0x749549ab)
 #  define CX8_MISMATCH_LO  UINT32_C(0x90f18981)
@@ -3043,53 +3068,84 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b)(uint8_t bMode)
 #  define CX8_STORE_LO     UINT32_C(0x51f6559b)
 #  define CX8_STORE_HI     UINT32_C(0xd1b54963)
 
-                PRTUINT64U pBuf = (PRTUINT64U)&pau64->au8[offBuf];
+                        PRTUINT64U pBuf = (PRTUINT64U)&pau64->au8[offBuf];
 
-                ExpectCtx.rax.u = Ctx.rax.u = CX8_MISMATCH_LO;
-                ExpectCtx.rdx.u = Ctx.rdx.u = CX8_MISMATCH_HI;
+                        ExpectCtx.rax.u = Ctx.rax.u = CX8_MISMATCH_LO;
+                        ExpectCtx.rdx.u = Ctx.rdx.u = CX8_MISMATCH_HI;
 
-                Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rdi, &Ctx.fs, pBuf);
-                Bs3RegCtxSetGrpSegFromCurPtr(&ExpectCtx, &ExpectCtx.rdi, &ExpectCtx.fs, pBuf);
+                        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rdi, &Ctx.fs, pBuf);
+                        Bs3RegCtxSetGrpSegFromCurPtr(&ExpectCtx, &ExpectCtx.rdi, &ExpectCtx.fs, pBuf);
 
-                for (iMatch = 0; iMatch < 2; iMatch++)
-                {
-                    uint8_t bExpectXcpt;
-                    pBuf->s.Lo = CX8_OLD_LO;
-                    pBuf->s.Hi = CX8_OLD_HI;
+                        for (iMatch = 0; iMatch < 2; iMatch++)
+                        {
+                            uint8_t bExpectXcpt;
+                            pBuf->s.Lo = CX8_OLD_LO;
+                            pBuf->s.Hi = CX8_OLD_HI;
 
-                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-                    g_usBs3TestStep++;
-                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
-                    bExpectXcpt = X86_XCPT_DB;
-                    if (fSupportCX8)
-                    {
-                        ExpectCtx.rax.u = CX8_OLD_LO;
-                        ExpectCtx.rdx.u = CX8_OLD_HI;
-                        if (iMatch & 1)
-                            ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
-                        else
-                            ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
-                        ExpectCtx.rip.u = Ctx.rip.u + s_aWorkers[iWorker].offIcebp;
+                            Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+                            g_usBs3TestStep++;
+                            //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
+                            bExpectXcpt = X86_XCPT_UD;
+                            if (fSupportCX8)
+                            {
+                                if (   offBuf
+                                    && bRing == 3
+                                    && bMode != BS3_MODE_RM
+                                    && !BS3_MODE_IS_V86(bMode)
+                                    && iCfg)
+                                {
+                                    bExpectXcpt = X86_XCPT_AC;
+                                    ExpectCtx.rflags.u32 = Ctx.rflags.u32;
+                                }
+                                else
+                                {
+                                    bExpectXcpt = X86_XCPT_DB;
 
-                        /** @todo r=aeichner RF (Resume Flag) gets always cleared on my i7-6700K. */
-                        ExpectCtx.rflags.u32 &= ~X86_EFL_RF;
+                                    ExpectCtx.rax.u = CX8_OLD_LO;
+                                    ExpectCtx.rdx.u = CX8_OLD_HI;
+
+                                    if (iMatch & 1)
+                                        ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
+                                    else
+                                        ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
+                                }
+
+                                /* Kludge! Looks like EFLAGS.AC is cleared when raising #GP in real mode on an i7-6700K. WEIRD! */
+                                if (bMode == BS3_MODE_RM && (Ctx.rflags.u32 & X86_EFL_AC))
+                                {
+                                    if (TrapFrame.Ctx.rflags.u32 & X86_EFL_AC)
+                                        Bs3TestFailedF("Expected EFLAGS.AC to be cleared (bXcpt=%d)", TrapFrame.bXcpt);
+                                    TrapFrame.Ctx.rflags.u32 |= X86_EFL_AC;
+                                }
+                            }
+
+                            if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, bExpectXcpt == X86_XCPT_DB ? s_aWorkers[iWorker].offIcebp : 0, 0 /*cbSpAdjust*/,
+                                                         bExpectXcpt == X86_XCPT_DB || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF, pszMode, g_usBs3TestStep)
+                                || TrapFrame.bXcpt != bExpectXcpt)
+                            {
+                                if (TrapFrame.bXcpt != bExpectXcpt)
+                                    Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
+                                Bs3TestFailedF("^^^ bRing=%u iCfg=%d iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n",
+                                               bRing, iCfg, iWorker, iFlags, offBuf, iMatch);
+                                ASMHalt();
+                            }
+
+                            ExpectCtx.rax.u = Ctx.rax.u = CX8_OLD_LO;
+                            ExpectCtx.rdx.u = Ctx.rdx.u = CX8_OLD_HI;
+                        }
                     }
-                    if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
-                                                 0 /*fExtraEfl*/, "mode", 0 /*idTestStep*/)
-                        || TrapFrame.bXcpt != bExpectXcpt)
-                    {
-                        if (TrapFrame.bXcpt != bExpectXcpt)
-                            Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
-                        Bs3TestFailedF("^^^ iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n", iWorker, iFlags, offBuf, iMatch);
-                        ASMHalt();
-                    }
-
-                    ExpectCtx.rax.u = Ctx.rax.u = CX8_OLD_LO;
-                    ExpectCtx.rdx.u = Ctx.rdx.u = CX8_OLD_HI;
+                    Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
                 }
             }
-            Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
-        }
+        } /* for each test config. */
+
+        /*
+         * Next ring.
+         */
+        bRing++;
+        if (bRing > 3 || bMode == BS3_MODE_RM)
+            break;
+        Bs3RegCtxConvertToRingX(&Ctx, bRing);
     }
 
     return 0;
@@ -3104,16 +3160,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
 {
-    BS3REGCTX       Ctx;
-    BS3REGCTX       ExpectCtx;
-    BS3TRAPFRAME    TrapFrame;
-    RTUINT128U      au128[3];
-    PRTUINT128U     pau128       = RT_ALIGN_PT(&au128[0], sizeof(RTUINT128U), PRTUINT128U);
-    bool const      fSupportCX16 = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
-    unsigned        iFlags;
-    unsigned        offBuf;
-    unsigned        iMatch;
-    unsigned        iWorker;
+    BS3REGCTX                   Ctx;
+    BS3REGCTX                   ExpectCtx;
+    BS3TRAPFRAME                TrapFrame;
+    RTUINT128U                  au128[3];
+    PRTUINT128U                 pau128       = RT_ALIGN_PT(&au128[0], sizeof(RTUINT128U), PRTUINT128U);
+    bool const                  fSupportCX16 = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
+    const char BS3_FAR * const  pszMode      = Bs3GetModeName(bMode);
+    uint8_t                     bRing        = BS3_MODE_IS_V86(bMode) ? 3 : 0;
+    unsigned                    iFlags;
+    unsigned                    offBuf;
+    unsigned                    iMatch;
+    unsigned                    iWorker;
     static struct
     {
         bool        fLocked;
@@ -3144,24 +3202,48 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
     if (!fSupportCX16)
         Bs3TestPrintf("Note! CMPXCHG16B is not supported by the CPU!\n");
 
+
     /*
-     * One loop with the normal variant and one with the locked one
+     * Run the tests in all rings since alignment issues may behave
+     * differently in ring-3 compared to ring-0.
      */
-    g_usBs3TestStep = 0;
-    for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
+    for (;;)
     {
-        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
-
         /*
-         * One loop with all status flags set, and one with them clear.
+         * One loop with alignment checks disabled and one with enabled.
          */
-        Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
-        for (iFlags = 0; iFlags < 2; iFlags++)
+        unsigned iCfg;
+        for (iCfg = 0; iCfg < 2; iCfg++)
         {
-            Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
-
-            for (offBuf = 0; offBuf < sizeof(RTUINT128U); offBuf++)
+            if (iCfg)
             {
+                Ctx.rflags.u32 |= X86_EFL_AC;
+                Ctx.cr0.u32    |= X86_CR0_AM;
+            }
+            else
+            {
+                Ctx.rflags.u32 &= ~X86_EFL_AC;
+                Ctx.cr0.u32    &= ~X86_CR0_AM;
+            }
+
+            /*
+             * One loop with the normal variant and one with the locked one
+             */
+            g_usBs3TestStep = 0;
+            for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
+            {
+                Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
+
+                /*
+                 * One loop with all status flags set, and one with them clear.
+                 */
+                Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+                for (iFlags = 0; iFlags < 2; iFlags++)
+                {
+                    Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
+
+                    for (offBuf = 0; offBuf < sizeof(RTUINT128U); offBuf++)
+                    {
 #  define CX16_OLD_LO       UINT64_C(0xabb6345dcc9c4bbd)
 #  define CX16_OLD_HI       UINT64_C(0x7b06ea35749549ab)
 #  define CX16_MISMATCH_LO  UINT64_C(0xbace3e3590f18981)
@@ -3169,56 +3251,66 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
 #  define CX16_STORE_LO     UINT64_C(0x5cbd27d251f6559b)
 #  define CX16_STORE_HI     UINT64_C(0x17ff434ed1b54963)
 
-                PRTUINT128U pBuf = (PRTUINT128U)&pau128->au8[offBuf];
+                        PRTUINT128U pBuf = (PRTUINT128U)&pau128->au8[offBuf];
 
-                ExpectCtx.rax.u = Ctx.rax.u = CX16_MISMATCH_LO;
-                ExpectCtx.rdx.u = Ctx.rdx.u = CX16_MISMATCH_HI;
-                for (iMatch = 0; iMatch < 2; iMatch++)
-                {
-                    uint8_t bExpectXcpt;
-                    pBuf->s.Lo = CX16_OLD_LO;
-                    pBuf->s.Hi = CX16_OLD_HI;
-                    ExpectCtx.rdi.u = Ctx.rdi.u = (uintptr_t)pBuf;
-                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-                    g_usBs3TestStep++;
-                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
-                    bExpectXcpt = X86_XCPT_UD;
-                    if (fSupportCX16)
-                    {
-                        if (offBuf & 15)
+                        ExpectCtx.rax.u = Ctx.rax.u = CX16_MISMATCH_LO;
+                        ExpectCtx.rdx.u = Ctx.rdx.u = CX16_MISMATCH_HI;
+                        for (iMatch = 0; iMatch < 2; iMatch++)
                         {
-                            bExpectXcpt = X86_XCPT_GP;
-                            ExpectCtx.rip.u = Ctx.rip.u;
-                            ExpectCtx.rflags.u32 = Ctx.rflags.u32;
-                        }
-                        else
-                        {
-                            ExpectCtx.rax.u = CX16_OLD_LO;
-                            ExpectCtx.rdx.u = CX16_OLD_HI;
-                            if (iMatch & 1)
-                                ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
-                            else
-                                ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
-                            ExpectCtx.rip.u = Ctx.rip.u + s_aWorkers[iWorker].offUd2;
-                        }
-                        ExpectCtx.rflags.u32 |= X86_EFL_RF;
-                    }
-                    if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
-                                                 0 /*fExtraEfl*/, "lm64", 0 /*idTestStep*/)
-                        || TrapFrame.bXcpt != bExpectXcpt)
-                    {
-                        if (TrapFrame.bXcpt != bExpectXcpt)
-                            Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
-                        Bs3TestFailedF("^^^ iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n", iWorker, iFlags, offBuf, iMatch);
-                        ASMHalt();
-                    }
+                            uint8_t bExpectXcpt;
+                            pBuf->s.Lo = CX16_OLD_LO;
+                            pBuf->s.Hi = CX16_OLD_HI;
+                            ExpectCtx.rdi.u = Ctx.rdi.u = (uintptr_t)pBuf;
+                            Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+                            g_usBs3TestStep++;
+                            //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
+                            bExpectXcpt = X86_XCPT_UD;
+                            if (fSupportCX16)
+                            {
+                                if (offBuf & 15)
+                                {
+                                    bExpectXcpt = X86_XCPT_GP;
+                                    ExpectCtx.rip.u = Ctx.rip.u;
+                                    ExpectCtx.rflags.u32 = Ctx.rflags.u32;
+                                }
+                                else
+                                {
+                                    ExpectCtx.rax.u = CX16_OLD_LO;
+                                    ExpectCtx.rdx.u = CX16_OLD_HI;
+                                    if (iMatch & 1)
+                                        ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
+                                    else
+                                        ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
+                                    ExpectCtx.rip.u = Ctx.rip.u + s_aWorkers[iWorker].offUd2;
+                                }
+                                ExpectCtx.rflags.u32 |= X86_EFL_RF;
+                            }
+                            if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
+                                                         0 /*fExtraEfl*/, pszMode, 0 /*idTestStep*/)
+                                || TrapFrame.bXcpt != bExpectXcpt)
+                            {
+                                if (TrapFrame.bXcpt != bExpectXcpt)
+                                    Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
+                                Bs3TestFailedF("^^^bRing=%d iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n", bRing, iWorker, iFlags, offBuf, iMatch);
+                                ASMHalt();
+                            }
 
-                    ExpectCtx.rax.u = Ctx.rax.u = CX16_OLD_LO;
-                    ExpectCtx.rdx.u = Ctx.rdx.u = CX16_OLD_HI;
+                            ExpectCtx.rax.u = Ctx.rax.u = CX16_OLD_LO;
+                            ExpectCtx.rdx.u = Ctx.rdx.u = CX16_OLD_HI;
+                        }
+                    }
+                    Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
                 }
             }
-            Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
-        }
+        } /* for each test config. */
+
+        /*
+         * Next ring.
+         */
+        bRing++;
+        if (bRing > 3 || bMode == BS3_MODE_RM)
+            break;
+        Bs3RegCtxConvertToRingX(&Ctx, bRing);
     }
 
     return 0;
