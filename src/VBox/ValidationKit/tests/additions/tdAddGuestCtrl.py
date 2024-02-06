@@ -2561,8 +2561,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if fRc \
         and self.sGstCtlHelperExe:
             try:
-                asArgs2 = [ self.sGstCtlHelperExe ];
-                asArgs2.append(asArgs); # Always set argv0.
+                asArgs2 = [ self.sGstCtlHelperExe ]; # Always set argv0.
+                asArgs2.extend(asArgs);              # Add the arguments passed-in.
                 if not asEnv:
                     asEnv = [];
                 aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, \
