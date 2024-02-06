@@ -2383,9 +2383,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oProcess = self.processCreateWrapper(oGuestSession, sCmd, asArgs, sCwd, aEnv, afFlags, timeoutMS);
         except:
             reporter.maybeErrXcpt(fIsError, 'type=%s, asArgs=%s' % (type(asArgs), asArgs,));
-            return False;
+            return (False, vboxcon.ProcessStatus_Undefined, 0, 0, 0, '');
         if oProcess is None:
-            return reporter.error('oProcess is None! (%s)' % (asArgs,));
+            reporter.error('oProcess is None! (%s)' % (asArgs,));
+            return (False, vboxcon.ProcessStatus_Undefined, 0, 0, 0, '');
 
         fRc         = True;
         uExitStatus = vboxcon.ProcessStatus_Undefined;
@@ -2507,7 +2508,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except:
             fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
         reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, iExitCode, uExitStatus));
-        return fRc, uExitStatus, iExitCode, cbStdOut, cbStdErr, sBufOut;
+        return (fRc, uExitStatus, iExitCode, cbStdOut, cbStdErr, sBufOut);
 
     def gctrlExecute(self, oTest, oGuestSession, fIsError):                     # pylint: disable=too-many-statements
         """
@@ -2534,7 +2535,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return reporter.errorXcpt();
 
         fRc, oTest.uExitStatus, oTest.iExitCode, oTest.cbStdOut, oTest.cbStdErr, oTest.sBuf = \
-            self.processExecute(oGuestSession, oTest.sCmd, oTest.asArgs, oTest.sCwd,
+            self.processExecute(oGuestSession, oTest.sCmd, oTest.asArgs, oTest.sCwd, \
                                 oTest.aEnv, oTest.afFlags, oTest.timeoutMS, fIsError);
 
         return fRc;
@@ -2569,7 +2570,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               vboxcon.ProcessWaitForFlag_StdErr ];
 
                 fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf = \
-                    self.processExecute(oGuestSession, self.sGstCtlHelperExe, asArgs2, sCwd,
+                    self.processExecute(oGuestSession, self.sGstCtlHelperExe, asArgs2, sCwd, \
                                         asEnv, aeWaitFor, timeoutMS);
                 if eExitStatus != vboxcon.TerminatedNormally:
                     reporter.log('VBoxGuestControlHelper failed to run; got exit status %d' % (eExitStatus,));
@@ -2577,7 +2578,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except:
                 reporter.errorXcpt();
 
-        return fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf;
+        return (fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf);
 
     def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
