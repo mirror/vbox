@@ -2729,10 +2729,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             and eExitStatus == vboxcon.TerminatedNormally:
                 if iExitCode >= 1000: # We report 1000 + <session ID> as exit code.
                     uSessionId = iExitCode - 1000;
-                    if uSessionId == 0:
+                    if uSessionId >= 1:
                         reporter.log('Guest processes start in session %d, good' % (uSessionId));
                     else:
-                        reporter.error('Guest processes start in session %d, expected session 0' % (uSessionId));
+                        reporter.error('Guest processes start in session 0, expected session >= 1');
                 else:
                     reporter.error('Guest Control Helper returned error %d (exit code)' % (iExitCode));
             reporter.testDone();
