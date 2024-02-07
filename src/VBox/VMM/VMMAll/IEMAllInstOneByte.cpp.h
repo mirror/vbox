@@ -8252,16 +8252,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
 }
 
 
-/**
- * @opcode      0xc1
- */
-FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
-{
-    IEMOP_HLP_MIN_186();
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-
-    /* Need to use a body macro here since the EFLAGS behaviour differs between
-       the shifts, rotates and rotate w/ carry. Sigh. */
+/* Need to use a body macro here since the EFLAGS behaviour differs between
+   the shifts, rotates and rotate w/ carry. Sigh. */
 #define GRP2_BODY_Ev_Ib(a_pImplExpr) \
         PCIEMOPSHIFTSIZES const pImpl = (a_pImplExpr); \
         if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -8391,97 +8383,111 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
             } \
         } (void)0
 
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /0
+ * @opflclass   rotate_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rol_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, ROL, rol, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /1
+ * @opflclass   rotate_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_ror_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, ROR, ror, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /2
+ * @opflclass   rotate_carry_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcl_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, RCL, rcl, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /3
+ * @opflclass   rotate_carry_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, RCR, rcr, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /4
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, SHL, shl, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /5
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shr_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, SHR, shr, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_c1
+ * @opcode      /7
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_sar_Ev_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(MI, SAR, sar, Ev, Ib, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
+}
+
+#undef GRP2_BODY_Ev_Ib
+
+/**
+ * @opcode      0xc1
+ */
+FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
+{
+    IEMOP_HLP_MIN_186();
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /0
-         * @opflclass   rotate_count
-         */
-        case 0:
-        {
-            IEMOP_MNEMONIC2(MI, ROL, rol, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /1
-         * @opflclass   rotate_count
-         */
-        case 1:
-        {
-            IEMOP_MNEMONIC2(MI, ROR, ror, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /2
-         * @opflclass   rotate_carry_count
-         */
-        case 2:
-        {
-            IEMOP_MNEMONIC2(MI, RCL, rcl, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /3
-         * @opflclass   rotate_carry_count
-         */
-        case 3:
-        {
-            IEMOP_MNEMONIC2(MI, RCR, rcr, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /4
-         * @opflclass   shift_count
-         */
-        case 4:
-        {
-            IEMOP_MNEMONIC2(MI, SHL, shl, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /5
-         * @opflclass   shift_count
-         */
-        case 5:
-        {
-            IEMOP_MNEMONIC2(MI, SHR, shr, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_c1
-         * @opcode      /7
-         * @opflclass   shift_count
-         */
-        case 7:
-        {
-            IEMOP_MNEMONIC2(MI, SAR, sar, Ev, Ib, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_Ib(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
-            break;
-        }
-
+        case 0: return FNIEMOP_CALL_1(iemOp_grp2_rol_Ev_Ib, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_grp2_ror_Ev_Ib, bRm);
+        case 2: return FNIEMOP_CALL_1(iemOp_grp2_rcl_Ev_Ib, bRm);
+        case 3: return FNIEMOP_CALL_1(iemOp_grp2_rcr_Ev_Ib, bRm);
+        case 4: return FNIEMOP_CALL_1(iemOp_grp2_shl_Ev_Ib, bRm);
+        case 5: return FNIEMOP_CALL_1(iemOp_grp2_shr_Ev_Ib, bRm);
+        case 7: return FNIEMOP_CALL_1(iemOp_grp2_sar_Ev_Ib, bRm);
         case 6: IEMOP_RAISE_INVALID_OPCODE_RET();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
-#undef GRP2_BODY_Ev_Ib
 }
 
 
@@ -9087,16 +9093,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
 }
 
 
-
-/**
- * @opcode      0xd1
- */
-FNIEMOP_DEF(iemOp_Grp2_Ev_1)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-
-    /* Need to use a body macro here since the EFLAGS behaviour differs between
-       the shifts, rotates and rotate w/ carry. Sigh. */
+/* Need to use a body macro here since the EFLAGS behaviour differs between
+   the shifts, rotates and rotate w/ carry. Sigh. */
 #define GRP2_BODY_Ev_1(a_pImplExpr) \
         PCIEMOPSHIFTSIZES const pImpl = (a_pImplExpr); \
         if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -9216,97 +9214,109 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
             } \
         } (void)0
 
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /0
+ * @opflclass   rotate_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rol_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, ROL, rol, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /1
+ * @opflclass   rotate_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_ror_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, ROR, ror, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /2
+ * @opflclass   rotate_carry_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcl_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, RCL, rcl, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /3
+ * @opflclass   rotate_carry_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, RCR, rcr, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /4
+ * @opflclass   shift_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, SHL, shl, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /5
+ * @opflclass   shift_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shr_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, SHR, shr, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d1
+ * @opcode      /7
+ * @opflclass   shift_1
+ */
+FNIEMOP_DEF_1(iemOp_grp2_sar_Ev_1, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2(M1, SAR, sar, Ev, 1, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
+}
+
+#undef GRP2_BODY_Ev_1
+
+/**
+ * @opcode      0xd1
+ */
+FNIEMOP_DEF(iemOp_Grp2_Ev_1)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /0
-         * @opflclass   rotate_1
-         */
-        case 0:
-        {
-            IEMOP_MNEMONIC2(M1, ROL, rol, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /1
-         * @opflclass   rotate_1
-         */
-        case 1:
-        {
-            IEMOP_MNEMONIC2(M1, ROR, ror, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /2
-         * @opflclass   rotate_carry_1
-         */
-        case 2:
-        {
-            IEMOP_MNEMONIC2(M1, RCL, rcl, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /3
-         * @opflclass   rotate_carry_1
-         */
-        case 3:
-        {
-            IEMOP_MNEMONIC2(M1, RCR, rcr, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /4
-         * @opflclass   shift_1
-         */
-        case 4:
-        {
-            IEMOP_MNEMONIC2(M1, SHL, shl, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /5
-         * @opflclass   shift_1
-         */
-        case 5:
-        {
-            IEMOP_MNEMONIC2(M1, SHR, shr, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d1
-         * @opcode      /7
-         * @opflclass   shift_1
-         */
-        case 7:
-        {
-            IEMOP_MNEMONIC2(M1, SAR, sar, Ev, 1, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_1(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
-            break;
-        }
-        /** @opdone */
+        case 0: return FNIEMOP_CALL_1(iemOp_grp2_rol_Ev_1, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_grp2_ror_Ev_1, bRm);
+        case 2: return FNIEMOP_CALL_1(iemOp_grp2_rcl_Ev_1, bRm);
+        case 3: return FNIEMOP_CALL_1(iemOp_grp2_rcr_Ev_1, bRm);
+        case 4: return FNIEMOP_CALL_1(iemOp_grp2_shl_Ev_1, bRm);
+        case 5: return FNIEMOP_CALL_1(iemOp_grp2_shr_Ev_1, bRm);
+        case 7: return FNIEMOP_CALL_1(iemOp_grp2_sar_Ev_1, bRm);
         case 6: IEMOP_RAISE_INVALID_OPCODE_RET();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
-#undef GRP2_BODY_Ev_1
 }
 
 
@@ -9453,15 +9463,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
 }
 
 
-/**
- * @opcode      0xd3
- */
-FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-
-    /* Need to use a body macro here since the EFLAGS behaviour differs between
-       the shifts, rotates and rotate w/ carry. Sigh. */
+/* Need to use a body macro here since the EFLAGS behaviour differs between
+   the shifts, rotates and rotate w/ carry. Sigh. */
 #define GRP2_BODY_Ev_CL(a_pImplExpr) \
         PCIEMOPSHIFTSIZES const pImpl = (a_pImplExpr); \
         if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -9586,97 +9589,111 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
                 IEM_NOT_REACHED_DEFAULT_CASE_RET(); \
             } \
         } (void)0
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /0
+ * @opflclass   rotate_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rol_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(rol_Ev_CL, "rol Ev,CL", M_CL, ROL, rol, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /1
+ * @opflclass   rotate_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_ror_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(ror_Ev_CL, "ror Ev,CL", M_CL, ROR, ror, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /2
+ * @opflclass   rotate_carry_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcl_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(rcl_Ev_CL, "rcl Ev,CL", M_CL, RCL, rcl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /3
+ * @opflclass   rotate_carry_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(rcr_Ev_CL, "rcr Ev,CL", M_CL, RCR, rcr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /4
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(shl_Ev_CL, "shl Ev,CL", M_CL, SHL, shl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /5
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_shr_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(shr_Ev_CL, "shr Ev,CL", M_CL, SHR, shr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
+}
+
+
+/**
+ * @opmaps      grp2_d0
+ * @opcode      /7
+ * @opflclass   shift_count
+ */
+FNIEMOP_DEF_1(iemOp_grp2_sar_Ev_CL, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC2EX(sar_Ev_CL, "sar Ev,CL", M_CL, SAR, sar, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
+    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
+}
+
+#undef GRP2_BODY_Ev_CL
+
+/**
+ * @opcode      0xd3
+ */
+FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /0
-         * @opflclass   rotate_count
-         */
-        case 0:
-        {
-            IEMOP_MNEMONIC2EX(rol_Ev_CL, "rol Ev,CL", M_CL, ROL, rol, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /1
-         * @opflclass   rotate_count
-         */
-        case 1:
-        {
-            IEMOP_MNEMONIC2EX(ror_Ev_CL, "ror Ev,CL", M_CL, ROR, ror, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /2
-         * @opflclass   rotate_carry_count
-         */
-        case 2:
-        {
-            IEMOP_MNEMONIC2EX(rcl_Ev_CL, "rcl Ev,CL", M_CL, RCL, rcl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /3
-         * @opflclass   rotate_carry_count
-         */
-        case 3:
-        {
-            IEMOP_MNEMONIC2EX(rcr_Ev_CL, "rcr Ev,CL", M_CL, RCR, rcr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /4
-         * @opflclass   shift_count
-         */
-        case 4:
-        {
-            IEMOP_MNEMONIC2EX(shl_Ev_CL, "shl Ev,CL", M_CL, SHL, shl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /5
-         * @opflclass   shift_count
-         */
-        case 5:
-        {
-            IEMOP_MNEMONIC2EX(shr_Ev_CL, "shr Ev,CL", M_CL, SHR, shr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
-            break;
-        }
-        /**
-         * @opdone
-         * @opmaps      grp2_d0
-         * @opcode      /7
-         * @opflclass   shift_count
-         */
-        case 7:
-        {
-            IEMOP_MNEMONIC2EX(sar_Ev_CL, "sar Ev,CL", M_CL, SAR, sar, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-            GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
-            break;
-        }
-        /** @opdone */
+        case 0: return FNIEMOP_CALL_1(iemOp_grp2_rol_Ev_CL, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_grp2_ror_Ev_CL, bRm);
+        case 2: return FNIEMOP_CALL_1(iemOp_grp2_rcl_Ev_CL, bRm);
+        case 3: return FNIEMOP_CALL_1(iemOp_grp2_rcr_Ev_CL, bRm);
+        case 4: return FNIEMOP_CALL_1(iemOp_grp2_shl_Ev_CL, bRm);
+        case 5: return FNIEMOP_CALL_1(iemOp_grp2_shr_Ev_CL, bRm);
+        case 7: return FNIEMOP_CALL_1(iemOp_grp2_sar_Ev_CL, bRm);
         case 6: IEMOP_RAISE_INVALID_OPCODE_RET();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
-#undef GRP2_BODY_Ev_CL
 }
 
 
@@ -14318,6 +14335,58 @@ FNIEMOP_DEF_1(iemOp_grp3_neg_Ev, uint8_t, bRm)
 
 
 /**
+ * @opmaps      grp3_f7
+ * @opcode      /4
+ * @opflclass   multiply
+ */
+FNIEMOP_DEF_1(iemOp_grp3_mul_Ev, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(mul_Ev, "mul Ev");
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
+    IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_eflags));
+}
+
+
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /5
+ * @opflclass   multiply
+ */
+FNIEMOP_DEF_1(iemOp_grp3_imul_Ev, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(imul_Ev, "imul Ev");
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
+    IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_eflags));
+}
+
+
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /6
+ * @opflclass   division
+ */
+FNIEMOP_DEF_1(iemOp_grp3_div_Ev, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(div_Ev, "div Ev");
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
+    IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_eflags));
+}
+
+
+/**
+ * @opmaps      grp3_f7
+ * @opcode      /7
+ * @opflclass   division
+ */
+FNIEMOP_DEF_1(iemOp_grp3_idiv_Ev, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(idiv_Ev, "idiv Ev");
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
+    IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_eflags));
+}
+
+
+/**
  * @opcode      0xf7
  */
 FNIEMOP_DEF(iemOp_Grp3_Ev)
@@ -14325,66 +14394,14 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        case 0:
-            return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
-        case 1:
-            return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
-        case 2:
-            return FNIEMOP_CALL_1(iemOp_grp3_not_Ev, bRm);
-        case 3:
-            return FNIEMOP_CALL_1(iemOp_grp3_neg_Ev, bRm);
-        case 4:
-        {
-            /**
-             * @opdone
-             * @opmaps      grp3_f7
-             * @opcode      /4
-             * @opflclass   multiply
-             */
-            IEMOP_MNEMONIC(mul_Ev, "mul Ev");
-            IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
-            IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_mul_eflags));
-            break;
-        }
-        case 5:
-        {
-            /**
-             * @opdone
-             * @opmaps      grp3_f7
-             * @opcode      /5
-             * @opflclass   multiply
-             */
-            IEMOP_MNEMONIC(imul_Ev, "imul Ev");
-            IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
-            IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_eflags));
-            break;
-        }
-        case 6:
-        {
-            /**
-             * @opdone
-             * @opmaps      grp3_f7
-             * @opcode      /6
-             * @opflclass   division
-             */
-            IEMOP_MNEMONIC(div_Ev, "div Ev");
-            IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
-            IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_div_eflags));
-            break;
-        }
-        case 7:
-        {
-            /**
-             * @opdone
-             * @opmaps      grp3_f7
-             * @opcode      /7
-             * @opflclass   division
-             */
-            IEMOP_MNEMONIC(idiv_Ev, "idiv Ev");
-            IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_OF | X86_EFL_CF);
-            IEMOP_BODY_GRP3_MUL_DIV_EV(bRm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_idiv_eflags));
-            break;
-        }
+        case 0: return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_grp3_test_Ev, bRm);
+        case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Ev, bRm);
+        case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Ev, bRm);
+        case 4: return FNIEMOP_CALL_1(iemOp_grp3_mul_Ev, bRm);
+        case 5: return FNIEMOP_CALL_1(iemOp_grp3_imul_Ev, bRm);
+        case 6: return FNIEMOP_CALL_1(iemOp_grp3_div_Ev, bRm);
+        case 7: return FNIEMOP_CALL_1(iemOp_grp3_idiv_Ev, bRm);
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
