@@ -991,6 +991,7 @@ HRESULT  NATNetwork::start()
                                                       Bstr(m->IPv4NetworkMask).raw(),
                                                       Bstr(m->IPv4DhcpServerLowerIp).raw(),
                                                       Bstr(m->IPv4DhcpServerUpperIp).raw());
+                break;
             }
             case S_OK:
                 break;
