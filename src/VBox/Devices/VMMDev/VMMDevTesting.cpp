@@ -647,6 +647,7 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
          */
         case VMMDEV_TESTING_IOPORT_LOCKED_HI - VMMDEV_TESTING_IOPORT_BASE:
         case VMMDEV_TESTING_IOPORT_LOCKED_LO - VMMDEV_TESTING_IOPORT_BASE:
+        {
             switch (cb)
             {
                 case 4:
@@ -707,6 +708,8 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     AssertFailed();
                     return VERR_INTERNAL_ERROR_2;
             }
+            break;
+        }
 
         default:
             break;
