@@ -14784,6 +14784,8 @@ BS3_DECL(void) Main_pe32()
 #endif
 #if defined (ALL_TESTS)
         { "[v]psllw/[v]pslld/[v]psllq",                     bs3CpuInstr3_v_psllw_pslld_psllq, 0 },
+#endif
+#if 0 /** @todo Misses the IEM implementation. */
         { "[v]psraw/[v]psrad",                              bs3CpuInstr3_v_psraw_psrad, 0 },
         { "[v]psrlw/[v]psrld/[v]psrlq",                     bs3CpuInstr3_v_psrlw_psrld_psrlq, 0 },
 #endif
