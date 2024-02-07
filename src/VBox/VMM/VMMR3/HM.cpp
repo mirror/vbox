@@ -1970,12 +1970,17 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         switch (CPUMGetGuestCpuVendor(pVM))
         {
             case CPUMCPUVENDOR_INTEL:
+                RT_FALL_THROUGH();
             case CPUMCPUVENDOR_VIA: /*?*/
+                RT_FALL_THROUGH();
             case CPUMCPUVENDOR_SHANGHAI: /*?*/
+            {
                 switch (CPUMGetHostCpuVendor(pVM))
                 {
                     case CPUMCPUVENDOR_AMD:
+                        RT_FALL_THROUGH();
                     case CPUMCPUVENDOR_HYGON:
+                    {
                         if (pVM->hm.s.fAllow64BitGuestsCfg)
                         {
                             LogRel(("HM: Intercepting #UD for emulating SYSENTER/SYSEXIT in long mode.\n"));
@@ -1983,9 +1988,14 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
                                 pVM->apCpusR3[idCpu]->hm.s.svm.fEmulateLongModeSysEnterExit = true;
                         }
                         break;
-                    default: break;
+                    }
+                    default:
+                        break;
                 }
-            default: break;
+                break;
+            }
+            default:
+                break;
         }
 
     /*

@@ -3196,6 +3196,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPUCC    pVCpu,
 
         case X86_SEL_TYPE_SYS_286_TRAP_GATE:
             f32BitGate = false;
+            break;
         case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             break;
 
