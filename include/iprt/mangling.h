@@ -2272,6 +2272,7 @@
 # define RTStrConvertHexBytes                           RT_MANGLER(RTStrConvertHexBytes)
 # define RTStrConvertHexBytesEx                         RT_MANGLER(RTStrConvertHexBytesEx)
 # define RTStrCopy                                      RT_MANGLER(RTStrCopy)
+# define RTStrCopy2                                     RT_MANGLER(RTStrCopy2)
 # define RTStrCopyEx                                    RT_MANGLER(RTStrCopyEx)
 # define RTStrCopyP                                     RT_MANGLER(RTStrCopyP)
 # define RTStrCopyPEx                                   RT_MANGLER(RTStrCopyPEx)

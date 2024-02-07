@@ -44,7 +44,7 @@
 #include <iprt/errcore.h>
 
 
-RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc)
+DECLINLINE(int) rtStrCopy(char *pszDst, size_t cbDst, const char *pszSrc)
 {
     size_t cchSrc = strlen(pszSrc);
     if (RT_LIKELY(cchSrc < cbDst))
@@ -60,5 +60,16 @@ RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc)
     }
     return VERR_BUFFER_OVERFLOW;
 }
+
+RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc)
+{
+    return rtStrCopy(pszDst, cbDst, pszSrc);
+}
 RT_EXPORT_SYMBOL(RTStrCopy);
+
+RTDECL(char *) RTStrCopy2(char *pszDst, size_t cbDst, const char *pszSrc)
+{
+    return RT_SUCCESS(rtStrCopy(pszDst, cbDst, pszSrc)) ? pszDst : NULL;
+}
+RT_EXPORT_SYMBOL(RTStrCopy2);
 
