@@ -74,7 +74,7 @@
 
 
 /** Name of the server executable. */
-const char VBoxSVC_exe[] = RTPATH_SLASH_STR "VBoxSVC" HOSTSUFF_EXE;
+const char g_szVBoxSVC_exe[] = RTPATH_SLASH_STR "VBoxSVC" HOSTSUFF_EXE;
 
 enum
 {
@@ -87,8 +87,8 @@ enum
 /**
  *  Full path to the VBoxSVC executable.
  */
-static char VBoxSVCPath[RTPATH_MAX];
-static bool IsVBoxSVCPathSet = false;
+static char g_szVBoxSVCPath[RTPATH_MAX];
+static bool g_fIsVBoxSVCPathSet = false;
 
 /*
  *  The following macros define the method necessary to provide a list of
@@ -115,7 +115,7 @@ static nsresult vboxsvcSpawnDaemon(void)
         char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
         const char *apszArgs[] =
         {
-            VBoxSVCPath,
+            g_szVBoxSVCPath,
             "--auto-shutdown",
             "--inherit-startup-pipe",
             &szPipeInheritFd[0],
@@ -131,7 +131,7 @@ static nsresult vboxsvcSpawnDaemon(void)
         hStdNil.enmType = RTHANDLETYPE_FILE;
         hStdNil.u.hFile = NIL_RTFILE;
 
-        vrc = RTProcCreateEx(VBoxSVCPath, apszArgs, RTENV_DEFAULT,
+        vrc = RTProcCreateEx(g_szVBoxSVCPath, apszArgs, RTENV_DEFAULT,
                              RTPROC_FLAGS_DETACHED, &hStdNil, &hStdNil, &hStdNil,
                              NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
                              NULL /* phProcess */);
@@ -186,7 +186,7 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
             break;
         }
 
-        if (!IsVBoxSVCPathSet)
+        if (!g_fIsVBoxSVCPathSet)
         {
             /* Get the directory containing XPCOM components -- the VBoxSVC
              * executable is expected in the parent directory. */
@@ -203,7 +203,7 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
                     componentDir->GetNativePath(path);
 
                     LogFlowFunc(("component directory = \"%s\"\n", path.get()));
-                    AssertBreakStmt(path.Length() + strlen(VBoxSVC_exe) < RTPATH_MAX,
+                    AssertBreakStmt(path.Length() + strlen(g_szVBoxSVC_exe) < RTPATH_MAX,
                                     rc = NS_ERROR_FAILURE);
 
 #if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_HARDENING)
@@ -211,17 +211,19 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
                     int cbKernArch = sysinfo(SI_ARCHITECTURE_K, achKernArch, sizeof(achKernArch));
                     if (cbKernArch > 0)
                     {
-                        sprintf(VBoxSVCPath, "/opt/VirtualBox/%s%s", achKernArch, VBoxSVC_exe);
-                        IsVBoxSVCPathSet = true;
+                        sprintf(g_szVBoxSVCPath, "/opt/VirtualBox/%s%s", achKernArch, g_szVBoxSVC_exe);
+                        g_fIsVBoxSVCPathSet = true;
                     }
                     else
                         rc = NS_ERROR_UNEXPECTED;
 #else
-                    strcpy(VBoxSVCPath, path.get());
-                    RTPathStripFilename(VBoxSVCPath);
-                    strcat(VBoxSVCPath, VBoxSVC_exe);
+                    int vrc = RTStrCopy(g_szVBoxSVCPath, sizeof(g_szVBoxSVCPath), path.get());
+                    AssertRCBreakStmt(vrc, rc = NS_ERROR_FAILURE);
+                    RTPathStripFilename(g_szVBoxSVCPath);
+                    vrc = RTStrCat(g_szVBoxSVCPath, sizeof(g_szVBoxSVCPath), g_szVBoxSVC_exe);
+                    AssertRCBreakStmt(vrc, rc = NS_ERROR_FAILURE);
 
-                    IsVBoxSVCPathSet = true;
+                    g_fIsVBoxSVCPathSet = true;
 #endif
                 }
             }
@@ -246,7 +248,7 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
             rc = ipcServ->ResolveClientName(VBOXSVC_IPC_NAME, &serverID);
             if (NS_FAILED(rc))
             {
-                LogFlowFunc(("Starting server \"%s\"...\n", VBoxSVCPath));
+                LogFlowFunc(("Starting server \"%s\"...\n", g_szVBoxSVCPath));
 
                 startedOnce = true;
 

@@ -120,7 +120,7 @@ static RTEXITCODE RTR3TestR0CommonDriverInit(const char *pszTestServiceName)
     if (RT_SUCCESS(rc))
         rc = RTPathAppend(szPath, RTPATH_MAX, pszTestServiceName);
     if (RT_SUCCESS(rc))
-        strcat(szPath, ".r0");
+        rc = RTStrCat(szPath, sizeof(szPath), ".r0");
     if (RT_FAILURE(rc))
     {
         RTTestFailed(g_hTest, "Failed constructing .r0 filename (rc=%Rrc)", rc);
@@ -128,8 +128,15 @@ static RTEXITCODE RTR3TestR0CommonDriverInit(const char *pszTestServiceName)
     }
 
     char szSrvReqHandler[sizeof(g_szSrvName) + sizeof("SrvReqHandler")];
-    strcpy(szSrvReqHandler, pszTestServiceName);
-    strcat(szSrvReqHandler, "SrvReqHandler");
+    rc = RTStrCopy(szSrvReqHandler, sizeof(szSrvReqHandler), pszTestServiceName);
+    if (RT_SUCCESS(rc))
+        rc = RTStrCat(szSrvReqHandler, sizeof(szSrvReqHandler), "SrvReqHandler");
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "RTStrCat failed with rc=%Rrc\n", rc);
+        return RTTestSummaryAndDestroy(g_hTest);
+    }
+
     for (size_t off = 0; RT_C_IS_LOWER(szSrvReqHandler[off]); off++)
         szSrvReqHandler[off] = RT_C_TO_UPPER(szSrvReqHandler[off]);
 

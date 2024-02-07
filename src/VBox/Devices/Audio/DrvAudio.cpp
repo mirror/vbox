@@ -4841,10 +4841,16 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
 #define QUERY_VAL_RET(a_Width, a_szName, a_pValue, a_uDefault, a_ExprValid, a_szValidRange) \
             do { \
-                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, strcpy(szNm, a_szName), a_pValue); \
+                rc = RTStrCopy(szNm, sizeof(szNm), a_szName); \
+                AssertRCReturn(rc, PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, \
+                                                       N_("Configuration error: Name '%s' too long [1]"), szNm)); \
+                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, szNm, a_pValue); \
                 if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                 { \
-                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, strcat(szNm, pszDir), a_pValue); \
+                    rc = RTStrCat(szNm, sizeof(szNm), pszDir); \
+                    AssertRCReturn(rc, PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, \
+                                                           N_("Configuration error: Name '%s' too long [2]"), pszDir)); \
+                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, szNm, a_pValue); \
                     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                     { \
                         *(a_pValue) = a_uDefault; \

@@ -61,7 +61,6 @@ int main(int argc, char **argv)
 {
     int rcRet = 0;
     int i;
-    int rc;
     int cIterations = argc > 1 ? RTStrToUInt32(argv[1]) : 32;
     if (cIterations == 0)
         cIterations = 64;
@@ -71,19 +70,19 @@ int main(int argc, char **argv)
      */
     RTR3InitExe(argc, &argv, 0);
     PSUPDRVSESSION pSession;
-    rc = SUPR3Init(&pSession);
+    int rc = SUPR3Init(&pSession);
     rcRet += rc != 0;
     RTPrintf("tstInt: SUPR3Init -> rc=%Rrc\n", rc);
     char szFile[RTPATH_MAX];
-    if (!rc)
-    {
-        rc = RTPathExecDir(szFile, sizeof(szFile) - sizeof("/VMMR0.r0"));
-    }
+    if (RT_SUCCESS(rc))
+        rc = RTPathExecDir(szFile, sizeof(szFile));
+
     char szAbsFile[RTPATH_MAX];
     if (RT_SUCCESS(rc))
     {
-        strcat(szFile, "/VMMR0.r0");
-        rc = RTPathAbs(szFile, szAbsFile, sizeof(szAbsFile));
+        rc = RTPathAppend(szFile, sizeof(szFile), "VMMR0.r0");
+        if (RT_SUCCESS(rc))
+            rc = RTPathAbs(szFile, szAbsFile, sizeof(szAbsFile));
     }
     if (RT_SUCCESS(rc))
     {
@@ -234,6 +233,9 @@ int main(int argc, char **argv)
         rcRet += rc != 0;
         RTPrintf("tstInt: SUPR3Term -> rc=%Rrc\n", rc);
     }
+
+    if (RT_FAILURE(rc))
+        RTPrintf("Failed with rc=%Rrc\n", rc);
 
     return !!rc;
 }

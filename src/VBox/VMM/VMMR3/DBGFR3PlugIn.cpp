@@ -279,8 +279,10 @@ static DECLCALLBACK(int) dbgfR3PlugInLoadCallback(const char *pchPath, size_t cc
 
     int rc = RTPathAppend(pszModule, cchModule, DBGF_PLUG_IN_PREFIX);
     AssertRCReturn(rc, VERR_TRY_AGAIN);
-    strcat(&pszModule[cchPath], pPlugIn->szName);
-    strcat(&pszModule[cchPath + sizeof(DBGF_PLUG_IN_PREFIX) - 1 + pPlugIn->cchName], pszSuff);
+    rc = RTStrCat(pszModule, cchModule, pPlugIn->szName);
+    AssertRCReturn(rc, VERR_TRY_AGAIN);
+    rc = RTStrCat(pszModule, cchModule, pszSuff);
+    AssertRCReturn(rc, VERR_TRY_AGAIN);
     Assert(strlen(pszModule) < cchModule - 4);
 
     if (RTPathExists(pszModule))
@@ -479,7 +481,8 @@ VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM)
 
     rc = RTPathAppend(szPath, sizeof(szPath) - cchSuff, DBGF_PLUG_IN_PREFIX "*");
     AssertRCReturnVoid(rc);
-    strcat(szPath, pszSuff);
+    rc = RTStrCat(szPath, sizeof(szPath), pszSuff);
+    AssertRCReturnVoid(rc);
 
     RTDIR hDir;
     rc = RTDirOpenFiltered(&hDir, szPath, RTDIRFILTER_WINNT, 0 /*fFlags*/);
