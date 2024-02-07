@@ -433,6 +433,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Profiling iemNativeRecompile()",               "/IEM/CPU%u/re/NativeRecompilation", idCpu);
 
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+#  ifdef VBOX_WITH_STATISTICS
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflCfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.CF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsCfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflPfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.PF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsPfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflAfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.AF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsAfSkippable", idCpu);
@@ -477,7 +478,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         szPat[offFlagChar] = szVal[offFlagChar] = 'S'; STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT, szVal, szPat, "Skippable EFLAGS.SF updating percentage", "/IEM/CPU%u/re/NativeLivenessEFlagsSfSkippablePct", idCpu);
         szPat[offFlagChar] = szVal[offFlagChar] = 'O'; STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT, szVal, szPat, "Skippable EFLAGS.OF updating percentage", "/IEM/CPU%u/re/NativeLivenessEFlagsOfSkippablePct", idCpu);
 
-# endif
+#  endif /* VBOX_WITH_STATISTICS */
+# endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
 
 #endif /* VBOX_WITH_IEM_RECOMPILER */
 
