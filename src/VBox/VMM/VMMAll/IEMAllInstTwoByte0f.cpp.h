@@ -5609,7 +5609,7 @@ FNIEMOP_DEF(iemOp_movmskpd_Gy_Upd)
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_REF_XREG_U128_CONST(puSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_movmskpd_u128, pu8Dst, puSrc);
-        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG_8(bRm), u8Dst);
+        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u8Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
