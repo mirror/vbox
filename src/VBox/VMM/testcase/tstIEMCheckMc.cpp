@@ -918,8 +918,10 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF(a_pr80Dst)                 do { CHK_VAR(a_pr80Dst); CHK_TYPE(PRTFLOAT80U, a_pr80Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_MEM_INDEF_D80_BY_REF(a_pd80Dst)                    do { CHK_VAR(a_pd80Dst); CHK_TYPE(PRTPBCD80U,  a_pd80Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Src)            do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u128Src); CHK_TYPE(RTUINT128U, a_u128Src); (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_MEM_U128_NO_AC(a_iSeg, a_GCPtrMem, a_u128Src)      do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u128Src); CHK_TYPE(RTUINT128U, a_u128Src); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Src)  do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u128Src); CHK_TYPE(RTUINT128U, a_u128Src); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_MEM_U256(a_iSeg, a_GCPtrMem, a_u256Src)            do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Src); CHK_TYPE(RTUINT256U, a_u256Src); (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_MEM_U256_NO_AC(a_iSeg, a_GCPtrMem, a_u256Src)      do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Src); CHK_TYPE(RTUINT256U, a_u256Src); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_MEM_U256_ALIGN_AVX(a_iSeg, a_GCPtrMem, a_u256Src)  do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Src); CHK_TYPE(RTUINT256U, a_u256Src); (void)fMcBegin; } while (0)
 
 #define IEM_MC_PUSH_U16(a_u16Value)                                     do { CHK_VAR(a_u16Value); (void)fMcBegin; } while (0)

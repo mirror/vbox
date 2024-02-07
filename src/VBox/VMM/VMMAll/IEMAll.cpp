@@ -7146,6 +7146,12 @@ void iemMemRollback(PVMCPUCC pVCpu) RT_NOEXCEPT
 #define TMPL_MEM_FMT_DESC   "dqword"
 #include "IEMAllMemRWTmpl.cpp.h"
 
+#define TMPL_MEM_TYPE       RTUINT128U
+#define TMPL_MEM_TYPE_ALIGN 0
+#define TMPL_MEM_FN_SUFF    U128NoAc
+#define TMPL_MEM_FMT_TYPE   "%.16Rhxs"
+#define TMPL_MEM_FMT_DESC   "dqword"
+#include "IEMAllMemRWTmpl.cpp.h"
 
 /**
  * Fetches a data dword and zero extends it to a qword.
@@ -7276,7 +7282,7 @@ void iemMemFetchDataU128AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-VBOXSTRICTRC iemMemFetchDataU256(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
+VBOXSTRICTRC iemMemFetchDataU256NoAc(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
 {
     /* The lazy approach for now... */
     uint8_t      bUnmapInfo;
@@ -7306,7 +7312,7 @@ VBOXSTRICTRC iemMemFetchDataU256(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t i
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-void iemMemFetchDataU256Jmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+void iemMemFetchDataU256NoAcJmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
     /* The lazy approach for now... */
     uint8_t      bUnmapInfo;
@@ -7552,6 +7558,62 @@ VBOXSTRICTRC iemMemStoreDataU256(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrM
  * @param   pu256Value          Pointer to the value to store.
  */
 void iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    /* The lazy approach for now... */
+    uint8_t     bUnmapInfo;
+    PRTUINT256U pu256Dst = (PRTUINT256U)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pu256Dst), iSegReg, GCPtrMem,
+                                                     IEM_ACCESS_DATA_W, 0 /* NO_AC variant */);
+    pu256Dst->au64[0] = pu256Value->au64[0];
+    pu256Dst->au64[1] = pu256Value->au64[1];
+    pu256Dst->au64[2] = pu256Value->au64[2];
+    pu256Dst->au64[3] = pu256Value->au64[3];
+    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
+    Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+}
+#endif
+
+
+/**
+ * Stores a data qqword.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+VBOXSTRICTRC iemMemStoreDataU256NoAc(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) RT_NOEXCEPT
+{
+    /* The lazy approach for now... */
+    uint8_t      bUnmapInfo;
+    PRTUINT256U  pu256Dst;
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu256Dst, &bUnmapInfo, sizeof(*pu256Dst), iSegReg, GCPtrMem,
+                                IEM_ACCESS_DATA_W, 0 /* NO_AC variant */);
+    if (rc == VINF_SUCCESS)
+    {
+        pu256Dst->au64[0] = pu256Value->au64[0];
+        pu256Dst->au64[1] = pu256Value->au64[1];
+        pu256Dst->au64[2] = pu256Value->au64[2];
+        pu256Dst->au64[3] = pu256Value->au64[3];
+        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+    }
+    return rc;
+}
+
+
+#ifdef IEM_WITH_SETJMP
+/**
+ * Stores a data qqword, longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+void iemMemStoreDataU256NoAcJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) IEM_NOEXCEPT_MAY_LONGJMP
 {
     /* The lazy approach for now... */
     uint8_t     bUnmapInfo;
