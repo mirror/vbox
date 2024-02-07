@@ -1975,6 +1975,7 @@ QVariant StorageModel::data(const QModelIndex &specifiedIndex, int iRole) const
                                     default:
                                         break;
                                 }
+                                break;
                             }
                             default:
                                 break;
