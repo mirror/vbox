@@ -1204,7 +1204,8 @@ static bool cidetCoreSetupNextBaseEncoding_OperandSize(PCIDETCORE pThis)
                     pThis->fOpSizePrf = true; /* check that it's ignored. */
                     cidetCoreUpdateOperandSizes(pThis);
                     return true;
-                default: AssertReleaseFailed();
+                default:
+                    AssertReleaseFailedBreak();
                 case 3:
                     break;
             }
