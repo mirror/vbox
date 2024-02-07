@@ -3375,8 +3375,9 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
                 break;
 
             default:
+                RT_FALL_THROUGH();
             case RTLDRARCH_HOST:
-                AssertFailed();
+                AssertFailedBreak();
             case RTLDRARCH_WHATEVER:
                 break;
         }
