@@ -235,10 +235,61 @@ AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
 
 /* Effective address stuff is rather complicated... */
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp) do { \
+        if (((a_bRm) & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) != 6) \
+        { \
+            switch ((a_bRm) & X86_MODRM_RM_MASK) \
+            { \
+                case 0: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBX); IEM_LIVENESS_GPR_INPUT(X86_GREG_xSI); break; \
+                case 1: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBX); IEM_LIVENESS_GPR_INPUT(X86_GREG_xDI); break; \
+                case 2: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBP); IEM_LIVENESS_GPR_INPUT(X86_GREG_xSI); break; \
+                case 3: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBP); IEM_LIVENESS_GPR_INPUT(X86_GREG_xDI); break; \
+                case 4: IEM_LIVENESS_GPR_INPUT(X86_GREG_xSI); break; \
+                case 5: IEM_LIVENESS_GPR_INPUT(X86_GREG_xDI); break; \
+                case 6: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBP); break; \
+                case 7: IEM_LIVENESS_GPR_INPUT(X86_GREG_xBX); break; \
+            } \
+        } \
     } while (0)
+
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) do { \
+        if (((a_bRm) & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) != 5) \
+        { \
+            uint8_t const idxReg = (a_bRm) & X86_MODRM_RM_MASK; \
+            if (idxReg != 4 /*SIB*/) \
+                IEM_LIVENESS_GPR_INPUT(idxReg); \
+            else \
+            { \
+                uint8_t const idxIndex = ((a_uSibAndRspOffset) >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK; \
+                if (idxIndex != 4 /*no index*/) \
+                    IEM_LIVENESS_GPR_INPUT(idxIndex); \
+                \
+                uint8_t const idxBase = (a_uSibAndRspOffset) & X86_SIB_BASE_MASK; \
+                if (idxBase != 5 || ((a_bRm) & X86_MODRM_MOD_MASK) != 0) \
+                    IEM_LIVENESS_GPR_INPUT(idxBase); \
+            } \
+        } \
     } while (0)
+
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) do { \
+        if (((a_bRmEx) & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5) \
+        { /* RIP */ } \
+        else \
+        { \
+            uint8_t const idxReg = (a_bRmEx) & (X86_MODRM_RM_MASK | 0x8); /* bRmEx[bit 3] = REX.B */ \
+            if ((idxReg & X86_MODRM_RM_MASK) != 4 /* not SIB */) \
+                IEM_LIVENESS_GPR_INPUT(idxReg); \
+            else /* SIB: */\
+            { \
+                uint8_t const idxIndex = (((a_uSibAndRspOffset) >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) \
+                                       | (((a_bRmEx) & 0x10) >> 1); /* bRmEx[bit 4] = REX.X */ \
+                if (idxIndex != 4 /*no index*/) \
+                    IEM_LIVENESS_GPR_INPUT(idxIndex); \
+                \
+                uint8_t const idxBase = ((a_uSibAndRspOffset) & X86_SIB_BASE_MASK) | ((a_bRmEx) & 0x8); /* bRmEx[bit 3] = REX.B */ \
+                if ((idxBase & 7) != 5 /* and !13*/ || ((a_bRmEx) & X86_MODRM_MOD_MASK) != 0) \
+                    IEM_LIVENESS_GPR_INPUT(idxBase); \
+            } \
+        } \
     } while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
     IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm)
