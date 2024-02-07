@@ -1429,7 +1429,11 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         }
         if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE)
         {
-            Assert(fd == -1);
+            if (fd != -1)
+            {
+                close(fd);
+                fd = -1;
+            }
             LogRel(("PIT: speaker: no emulation possible\n"));
         }
 #else
