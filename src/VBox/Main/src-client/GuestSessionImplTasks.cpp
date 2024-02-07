@@ -2312,6 +2312,7 @@ int GuestSessionTaskCopyTo::Run(void)
                                             Utf8StrFmt(tr("Destination \"%s\" on guest already exists and is a file"),
                                                        strDstRootAbs.c_str()));
                         vrc = VERR_IS_A_FILE;
+                        break;
                     }
 
                     case FsObjType_Symlink:
