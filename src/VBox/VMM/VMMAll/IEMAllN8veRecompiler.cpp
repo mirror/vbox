@@ -9831,7 +9831,7 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 }
 
 
-/* @todo Emit code for IEM_MC_ASSERT_EFLAGS in strict builds?  Once we emit
+/** @todo Emit code for IEM_MC_ASSERT_EFLAGS in strict builds?  Once we emit
  * different code from threaded recompiler, maybe it would be helpful. For now
  * we assume the threaded recompiler catches any incorrect EFLAGS delcarations. */
 #define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput) ((void)0)
