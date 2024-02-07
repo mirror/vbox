@@ -2572,11 +2572,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf = \
                     self.processExecute(oGuestSession, self.sGstCtlHelperExe, asArgs2, sCwd, \
                                         asEnv, aeWaitFor, timeoutMS);
-                if eExitStatus != vboxcon.TerminatedNormally:
+                if eExitStatus != vboxcon.ProcessStatus_TerminatedNormally:
                     reporter.log('VBoxGuestControlHelper failed to run; got exit status %d' % (eExitStatus,));
                     fRc = False;
             except:
-                reporter.errorXcpt();
+                fRc = reporter.errorXcpt();
 
         return (fRc, eExitStatus, iExitCode, cbStdOut, cbStdErr, sBuf);
 
@@ -2718,16 +2718,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
 
-        if  self.oTstDrv.fpApiVer >= 7.1 \
+        # Note: Starting with r161502 this should be fixed.
+        #       Session 0 separation started with Windows Vista, so skip everything older.
+        if  self.oTstDrv.uRevision >= 161502 \
         and oTestVm.isWindows() \
-        and oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
+        and oTestVm.sKind not in ('WindowsNT3x', 'WindowsNT4', 'Windows2000', 'WindowsXP'):
             reporter.testStart('Windows guest processes in session >= 1');
             # Test in which Windows session Guest Control processes are being started.
             # We don't want them to be started in session 0, as this would prevent desktop interaction and other stuff.
             fRc, eExitStatus, iExitCode, _, _, _ = \
                 self.executeGstCtlHelper(oTxsSession, oGuestSession, [ "show", "win-session-id" ]);
             if  fRc \
-            and eExitStatus == vboxcon.TerminatedNormally:
+            and eExitStatus == vboxcon.ProcessStatus_TerminatedNormally:
                 if iExitCode >= 1000: # We report 1000 + <session ID> as exit code.
                     uSessionId = iExitCode - 1000;
                     if uSessionId >= 1:
