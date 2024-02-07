@@ -2382,32 +2382,34 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         LogRel(("Shared Clipboard: Converting X11 format index %#x to VBox format %#x failed, rc=%Rrc\n",
                 pReq->Read.idxFmtX11, pReq->Read.uFmtVBox, rc));
 
-    int rc2;
-
     PSHCLEVENTPAYLOAD pPayload = NULL;
-    size_t            cbResp   = sizeof(SHCLX11RESPONSE);
-    PSHCLX11RESPONSE  pResp    = (PSHCLX11RESPONSE)RTMemAllocZ(cbResp);
-    if (pResp)
+
+    if (   pvDst
+        && cbDst)
     {
-        pResp->enmType     = SHCLX11EVENTTYPE_READ;
-        pResp->Read.pvData = pvDst;
-        pResp->Read.cbData = cbDst;
-
-        pvDst = NULL; /* The response owns the data now. */
-
-        if (   pResp->Read.pvData
-            && pResp->Read.cbData)
+        size_t           cbResp   = sizeof(SHCLX11RESPONSE);
+        PSHCLX11RESPONSE pResp    = (PSHCLX11RESPONSE)RTMemAllocZ(cbResp);
+        if (pResp)
         {
-            rc2 = ShClPayloadInit(0 /* ID, unused */, pResp, cbResp, &pPayload);
-            AssertRC(rc2);
-        }
-    }
-    else
-        rc = VERR_NO_MEMORY;
+            pResp->enmType     = SHCLX11EVENTTYPE_READ;
+            pResp->Read.pvData = pvDst;
+            pResp->Read.cbData = cbDst;
 
-    rc2 = ShClEventSignal(pReq->pEvent, pPayload);
+            pvDst = NULL; /* The response owns the data now. */
+
+            rc = ShClPayloadInit(0 /* ID, unused */, pResp, cbResp, &pPayload);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    /* Let the caller know in any case. */
+    int rc2 = ShClEventSignal(pReq->pEvent, pPayload);
     if (RT_SUCCESS(rc2))
         pPayload = NULL; /* The event owns the payload now. */
+
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     if (pPayload) /* Free payload on error. */
     {
