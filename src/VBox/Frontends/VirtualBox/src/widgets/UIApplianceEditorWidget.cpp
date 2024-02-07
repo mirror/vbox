@@ -1241,10 +1241,15 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
             break;
         }
         case KVirtualSystemDescriptionType_CloudInstanceShape:
+            RT_FALL_THROUGH();
         case KVirtualSystemDescriptionType_CloudDomain:
+            RT_FALL_THROUGH();
         case KVirtualSystemDescriptionType_CloudBootDiskSize:
+            RT_FALL_THROUGH();
         case KVirtualSystemDescriptionType_CloudBucket:
+            RT_FALL_THROUGH();
         case KVirtualSystemDescriptionType_CloudOCIVCN:
+            RT_FALL_THROUGH();
         case KVirtualSystemDescriptionType_CloudOCISubnet:
         {
             switch (m_pParent->kindHint(m_enmVSDType))
@@ -1288,8 +1293,10 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
                 default:
                     break;
             }
+            break;
         }
-        default: break;
+        default:
+            break;
     }
     if (fDone)
         m_fModified = true;

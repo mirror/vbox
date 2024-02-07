@@ -322,36 +322,38 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
         {
             /* Watch for button-events: */
             case XCB_BUTTON_PRESS:
+            {
+                /* Do nothing if mouse is actively grabbed: */
+                if (uimachine()->isMouseCaptured())
+                    break;
+
+                /* If we see a mouse press from a grab while the mouse is not captured,
+                 * release the keyboard before letting the event owner see it. This is
+                 * because some owners cannot deal with failures to grab the keyboard
+                 * themselves (e.g. window managers dragging windows). */
+
+                /* Cast to XCB button-event: */
+                xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
+
+                /* If this event is from our button grab then it will be reported relative to the root
+                 * window and not to ours. In that case release the keyboard capture, re-capture it
+                 * delayed, which will fail if we have lost the input focus in the mean-time, replay
+                 * the button event for normal delivery (possibly straight back to us, but not relative
+                 * to root this time) and tell Qt not to further process this event: */
+                if (pButtonEvent->event == pButtonEvent->root)
                 {
-                    /* Do nothing if mouse is actively grabbed: */
-                    if (uimachine()->isMouseCaptured())
-                        break;
-
-                    /* If we see a mouse press from a grab while the mouse is not captured,
-                     * release the keyboard before letting the event owner see it. This is
-                     * because some owners cannot deal with failures to grab the keyboard
-                     * themselves (e.g. window managers dragging windows). */
-
-                    /* Cast to XCB button-event: */
-                    xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
-
-                    /* If this event is from our button grab then it will be reported relative to the root
-                     * window and not to ours. In that case release the keyboard capture, re-capture it
-                     * delayed, which will fail if we have lost the input focus in the mean-time, replay
-                     * the button event for normal delivery (possibly straight back to us, but not relative
-                     * to root this time) and tell Qt not to further process this event: */
-                    if (pButtonEvent->event == pButtonEvent->root)
-                    {
-                        machineLogic()->keyboardHandler()->releaseKeyboard();
-                        /** @todo It would be nicer to do this in the normal Qt button event
-                         *       handler to avoid avoidable races if the event was not for us. */
-                        machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
-                        /* Re-send the event so that the window which it was meant for gets it: */
-                        xcb_allow_events_checked(NativeWindowSubsystem::X11GetConnection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
-                        /* Do not let Qt see the event: */
-                        return true;
-                    }
+                    machineLogic()->keyboardHandler()->releaseKeyboard();
+                    /** @todo It would be nicer to do this in the normal Qt button event
+                     *       handler to avoid avoidable races if the event was not for us. */
+                    machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
+                    /* Re-send the event so that the window which it was meant for gets it: */
+                    xcb_allow_events_checked(NativeWindowSubsystem::X11GetConnection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
+                    /* Do not let Qt see the event: */
+                    return true;
                 }
+                break;
+            }
+
             default:
                 break;
         }
