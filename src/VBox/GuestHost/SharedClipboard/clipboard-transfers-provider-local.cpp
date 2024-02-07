@@ -125,6 +125,7 @@ static int shclTransferLocalListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPa
                         case RTFS_TYPE_SYMLINK:
                         {
                             /** @todo Not implemented yet. */
+                            break;
                         }
 
                         default:
