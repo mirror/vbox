@@ -1937,7 +1937,12 @@ class TestVmSet(object):
                 reporter.log('Hardware assisted virtualization is not available on the host, skipping it.');
                 asVirtModesWanted.remove('hwvirt');
 
-            if 'hwvirt-np' in asVirtModesWanted and not oTestDrv.hasHostNestedPaging():
+            # r=aeichner: For 7.0 there is no native API mode to set but NEM gets picked by default on macOS.
+            #             But because the darwin testboxes don't report the hwvirt or hwvirt-np capability anymore (see @bugref{10592})
+            #             this results in no virt mode being supported and all the VMs getting skipped (but the test marked as
+            #             succeeded anyway). In order to keep the default behavior we keep at least hwvirt-np on macOS which will
+            #             make use of NEM automatically and testing with 7.0 continues working.
+            if 'hwvirt-np' in asVirtModesWanted and not oTestDrv.hasHostNestedPaging() and utils.getHostOs() != 'darwin':
                 reporter.log('Nested paging not supported by the host, skipping it.');
                 asVirtModesWanted.remove('hwvirt-np');
 
