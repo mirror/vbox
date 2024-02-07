@@ -315,7 +315,18 @@ AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)           NOP()
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg)       NOP()
 
-#define IEM_MC_COMMIT_EFLAGS(a_EFlags)                              IEM_LIVENESS_ALL_EFLAGS_CLOBBERED()
+#undef  IEM_MC_COMMIT_EFLAGS /* unused here */
+#define IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) do { \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_CF, u2EflCf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_PF, u2EflPf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_AF, u2EflAf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_ZF, u2EflZf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_SF, u2EflSf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_OF, u2EflOf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, ~X86_EFL_STATUS_BITS, u2EflOther); \
+        Assert(!(  ((a_fEflInput) | (a_fEflOutput)) \
+                 & ~(uint32_t)(X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_VM | X86_EFL_VIF | X86_EFL_IOPL))); \
+    } while (0)
 
 #define IEM_MC_ASSIGN_TO_SMALLER(a_VarDst, a_VarSrcEol)             NOP()
 
@@ -338,7 +349,20 @@ AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
 #define IEM_MC_FETCH_SREG_ZX_U64(a_u64Dst, a_iSReg)                 IEM_LIVENESS_SEG_SEL_INPUT(a_iSReg)
 #define IEM_MC_FETCH_SREG_BASE_U64(a_u64Dst, a_iSReg)               IEM_LIVENESS_SEG_BASE_INPUT(a_iSReg)
 #define IEM_MC_FETCH_SREG_BASE_U32(a_u32Dst, a_iSReg)               IEM_LIVENESS_SEG_BASE_INPUT(a_iSReg)
-#define IEM_MC_FETCH_EFLAGS(a_EFlags)                               IEM_LIVENESS_ALL_EFLAGS_INPUT()
+#undef  IEM_MC_FETCH_EFLAGS /* unused here */
+#define IEM_MC_FETCH_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) do { \
+        /* IEM_MC_COMMIT_EFLAGS_EX doesn't cover input-only situations.  This OTOH, leads \
+           to duplication in many cases, but the compiler's optimizers should help with that. */ \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_CF, u2EflCf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_PF, u2EflPf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_AF, u2EflAf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_ZF, u2EflZf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_SF, u2EflSf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_OF, u2EflOf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, ~X86_EFL_STATUS_BITS, u2EflOther); \
+        Assert(!(  ((a_fEflInput) | (a_fEflOutput)) \
+                 & ~(uint32_t)(X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_VM | X86_EFL_VIF | X86_EFL_IOPL))); \
+    } while (0)
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags) do { \
         IEM_LIVENESS_ONE_EFLAGS_INPUT(u2Cf); \
         IEM_LIVENESS_ONE_EFLAGS_INPUT(u2Pf); \
@@ -379,6 +403,21 @@ AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
 #define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                                IEM_LIVENESS_ALL_EFLAGS_INPUT()
+#define IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, a_fEfl, a_Member) \
+        if ((a_fEflInput) & (a_fEfl))           IEM_LIVENESS_ONE_EFLAG_INPUT(a_Member); \
+        else if ((a_fEflOutput) & (a_fEfl)) IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Member)
+#define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) do { \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_CF, u2EflCf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_PF, u2EflPf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_AF, u2EflAf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_ZF, u2EflZf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_SF, u2EflSf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_OF, u2EflOf); \
+        IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, ~X86_EFL_STATUS_BITS, u2EflOther); \
+        Assert(!(  ((a_fEflInput) | (a_fEflOutput)) \
+                 & ~(uint32_t)(X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_VM | X86_EFL_VIF | X86_EFL_IOPL))); \
+    } while (0)
+#define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput)             NOP()
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                                 NOP()
 
 

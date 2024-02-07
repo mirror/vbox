@@ -208,6 +208,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     uint32_t *a_pName = &a_Name
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
    do { pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); } while (0)
+#define IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) do { \
+        AssertMsg((pVCpu->cpum.GstCtx.eflags.u & ~(a_fEflOutput)) == ((a_EFlags) & ~(a_fEflOutput)),  \
+                  ("eflags.u=%#x (%#x) vs %s=%#x (%#x) - diff %#x (a_fEflOutput=%#x)\n", \
+                   pVCpu->cpum.GstCtx.eflags.u & ~(a_fEflOutput), pVCpu->cpum.GstCtx.eflags.u, #a_EFlags, \
+                   (a_EFlags) & ~(a_fEflOutput), (a_EFlags), \
+                   (pVCpu->cpum.GstCtx.eflags.u & ~(a_fEflOutput)) ^ ((a_EFlags) & ~(a_fEflOutput)), a_fEflOutput)); \
+        pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); \
+        Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); \
+    } while (0)
 
 /** ASSUMES the source variable not used after this statement. */
 #define IEM_MC_ASSIGN_TO_SMALLER(a_VarDst, a_VarSrcEol) (a_VarDst) = (a_VarSrcEol)
@@ -260,7 +269,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 /** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = pVCpu->cpum.GstCtx.eflags.u
-#define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)pVCpu->cpum.GstCtx.eflags.u
+#define IEM_MC_FETCH_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) IEM_MC_FETCH_EFLAGS(a_EFlags)
+#define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)pVCpu->cpum.GstCtx.eflags.u   /* (only LAHF) */
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pVCpu->cpum.GstCtx.XState.x87.FSW
 #define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = pVCpu->cpum.GstCtx.XState.x87.FCW
 
@@ -313,6 +323,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 /** @note Not for IOPL or IF testing or modification.
  * @note Must preserve any undefined bits, see CPUMX86EFLAGS! */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &pVCpu->cpum.GstCtx.eflags.uBoth
+#define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) IEM_MC_REF_EFLAGS(a_pEFlags)
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                     (a_pfMxcsr) = &pVCpu->cpum.GstCtx.XState.x87.MXCSR
 
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) += (a_u16Value)

@@ -9586,10 +9586,44 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 *   EFLAGS                                                                                                                       *
 *********************************************************************************************************************************/
 
-#define IEM_MC_FETCH_EFLAGS(a_EFlags) \
+#if !defined(VBOX_WITH_STATISTICS) || !defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS)
+# define IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput)     ((void)0)
+#else
+# define IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput) \
+    iemNativeEFlagsOptimizationStats(pReNative, a_fEflInput, a_fEflOutput)
+
+DECLINLINE(void) iemNativeEFlagsOptimizationStats(PIEMRECOMPILERSTATE pReNative, uint32_t fEflInput, uint32_t fEflOutput)
+{
+    if (fEflOutput)
+    {
+        IEMLIVENESSPART2 const LivenessInfo2 = pReNative->paLivenessEntries[pReNative->idxCurCall].s2;
+        PVMCPUCC const pVCpu = pReNative->pVCpu;
+# define CHECK_FLAG_AND_UPDATE_STATS(a_fEfl, a_u2LivenessMember, a_CoreStatName) \
+            if (fEflOutput & (a_fEfl)) \
+            { \
+                if (LivenessInfo2.a_u2LivenessMember != IEMLIVENESS_STATE_CLOBBERED) \
+                    STAM_COUNTER_INC(&pVCpu->iem.s. a_CoreStatName ## Required); \
+                else \
+                    STAM_COUNTER_INC(&pVCpu->iem.s. a_CoreStatName ## Skippable); \
+            } else do { } while (0)
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_CF, u2EflCf, StatNativeLivenessEflCf);
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_PF, u2EflPf, StatNativeLivenessEflPf);
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_AF, u2EflAf, StatNativeLivenessEflAf);
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_ZF, u2EflZf, StatNativeLivenessEflZf);
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_SF, u2EflSf, StatNativeLivenessEflSf);
+        CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_OF, u2EflOf, StatNativeLivenessEflOf);
+        CHECK_FLAG_AND_UPDATE_STATS(~X86_EFL_STATUS_BITS, u2EflOther, StatNativeLivenessEflOther);
+# undef CHECK_FLAG_AND_UPDATE_STATS
+    }
+    RT_NOREF(fEflInput);
+}
+#endif /* VBOX_WITH_STATISTICS */
+
+#undef  IEM_MC_FETCH_EFLAGS /* should not be used */
+#define IEM_MC_FETCH_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) \
     off = iemNativeEmitFetchEFlags(pReNative, off, a_EFlags)
 
-/** Handles IEM_MC_FETCH_EFLAGS. */
+/** Handles IEM_MC_FETCH_EFLAGS_EX. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEFlags)
 {
@@ -9604,10 +9638,16 @@ iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 }
 
 
-#define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
+
+/** @todo emit strict build assertions for IEM_MC_COMMIT_EFLAGS_EX when we
+ * start using it with custom native code emission (inlining assembly
+ * instruction helpers). */
+#undef  IEM_MC_COMMIT_EFLAGS /* should not be used */
+#define IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) \
+    IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput); \
     off = iemNativeEmitCommitEFlags(pReNative, off, a_EFlags)
 
-/** Handles IEM_MC_COMMIT_EFLAGS. */
+/** Handles IEM_MC_COMMIT_EFLAGS_EX. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEFlags)
 {
@@ -9767,7 +9807,9 @@ iemNativeEmitRefGregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 }
 
 
-#define IEM_MC_REF_EFLAGS(a_pEFlags) \
+#undef  IEM_MC_REF_EFLAGS /* should not be used. */
+#define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) \
+    IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput); \
     off = iemNativeEmitRefEFlags(pReNative, off, a_pEFlags)
 
 /** Handles IEM_MC_REF_EFLAGS. */
@@ -9787,6 +9829,13 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 
     return off;
 }
+
+
+/* @todo Emit code for IEM_MC_ASSERT_EFLAGS in strict builds?  Once we emit
+ * different code from threaded recompiler, maybe it would be helpful. For now
+ * we assume the threaded recompiler catches any incorrect EFLAGS delcarations. */
+#define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput) ((void)0)
+
 
 
 /*********************************************************************************************************************************

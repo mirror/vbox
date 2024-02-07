@@ -1670,6 +1670,40 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         """ Returns asFlClear into a integer mask value """
         return self._flagsToIntegerMask(self.asFlClear);
 
+    @staticmethod
+    def _flagsToC(asFlags):
+        """
+        Returns asFlags converted to X86_EFL_XXX ored together C-style.
+        """
+        if asFlags:
+            asRet = [];
+            for sFlag in asFlags:
+                sConstant = g_kdEFlagsMnemonics[sFlag];
+                assert sConstant[0] != '!', sConstant
+                asRet.append(sConstant);
+            return ' | '.join(asRet);
+        return '0';
+
+    def getTestedFlagsCStyle(self):
+        """ Returns asFlTest as C constants ored together. """
+        return self._flagsToC(self.asFlTest);
+
+    def getModifiedFlagsCStyle(self):
+        """ Returns asFlModify as C constants ored together. """
+        return self._flagsToC(self.asFlModify);
+
+    def getUndefinedFlagsCStyle(self):
+        """ Returns asFlUndefined as C constants ored together. """
+        return self._flagsToC(self.asFlUndefined);
+
+    def getSetFlagsCStyle(self):
+        """ Returns asFlSet as C constants ored together. """
+        return self._flagsToC(self.asFlSet);
+
+    def getClearedFlagsCStyle(self):
+        """ Returns asFlClear as C constants ored together. """
+        return self._flagsToC(self.asFlClear);
+
     def onlyInVexMaps(self):
         """ Returns True if only in VEX maps, otherwise False.  (No maps -> False) """
         if not self.aoMaps:
@@ -1874,7 +1908,6 @@ class McStmtArg(McStmtVar):
         self.sRefType   = sRefType;   ##< The kind of reference: 'local', 'none'.
         assert sRefType in ('none', 'local');
 
-
 class McStmtCall(McStmt):
     """ IEM_MC_CALL_* """
     def __init__(self, sName, asParams, iFnParam, iRcNameParam = -1):
@@ -1883,6 +1916,15 @@ class McStmtCall(McStmt):
         self.idxParams   = iFnParam + 1;
         self.sFn         = asParams[iFnParam];
         self.iRcName     = None if iRcNameParam < 0 else asParams[iRcNameParam];
+
+class McStmtAssertEFlags(McStmt):
+    """
+    IEM_MC_ASSERT_EFLAGS
+    """
+    def __init__(self, oInstruction):
+        McStmt.__init__(self, 'IEM_MC_ASSERT_EFLAGS',
+                        [oInstruction.getTestedFlagsCStyle(), oInstruction.getModifiedFlagsCStyle(),]);
+
 
 class McCppGeneric(McStmt):
     """
@@ -2034,7 +2076,7 @@ class McBlock(object):
         ## The block number within the function.
         self.iInFunction  = iInFunction;
         ## The instruction this block is associated with - can be None.
-        self.oInstruction = oInstruction;
+        self.oInstruction = oInstruction    # type: Instruction
         ## Indentation level of the block.
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         ## The raw lines the block is made up of.

@@ -1752,7 +1752,37 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeCodeTlbMissesNewPageWithOffset;
     /** Native recompiled execution: Code TLB hits for new page with offset. */
     STAMCOUNTER             StatNativeCodeTlbHitsForNewPageWithOffset;
-    uint64_t                au64Padding[3];
+
+    /** Native recompiler: Number of opportunities to skip EFLAGS.CF updating. */
+    STAMCOUNTER             StatNativeLivenessEflCfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.PF updating. */
+    STAMCOUNTER             StatNativeLivenessEflPfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.AF updating. */
+    STAMCOUNTER             StatNativeLivenessEflAfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.ZF updating. */
+    STAMCOUNTER             StatNativeLivenessEflZfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.SF updating. */
+    STAMCOUNTER             StatNativeLivenessEflSfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.OF updating. */
+    STAMCOUNTER             StatNativeLivenessEflOfSkippable;
+    /** Native recompiler: Number of opportunities to skip EFLAGS.OTHER updating. */
+    STAMCOUNTER             StatNativeLivenessEflOtherSkippable;
+    /** Native recompiler: Number of required EFLAGS.CF updates. */
+    STAMCOUNTER             StatNativeLivenessEflCfRequired;
+    /** Native recompiler: Number of required EFLAGS.PF updates. */
+    STAMCOUNTER             StatNativeLivenessEflPfRequired;
+    /** Native recompiler: Number of required EFLAGS.AF updates. */
+    STAMCOUNTER             StatNativeLivenessEflAfRequired;
+    /** Native recompiler: Number of required EFLAGS.ZF updates. */
+    STAMCOUNTER             StatNativeLivenessEflZfRequired;
+    /** Native recompiler: Number of required EFLAGS.SF updates. */
+    STAMCOUNTER             StatNativeLivenessEflSfRequired;
+    /** Native recompiler: Number of required EFLAGS.OF updates. */
+    STAMCOUNTER             StatNativeLivenessEflOfRequired;
+    /** Native recompiler: Number of required EFLAGS.OTHER updates. */
+    STAMCOUNTER             StatNativeLivenessEflOtherRequired;
+
+    uint64_t                au64Padding[5];
     /** @} */
 
     /** Data TLB.

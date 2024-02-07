@@ -938,7 +938,7 @@ class ThreadedFunctionVariation(object):
         ksVariation_64f_Addr32:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32',
     };
 
-    def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
+    def analyzeMorphStmtForThreaded(self, aoStmts, dState, iParamRef = 0):
         """
         Transforms (copy) the statements into those for the threaded function.
 
@@ -1045,6 +1045,11 @@ class ThreadedFunctionVariation(object):
                                 sExitTbStatus = 'VINF_IEM_REEXEC_BREAK';
                         oNewStmt.asParams.append(sExitTbStatus);
 
+                    # Insert an MC so we can assert the correctioness of modified flags annotations on IEM_MC_REF_EFLAGS.
+                    if 'IEM_MC_ASSERT_EFLAGS' in dState:
+                        aoThreadedStmts.insert(len(aoThreadedStmts) - 1,
+                                               iai.McStmtAssertEFlags(self.oParent.oMcBlock.oInstruction));
+
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
                     (idxReg, _, sStdRef) = self.analyze8BitGRegStmt(oStmt); # Don't use oNewStmt as it has been modified!
@@ -1079,12 +1084,23 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation in
                                                                                      self.kdVariationsWithFlat64StackAddress)];
 
+                # Add EFLAGS usage annotations to relevant MCs.
+                elif oNewStmt.sName in ('IEM_MC_COMMIT_EFLAGS', 'IEM_MC_REF_EFLAGS', 'IEM_MC_FETCH_EFLAGS'):
+                    oInstruction = self.oParent.oMcBlock.oInstruction;
+                    oNewStmt.sName += '_EX';
+                    oNewStmt.asParams.append(oInstruction.getTestedFlagsCStyle());   # Shall crash and burn if oInstruction is
+                    oNewStmt.asParams.append(oInstruction.getModifiedFlagsCStyle()); # None.  Fix the IEM decoder code.
+
+                    # For IEM_MC_REF_EFLAGS we to emit an MC before the ..._FINISH
+                    if oNewStmt.sName == 'IEM_MC_REF_EFLAGS_EX':
+                        dState['IEM_MC_ASSERT_EFLAGS'] = True;
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
-                    (oNewStmt.aoIfBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoIfBranch,   iParamRef);
+                    (oNewStmt.aoIfBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoIfBranch, dState, iParamRef);
                     if oStmt.aoElseBranch:
-                        (oNewStmt.aoElseBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoElseBranch, iParamRef);
+                        (oNewStmt.aoElseBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoElseBranch,
+                                                                                              dState, iParamRef);
 
         return (aoThreadedStmts, iParamRef);
 
@@ -1414,7 +1430,7 @@ class ThreadedFunctionVariation(object):
         self.analyzeConsolidateThreadedParamRefs();
 
         # Morph the statement stream for the block into what we'll be using in the threaded function.
-        (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
+        (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts, {});
         if iParamRef != len(self.aoParamRefs):
             raise Exception('iParamRef=%s, expected %s!' % (iParamRef, len(self.aoParamRefs),));
 

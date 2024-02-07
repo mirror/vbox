@@ -118,6 +118,11 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_GREG_U8_ZX_U64_THREADED':                              (None, False, False, True,  ),
     'IEM_MC_REF_GREG_U8_THREADED':                                       (None, True,  True,  True,  ),
 
+    'IEM_MC_REF_EFLAGS_EX':                                              (None, False, False, True,  ),
+    'IEM_MC_COMMIT_EFLAGS_EX':                                           (None, True,  True,  True,  ),
+    'IEM_MC_FETCH_EFLAGS_EX':                                            (None, False, False, True,  ),
+    'IEM_MC_ASSERT_EFLAGS':                                              (None, True,  True,  True,  ),
+
     # Flat Mem:
     'IEM_MC_FETCH_MEM16_FLAT_U8':                                        (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM32_FLAT_U8':                                        (None, True,  True,  False, ),

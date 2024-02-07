@@ -707,6 +707,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)   do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_pi32Dst); (a_pi32Dst) = (int32_t const *)((uintptr_t)0); CHK_PTYPE(int32_t const *, a_pi32Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)   do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_pi64Dst); (a_pi64Dst) = (int64_t const *)((uintptr_t)0); CHK_PTYPE(int64_t const *, a_pi64Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    do { (a_pEFlags) = (uint32_t *)((uintptr_t)0);  CHK_PTYPE(uint32_t *, a_pEFlags);   CHK_VAR(a_pEFlags); (void)fMcBegin; } while (0)
+#define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) IEM_MC_REF_EFLAGS(a_pEFlags)
 #define IEM_MC_REF_FPUREG(a_pr80Dst, a_iSt)             do { (a_pr80Dst) = (PRTFLOAT80U)((uintptr_t)0); CHK_PTYPE(PCRTFLOAT80U, a_pr80Dst); CHK_VAR(a_pr80Dst); AssertCompile((a_iSt) < 8); (void)fMcBegin; } while (0)
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                     do { (a_pfMxcsr) = (uint32_t *)((uintptr_t)0);  CHK_PTYPE(uint32_t *, a_pfMxcsr);   CHK_VAR(a_pfMxcsr); (void)fMcBegin; (void)fSseRead; } while (0)
 
