@@ -71,7 +71,7 @@ RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc)
 }
 RT_EXPORT_SYMBOL(RTStrCat);
 
-RTDECL(int) RTStrCat2(char *pszDst, size_t cbDst, const char *pszSrc)
+RTDECL(char *) RTStrCat2(char *pszDst, size_t cbDst, const char *pszSrc)
 {
     return RT_SUCCESS(rtStrCat(pszDst, cbDst, pszSrc)) ? pszDst : NULL;
 }
