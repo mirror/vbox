@@ -127,7 +127,7 @@ g_kcSecMinSinceLastFailedTask           = 180; # (3 min)
 ## @{
 
 ## The max number of test results per test set.
-g_kcMaxTestResultsPerTS = 4096;
+g_kcMaxTestResultsPerTS = 12288;
 ## The max number of test results (children) per test result.
 g_kcMaxTestResultsPerTR = 512;
 ## The max number of test result values per test set.
