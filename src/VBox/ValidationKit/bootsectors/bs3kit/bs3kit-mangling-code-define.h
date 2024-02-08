@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2007-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -216,6 +216,10 @@
 #define Bs3TestSubDone BS3_CMN_MANGLER(Bs3TestSubDone)
 #define Bs3TestSubErrorCount BS3_CMN_MANGLER(Bs3TestSubErrorCount)
 #define Bs3TestSubF BS3_CMN_MANGLER(Bs3TestSubF)
+#define Bs3TestSubSub BS3_CMN_MANGLER(Bs3TestSubSub)
+#define Bs3TestSubSubDone BS3_CMN_MANGLER(Bs3TestSubSubDone)
+#define Bs3TestSubSubF BS3_CMN_MANGLER(Bs3TestSubSubF)
+#define Bs3TestSubSubV BS3_CMN_MANGLER(Bs3TestSubSubV)
 #define Bs3TestSubV BS3_CMN_MANGLER(Bs3TestSubV)
 #define Bs3TestTerm BS3_CMN_MANGLER(Bs3TestTerm)
 #define Bs3TestValue BS3_CMN_MANGLER(Bs3TestValue)

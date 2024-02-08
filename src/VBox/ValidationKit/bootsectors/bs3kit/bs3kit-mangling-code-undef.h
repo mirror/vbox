@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2007-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -216,6 +216,10 @@
 #undef Bs3TestSubDone
 #undef Bs3TestSubErrorCount
 #undef Bs3TestSubF
+#undef Bs3TestSubSub
+#undef Bs3TestSubSubDone
+#undef Bs3TestSubSubF
+#undef Bs3TestSubSubV
 #undef Bs3TestSubV
 #undef Bs3TestTerm
 #undef Bs3TestValue

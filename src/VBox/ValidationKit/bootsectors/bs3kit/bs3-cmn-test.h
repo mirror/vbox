@@ -44,6 +44,11 @@
 #include <VBox/VMMDevTesting.h>
 
 
+/** The test name. */
+extern const char BS3_FAR  *g_pszBs3Test_c16;
+extern const char          *g_pszBs3Test_c32;
+extern const char          *g_pszBs3Test_c64;
+
 /** Indicates whether the VMMDev is operational. */
 #ifndef DOXYGEN_RUNNING
 # define g_fbBs3VMMDevTesting BS3_DATA_NM(g_fbBs3VMMDevTesting)
@@ -55,6 +60,13 @@ extern bool                 g_fbBs3VMMDevTesting;
 # define g_cusBs3TestErrors BS3_DATA_NM(g_cusBs3TestErrors)
 #endif
 extern uint16_t             g_cusBs3TestErrors;
+
+
+/** The subtest name. */
+#ifndef DOXYGEN_RUNNING
+# define g_szBs3SubTest     BS3_DATA_NM(g_szBs3SubTest)
+#endif
+extern char                 g_szBs3SubTest[64];
 
 /** The start error count of the current subtest. */
 #ifndef DOXYGEN_RUNNING
@@ -85,22 +97,49 @@ extern uint16_t             g_cusBs3SubTests;
 #endif
 extern uint16_t             g_cusBs3SubTestsFailed;
 
+
+/** The subsubtest name. */
+#ifndef DOXYGEN_RUNNING
+# define g_szBs3SubSubTest  BS3_DATA_NM(g_szBs3SubSubTest)
+#endif
+extern char                 g_szBs3SubSubTest[64];
+
+/** The start error count of the current sub-sub-test. */
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubSubTestAtErrors BS3_DATA_NM(g_cusBs3SubSubTestAtErrors)
+#endif
+extern uint16_t             g_cusBs3SubSubTestAtErrors;
+
+/**  Whether we've reported the sub-sub-test result or not. */
+#ifndef DOXYGEN_RUNNING
+# define g_fbBs3SubSubTestReported BS3_DATA_NM(g_fbBs3SubSubTestReported)
+#endif
+extern bool                 g_fbBs3SubSubTestReported;
+/** Whether the sub-sub-test has been skipped or not. */
+#ifndef DOXYGEN_RUNNING
+# define g_fbBs3SubSubTestSkipped BS3_DATA_NM(g_fbBs3SubSubTestSkipped)
+#endif
+extern bool                 g_fbBs3SubSubTestSkipped;
+
+/** The number of sub-sub-tests. */
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubSubTests   BS3_DATA_NM(g_cusBs3SubSubTests)
+#endif
+extern uint16_t             g_cusBs3SubSubTests;
+
+/** The number of sub-sub-tests that failed. */
+#ifndef DOXYGEN_RUNNING
+# define g_cusBs3SubSubTestsFailed BS3_DATA_NM(g_cusBs3SubSubTestsFailed)
+#endif
+extern uint16_t             g_cusBs3SubSubTestsFailed;
+
+
 /** VMMDEV_TESTING_UNIT_XXX -> string */
 #ifndef DOXYGEN_RUNNING
 # define g_aszBs3TestUnitNames BS3_DATA_NM(g_aszBs3TestUnitNames)
 #endif
 extern char const           g_aszBs3TestUnitNames[][12];
 
-/** The test name. */
-extern const char BS3_FAR  *g_pszBs3Test_c16;
-extern const char          *g_pszBs3Test_c32;
-extern const char          *g_pszBs3Test_c64;
-
-/** The subtest name. */
-#ifndef DOXYGEN_RUNNING
-# define g_szBs3SubTest     BS3_DATA_NM(g_szBs3SubTest)
-#endif
-extern char                 g_szBs3SubTest[64];
 
 
 /**
@@ -140,6 +179,14 @@ BS3_DECL(void) bs3TestSendCmdWithU32(uint32_t uCmd, uint32_t uValue);
 # define bs3TestIsVmmDevTestingPresent BS3_CMN_NM(bs3TestIsVmmDevTestingPresent)
 #endif
 BS3_DECL(bool) bs3TestIsVmmDevTestingPresent(void);
+
+/**
+ * Similar to rtTestSubSubCleanup.
+ */
+#ifndef DOXYGEN_RUNNING
+# define bs3TestSubSubCleanup BS3_CMN_NM(bs3TestSubSubCleanup)
+#endif
+BS3_DECL(void) bs3TestSubSubCleanup(void);
 
 /**
  * Similar to rtTestSubCleanup.

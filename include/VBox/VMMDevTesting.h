@@ -127,7 +127,7 @@
 #define VMMDEV_TESTING_CMD_TERM         UINT32_C(0xcab1e001)
 /** Start a new sub-test, sending name (zero terminated string). (RTTestSub) */
 #define VMMDEV_TESTING_CMD_SUB_NEW      UINT32_C(0xcab1e002)
-/** Sub-test is done, sending 32-bit error count for it. (RTTestDone) */
+/** Sub-test is done, sending 32-bit error count for it. (RTTestSubDone) */
 #define VMMDEV_TESTING_CMD_SUB_DONE     UINT32_C(0xcab1e003)
 /** Report a failure, sending reason (zero terminated string). (RTTestFailed) */
 #define VMMDEV_TESTING_CMD_FAILED       UINT32_C(0xcab1e004)
@@ -144,6 +144,10 @@
 /** Query a config value, sending a 16-bit word (VMMDEV_TESTING_CFG_XXX) to the
  * DATA port and reading back the result. */
 #define VMMDEV_TESTING_CMD_QUERY_CFG    UINT32_C(0xcab1e009)
+/** Start a new sub-sub-test, sending name (zero terminated string). (RTTestSubSub) */
+#define VMMDEV_TESTING_CMD_SUBSUB_NEW   UINT32_C(0xcab1e00a)
+/** Sub-sub-test is done, sending 32-bit error count for it. (RTTestSubSubDone) */
+#define VMMDEV_TESTING_CMD_SUBSUB_DONE  UINT32_C(0xcab1e00b)
 
 /** The magic part of the command. */
 #define VMMDEV_TESTING_CMD_MAGIC        UINT32_C(0xcab1e000)

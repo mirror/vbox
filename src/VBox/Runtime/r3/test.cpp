@@ -121,21 +121,27 @@ typedef struct RTTESTINT
     /** The list of guarded memory allocations. */
     PRTTESTGUARDEDMEM   pGuardedMem;
 
-    /** The current sub-test. */
-    const char         *pszSubTest;
-    /** The length of the sub-test name. */
-    size_t              cchSubTest;
-    /** Whether the current subtest should figure as 'SKIPPED'. */
-    bool                fSubTestSkipped;
-    /** Whether we've reported the sub-test result or not. */
-    bool                fSubTestReported;
-    /** The start error count of the current subtest. */
-    uint32_t            cSubTestAtErrors;
-
-    /** The number of sub tests. */
-    uint32_t            cSubTests;
-    /** The number of sub tests that failed. */
-    uint32_t            cSubTestsFailed;
+    struct RTTESTINTSUBTRACKER
+    {
+        /** The current (sub-)sub-test. */
+        const char         *pszName;
+        /** The length of the (sub-)sub-test name. */
+        size_t              cchName;
+        /** Whether the current (sub-)sub-test should figure as 'SKIPPED'. */
+        bool                fSkipped;
+        /** Whether we've reported the (sub-)sub-test result or not. */
+        bool                fReported;
+        /** The start error count of the current (sub-)sub-test. */
+        uint32_t            cErrorsAtStart;
+        /** The number of (sub-)sub-tests. */
+        uint32_t            cTests;
+        /** The number of (sub-)sub-tests that failed. */
+        uint32_t            cFailedTests;
+    }
+    /** sub-test tracker. */
+                        Sub,
+    /** sub-sub-test tracker. */
+                        SubSub;
 
     /** Error context message. */
     char               *pszErrCtx;
@@ -242,6 +248,19 @@ static DECLCALLBACK(int32_t) rtTestInitOnce(void *pvUser)
 }
 
 
+/** RTTestCreateEx helpers.   */
+DECL_FORCE_INLINE(void) rtTestInitSubTracking(struct RTTESTINT::RTTESTINTSUBTRACKER *pTracker)
+{
+    pTracker->pszName        = NULL;
+    pTracker->cchName        = 0;
+    pTracker->fSkipped       = false;
+    pTracker->fReported      = true;
+    pTracker->cErrorsAtStart = 0;
+    pTracker->cTests         = 0;
+    pTracker->cFailedTests   = 0;
+}
+
+
 RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enmMaxLevel,
                              RTHCINTPTR iNativeTestPipe, const char *pszXmlFile, PRTTEST phTest)
 {
@@ -276,13 +295,8 @@ RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enm
 
     pTest->pGuardedMem      = NULL;
 
-    pTest->pszSubTest       = NULL;
-    pTest->cchSubTest       = 0;
-    pTest->fSubTestSkipped  = false;
-    pTest->fSubTestReported = true;
-    pTest->cSubTestAtErrors = 0;
-    pTest->cSubTests        = 0;
-    pTest->cSubTestsFailed  = 0;
+    rtTestInitSubTracking(&pTest->Sub);
+    rtTestInitSubTracking(&pTest->SubSub);
 
     pTest->fXmlEnabled      = false;
     pTest->fXmlTopTestDone  = false;
@@ -524,8 +538,10 @@ RTR3DECL(int) RTTestDestroy(RTTEST hTest)
         rtTestGuardedFreeOne(pFree);
     }
 
-    RTStrFree((char *)pTest->pszSubTest);
-    pTest->pszSubTest = NULL;
+    RTStrFree((char *)pTest->SubSub.pszName);
+    pTest->SubSub.pszName = NULL;
+    RTStrFree((char *)pTest->Sub.pszName);
+    pTest->Sub.pszName = NULL;
     RTStrFree((char *)pTest->pszTest);
     pTest->pszTest = NULL;
     RTStrFree(pTest->pszErrCtx);
@@ -943,7 +959,7 @@ static void rtTestXmlEnd(PRTTESTINT pTest)
         if (!pTest->fXmlOmitTopTest && pTest->fXmlTopTestDone)
         {
             rtTestXmlElem(pTest, "End", "SubTests=\"%u\" SubTestsFailed=\"%u\" errors=\"%u\"",
-                          pTest->cSubTests, pTest->cSubTestsFailed, pTest->cErrors);
+                          pTest->Sub.cTests, pTest->Sub.cFailedTests, pTest->cErrors);
             rtTestXmlOutput(pTest, "</Test>\n");
         }
 
@@ -1119,45 +1135,75 @@ RTR3DECL(int) RTTestBanner(RTTEST hTest)
 
 
 /**
- * Prints the result of a sub-test if necessary.
+ * Prints the result of a sub-test or sub-sub-test if necessary.
  *
  * @returns Number of chars printed.
  * @param   pTest       The test instance.
+ * @param   pTracker    The sub-test or sub-sub-test tracker.
+ * @param   cchIndent   Result indent.
  * @remarks Caller own the test Lock.
  */
-static int rtTestSubTestReport(PRTTESTINT pTest)
+static int rtTestSubTestReportWorker(PRTTESTINT pTest, struct RTTESTINT::RTTESTINTSUBTRACKER *pTracker, unsigned cchIndent)
 {
     int cch = 0;
-    if (    !pTest->fSubTestReported
-        &&  pTest->pszSubTest)
+    if (   !pTracker->fReported
+        && pTracker->pszName)
     {
-        pTest->fSubTestReported = true;
-        uint32_t cErrors = ASMAtomicUoReadU32(&pTest->cErrors) - pTest->cSubTestAtErrors;
+        unsigned const cchNameWidth = 60 - cchIndent;
+        pTracker->fReported = true;
+        uint32_t const cErrors = ASMAtomicUoReadU32(&pTest->cErrors) - pTracker->cErrorsAtStart;
         if (!cErrors)
         {
-            if (!pTest->fSubTestSkipped)
+            if (!pTracker->fSkipped)
             {
                 rtTestXmlElem(pTest, "Passed", NULL);
                 rtTestXmlElemEnd(pTest, "Test");
-                cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-60s: PASSED\n", pTest->pszSubTest);
+                cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%*s%-*s: PASSED\n",
+                                      cchIndent, "", cchNameWidth, pTracker->pszName);
             }
             else
             {
                 rtTestXmlElem(pTest, "Skipped", NULL);
                 rtTestXmlElemEnd(pTest, "Test");
-                cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-60s: SKIPPED\n", pTest->pszSubTest);
+                cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%*s%-60s: SKIPPED\n",
+                                      cchIndent, "", cchNameWidth, pTracker->pszName);
             }
         }
         else
         {
-            pTest->cSubTestsFailed++;
+            pTracker->cFailedTests++;
             rtTestXmlElem(pTest, "Failed", "errors=\"%u\"", cErrors);
             rtTestXmlElemEnd(pTest, "Test");
-            cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-60s: FAILED (%u errors)\n",
-                                  pTest->pszSubTest, cErrors);
+            cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%*s%-60s: FAILED (%u errors)\n",
+                                  cchIndent, "", cchNameWidth, pTracker->pszName, cErrors);
         }
     }
     return cch;
+}
+
+
+/** Worker for rtTestSubSubCleanup and rtTestSubCleanup.  */
+static int rtTestSubCleanupWorker(PRTTESTINT pTest, struct RTTESTINT::RTTESTINTSUBTRACKER *pTracker, unsigned cchIndent)
+{
+    int cch = rtTestSubTestReportWorker(pTest, pTracker, cchIndent);
+    RTStrFree((char *)pTracker->pszName);
+    pTracker->pszName   = NULL;
+    pTracker->fReported = true;
+    return cch;
+}
+
+
+/**
+ * RTTestSubSub and RTTestSubSubDone worker that cleans up the current (if any)
+ * sub-sub-test.
+ *
+ * @returns Number of chars printed.
+ * @param   pTest       The test instance.
+ * @remarks Caller own the test Lock.
+ */
+static int rtTestSubSubCleanup(PRTTESTINT pTest)
+{
+    return rtTestSubCleanupWorker(pTest, &pTest->SubSub, 2);
 }
 
 
@@ -1171,15 +1217,9 @@ static int rtTestSubTestReport(PRTTESTINT pTest)
  */
 static int rtTestSubCleanup(PRTTESTINT pTest)
 {
-    int cch = 0;
-    if (pTest->pszSubTest)
-    {
-        cch += rtTestSubTestReport(pTest);
+    int cch = rtTestSubCleanupWorker(pTest, &pTest->SubSub, 2);
+    cch    += rtTestSubCleanupWorker(pTest, &pTest->Sub, 0);
 
-        RTStrFree((char *)pTest->pszSubTest);
-        pTest->pszSubTest = NULL;
-        pTest->fSubTestReported = true;
-    }
     RTStrFree(pTest->pszErrCtx);
     pTest->pszErrCtx = NULL;
     return cch;
@@ -1192,7 +1232,8 @@ RTR3DECL(RTEXITCODE) RTTestSummaryAndDestroy(RTTEST hTest)
     RTTEST_GET_VALID_RETURN_RC(pTest, RTEXITCODE_FAILURE);
 
     RTCritSectEnter(&pTest->Lock);
-    rtTestSubTestReport(pTest);
+    rtTestSubTestReportWorker(pTest, &pTest->SubSub, 2);
+    rtTestSubTestReportWorker(pTest, &pTest->Sub, 0);
     RTCritSectLeave(&pTest->Lock);
 
     RTEXITCODE enmExitCode;
@@ -1218,7 +1259,8 @@ RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFm
     RTTEST_GET_VALID_RETURN_RC(pTest, RTEXITCODE_SKIPPED);
 
     RTCritSectEnter(&pTest->Lock);
-    rtTestSubTestReport(pTest);
+    rtTestSubTestReportWorker(pTest, &pTest->SubSub, 2);
+    rtTestSubTestReportWorker(pTest, &pTest->Sub, 0);
     RTCritSectLeave(&pTest->Lock);
 
     RTEXITCODE enmExitCode;
@@ -1250,6 +1292,20 @@ RTR3DECL(RTEXITCODE) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt
 }
 
 
+/** Worker for RTTestSub and RTTestSubSub. */
+static void rtTestSubNew(PRTTESTINT pTest, struct RTTESTINT::RTTESTINTSUBTRACKER *pTracker, const char *pszName)
+{
+    pTracker->cTests++;
+    pTracker->cErrorsAtStart = ASMAtomicUoReadU32(&pTest->cErrors);
+    pTracker->pszName        = RTStrDup(pszName);
+    pTracker->cchName        = strlen(pszName);
+    AssertMsg(pTracker->cchName < 64 /* See g_kcchMaxTestResultName in testmanager/config.py. */,
+              ("cchSubTest=%u: '%s'\n", pTracker->cchName, pTracker->pszName));
+    pTracker->fSkipped       = false;
+    pTracker->fReported      = false;
+}
+
+
 RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
 {
     PRTTESTINT pTest = hTest;
@@ -1260,15 +1316,11 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
     /* Cleanup, reporting if necessary previous sub test. */
     rtTestSubCleanup(pTest);
 
+    pTest->SubSub.cTests       = 0;
+    pTest->SubSub.cFailedTests = 0;
+
     /* Start new sub test. */
-    pTest->cSubTests++;
-    pTest->cSubTestAtErrors = ASMAtomicUoReadU32(&pTest->cErrors);
-    pTest->pszSubTest = RTStrDup(pszSubTest);
-    pTest->cchSubTest = strlen(pszSubTest);
-    AssertMsg(pTest->cchSubTest < 64 /* See g_kcchMaxTestResultName in testmanager/config.py. */,
-              ("cchSubTest=%u: '%s'\n", pTest->cchSubTest, pTest->pszSubTest));
-    pTest->fSubTestSkipped  = false;
-    pTest->fSubTestReported = false;
+    rtTestSubNew(pTest, &pTest->Sub, pszSubTest);
 
     int cch = 0;
     if (pTest->enmMaxLevel >= RTTESTLVL_DEBUG)
@@ -1325,6 +1377,71 @@ RTR3DECL(int) RTTestSubDone(RTTEST hTest)
 }
 
 
+RTR3DECL(int) RTTestSubSub(RTTEST hTest, const char *pszSubSubTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, -1);
+    AssertReturn(pTest->Sub.pszName, -1);
+    AssertReturn(!pTest->Sub.fReported, -1);
+    AssertReturn(!pTest->Sub.fSkipped, -1);
+
+    RTCritSectEnter(&pTest->Lock);
+
+    /* Cleanup, reporting if necessary previous sub-sub-test. */
+    rtTestSubSubCleanup(pTest);
+
+    /* Start new sub-sub-test. */
+    rtTestSubNew(pTest, &pTest->SubSub, pszSubSubTest);
+
+    int cch = 0;
+    if (pTest->enmMaxLevel >= RTTESTLVL_DEBUG)
+        cch = RTTestPrintfNl(hTest, RTTESTLVL_DEBUG, "debug: Starting sub-sub-test '%s'\n", pszSubSubTest);
+
+    Assert(pTest->fXmlTopTestDone);
+    rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszSubSubTest);
+
+    RTCritSectLeave(&pTest->Lock);
+
+    return cch;
+}
+
+
+RTR3DECL(int) RTTestSubSubF(RTTEST hTest, const char *pszSubSubTestFmt, ...)
+{
+    va_list va;
+    va_start(va, pszSubSubTestFmt);
+    int cch = RTTestSubSubV(hTest, pszSubSubTestFmt, va);
+    va_end(va);
+    return cch;
+}
+
+
+RTR3DECL(int) RTTestSubSubV(RTTEST hTest, const char *pszSubSubTestFmt, va_list va)
+{
+    char *pszSubSubTest;
+    RTStrAPrintfV(&pszSubSubTest, pszSubSubTestFmt, va);
+    if (pszSubSubTest)
+    {
+        int cch = RTTestSubSub(hTest, pszSubSubTest);
+        RTStrFree(pszSubSubTest);
+        return cch;
+    }
+    return 0;
+}
+
+
+RTR3DECL(int) RTTestSubSubDone(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, VERR_INVALID_HANDLE);
+
+    RTCritSectEnter(&pTest->Lock);
+    int cch = rtTestSubSubCleanup(pTest);
+    RTCritSectLeave(&pTest->Lock);
+
+    return cch;
+}
+
 RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va)
 {
     PRTTESTINT pTest = hTest;
@@ -1366,7 +1483,10 @@ RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va)
     AssertPtrNull(pszFormat);
     RTTEST_GET_VALID_RETURN_RC(pTest, VERR_INVALID_HANDLE);
 
-    pTest->fSubTestSkipped = true;
+    if (pTest->SubSub.pszName)
+        pTest->SubSub.fSkipped = true;
+    else
+        pTest->Sub.fSkipped = true;
 
     int cch = 0;
     if (pszFormat && *pszFormat && pTest->enmMaxLevel >= RTTESTLVL_INFO)
@@ -1532,7 +1652,16 @@ RTR3DECL(uint32_t) RTTestSubErrorCount(RTTEST hTest)
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, UINT32_MAX);
 
-    return ASMAtomicReadU32(&pTest->cErrors) - pTest->cSubTestAtErrors;
+    return ASMAtomicReadU32(&pTest->cErrors) - pTest->Sub.cErrorsAtStart;
+}
+
+
+RTR3DECL(uint32_t) RTTestSubSubErrorCount(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, UINT32_MAX);
+
+    return ASMAtomicReadU32(&pTest->cErrors) - pTest->SubSub.cErrorsAtStart;
 }
 
 

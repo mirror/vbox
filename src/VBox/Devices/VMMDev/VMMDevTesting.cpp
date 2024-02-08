@@ -383,6 +383,7 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
             {
                 case VMMDEV_TESTING_CMD_INIT:
                 case VMMDEV_TESTING_CMD_SUB_NEW:
+                case VMMDEV_TESTING_CMD_SUBSUB_NEW:
                 case VMMDEV_TESTING_CMD_FAILED:
                 case VMMDEV_TESTING_CMD_SKIPPED:
                 case VMMDEV_TESTING_CMD_PRINT:
@@ -412,6 +413,11 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                                     VMMDEV_TESTING_OUTPUT(("testing: SUB_NEW  '%s'\n", pThis->TestingData.String.sz));
                                     if (pThisCC->hTestingTest != NIL_RTTEST)
                                         RTTestSub(pThisCC->hTestingTest, pThis->TestingData.String.sz);
+                                    break;
+                                case VMMDEV_TESTING_CMD_SUBSUB_NEW:
+                                    VMMDEV_TESTING_OUTPUT(("testing: SUBSUB_NEW  '%s'\n", pThis->TestingData.String.sz));
+                                    if (pThisCC->hTestingTest != NIL_RTTEST)
+                                        RTTestSubSub(pThisCC->hTestingTest, pThis->TestingData.String.sz);
                                     break;
                                 case VMMDEV_TESTING_CMD_FAILED:
                                     if (pThisCC->hTestingTest != NIL_RTTEST)
@@ -444,6 +450,7 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
 
                 case VMMDEV_TESTING_CMD_TERM:
                 case VMMDEV_TESTING_CMD_SUB_DONE:
+                case VMMDEV_TESTING_CMD_SUBSUB_DONE:
                     if (cb == 2)
                     {
                         if (off == 0)
@@ -468,26 +475,39 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     {
 #ifdef IN_RING3
                         pThis->TestingData.Error.c = u32;
+
+                        /* Bring the error count up to the right level (a bit stupid way
+                           to do it, but it gets the job done). */
+                        if (pThisCC->hTestingTest != NIL_RTTEST)
+                        {
+                            uint32_t cShort = uCmd == VMMDEV_TESTING_CMD_TERM     ? RTTestErrorCount(pThisCC->hTestingTest)
+                                            : uCmd == VMMDEV_TESTING_CMD_SUB_DONE ? RTTestSubErrorCount(pThisCC->hTestingTest)
+                                            :                                       RTTestSubSubErrorCount(pThisCC->hTestingTest);
+                            cShort = u32 > cShort ? u32 - cShort : 0;
+                            while (cShort-- > 0)
+                                RTTestErrorInc(pThisCC->hTestingTest);
+                        }
+
                         if (uCmd == VMMDEV_TESTING_CMD_TERM)
                         {
                             if (pThisCC->hTestingTest != NIL_RTTEST)
                             {
-                                while (RTTestErrorCount(pThisCC->hTestingTest) < u32)
-                                    RTTestErrorInc(pThisCC->hTestingTest); /* A bit stupid, but does the trick. */
                                 RTTestSubDone(pThisCC->hTestingTest);
                                 RTTestSummaryAndDestroy(pThisCC->hTestingTest);
                                 pThisCC->hTestingTest = NIL_RTTEST;
                             }
                             VMMDEV_TESTING_OUTPUT(("testing: TERM - %u errors\n", u32));
                         }
+                        else if (uCmd == VMMDEV_TESTING_CMD_SUBSUB_DONE)
+                        {
+                            if (pThisCC->hTestingTest != NIL_RTTEST)
+                                RTTestSubSubDone(pThisCC->hTestingTest);
+                            VMMDEV_TESTING_OUTPUT(("testing: SUBSUB_DONE - %u errors\n", u32));
+                        }
                         else
                         {
                             if (pThisCC->hTestingTest != NIL_RTTEST)
-                            {
-                                while (RTTestSubErrorCount(pThisCC->hTestingTest) < u32)
-                                    RTTestErrorInc(pThisCC->hTestingTest); /* A bit stupid, but does the trick. */
                                 RTTestSubDone(pThisCC->hTestingTest);
-                            }
                             VMMDEV_TESTING_OUTPUT(("testing: SUB_DONE - %u errors\n", u32));
                         }
                         return VINF_SUCCESS;

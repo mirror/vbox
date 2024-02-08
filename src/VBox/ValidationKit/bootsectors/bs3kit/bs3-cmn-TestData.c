@@ -45,6 +45,9 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** The test name. */
+const char BS3_FAR *BS3_CMN_NM(g_pszBs3Test) = NULL;
+
 #if ARCH_BITS == 16
 
 /** Indicates whether the VMMDev is operational. */
@@ -56,19 +59,30 @@ bool        g_fTestDataPadding0 = true;
 /** The number of tests that have failed. */
 uint16_t    g_cusBs3TestErrors = 0;
 
+/** The start error count of the current sub-sub-test. */
+uint16_t    g_cusBs3SubSubTestAtErrors = 0;
+/** Whether we've reported the sub-sub-test result or not. */
+bool        g_fbBs3SubSubTestReported = true;
+/** Whether the sub-sub-test has been skipped or not. */
+bool        g_fbBs3SubSubTestSkipped = false;
+/** The number of sub-sub-tests. */
+uint16_t    g_cusBs3SubSubTests = 0;
+/** The number of sub-sub-tests that failed. */
+uint16_t    g_cusBs3SubSubTestsFailed = 0;
+
 /** The start error count of the current subtest. */
 uint16_t    g_cusBs3SubTestAtErrors = 0;
-
 /** Whether we've reported the sub-test result or not. */
 bool        g_fbBs3SubTestReported = true;
 /** Whether the sub-test has been skipped or not. */
 bool        g_fbBs3SubTestSkipped = false;
-
-/** The number of sub tests. */
+/** The number of sub-tests. */
 uint16_t    g_cusBs3SubTests = 0;
-
-/** The number of sub tests that failed. */
+/** The number of sub-tests that failed. */
 uint16_t    g_cusBs3SubTestsFailed = 0;
+
+/** The current test step. */
+uint16_t    g_usBs3TestStep;
 
 /** VMMDEV_TESTING_UNIT_XXX -> string */
 char const  g_aszBs3TestUnitNames[][12] =
@@ -124,12 +138,8 @@ char const  g_aszBs3TestUnitNames[][12] =
 
 /** The subtest name. */
 char        g_szBs3SubTest[64];
-
-/** The current test step. */
-uint16_t    g_usBs3TestStep;
+/** The subsubtest name. */
+char        g_szBs3SubSubTest[64];
 
 #endif /* ARCH_BITS == 16 */
-
-/** The test name. */
-const char BS3_FAR *BS3_CMN_NM(g_pszBs3Test) = NULL;
 

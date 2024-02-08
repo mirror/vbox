@@ -1973,6 +1973,10 @@ EXPORTS
     RTTestISubDone
     RTTestISubF
     RTTestISubV
+    RTTestISubSub
+    RTTestISubSubDone
+    RTTestISubSubF
+    RTTestISubSubV
     RTTestIValue
     RTTestIValueF
     RTTestIValueV
@@ -1988,8 +1992,14 @@ EXPORTS
     RTTestSkipAndDestroyV
     RTTestSub
     RTTestSubDone
+    RTTestSubErrorCount
     RTTestSubF
     RTTestSubV
+    RTTestSubSub
+    RTTestSubSubDone
+    RTTestSubSubErrorCount
+    RTTestSubSubF
+    RTTestSubSubV
     RTTestSummaryAndDestroy
     RTTestValue
     RTTestValueF

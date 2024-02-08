@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2007-2023 Oracle and/or its affiliates.
+# Copyright (C) 2007-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -163,6 +163,10 @@ $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSkippedV)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSub)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubDone)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubF)
+$(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubSub)
+$(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubSubDone)
+$(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubSubF)
+$(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubSubV)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestSubV)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestTerm)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestValue)

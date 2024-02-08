@@ -230,6 +230,9 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestSub.c \
 	bs3-cmn-TestSubDone.c \
 	bs3-cmn-TestSubErrorCount.c \
+	bs3-cmn-TestSubSub.c \
+	bs3-cmn-TestSubSubDone.c \
+	bs3-cmn-TestSubSubErrorCount.c \
 	bs3-cmn-TestTerm.c \
 	bs3-cmn-TestSendCmdWithStr.asm \
 	bs3-cmn-TestSendCmdWithU32.asm \

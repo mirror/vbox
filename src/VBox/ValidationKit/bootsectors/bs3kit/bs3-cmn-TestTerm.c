@@ -42,38 +42,71 @@
 #include "bs3-cmn-test.h"
 
 
+static void bs3TestSubCleanupWorker(char const BS3_FAR *pszName, bool fSkipped, uint16_t cErrorsAtStart, uint32_t uDoneCmd,
+                                    char const BS3_FAR *pszParent)
+{
+    uint16_t const cErrors = g_cusBs3TestErrors - cErrorsAtStart;
+    size_t         cch     = Bs3StrLen(pszName);
+
+    /* Tell VMMDev. */
+    bs3TestSendCmdWithU32(uDoneCmd, cErrors);
+
+    /* Print result to the console. */
+    if (pszParent)
+    {
+        Bs3PrintStr(pszParent);
+        cch += Bs3StrLen(pszParent) + 3;
+        Bs3PrintStr(" / ");
+    }
+    Bs3PrintStr(pszName);
+    Bs3PrintChr(':');
+    do
+        Bs3PrintChr(' ');
+    while (cch++ < 49);
+
+    if (!cErrors)
+        Bs3PrintStr(!fSkipped ? "PASSED\n" : "SKIPPED\n");
+    else
+    {
+        if (uDoneCmd == VMMDEV_TESTING_CMD_SUB_DONE)
+            g_cusBs3SubTestsFailed++;
+        else
+            g_cusBs3SubSubTestsFailed++;
+        Bs3Printf("FAILED (%u errors)\n", cErrors);
+    }
+}
+
+
+/**
+ * Cleans up the current sub-sub-test.
+ */
+BS3_DECL(void) bs3TestSubSubCleanup(void)
+{
+    if (g_szBs3SubSubTest[0] != '\0')
+    {
+        if (!g_fbBs3SubSubTestReported)
+            bs3TestSubCleanupWorker(g_szBs3SubSubTest, g_fbBs3SubSubTestSkipped, g_cusBs3SubSubTestAtErrors,
+                                    VMMDEV_TESTING_CMD_SUBSUB_DONE, g_szBs3SubTest);
+
+        /* Reset the sub-sub-test. */
+        g_fbBs3SubSubTestReported = true;
+        g_fbBs3SubSubTestSkipped  = false;
+        g_szBs3SubSubTest[0]      = '\0';
+    }
+}
+
 
 /**
  * Equivalent to rtTestSubCleanup + rtTestSubTestReport.
  */
 BS3_DECL(void) bs3TestSubCleanup(void)
 {
+    bs3TestSubSubCleanup();
     if (g_szBs3SubTest[0] != '\0')
     {
         if (!g_fbBs3SubTestReported)
-        {
-            size_t   cch;
-            uint16_t cErrors = g_cusBs3TestErrors - g_cusBs3SubTestAtErrors;
-
-            /* Tell VMMDev. */
-            bs3TestSendCmdWithU32(VMMDEV_TESTING_CMD_SUB_DONE, cErrors);
-
-            /* Print result to the console. */
-            Bs3PrintStr(g_szBs3SubTest);
-            Bs3PrintChr(':');
-            cch = Bs3StrLen(g_szBs3SubTest);
-            do
-                Bs3PrintChr(' ');
-            while (cch++ < 49);
-
-            if (!cErrors)
-                Bs3PrintStr(!g_fbBs3SubTestSkipped ? "PASSED\n" : "SKIPPED\n");
-            else
-            {
-                g_cusBs3SubTestsFailed++;
-                Bs3Printf("FAILED (%u errors)\n", cErrors);
-            }
-        }
+            bs3TestSubCleanupWorker(g_szBs3SubTest, g_fbBs3SubTestSkipped, g_cusBs3SubTestAtErrors,
+                                    VMMDEV_TESTING_CMD_SUB_DONE, NULL);
 
         /* Reset the sub-test. */
         g_fbBs3SubTestReported = true;
