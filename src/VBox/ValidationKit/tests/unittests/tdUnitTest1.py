@@ -73,11 +73,11 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstLow':                        '>=7.0.0',    # Driverless package.
             'testcase/tstPin':                        '>=7.0.0',    # Driverless package.
             'testcase/tstIntNet-1':                   '>=7.0.0',    # Driverless package.
-            'testacse/tstRTR0DbgKrnlInfoDriver':      '>=7.0.0',    # Driverless package.
-            'testacse/tstRTR0MemUserKernelDriver':    '>=7.0.0',    # Driverless package.
-            'testacse/tstRTR0SemMutexDriver':         '>=7.0.0',    # Driverless package.
-            'testacse/tstRTR0ThreadPreemptionDriver': '>=7.0.0',    # Driverless package.
-            'testacse/tstRTR0TimerDriver':            '>=7.0.0',    # Driverless package.
+            'testcase/tstRTR0DbgKrnlInfoDriver':      '>=7.0.0',    # Driverless package.
+            'testcase/tstRTR0MemUserKernelDriver':    '>=7.0.0',    # Driverless package.
+            'testcase/tstRTR0SemMutexDriver':         '>=7.0.0',    # Driverless package.
+            'testcase/tstRTR0ThreadPreemptionDriver': '>=7.0.0',    # Driverless package.
+            'testcase/tstRTR0TimerDriver':            '>=7.0.0',    # Driverless package.
             'testcase/tstDarwinKeyboard': '',                       # Fails for unknown reason.
             'testcase/tstVBoxAPIXPCOM': '',                         # Can't instantiate the VirtualBox object
                                                                     # (binary would need moving to the VirtualBox installation
