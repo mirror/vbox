@@ -10132,7 +10132,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrlw_imm_u128,(PRTUINT128U puDst, uint8_t uShi
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
 {
     RTUINT128U uSrc1 = *puSrc1;
- 
+
     if (uShift <= 15)
     {
         puDst->au16[0] = uSrc1.au16[0] >> uShift;
@@ -10588,7 +10588,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrld_imm_u128,(PRTUINT128U puDst, uint8_t uShi
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
 {
     RTUINT128U uSrc1 = *puSrc1;
- 
+
     if (uShift <= 31)
     {
         puDst->au32[0] = uSrc1.au32[0] >> uShift;
@@ -10616,7 +10616,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_u128_fallback,(PRTUINT128U puDst, PCRTUI
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
 {
     RTUINT256U uSrc1 = *puSrc1;
- 
+
     if (uShift <= 31)
     {
        puDst->au32[0] = uSrc1.au32[0] >> uShift;
@@ -10979,7 +10979,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrlq_imm_u128,(PRTUINT128U puDst, uint8_t uShi
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
 {
     RTUINT128U uSrc1 = *puSrc1;
- 
+
     if (uShift <= 63)
     {
         puDst->au64[0] = uSrc1.au64[0] >> uShift;
@@ -11005,7 +11005,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_u128_fallback,(PRTUINT128U puDst, PCRTUI
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
 {
     RTUINT256U uSrc1 = *puSrc1;
- 
+
     if (uShift <= 63)
     {
         puDst->au64[0] = uSrc1.au64[0] >> uShift;
