@@ -77,7 +77,7 @@ class tdCpuIemInstr1(vbox.TestDriver):
     def __init__(self):
         vbox.TestDriver.__init__(self);
 
-        kaTestVMs = (
+        self.oTestVmSet.aoTestVms.extend([
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-2'),
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-basic-3'),
 
@@ -93,11 +93,9 @@ class tdCpuIemInstr1(vbox.TestDriver):
 
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-state64-1'),
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1'),
-            IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1')
-        );
+            IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1'),
+        ]);
 
-        for oTestVm in kaTestVMs:
-            self.oTestVmSet.aoTestVms.append(oTestVm);
 
     #
     # Overridden methods.
