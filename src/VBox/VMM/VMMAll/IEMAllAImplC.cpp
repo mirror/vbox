@@ -10140,18 +10140,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u64,(uint64_t *puDst, uint64_t const *puS
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
+    uint8_t uShift;
 
-    if (uSrc2.au64[0] <= 15)
-    {
-        uDst.ai16[0] = uSrc1.ai16[0] >> uSrc2.au8[0];
-        uDst.ai16[1] = uSrc1.ai16[1] >> uSrc2.au8[0];
-        uDst.ai16[2] = uSrc1.ai16[2] >> uSrc2.au8[0];
-        uDst.ai16[3] = uSrc1.ai16[3] >> uSrc2.au8[0];
-    }
-    else
-    {
-        uDst.au64[0] = 0;
-    }
+    uShift = RT_MIN(15, uSrc2.au64[0]);
+
+    uDst.ai16[0] = uSrc1.ai16[0] >> uShift;
+    uDst.ai16[1] = uSrc1.ai16[1] >> uShift;
+    uDst.ai16[2] = uSrc1.ai16[2] >> uShift;
+    uDst.ai16[3] = uSrc1.ai16[3] >> uShift;
+
     *puDst = uDst.u;
 }
 
@@ -10161,17 +10158,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u64,(uint64_t *puDst, uint8_t uShift)
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uDst;
 
-    if (uShift <= 15)
-    {
-        uDst.ai16[0] = uSrc1.ai16[0] >> uShift;
-        uDst.ai16[1] = uSrc1.ai16[1] >> uShift;
-        uDst.ai16[2] = uSrc1.ai16[2] >> uShift;
-        uDst.ai16[3] = uSrc1.ai16[3] >> uShift;
-    }
-    else
-    {
-        uDst.au64[0] = 0;
-    }
+    uShift = RT_MIN(15, uShift);
+
+    uDst.ai16[0] = uSrc1.ai16[0] >> uShift;
+    uDst.ai16[1] = uSrc1.ai16[1] >> uShift;
+    uDst.ai16[2] = uSrc1.ai16[2] >> uShift;
+    uDst.ai16[3] = uSrc1.ai16[3] >> uShift;
+
     *puDst = uDst.u;
 }
 
@@ -10179,45 +10172,34 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u64,(uint64_t *puDst, uint8_t uShift)
 IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
+    uint8_t uShift;
 
-    if (puSrc->au64[0] <= 15)
-    {
-        puDst->ai16[0] = uSrc1.ai16[0] >> puSrc->au8[0];
-        puDst->ai16[1] = uSrc1.ai16[1] >> puSrc->au8[0];
-        puDst->ai16[2] = uSrc1.ai16[2] >> puSrc->au8[0];
-        puDst->ai16[3] = uSrc1.ai16[3] >> puSrc->au8[0];
-        puDst->ai16[4] = uSrc1.ai16[4] >> puSrc->au8[0];
-        puDst->ai16[5] = uSrc1.ai16[5] >> puSrc->au8[0];
-        puDst->ai16[6] = uSrc1.ai16[6] >> puSrc->au8[0];
-        puDst->ai16[7] = uSrc1.ai16[7] >> puSrc->au8[0];
-    }
-    else
-    {
-        puDst->au64[0] = 0;
-        puDst->au64[1] = 0;
-    }
+    uShift = RT_MIN(15, puSrc->au64[0]);
+
+    puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
+    puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
+    puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
+    puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
+    puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
+    puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
+    puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
+    puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
 {
     RTUINT128U uSrc1 = *puDst;
 
-    if (uShift <= 15)
-    {
-        puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
-        puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
-        puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
-        puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
-        puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
-        puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
-        puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
-        puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
-    }
-    else
-    {
-        puDst->au64[0] = 0;
-        puDst->au64[1] = 0;
-    }
+    uShift = RT_MIN(15, uShift);
+
+    puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
+    puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
+    puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
+    puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
+    puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
+    puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
+    puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
+    puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
 }
 
 #endif
@@ -10480,16 +10462,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u64,(uint64_t *puDst, uint64_t const *puS
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
+    uint8_t uShift;
 
-    if (uSrc2.au64[0] <= 31)
-    {
-        uDst.ai32[0] = uSrc1.ai32[0] >> uSrc2.au8[0];
-        uDst.ai32[1] = uSrc1.ai32[1] >> uSrc2.au8[0];
-    }
-    else
-    {
-        uDst.au64[0] = 0;
-    }
+    uShift = RT_MIN(31, uSrc2.au64[0]);
+
+    uDst.ai32[0] = uSrc1.ai32[0] >> uShift;
+    uDst.ai32[1] = uSrc1.ai32[1] >> uShift;
+
     *puDst = uDst.u;
 }
 
@@ -10499,15 +10478,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u64,(uint64_t *puDst, uint8_t uShift)
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uDst;
 
-    if (uShift <= 31)
-    {
-        uDst.ai32[0] = uSrc1.ai32[0] >> uShift;
-        uDst.ai32[1] = uSrc1.ai32[1] >> uShift;
-    }
-    else
-    {
-        uDst.au64[0] = 0;
-    }
+    uShift = RT_MIN(31, uShift);
+
+    uDst.ai32[0] = uSrc1.ai32[0] >> uShift;
+    uDst.ai32[1] = uSrc1.ai32[1] >> uShift;
+
     *puDst = uDst.u;
 }
 
@@ -10515,37 +10490,26 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u64,(uint64_t *puDst, uint8_t uShift)
 IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
+    uint8_t uShift;
 
-    if (puSrc->au64[0] <= 31)
-    {
-        puDst->ai32[0] = uSrc1.ai32[0] >> puSrc->au8[0];
-        puDst->ai32[1] = uSrc1.ai32[1] >> puSrc->au8[0];
-        puDst->ai32[2] = uSrc1.ai32[2] >> puSrc->au8[0];
-        puDst->ai32[3] = uSrc1.ai32[3] >> puSrc->au8[0];
-    }
-    else
-    {
-        puDst->au64[0] = 0;
-        puDst->au64[1] = 0;
-    }
+    uShift = RT_MIN(31, puSrc->au64[0]);
+
+    puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
+    puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
+    puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
+    puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
 {
     RTUINT128U uSrc1 = *puDst;
 
-    if (uShift <= 31)
-    {
-        puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
-        puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
-        puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
-        puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
-    }
-    else
-    {
-        puDst->au64[0] = 0;
-        puDst->au64[1] = 0;
-    }
+    uShift = RT_MIN(31, uShift);
+
+    puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
+    puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
+    puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
+    puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
 }
 
 #endif
