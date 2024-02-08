@@ -10204,6 +10204,66 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psraw_imm_u128,(PRTUINT128U puDst, uint8_t uShi
 
 #endif
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puSrc1;
+
+    uShift = RT_MIN(15, uShift);
+
+    puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
+    puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
+    puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
+    puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
+    puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
+    puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
+    puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
+    puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    iemAImpl_vpsraw_imm_u128_fallback(puDst, puSrc1, RT_MIN(15, puSrc2->au64[0]));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+     iemAImpl_vpsraw_imm_u128_fallback(puDst, puSrc1, uShift);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    RTUINT256U uSrc1 = *puSrc1;
+
+    uShift = RT_MIN(15, uShift);
+
+    puDst->ai16[0] = uSrc1.ai16[0] >> uShift;
+    puDst->ai16[1] = uSrc1.ai16[1] >> uShift;
+    puDst->ai16[2] = uSrc1.ai16[2] >> uShift;
+    puDst->ai16[3] = uSrc1.ai16[3] >> uShift;
+    puDst->ai16[4] = uSrc1.ai16[4] >> uShift;
+    puDst->ai16[5] = uSrc1.ai16[5] >> uShift;
+    puDst->ai16[6] = uSrc1.ai16[6] >> uShift;
+    puDst->ai16[7] = uSrc1.ai16[7] >> uShift;
+    puDst->ai16[8] = uSrc1.ai16[8] >> uShift;
+    puDst->ai16[9] = uSrc1.ai16[9] >> uShift;
+    puDst->ai16[10] = uSrc1.ai16[10] >> uShift;
+    puDst->ai16[11] = uSrc1.ai16[11] >> uShift;
+    puDst->ai16[12] = uSrc1.ai16[12] >> uShift;
+    puDst->ai16[13] = uSrc1.ai16[13] >> uShift;
+    puDst->ai16[14] = uSrc1.ai16[14] >> uShift;
+    puDst->ai16[15] = uSrc1.ai16[15] >> uShift;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsraw_imm_u256_fallback(puDst, puSrc1, uShift);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsraw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    iemAImpl_vpsraw_imm_u256_fallback(puDst, puSrc1, RT_MIN(15, puSrc2->au64[0]));
+}
+
 
 /*
  * PSLLW / VPSLLW
@@ -10513,6 +10573,54 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrad_imm_u128,(PRTUINT128U puDst, uint8_t uShi
 }
 
 #endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    RTUINT128U uSrc1 = *puSrc1;
+
+    uShift = RT_MIN(31, uShift);
+
+    puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
+    puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
+    puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
+    puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsrad_imm_u128_fallback(puDst, puSrc1, uShift);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    iemAImpl_vpsrad_imm_u128_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    RTUINT256U uSrc1 = *puSrc1;
+
+    uShift = RT_MIN(31, uShift);
+
+    puDst->ai32[0] = uSrc1.ai32[0] >> uShift;
+    puDst->ai32[1] = uSrc1.ai32[1] >> uShift;
+    puDst->ai32[2] = uSrc1.ai32[2] >> uShift;
+    puDst->ai32[3] = uSrc1.ai32[3] >> uShift;
+    puDst->ai32[4] = uSrc1.ai32[4] >> uShift;
+    puDst->ai32[5] = uSrc1.ai32[5] >> uShift;
+    puDst->ai32[6] = uSrc1.ai32[6] >> uShift;
+    puDst->ai32[7] = uSrc1.ai32[7] >> uShift;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    iemAImpl_vpsrad_imm_u256_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrad_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
+{
+    iemAImpl_vpsrad_imm_u256_fallback(puDst, puSrc1, uShift);
+}
 
 
 /*

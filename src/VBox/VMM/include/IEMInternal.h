@@ -3150,6 +3150,8 @@ FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpaddsw_u128,    iemAImpl_vpaddsw_u128_fallbac
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsllw_u128,     iemAImpl_vpsllw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpslld_u128,     iemAImpl_vpslld_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsllq_u128,     iemAImpl_vpsllq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsraw_u128,     iemAImpl_vpsraw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsrad_u128,     iemAImpl_vpsrad_u128_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsb_u128,     iemAImpl_vpabsb_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsw_u128,     iemAImpl_vpabsd_u128_fallback;
@@ -3224,6 +3226,8 @@ FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpaddsw_u256,    iemAImpl_vpaddsw_u256_fallbac
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsllw_u256,     iemAImpl_vpsllw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpslld_u256,     iemAImpl_vpslld_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsllq_u256,     iemAImpl_vpsllq_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsraw_u256,     iemAImpl_vpsraw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsrad_u256,     iemAImpl_vpsrad_u256_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsb_u256,     iemAImpl_vpabsb_u256_fallback;
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsw_u256,     iemAImpl_vpabsw_u256_fallback;
@@ -3554,6 +3558,11 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpslld_imm_u128, iemAImpl_vpslld_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpslld_imm_u256, iemAImpl_vpslld_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsllq_imm_u128, iemAImpl_vpsllq_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsllq_imm_u256, iemAImpl_vpsllq_imm_u256_fallback;
+
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsraw_imm_u128, iemAImpl_vpsraw_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsraw_imm_u256, iemAImpl_vpsraw_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrad_imm_u128, iemAImpl_vpsrad_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrad_imm_u256, iemAImpl_vpsrad_imm_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends
