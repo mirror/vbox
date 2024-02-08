@@ -4841,10 +4841,11 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
 #define QUERY_VAL_RET(a_Width, a_szName, a_pValue, a_uDefault, a_ExprValid, a_szValidRange) \
             do { \
-                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, strcpy(szNm, a_szName), a_pValue); \
+                AssertCompile(sizeof(szNm) - 1 >= (sizeof(a_szName) - 1) + (sizeof("Out") - 1)); \
+                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, RTStrCopy2(szNm, sizeof(szNm), a_szName), a_pValue); \
                 if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                 { \
-                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, strcat(szNm, pszDir), a_pValue); \
+                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, RTStrCat2(szNm, sizeof(szNm), pszDir), a_pValue); \
                     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                     { \
                         *(a_pValue) = a_uDefault; \
