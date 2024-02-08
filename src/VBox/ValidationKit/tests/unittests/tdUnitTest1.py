@@ -79,8 +79,9 @@ class tdUnitTest1(vbox.TestDriver):
             'testacse/tstRTR0ThreadPreemptionDriver': '>=7.0.0',    # Driverless package.
             'testacse/tstRTR0TimerDriver':            '>=7.0.0',    # Driverless package.
             'testcase/tstDarwinKeyboard': '',                       # Fails for unknown reason.
-            'testcase/tstVBoxAPIXPCOM': '',                         # Can't instantiate the VirtualBox object (binary would need moving to the
-                                                                    # VirtualBox installation directory, merely a compile time test anyway)
+            'testcase/tstVBoxAPIXPCOM': '',                         # Can't instantiate the VirtualBox object
+                                                                    # (binary would need moving to the VirtualBox installation
+                                                                    # directory, merely a compile time test anyway)
         },
         'darwin.arm64': {
             'testcase/tstRTDarwinMachKernel': '',       # Not supported on arm64 right now (and not required due to driverless).
