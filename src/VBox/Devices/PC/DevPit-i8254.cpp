@@ -1390,22 +1390,26 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         /** @todo r=klaus move this to a (system-specific) driver */
 #ifdef RT_OS_LINUX
+        /** @todo r=andy Use #defines / enums(?) for all those uPassthroughSpeaker below. */
         int fd = -1;
-        if ((uPassthroughSpeaker == 1 || uPassthroughSpeaker == 100) && fd == -1)
+        if (uPassthroughSpeaker == 1 || uPassthroughSpeaker == 100)
             fd = pitR3TryDeviceOpenSanitizeIoctl("/dev/input/by-path/platform-pcspkr-event-spkr", O_WRONLY);
-        if ((uPassthroughSpeaker == 2 || uPassthroughSpeaker == 100) && fd == -1)
+
+        if (fd == -1 && (uPassthroughSpeaker == 2 || uPassthroughSpeaker == 100))
             fd = pitR3TryDeviceOpenSanitizeIoctl("/dev/tty", O_WRONLY);
-        if ((uPassthroughSpeaker == 3 || uPassthroughSpeaker == 100) && fd == -1)
+
+        if (fd == -1 && (uPassthroughSpeaker == 3 || uPassthroughSpeaker == 100))
         {
             fd = pitR3TryDeviceOpenSanitizeIoctl("/dev/tty0", O_WRONLY);
             if (fd == -1)
                 fd = pitR3TryDeviceOpenSanitizeIoctl("/dev/vc/0", O_WRONLY);
         }
-        if ((uPassthroughSpeaker == 9 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
+
+        if (fd == -1 && (uPassthroughSpeaker == 9 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice)
             fd = pitR3TryDeviceOpenSanitizeIoctl(pszPassthroughSpeakerDevice, O_WRONLY);
-        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
+
+        if (fd != -1)
         {
-            pThisCC->hHostSpeaker = fd;
             if (ioctl(fd, EVIOCGSND(0)) != -1)
             {
                 pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_EVDEV;
@@ -1416,29 +1420,26 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_CONSOLE;
                 LogRel(("PIT: speaker: emulation mode console\n"));
             }
-        }
-        if ((uPassthroughSpeaker == 70 || uPassthroughSpeaker == 100) && fd == -1)
-            fd = pitR3TryDeviceOpen("/dev/tty", O_WRONLY);
-        if ((uPassthroughSpeaker == 79 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
-            fd = pitR3TryDeviceOpen(pszPassthroughSpeakerDevice, O_WRONLY);
-        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
-        {
             pThisCC->hHostSpeaker = fd;
-            pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
-            LogRel(("PIT: speaker: emulation mode tty\n"));
         }
-        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE)
+        else
         {
+            if (uPassthroughSpeaker == 70 || uPassthroughSpeaker == 100)
+                fd = pitR3TryDeviceOpen("/dev/tty", O_WRONLY);
+            if (fd == -1 && (uPassthroughSpeaker == 79 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice)
+                fd = pitR3TryDeviceOpen(pszPassthroughSpeakerDevice, O_WRONLY);
             if (fd != -1)
             {
-                close(fd);
-                fd = -1;
+                pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
+                pThisCC->hHostSpeaker  = fd;
+                LogRel(("PIT: speaker: emulation mode tty\n"));
             }
-            LogRel(("PIT: speaker: no emulation possible\n"));
+            else
+                LogRel(("PIT: speaker: no emulation possible\n"));
         }
-#else
+#else  /* !RT_OS_LINUX */
         LogRel(("PIT: speaker: emulation deactivated\n"));
-#endif
+#endif /* !RT_OS_LINUX */
         if (pszPassthroughSpeakerDevice)
         {
             PDMDevHlpMMHeapFree(pDevIns, pszPassthroughSpeakerDevice);
