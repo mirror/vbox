@@ -623,6 +623,8 @@ void UIMachineSettingsSystem::retranslateUi()
 
 void UIMachineSettingsSystem::handleFilterChange()
 {
+    /* Update some stuff: */
+    updateOptionSet();
     updateMinimumLayoutHint();
 }
 
@@ -656,6 +658,9 @@ void UIMachineSettingsSystem::polishPage()
         m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   (systemData.m_fSupportedNestedPaging && isMachineOffline())
                                                                       || (systemData.m_fEnabledNestedPaging && isMachineOffline()));
     }
+
+    /* Update option set: */
+    updateOptionSet();
 }
 
 void UIMachineSettingsSystem::prepare()
@@ -667,6 +672,9 @@ void UIMachineSettingsSystem::prepare()
     /* Prepare everything: */
     prepareWidgets();
     prepareConnections();
+
+    /* Update option set: */
+    updateOptionSet();
 
     /* Apply language settings: */
     retranslateUi();
@@ -728,9 +736,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             }
 
             /* Prepare chipset editor: */
-#ifndef VBOX_WITH_VIRT_ARMV8
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
-#endif
             if (m_pEditorChipset)
             {
                 m_pTabMotherboard->addEditor(m_pEditorChipset);
@@ -886,6 +892,19 @@ void UIMachineSettingsSystem::prepareConnections()
     if (m_pEditorAccelerationFeatures)
         connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
                 this, &UIMachineSettingsSystem::revalidate);
+}
+
+void UIMachineSettingsSystem::updateOptionSet()
+{
+    /* Load currently propagated arch type: */
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_x86;
+
+    /* Some options visible only for x86 machines: */
+    const bool fx86 = enmArch == KPlatformArchitecture_x86;
+    m_pEditorChipset->setVisible(fx86);
+    m_pEditorProcessorFeatures->setVisible(fx86);
 }
 
 void UIMachineSettingsSystem::cleanup()
