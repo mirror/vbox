@@ -44,7 +44,7 @@
 #include <iprt/errcore.h>
 
 
-RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc)
+DECLINLINE(int) rtStrCat(char *pszDst, size_t cbDst, const char *pszSrc)
 {
     char *pszDst2 = RTStrEnd(pszDst, cbDst);
     AssertReturn(pszDst2, VERR_INVALID_PARAMETER);
@@ -64,5 +64,16 @@ RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc)
     }
     return VERR_BUFFER_OVERFLOW;
 }
+
+RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc)
+{
+    return rtStrCat(pszDst, cbDst, pszSrc);
+}
 RT_EXPORT_SYMBOL(RTStrCat);
+
+RTDECL(int) RTStrCat2(char *pszDst, size_t cbDst, const char *pszSrc)
+{
+    return RT_SUCCESS(rtStrCat(pszDst, cbDst, pszSrc)) ? pszDst : NULL;
+}
+RT_EXPORT_SYMBOL(RTStrCat2);
 

@@ -2265,6 +2265,7 @@
 # define RTStrCalcUtf16Len                              RT_MANGLER(RTStrCalcUtf16Len)
 # define RTStrCalcUtf16LenEx                            RT_MANGLER(RTStrCalcUtf16LenEx)
 # define RTStrCat                                       RT_MANGLER(RTStrCat)
+# define RTStrCat2                                      RT_MANGLER(RTStrCat2)
 # define RTStrCatEx                                     RT_MANGLER(RTStrCatEx)
 # define RTStrCatP                                      RT_MANGLER(RTStrCatP)
 # define RTStrCatPEx                                    RT_MANGLER(RTStrCatPEx)
