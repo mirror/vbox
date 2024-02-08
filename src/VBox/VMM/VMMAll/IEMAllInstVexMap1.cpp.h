@@ -3636,7 +3636,21 @@ FNIEMOP_DEF_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, uint8_t, bRm, PFNIEMAIMPLMEDIAPS
 
 /*  Opcode VEX.0F 0x71 11/2 - invalid. */
 /** Opcode VEX.66.0F 0x71 11/2. */
-FNIEMOP_STUB_1(iemOp_VGrp12_vpsrlw_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_VGrp12_vpsrlw_Hx_Ux_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC3(VEX_VMI_REG, VPSRLW, vpsrlw, Hx, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    if (pVCpu->iem.s.uVexLength)
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrlw_imm_u256, iemAImpl_vpsrlw_imm_u256_fallback));
+    }
+    else
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u128, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrlw_imm_u128, iemAImpl_vpsrlw_imm_u128_fallback));
+    }
+}
+
 
 /*  Opcode VEX.0F 0x71 11/4 - invalid */
 /** Opcode VEX.66.0F 0x71 11/4. */
@@ -3705,7 +3719,21 @@ FNIEMOP_DEF(iemOp_VGrp12)
 
 /*  Opcode VEX.0F 0x72 11/2 - invalid. */
 /** Opcode VEX.66.0F 0x72 11/2. */
-FNIEMOP_STUB_1(iemOp_VGrp13_vpsrld_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_VGrp13_vpsrld_Hx_Ux_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC3(VEX_VMI_REG, VPSRLD, vpsrld, Hx, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    if (pVCpu->iem.s.uVexLength)
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrld_imm_u256, iemAImpl_vpsrld_imm_u256_fallback));
+    }
+    else
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u128, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrld_imm_u128, iemAImpl_vpsrld_imm_u128_fallback));
+    }
+}
+
 
 /*  Opcode VEX.0F 0x72 11/4 - invalid. */
 /** Opcode VEX.66.0F 0x72 11/4. */
@@ -3773,7 +3801,21 @@ FNIEMOP_DEF(iemOp_VGrp13)
 
 /*  Opcode VEX.0F 0x73 11/2 - invalid. */
 /** Opcode VEX.66.0F 0x73 11/2. */
-FNIEMOP_STUB_1(iemOp_VGrp14_vpsrlq_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_VGrp14_vpsrlq_Hx_Ux_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC3(VEX_VMI_REG, VPSRLQ, vpsrlq, Hx, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    if (pVCpu->iem.s.uVexLength)
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrlq_imm_u256, iemAImpl_vpsrlq_imm_u256_fallback));
+    }
+    else
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u128, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrlq_imm_u128, iemAImpl_vpsrlq_imm_u128_fallback));
+    }
+}
+
 
 /** Opcode VEX.66.0F 0x73 11/3. */
 FNIEMOP_STUB_1(iemOp_VGrp14_vpsrldq_Hx_Ux_Ib, uint8_t, bRm);
@@ -4789,19 +4831,37 @@ FNIEMOP_STUB(iemOp_vaddsubps_Vps_Hps_Wps);
 
 /*  Opcode VEX.0F 0xd1 - invalid */
 /** Opcode VEX.66.0F 0xd1 - vpsrlw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsrlw_Vx_Hx_W);
+FNIEMOP_DEF(iemOp_vpsrlw_Vx_Hx_W)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSRLW, vpsrlw, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsrlw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
 /*  Opcode VEX.F3.0F 0xd1 - invalid */
 /*  Opcode VEX.F2.0F 0xd1 - invalid */
 
 /*  Opcode VEX.0F 0xd2 - invalid */
 /** Opcode VEX.66.0F 0xd2 - vpsrld Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsrld_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpsrld_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSRLD, vpsrld, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsrld);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
 /*  Opcode VEX.F3.0F 0xd2 - invalid */
 /*  Opcode VEX.F2.0F 0xd2 - invalid */
 
 /*  Opcode VEX.0F 0xd3 - invalid */
 /** Opcode VEX.66.0F 0xd3 - vpsrlq Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsrlq_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpsrlq_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSRLQ, vpsrlq, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsrlq);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
 /*  Opcode VEX.F3.0F 0xd3 - invalid */
 /*  Opcode VEX.F2.0F 0xd3 - invalid */
 

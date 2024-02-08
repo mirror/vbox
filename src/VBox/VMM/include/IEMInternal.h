@@ -3152,6 +3152,9 @@ FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpslld_u128,     iemAImpl_vpslld_u128_fallback
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsllq_u128,     iemAImpl_vpsllq_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsraw_u128,     iemAImpl_vpsraw_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsrad_u128,     iemAImpl_vpsrad_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsrlw_u128,     iemAImpl_vpsrlw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsrld_u128,     iemAImpl_vpsrld_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128 iemAImpl_vpsrlq_u128,     iemAImpl_vpsrlq_u128_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsb_u128,     iemAImpl_vpabsb_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128 iemAImpl_vpabsw_u128,     iemAImpl_vpabsd_u128_fallback;
@@ -3228,6 +3231,9 @@ FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpslld_u256,     iemAImpl_vpslld_u256_fallback
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsllq_u256,     iemAImpl_vpsllq_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsraw_u256,     iemAImpl_vpsraw_u256_fallback;
 FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsrad_u256,     iemAImpl_vpsrad_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsrlw_u256,     iemAImpl_vpsrlw_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsrld_u256,     iemAImpl_vpsrld_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U256 iemAImpl_vpsrlq_u256,     iemAImpl_vpsrlq_u256_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsb_u256,     iemAImpl_vpabsb_u256_fallback;
 FNIEMAIMPLMEDIAOPTF2U256 iemAImpl_vpabsw_u256,     iemAImpl_vpabsw_u256_fallback;
@@ -3563,6 +3569,13 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsraw_imm_u128, iemAImpl_vpsraw_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsraw_imm_u256, iemAImpl_vpsraw_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrad_imm_u128, iemAImpl_vpsrad_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrad_imm_u256, iemAImpl_vpsrad_imm_u256_fallback;
+
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrlw_imm_u128, iemAImpl_vpsrlw_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrlw_imm_u256, iemAImpl_vpsrlw_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrld_imm_u128, iemAImpl_vpsrld_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrld_imm_u256, iemAImpl_vpsrld_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrlq_imm_u128, iemAImpl_vpsrlq_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrlq_imm_u256, iemAImpl_vpsrlq_imm_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends
