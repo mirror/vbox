@@ -780,6 +780,7 @@ class tdUnitTest1(vbox.TestDriver):
         try:
             oVBox = self.oVBoxMgr.getVirtualBox();
             sVer = oVBox.version;
+            sVer += 'r' + str(self.uRevision);
 
             sVer = sVer.strip();
             sVer = re.sub(r'_BETA.*r', '.', sVer);
