@@ -236,13 +236,13 @@ check_testboxscript_install() {
     set +e
     "${TESTBOXSCRIPT_PYTHON}" "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript.py" --version > /dev/null
     if [ $? -ne 2 ]; then
-        echo "$0: error: testboxscript.py didn't respons correctly to the --version option."
+        echo "$0: error: testboxscript.py didn't respond correctly to the --version option."
         exit 1;
     fi
 
     "${TESTBOXSCRIPT_PYTHON}" "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript_real.py" --version > /dev/null
     if [ $? -ne 2 ]; then
-        echo "$0: error: testboxscript.py didn't respons correctly to the --version option."
+        echo "$0: error: testboxscript.py didn't respond correctly to the --version option."
         exit 1;
     fi
     set -e
@@ -669,12 +669,13 @@ if [ -z "${TESTBOXSCRIPT_PYTHON}" ]; then
     set +e
     MY_PYTHON_VER_TEST="\
 import sys;\
-x = sys.version_info[0] == 3 or (sys.version_info[0] == 2 and (sys.version_info[1] >= 6 or (sys.version_info[1] == 5 and sys.version_info[2] >= 1)));\
+x = (sys.version_info[0] == 3 and sys.version_info[1] >= 5) or (sys.version_info[0] == 2 and sys.version_info[1] >= 7);\
 sys.exit(not x);\
 ";
-    for python in python[2:3].[0:]  #python3.11 python3.10 python3.9 python2.6 python2.5 python;
+    for python in python3.{30..5} python3 python2.7 python2 python;
     do
-        python=`which ${python} 2> /dev/null`
+        # python=`which ${python} 2> /dev/null`
+        python=`command -v ${python} 2> /dev/null`
         if [ -n "${python}" -a -x "${python}" ]; then
             if ${python} -c "${MY_PYTHON_VER_TEST}"; then
                 TESTBOXSCRIPT_PYTHON="${python}";
