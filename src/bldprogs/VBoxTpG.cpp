@@ -2373,9 +2373,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
     int rc = RTPathAbs(g_pszAssemblerIncVal, g_szAssemblerIncVal, sizeof(g_szAssemblerIncVal) - 1);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed: %Rrc", rc);
-    rc = RTStrCat(g_szAssemblerIncVal, sizeof(g_szAssemblerIncVal), "/");
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrCat failed: %Rrc", rc);
+    strcat(g_szAssemblerIncVal, "/");
     g_pszAssemblerIncVal = g_szAssemblerIncVal;
 
     /*

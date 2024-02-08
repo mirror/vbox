@@ -715,9 +715,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, PCVMMR3VT
             if (aSegs[iSeg].cb > 0 && RT_SUCCESS(rc))
             {
                 char szTmp[RTDBG_SEGMENT_NAME_LENGTH + sizeof("_start")];
-                rc = RTStrCat(RTStrCopy2(szTmp, sizeof(szTmp), aSegs[iSeg].szName), sizeof(szTmp), "_start");
-                if (RT_SUCCESS(rc))
-                    rc = RTDbgModSymbolAdd(hMod, szTmp, iSeg, 0 /*uRva*/, 0 /*cb*/, 0 /*fFlags*/, NULL);
+                strcat(strcpy(szTmp, aSegs[iSeg].szName), "_start");
+                rc = RTDbgModSymbolAdd(hMod, szTmp, iSeg, 0 /*uRva*/, 0 /*cb*/, 0 /*fFlags*/, NULL);
             }
             uRvaNext += aSegs[iSeg].cb;
         }

@@ -846,12 +846,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    rc = RTStrCat(szPath, sizeof(szPath), "/../VMMR0.r0");
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstIntNet-1: RTStrCat -> %Rrc\n", rc);
-        return 1;
-    }
+    strcat(szPath, "/../VMMR0.r0");
 
     char szAbsPath[RTPATH_MAX];
     rc = RTPathAbs(szPath, szAbsPath, sizeof(szAbsPath));

@@ -2309,9 +2309,7 @@ void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
         int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - strlen(s_pszTmpSuff), pcszFilename);
         if (RT_FAILURE(rc))
             throw EIPRTFailure(rc, "RTStrCopy");
-        rc = RTStrCat(szTmpFilename, sizeof(szTmpFilename), s_pszTmpSuff);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCat");
+        strcat(szTmpFilename, s_pszTmpSuff);
 
         char szPrevFilename[RTPATH_MAX];
         rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - strlen(s_pszPrevSuff), pcszFilename);

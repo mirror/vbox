@@ -609,18 +609,14 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
                                        : pDbgMod->pszName;
             if (pszName)
             {
-                size_t const cchName       = strlen(pszName);
-                size_t const cchExtFileBuf = cchName + strlen(pszExt) + 1;
-
-                char *pszExtFileBuf = (char *)alloca(cchExtFileBuf);
-                AssertPtrReturn(pszExtFileBuf, VERR_NO_MEMORY);
-
-                memcpy(pszExtFileBuf, pszName, cchName + 1);
-                RTPathStripSuffix(pszExtFileBuf);
-                int rc2 = RTStrCat(pszExtFileBuf, cchExtFileBuf, pszExt);
-                AssertRCReturn(rc2, rc2);
-
-                pszExtFile = pszExtFileBuf;
+                size_t cchName = strlen(pszName);
+                char *pszExtFileBuf = (char *)alloca(cchName + strlen(pszExt) + 1);
+                if (pszExtFileBuf)
+                {
+                    memcpy(pszExtFileBuf, pszName, cchName + 1);
+                    RTPathStripSuffix(pszExtFileBuf);
+                    pszExtFile = strcat(pszExtFileBuf, pszExt);
+                }
             }
         }
         if (!pszExtFile)

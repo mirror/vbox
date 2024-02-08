@@ -2953,7 +2953,7 @@ static void fsPerfUtimes(void)
 DECL_FORCE_INLINE(int) fsPerfRenameMany(const char *pszFile, uint32_t iIteration)
 {
     char szRenamed[FSPERF_MAX_PATH];
-    RTTESTI_CHECK_RC_OK(RTStrCat(RTStrCopy2(szRenamed, sizeof(szRenamed), pszFile), sizeof(szRenamed), "-renamed"));
+    strcat(strcpy(szRenamed, pszFile), "-renamed");
     if (!(iIteration & 1))
         return RTPathRename(pszFile, szRenamed, 0);
     return RTPathRename(szRenamed, pszFile, 0);
@@ -2970,26 +2970,24 @@ static void fsPerfRename(void)
  *        unix). */
 
     /* Non-existing files. */
-    RTTESTI_CHECK_RC_OK(RTStrCopy(szPath, sizeof(szPath), InEmptyDir(RT_STR_TUPLE("other-no-such-file"))));
+    strcpy(szPath, InEmptyDir(RT_STR_TUPLE("other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-file")), szPath, 0), VERR_FILE_NOT_FOUND);
-
-    RTTESTI_CHECK_RC_OK(RTStrCopy(szPath, sizeof(szPath), InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "other-no-such-file"))));
+    strcpy(szPath, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), szPath, 0),
                      FSPERF_VERR_PATH_NOT_FOUND);
-
-    RTTESTI_CHECK_RC_OK(RTStrCopy(szPath, sizeof(szPath), InEmptyDir(RT_STR_TUPLE("other-no-such-file"))));
+    strcpy(szPath, InEmptyDir(RT_STR_TUPLE("other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")), szPath, 0), VERR_PATH_NOT_FOUND);
 
     RTFILE hFile1;
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file16")),
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_OK(RTStrCat(RTStrCopy2(szPath, sizeof(szPath), g_szDir), sizeof(szPath), "-no-such-dir" RTPATH_SLASH_STR "file16"));
+    strcat(strcpy(szPath, g_szDir), "-no-such-dir" RTPATH_SLASH_STR "file16");
     RTTESTI_CHECK_RC(RTPathRename(szPath, g_szDir, 0), FSPERF_VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathRename(g_szDir, szPath, 0), FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
-    RTTESTI_CHECK_RC_OK(RTStrCat(RTStrCopy2(szPath, sizeof(szPath), g_szDir), sizeof(szPath), "-other"));
+    strcat(strcpy(szPath, g_szDir), "-other");
     PROFILE_FN(RTPathRename(iIteration & 1 ? szPath : g_szDir, iIteration & 1 ? g_szDir : szPath, 0), g_nsTestRun, "RTPathRename");
 
     /* Deep: */
@@ -2997,7 +2995,7 @@ static void fsPerfRename(void)
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
-    RTTESTI_CHECK_RC_OK(RTStrCat(RTStrCopy2(szPath, sizeof(szPath), g_szDeepDir), sizeof(szPath), "-other"));
+    strcat(strcpy(szPath, g_szDeepDir), "-other");
     PROFILE_FN(RTPathRename(iIteration & 1 ? szPath : g_szDeepDir, iIteration & 1 ? g_szDeepDir : szPath, 0),
                g_nsTestRun, "RTPathRename/deep");
 

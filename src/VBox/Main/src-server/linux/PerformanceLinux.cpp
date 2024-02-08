@@ -530,10 +530,8 @@ void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& lis
         LogRel(("VolInfo: Failed to get program path, vrc=%Rrc\n", vrc));
         return;
     }
-    vrc = RTStrCat(szVolInfo, sizeof(szVolInfo), "/" VBOXVOLINFO_NAME " ");
-    AssertRCReturnVoid(vrc);
-    vrc = RTStrCat(szVolInfo, sizeof(szVolInfo), pcszVolume);
-    AssertRCReturnVoid(vrc);
+    strcat(szVolInfo, "/" VBOXVOLINFO_NAME " ");
+    strcat(szVolInfo, pcszVolume);
 
     FILE *fp = popen(szVolInfo, "r");
     if (fp)
