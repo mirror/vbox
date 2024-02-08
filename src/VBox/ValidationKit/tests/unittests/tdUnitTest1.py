@@ -778,7 +778,8 @@ class tdUnitTest1(vbox.TestDriver):
     def _figureVersion(self):
         """ Tries to figure which VBox version this is, setting self.aiVBoxVer. """
         try:
-            sVer = utils.processOutputChecked(['VBoxManage', '--version'])
+            oVBox = self.oVBoxMgr.getVirtualBox();
+            sVer = oVBox.version;
 
             sVer = sVer.strip();
             sVer = re.sub(r'_BETA.*r', '.', sVer);
