@@ -1094,8 +1094,12 @@ void UICommon::loadColorTheme()
             break;
     }
     /* Redefine colors common for various OS types: */
-    colors[ColorSlot_DarkAlternate] = QColor("#2F2A2F");
-    colors[ColorSlot_LightAlternate] = QColor("#F4F5F5");
+    // we do it only if we have redefined something above:
+    if (!colors.isEmpty())
+    {
+        colors[ColorSlot_DarkAlternate] = QColor("#2F2A2F");
+        colors[ColorSlot_LightAlternate] = QColor("#F4F5F5");
+    }
 
     /* Do we have redefined colors? */
     if (!colors.isEmpty())
