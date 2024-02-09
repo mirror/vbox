@@ -973,7 +973,7 @@ void Console::uninit()
 HRESULT Console::i_pullGuestProperties(ComSafeArrayOut(BSTR, names), ComSafeArrayOut(BSTR, values),
                                        ComSafeArrayOut(LONG64, timestamps), ComSafeArrayOut(BSTR, flags))
 {
-    AssertReturn(mControl.isNotNull(), VERR_INVALID_POINTER);
+    AssertReturn(mControl.isNotNull(), E_POINTER);
     return mControl->PullGuestProperties(ComSafeArrayOutArg(names), ComSafeArrayOutArg(values),
                                          ComSafeArrayOutArg(timestamps), ComSafeArrayOutArg(flags));
 }
@@ -5712,7 +5712,9 @@ HRESULT Console::i_onCPUExecutionCapChange(ULONG aExecutionCap)
             )
         {
             /* No need to call in the EMT thread. */
-            hrc = ptrVM.vtable()->pfnVMR3SetCpuExecutionCap(ptrVM.rawUVM(), aExecutionCap);
+            int vrc = ptrVM.vtable()->pfnVMR3SetCpuExecutionCap(ptrVM.rawUVM(), aExecutionCap);
+            if (RT_FAILURE(vrc))
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to change the CPU execution limit (%Rrc)"), vrc);
         }
         else
             hrc = i_setInvalidMachineStateError();
@@ -7499,7 +7501,11 @@ HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_
 {
     if (   mRecording.mCtx.IsStarted()
         && mRecording.mCtx.IsFeatureEnabled(RecordingFeature_Audio))
-        return mRecording.mCtx.SendAudioFrame(pvData, cbData, uTimestampMs);
+    {
+        int vrc = mRecording.mCtx.SendAudioFrame(pvData, cbData, uTimestampMs);
+        if (RT_FAILURE(vrc))
+            return E_FAIL;
+    }
 
     return S_OK;
 }
@@ -9597,14 +9603,18 @@ int Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
         Bstr bstrExtPack;
 
         ComPtr<IVirtualBox> pVirtualBox;
-        mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+        hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
         ComPtr<ISystemProperties> pSystemProperties;
-        if (pVirtualBox)
-            pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-        if (pSystemProperties)
-            pSystemProperties->COMGETTER(DefaultCryptoExtPack)(bstrExtPack.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        if (SUCCEEDED(hrc))
+            hrc = pSystemProperties->COMGETTER(DefaultCryptoExtPack)(bstrExtPack.asOutParam());
         if (FAILED(hrc))
-            return hrc;
+        {
+            setErrorBoth(hrc, VERR_INVALID_PARAMETER,
+                         tr("Failed to query default extension pack name for the cryptographic module"));
+            return VERR_INVALID_PARAMETER;
+        }
 
         Utf8Str strExtPack(bstrExtPack);
         if (strExtPack.isEmpty())
