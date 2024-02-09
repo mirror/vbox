@@ -5157,9 +5157,44 @@ void UIStorageSettingsEditor::updateRootAndCurrentIndexes()
     /* But if we have at least one controller: */
     if (pModel->rowCount(currentIndex) > 0)
     {
-        /* Why not select it as well?
-         * It contains all the attachments we have (there): */
-        currentIndex = pModel->index(0, 0, currentIndex);
+        /* Let's enumerate controllers according to their bus type priorities: */
+        // For future support we have possibility to show Unknown bus above Low one.
+        enum BusPriority { BusPriority_High, BusPriority_Medium, BusPriority_Unknown, BusPriority_Low };
+        QMap<BusPriority, int> busPositions;
+        for (int i = 0; i < pModel->rowCount(currentIndex); ++i)
+        {
+            /* Acquire iterated controller bus type: */
+            const QModelIndex controllerIndex = pModel->index(i, 0, currentIndex);
+            const KStorageBus enmBus = pModel->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
+            BusPriority enmBusPriority = BusPriority_Unknown;
+            switch (enmBus)
+            {
+                case KStorageBus_SATA:
+                    enmBusPriority = BusPriority_High;
+                    break;
+                case KStorageBus_IDE:
+                case KStorageBus_SCSI:
+                case KStorageBus_SAS:
+                case KStorageBus_VirtioSCSI:
+                    enmBusPriority = BusPriority_Medium;
+                    break;
+                case KStorageBus_Floppy:
+                case KStorageBus_USB:
+                case KStorageBus_PCIe:
+                    enmBusPriority = BusPriority_Low;
+                    break;
+                default:
+                    break;
+            }
+            if (!busPositions.contains(enmBusPriority))
+                busPositions[enmBusPriority] = i;
+        }
+        if (!busPositions.isEmpty())
+        {
+            /* Why not select it as well?
+             * It contains all the attachments we have (there): */
+            currentIndex = pModel->index(busPositions.first(), 0, currentIndex);
+        }
         /* For Basic experience mode: */
         if (!m_fInExpertMode)
         {
