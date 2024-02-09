@@ -4168,7 +4168,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     pVCpu->cpum.GstCtx.fExtrn |= HMVMX_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    bool const   fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
+    bool const   fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
 #ifdef VBOX_WITH_STATISTICS
     if (fResumeVM)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxVmResume);
@@ -6261,7 +6261,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     pVCpu->hmr0.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Some host state messed up by VMX needs restoring. */
-    pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
+    pVmcsInfo->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;           /* Use VMRESUME instead of VMLAUNCH in the next run. */
 #ifdef VBOX_STRICT
     hmR0VmxCheckHostEferMsr(pVmcsInfo);                                 /* Verify that the host EFER MSR wasn't modified. */
 #endif
@@ -6443,6 +6443,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
     VMXTRANSIENT VmxTransient;
     RT_ZERO(VmxTransient);
     VmxTransient.pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+    Assert(!pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs);
 
     /* Paranoia. */
     Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfo);
@@ -6555,6 +6556,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     RT_ZERO(VmxTransient);
     VmxTransient.pVmcsInfo      = hmGetVmxActiveVmcsInfo(pVCpu);
     VmxTransient.fIsNestedGuest = true;
+    Assert(pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs);
 
     /* Paranoia. */
     Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfoNstGst);
