@@ -922,7 +922,7 @@ void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
 void VirtualHardwareItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicError)
 {
     RTCString name = getItemName();
-    if (resourceType == 0)
+    if (resourceType == ResourceType_Invalid)
         throw OVFLogicError(N_("Empty element ResourceType under %s element, line %d. see DMTF Schema Documentation %s"),
                             name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
 

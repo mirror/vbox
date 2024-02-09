@@ -293,6 +293,7 @@ struct DiskImage
 
 enum ResourceType_T
 {
+    ResourceType_Invalid  = 0,
     ResourceType_Other  = 1,
     ResourceType_ComputerSystem = 2,
     ResourceType_Processor  = 3,
@@ -385,7 +386,8 @@ public:
     int m_iLineNumber;           ///< line number of \<Item\> element in XML source; cached for error messages
 
     VirtualHardwareItem()
-        : fResourceRequired(false)
+        : resourceType(ResourceType_Invalid)
+        , fResourceRequired(false)
         , fAutomaticAllocation(false)
         , fAutomaticDeallocation(false)
         , ullVirtualQuantity(0)
