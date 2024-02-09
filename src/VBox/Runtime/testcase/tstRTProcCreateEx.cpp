@@ -579,7 +579,15 @@ static int tstRTCreateProcEx4Child(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
     int cErrors = 0;
-    for (int i = 0; i < argc; i++)
+    if (argc >= (int)RT_ELEMENTS(g_apszArgs4))
+    {
+        RTStrmPrintf(g_pStdErr,
+                     "Expected argument count to be <= %u, got %u\n",
+                     argc, RT_ELEMENTS(g_apszArgs4));
+        cErrors++;
+    }
+
+    for (int i = 0; i < RT_MIN(argc, (int)RT_ELEMENTS(g_apszArgs4) - 1); i++)
         if (strcmp(argv[i], g_apszArgs4[i]))
         {
             RTStrmPrintf(g_pStdErr,
