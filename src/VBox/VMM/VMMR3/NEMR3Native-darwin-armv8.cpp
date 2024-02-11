@@ -1286,6 +1286,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                                                false /*f64BitReg*/, false /*fSignExtend*/,
                                                (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
                     }
+                    break;
                 }
                 default:
                     nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
