@@ -1003,6 +1003,8 @@ ifdef VBOX_WITH_LIBSSH
 endif
 # Use Mac OS X VMNET API instead of network kernel extensions
 VBOX_WITH_VMNET = 1
+# Link VBoxXPCOMIPCD into VBoxSVC instead of running it as a separate process @bugref{10594}
+#VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC = 1
 ## @}
 
 
@@ -2255,6 +2257,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dylib
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
  VBOX_LIB_SUPR0 :=
+ LIB_VBOXXPCOMIPCD = $(PATH_STAGE_BIN)/VBoxXPCOMIPCD.dylib
 endif
 if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so
@@ -2269,6 +2272,7 @@ if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  VBOX_LIB_XPCOM_X86   = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.so
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.so
  VBOX_LIB_SUPR0 :=
+ LIB_VBOXXPCOMIPCD = $(PATH_STAGE_BIN)/VBoxXPCOMIPCD.so
 endif
 ifeq ($(KBUILD_TARGET),os2)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.dll

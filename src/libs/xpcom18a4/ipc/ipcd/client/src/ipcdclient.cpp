@@ -1241,7 +1241,12 @@ IPC_SpawnDaemon(const char *path)
     if (RT_SUCCESS(vrc))
     {
       char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
-      const char *const s_apszArgs[] = { (char *const) path, "--inherit-startup-pipe", &szPipeInheritFd[0], NULL };
+      const char *const s_apszArgs[] = { (char *const) path,
+#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
+                                         "--auto-shutdown",
+#endif
+                                         "--inherit-startup-pipe",
+                                         &szPipeInheritFd[0], NULL };
       char c;
 
       ssize_t cch = RTStrFormatU32(&szPipeInheritFd[0], sizeof(szPipeInheritFd),

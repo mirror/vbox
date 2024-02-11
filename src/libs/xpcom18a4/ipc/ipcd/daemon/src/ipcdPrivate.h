@@ -47,7 +47,11 @@ class ipcClient;
 // upper limit on the number of active connections
 // XXX may want to make this more dynamic
 //
-#define IPC_MAX_CLIENTS 10000
+#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
+# define IPC_MAX_CLIENTS 100
+#else
+# define IPC_MAX_CLIENTS 10000
+#endif
 
 /** List of connected IPC clients. */
 extern RTLISTANCHOR g_LstIpcClients;
