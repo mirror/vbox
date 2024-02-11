@@ -2515,7 +2515,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     Assert(   PGM_PAGE_IS_ZERO(pPage)
                            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
                            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
-                    pPage++;
+                    iPage++;
                 }
                 if (fAllMMIO)
                 {
