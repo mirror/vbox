@@ -107,7 +107,7 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
  	VBoxXPCOMIPCC
  ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
   VBOX_XPCOM_DLLS += \
- 	VBoxXPCOMIPCD
+  	VBoxXPCOMIPCD
  endif
 
  DLLS += $(VBOX_XPCOM_DLLS)
@@ -864,9 +864,9 @@ ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
  	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
  	ipc/ipcd/daemon/src/ipcdUnix.cpp
  VBoxXPCOMIPCD_LIBS = \
-	$(VBox-xpcom-ipcshared_1_TARGET) \
-	$(VBoxXPCOM_1_TARGET) \
-	$(TEMPLATE_XPComDll_LIBS)
+ 	$(VBox-xpcom-ipcshared_1_TARGET) \
+ 	$(VBoxXPCOM_1_TARGET) \
+ 	$(TEMPLATE_XPComDll_LIBS)
 else
  VBoxXPCOMIPCD_TEMPLATE = XPComIpcExe
  VBoxXPCOMIPCD_SOURCES = \
