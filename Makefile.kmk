@@ -2519,7 +2519,7 @@ ifdef VBOX_WITH_PARFAIT
 	+ $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(KMK) all
  endif
 	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
-	 -p \
+	 -p -W -e all -d misaligned-access \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),) \
 	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
@@ -2527,13 +2527,12 @@ ifdef VBOX_WITH_PARFAIT
 	 -g $(PATH_OUT)/html \
 	 -c $(PATH_ROOT)/tools/parfait-vbox.conf \
 	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
-	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
 	 $(PATH_OUT)/obj
  ifdef VBOX_PARFAIT_SERVER_2
 	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
-	 -p \
+   -p -W -e all -d misaligned-access \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_2),-s $(VBOX_PARFAIT_SERVER_2),) \
 	 $(VBOX_PARFAIT_OPTS_2) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE_2),-b $(VBOX_PARFAIT_SERVER_BASELINE_2),) \
@@ -2542,7 +2541,6 @@ ifdef VBOX_WITH_PARFAIT
 	 -g $(PATH_OUT)/html_2 \
 	 -c $(PATH_ROOT)/tools/parfait-vbox.conf \
 	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
-	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
 	 $(PATH_OUT)/obj
