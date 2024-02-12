@@ -163,8 +163,8 @@ if   defined(VBOX_WITH_MAIN) \
 
   # libpng for screenshots in main.
   if   !defined(VBOX_ONLY_DOCS) \
-    && "$(SDK_VBoxLibPng_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.6.37"
-   include $(PATH_SUB_CURRENT)/libpng-1.6.37/Makefile.kmk
+    && "$(SDK_VBoxLibPng_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.6.42"
+   include $(PATH_SUB_CURRENT)/libpng-1.6.42/Makefile.kmk
   endif
 
 
