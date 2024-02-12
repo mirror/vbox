@@ -107,7 +107,7 @@ VBOX_FBSD_STRIP_BIN = \
 		VBoxSVC \
 		VBoxXPCOM.so \
 		VBoxXPCOMC.so \
-		VBoxXPCOMIPCD \
+		$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),VBoxXPCOMICPD.so,VBoxXPCOMICPD) \
 		components/VBoxXPCOMIPCC.so \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \

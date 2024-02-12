@@ -410,7 +410,7 @@ endif
 VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxManage \
 	MacOS/VBoxSVC \
-	MacOS/VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),,MacOS/VBoxXPCOMICPD) \
 	MacOS/VBoxNetAdpCtl \
 	MacOS/VBoxExtPackHelperApp \
 	$(if $(VBOX_WITH_FE_BUGREPORT),MacOS/VBoxBugReport) \
@@ -439,6 +439,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	$(if $(VBOX_WITH_VIRT_ARMV8),MacOS/VBoxVMMArm.dylib,) \
 	MacOS/VBoxXPCOM.dylib \
 	MacOS/VBoxXPCOMC.dylib \
+	$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),MacOS/VBoxXPCOMICPD.dylib,) \
 	MacOS/components/VBoxC.dylib \
 	MacOS/components/VBoxSVCM.dylib \
 	MacOS/components/VBoxXPCOMIPCC.dylib \

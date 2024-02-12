@@ -180,7 +180,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxSVC \
 		VBoxXPCOM.so \
 		VBoxXPCOMC.so \
-		VBoxXPCOMIPCD \
+		$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),VBoxXPCOMIPCD.so,VBoxXPCOMICPD) \
 		components/VBoxXPCOMIPCC.so \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \

@@ -326,7 +326,7 @@ SOLARIS_STRIP_EXES = \
 	VBoxNetNAT \
 	$(if $(VBOX_WITH_EXTPACK),VBoxExtPackHelperApp,) \
 	VBoxSVC \
-	VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),,VBoxXPCOMICPD) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
@@ -347,6 +347,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_LIBSSH),VBoxLibSsh.so,) \
 	VBoxXPCOM.so \
 	VBoxXPCOMC.so \
+	$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),VBoxXPCOMICPD.so,) \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_DRAG_AND_DROP),VBoxDragAndDropSvc.so,) \
