@@ -1753,6 +1753,21 @@ typedef struct IEMCPU
     /** Native recompiled execution: Code TLB hits for new page with offset. */
     STAMCOUNTER             StatNativeCodeTlbHitsForNewPageWithOffset;
 
+    /** Native recompiler: Number of calls to iemNativeRegAllocFindFree. */
+    STAMCOUNTER             StatNativeRegFindFree;
+    /** Native recompiler: Number of times iemNativeRegAllocFindFree needed
+     *  to free a variable. */
+    STAMCOUNTER             StatNativeRegFindFreeVar;
+    /** Native recompiler: Number of times iemNativeRegAllocFindFree did
+     *  not need to free any variables. */
+    STAMCOUNTER             StatNativeRegFindFreeNoVar;
+    /** Native recompiler: Liveness info freed shadowed guest registers in
+     * iemNativeRegAllocFindFree. */
+    STAMCOUNTER             StatNativeRegFindFreeLivenessUnshadowed;
+    /** Native recompiler: Liveness info helped with the allocation in
+     *  iemNativeRegAllocFindFree. */
+    STAMCOUNTER             StatNativeRegFindFreeLivenessHelped;
+
     /** Native recompiler: Number of opportunities to skip EFLAGS.CF updating. */
     STAMCOUNTER             StatNativeLivenessEflCfSkippable;
     /** Native recompiler: Number of opportunities to skip EFLAGS.PF updating. */
@@ -1782,7 +1797,7 @@ typedef struct IEMCPU
     /** Native recompiler: Number of required EFLAGS.OTHER updates. */
     STAMCOUNTER             StatNativeLivenessEflOtherRequired;
 
-    uint64_t                au64Padding[5];
+    //uint64_t                au64Padding[3];
     /** @} */
 
     /** Data TLB.

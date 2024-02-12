@@ -434,6 +434,24 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
 #  ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeRegFindFree, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of calls to iemNativeRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeRegFindFree", idCpu);
+#  endif
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeRegFindFreeVar, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times iemNativeRegAllocFindFree needed to free a variable.",
+                        "/IEM/CPU%u/re/NativeRegFindFreeVar", idCpu);
+#  ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeRegFindFreeNoVar, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times iemNativeRegAllocFindFree did not needed to free any variables.",
+                        "/IEM/CPU%u/re/NativeRegFindFreeNoVar", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeRegFindFreeLivenessUnshadowed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Times liveness info freeed up shadowed guest registers in iemNativeRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeRegFindFreeLivenessUnshadowed", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeRegFindFreeLivenessHelped,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Times liveness info helped finding the return register in iemNativeRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeRegFindFreeLivenessHelped", idCpu);
+
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflCfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.CF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsCfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflPfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.PF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsPfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflAfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.AF updating",    "/IEM/CPU%u/re/NativeLivenessEFlagsAfSkippable", idCpu);
