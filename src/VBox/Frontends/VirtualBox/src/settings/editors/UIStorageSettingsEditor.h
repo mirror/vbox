@@ -394,6 +394,9 @@ private:
         /** Holds configuration access level. */
         ConfigurationAccessLevel  m_enmConfigurationAccessLevel;
 
+        /** Holds whether we are showing full contents. */
+        bool  m_fShowFullContents;
+
         /** Holds the last mouse-press position. */
         QPoint  m_mousePressPosition;
     /** @} */

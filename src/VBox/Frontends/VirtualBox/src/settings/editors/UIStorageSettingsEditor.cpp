@@ -2924,6 +2924,7 @@ UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
     : UIEditor(pParent, true /* show in basic mode? */)
     , m_fLoadingInProgress(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
+    , m_fShowFullContents(true)
     , m_pActionPool(0)
     , m_pModelStorage(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
@@ -3333,8 +3334,8 @@ void UIStorageSettingsEditor::handleFilterChange()
 
     /* Update action visibility. In Basic mode
      * we no need controller actions as well. */
-    m_pActionAddController->setVisible(m_fInExpertMode);
-    m_pActionRemoveController->setVisible(m_fInExpertMode);
+    m_pActionAddController->setVisible(m_fShowFullContents);
+    m_pActionRemoveController->setVisible(m_fShowFullContents);
 
     /* We should also redraw branches if any: */
     update();
@@ -4120,7 +4121,7 @@ void UIStorageSettingsEditor::sltHandleContextMenuRequest(const QPoint &position
 void UIStorageSettingsEditor::sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index)
 {
     /* Do nothing for Basic experience mode:  */
-    if (!m_fInExpertMode)
+    if (!m_fShowFullContents)
         return;
 
     /* Acquire model: */
@@ -5161,10 +5162,14 @@ void UIStorageSettingsEditor::updateRootAndCurrentIndexes()
         // For future support we have possibility to show Unknown bus above Low one.
         enum BusPriority { BusPriority_High, BusPriority_Medium, BusPriority_Unknown, BusPriority_Low };
         QMap<BusPriority, int> busPositions;
+        QMap<int, int> attachmentCount;
         for (int i = 0; i < pModel->rowCount(currentIndex); ++i)
         {
-            /* Acquire iterated controller bus type: */
+            /* Acquire iterated controller index: */
             const QModelIndex controllerIndex = pModel->index(i, 0, currentIndex);
+            /* Remember iterated controller child count: */
+            attachmentCount[i] = pModel->rowCount(controllerIndex);
+            /* Acquire iterated controller bus type: */
             const KStorageBus enmBus = pModel->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
             BusPriority enmBusPriority = BusPriority_Unknown;
             switch (enmBus)
@@ -5195,8 +5200,26 @@ void UIStorageSettingsEditor::updateRootAndCurrentIndexes()
              * It contains all the attachments we have (there): */
             currentIndex = pModel->index(busPositions.first(), 0, currentIndex);
         }
+        /* Basic approach is to show full contents for Expert mode only: */
+        m_fShowFullContents = m_fInExpertMode;
         /* For Basic experience mode: */
         if (!m_fInExpertMode)
+        {
+            /* Important controller position is: */
+            const int iImportantControllerPosition = busPositions.first();
+            /* Check whether at least one unimportant controller have children: */
+            for (int iPosition = 0; iPosition < attachmentCount.size(); ++iPosition)
+            {
+                if (   iPosition != iImportantControllerPosition
+                    && attachmentCount.value(iPosition))
+                {
+                    m_fShowFullContents = true;
+                    break;
+                }
+            }
+        }
+        /* Should we hide some contents? */
+        if (!m_fShowFullContents)
         {
             /* Map the view to this selection: */
             rootIndex = currentIndex;
