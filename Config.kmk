@@ -5027,7 +5027,7 @@ ifdef VBOX_WITH_LIBCURL
 endif
 
 SDK_VBoxLibPng                := protable network graphics (png) library for dll linking.
-SDK_VBoxLibPng_INCS           ?= $(PATH_ROOT)/src/libs/libpng-1.6.37
+SDK_VBoxLibPng_INCS           ?= $(PATH_ROOT)/src/libs/libpng-1.6.42
 SDK_VBoxLibPng_LIBS           ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 # lzf
