@@ -863,6 +863,7 @@ ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
  	ipc/ipcd/daemon/src/ipcClient.cpp \
  	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
  	ipc/ipcd/daemon/src/ipcdUnix.cpp
+ VBoxXPCOMIPCD_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxXPCOMIPCD.dylib
  VBoxXPCOMIPCD_LIBS = \
  	$(VBox-xpcom-ipcshared_1_TARGET) \
  	$(VBoxXPCOM_1_TARGET) \
