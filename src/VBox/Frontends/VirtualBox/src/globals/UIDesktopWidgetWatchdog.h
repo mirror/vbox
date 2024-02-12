@@ -41,12 +41,21 @@
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
-#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
-# include "UIDefs.h"
-#endif
 
 /* Forward declarations: */
 class QScreen;
+
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+/** Desktop Watchdog / Synthetic Test policy type. */
+enum DesktopWatchdogPolicy_SynthTest
+{
+    DesktopWatchdogPolicy_SynthTest_Disabled,
+    DesktopWatchdogPolicy_SynthTest_ManagerOnly,
+    DesktopWatchdogPolicy_SynthTest_MachineOnly,
+    DesktopWatchdogPolicy_SynthTest_Both
+};
+Q_DECLARE_METATYPE(DesktopWatchdogPolicy_SynthTest);
+#endif /* VBOX_WS_NIX && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
 /** Singleton QObject extension used as desktop-widget
   * watchdog aware of the host-screen geometry changes. */
@@ -208,6 +217,9 @@ private:
 
     /** Cleanups existing workers. */
     void cleanupExistingWorkers();
+
+    /** Holds environment variable name for Desktop Watchdog / Synthetic Test policy type. */
+    static const QString s_strVBoxDesktopWatchdogPolicySynthTest;
 
     /** Holds the cached Synthetic Test policy. */
     DesktopWatchdogPolicy_SynthTest  m_enmSynthTestPolicy;

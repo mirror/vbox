@@ -38,6 +38,9 @@
 #include "UIIconPool.h"
 #include "UISettingsDefs.h"
 #include "UITranslator.h"
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+# include "UIDesktopWidgetWatchdog.h"
+#endif
 
 /* COM includes: */
 #include "CPlatformProperties.h"
@@ -400,6 +403,7 @@ template<> SHARED_LIBRARY_STUFF StorageSlot UIConverter::fromString<StorageSlot>
     return result;
 }
 
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
 /* DesktopWatchdogPolicy_SynthTest <= QString: */
 template<> SHARED_LIBRARY_STUFF DesktopWatchdogPolicy_SynthTest UIConverter::fromInternalString<DesktopWatchdogPolicy_SynthTest>(const QString &strPolicyType) const
 {
@@ -413,6 +417,7 @@ template<> SHARED_LIBRARY_STUFF DesktopWatchdogPolicy_SynthTest UIConverter::fro
         return DesktopWatchdogPolicy_SynthTest_Both;
     return DesktopWatchdogPolicy_SynthTest_Both;
 }
+#endif /* VBOX_WS_NIX && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
 /* QString <= UIExtraDataMetaDefs::DialogType: */
 template<> SHARED_LIBRARY_STUFF QString UIConverter::toInternalString(const UIExtraDataMetaDefs::DialogType &enmDialogType) const

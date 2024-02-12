@@ -123,6 +123,10 @@ static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT 
 
 #if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
 
+/* static */
+const QString
+UIDesktopWidgetWatchdog::s_strVBoxDesktopWatchdogPolicySynthTest = "VBOX_DESKTOPWATCHDOGPOLICY_SYNTHTEST";
+
 /** QWidget extension used as
   * an invisible window on the basis of which we
   * can calculate available host-screen geometry. */
@@ -1002,7 +1006,8 @@ void UIDesktopWidgetWatchdog::prepare()
 
 #if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /* Load Synthetic Test policy: */
-    const QString strSynthTestPolicy = QString::fromLocal8Bit(qgetenv(VBox_DesktopWatchdogPolicy_SynthTest));
+    const QString strSynthTestPolicy =
+        QString::fromLocal8Bit(qgetenv(s_strVBoxDesktopWatchdogPolicySynthTest.toLatin1().constData()));
     m_enmSynthTestPolicy = gpConverter->fromInternalString<DesktopWatchdogPolicy_SynthTest>(strSynthTestPolicy);
 
     /* Update host-screen configuration: */
