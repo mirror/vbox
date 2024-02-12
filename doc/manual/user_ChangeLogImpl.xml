@@ -122,6 +122,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>VBoxSDL: Compatibility fixes for SDL 2.x</para>
+      </listitem>
+
+      <listitem>
        <para>Python: Our API bindings for Python 2.x is now marked as being deprecated and will
          be removed in a future version. Please upgrade your code to use Python 3</para>
       </listitem>
