@@ -238,6 +238,8 @@ void SELFSIZINGTABLE::setCell(void *row, void *col, ...)
         }
         pColData = pColData->next;
     }
+
+    va_end(ap);
 }
 
 void SELFSIZINGTABLE::displayTable()

@@ -2702,12 +2702,14 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
     LogRel((" '%s'", a_pszCommand));
     apszArgs[cArgs++] = a_pszCommand;
 
+    HRESULT hrc = S_OK;
+
     va_list va;
     va_start(va, a_pszCommand);
     const char *pszLastArg;
     for (;;)
     {
-        AssertReturn(cArgs < RT_ELEMENTS(apszArgs) - 1, E_UNEXPECTED);
+        AssertBreakStmt(cArgs < RT_ELEMENTS(apszArgs) - 1, hrc = E_UNEXPECTED);
         pszLastArg = va_arg(va, const char *);
         if (!pszLastArg)
             break;
@@ -2715,6 +2717,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
         apszArgs[cArgs++] = pszLastArg;
     };
     va_end(va);
+    ComAssertComRCRet(hrc, hrc);
 
     LogRel(("\n"));
     apszArgs[cArgs] = NULL;
@@ -2732,7 +2735,6 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
     /*
      * Spawn the process.
      */
-    HRESULT hrc;
     RTPROCESS hProcess;
     vrc = RTProcCreateEx(szExecName,
                          apszArgs,
