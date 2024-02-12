@@ -1623,7 +1623,7 @@ DECLINLINE(void) ehciR3DumpQTD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         if (GCPhys == ((RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT))
             break; /* detect if list item is self-cycled. */
 
-        GCPhys = qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (GCPhys == GCPhysHead)
             break;
@@ -1659,7 +1659,7 @@ DECLINLINE(void) ehciR3DumpQTD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         if (GCPhys == ((RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT))
             break; /* detect if list item is self-cycled. */
 
-        GCPhys = qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (GCPhys == GCPhysHead)
             break;
@@ -1701,8 +1701,8 @@ DECLINLINE(void) ehciR3DumpQH(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLis
           ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT),
           ((RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT), qhd.Overlay.OrgQTD.Next.Terminate,
           ((RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT), qhd.Overlay.OrgQTD.AltNext.Terminate));
-    ehciR3DumpSingleQTD(qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qhd.Overlay.OrgQTD, "");
-    ehciR3DumpQTD(pDevIns, qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT, true);
+    ehciR3DumpSingleQTD((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qhd.Overlay.OrgQTD, "");
+    ehciR3DumpQTD(pDevIns, (RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT, true);
 
     Assert(qhd.Next.Pointer || qhd.Next.Terminate);
     if (    !fList
@@ -1727,7 +1727,7 @@ DECLINLINE(void) ehciR3DumpQH(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLis
         if (GCPhys == ((RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT))
             break;  /* Looping on itself. Bad guest! */
 
-        GCPhys = ptr.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT;
         if (GCPhys == GCPhysHead)
             break;  /* break the loop */
 
@@ -1767,7 +1767,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
             if (pItd->Transaction[i].Active)
             {
                 Log2(("T%d Len=%x Offset=%x PG=%d IOC=%d Buffer=%x\n", i, pItd->Transaction[i].Length, pItd->Transaction[i].Offset, pItd->Transaction[i].PG, pItd->Transaction[i].IOC,
-                       pItd->Buffer.Buffer[pItd->Transaction[i].PG].Pointer << EHCI_BUFFER_PTR_SHIFT));
+                       (RTGCPHYS)pItd->Buffer.Buffer[pItd->Transaction[i].PG].Pointer << EHCI_BUFFER_PTR_SHIFT));
             }
         }
         Assert(pItd->Next.Pointer || pItd->Next.Terminate);
@@ -1784,7 +1784,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         }
 
         /* next */
-        GCPhys = pItd->Next.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)pItd->Next.Pointer << EHCI_TD_PTR_SHIFT;
     }
 }
 
@@ -2325,7 +2325,7 @@ static void ehciR3RhXferCompleteITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pTh
                             if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
                                LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on completion.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
-                            GCPhysBuf = pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                            GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                             ehciPhysWrite(pDevIns, GCPhysBuf, pb + cb1, cb2);
                         }
                         else
@@ -2409,7 +2409,7 @@ static void ehciR3RhXferCompleteQH(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
     AssertMsg(pUrb->paTds[0].TdAddr == ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT),
               ("Out of order completion %RGp != %RGp Endpoint=%#x\n", pUrb->paTds[0].TdAddr,
                ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT), pUrb->EndPt));
-    ehciR3ReadQTD(pDevIns, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
+    ehciR3ReadQTD(pDevIns, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
 
     /*
      * Check that the URB hasn't been canceled and then try unlink the TDs.
@@ -2460,7 +2460,7 @@ static void ehciR3RhXferCompleteQH(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
             RTGCPHYS GCPhysBuf;
             unsigned cbCurTransfer;
 
-            GCPhysBuf = qtd.Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
+            GCPhysBuf = (RTGCPHYS)qtd.Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
             if (i == 0)
                 GCPhysBuf += qtd.Buffer.Offset.Offset;
 
@@ -2600,7 +2600,7 @@ static bool ehciR3RhXferErrorQH(PPDMDEVINS pDevIns, PEHCICC pThisCC, PVUSBURB pU
     /* Read the whole QHD & QTD */
     ehciR3ReadQHD(pDevIns, pUrb->pHci->EdAddr, &qhd);
     Assert(pUrb->paTds[0].TdAddr == ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
-    ehciR3ReadQTD(pDevIns, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
+    ehciR3ReadQTD(pDevIns, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
 
     /*
      * Check if the TDs still are valid.
@@ -2737,7 +2737,7 @@ static bool ehciR3SubmitQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC, RT
             RTGCPHYS GCPhysBuf;
             unsigned cbCurTransfer;
 
-            GCPhysBuf = pQtd->Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
+            GCPhysBuf = (RTGCPHYS)pQtd->Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
             if (i == 0)
                 GCPhysBuf += pQtd->Buffer.Offset.Offset;
 
@@ -2862,7 +2862,7 @@ static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             {
                 const unsigned  pg = pItd->Transaction[i].PG;
 
-                GCPhysBuf = pItd->Buffer.Buffer[pg].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg].Pointer << EHCI_BUFFER_PTR_SHIFT;
                 GCPhysBuf += pItd->Transaction[i].Offset;
 
                 /* If the transfer would cross page boundary, use the next sequential PG pointer
@@ -2877,7 +2877,7 @@ static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
                     if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
                        LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on submit.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
-                    GCPhysBuf = pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                    GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                     ehciPhysRead(pDevIns, GCPhysBuf, &pUrb->abData[curOffset + cb1], cb2);
                 }
                 else
@@ -3024,7 +3024,7 @@ static void ehciR3QHUpdateOverlay(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThis
     if (!pQhd->Overlay.OrgQTD.Next.Terminate)
     {
         EHCI_QTD qtdNext;
-        RTGCPHYS GCPhysNextQTD = pQhd->Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        RTGCPHYS GCPhysNextQTD = (RTGCPHYS)pQhd->Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (ehciR3IsTdInFlight(pThisCC, GCPhysNextQTD))
         {
@@ -3073,7 +3073,7 @@ static RTGCPHYS ehciR3ServiceQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisC
                 ||  GCPhysQTD == (RTGCPHYS)pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT)
                 ehciR3QHSetupOverlay(pDevIns, pQhd, GCPhysQHD, &qtd, GCPhysQTD);
             else
-                Log2Func(("transfer %RGp in progress -> don't update the overlay\n", (RTGCPHYS)(pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT)));
+                Log2Func(("transfer %RGp in progress -> don't update the overlay\n", (RTGCPHYS)pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
 
             ehciR3SubmitQTD(pDevIns, pThis, pThisCC, GCPhysQHD, pQhd, GCPhysQTD, &qtd, iFrame);
 
@@ -3119,14 +3119,14 @@ static RTGCPHYS ehciR3ServiceQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisC
     {
         Assert(qtd.AltNext.Pointer);
         Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)(qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT)));
-        return qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+        return (RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
     }
     else
     {
         Assert(qtd.Next.Pointer || qtd.Next.Terminate);
         if (qtd.Next.Terminate || !qtd.Next.Pointer)
             return 0;
-        return qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        return (RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
     }
 }
 
@@ -3206,8 +3206,8 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
     RTGCPHYS GCPhysQTD;
     if (qhd.Overlay.OrgQTD.Token.Bits.Active)
     {
-        Assert(ehciR3IsTdInFlight(pThisCC, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
-        GCPhysQTD = qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT;
+        Assert(ehciR3IsTdInFlight(pThisCC, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
+        GCPhysQTD = (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT;
     }
     else
     {
@@ -3216,8 +3216,8 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             &&  qhd.Overlay.OrgQTD.Token.Bits.Length)
         {
             Assert(qhd.Overlay.OrgQTD.AltNext.Pointer);
-            Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)(qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT)));
-            GCPhysQTD = qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+            Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT));
+            GCPhysQTD = (RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
         }
         else
         {
@@ -3225,7 +3225,7 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             if (qhd.Overlay.OrgQTD.Next.Terminate || !qhd.Overlay.OrgQTD.Next.Pointer || qhd.Overlay.OrgQTD.Token.Bits.Halted)
                 GCPhysQTD = 0;
             else
-                GCPhysQTD = qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
+                GCPhysQTD = (RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
         }
     }
 
@@ -3308,7 +3308,7 @@ static void ehciR3ServiceAsyncList(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
         AssertMsgBreak(++cIterations < 128, ("Too many iterations, exiting\n"));
 
         /* next */
-        GCPhys = ptr.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT;
         Assert(!(GCPhys & 0x1f));
         if (   GCPhys == GCPhysHead
             || GCPhys == GCPhysLast)
@@ -3357,7 +3357,7 @@ static void ehciR3ServicePeriodicList(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC p
     ehciR3ReadFrameListPtr(pDevIns, GCPhys, &FramePtr);
     while (!FramePtr.Terminate && (pThis->cmd & EHCI_CMD_RUN))
     {
-        GCPhys = FramePtr.FrameAddr << EHCI_FRAME_LIST_NEXTPTR_SHIFT;
+        GCPhys = (RTGCPHYS)FramePtr.FrameAddr << EHCI_FRAME_LIST_NEXTPTR_SHIFT;
         /* Process the descriptor based on its type. Note that on the periodic
          * list, HCDs may (and do) mix iTDs and qHDs more or less freely.
          */
