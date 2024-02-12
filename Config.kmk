@@ -1004,7 +1004,7 @@ endif
 # Use Mac OS X VMNET API instead of network kernel extensions
 VBOX_WITH_VMNET = 1
 # Link VBoxXPCOMIPCD into VBoxSVC instead of running it as a separate process @bugref{10594}
-#VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC = 1
+VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC = 1
 ## @}
 
 
