@@ -292,48 +292,15 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
     LogFlowFunc(("pClient=%p, uFormat=%#x, pv=%p, cb=%RU32, pcbActual=%p\n",
                  pClient, uFormat, pvData, cbData, pcbActual));
 
-    PSHCLEVENT pEvent;
-    int rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+    uint32_t cbRead;
+    int rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, &pClient->EventSrc,
+                                    SHCL_TIMEOUT_DEFAULT_MS, uFormat, pvData, cbData, &cbRead);
     if (RT_SUCCESS(rc))
     {
-        rc = ShClX11ReadDataFromX11Async(&pClient->State.pCtx->X11, uFormat, cbData, pEvent);
-        if (RT_SUCCESS(rc))
-        {
-            int               rcEvent;
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                if (pPayload)
-                {
-                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
-                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
-                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
+        LogRel2(("Shared Clipboard: Read %RU32 bytes host X11 clipboard data\n", cbRead));
 
-                    uint32_t const cbRead = pResp->Read.cbData;
-
-                    size_t const cbToCopy = RT_MIN(cbData, cbRead);
-                    if (cbToCopy) /* memcpy doesn't like 0 byte inputs. */
-                        memcpy(pvData, pResp->Read.pvData, RT_MIN(cbData, cbRead));
-
-                    LogRel2(("Shared Clipboard: Read %RU32 bytes host X11 clipboard data\n", cbRead));
-
-                    *pcbActual = cbRead;
-
-                    RTMemFree(pResp->Read.pvData);
-                    pResp->Read.cbData = 0;
-
-                    ShClPayloadFree(pPayload);
-                }
-                else /* No payload given; could happen on invalid / not-expected formats. */
-                    *pcbActual = 0;
-            }
-            else if (rc == VERR_SHCLPB_EVENT_FAILED)
-                rc = rcEvent;
-        }
-
-        ShClEventRelease(pEvent);
+        if (pcbActual)
+            *pcbActual = cbRead;
     }
 
     if (RT_FAILURE(rc))
@@ -698,49 +665,20 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
     AssertPtr(pClient->State.pCtx);
     PSHCLX11CTX pX11 = &pClient->State.pCtx->X11;
 
-    PSHCLEVENT pEvent;
-    int rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+    /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
+    void    *pvData;
+    uint32_t cbData;
+    int rc = ShClX11ReadDataFromX11Ex(pX11, &pClient->EventSrc, SHCL_TIMEOUT_DEFAULT_MS, VBOX_SHCL_FMT_URI_LIST,
+                                      &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
-        rc = ShClX11ReadDataFromX11Async(pX11, VBOX_SHCL_FMT_URI_LIST, UINT32_MAX, pEvent);
+        rc = ShClTransferRootsInitFromStringList(pCtx->pTransfer, (const char *)pvData, cbData);
         if (RT_SUCCESS(rc))
-        {
-            /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
-            int               rcEvent;
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                if (pPayload)
-                {
-                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
-                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
-                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
+            LogRel2(("Shared Clipboard: Host reported %RU64 X11 root entries for transfer to guest\n",
+                     ShClTransferRootsCount(pCtx->pTransfer)));
 
-                    rc = ShClTransferRootsInitFromStringList(pCtx->pTransfer,
-                                                             (char *)pResp->Read.pvData, pResp->Read.cbData + 1 /* Include zero terminator */);
-                    if (RT_SUCCESS(rc))
-                        LogRel2(("Shared Clipboard: Host reported %RU64 X11 root entries for transfer to guest\n",
-                                 ShClTransferRootsCount(pCtx->pTransfer)));
-
-                    RTMemFree(pResp->Read.pvData);
-                    pResp->Read.cbData = 0;
-
-                    ShClPayloadFree(pPayload);
-                    pPayload = NULL;
-                }
-                else /* No payload given; could happen on invalid / not-expected formats. */
-                    rc = VERR_NO_DATA;
-            }
-            else if (rc == VERR_SHCLPB_EVENT_FAILED)
-                rc = rcEvent;
-        }
-
-        ShClEventRelease(pEvent);
+        RTMemFree(pvData);
     }
-    else
-        rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

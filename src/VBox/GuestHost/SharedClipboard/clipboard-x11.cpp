@@ -1571,6 +1571,37 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
 }
 
 /**
+ * Free's an allocated SHCLX11RESPONSE struct.
+ *
+ * @param   pResp               Pointer to response to free.
+ *                              The pointer will be invalid after return.
+ */
+static void shClX11ResponseFree(PSHCLX11RESPONSE pResp)
+{
+    if (!pResp)
+        return;
+
+    switch (pResp->enmType)
+    {
+        case SHCLX11EVENTTYPE_READ:
+        {
+            Assert(pResp->Read.cbData);
+            RTMemFree(pResp->Read.pvData);
+            break;
+        }
+
+        case SHCLX11EVENTTYPE_REPORT_FORMATS:
+            RT_FALL_THROUGH();
+        case SHCLX11EVENTTYPE_WRITE:
+            RT_FALL_THROUGH();
+        default:
+            break;
+    }
+
+    RTMemFree(pResp);
+}
+
+/**
  * Satisfies a request from X11 to convert the clipboard text to UTF-8 LF.
  *
  * @returns VBox status code. VERR_NO_DATA if no data was converted.
@@ -2669,6 +2700,109 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
 }
 
 /**
+ * Reads from the X11 clipboard, internal version.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   pEventSource        Event source to use.
+ * @param   msTimeout           Timeout (in ms) for waiting.
+ * @param   uFmt                The format that the VBox would like to receive the data in.
+ * @param   cbMax               Maximum size (in bytes) to read.
+ * @param   pResp               Where to return the allocated SHCLX11RESPONSE on success.
+ *                              Must be free'd via shClX11ResponseFree() by the caller.
+ */
+static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout,
+                                          SHCLFORMAT uFmt, uint32_t cbMax, PSHCLX11RESPONSE *ppResp)
+{
+    PSHCLEVENT pEvent;
+    int rc = ShClEventSourceGenerateAndRegisterEvent(pEventSource, &pEvent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = ShClX11ReadDataFromX11Async(pCtx, uFmt, cbMax, pEvent);
+        if (RT_SUCCESS(rc))
+        {
+            PSHCLEVENTPAYLOAD pPayload;
+            int               rcEvent;
+            rc = ShClEventWaitEx(pEvent, msTimeout, &rcEvent, &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                if (pPayload)
+                {
+                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
+                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
+                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
+                    AssertReturn(pResp->Read.cbData <= cbMax, VERR_BUFFER_OVERFLOW); /* Paranoia. */
+
+                    pPayload->pvData = NULL; /* pvData (pResp) is owned by ppResp now. */
+                    pPayload->cbData = 0;
+
+                    ShClPayloadFree(pPayload);
+
+                    *ppResp = pResp;
+                }
+                else /* No payload given; could happen on invalid / not-expected formats. */
+                    rc = VERR_NO_DATA;
+            }
+            else if (rc == VERR_SHCLPB_EVENT_FAILED)
+                rc = rcEvent;
+        }
+
+        ShClEventRelease(pEvent);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Reads from the X11 clipboard, extended version.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   pEventSource        Event source to use.
+ * @param   msTimeout           Timeout (in ms) for waiting.
+ * @param   uFmt                The format that the VBox would like to receive the data in.
+ * @param   ppvBuf              Where to return the allocated received data on success.
+ *                              Must be free'd by the caller.
+ * @param   pcbBuf              Where to return the size (in bytes) of \a ppvBuf.
+ */
+int ShClX11ReadDataFromX11Ex(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout,
+                             SHCLFORMAT uFmt, void **ppvBuf, uint32_t *pcbBuf)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEventSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbBuf, VERR_INVALID_POINTER);
+
+    if (shClX11HeadlessIsEnabled(pCtx))
+    {
+        *pcbBuf = 0;
+        return VINF_SUCCESS;
+    }
+
+    PSHCLX11RESPONSE pResp;
+    int rc = shClX11ReadDataFromX11Internal(pCtx, pEventSource, msTimeout, uFmt, UINT32_MAX, &pResp);
+    if (RT_SUCCESS(rc))
+    {
+        *ppvBuf = pResp->Read.pvData;
+        *pcbBuf = pResp->Read.cbData;
+
+        pResp->Read.pvData = NULL; /* Is owned by ppvBuf now. */
+        pResp->Read.cbData = 0;
+
+        shClX11ResponseFree(pResp);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Reads from the X11 clipboard.
  *
  * @returns VBox status code.
@@ -2698,46 +2832,15 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMS
         return VINF_SUCCESS;
     }
 
-    PSHCLEVENT pEvent;
-    int rc = ShClEventSourceGenerateAndRegisterEvent(pEventSource, &pEvent);
+    PSHCLX11RESPONSE pResp;
+    int rc = shClX11ReadDataFromX11Internal(pCtx, pEventSource, msTimeout, uFmt, cbBuf, &pResp);
     if (RT_SUCCESS(rc))
     {
-        rc = ShClX11ReadDataFromX11Async(pCtx, uFmt, cbBuf, pEvent);
-        if (RT_SUCCESS(rc))
-        {
-            int               rcEvent;
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWaitEx(pEvent, msTimeout, &rcEvent, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                if (pPayload)
-                {
-                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
-                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
-                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
+        memcpy(pvBuf, pResp->Read.pvData, RT_MIN(cbBuf, pResp->Read.cbData));
+        if (pcbRead)
+            *pcbRead = pResp->Read.cbData;
 
-                    memcpy(pvBuf, pResp->Read.pvData, RT_MIN(cbBuf, pResp->Read.cbData));
-                    if (pcbRead)
-                        *pcbRead = pResp->Read.cbData;
-
-                    RTMemFree(pResp->Read.pvData);
-                    pResp->Read.cbData = 0;
-
-                    ShClPayloadFree(pPayload);
-                }
-                else /* No payload given; could happen on invalid / not-expected formats. */
-                {
-                    rc = VERR_NO_DATA;
-                    if (pcbRead)
-                        *pcbRead = 0;
-                }
-            }
-            else if (rc == VERR_SHCLPB_EVENT_FAILED)
-                rc = rcEvent;
-        }
-
-        ShClEventRelease(pEvent);
+        shClX11ResponseFree(pResp);
     }
 
     LogFlowFuncLeaveRC(rc);

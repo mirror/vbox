@@ -78,42 +78,15 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
     {
         case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
         {
-            PSHCLEVENT pEvent;
-            rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->EventSrc, &pEvent);
+            void    *pvData;
+            uint32_t cbData;
+            rc = ShClX11ReadDataFromX11Ex(&g_Ctx.X11, &pCtx->EventSrc, SHCL_TIMEOUT_DEFAULT_MS, VBOX_SHCL_FMT_URI_LIST,
+                                          &pvData, &cbData);
             if (RT_SUCCESS(rc))
             {
-                rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, VBOX_SHCL_FMT_URI_LIST, UINT32_MAX, pEvent);
-                if (RT_SUCCESS(rc))
-                {
-                    int               rcEvent;
-                    PSHCLEVENTPAYLOAD pPayload;
-                    rc = ShClEventWaitEx(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (pPayload)
-                        {
-                            AssertReturnVoid(pPayload->cbData == sizeof(SHCLX11RESPONSE));
-                            AssertReturnVoid(pPayload->pvData);
-                            PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                            AssertReturnVoid(pResp->enmType == SHCLX11EVENTTYPE_READ);
-
-                            rc = ShClTransferRootsInitFromStringListEx(pTransfer, (const char *)pResp->Read.pvData, pResp->Read.cbData,
-                                                                       "\n" /* X11-based Desktop environments separate entries with "\n" */);
-
-                            RTMemFree(pResp->Read.pvData);
-                            pResp->Read.cbData = 0;
-
-                            ShClPayloadFree(pPayload);
-                        }
-                        else /* No payload given; could happen on invalid / not-expected formats. */
-                            rc = VERR_NO_DATA;
-                    }
-                    else if (rc == VERR_SHCLPB_EVENT_FAILED)
-                        rc = rcEvent;
-                }
-
-                ShClEventRelease(pEvent);
-                pEvent = NULL;
+                rc = ShClTransferRootsInitFromStringListEx(pTransfer, (const char *)pvData, cbData,
+                                                           "\n" /* X11-based Desktop environments separate entries with "\n" */);
+                RTMemFree(pvData);
             }
             break;
         }
@@ -527,42 +500,14 @@ int VBClX11ClipboardMain(void)
 
                 case VBGLR3CLIPBOARDEVENTTYPE_READ_DATA:
                 {
-                    PSHCLEVENT pReadDataEvent;
-                    rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->EventSrc, &pReadDataEvent);
+                    void    *pvData;
+                    uint32_t cbData;
+                    rc = ShClX11ReadDataFromX11Ex(&g_Ctx.X11, &pCtx->EventSrc, SHCL_TIMEOUT_DEFAULT_MS, pEvent->u.fReadData,
+                                                  &pvData, &cbData);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, pEvent->u.fReadData, UINT32_MAX, pReadDataEvent);
-                        if (RT_SUCCESS(rc))
-                        {
-                            int               rcEvent;
-                            PSHCLEVENTPAYLOAD pPayload;
-                            rc = ShClEventWaitEx(pReadDataEvent, SHCL_TIMEOUT_DEFAULT_MS, &rcEvent, &pPayload);
-                            if (RT_SUCCESS(rc))
-                            {
-                                if (pPayload)
-                                {
-                                    AssertBreakStmt(pPayload->cbData == sizeof(SHCLX11RESPONSE), rc = VERR_INVALID_PARAMETER);
-                                    AssertPtrBreakStmt(pPayload->pvData, rc = VERR_INVALID_POINTER);
-                                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                                    AssertBreakStmt(pResp->enmType == SHCLX11EVENTTYPE_READ, rc = VERR_INVALID_PARAMETER);
-
-                                    rc = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pEvent->u.fReadData,
-                                                                    pResp->Read.pvData, pResp->Read.cbData);
-
-                                    RTMemFree(pResp->Read.pvData);
-                                    pResp->Read.cbData = 0;
-
-                                    ShClPayloadFree(pPayload);
-                                }
-                                else /* No payload given; could happen on invalid / not-expected formats. */
-                                    rc = VERR_NO_DATA;
-                            }
-                            else if (rc == VERR_SHCLPB_EVENT_FAILED)
-                                rc = rcEvent;
-                        }
-
-                        ShClEventRelease(pReadDataEvent);
-                        pReadDataEvent = NULL;
+                        rc = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pEvent->u.fReadData, pvData, cbData);
+                        RTMemFree(pvData);
                     }
 
                     if (RT_FAILURE(rc))
