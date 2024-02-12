@@ -260,7 +260,8 @@ static int tstReadFromFile(const char *pszFile)
             size_t const cbToReadFromArray = idxToRead < RT_ELEMENTS(aToRead) ? aToRead[idxToRead++] : 0;
             if (cbToReadFromArray)
                 cbChunk = RT_MIN(cbChunk, cbToReadFromArray);
-            cbChunk = RT_MIN(cbChunk, RTRandU64Ex(8, RT_MIN(sizeof(buf), 64)));
+            size_t const cbRand            = RTRandU64Ex(8, RT_MIN(sizeof(buf), 64));
+            cbChunk = RT_MIN(cbChunk, cbRand);
             if (cbChunk)
             {
                 RTTestIPrintf(RTTESTLVL_DEBUG, "Reading %zu bytes (of %zu left) ...\n", cbChunk, cbToRead);
