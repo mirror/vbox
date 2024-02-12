@@ -39,6 +39,9 @@
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 
 /* Forward declarations: */
 class QITabWidget;

@@ -34,6 +34,9 @@
 /* GUI includes: */
 #include "UIEditor.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Forward declarations: */
 class QCheckBox;
 class QComboBox;

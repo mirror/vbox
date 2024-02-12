@@ -29,11 +29,11 @@
 #include <QApplication>
 #include <QDir>
 #include <QKeySequence>
+#include <QRegExp>
+#include <QRegularExpression>
 #ifdef Q_OS_UNIX
 # include <QLibraryInfo>
 #endif
-#include <QRegularExpression>
-#include <QRegExp>
 
 /* GUI includes: */
 #include "UIConverter.h"

@@ -118,19 +118,6 @@ enum MacOSXRelease
 #endif /* VBOX_WS_MAC */
 
 
-/** Size suffixes. */
-enum SizeSuffix
-{
-    SizeSuffix_Byte = 0,
-    SizeSuffix_KiloByte,
-    SizeSuffix_MegaByte,
-    SizeSuffix_GigaByte,
-    SizeSuffix_TeraByte,
-    SizeSuffix_PetaByte,
-    SizeSuffix_Max
-};
-
-
 /** VM launch modes. */
 enum UILaunchMode
 {

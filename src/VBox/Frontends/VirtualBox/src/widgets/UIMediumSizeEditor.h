@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIDefs.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -108,7 +107,8 @@ private:
     const int         m_iSliderScale;
     /** Holds the current medium size. */
     qulonglong        m_uSize;
-    SizeSuffix        m_enmSizeSuffix;
+    /** Holds the size suffix. */
+    QString           m_strSizeSuffix;
 
     /** Holds the size slider. */
     QSlider    *m_pSlider;

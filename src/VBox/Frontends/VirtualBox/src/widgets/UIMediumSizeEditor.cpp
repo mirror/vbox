@@ -50,7 +50,6 @@ UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent, qulonglong uMinimumSize
     , m_uSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_iSliderScale(calculateSliderScale(m_uSizeMax))
     , m_uSize(0)
-    , m_enmSizeSuffix(SizeSuffix_Byte)
     , m_pSlider(0)
     , m_pLabelMinSize(0)
     , m_pLabelMaxSize(0)
@@ -73,7 +72,7 @@ void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
     m_pSlider->blockSignals(false);
     m_pEditor->blockSignals(true);
     m_pEditor->setText(UITranslator::formatSize(m_uSize));
-    m_enmSizeSuffix = UITranslator::parseSizeSuffix(m_pEditor->text());
+    m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(m_pEditor->text()));
     m_pEditor->blockSignals(false);
 }
 
@@ -97,7 +96,7 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     /* Update the other widget: */
     m_pEditor->blockSignals(true);
     m_pEditor->setText(UITranslator::formatSize(m_uSize));
-    m_enmSizeSuffix = UITranslator::parseSizeSuffix(m_pEditor->text());
+    m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(m_pEditor->text()));
     m_pEditor->blockSignals(false);
     /* Notify the listeners: */
     emit sigSizeChanged(m_uSize);
@@ -127,13 +126,13 @@ void UIMediumSizeEditor::sltSizeEditorTextChanged()
 
 QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
 {
-    /* Try to update the m_enmSizeSuffix: */
+    /* Try to update the m_strSizeSuffix: */
     if (UITranslator::hasSizeSuffix(strSizeString))
-        m_enmSizeSuffix = UITranslator::parseSizeSuffix(strSizeString);
+        m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(strSizeString));
 
     QString strOnlyDigits(strSizeString);
     /* Remove any chars from the string except digits and decimal separator and then add a space and size suffix: */
-    return QString("%1 %2").arg(strOnlyDigits.remove(m_regExNonDigitOrSeparator)).arg(gpConverter->toString(m_enmSizeSuffix));
+    return QString("%1 %2").arg(strOnlyDigits.remove(m_regExNonDigitOrSeparator)).arg(m_strSizeSuffix);
 }
 
 void UIMediumSizeEditor::prepare()

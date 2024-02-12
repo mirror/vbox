@@ -53,7 +53,7 @@
 #include <iprt/mem.h>
 #include <iprt/err.h>
 
-const ULONG uAllowedFileSize = _4K;
+const qint64 iAllowedFileSize = _4K;
 const char *cRemoveText = ":remove:";
 
 struct ISOFileObject
@@ -873,7 +873,7 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
     QFile file(strFileName);
     if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
-    if (file.size() > uAllowedFileSize)
+    if (file.size() > iAllowedFileSize)
         return;
     QTextStream stream(&file);
     QString strFileContent = stream.readAll();

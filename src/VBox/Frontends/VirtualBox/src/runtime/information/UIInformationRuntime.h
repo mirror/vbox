@@ -37,6 +37,9 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+
 /* Forward declarations: */
 class QAction;
 class QVBoxLayout;

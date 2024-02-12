@@ -37,6 +37,7 @@
 #include "UIExtraDataDefs.h"
 #include "UIIconPool.h"
 #include "UISettingsDefs.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CPlatformProperties.h"

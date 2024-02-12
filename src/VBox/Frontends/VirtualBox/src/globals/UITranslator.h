@@ -35,8 +35,19 @@
 #include <QTranslator>
 
 /* GUI includes: */
-#include "UIDefs.h"
 #include "UILibraryDefs.h"
+
+/** Size suffixes. */
+enum SizeSuffix
+{
+    SizeSuffix_Byte = 0,
+    SizeSuffix_KiloByte,
+    SizeSuffix_MegaByte,
+    SizeSuffix_GigaByte,
+    SizeSuffix_TeraByte,
+    SizeSuffix_PetaByte,
+    SizeSuffix_Max
+};
 
 /** QTranslator subclass for VBox needs. */
 class SHARED_LIBRARY_STUFF UITranslator : public QTranslator

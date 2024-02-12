@@ -29,6 +29,9 @@
 #include "UISettingsPage.h"
 #include "UISettingsPageValidator.h"
 
+/* Other VBox includes: */
+#include <iprt/log.h>
+
 
 UISettingsPageValidator::UISettingsPageValidator(QObject *pParent, UISettingsPage *pPage)
     : QObject(pParent)
