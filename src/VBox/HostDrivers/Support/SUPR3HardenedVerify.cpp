@@ -183,7 +183,11 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
  #ifdef RT_OS_WINDOWS
     {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxC" SUPLIB_DLL_SUFF },
  #else
+# ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,       false, "VBoxXPCOMIPCD" SUPLIB_DLL_SUFF },
+# else
     {   kSupIFT_Exe,  kSupID_AppPrivArch,       false, "VBoxXPCOMIPCD" SUPLIB_EXE_SUFF },
+# endif
     {   kSupIFT_Dll,  kSupID_AppSharedLib,      false, "VBoxXPCOM" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxXPCOMIPCC" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArchComp,   false, "VBoxC" SUPLIB_DLL_SUFF },
