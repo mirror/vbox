@@ -287,7 +287,7 @@ struct UIDataSettingsMachineDisplay
     /** Holds the recording bit rate. */
     int m_iRecordingVideoBitRate;
     /** Holds which of the guest screens should be recorded. */
-    QVector<BOOL> m_vecRecordingScreens;
+    QVector<bool> m_vecRecordingScreens;
     /** Holds the video recording options. */
     QString m_strRecordingVideoOptions;
 };
@@ -1047,7 +1047,7 @@ bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
 void UIMachineSettingsDisplay::updateGuestScreenCount()
 {
     /* Update copy of the cached item to get the desired result: */
-    QVector<BOOL> screens = m_pCache->base().m_vecRecordingScreens;
+    QVector<bool> screens = m_pCache->base().m_vecRecordingScreens;
     screens.resize(m_pEditorMonitorCount->value());
     m_pEditorRecordingSettings->setScreens(screens);
     m_pEditorScaleFactor->setMonitorCount(m_pEditorMonitorCount->value());

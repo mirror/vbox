@@ -30,11 +30,13 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QScrollArea>
-#include <QScrollBar>
-#include <QStyle>
 #include <QVBoxLayout>
+#ifndef VBOX_WS_MAC
+# include <QStyle>
+#endif
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UIFilmContainer.h"
 
 
@@ -49,7 +51,7 @@ public:
     /** Constructs film widget passing @a pParent to the base-class.
       * @param  iScreenIndex  Brings the guest-screen index this film referencing.
       * @param  fEnabled      Brings whether the guest-screen mentioned above is enabled. */
-    UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent = 0);
+    UIFilm(int iScreenIndex, bool fEnabled, QWidget *pParent = 0);
 
     /** Returns whether guest-screen is enabled. */
     bool checked() const;
@@ -77,7 +79,7 @@ private:
     /** Holds the guest-screen index. */
     int  m_iScreenIndex;
     /** Holds whether guest-screen was enabled. */
-    BOOL m_fWasEnabled;
+    bool m_fWasEnabled;
 
     /** Holds the main-layout instance. */
     QVBoxLayout *m_pMainLayout;
@@ -90,7 +92,7 @@ private:
 *   Class UIFilm implementation.                                                                                                 *
 *********************************************************************************************************************************/
 
-UIFilm::UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent /* = 0*/)
+UIFilm::UIFilm(int iScreenIndex, bool fEnabled, QWidget *pParent /* = 0*/)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iScreenIndex(iScreenIndex)
     , m_fWasEnabled(fEnabled)
@@ -224,18 +226,18 @@ UIFilmContainer::UIFilmContainer(QWidget *pParent /* = 0*/)
     prepare();
 }
 
-QVector<BOOL> UIFilmContainer::value() const
+QVector<bool> UIFilmContainer::value() const
 {
     /* Enumerate all the existing widgets: */
-    QVector<BOOL> value;
+    QVector<bool> value;
     foreach (UIFilm *pWidget, m_widgets)
-        value << static_cast<BOOL>(pWidget->checked());
+        value << static_cast<bool>(pWidget->checked());
 
     /* Return value: */
     return value;
 }
 
-void UIFilmContainer::setValue(const QVector<BOOL> &value)
+void UIFilmContainer::setValue(const QVector<bool> &value)
 {
     /* Cleanup viewport/widget list: */
     delete m_pScroller->takeWidget();
@@ -292,7 +294,7 @@ void UIFilmContainer::prepare()
     prepareScroller();
 
     /* Append with 'default' value: */
-    setValue(QVector<BOOL>() << true);
+    setValue(QVector<bool>() << true);
 }
 
 void UIFilmContainer::prepareLayout()

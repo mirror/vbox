@@ -35,9 +35,6 @@
 #include "UIEditor.h"
 #include "UISettingsDefs.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-
 /* Forward declarations: */
 class QCheckBox;
 class QComboBox;
@@ -107,9 +104,9 @@ public:
     int audioQualityRate() const;
 
     /** Defines enabled @a screens. */
-    void setScreens(const QVector<BOOL> &screens);
+    void setScreens(const QVector<bool> &screens);
     /** Returns enabled screens. */
-    QVector<BOOL> screens() const;
+    QVector<bool> screens() const;
 
 protected:
 
@@ -197,7 +194,7 @@ private:
         int  m_iAudioQualityRate;
 
         /** Holds the screens. */
-        QVector<BOOL>  m_screens;
+        QVector<bool>  m_screens;
     /** @} */
 
     /** @name Widgets

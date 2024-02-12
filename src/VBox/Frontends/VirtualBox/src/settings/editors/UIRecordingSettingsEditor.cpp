@@ -273,7 +273,7 @@ int UIRecordingSettingsEditor::audioQualityRate() const
     return m_pSliderAudioQuality ? m_pSliderAudioQuality->value() : m_iAudioQualityRate;
 }
 
-void UIRecordingSettingsEditor::setScreens(const QVector<BOOL> &screens)
+void UIRecordingSettingsEditor::setScreens(const QVector<bool> &screens)
 {
     /* Update cached value and
      * editor if value has changed: */
@@ -285,7 +285,7 @@ void UIRecordingSettingsEditor::setScreens(const QVector<BOOL> &screens)
     }
 }
 
-QVector<BOOL> UIRecordingSettingsEditor::screens() const
+QVector<bool> UIRecordingSettingsEditor::screens() const
 {
     return m_pScrollerScreens ? m_pScrollerScreens->value() : m_screens;
 }
