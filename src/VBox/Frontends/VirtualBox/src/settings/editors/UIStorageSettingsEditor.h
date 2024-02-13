@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QUuid>
+
 /* GUI includes: */
 #include "UIEditor.h"
 #include "UIMediumDefs.h"

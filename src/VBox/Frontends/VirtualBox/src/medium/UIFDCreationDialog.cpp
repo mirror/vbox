@@ -103,7 +103,7 @@ void UIFDCreationDialog::accept()
 
     /* Acquire medium path & formats: */
     const QString strMediumLocation = m_pFilePathSelector->path();
-    const QVector<CMediumFormat> mediumFormats = UIMediumDefs::getFormatsForDeviceType(KDeviceType_Floppy);
+    const QVector<CMediumFormat> mediumFormats = getFormatsForDeviceType(KDeviceType_Floppy);
     /* Make sure we have both path and formats selected: */
     if (strMediumLocation.isEmpty() || mediumFormats.isEmpty())
         return;
@@ -172,20 +172,6 @@ void UIFDCreationDialog::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel"));
 }
 
-void UIFDCreationDialog::sltPathChanged(const QString &strPath)
-{
-    bool fIsFileUnique = checkFilePath(strPath);
-    m_pFilePathSelector->mark(!fIsFileUnique, tr("File already exists"));
-
-    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fIsFileUnique);
-}
-
-bool UIFDCreationDialog::checkFilePath(const QString &strPath) const
-{
-    return !QFileInfo(strPath).exists();
-}
-
 void UIFDCreationDialog::sltHandleMediumCreated(const CMedium &comMedium)
 {
     /* Store the ID of the newly created medium: */
@@ -193,6 +179,15 @@ void UIFDCreationDialog::sltHandleMediumCreated(const CMedium &comMedium)
 
     /* Close the dialog now: */
     QDialog::accept();
+}
+
+void UIFDCreationDialog::sltPathChanged(const QString &strPath)
+{
+    bool fIsFileUnique = checkFilePath(strPath);
+    m_pFilePathSelector->mark(!fIsFileUnique, tr("File already exists"));
+
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fIsFileUnique);
 }
 
 void UIFDCreationDialog::prepare()
@@ -310,4 +305,28 @@ QString UIFDCreationDialog::getDefaultFilePath() const
 
     /* Return default file-path: */
     return strDefaultFilePath;
+}
+
+bool UIFDCreationDialog::checkFilePath(const QString &strPath) const
+{
+    return !QFileInfo(strPath).exists();
+}
+
+/* static */
+QVector<CMediumFormat> UIFDCreationDialog::getFormatsForDeviceType(KDeviceType enmDeviceType)
+{
+    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
+    QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
+    QVector<CMediumFormat> formatList;
+    for (int i = 0; i < mediumFormats.size(); ++i)
+    {
+        /* File extensions */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+
+        mediumFormats[i].DescribeFileExtensions(fileExtensions, deviceTypes);
+        if (deviceTypes.contains(enmDeviceType))
+            formatList.push_back(mediumFormats[i]);
+    }
+    return formatList;
 }

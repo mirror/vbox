@@ -39,7 +39,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CVirtualBox.h"
 
 /* Other VBox includes: */
 #include <VBox/com/defs.h>
@@ -88,7 +87,6 @@ namespace UIMediumDefs
 
     /** Returns the first file extension of the list of file extension support for the @a enmDeviceType. */
    QString getPreferredExtensionForMedium(KDeviceType enmDeviceType);
-   QVector<CMediumFormat>  getFormatsForDeviceType(KDeviceType enmDeviceType);
 }
 /* Using this namespace globally: */
 using namespace UIMediumDefs;

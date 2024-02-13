@@ -134,21 +134,3 @@ QString UIMediumDefs::getPreferredExtensionForMedium(KDeviceType enmDeviceType)
     }
     return QString();
 }
-
-QVector<CMediumFormat> UIMediumDefs::getFormatsForDeviceType(KDeviceType enmDeviceType)
-{
-    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
-    QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
-    QVector<CMediumFormat> formatList;
-    for (int i = 0; i < mediumFormats.size(); ++i)
-    {
-        /* File extensions */
-        QVector <QString> fileExtensions;
-        QVector <KDeviceType> deviceTypes;
-
-        mediumFormats[i].DescribeFileExtensions(fileExtensions, deviceTypes);
-        if (deviceTypes.contains(enmDeviceType))
-            formatList.push_back(mediumFormats[i]);
-    }
-    return formatList;
-}

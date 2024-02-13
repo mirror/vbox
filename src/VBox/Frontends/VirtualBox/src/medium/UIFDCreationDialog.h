@@ -38,6 +38,10 @@
 /* GUI Includes */
 #include "QIWithRetranslateUI.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMediumFormat.h"
+
 /* Forward declarations: */
 class QCheckBox;
 class QComboBox;
@@ -69,18 +73,17 @@ public:
       * @param  strMachineName    Passes the name of the machine,
       * returns the UUID of the newly created medium if successful, a null QUuid otherwise.*/
     static QUuid createFloppyDisk(QWidget *pParent, const QString &strDefaultFolder = QString(),
-                           const QString &strMachineName = QString());
-
+                                  const QString &strMachineName = QString());
 
 public slots:
 
     /** Creates the floppy disc image, asynchronously. */
-    virtual void accept() /* override final */;
+    virtual void accept() RT_OVERRIDE;
 
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -107,6 +110,9 @@ private:
     QString getDefaultFilePath() const;
     /** Returns false if the file is already exists. */
     bool checkFilePath(const QString &strPath) const;
+
+    /** Returns a list of formats for certain @a enmDeviceType. */
+    static QVector<CMediumFormat> getFormatsForDeviceType(KDeviceType enmDeviceType);
 
     /** Holds the default folder. */
     QString  m_strDefaultFolder;
