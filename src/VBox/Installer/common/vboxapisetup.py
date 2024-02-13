@@ -150,6 +150,7 @@ def testVBoxAPI():
           % (sys.version_info.major, sys.version_info.minor))
     return True
 
+## @todo r=bird: This is supposed to be publicly visible?
 def findModulePathHelper(sModule = 'vboxapi', asDirs = None):
     """
     Helper function for findModulePath.
@@ -160,22 +161,15 @@ def findModulePathHelper(sModule = 'vboxapi', asDirs = None):
         asDirs = sys.path;
     for sPath in asDirs:
         if g_fVerbose:
-            print('Searching for "%s" in path "%s" ...' % (sModule, sPath))
-        ## @todo r=bird: WOW. We read the directory and then look for a filename in the returned list?!? Case sensitively.
-        ##  What about:
-        ## if g_fVerbose: # drop this
-        ##     print(os.listdir(sPath));
-        ## sCandiate = os.path.join(sPath, sModule);
-        ## if os.path.exists(sCandiate):
-        ##     return sCandiate;
-        if os.path.isdir(sPath):
-            asDirEntries = os.listdir(sPath)
-            if g_fVerbose:
-                print(asDirEntries)
-            if sModule in asDirEntries:
-                return os.path.join(sPath, sModule)
+            print('Searching for "%s" in "%s" ...' % (sModule, sPath))
+            try: print(os.listdir(sPath));
+            except: pass;
+        sCandiate = os.path.join(sPath, sModule);
+        if os.path.exists(sCandiate):
+             return sCandiate;
     return None
 
+## @todo r=bird: This is supposed to be publicly visible?
 def findModulePath(sModule = 'vboxapi'):
     """
     Finds a module in the system path.
