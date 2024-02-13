@@ -1242,9 +1242,7 @@ IPC_SpawnDaemon(const char *path)
     {
       char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
       const char *const s_apszArgs[] = { (char *const) path,
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
                                          "--auto-shutdown",
-#endif
                                          "--inherit-startup-pipe",
                                          &szPipeInheritFd[0], NULL };
       char c;

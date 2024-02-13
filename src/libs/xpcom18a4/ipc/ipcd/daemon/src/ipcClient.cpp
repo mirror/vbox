@@ -144,7 +144,7 @@ ipcClient::DelTarget(const nsID &target)
 //   PR_POLL_READ  - to wait for the client socket to become readable
 //   PR_POLL_WRITE - to wait for the client socket to become writable
 //
-int
+uint32_t
 ipcClient::Process(uint32_t inFlags)
 {
     if (inFlags & RTPOLL_EVT_ERROR)
@@ -154,7 +154,7 @@ ipcClient::Process(uint32_t inFlags)
     }
 
     // expect to wait for more data
-    int outFlags = RTPOLL_EVT_READ;
+    uint32_t outFlags = RTPOLL_EVT_READ;
 
     if (inFlags & RTPOLL_EVT_READ) {
         LogFlowFunc(("client socket is now readable\n"));

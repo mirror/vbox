@@ -43,9 +43,7 @@
 #include <iprt/poll.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
-# include <iprt/thread.h>
-#endif
+#include <iprt/thread.h>
 #include <VBox/log.h>
 
 #include <sys/types.h>
@@ -86,10 +84,7 @@ typedef struct IPCDSTATE
     ipcClient ipcClientArray[IPC_MAX_CLIENTS];
 
     RTPOLLSET hPollSet;
-
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
-    RTTHREAD hThread;
-#endif
+    RTTHREAD  hThread;
 } IPCDSTATE;
 typedef IPCDSTATE *PIPCDSTATE;
 typedef const IPCDSTATE *PCIPCDSTATE;
@@ -548,83 +543,6 @@ static void ipcdTerm(PIPCDSTATE pThis)
 }
 
 
-//-----------------------------------------------------------------------------
-#ifndef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
-int main(int argc, char **argv)
-{
-    /* Set up the runtime without loading the support driver. */
-    int vrc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(vrc))
-        return RTMsgInitFailure(vrc);
-
-    /*
-     * Parse the command line.
-     */
-    static RTGETOPTDEF const s_aOptions[] =
-    {
-        { "--inherit-startup-pipe", 'f', RTGETOPT_REQ_UINT32 },
-        { "--socket-path",          'p', RTGETOPT_REQ_STRING },
-    };
-
-    RTGETOPTSTATE State;
-    vrc = RTGetOptInit(&State, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1,  RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    if (RT_FAILURE(vrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc", vrc);
-
-    uint32_t        uStartupPipeFd = UINT32_MAX;
-    const char      *pszSocketPath = NULL;
-    RTGETOPTUNION   ValueUnion;
-    int             chOpt;
-    while ((chOpt = RTGetOpt(&State, &ValueUnion)) != 0)
-    {
-        switch (chOpt)
-        {
-            case 'f':
-                uStartupPipeFd = ValueUnion.u32;
-                break;
-            case 'p':
-                pszSocketPath = ValueUnion.psz;
-                break;
-            default:
-                return RTGetOptPrintError(chOpt, &ValueUnion);
-        }
-    }
-
-    //
-    // ignore SIGINT so <ctrl-c> from terminal only kills the client
-    // which spawned this daemon.
-    //
-    signal(SIGINT, SIG_IGN);
-    // XXX block others?  check cartman
-
-    // ensure strict file permissions
-    umask(0077);
-
-    LogFlowFunc(("daemon started...\n"));
-
-    //XXX uncomment these lines to test slow starting daemon
-    //IPC_Sleep(2);
-
-    IPCDSTATE IpcdState;
-    vrc = ipcdInit(&IpcdState, pszSocketPath);
-    if (vrc == VERR_ALREADY_EXISTS)
-    {
-        IPC_NotifyParent(uStartupPipeFd);
-        return 0;
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        IPC_NotifyParent(uStartupPipeFd);
-        PollLoop(&IpcdState);
-    }
-
-    ipcdTerm(&IpcdState);
-    return 0;
-}
-
-#else
-
 static DECLCALLBACK(int) ipcdThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     IPCDSTATE IpcdState;
@@ -675,4 +593,3 @@ DECL_EXPORT_NOTHROW(int) RTCALL VBoxXpcomIpcdDestroy(RTTHREAD hThrdIpcd)
 
     return vrcThrd;
 }
-#endif

@@ -104,11 +104,8 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
 
  VBOX_XPCOM_DLLS := \
  	VBoxXPCOM \
- 	VBoxXPCOMIPCC
- ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
-  VBOX_XPCOM_DLLS += \
-  	VBoxXPCOMIPCD
- endif
+ 	VBoxXPCOMIPCC \
+ 	VBoxXPCOMIPCD
 
  DLLS += $(VBOX_XPCOM_DLLS)
 
@@ -138,9 +135,6 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
   	tstTestStrings \
   	tstPrimitiveTest
  endif # VBOX_WITH_TESTCASES
- ifndef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
-  PROGRAMS += VBoxXPCOMIPCD
- endif
 
 endif # !VBOX_ONLY_SDK && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS))
 
@@ -762,21 +756,12 @@ TEMPLATE_XPComIpcDll                  = XPCOM IPC libraries
 TEMPLATE_XPComIpcDll_EXTENDS          = XPComDll
 TEMPLATE_XPComIpcDll_DEFS             = \
 	$(TEMPLATE_XPComDll_DEFS) \
-	BUILD_DCONNECT=1 \
-	$(if $(VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC),VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC,)
+	BUILD_DCONNECT=1
 
-ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-  TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxSVC$(SUFF_EXE)"
- else
-  TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxSVC$(SUFF_EXE)\"
- endif
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxSVC$(SUFF_EXE)"
 else
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-  TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME="VBoxXPCOMIPCD$(SUFF_EXE)"
- else
-  TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD$(SUFF_EXE)\"
- endif
+ TEMPLATE_XPComIpcDll_DEFS           += IPC_DAEMON_APP_NAME=\"VBoxSVC$(SUFF_EXE)\"
 endif
 ifdef IPC_LOGGING
  TEMPLATE_XPComIpcDll_DEFS           += IPC_LOGGING
@@ -856,26 +841,17 @@ VBoxXPCOMIPCC-x86_LIBS = \
 #
 # DCONNECT daemon executable
 #
-ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
- VBoxXPCOMIPCD_TEMPLATE = XPComIpcDll
- VBoxXPCOMIPCD_SOURCES = \
- 	ipc/ipcd/daemon/src/ipcd.cpp \
- 	ipc/ipcd/daemon/src/ipcClient.cpp \
- 	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
- 	ipc/ipcd/daemon/src/ipcdUnix.cpp
- VBoxXPCOMIPCD_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxXPCOMIPCD.dylib
- VBoxXPCOMIPCD_LIBS = \
- 	$(VBox-xpcom-ipcshared_1_TARGET) \
- 	$(VBoxXPCOM_1_TARGET) \
- 	$(TEMPLATE_XPComDll_LIBS)
-else
- VBoxXPCOMIPCD_TEMPLATE = XPComIpcExe
- VBoxXPCOMIPCD_SOURCES = \
- 	ipc/ipcd/daemon/src/ipcd.cpp \
- 	ipc/ipcd/daemon/src/ipcClient.cpp \
- 	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
- 	ipc/ipcd/daemon/src/ipcdUnix.cpp
-endif
+VBoxXPCOMIPCD_TEMPLATE = XPComIpcDll
+VBoxXPCOMIPCD_SOURCES = \
+	ipc/ipcd/daemon/src/ipcd.cpp \
+	ipc/ipcd/daemon/src/ipcClient.cpp \
+	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
+VBoxXPCOMIPCD_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxXPCOMIPCD.dylib
+VBoxXPCOMIPCD_LIBS = \
+	$(VBox-xpcom-ipcshared_1_TARGET) \
+	$(VBoxXPCOM_1_TARGET) \
+	$(TEMPLATE_XPComDll_LIBS)
 
 
 #

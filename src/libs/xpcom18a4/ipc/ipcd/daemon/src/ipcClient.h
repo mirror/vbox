@@ -97,7 +97,7 @@ public:
     //
     // the socket is non-blocking.
     //
-    int Process(uint32_t pollFlags);
+    uint32_t Process(uint32_t pollFlags);
 
     //
     // on success or failure, this function takes ownership of |msg| and will

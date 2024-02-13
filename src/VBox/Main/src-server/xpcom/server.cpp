@@ -50,6 +50,7 @@
 #include <iprt/path.h>
 #include <iprt/pipe.h>
 #include <iprt/process.h>
+#include <iprt/thread.h>
 #include <iprt/timer.h>
 #include <iprt/env.h>
 
@@ -110,6 +111,10 @@
 // is defined in the automatically generated VirtualBoxWrap.cpp
 extern nsIClassInfo *NS_CLASSINFO_NAME(VirtualBoxWrap);
 NS_DECL_CI_INTERFACE_GETTER(VirtualBoxWrap)
+
+/* Living in VBoxXPCOMIPCD. */
+DECL_IMPORT_NOTHROW(int) RTCALL VBoxXpcomIpcdCreate(PRTTHREAD phThrdIpcd);
+DECL_IMPORT_NOTHROW(int) RTCALL VBoxXpcomIpcdDestroy(RTTHREAD hThrdIpcd);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -663,13 +668,7 @@ static void showUsage(const char *pcszFileName)
     RTPrintf("\n");
 }
 
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
 
-#include <iprt/thread.h>
-
-DECL_IMPORT_NOTHROW(int) RTCALL VBoxXpcomIpcdCreate(PRTTHREAD phThrdIpcd);
-DECL_IMPORT_NOTHROW(int) RTCALL VBoxXpcomIpcdDestroy(RTTHREAD hThrdIpcd);
-#endif
 
 int main(int argc, char **argv)
 {
@@ -831,12 +830,11 @@ int main(int argc, char **argv)
         }
     };
 
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
+    /* Spawn the IPC message I/O thread. */
     RTTHREAD hThrdIpcd = NIL_RTTHREAD;
     vrc = VBoxXpcomIpcdCreate(&hThrdIpcd);
     if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to create IPC daemon thread -> %Rrc", vrc);
-#endif
 
     do /* goto avoidance only */
     {
@@ -1017,10 +1015,8 @@ int main(int argc, char **argv)
     if (NS_FAILED(rc))
         RTMsgError("Failed to shutdown XPCOM! (rc=%Rhrc)", rc);
 
-#ifdef VBOX_WITH_XPCOMIPCD_IN_VBOX_SVC
     vrc = VBoxXpcomIpcdDestroy(hThrdIpcd);
     AssertRC(vrc);
-#endif
 
     RTPrintf("XPCOM server has shutdown.\n");
 
