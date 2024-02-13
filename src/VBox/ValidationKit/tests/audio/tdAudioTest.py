@@ -360,19 +360,16 @@ class tdAudioTest(vbox.TestDriver):
         except:
             reporter.logXcpt('Executing "%s" failed!' % (sWhat));
 
+        reporter.log('Executing \"%s\" on host %s' % (sWhat, 'done' if fRc else 'failed',));
         return fRc;
 
     def executeHstThread(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
         """
         Thread execution helper to run a process on the host.
         """
-        fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
-        if fRc:
-            reporter.log('Executing \"%s\" on host done' % (sWhat,));
-        else:
-            reporter.log('Executing \"%s\" on host failed' % (sWhat,));
+        return self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
 
-    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
+    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False, fBlocking = False):
         """
         Runs a binary (image) with optional admin (root) rights on the host and
         waits until it terminates.
@@ -381,28 +378,33 @@ class tdAudioTest(vbox.TestDriver):
 
         Returns success status (exit code is 0).
         """
-        reporter.log('Executing \"%s\" on host (as admin = %s)' % (sWhat, fAsAdmin));
+        reporter.log('Executing \"%s\" on host (as admin = %s, blocking = %s)' % (sWhat, fAsAdmin, fBlocking));
+        reporter.log2('Arguments: %s' % (asArgs,));
+        if asEnv:
+            reporter.log2('Environment: %s' % (asEnv,));
 
         try:    sys.stdout.flush();
         except: pass;
         try:    sys.stderr.flush();
         except: pass;
 
-        # Initialize thread rc.
-        self.iThreadHstProcRc = -42;
+        if not fBlocking: # Run in same thread (blocking).
+            fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
+        else: # Run in separate thread (asynchronous).
+            self.iThreadHstProcRc = -42; # Initialize thread rc.
+            try:
+                oThread = threading.Thread(target = self.executeHstThread, args = [ sWhat, asArgs, asEnv, fAsAdmin ]);
+                oThread.start();
+                while oThread.join(0.1):
+                    if not oThread.is_alive():
+                        break;
+                    self.processEvents(0);
+                reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
+            except:
+                reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
+            fRc = self.iThreadHstProcRc == 0;
 
-        try:
-            oThread = threading.Thread(target = self.executeHstThread, args = [ sWhat, asArgs, asEnv, fAsAdmin ]);
-            oThread.start();
-            while oThread.join(0.1):
-                if not oThread.is_alive():
-                    break;
-                self.processEvents(0);
-            reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
-        except:
-            reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
-
-        return self.iThreadHstProcRc == 0;
+        return fRc;
 
     def getWinFirewallArgsDisable(self, sOsType):
         """
@@ -589,11 +591,19 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Host audio test output path is \"%s\"' % (sPathAudioTemp));
         reporter.log('Host audio test tag is \"%s\"' % (sTag));
 
-        reporter.testStart(sDesc);
-
         sVkatExe = self.getBinTool('vkat');
 
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
+
+        # Run the VKAT self test.
+        # Doesn't take long and gives us some more clue if it flies on the testboxes.
+        reporter.testStart('VKAT Selftest');
+        fRc = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ], fBlocking = True);
+        reporter.testDone();
+        if not fRc:
+            return fRc;
+
+        reporter.testStart(sDesc);
 
         # Build the base command line, exclude all tests by default.
         asArgs = [ sVkatExe, 'test', '--mode', 'host', '--probe-backends',
@@ -606,7 +616,7 @@ class tdAudioTest(vbox.TestDriver):
             asArgs.extend([ '-v' ]);
 
         if self.asVkatTestArgs:
-            asArgs += self.asVkatTestArgs;
+            asArgs.extend(self.asVkatTestArgs);
 
         # ... and extend it with wanted tests.
         asArgs.extend(asTests);
@@ -729,6 +739,8 @@ class tdAudioTest(vbox.TestDriver):
         and self.fpApiVer < 7.0:
             reporter.log('Audio testing for non-trunk builds skipped.');
             fSkip = True;
+
+        reporter.log('Verbosity level is: %d' % (reporter.getVerbosity(),));
 
         if not fSkip:
             sVkatExe = self.getBinTool('vkat');
