@@ -104,9 +104,9 @@ struct UIDataStorageAttachment
     /** Holds the device type. */
     KDeviceType  m_enmDeviceType;
     /** Holds the port. */
-    LONG         m_iPort;
+    qint32       m_iPort;
     /** Holds the device. */
-    LONG         m_iDevice;
+    qint32       m_iDevice;
     /** Holds the medium ID. */
     QUuid        m_uMediumId;
     /** Holds whether the attachment being passed through. */

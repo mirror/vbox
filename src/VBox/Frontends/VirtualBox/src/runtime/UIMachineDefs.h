@@ -37,10 +37,10 @@
 #include <QUuid>
 
 /* GUI includes: */
-#include "UIDefs.h"
+#include "UIMediumDefs.h" // for StorageSlot
 
 /* Other VBox includes: */
-#include <iprt/cdefs.h>
+#include <iprt/cdefs.h> // for RT_BIT stuff
 
 /** Machine window visual element types. */
 enum UIVisualElement
