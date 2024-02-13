@@ -135,7 +135,7 @@ def testVBoxAPI():
         oVBoxMgr = VirtualBoxManager()
         oVBox    = oVBoxMgr.getVirtualBox()
         oHost    = oVBox.host
-        if oHost.architecture not in (oVBoxMgr.constants.PlatformArchitecture_x86, \
+        if oHost.architecture not in (oVBoxMgr.constants.PlatformArchitecture_x86,
                                       oVBoxMgr.constants.PlatformArchitecture_ARM):
             raise Exception('Host platform invalid!')
         print("Testing VirtualBox Python bindings successful: Detected VirtualBox %s (%d)" % (oVBox.version, oHost.architecture))
@@ -143,27 +143,36 @@ def testVBoxAPI():
         oVBoxMgr.deinit()
         del oVBoxMgr
     except ImportError as exc:
-        print("ERROR: Testing VirtualBox Python bindings failed: %s" % (exc))
+        print("ERROR: Testing VirtualBox Python bindings failed: %s" % (exc,))
         return False
 
-    print("Installation of VirtualBox Python bindings for Python %d.%d successful." \
+    print("Installation of VirtualBox Python bindings for Python %d.%d successful."
           % (sys.version_info.major, sys.version_info.minor))
     return True
 
-def findModulePathHelper(sModule = 'vboxapi', aDir = sys.path):
+def findModulePathHelper(sModule = 'vboxapi', asDirs = None):
     """
     Helper function for findModulePath.
 
     Returns the path found, or None if not found.
     """
-    for sPath in aDir:
+    if asDirs is None:
+        asDirs = sys.path;
+    for sPath in asDirs:
         if g_fVerbose:
             print('Searching for "%s" in path "%s" ...' % (sModule, sPath))
+        ## @todo r=bird: WOW. We read the directory and then look for a filename in the returned list?!? Case sensitively.
+        ##  What about:
+        ## if g_fVerbose: # drop this
+        ##     print(os.listdir(sPath));
+        ## sCandiate = os.path.join(sPath, sModule);
+        ## if os.path.exists(sCandiate):
+        ##     return sCandiate;
         if os.path.isdir(sPath):
-            aDirEntries = os.listdir(sPath)
+            asDirEntries = os.listdir(sPath)
             if g_fVerbose:
-                print(aDirEntries)
-            if sModule in aDirEntries:
+                print(asDirEntries)
+            if sModule in asDirEntries:
                 return os.path.join(sPath, sModule)
     return None
 
@@ -187,7 +196,7 @@ try:
 except:
     pass
 
-class setupInstallClass(install):
+class VBoxSetupInstallClass(install):
     """
     Class which overrides the "install" command of the setup so that we can
     run post-install actions.
@@ -209,9 +218,9 @@ def main():
 
     # Deprecation warning for older Python stuff (< Python 3.x).
     if sys.version_info.major < 3:
-        print("\nWarning: Running VirtualBox with Python %d.%d is marked as being deprecated.\n" \
-              "Please upgrade your Python installation to avoid breakage.\n" \
-              % (sys.version_info.major, sys.version_info.minor))
+        print("\nWarning: Running VirtualBox with Python %d.%d is marked as being deprecated.\n"
+              "Please upgrade your Python installation to avoid breakage.\n"
+              % (sys.version_info.major, sys.version_info.minor,))
 
     sVBoxInstallPath = os.environ.get("VBOX_MSI_INSTALL_PATH", None)
     if sVBoxInstallPath is None:
@@ -246,8 +255,7 @@ def main():
         # @todo r=andy This *will* break the script if VirtualBox installation files will be moved.
         #              Better would be patching the *installed* module instead of the original module.
         sVBoxSdkPath = os.path.join(sVBoxInstallPath, "sdk")
-        fRc = patchWith(os.path.join(sCurDir, 'src', 'vboxapi', '__init__.py'), \
-                        sVBoxInstallPath, sVBoxSdkPath)
+        fRc = patchWith(os.path.join(sCurDir, 'src', 'vboxapi', '__init__.py'), sVBoxInstallPath, sVBoxSdkPath)
         if not fRc:
             return 1
 
@@ -265,7 +273,7 @@ def main():
             except ImportError:
                 print("ERROR: setuptools package not installed, can't continue. Exiting.")
                 return 1
-            setup(cmdclass={"install": setupInstallClass})
+            setup(cmdclass = { "install": VBoxSetupInstallClass, })
         else:
             try:
                 from distutils.core import setup # pylint: disable=deprecated-module
@@ -278,19 +286,20 @@ def main():
                 if g_fVerbose:
                     print("Invoking setuptools directly ...")
                 setupTool = setup(name='vboxapi',
-                            version=sVBoxVersion,
-                            description='Python interface to VirtualBox',
-                            author='Oracle Corp.',
-                            author_email='vbox-dev@virtualbox.org',
-                            url='https://www.virtualbox.org',
-                            package_dir={'': 'src'},
-                            packages=['vboxapi'])
+                                  version=sVBoxVersion,
+                                  description='Python interface to VirtualBox',
+                                  author='Oracle Corp.',
+                                  author_email='vbox-dev@virtualbox.org',
+                                  url='https://www.virtualbox.org',
+                                  package_dir={'': 'src'},
+                                  packages=['vboxapi'])
                 if setupTool:
                     sPathInstalled = setupTool.command_obj['install'].install_lib
                     if sPathInstalled not in sys.path:
-                        print("\nWARNING: Installation path is not in current module search path!")
-                        print("         This might happen on OSes / distributions which only maintain packages by")
-                        print("         a vendor-specific method.")
+                        print("");
+                        print("WARNING: Installation path is not in current module search path!")
+                        print("         This might happen on OSes / distributions which only maintain ")
+                        print("         packages by a vendor-specific method.")
                         print("Hints:")
                         print("- Check how the distribution handles user-installable Python packages.")
                         print("- Using setuptools directly might be deprecated on the distribution.")
@@ -303,7 +312,7 @@ def main():
                 testVBoxAPI() # Testing the VBox API does not affect the exit code.
 
     except RuntimeError as exc:
-        print("ERROR: Installation of VirtualBox Python bindings failed: %s" % (exc))
+        print("ERROR: Installation of VirtualBox Python bindings failed: %s" % (exc,))
         return 1
 
     return 0

@@ -36,9 +36,9 @@ SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 if __name__ == '__main__':
     import sys
     try:
-        sys.path.append("vboxapi")
+        sys.path.append("vboxapi") # ASSUMES that the CWD is the same as the script directory. This has always been the case.
         import setup
         sys.exit(setup.main())
-    except ImportError as exc:
-        print("VBox Python API binding sources not found: %s" % (exc))
+    except ImportError as oXcpt:
+        print("VBox Python API binding sources not found: %s" % (oXcpt,))
     sys.exit(1)
