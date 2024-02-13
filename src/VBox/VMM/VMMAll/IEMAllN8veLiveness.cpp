@@ -50,46 +50,17 @@
 /*
  * BEGIN & END as well as internal workers.
  */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
-    { \
-        /* Define local variables that we use to accumulate the liveness state changes in. */ \
-        IEMLIVENESSPART1 LiveStatePart1  = { 0 }; \
-        IEMLIVENESSPART2 LiveStatePart2  = { 0 }; \
-        IEMLIVENESSPART1 LiveMaskPart1   = { 0 }; \
-        IEMLIVENESSPART2 LiveMaskPart2   = { 0 }; \
-        bool             fDoneXpctOrCall = false
-#else
-# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
     { \
         /* Define local variables that we use to accumulate the liveness state changes in. */ \
         IEMLIVENESSBIT  LiveStateBit0   = { 0 }; \
         IEMLIVENESSBIT  LiveStateBit1   = { 0 }; \
         IEMLIVENESSBIT  LiveMask        = { 0 }; \
         bool            fDoneXpctOrCall = false
-#endif
 
 AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
-            if (!fDoneXpctOrCall) \
-            { \
-                uint64_t uTmp0 = pIncoming->s1.bm64 & ~LiveMaskPart1.bm64; \
-                uTmp0 = uTmp0 & (uTmp0 >> 1); \
-                LiveStatePart1.bm64 |= uTmp0 | IEMLIVENESSPART1_XCPT_OR_CALL; \
-                \
-                uint64_t uTmp1 = pIncoming->s2.bm64 & ~LiveMaskPart2.bm64; \
-                uTmp1 = uTmp1 & (uTmp1 >> 1); \
-                LiveStatePart2.bm64 |= uTmp1 | IEMLIVENESSPART2_XCPT_OR_CALL; \
-                \
-                LiveMaskPart1.bm64  |= IEMLIVENESSPART1_MASK; /* could also use UINT64_MAX here, but makes no difference */ \
-                LiveMaskPart2.bm64  |= IEMLIVENESSPART2_MASK; /* when compiling with gcc and cl.exe on x86 - may on arm, though. */ \
-                fDoneXpctOrCall      = true; \
-            } \
-        } while (0)
-#else
 AssertCompile(IEMLIVENESSBIT0_XCPT_OR_CALL == 0 && IEMLIVENESSBIT1_XCPT_OR_CALL != 0);
-# define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
+#define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
             if (!fDoneXpctOrCall) \
             { \
                 LiveStateBit0.bm64 |= pIncoming->Bit0.bm64 & pIncoming->Bit1.bm64 & ~LiveMask.bm64; \
@@ -99,71 +70,39 @@ AssertCompile(IEMLIVENESSBIT0_XCPT_OR_CALL == 0 && IEMLIVENESSBIT1_XCPT_OR_CALL 
                 fDoneXpctOrCall  = true;                /* when compiling with gcc and cl.exe on x86 - may on arm, though. */ \
             } \
         } while (0)
-#endif
 
 
 AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_ALL_EFLAGS_CLOBBERED() do { \
-            LiveMaskPart2.bm64  |= IEMLIVENESSPART2_ALL_EFL_MASK; \
-        } while (0)
-AssertCompile(IEMLIVENESSPART1_ALL_EFL_MASK == 0);
-# define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
-            LiveMaskPart2.bm64  |= IEMLIVENESSPART2_ALL_EFL_MASK; \
-            LiveStatePart2.bm64 |= IEMLIVENESSPART2_ALL_EFL_INPUT; \
-        } while (0)
-#else
-# define IEM_LIVENESS_ALL_EFLAGS_CLOBBERED() do { \
+#define IEM_LIVENESS_ALL_EFLAGS_CLOBBERED() do { \
             LiveMask.bm64       |= IEMLIVENESSBIT_ALL_EFL_MASK; \
         } while (0)
 AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
-# define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
+#define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
             LiveStateBit0.bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
             LiveStateBit1.bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
             LiveMask.bm64       |= IEMLIVENESSBIT_ALL_EFL_MASK; \
         } while (0)
-#endif
 
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Name) do { \
-            LiveMaskPart2.a_Name  |= IEMLIVENESS_STATE_MASK; \
-        } while (0)
-# define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
-            LiveMaskPart2.a_Name  |= IEMLIVENESS_STATE_MASK; \
-            LiveStatePart2.a_Name |= IEMLIVENESS_STATE_INPUT; \
-        } while (0)
-#else
-# define IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Name) do { \
+#define IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Name) do { \
             LiveMask.a_Name       |= 1; \
         } while (0)
-# define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
+#define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
             LiveStateBit0.a_Name  |= 1; \
             LiveStateBit1.a_Name  |= 1; \
             LiveMask.a_Name       |= 1; \
         } while (0)
-#endif
 
 
 /* Generic bitmap (bmGpr, bmSegBase, ++) setters. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(a_Part, a_bmMember, a_iElement) do { \
-            LiveMaskPart##a_Part.a_bmMember  |= (uint32_t)IEMLIVENESS_STATE_MASK  << ((a_iElement) * IEMLIVENESS_STATE_BIT_COUNT); \
-        } while (0)
-# define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_Part, a_bmMember, a_iElement) do { \
-            LiveMaskPart##a_Part.a_bmMember  |= (uint32_t)IEMLIVENESS_STATE_MASK  << ((a_iElement) * IEMLIVENESS_STATE_BIT_COUNT); \
-            LiveStatePart##a_Part.a_bmMember |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iElement) * IEMLIVENESS_STATE_BIT_COUNT); \
-        } while (0)
-#else
-# define IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(a_Part, a_bmMember, a_iElement) do { \
+#define IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(a_Part, a_bmMember, a_iElement) do { \
             LiveMask.a_bmMember  |= RT_BIT_64(a_iElement); \
         } while (0)
-# define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_Part, a_bmMember, a_iElement) do { \
+#define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_Part, a_bmMember, a_iElement) do { \
             LiveStateBit0.a_bmMember  |= RT_BIT_64(a_iElement); \
             LiveStateBit1.a_bmMember  |= RT_BIT_64(a_iElement); \
             LiveMask.a_bmMember       |= RT_BIT_64(a_iElement); \
         } while (0)
-#endif
 
 
 #define IEM_LIVENESS_GPR_CLOBBERED(a_idxGpr)        IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(1, bmGprs, a_idxGpr)
@@ -215,24 +154,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_LIVENESS_PC32_JMP_WITH_FLAGS()  IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_ONE_EFLAG_INPUT(fEflOther); IEM_LIVENESS_SEG_LIMIT_INPUT(X86_SREG_CS)
 #define IEM_LIVENESS_PC64_JMP_WITH_FLAGS()  IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_ONE_EFLAG_INPUT(fEflOther)
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_MC_END() \
-        /* Combine the incoming state with what we've accumulated in this block. */ \
-        /* We can help the compiler by skipping OR'ing when having applied XPCT_OR_CALL, */ \
-        /* since that already imports all the incoming state. Saves a lot with cl.exe. */ \
-        if (!fDoneXpctOrCall) \
-        { \
-            pOutgoing->s1.bm64 = LiveStatePart1.bm64 | (~LiveMaskPart1.bm64 & pIncoming->s1.bm64); \
-            pOutgoing->s2.bm64 = LiveStatePart2.bm64 | (~LiveMaskPart2.bm64 & pIncoming->s2.bm64); \
-        } \
-        else \
-        { \
-            pOutgoing->s1.bm64 = LiveStatePart1.bm64; \
-            pOutgoing->s2.bm64 = LiveStatePart2.bm64; \
-        } \
-    }
-#else
-# define IEM_MC_END() \
+#define IEM_MC_END() \
         /* Combine the incoming state with what we've accumulated in this block. */ \
         /* We can help the compiler by skipping OR'ing when having applied XPCT_OR_CALL, */ \
         /* since that already imports all the incoming state. Saves a lot with cl.exe. */ \
@@ -247,7 +169,6 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
             pOutgoing->Bit1.bm64 = LiveStateBit1.bm64; \
         } \
     }
-#endif
 
 /*
  * The native MC variants.

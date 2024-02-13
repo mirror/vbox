@@ -380,44 +380,6 @@ typedef struct IEMNATIVEFIXUP
 /** Pointer to a native code generator fixup. */
 typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 
-//#define IEMLIVENESS_OLD_LAYOUT
-#ifdef IEMLIVENESS_OLD_LAYOUT
-
-typedef union IEMLIVENESSPART1
-{
-    uint64_t        bm64;
-    RT_GCC_EXTENSION struct
-    {                                     /*   bit no */
-        uint64_t    bmGprs      : 32;   /**< 0x00 /  0: The 16 general purpose registers. */
-        uint64_t    fUnusedPc   : 2;    /**< 0x20 / 32: (PC in ) */
-        uint64_t    u6Padding   : 6;    /**< 0x22 / 34: */
-        uint64_t    bmSegBase   : 12;   /**< 0x28 / 40: */
-        uint64_t    bmSegAttrib : 12;   /**< 0x34 / 52: */
-    };
-} IEMLIVENESSPART1;
-AssertCompileSize(IEMLIVENESSPART1, 8);
-
-typedef union IEMLIVENESSPART2
-{
-    uint64_t        bm64;
-    RT_GCC_EXTENSION struct
-    {                                     /*   bit no */
-        uint64_t    bmSegLimit  : 12;   /**< 0x40 / 64: */
-        uint64_t    bmSegSel    : 12;   /**< 0x4c / 76: */
-        uint64_t    fEflOther   : 2;    /**< 0x58 / 88: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). First! */
-        uint64_t    fEflCf      : 2;    /**< 0x5a / 90: Carry flag          (X86_EFL_CF / 0). */
-        uint64_t    fEflPf      : 2;    /**< 0x5c / 92: Parity flag         (X86_EFL_PF / 2). */
-        uint64_t    fEflAf      : 2;    /**< 0x5e / 94: Auxilary carry flag (X86_EFL_AF / 4). */
-        uint64_t    fEflZf      : 2;    /**< 0x60 / 96: Zero flag           (X86_EFL_ZF / 6). */
-        uint64_t    fEflSf      : 2;    /**< 0x62 / 98: Signed flag         (X86_EFL_SF / 7). */
-        uint64_t    fEflOf      : 2;    /**< 0x64 /100: Overflow flag       (X86_EFL_OF / 12). */
-        uint64_t    u24Unused   : 26;     /* 0x66 /102 -> 0x80/128 */
-    };
-} IEMLIVENESSPART2;
-AssertCompileSize(IEMLIVENESSPART2, 8);
-# define IEMLIVENESSPART2_REG_COUNT 19
-
-#else
 
 /**
  * One bit of the state.
@@ -450,7 +412,6 @@ typedef union IEMLIVENESSBIT
 } IEMLIVENESSBIT;
 AssertCompileSize(IEMLIVENESSBIT, 8);
 
-#endif
 
 /**
  * A liveness state entry.
@@ -467,15 +428,10 @@ typedef union IEMLIVENESSENTRY
     uint8_t         bm8[16 / 1];
     RT_GCC_EXTENSION struct
     {
-#ifdef IEMLIVENESS_OLD_LAYOUT
-        IEMLIVENESSPART1 s1;
-        IEMLIVENESSPART2 s2;
-#else
         /** Bit \#0 of the register states. */
         IEMLIVENESSBIT Bit0;
         /** Bit \#1 of the register states. */
         IEMLIVENESSBIT Bit1;
-#endif
     };
 } IEMLIVENESSENTRY;
 AssertCompileSize(IEMLIVENESSENTRY, 16);
@@ -486,43 +442,18 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 
 /** @name 64-bit value masks for IEMLIVENESSENTRY.
  * @{ */                                      /*         0xzzzzyyyyxxxxwwww */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEMLIVENESSPART1_MASK                  UINT64_C(0xffffff00ffffffff)
-# define IEMLIVENESSPART2_MASK                  UINT64_C(0x0000003fffffffff)
-#else
-# define IEMLIVENESSBIT_MASK                    UINT64_C(0x0007fffffff0ffff)
-#endif
+#define IEMLIVENESSBIT_MASK                     UINT64_C(0x0007fffffff0ffff)
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEMLIVENESSPART1_XCPT_OR_CALL          UINT64_C(0xaaaaaa00aaaaaaaa)
-# define IEMLIVENESSPART2_XCPT_OR_CALL          UINT64_C(0x0000002aaaaaaaaa)
-#else
-# define IEMLIVENESSBIT0_XCPT_OR_CALL           UINT64_C(0x0000000000000000)
-# define IEMLIVENESSBIT1_XCPT_OR_CALL           IEMLIVENESSBIT_MASK
-#endif
+#define IEMLIVENESSBIT0_XCPT_OR_CALL            UINT64_C(0x0000000000000000)
+#define IEMLIVENESSBIT1_XCPT_OR_CALL            IEMLIVENESSBIT_MASK
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEMLIVENESSPART1_ALL_UNUSED            UINT64_C(0x5555550055555555)
-# define IEMLIVENESSPART2_ALL_UNUSED            UINT64_C(0x0000001555555555)
-#else
-# define IEMLIVENESSBIT0_ALL_UNUSED             IEMLIVENESSBIT_MASK
-# define IEMLIVENESSBIT1_ALL_UNUSED             UINT64_C(0x0000000000000000)
-#endif
+#define IEMLIVENESSBIT0_ALL_UNUSED              IEMLIVENESSBIT_MASK
+#define IEMLIVENESSBIT1_ALL_UNUSED              UINT64_C(0x0000000000000000)
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEMLIVENESSPART1_ALL_EFL_MASK          UINT64_C(0x0000000000000000)
-# define IEMLIVENESSPART2_ALL_EFL_MASK          UINT64_C(0x0000003fff000000)
-#else
-# define IEMLIVENESSBIT_ALL_EFL_MASK            UINT64_C(0x0007f00000000000)
-#endif
+#define IEMLIVENESSBIT_ALL_EFL_MASK             UINT64_C(0x0007f00000000000)
 
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEMLIVENESSPART1_ALL_EFL_INPUT         IEMLIVENESSPART1_ALL_EFL_MASK
-# define IEMLIVENESSPART2_ALL_EFL_INPUT         IEMLIVENESSPART2_ALL_EFL_MASK
-#else
-# define IEMLIVENESSBIT0_ALL_EFL_INPUT          IEMLIVENESSBIT_ALL_EFL_MASK
-# define IEMLIVENESSBIT1_ALL_EFL_INPUT          IEMLIVENESSBIT_ALL_EFL_MASK
-#endif
+#define IEMLIVENESSBIT0_ALL_EFL_INPUT           IEMLIVENESSBIT_ALL_EFL_MASK
+#define IEMLIVENESSBIT1_ALL_EFL_INPUT           IEMLIVENESSBIT_ALL_EFL_MASK
 /** @} */
 
 
@@ -603,69 +534,36 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
  * @{ */
 /** Initializing the outgoing state with a potential xcpt or call state.
  * This only works when all later changes will be IEMLIVENESS_STATE_INPUT. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(a_pOutgoing, a_pIncoming) \
-    do { \
-        uint64_t uTmp1 = (a_pIncoming)->s1.bm64; \
-        uTmp1 = uTmp1 & (uTmp1 >> 1); \
-        (a_pOutgoing)->s1.bm64 = uTmp1 | IEMLIVENESSPART1_XCPT_OR_CALL; \
-        \
-        uint64_t uTmp2 = (a_pIncoming)->s2.bm64; \
-        uTmp2 = uTmp2 & (uTmp1 >> 1); \
-        (a_pOutgoing)->s2.bm64 = uTmp2 | IEMLIVENESSPART2_XCPT_OR_CALL; \
-    } while (0)
-#else
-# define IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(a_pOutgoing, a_pIncoming) \
+#define IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(a_pOutgoing, a_pIncoming) \
     do { \
         (a_pOutgoing)->Bit0.bm64 = (a_pIncoming)->Bit0.bm64 & (a_pIncoming)->Bit1.bm64; \
         (a_pOutgoing)->Bit1.bm64 = IEMLIVENESSBIT1_XCPT_OR_CALL; \
     } while (0)
-#endif
 
 /** Adds a segment base register as input to the outgoing state. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, a_iSReg) \
-    (a_pOutgoing)->s1.bmSegBase   |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
-#else
-# define IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, a_iSReg) do { \
+#define IEM_LIVENESS_RAW_SEG_BASE_INPUT(a_pOutgoing, a_iSReg) do { \
         (a_pOutgoing)->Bit0.bmSegBase   |= RT_BIT_64(a_iSReg); \
         (a_pOutgoing)->Bit1.bmSegBase   |= RT_BIT_64(a_iSReg); \
     } while (0)
-#endif
 
 /** Adds a segment attribute register as input to the outgoing state. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_RAW_SEG_ATTRIB_INPUT(a_pOutgoing, a_iSReg) \
-    (a_pOutgoing)->s1.bmSegAttrib |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
-#else
-# define IEM_LIVENESS_RAW_SEG_ATTRIB_INPUT(a_pOutgoing, a_iSReg) do { \
+#define IEM_LIVENESS_RAW_SEG_ATTRIB_INPUT(a_pOutgoing, a_iSReg) do { \
         (a_pOutgoing)->Bit0.bmSegAttrib |= RT_BIT_64(a_iSReg); \
         (a_pOutgoing)->Bit1.bmSegAttrib |= RT_BIT_64(a_iSReg); \
     } while (0)
-#endif
 
 
 /** Adds a segment limit register as input to the outgoing state. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, a_iSReg) \
-    (a_pOutgoing)->s2.bmSegLimit  |= (uint32_t)IEMLIVENESS_STATE_INPUT << ((a_iSReg) * IEMLIVENESS_STATE_BIT_COUNT)
-#else
-# define IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, a_iSReg) do { \
+#define IEM_LIVENESS_RAW_SEG_LIMIT_INPUT(a_pOutgoing, a_iSReg) do { \
         (a_pOutgoing)->Bit0.bmSegLimit  |= RT_BIT_64(a_iSReg); \
         (a_pOutgoing)->Bit1.bmSegLimit  |= RT_BIT_64(a_iSReg); \
     } while (0)
-#endif
 
 /** Adds a segment limit register as input to the outgoing state. */
-#ifdef IEMLIVENESS_OLD_LAYOUT
-# define IEM_LIVENESS_RAW_EFLAGS_ONE_INPUT(a_pOutgoing, a_fEflMember) \
-    (a_pOutgoing)->s2.a_fEflMember |= IEMLIVENESS_STATE_INPUT
-#else
-# define IEM_LIVENESS_RAW_EFLAGS_ONE_INPUT(a_pOutgoing, a_fEflMember) do { \
+#define IEM_LIVENESS_RAW_EFLAGS_ONE_INPUT(a_pOutgoing, a_fEflMember) do { \
         (a_pOutgoing)->Bit0.a_fEflMember  |= 1; \
         (a_pOutgoing)->Bit1.a_fEflMember  |= 1; \
     } while (0)
-#endif
 /** @} */
 
 /**
