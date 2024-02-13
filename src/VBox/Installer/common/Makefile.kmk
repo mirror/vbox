@@ -37,16 +37,14 @@ endif
 ifdef VBOX_WITH_PYTHON
 
  INSTALLS += VBox-python-glue-vboxapisetup
-
- VBox-python-glue-vboxapisetup_INST = $(INST_SDK)installer/python/vboxapi/
- VBox-python-glue-vboxapisetup_MODE = a+r,u+w
- VBox-python-glue-vboxapisetup_SOURCES = vboxapisetup.py=>setup.py
+ VBox-python-glue-vboxapisetup_INST     = $(INST_SDK)installer/python/vboxapi/
+ VBox-python-glue-vboxapisetup_MODE    := a+r,u+w
+ VBox-python-glue-vboxapisetup_SOURCES := vboxapisetup.py=>setup.py
 
  INSTALLS += VBox-python-glue-vboxapisetup-stub
-
- VBox-python-glue-vboxapisetup-stub_INST = $(INST_SDK)installer/python/
- VBox-python-glue-vboxapisetup-stub_MODE = a+r,u+w
- VBox-python-glue-vboxapisetup-stub_SOURCES = vboxapisetup-stub.py=>vboxapisetup.py
+ VBox-python-glue-vboxapisetup-stub_INST     = $(INST_SDK)installer/python/
+ VBox-python-glue-vboxapisetup-stub_MODE    := a+r,u+w
+ VBox-python-glue-vboxapisetup-stub_SOURCES := vboxapisetup-stub.py=>vboxapisetup.py
 
  #
  # Automatically lint common installer Python stuff.
