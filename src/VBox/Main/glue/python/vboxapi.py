@@ -146,7 +146,7 @@ class PerfCollector(object):
             (values, names_out, objects_out, units, scales, _sequence_numbers,
              indices, lengths) = self.collector.queryMetricsData(names, objects)
         out = []
-        for i in enumerate(names_out):
+        for i, _ in enumerate(names_out):
             scale = int(scales[i])
             if scale != 1:
                 fmt = '%.2f%s'
@@ -472,12 +472,10 @@ class PlatformMSCOM(PlatformBase):
 
         # Hack the COM dispatcher base class so we can modify method and
         # attribute names to match those in xpcom.
-        if 'getattr' not in _g_dCOMForward:
-            _g_dCOMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
-            setattr(DispatchBaseClass, '__getattr__', _CustomGetAttr)
-
         if 'setattr' not in _g_dCOMForward:
+            _g_dCOMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__'] # before setattr which we test for.
             _g_dCOMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
+            setattr(DispatchBaseClass, '__getattr__', _CustomGetAttr)
             setattr(DispatchBaseClass, '__setattr__', _CustomSetAttr)
 
         # Hack the exception base class so the users doesn't need to check for
@@ -585,6 +583,7 @@ class PlatformMSCOM(PlatformBase):
         pythoncom.CoUninitialize()
 
     def createListener(self, oImplClass, dArgs):
+        _ = oImplClass; _ = dArgs;
         raise Exception('no active listeners on Windows as PyGatewayBase::QueryInterface() '
                         'returns new gateway objects all the time, thus breaking EventQueue '
                         'assumptions about the listener interface pointer being constants between calls ')
@@ -768,7 +767,7 @@ class PlatformXPCOM(PlatformBase):
         notDocumentedDict = {}
         notDocumentedDict['BaseClass'] = oImplClass
         notDocumentedDict['dArgs'] = dArgs
-        sEval = ""
+        sEval  = ""
         sEval += "import xpcom.components\n"
         sEval += "class ListenerImpl(BaseClass):\n"
         sEval += "   _com_interfaces_ = xpcom.components.interfaces.IEventListener\n"
@@ -901,7 +900,7 @@ class PlatformWEBSERVICE(PlatformBase):
     def queryInterface(self, oIUnknown, sClassName):
         notDocumentedDict = {}
         notDocumentedDict['oIUnknown'] = oIUnknown
-        sEval = ""
+        sEval  = ""
         sEval += "from VirtualBox_wrappers import " + sClassName + "\n"
         sEval += "result = " + sClassName + "(oIUnknown.mgr, oIUnknown.handle)\n"
         # wrong, need to test if class indeed implements this interface
@@ -942,10 +941,10 @@ class PlatformWEBSERVICE(PlatformBase):
 ## The current (last) exception class.
 # This is reinitalized whenever VirtualBoxManager is called, so it will hold
 # the reference to the error exception class for the last platform/style that
-# was used.  Most clients does talk to multiple VBox instance on different
+# was used.  Most clients does not talk to multiple VBox instance on different
 # platforms at the same time, so this should be sufficent for most uses and
 # be way simpler to use than VirtualBoxManager::oXcptClass.
-g_curXcptClass = None
+g_oCurXcptClass = None
 
 
 class VirtualBoxManager(object):
@@ -1004,8 +1003,8 @@ class VirtualBoxManager(object):
 
         ## The exception class for the selected platform.
         self.oXcptClass = self.platform.xcptGetBaseXcpt()
-        global g_curXcptClass
-        g_curXcptClass = self.oXcptClass
+        global g_oCurXcptClass
+        g_oCurXcptClass = self.oXcptClass
 
         # Get the virtualbox singleton.
         try:
