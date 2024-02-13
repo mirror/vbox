@@ -663,8 +663,10 @@ class StorageCfg(object):
     def mkDirOnVolume(self, sMountPoint, sDir, fMode = 0o700):
         """
         Creates a new directory on the volume pointed to by the given mount point.
+
+        Returns success status.
         """
-        return self.oExec.mkDir(sMountPoint + '/' + sDir, fMode);
+        return self.oExec.mkDir(os.path.join(sMountPoint, sDir), fMode);
 
     def cleanupLeftovers(self):
         """

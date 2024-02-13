@@ -836,6 +836,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     def prepareStorage(self, oStorCfg, fRamDisk = False, cbPool = None):
         """
         Prepares the host storage for disk images or direct testing on the host.
+
+        Will return the created mount point path on success, or None on failure.
         """
         # Create a basic pool with the default configuration.
         sMountPoint = None;
@@ -846,6 +848,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 sMountPoint = None;
                 oStorCfg.cleanup();
 
+        if not fRc:
+            reporter.error('Failed to prepare host storage (fRamDisk=%s, cbPool=%d)' % (fRamDisk, cbPool,));
         return sMountPoint;
 
     def cleanupStorage(self, oStorCfg):
@@ -1448,11 +1452,15 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 elif not self.fRecreateStorCfg:
                     reporter.testStart('Create host storage');
                     sMountPoint = self.prepareStorage(self.oStorCfg);
-                    if sMountPoint is None:
-                        reporter.testFailure('Failed to prepare host storage');
+                    if sMountPoint:
+                        fMode = 0o777;
+                        sDir  = os.path.join(sMountPoint, 'test');
+                        if self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', fMode):
+                            sMountPoint = sDir;
+                        else:
+                            reporter.error('Creating volume directory "%s" (mode %x) failed' % (sDir, fMode,));
+                    else:
                         fRc = False;
-                    self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0o777);
-                    sMountPoint = sMountPoint + '/test';
                     reporter.testDone();
 
                 if fRc:
