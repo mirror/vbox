@@ -1249,7 +1249,7 @@ class ThreadedFunctionVariation(object):
             # 8-bit register accesses needs to have their index argument reworked to take REX into account.
             if oStmt.sName.startswith('IEM_MC_') and oStmt.sName.find('_GREG_U8') > 0:
                 (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oStmt);
-                self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint16_t', oStmt, idxReg, sStdRef = sStdRef));
+                self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint8_t', oStmt, idxReg, sStdRef = sStdRef));
                 aiSkipParams[idxReg] = True; # Skip the parameter below.
 
             # If in flat mode variation, ignore the effective segment parameter to memory MCs.
