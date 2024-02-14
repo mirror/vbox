@@ -1378,111 +1378,115 @@ static int rtldrLx_EnumDbgInfoHelper(PKLDRMODLX pModLX, PFNRTLDRENUMDBG pfnCallb
     /*
      * Look for codeview signature.
      */
-    RTCVHDR const *pCvHdr = (RTCVHDR const *)pbBuf;
-    if (   cbRead > sizeof(*pCvHdr)
-        && pCvHdr->off >= sizeof(*pCvHdr)
-        && pCvHdr->off < cbDbgInfo)
+    if (cbRead > sizeof(RTCVHDR))
     {
-        switch (pCvHdr->u32Magic)
+        RTCVHDR const *pCvHdr = (RTCVHDR const *)pbBuf;
+        if (   pCvHdr->off >= sizeof(*pCvHdr)
+            && pCvHdr->off < cbDbgInfo)
         {
-            case RTCVHDR_MAGIC_NB11:
-            case RTCVHDR_MAGIC_NB09:
-            case RTCVHDR_MAGIC_NB08:
-            case RTCVHDR_MAGIC_NB07:
-            case RTCVHDR_MAGIC_NB06:
-            case RTCVHDR_MAGIC_NB05:
-            case RTCVHDR_MAGIC_NB04:
-            case RTCVHDR_MAGIC_NB02:
-            case RTCVHDR_MAGIC_NB01:
-            case RTCVHDR_MAGIC_NB00:
-                DbgInfo.enmType         = RTLDRDBGINFOTYPE_CODEVIEW;
-                DbgInfo.iDbgInfo        = iDbgInfo;
-                DbgInfo.offFile         = offDbgInfo;
-                DbgInfo.LinkAddress     = NIL_RTLDRADDR;
-                DbgInfo.cb              = cbDbgInfo;
-                DbgInfo.pszExtFile      = NULL;
-                DbgInfo.u.Cv.cbImage    = pModLX->Hdr.e32_mpages * pModLX->Hdr.e32_pagesize;
-                DbgInfo.u.Cv.uTimestamp = 0;
-                DbgInfo.u.Cv.uMajorVer  = 0;
-                DbgInfo.u.Cv.uMinorVer  = 0;
+            switch (pCvHdr->u32Magic)
+            {
+                case RTCVHDR_MAGIC_NB11:
+                case RTCVHDR_MAGIC_NB09:
+                case RTCVHDR_MAGIC_NB08:
+                case RTCVHDR_MAGIC_NB07:
+                case RTCVHDR_MAGIC_NB06:
+                case RTCVHDR_MAGIC_NB05:
+                case RTCVHDR_MAGIC_NB04:
+                case RTCVHDR_MAGIC_NB02:
+                case RTCVHDR_MAGIC_NB01:
+                case RTCVHDR_MAGIC_NB00:
+                    DbgInfo.enmType         = RTLDRDBGINFOTYPE_CODEVIEW;
+                    DbgInfo.iDbgInfo        = iDbgInfo;
+                    DbgInfo.offFile         = offDbgInfo;
+                    DbgInfo.LinkAddress     = NIL_RTLDRADDR;
+                    DbgInfo.cb              = cbDbgInfo;
+                    DbgInfo.pszExtFile      = NULL;
+                    DbgInfo.u.Cv.cbImage    = pModLX->Hdr.e32_mpages * pModLX->Hdr.e32_pagesize;
+                    DbgInfo.u.Cv.uTimestamp = 0;
+                    DbgInfo.u.Cv.uMajorVer  = 0;
+                    DbgInfo.u.Cv.uMinorVer  = 0;
 
-                *pfReturn = true;
-                return pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+                    *pfReturn = true;
+                    return pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+            }
         }
     }
 
     /*
      * Watcom wraps its DWARF output in an ELF image, so look for and ELF magic.
      */
-    Elf32_Ehdr const *pElfHdr = (Elf32_Ehdr const *)pbBuf;
-    if (   cbRead >= sizeof(*pElfHdr)
-        && pElfHdr->e_ident[EI_MAG0]    == ELFMAG0
-        && pElfHdr->e_ident[EI_MAG1]    == ELFMAG1
-        && pElfHdr->e_ident[EI_MAG2]    == ELFMAG2
-        && pElfHdr->e_ident[EI_MAG3]    == ELFMAG3
-        && pElfHdr->e_ident[EI_CLASS]   == ELFCLASS32
-        && pElfHdr->e_ident[EI_DATA]    == ELFDATA2LSB
-        && pElfHdr->e_ident[EI_VERSION] == EV_CURRENT
-        && pElfHdr->e_shentsize         == sizeof(Elf32_Shdr)
-        && pElfHdr->e_shnum             >= 2
-        && pElfHdr->e_shnum             <  _32K + 10
-        && pElfHdr->e_shstrndx          <= pElfHdr->e_shnum
-        && pElfHdr->e_shstrndx          >  0
-       )
+    if (cbRead >= sizeof(Elf32_Ehdr))
     {
-        /** @todo try use pBuf for reading into and try to read more at once. */
-        uint32_t const offShdrs = pElfHdr->e_shoff + offDbgInfo;
-        uint32_t const cShdrs   = pElfHdr->e_shnum;
-        uint32_t const cbShdr   = pElfHdr->e_shentsize;
-        int            rc       = VINF_SUCCESS;
-
-        /* Read the section string table. */
-        Elf32_Shdr Shdr;
-        int rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr),
-                                                offShdrs + pElfHdr->e_shstrndx * cbShdr);
-        if (   RT_SUCCESS(rc2)
-            && Shdr.sh_offset > 0
-            && Shdr.sh_size > 0
-            && Shdr.sh_size < _256K
-            && Shdr.sh_type == SHT_STRTAB)
+        Elf32_Ehdr const *pElfHdr = (Elf32_Ehdr const *)pbBuf;
+        if (   pElfHdr->e_ident[EI_MAG0]    == ELFMAG0
+            && pElfHdr->e_ident[EI_MAG1]    == ELFMAG1
+            && pElfHdr->e_ident[EI_MAG2]    == ELFMAG2
+            && pElfHdr->e_ident[EI_MAG3]    == ELFMAG3
+            && pElfHdr->e_ident[EI_CLASS]   == ELFCLASS32
+            && pElfHdr->e_ident[EI_DATA]    == ELFDATA2LSB
+            && pElfHdr->e_ident[EI_VERSION] == EV_CURRENT
+            && pElfHdr->e_shentsize         == sizeof(Elf32_Shdr)
+            && pElfHdr->e_shnum             >= 2
+            && pElfHdr->e_shnum             <  _32K + 10
+            && pElfHdr->e_shstrndx          <= pElfHdr->e_shnum
+            && pElfHdr->e_shstrndx          >  0)
         {
-            uint32_t const cbStrTab = Shdr.sh_size;
-            char * const   pszStrTab = (char *)RTMemTmpAlloc(cbStrTab + 2);
-            if (pszStrTab)
+            /** @todo try use pBuf for reading into and try to read more at once. */
+            uint32_t const offShdrs = pElfHdr->e_shoff + offDbgInfo;
+            uint32_t const cShdrs   = pElfHdr->e_shnum;
+            uint32_t const cbShdr   = pElfHdr->e_shentsize;
+            int            rc       = VINF_SUCCESS;
+
+            /* Read the section string table. */
+            Elf32_Shdr Shdr;
+            int rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr),
+                                                    offShdrs + pElfHdr->e_shstrndx * cbShdr);
+            if (   RT_SUCCESS(rc2)
+                && Shdr.sh_offset > 0
+                && Shdr.sh_size > 0
+                && Shdr.sh_size < _256K
+                && Shdr.sh_type == SHT_STRTAB)
             {
-                rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, pszStrTab, Shdr.sh_size, offDbgInfo + Shdr.sh_offset);
-                if (RT_SUCCESS(rc2))
+                uint32_t const cbStrTab = Shdr.sh_size;
+                char * const   pszStrTab = (char *)RTMemTmpAlloc(cbStrTab + 2);
+                if (pszStrTab)
                 {
-                    pszStrTab[cbStrTab] = '\0';
-
-                    /* Iterate the sections, one by one. */
-                    for (uint32_t i = 1; i < cShdrs; i++)
+                    rc2 = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, pszStrTab, Shdr.sh_size,
+                                                        offDbgInfo + Shdr.sh_offset);
+                    if (RT_SUCCESS(rc2))
                     {
-                        rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr), offShdrs + i * cbShdr);
-                        if (   RT_SUCCESS(rc)
-                            && Shdr.sh_name < cbStrTab
-                            && strncmp(&pszStrTab[Shdr.sh_name], RT_STR_TUPLE(".debug_")) == 0)
-                        {
-                            DbgInfo.enmType            = RTLDRDBGINFOTYPE_DWARF;
-                            DbgInfo.iDbgInfo           = iDbgInfo;
-                            DbgInfo.offFile            = offDbgInfo + Shdr.sh_offset;
-                            DbgInfo.LinkAddress        = NIL_RTLDRADDR;
-                            DbgInfo.cb                 = Shdr.sh_size;
-                            DbgInfo.pszExtFile         = NULL;
-                            DbgInfo.u.Dwarf.pszSection = &pszStrTab[Shdr.sh_name];
+                        pszStrTab[cbStrTab] = '\0';
 
-                            *pfReturn = true;
-                            rc = pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
-                            if (rc != VINF_SUCCESS)
-                                break;
-                            iDbgInfo++;
+                        /* Iterate the sections, one by one. */
+                        for (uint32_t i = 1; i < cShdrs; i++)
+                        {
+                            rc = pModLX->Core.pReader->pfnRead(pModLX->Core.pReader, &Shdr, sizeof(Shdr), offShdrs + i * cbShdr);
+                            if (   RT_SUCCESS(rc)
+                                && Shdr.sh_name < cbStrTab
+                                && strncmp(&pszStrTab[Shdr.sh_name], RT_STR_TUPLE(".debug_")) == 0)
+                            {
+                                DbgInfo.enmType            = RTLDRDBGINFOTYPE_DWARF;
+                                DbgInfo.iDbgInfo           = iDbgInfo;
+                                DbgInfo.offFile            = offDbgInfo + Shdr.sh_offset;
+                                DbgInfo.LinkAddress        = NIL_RTLDRADDR;
+                                DbgInfo.cb                 = Shdr.sh_size;
+                                DbgInfo.pszExtFile         = NULL;
+                                DbgInfo.u.Dwarf.pszSection = &pszStrTab[Shdr.sh_name];
+
+                                *pfReturn = true;
+                                rc = pfnCallback(&pModLX->Core, &DbgInfo, pvUser);
+                                if (rc != VINF_SUCCESS)
+                                    break;
+                                iDbgInfo++;
+                            }
                         }
                     }
+                    RTMemTmpFree(pszStrTab);
                 }
-                RTMemTmpFree(pszStrTab);
             }
+            return rc;
         }
-        return rc;
     }
 
     /*
