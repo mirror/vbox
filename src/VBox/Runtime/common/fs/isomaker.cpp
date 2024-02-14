@@ -6760,6 +6760,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
         RTUTF16  wszTmp[128];
         PRTUTF16 pwszTmp = &wszTmp[0];
         size_t   cwcResult = 0;
+        wszTmp[0] = '\0';
         int rc = RTStrToUtf16BigEx(pName->szName, RTSTR_MAX, &pwszTmp, RT_ELEMENTS(wszTmp), &cwcResult);
         AssertRC(rc);
         Assert(   cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec
