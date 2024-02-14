@@ -1707,14 +1707,14 @@ RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty,
     *pu32++ = RT_H2BE_U32(cbStrings);
     *pu32++ = RT_H2BE_U32(offStr);
 
-    char *pb = (char *)pu32;
+    char *pchDst = (char *)pu32;
     for (uint32_t i = 0; i < cStrings; i++)
     {
-        const char *psz = va_arg(va, const char *);
-        /* MSVC doesn't know about stpcpy(), so we have to query the string length again... */
-        uint32_t cbStr = (uint32_t)strlen(psz);
-        strcpy(pb, psz);
-        pb += cbStr + 1;
+        const char * const pszSrc = va_arg(va, const char *);
+        size_t const cbStr = strlen(pszSrc) + 1;
+        Assert((size_t)(pchDst - (char *)pu32) >= cbStr);
+        memcpy(pchDst, pszSrc, cbStr);
+        pchDst += cbStr;
     }
 
     pThis->cbStruct += cbProp;
