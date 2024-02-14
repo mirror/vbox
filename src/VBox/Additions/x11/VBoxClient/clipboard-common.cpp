@@ -109,65 +109,9 @@ RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPOR
     return rc;
 }
 
-/**
- * Reads clipboard from the host.
- *
- * @returns VBox status code.
- * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
- * @param   pCtx                Shared Clipbaord context to use.
- * @param   uFmt                The format to read clipboard data in.
- * @param   ppv                 Where to return the allocated data read.
- *                              Must be free'd by the caller.
- * @param   pcb                 Where to return number of bytes read.
- */
-RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
+RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx,
+                                           SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData)
 {
-    int rc;
-
-    uint32_t cbRead = 0;
-    uint32_t cbData = _4K;
-
-    void *pvData;
-
-    pvData = RTMemAllocZ(cbData);
-    if (pvData)
-    {
-        rc = VbglR3ClipboardReadDataEx(pCtx, uFmt, pvData, cbData, &cbRead);
-
-        /*
-         * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
-         * larger buffer.  The size of the buffer needed is placed in *pcb.
-         * So we start all over again.
-         */
-        if (rc == VINF_BUFFER_OVERFLOW)
-        {
-            /* cbRead contains the size required. */
-            pvData = RTMemReallocZ(pvData, cbData, cbRead);
-            cbData = cbRead;
-            if (pvData)
-            {
-                rc = VbglR3ClipboardReadDataEx(pCtx, uFmt, pvData, cbData, &cbRead);
-                if (rc == VINF_BUFFER_OVERFLOW)
-                    rc = VERR_BUFFER_OVERFLOW;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            *pcb = cbRead; /* Actual bytes read. */
-            *ppv = pvData;
-        }
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    if (!cbRead)
-        rc = VERR_SHCLPB_NO_DATA;
-
-    if (RT_FAILURE(rc))
-        RTMemFree(pvData);
-
-    return rc;
+    return VbglR3ClipboardReadDataEx(pCtx, uFmt, ppvData, pcbData);
 }
+

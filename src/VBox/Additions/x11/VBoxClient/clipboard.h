@@ -113,9 +113,9 @@ RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPOR
  * @returns VBox status code.
  * @param   pCtx            Host Shared Clipboard service connection context.
  * @param   uFmt            Format in which data should be read.
- * @param   ppv             Newly allocated output buffer (should be freed by caller).
- * @param   pcb             Output buffer size.
+ * @param   ppvData         Newly allocated output buffer (should be freed by caller).
+ * @param   pcbData         Output buffer size.
  */
-RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
+RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData);
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h */

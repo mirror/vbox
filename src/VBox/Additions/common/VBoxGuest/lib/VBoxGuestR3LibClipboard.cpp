@@ -437,8 +437,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pi
  * Reads data from the host clipboard.
  *
  * @returns VBox status code.
- * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
- *
+ * @retval  VINF_BUFFER_OVERFLOW if there is more data available than the caller provided buffer space for.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format we're requesting the data in.
  * @param   pvData          Where to store the data.
@@ -493,16 +492,75 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
  *
  * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
  * @param   uFormat             Clipboard format of clipboard data to be read.
- * @param   pvData              Buffer where to store the read data.
- * @param   cbData              Size (in bytes) of data buffer where to store the read data.
- * @param   pcbRead             The actual size of the host clipboard data.
+ * @param   ppvData             Buffer where return the newly allocated read clipboard data on success.
+ *                              Needs to be free'd by the caller.
+ * @param   pcbData             Size (in bytes) of clipboard data read on success.
  */
 VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx,
-                                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbRead)
+                                          SHCLFORMAT uFormat, void **ppvData, uint32_t *pcbData)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    return VbglR3ClipboardReadData(pCtx->idClient, uFormat, pvData, cbData, pcbRead);
+    AssertPtrReturn(ppvData, VERR_INVALID_POINTER);
+    AssertReturn(pcbData, VERR_INVALID_PARAMETER);
+
+    int rc;
+
+    uint32_t cbRead = 0;
+    uint32_t cbData = _4K;
+
+    void *pvData = RTMemAlloc(cbData);
+    if (pvData)
+    {
+        rc = VbglR3ClipboardReadData(pCtx->idClient, uFormat, pvData, cbData, &cbRead);
+
+        /*
+         * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
+         * larger buffer.  The size of the buffer needed is placed in *pcb.
+         * So we start all over again.
+         */
+        if (   rc == VINF_BUFFER_OVERFLOW
+            && cbRead)
+        {
+            /* cbRead contains the size required. */
+            pvData = RTMemReallocZ(pvData, cbData, cbRead);
+            cbData = cbRead;
+            if (pvData)
+            {
+                rc = VbglR3ClipboardReadData(pCtx->idClient, uFormat, pvData, cbData, &cbRead);
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbRead != cbData) /* The data size must match now. */
+                        rc = VERR_MISMATCH;
+                }
+                else
+                {
+                    if (rc == VINF_BUFFER_OVERFLOW)
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *pcbData = cbRead; /* Actual bytes read. */
+            *ppvData = pvData;
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (!cbRead)
+        rc = VERR_SHCLPB_NO_DATA;
+
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pvData);
+        LogRel(("Shared Clipboard: Reading clipboard data in format %#x from host failed with %Rrc\n", uFormat, rc));
+    }
+
+    return rc;
 }
 
 

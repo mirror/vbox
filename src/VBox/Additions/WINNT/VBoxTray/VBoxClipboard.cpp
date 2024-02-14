@@ -100,83 +100,6 @@ static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX
 #endif
 
 
-/**
- * Worker for a reading clipboard from the host.
- *
- * @returns VBox status code.
- * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
- * @param   pCtx                Shared Clipbaord context to use.
- * @param   uFmt                The format to read clipboard data in.
- * @param   ppv                 Where to return the allocated data read.
- *                              Must be free'd by the caller.
- * @param   pcb                 Where to return number of bytes read.
- * @param   pvUser              User-supplied context.
- */
-static DECLCALLBACK(int) vbtrReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
-{
-    RT_NOREF(pvUser);
-
-    LogFlowFuncEnter();
-
-    int rc;
-
-    uint32_t cbRead = 0;
-
-    uint32_t cbData = _4K; /** @todo Make this dynamic. */
-    void    *pvData = RTMemAlloc(cbData);
-    if (pvData)
-    {
-        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    /*
-     * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
-     * larger buffer.  The size of the buffer needed is placed in *pcb.
-     * So we start all over again.
-     */
-    if (rc == VINF_BUFFER_OVERFLOW)
-    {
-        /* cbRead contains the size required. */
-
-        cbData = cbRead;
-        pvData = RTMemRealloc(pvData, cbRead);
-        if (pvData)
-        {
-            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-            if (rc == VINF_BUFFER_OVERFLOW)
-                rc = VERR_BUFFER_OVERFLOW;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (!cbRead)
-        rc = VERR_SHCLPB_NO_DATA;
-
-    if (RT_SUCCESS(rc))
-    {
-        if (ppv)
-            *ppv = pvData;
-        if (pcb)
-            *pcb = cbRead; /* Actual bytes read. */
-    }
-    else
-    {
-        /*
-         * Catch other errors. This also catches the case in which the buffer was
-         * too small a second time, possibly because the clipboard contents
-         * changed half-way through the operation.  Since we can't say whether or
-         * not this is actually an error, we just return size 0.
-         */
-        RTMemFree(pvData);
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
  * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferBegin
@@ -290,22 +213,24 @@ static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLB
 /**
  * Worker for a reading clipboard from the host.
  *
+ * @returns VBox status code.
+ * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
+ * @param   pCtx                Shared Clipbaord context to use.
+ * @param   uFmt                The format to read clipboard data in.
+ * @param   ppvData             Where to return the allocated data read.
+ *                              Must be free'd by the caller.
+ * @param   pcbData             Where to return number of bytes read.
+ * @param   pvUser              User-supplied context.
+ *
  * @thread  Clipboard main thread.
+ *
  */
 static DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallbackWorker(PSHCLCONTEXT pCtx,
-                                                                     SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+                                                                     SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData, void *pvUser)
 {
     RT_NOREF(pvUser);
 
-    LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
-
-    int rc = vbtrReadDataWorker(pCtx, uFmt, ppv, pcb, pvUser);
-
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, ppvData, pcbData);
 }
 
 /**

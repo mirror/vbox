@@ -205,69 +205,12 @@ static DECLCALLBACK(void) vbclX11OnTransferErrorCallback(PSHCLTRANSFERCALLBACKCT
 /**
  * Worker for a reading clipboard from the host.
  */
-static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx,
+                                               SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData, void *pvUser)
 {
     RT_NOREF(pvUser);
 
-    LogFlowFuncEnter();
-
-    int rc;
-
-    uint32_t cbRead = 0;
-
-    uint32_t cbData = _4K; /** @todo Make this dynamic. */
-    void    *pvData = RTMemAlloc(cbData);
-    if (pvData)
-    {
-        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    /*
-     * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
-     * larger buffer.  The size of the buffer needed is placed in *pcb.
-     * So we start all over again.
-     */
-    if (rc == VINF_BUFFER_OVERFLOW)
-    {
-        /* cbRead contains the size required. */
-
-        cbData = cbRead;
-        pvData = RTMemRealloc(pvData, cbRead);
-        if (pvData)
-        {
-            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-            if (rc == VINF_BUFFER_OVERFLOW)
-                rc = VERR_BUFFER_OVERFLOW;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (!cbRead)
-        rc = VERR_SHCLPB_NO_DATA;
-
-    if (RT_SUCCESS(rc))
-    {
-        if (ppv)
-            *ppv = pvData;
-        if (pcb)
-            *pcb = cbRead; /* Actual bytes read. */
-    }
-    else
-    {
-        /*
-         * Catch other errors. This also catches the case in which the buffer was
-         * too small a second time, possibly because the clipboard contents
-         * changed half-way through the operation.  Since we can't say whether or
-         * not this is actually an error, we just return size 0.
-         */
-        RTMemFree(pvData);
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, ppvData, pcbData);
 }
 
 /**
