@@ -722,6 +722,7 @@ static int dbgfR3FlowQueryDirectBranchTarget(PUVM pUVM, VMCPUID idCpu, PDISOPPAR
 }
 
 
+#if 0 /* unused */
 /**
  * Returns the CPU mode based on the given assembler flags.
  *
@@ -747,6 +748,52 @@ static CPUMMODE dbgfR3FlowGetDisasCpuMode(PUVM pUVM, VMCPUID idCpu, uint32_t fFl
         AssertFailed();
 
     return enmMode;
+}
+#endif
+
+
+/**
+ * Returns the (PC) pointer size based on given assembler flags.
+ *
+ * @returns 2, 4, or 8.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   fFlagsDisasm        The flags used for disassembling.
+ */
+DECLINLINE(uint32_t) dbgfR3FlowGetDisasPtrSize(PUVM pUVM, VMCPUID idCpu, uint32_t fFlagsDisasm)
+{
+    switch (fFlagsDisasm & DBGF_DISAS_FLAGS_MODE_MASK)
+    {
+        case DBGF_DISAS_FLAGS_16BIT_MODE:
+        case DBGF_DISAS_FLAGS_16BIT_REAL_MODE:
+            return sizeof(uint16_t);
+        case DBGF_DISAS_FLAGS_32BIT_MODE:
+            return sizeof(uint32_t);
+        case DBGF_DISAS_FLAGS_64BIT_MODE:
+            return sizeof(uint64_t);
+        default:
+            AssertMsgFailed(("%#x\n", fFlagsDisasm));
+            RT_FALL_THRU();
+        case DBGF_DISAS_FLAGS_DEFAULT_MODE:
+        {
+            CPUMMODE const enmMode = DBGFR3CpuGetMode(pUVM, idCpu);
+            switch (enmMode)
+            {
+                case CPUMMODE_REAL:
+                    return sizeof(uint16_t);
+                case CPUMMODE_PROTECTED:
+                case CPUMMODE_ARMV8_AARCH32:
+                    return sizeof(uint32_t);
+                default:
+                    AssertFailed();
+                    RT_FALL_THRU();
+                case CPUMMODE_LONG:
+                case CPUMMODE_ARMV8_AARCH64:
+                    return sizeof(uint64_t);
+            }
+            break;
+        }
+    }
 }
 
 
@@ -921,20 +968,20 @@ static int dbgfR3FlowBranchTblVerifyAdd(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlow
 static int dbgfR3FlowCheckBranchTargetLocation(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFADDRESS pAddrBranchTgt,
                                                uint8_t idxGenRegBase, uint32_t cbPtr, PUVM pUVM, VMCPUID idCpu, bool fBranchTbl)
 {
-    int rc = VINF_SUCCESS;
-
+    int rc;
     if (!fBranchTbl)
     {
-        union { uint16_t u16Val; uint32_t u32Val; uint64_t u64Val; } uVal;
-        rc = DBGFR3MemRead(pUVM, idCpu, pAddrBranchTgt, &uVal, cbPtr);
+        RTUINT64U uVal = { 0 };
+        Assert(cbPtr <= sizeof(uVal));
+        rc = DBGFR3MemRead(pUVM, idCpu, pAddrBranchTgt, &uVal, cbPtr); /* (parfait wrong about potential buffer overflow, cbPtr is known) */
         if (RT_SUCCESS(rc))
         {
             DBGFADDRESS AddrTgt;
-            RTGCUINTPTR GCPtr =   cbPtr == sizeof(uint64_t)
-                                ? uVal.u64Val
+            RTGCUINTPTR GCPtr =   cbPtr == sizeof(uint64_t) /* (We could use uVal directly on little endian machines.) */
+                                ? uVal.au64[0]
                                 : cbPtr == sizeof(uint32_t)
-                                ? uVal.u32Val
-                                : uVal.u16Val;
+                                ? uVal.au32[0]
+                                : uVal.au16[0];
             if (DBGFADDRESS_IS_FLAT(pAddrBranchTgt))
                 DBGFR3AddrFromFlat(pUVM, &AddrTgt, GCPtr);
             else
@@ -945,7 +992,7 @@ static int dbgfR3FlowCheckBranchTargetLocation(PDBGFFLOWINT pThis, PDBGFFLOWBBIN
                 /* Finish the basic block. */
                 pFlowBb->AddrTarget = AddrTgt;
                 rc = dbgfR3FlowBbSuccessorAdd(pThis, &AddrTgt,
-                                              (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE),
+                                              pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE,
                                               pFlowBb->pFlowBranchTbl);
             }
             else
@@ -976,27 +1023,10 @@ static int dbgfR3FlowTryResolveIndirectBranch(PDBGFFLOWINT pThis, PDBGFFLOWBBINT
 {
     Assert(dbgfR3FlowBranchTargetIsIndirect(pDisParam));
 
-    uint32_t cbPtr = 0;
-    CPUMMODE enmMode = dbgfR3FlowGetDisasCpuMode(pUVM, idCpu, fFlagsDisasm);
-
-    switch (enmMode)
-    {
-        case CPUMMODE_REAL:
-            cbPtr = sizeof(uint16_t);
-            break;
-        case CPUMMODE_PROTECTED:
-            cbPtr = sizeof(uint32_t);
-            break;
-        case CPUMMODE_LONG:
-            cbPtr = sizeof(uint64_t);
-            break;
-        default:
-            AssertMsgFailed(("Invalid CPU mode %u\n", enmMode));
-    }
-
     if (pDisParam->fUse & DISUSE_BASE)
     {
-        uint8_t idxRegBase = pDisParam->x86.Base.idxGenReg;
+        uint8_t const idxRegBase = pDisParam->x86.Base.idxGenReg;
+        uint32_t const cbPtr = dbgfR3FlowGetDisasPtrSize(pUVM, idCpu, fFlagsDisasm);
 
         /* Check that the used register size and the pointer size match. */
         if (   ((pDisParam->fUse & DISUSE_REG_GEN16) && cbPtr == sizeof(uint16_t))
@@ -1063,27 +1093,10 @@ static int dbgfR3FlowBbCheckBranchTblCandidate(PDBGFFLOWINT pThis, PDBGFFLOWBBIN
 
     Assert(pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE && pFlowBb->pFlowBranchTbl);
 
-    uint32_t cbPtr = 0;
-    CPUMMODE enmMode = dbgfR3FlowGetDisasCpuMode(pUVM, idCpu, fFlagsDisasm);
-
-    switch (enmMode)
-    {
-        case CPUMMODE_REAL:
-            cbPtr = sizeof(uint16_t);
-            break;
-        case CPUMMODE_PROTECTED:
-            cbPtr = sizeof(uint32_t);
-            break;
-        case CPUMMODE_LONG:
-            cbPtr = sizeof(uint64_t);
-            break;
-        default:
-            AssertMsgFailed(("Invalid CPU mode %u\n", enmMode));
-    }
-
     if (pDisParam->fUse & DISUSE_BASE)
     {
-        uint8_t idxRegBase = pDisParam->x86.Base.idxGenReg;
+        uint8_t const idxRegBase = pDisParam->x86.Base.idxGenReg;
+        uint32_t const cbPtr = dbgfR3FlowGetDisasPtrSize(pUVM, idCpu, fFlagsDisasm);
 
         /* Check that the used register size and the pointer size match. */
         if (   ((pDisParam->fUse & DISUSE_REG_GEN16) && cbPtr == sizeof(uint16_t))
@@ -1123,7 +1136,7 @@ static int dbgfR3FlowBbCheckBranchTblCandidate(PDBGFFLOWINT pThis, PDBGFFLOWBBIN
  * @param   fFlags              Combination of DBGF_DISAS_FLAGS_*.
  */
 static int dbgfR3FlowBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb,
-                              uint32_t cbDisasmMax, uint32_t fFlags)
+                               uint32_t cbDisasmMax, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
     uint32_t cbDisasmLeft = cbDisasmMax ? cbDisasmMax : UINT32_MAX;
