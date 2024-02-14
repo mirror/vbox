@@ -496,7 +496,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                     else if (uFmtVBox == VBOX_SHCL_FMT_HTML)
                     {
                         /* Wrap content into CF_HTML clipboard format if needed. */
-                        if (!SharedClipboardWinIsCFHTML((const char *)pvMem))
+                        if (!SharedClipboardWinIsCFHTML((const char *)pvData))
                         {
                             char    *pszWrapped = NULL;
                             uint32_t cbWrapped  = 0;
@@ -504,7 +504,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                             if (RT_SUCCESS(rc))
                             {
                                 AssertBreakStmt(cbWrapped, rc = VERR_INVALID_PARAMETER);
-                                pvData = RTMemReAlloc(pvData, cbWrapped);
+                                pvData = RTMemRealloc(pvData, cbWrapped);
                                 if (pvData)
                                 {
                                     memcpy(pvData, pszWrapped, cbWrapped);
