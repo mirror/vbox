@@ -2678,7 +2678,7 @@ VMMR3DECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGV
         {
             if (cbBuf)
             {
-                memcpy(pszBuf, szTmp, cbBuf - 1);
+                memcpy(pszBuf, szTmp, cbBuf - 1);  /* (parfait is wrong about out of bound read here) */
                 pszBuf[cbBuf - 1] = '\0';
             }
             cchOutput = VERR_BUFFER_OVERFLOW;
