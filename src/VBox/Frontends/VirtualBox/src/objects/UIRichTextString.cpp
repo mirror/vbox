@@ -28,7 +28,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QPalette>
-#include <QRegExp>
+#include <QRegularExpression>
 
 /* GUI includes: */
 #include "UIRichTextString.h"
@@ -144,20 +144,18 @@ void UIRichTextString::parse()
                 /* Compose full pattern of the corresponding level: */
                 const QString strFullPattern = composeFullPattern(strPattern, strPattern, iMaxLevel);
                 //printf("  Full pattern: %s\n", strFullPattern.toUtf8().constData());
-                QRegExp regExp(strFullPattern);
-                regExp.setMinimal(true);
-                const int iPosition = regExp.indexIn(m_strString);
+                QRegularExpression re(strFullPattern);
+                re.setPatternOptions(QRegularExpression::InvertedGreedinessOption);
+                const QRegularExpressionMatch mt = re.match(m_strString);
+                const int iPosition = mt.capturedStart();
                 AssertReturnVoid(iPosition != -1);
-                if (iPosition != -1)
-                {
-                    /* Cut the found string: */
-                    m_strString.remove(iPosition, regExp.cap(0).size());
-                    /* And paste that string as our child: */
-                    const bool fPatterHasMeta = s_doPatternHasMeta.value(enmPattern);
-                    const QString strSubString = !fPatterHasMeta ? regExp.cap(1) : regExp.cap(2);
-                    const QString strSubMeta   = !fPatterHasMeta ? QString()     : regExp.cap(1);
-                    m_strings.insert(iPosition, new UIRichTextString(strSubString, enmPattern, strSubMeta));
-                }
+                /* Cut the found string: */
+                m_strString.remove(iPosition, mt.capturedLength());
+                /* And paste that string as our child: */
+                const bool fPatterHasMeta = s_doPatternHasMeta.value(enmPattern);
+                const QString strSubString = !fPatterHasMeta ? mt.captured(1) : mt.captured(2);
+                const QString strSubMeta   = !fPatterHasMeta ? QString()      : mt.captured(1);
+                m_strings.insert(iPosition, new UIRichTextString(strSubString, enmPattern, strSubMeta));
             }
         }
         while (iMaxLevel > 0);
@@ -188,9 +186,10 @@ QMap<UIRichTextString::Type, bool> UIRichTextString::populatePatternHasMeta()
 int UIRichTextString::searchForMaxLevel(const QString &strString, const QString &strPattern,
                                         const QString &strCurrentPattern, int iCurrentLevel /* = 0 */)
 {
-    QRegExp regExp(strCurrentPattern.arg(s_strAny));
-    regExp.setMinimal(true);
-    if (regExp.indexIn(strString) != -1)
+    QRegularExpression re(strCurrentPattern.arg(s_strAny));
+    re.setPatternOptions(QRegularExpression::InvertedGreedinessOption);
+    const QRegularExpressionMatch mt = re.match(strString);
+    if (mt.hasMatch())
         return searchForMaxLevel(strString, strPattern,
                                  strCurrentPattern.arg(s_strAny + strPattern + s_strAny),
                                  iCurrentLevel + 1);

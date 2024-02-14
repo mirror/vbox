@@ -29,7 +29,7 @@
 #include <QHeaderView>
 #include <QMenuBar>
 #include <QPushButton>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -524,10 +524,13 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
     /* Compose a map of busy indexes: */
     QMap<int, bool> presence;
     const QString strNameTemplate("HostNetwork%1");
-    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    const QRegularExpression re(strNameTemplate.arg("([\\d]*)"));
     foreach (const QString &strName, names)
-        if (regExp.indexIn(strName) != -1)
-            presence[regExp.cap(1).toInt()] = true;
+    {
+        const QRegularExpressionMatch mt = re.match(strName);
+        if (mt.hasMatch())
+            presence[mt.captured(1).toInt()] = true;
+    }
     /* Search for a minimum index: */
     int iMinimumIndex = 0;
     for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
@@ -779,10 +782,13 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
     /* Compose a map of busy indexes: */
     QMap<int, bool> presence;
     const QString strNameTemplate("NatNetwork%1");
-    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    const QRegularExpression re(strNameTemplate.arg("([\\d]*)"));
     foreach (const QString &strName, names)
-        if (regExp.indexIn(strName) != -1)
-            presence[regExp.cap(1).toInt()] = true;
+    {
+        const QRegularExpressionMatch mt = re.match(strName);
+        if (mt.hasMatch())
+            presence[mt.captured(1).toInt()] = true;
+    }
     /* Search for a minimum index: */
     int iMinimumIndex = 0;
     for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
@@ -918,10 +924,13 @@ void UINetworkManagerWidget::sltCreateCloudNetwork()
     /* Compose a map of busy indexes: */
     QMap<int, bool> presence;
     const QString strNameTemplate("CloudNetwork%1");
-    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    const QRegularExpression re(strNameTemplate.arg("([\\d]*)"));
     foreach (const QString &strName, names)
-        if (regExp.indexIn(strName) != -1)
-            presence[regExp.cap(1).toInt()] = true;
+    {
+        const QRegularExpressionMatch mt = re.match(strName);
+        if (mt.hasMatch())
+            presence[mt.captured(1).toInt()] = true;
+    }
     /* Search for a minimum index: */
     int iMinimumIndex = 0;
     for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
@@ -2256,14 +2265,16 @@ void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDat
             /* Replace all ':' with ',' first: */
             strIPv6Rule.replace(':', ',');
             /* But replace ',' back with ':' for addresses: */
-            QRegExp re("\\[[0-9a-fA-F,]*,[0-9a-fA-F,]*\\]");
-            re.setMinimal(true);
-            while (re.indexIn(strIPv6Rule) != -1)
+            QRegularExpression re("\\[[0-9a-fA-F,]*,[0-9a-fA-F,]*\\]");
+            re.setPatternOptions(QRegularExpression::InvertedGreedinessOption);
+            QRegularExpressionMatch mt = re.match(strIPv6Rule);
+            while (mt.hasMatch())
             {
-                QString strCapOld = re.cap(0);
+                QString strCapOld = mt.captured();
                 QString strCapNew = strCapOld;
                 strCapNew.replace(',', ':');
                 strIPv6Rule.replace(strCapOld, strCapNew);
+                mt = re.match(strIPv6Rule);
             }
             /* Parse rules: */
             QStringList rules = strIPv6Rule.split(',');

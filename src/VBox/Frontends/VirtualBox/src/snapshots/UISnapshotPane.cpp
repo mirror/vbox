@@ -34,7 +34,7 @@
 #include <QMenu>
 #include <QPointer>
 #include <QReadWriteLock>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QScrollBar>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -1664,16 +1664,18 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     /* Search for a maximum existing snapshot index: */
     int iMaximumIndex = 0;
     const QString strNameTemplate = tr("Snapshot %1");
-    const QRegExp reName(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
+    const QRegularExpression re(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
     QTreeWidgetItemIterator iterator(m_pSnapshotTree);
     while (*iterator)
     {
         const QString strName = static_cast<UISnapshotItem*>(*iterator)->name();
-        const int iPosition = reName.indexIn(strName);
-        if (iPosition != -1)
-            iMaximumIndex = reName.cap(1).toInt() > iMaximumIndex
-                          ? reName.cap(1).toInt()
-                          : iMaximumIndex;
+        const QRegularExpressionMatch mt = re.match(strName);
+        if (mt.hasMatch())
+        {
+            const int iFoundIndex = mt.captured(1).toInt();
+            iMaximumIndex = iFoundIndex > iMaximumIndex
+                          ? iFoundIndex : iMaximumIndex;
+        }
         ++iterator;
     }
 

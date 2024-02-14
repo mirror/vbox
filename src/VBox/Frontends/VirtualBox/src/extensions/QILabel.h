@@ -38,7 +38,6 @@
 /* Qt includes: */
 #include <QLabel>
 #include <QRegularExpression>
-#include <QRegExp>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -141,7 +140,7 @@ private:
     /** Holds text-copy reg-exp. */
     static const QRegularExpression s_regExpCopy;
     /** Holds text-elide reg-exp. */
-    static QRegExp                  s_regExpElide;
+    static const QRegularExpression s_regExpElide;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILabel_h */

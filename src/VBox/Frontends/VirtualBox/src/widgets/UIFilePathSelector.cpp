@@ -33,10 +33,10 @@
 #include <QFocusEvent>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QRegularExpression>
 #ifdef VBOX_WS_WIN
 # include <QListView>
 #endif
-#include <QRegExp>
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -519,8 +519,9 @@ QString UIFilePathSelector::shrinkText(int iWidth) const
             iFinish = strFullText.length();
 
             /* Selecting remove position: */
-            QRegExp regExp("([\\\\/][^\\\\^/]+[\\\\/]?$)");
-            int iNewFinish = regExp.indexIn(strFullText);
+            const QRegularExpression re("([\\\\/][^\\\\^/]+[\\\\/]?$)");
+            const QRegularExpressionMatch mt = re.match(strFullText);
+            const int iNewFinish = mt.capturedStart();
             if (iNewFinish != -1)
                 iFinish = iNewFinish;
             iPosition = (iFinish - iStart) / 2;

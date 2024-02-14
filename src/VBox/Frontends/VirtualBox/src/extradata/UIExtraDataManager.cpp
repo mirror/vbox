@@ -29,7 +29,6 @@
 #include <QFontDatabase>
 #include <QMetaEnum>
 #include <QMutex>
-#include <QRegExp>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -3156,10 +3155,13 @@ QStringList UIExtraDataManager::cloudConsoleManagerApplications()
 {
     /* Gather a list of keys matching required expression: */
     QStringList result;
-    QRegExp re(QString("^%1/([^/]+)$").arg(GUI_CloudConsoleManager_Application));
+    const QRegularExpression re(QString("^%1/([^/]+)$").arg(GUI_CloudConsoleManager_Application));
     foreach (const QString &strKey, m_data.value(GlobalID).keys())
-        if (re.indexIn(strKey) != -1)
-            result << re.cap(1);
+    {
+        const QRegularExpressionMatch mt = re.match(strKey);
+        if (mt.hasMatch())
+            result << mt.captured(1);
+    }
     return result;
 }
 
@@ -3167,10 +3169,13 @@ QStringList UIExtraDataManager::cloudConsoleManagerProfiles(const QString &strId
 {
     /* Gather a list of keys matching required expression: */
     QStringList result;
-    QRegExp re(QString("^%1/%2/([^/]+)$").arg(GUI_CloudConsoleManager_Application, strId));
+    const QRegularExpression re(QString("^%1/%2/([^/]+)$").arg(GUI_CloudConsoleManager_Application, strId));
     foreach (const QString &strKey, m_data.value(GlobalID).keys())
-        if (re.indexIn(strKey) != -1)
-            result << re.cap(1);
+    {
+        const QRegularExpressionMatch mt = re.match(strKey);
+        if (mt.hasMatch())
+            result << mt.captured(1);
+    }
     return result;
 }
 

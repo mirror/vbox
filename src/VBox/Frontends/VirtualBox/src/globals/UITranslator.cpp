@@ -29,7 +29,6 @@
 #include <QApplication>
 #include <QDir>
 #include <QKeySequence>
-#include <QRegExp>
 #include <QRegularExpression>
 #ifdef Q_OS_UNIX
 # include <QLibraryInfo>
@@ -110,12 +109,12 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
     Assert(!strEffectiveLangId.isEmpty());
     if (!strEffectiveLangId.isEmpty() && strEffectiveLangId != vboxBuiltInLanguageName())
     {
-        QRegExp regExp(vboxLanguageIdRegExp());
-        int iPos = regExp.indexIn(strEffectiveLangId);
+        const QRegularExpression re(vboxLanguageIdRegExp());
+        const QRegularExpressionMatch mt = re.match(strEffectiveLangId);
         /* The language ID should match the regexp completely: */
-        AssertReturnVoid(iPos == 0);
+        AssertReturnVoid(mt.capturedStart() == 0);
 
-        QString strStrippedLangId = regExp.cap(2);
+        QString strStrippedLangId = mt.captured(2);
 
         if (nlsDir.exists(vboxLanguageFileBase() + strEffectiveLangId + vboxLanguageFileExtension()))
         {
@@ -393,18 +392,18 @@ QString UITranslator::sizeRegexp()
 quint64 UITranslator::parseSize(const QString &strText)
 {
     /* Text should be in form of B|KB|MB|GB|TB|PB. */
-    QRegExp regexp(sizeRegexp());
-    int iPos = regexp.indexIn(strText);
-    if (iPos != -1)
+    const QRegularExpression re(sizeRegexp());
+    const QRegularExpressionMatch mt = re.match(strText);
+    if (mt.hasMatch())
     {
-        QString strInteger = regexp.cap(1);
+        QString strInteger = mt.captured(1);
         QString strHundred;
-        QString strSuff = regexp.cap(2);
+        QString strSuff = mt.captured(2);
         if (strInteger.isEmpty())
         {
-            strInteger = regexp.cap(3);
-            strHundred = regexp.cap(4);
-            strSuff = regexp.cap(5);
+            strInteger = mt.captured(3);
+            strHundred = mt.captured(4);
+            strSuff = mt.captured(5);
         }
 
         quint64 uDenominator = 0;
@@ -438,16 +437,16 @@ quint64 UITranslator::parseSize(const QString &strText)
 SizeSuffix UITranslator::parseSizeSuffix(const QString &strText)
 {
     /* Text should be in form of B|KB|MB|GB|TB|PB. */
-    QRegExp regexp(sizeRegexp());
-    int iPos = regexp.indexIn(strText);
-    if (iPos != -1)
+    const QRegularExpression re(sizeRegexp());
+    const QRegularExpressionMatch mt = re.match(strText);
+    if (mt.hasMatch())
     {
-        QString strInteger = regexp.cap(1);
-        QString strSuff = regexp.cap(2);
+        QString strInteger = mt.captured(1);
+        QString strSuff = mt.captured(2);
         if (strInteger.isEmpty())
         {
-            strInteger = regexp.cap(3);
-            strSuff = regexp.cap(5);
+            strInteger = mt.captured(3);
+            strSuff = mt.captured(5);
         }
 
         SizeSuffix enmSizeSuffix = SizeSuffix_Byte;
@@ -474,16 +473,16 @@ SizeSuffix UITranslator::parseSizeSuffix(const QString &strText)
 bool UITranslator::hasSizeSuffix(const QString &strText)
 {
     /* Text should be in form of B|KB|MB|GB|TB|PB. */
-    QRegExp regexp(sizeRegexp());
-    int iPos = regexp.indexIn(strText);
-    if (iPos != -1)
+    const QRegularExpression re(sizeRegexp());
+    const QRegularExpressionMatch mt = re.match(strText);
+    if (mt.hasMatch())
     {
-        QString strInteger = regexp.cap(1);
-        QString strSuff = regexp.cap(2);
+        QString strInteger = mt.captured(1);
+        QString strSuff = mt.captured(2);
         if (strInteger.isEmpty())
         {
-            strInteger = regexp.cap(3);
-            strSuff = regexp.cap(5);
+            strInteger = mt.captured(3);
+            strSuff = mt.captured(5);
         }
 
         if (strSuff.isEmpty())
@@ -755,10 +754,11 @@ QString UITranslator::removeAccelMark(QString strText)
      * whole. If such a pattern is not found, then the '&' character is simply
      * removed from the string. */
 
-    QRegExp accel("\\(&[a-zA-Z]\\)");
-    int iPos = accel.indexIn(strText);
+    const QRegularExpression re("\\(&[a-zA-Z]\\)");
+    const QRegularExpressionMatch mt = re.match(strText);
+    int iPos = mt.capturedStart();
     if (iPos >= 0)
-        strText.remove(iPos, accel.cap().length());
+        strText.remove(iPos, mt.capturedLength());
     else
     {
         iPos = strText.indexOf('&');

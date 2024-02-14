@@ -29,7 +29,7 @@
 #include <QDir>
 #include <QHeaderView>
 #include <QPainter>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QTranslator>
 #include <QVBoxLayout>
 
@@ -386,13 +386,13 @@ void UILanguageSettingsEditor::reloadLanguageTree(const QString &strLanguageId)
     for (QStringList::Iterator it = files.begin(); it != files.end(); ++it)
     {
         QString strFileName = *it;
-        QRegExp regExp(UITranslator::vboxLanguageFileBase() + UITranslator::vboxLanguageIdRegExp());
-        int iPos = regExp.indexIn(strFileName);
-        if (iPos == -1)
+        const QRegularExpression re(UITranslator::vboxLanguageFileBase() + UITranslator::vboxLanguageIdRegExp());
+        const QRegularExpressionMatch mt = re.match(strFileName);
+        if (!mt.hasMatch())
             continue;
 
         /* Skip any English version, cause this is extra handled: */
-        QString strLanguage = regExp.cap(2);
+        QString strLanguage = mt.captured(2);
         if (strLanguage.toLower() == "en")
             continue;
 
@@ -400,7 +400,7 @@ void UILanguageSettingsEditor::reloadLanguageTree(const QString &strLanguageId)
         if (!fLoadOk)
             continue;
 
-        new UILanguageItem(m_pTreeWidget, translator, regExp.cap(1));
+        new UILanguageItem(m_pTreeWidget, translator, mt.captured(1));
     }
 
     /* Adjust selector list: */

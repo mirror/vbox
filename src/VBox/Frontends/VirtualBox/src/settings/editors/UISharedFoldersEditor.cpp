@@ -28,7 +28,7 @@
 /* Qt includes: */
 #include <QHeaderView>
 #include <QMenu>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -231,8 +231,9 @@ void SFTreeViewItem::processColumn(int iColumn)
                     break;
                 case FormatType_EllipsisFile:
                 {
-                    const QRegExp regExp("([\\\\/][^\\\\^/]+[\\\\/]?$)");
-                    const int iNewFinish = regExp.indexIn(strOneString);
+                    const QRegularExpression re("([\\\\/][^\\\\^/]+[\\\\/]?$)");
+                    const QRegularExpressionMatch mt = re.match(strOneString);
+                    const int iNewFinish = mt.capturedStart();
                     if (iNewFinish != -1)
                         iFinish = iNewFinish;
                     iPosition = (iFinish - iStart) / 2;

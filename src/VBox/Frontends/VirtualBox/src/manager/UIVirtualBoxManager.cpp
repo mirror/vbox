@@ -41,7 +41,7 @@
 #include <QVBoxLayout>
 #include <QWindow>
 #ifndef VBOX_WS_WIN
-# include <QRegExp>
+# include <QRegularExpression>
 #endif
 
 /* GUI includes: */
@@ -3048,19 +3048,20 @@ QStringList UIVirtualBoxManager::parseShellArguments(const QString &strArguments
 
     /* Parse argument string: */
     QStringList arguments;
-    QRegExp re("(\"[^\"]+\")|('[^']+')|([^\\s\"']+)");
+    const QRegularExpression re("(\"[^\"]+\")|('[^']+')|([^\\s\"']+)");
     int iPosition = 0;
-    int iIndex = re.indexIn(strArguments, iPosition);
+    QRegularExpressionMatch mt = re.match(strArguments, iPosition);
+    int iIndex = mt.capturedStart();
     while (iIndex != -1)
     {
         /* Get what's the sequence we have: */
-        const QString strCap0 = re.cap(0);
+        const QString strCap0 = mt.captured(0);
         /* Get what's the double-quoted sequence we have: */
-        const QString strCap1 = re.cap(1);
+        const QString strCap1 = mt.captured(1);
         /* Get what's the single-quoted sequence we have: */
-        const QString strCap2 = re.cap(2);
+        const QString strCap2 = mt.captured(2);
         /* Get what's the unquoted sequence we have: */
-        const QString strCap3 = re.cap(3);
+        const QString strCap3 = mt.captured(3);
 
         /* If new sequence starts where previous ended
          * we are appending new value to previous one, otherwise
@@ -3102,7 +3103,8 @@ QStringList UIVirtualBoxManager::parseShellArguments(const QString &strArguments
         /* Advance position: */
         iPosition = iIndex + strCap0.size();
         /* Search for a next sequence: */
-        iIndex = re.indexIn(strArguments, iPosition);
+        mt = re.match(strArguments, iPosition);
+        iIndex = mt.capturedStart();
     }
 
     //printf("arguments processed:\n");

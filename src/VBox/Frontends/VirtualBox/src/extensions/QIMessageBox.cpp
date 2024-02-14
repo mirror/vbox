@@ -32,7 +32,6 @@
 #include <QLabel>
 #include <QMimeData>
 #include <QPushButton>
-#include <QRegExp>
 #include <QRegularExpression>
 #include <QStyle>
 #include <QVBoxLayout>
@@ -412,17 +411,19 @@ QString QIMessageBox::compressLongWords(QString strText)
     // The idea is to compress long words of more than 100 symbols in size consisting of alphanumeric
     // characters with ellipsiss using the following template:
     // "[50 first symbols]...[50 last symbols]"
-    QRegExp re("[a-zA-Z0-9]{101,}");
-    int iPosition = re.indexIn(strText);
+    const QRegularExpression re("[a-zA-Z0-9]{101,}");
+    QRegularExpressionMatch mt = re.match(strText);
+    int iPosition = mt.capturedStart();
     bool fChangeAllowed = iPosition != -1;
     while (fChangeAllowed)
     {
         QString strNewText = strText;
-        const QString strFound = re.cap(0);
+        const QString strFound = mt.captured();
         strNewText.replace(iPosition, strFound.size(), strFound.left(50) + "..." + strFound.right(50));
         fChangeAllowed = fChangeAllowed && strText != strNewText;
         strText = strNewText;
-        iPosition = re.indexIn(strText);
+        mt = re.match(strText);
+        iPosition = mt.capturedStart();
         fChangeAllowed = fChangeAllowed && iPosition != -1;
     }
     return strText;

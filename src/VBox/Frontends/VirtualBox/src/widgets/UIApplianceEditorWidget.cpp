@@ -32,7 +32,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -1374,16 +1374,17 @@ UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QI
                     controllerMap[i] = pHardwareItem;
             }
         }
-        QRegExp rx("controller=(\\d+);?");
+        const QRegularExpression re("controller=(\\d+);?");
         /* Now process the hard disk images */
         for (int iHDIndex = 0; iHDIndex < hdIndexes.size(); ++iHDIndex)
         {
             int i = hdIndexes[iHDIndex];
             QString ecnf = extraConfigValues[i];
-            if (rx.indexIn(ecnf) != -1)
+            const QRegularExpressionMatch mt = re.match(ecnf);
+            if (mt.hasMatch())
             {
                 /* Get the controller */
-                UIVirtualHardwareItem *pControllerItem = controllerMap[rx.cap(1).toInt()];
+                UIVirtualHardwareItem *pControllerItem = controllerMap[mt.captured(1).toInt()];
                 if (pControllerItem)
                 {
                     /* New hardware item as child of the controller */

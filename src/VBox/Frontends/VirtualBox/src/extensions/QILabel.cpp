@@ -50,7 +50,7 @@
 
 /* static */
 const QRegularExpression QILabel::s_regExpCopy = QRegularExpression("<[^>]*>");
-QRegExp QILabel::s_regExpElide = QRegExp("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
+const QRegularExpression QILabel::s_regExpElide = QRegularExpression("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
 
 QILabel::QILabel(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QLabel(pParent, enmFlags)
@@ -322,14 +322,15 @@ QString QILabel::compressText(const QString &strText) const
     foreach (QString strLine, strText.split(QRegularExpression("<br */?>")))
     {
         /* Search for the compact tag: */
-        if (s_regExpElide.indexIn(strLine) > -1)
+        const QRegularExpressionMatch mt = s_regExpElide.match(strLine);
+        if (mt.hasMatch())
         {
             /* USe the untouchable text to work on: */
             const QString strWork = strLine;
             /* Grep out the necessary info of the regexp: */
-            const QString strCompact   = s_regExpElide.cap(1);
-            const QString strElideMode = s_regExpElide.cap(2);
-            const QString strElide     = s_regExpElide.cap(3);
+            const QString strCompact   = mt.captured(1);
+            const QString strElideMode = mt.captured(2);
+            const QString strElide     = mt.captured(3);
             /* Remove the whole compact tag (also the text): */
             const QString strFlat = removeHtmlTags(QString(strWork).remove(strCompact));
             /* What size will the text have without the compact text: */

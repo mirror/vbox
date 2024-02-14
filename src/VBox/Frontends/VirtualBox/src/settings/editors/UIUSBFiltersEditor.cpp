@@ -28,7 +28,7 @@
 /* Qt includes: */
 #include <QHeaderView>
 #include <QMenu>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QToolTip>
 #include <QVBoxLayout>
 
@@ -352,15 +352,18 @@ void UIUSBFiltersEditor::sltCreateFilter()
 {
     /* Search for the max available filter index: */
     int iMaxFilterIndex = 0;
-    const QRegExp regExp(QString("^") + m_strTrUSBFilterName.arg("([0-9]+)") + QString("$"));
+    const QRegularExpression re(QString("^") + m_strTrUSBFilterName.arg("([0-9]+)") + QString("$"));
     QTreeWidgetItemIterator iterator(m_pTreeWidget);
     while (*iterator)
     {
         const QString filterName = (*iterator)->text(0);
-        const int pos = regExp.indexIn(filterName);
-        if (pos != -1)
-            iMaxFilterIndex = regExp.cap(1).toInt() > iMaxFilterIndex ?
-                              regExp.cap(1).toInt() : iMaxFilterIndex;
+        const QRegularExpressionMatch mt = re.match(filterName);
+        if (mt.hasMatch())
+        {
+            const int iFoundIndex = mt.captured(1).toInt();
+            iMaxFilterIndex = iFoundIndex > iMaxFilterIndex
+                            ? iFoundIndex : iMaxFilterIndex;
+        }
         ++iterator;
     }
 

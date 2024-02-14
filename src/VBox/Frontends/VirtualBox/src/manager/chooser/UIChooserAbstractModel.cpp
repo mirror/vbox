@@ -26,7 +26,6 @@
  */
 
 /* Qt includes: */
-#include <QRegExp>
 #include <QRegularExpression>
 #include <QThread>
 
@@ -470,17 +469,19 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
     const QString strMinimumName = tr("New group");
     const QString strShortTemplate = strMinimumName;
     const QString strFullTemplate = strShortTemplate + QString(" (\\d+)");
-    const QRegExp shortRegExp(strShortTemplate);
-    const QRegExp fullRegExp(strFullTemplate);
+    const QRegularExpression shortRegExp(strShortTemplate);
+    const QRegularExpression fullRegExp(strFullTemplate);
 
     /* Search for the maximum index: */
     int iMinimumPossibleNumber = 0;
     foreach (const QString &strName, groupNames)
     {
-        if (shortRegExp.exactMatch(strName))
+        const QRegularExpressionMatch mtShort = shortRegExp.match(strName);
+        const QRegularExpressionMatch mtFull = fullRegExp.match(strName);
+        if (mtShort.hasMatch())
             iMinimumPossibleNumber = qMax(iMinimumPossibleNumber, 2);
-        else if (fullRegExp.exactMatch(strName))
-            iMinimumPossibleNumber = qMax(iMinimumPossibleNumber, fullRegExp.cap(1).toInt() + 1);
+        else if (mtFull.hasMatch())
+            iMinimumPossibleNumber = qMax(iMinimumPossibleNumber, mtFull.captured(1).toInt() + 1);
     }
 
     /* Prepare/return result: */
@@ -653,12 +654,12 @@ bool UIChooserAbstractModel::containsCloudEntityKey(const UICloudEntityKey &key)
 bool UIChooserAbstractModel::isCloudProfileUpdateInProgress() const
 {
     /* Compose RE for profile: */
-    QRegExp re("^/[^/]+/[^/]+$");
+    const QRegularExpression re("^/[^/]+/[^/]+$");
     /* Check whether keys match profile RE: */
     foreach (const UICloudEntityKey &key, m_cloudEntityKeysBeingUpdated)
     {
-        const int iIndex = re.indexIn(key.toString());
-        if (iIndex != -1)
+        const QRegularExpressionMatch mt = re.match(key.toString());
+        if (mt.hasMatch())
             return true;
     }
     /* False by default: */
@@ -1462,15 +1463,16 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
     const QString strNodePrefix = prefixToString(enmDataType);
     const QString strNodeOptionOpened = optionToString(UIChooserNodeDataOptionType_GroupOpened);
     const QString strDefinitionTemplate = QString("%1(\\S)*=%2").arg(strNodePrefix, strName);
-    const QRegExp definitionRegExp(strDefinitionTemplate);
+    const QRegularExpression re(strDefinitionTemplate);
     /* For each the group definition: */
     foreach (const QString &strDefinition, definitions)
     {
         /* Check if this is required definition: */
-        if (definitionRegExp.indexIn(strDefinition) == 0)
+        const QRegularExpressionMatch mt = re.match(strDefinition);
+        if (mt.capturedStart() == 0)
         {
             /* Get group descriptor: */
-            const QString strDescriptor(definitionRegExp.cap(1));
+            const QString strDescriptor = mt.captured(1);
             if (strDescriptor.contains(strNodeOptionOpened))
                 return true;
         }
@@ -1493,15 +1495,16 @@ bool UIChooserAbstractModel::shouldGlobalNodeBeFavorite(UIChooserNode *pParentNo
     const QString strNodeOptionFavorite = optionToString(UIChooserNodeDataOptionType_GlobalFavorite);
     const QString strNodeValueDefault = valueToString(UIChooserNodeDataValueType_GlobalDefault);
     const QString strDefinitionTemplate = QString("%1(\\S)*=%2").arg(strNodePrefix, strNodeValueDefault);
-    const QRegExp definitionRegExp(strDefinitionTemplate);
+    const QRegularExpression re(strDefinitionTemplate);
     /* For each the group definition: */
     foreach (const QString &strDefinition, definitions)
     {
         /* Check if this is required definition: */
-        if (definitionRegExp.indexIn(strDefinition) == 0)
+        const QRegularExpressionMatch mt = re.match(strDefinition);
+        if (mt.capturedStart() == 0)
         {
             /* Get group descriptor: */
-            const QString strDescriptor(definitionRegExp.cap(1));
+            const QString strDescriptor = mt.captured(1);
             if (strDescriptor.contains(strNodeOptionFavorite))
                 return true;
         }
@@ -1645,19 +1648,21 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
         default:
             return -1;
     }
-    QRegExp definitionRegExpShort(strDefinitionTemplateShort);
-    QRegExp definitionRegExpFull(strDefinitionTemplateFull);
+    const QRegularExpression definitionRegExpShort(strDefinitionTemplateShort);
+    const QRegularExpression definitionRegExpFull(strDefinitionTemplateFull);
 
     /* For each the definition: */
     int iDefinitionIndex = -1;
     foreach (const QString &strDefinition, definitions)
     {
         /* Check if this definition is of required type: */
-        if (definitionRegExpShort.indexIn(strDefinition) == 0)
+        const QRegularExpressionMatch mtShort = definitionRegExpShort.match(strDefinition);
+        if (mtShort.capturedStart() == 0)
         {
             ++iDefinitionIndex;
             /* Check if this definition is exactly what we need: */
-            if (definitionRegExpFull.indexIn(strDefinition) == 0)
+            const QRegularExpressionMatch mtFull = definitionRegExpFull.match(strDefinition);
+            if (mtFull.capturedStart() == 0)
                 return iDefinitionIndex;
         }
     }

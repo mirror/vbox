@@ -28,7 +28,6 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHash>
-#include <QRegExp>
 #include <QRegularExpression>
 
 /* GUI includes: */
@@ -311,11 +310,13 @@ template<> SHARED_LIBRARY_STUFF StorageSlot UIConverter::fromString<StorageSlot>
 
     /* Search for a template index strStorageSlot corresponds to: */
     int iIndex = -1;
-    QRegExp regExp;
+    QRegularExpression re;
+    QRegularExpressionMatch mt;
     for (int i = 0; i < templates.size(); ++i)
     {
-        regExp = QRegExp(i >= 0 && i <= 3 ? templates.value(i) : templates.value(i).arg("(\\d+)"));
-        if (regExp.indexIn(strStorageSlot) != -1)
+        re.setPattern(i >= 0 && i <= 3 ? templates.value(i) : templates.value(i).arg("(\\d+)"));
+        mt = re.match(strStorageSlot);
+        if (mt.hasMatch())
         {
             iIndex = i;
             break;
@@ -381,7 +382,7 @@ template<> SHARED_LIBRARY_STUFF StorageSlot UIConverter::fromString<StorageSlot>
             if (result.bus == KStorageBus_Null)
                 break;
             const int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(result.bus);
-            const LONG iPort = regExp.cap(1).toInt();
+            const LONG iPort = mt.captured(1).toInt();
             const LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
