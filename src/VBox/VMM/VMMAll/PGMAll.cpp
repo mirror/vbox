@@ -1479,6 +1479,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
     {
         const unsigned     iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
         PX86PML4E          pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
+        AssertReturn(pPml4e, VERR_PGM_PML4_MAPPING);
         X86PGPAEUINT const uPml4e = pPml4e->u;
 
         /* Allocate page directory pointer table if not present. */

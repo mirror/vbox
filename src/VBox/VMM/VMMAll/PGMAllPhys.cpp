@@ -657,8 +657,9 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
  */
 VMMDECL(bool) PGMPhysIsA20Enabled(PVMCPU pVCpu)
 {
-    LogFlow(("PGMPhysIsA20Enabled %d\n", pVCpu->pgm.s.fA20Enabled));
-    return pVCpu->pgm.s.fA20Enabled;
+    /* Must check that pVCpu isn't NULL here because PDM device helper are a little lazy. */
+    LogFlow(("PGMPhysIsA20Enabled %d\n", pVCpu && pVCpu->pgm.s.fA20Enabled));
+    return pVCpu && pVCpu->pgm.s.fA20Enabled;
 }
 
 

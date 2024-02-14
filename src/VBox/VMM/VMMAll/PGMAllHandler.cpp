@@ -1507,17 +1507,22 @@ DECLHIDDEN(int) pgmHandlerPhysicalResetMmio2WithBitmap(PVMCC pVM, RTGCPHYS GCPhy
         {
             STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerReset));
 
-            PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
-            Assert(pRam);
-            Assert(pRam->GCPhys     <= pCur->Key);
-            Assert(pRam->GCPhysLast >= pCur->KeyLast);
+#ifdef VBOX_STRICT
+            PPGMRAMRANGE const pRamStrict = pgmPhysGetRange(pVM, GCPhys);
+            Assert(pRamStrict && pRamStrict->GCPhys     <= pCur->Key);
+            Assert(pRamStrict && pRamStrict->GCPhysLast >= pCur->KeyLast);
+#endif
 
             /*
              * Set the flags and flush shadow PT entries.
              */
             if (pCur->cTmpOffPages > 0)
             {
-                rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam, pvBitmap, offBitmap);
+                PPGMRAMRANGE const pRam = pgmPhysGetRange(pVM, GCPhys);
+                if (pRam) /* paranoia */
+                    rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam, pvBitmap, offBitmap);
+                else
+                    AssertFailed();
                 pCur->cTmpOffPages  = 0;
             }
             else
@@ -1913,8 +1918,13 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             /*
              * Get and validate the pages.
              */
-            PPGMPAGE pPage;
+            PPGMPAGE     pPage = NULL;
+#ifdef VBOX_WITH_NATIVE_NEM
+            PPGMRAMRANGE pRam  = NULL;
+            rc = pgmPhysGetPageAndRangeEx(pVM, GCPhysPage, &pPage, &pRam);
+#else
             rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
+#endif
             AssertReturnStmt(RT_SUCCESS_NP(rc), PGM_UNLOCK(pVM), rc);
             if (PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO)
             {
@@ -1953,8 +1963,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             /* Tell NEM about the backing and protection change. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
-                PPGMRAMRANGE pRam    = pgmPhysGetRange(pVM, GCPhysPage);
-                uint8_t      u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+                uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
                 NEMHCNotifyPhysPageChanged(pVM, GCPhysPage, pVM->pgm.s.HCPhysZeroPg, PGM_PAGE_GET_HCPHYS(pPage),
                                            PGM_RAMRANGE_CALC_PAGE_R3PTR(pRam, GCPhysPage),
                                            pgmPhysPageCalcNemProtection(pPage, PGMPAGETYPE_SPECIAL_ALIAS_MMIO),

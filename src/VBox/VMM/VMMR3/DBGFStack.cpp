@@ -847,8 +847,8 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
             fAddrMask = UINT64_MAX;
         else
         {
-            PVMCPU pVCpu = VMMGetCpuById(pUVM->pVM, idCpu);
-            CPUMMODE enmCpuMode = CPUMGetGuestMode(pVCpu);
+            PVMCPU const   pVCpu      = pUVM->pVM->apCpusR3[idCpu];
+            CPUMMODE const enmCpuMode = CPUMGetGuestMode(pVCpu);
             if (enmCpuMode == CPUMMODE_REAL)
             {
                 fAddrMask = UINT16_MAX;
@@ -1028,11 +1028,11 @@ static int dbgfR3StackWalkBeginCommon(PUVM pUVM,
     switch (enmCodeType)
     {
         case DBGFCODETYPE_GUEST:
-            pCtx = CPUMQueryGuestCtxPtr(VMMGetCpuById(pVM, idCpu));
+            pCtx = CPUMQueryGuestCtxPtr(pVM->apCpusR3[idCpu]);
             hAs  = DBGF_AS_GLOBAL;
             break;
         case DBGFCODETYPE_HYPER:
-            pCtx = CPUMQueryGuestCtxPtr(VMMGetCpuById(pVM, idCpu));
+            pCtx = CPUMQueryGuestCtxPtr(pVM->apCpusR3[idCpu]);
             hAs  = DBGF_AS_RC_AND_GC_GLOBAL;
             break;
         case DBGFCODETYPE_RING0:

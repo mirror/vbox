@@ -1295,6 +1295,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
 
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
+
 /**
  * VCPU worker for VMMR3CpuOn.
  *
@@ -1305,7 +1306,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
  */
 static DECLCALLBACK(int) vmmR3CpuOn(PVM pVM, VMCPUID idCpu, RTGCPHYS GCPhysExecAddr, uint64_t u64CtxId)
 {
-    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
     VMCPU_ASSERT_EMT(pVCpu);
 
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
@@ -1345,7 +1346,9 @@ VMMR3_INT_DECL(void)    VMMR3CpuOn(PVM pVM, VMCPUID idCpu, RTGCPHYS GCPhysExecAd
     int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3CpuOn, 4, pVM, idCpu, GCPhysExecAddr, u64CtxId);
     AssertRC(rc);
 }
-#else
+
+#else /* !VBOX_VMM_TARGET_ARMV8 */
+
 /**
  * VCPU worker for VMMR3SendStartupIpi.
  *
@@ -1355,7 +1358,7 @@ VMMR3_INT_DECL(void)    VMMR3CpuOn(PVM pVM, VMCPUID idCpu, RTGCPHYS GCPhysExecAd
  */
 static DECLCALLBACK(int) vmmR3SendStartupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
-    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
     VMCPU_ASSERT_EMT(pVCpu);
 
     /*
@@ -1410,7 +1413,7 @@ static DECLCALLBACK(int) vmmR3SendStartupIpi(PVM pVM, VMCPUID idCpu, uint32_t uV
  */
 static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
-    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
     VMCPU_ASSERT_EMT(pVCpu);
 
     Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
@@ -1419,20 +1422,20 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
      *        wait-for-SIPI state. Verify. */
 
     /* If the CPU is in VMX non-root mode, INIT signals cause VM-exits. */
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
         return VBOXSTRICTRC_TODO(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INIT_SIGNAL, 0 /* uExitQual */));
-#endif
+# endif
 
     /** @todo Figure out how to handle a SVM nested-guest intercepts here for INIT
      *  IPI (e.g. SVM_EXIT_INIT). */
 
     PGMR3ResetCpu(pVM, pVCpu);
     PDMR3ResetCpu(pVCpu);   /* Only clears pending interrupts force flags */
-#if !defined(VBOX_VMM_TARGET_ARMV8)
+# if !defined(VBOX_VMM_TARGET_ARMV8)
     APICR3InitIpi(pVCpu);
-#endif
+# endif
     TRPMR3ResetCpu(pVCpu);
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
@@ -1474,8 +1477,8 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
     AssertRC(rc);
 }
-#endif
 
+#endif /* !VBOX_VMM_TARGET_ARMV8 */
 
 /**
  * Registers the guest memory range that can be used for patching.
