@@ -7802,7 +7802,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  ifeq ($(KBUILD_TARGET),darwin)
   VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport QtHelp QtNetwork QtSql
   ifdef VBOX_WITH_QT6
-   VBOX_QT_MOD += QtStateMachine QtCore5Compat
+   VBOX_QT_MOD += QtStateMachine
   else
    VBOX_QT_MOD += QtMacExtras
   endif
@@ -7819,7 +7819,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     	plugins/styles/libqgtk2style.so \
     	plugins/xcbglintegrations/libqxcb-glx-integration.so
    else # qt6
-    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat
+    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine
     VBOX_QT_MOD += Qt6DBus Qt6Xml Qt6XcbQpa Qt6Help Qt6Network Qt6Sql
     VBOX_QT_PLUGINS = \
     	plugins/platforms/libqxcbVBox.so \
@@ -7833,7 +7833,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
     VBOX_QT_MOD += Qt5WinExtras Qt5Help Qt5Network Qt5Sql
    else # qt6
-    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat Qt6Help Qt6Network Qt6Sql
+    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Help Qt6Network Qt6Sql
    endif # qt6
   endif # win
  endif # linux freebsd netbsd openbsd solaris win
@@ -7878,7 +7878,6 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBoxQtGuiExe_RCCTOOL := QT6
   TEMPLATE_VBoxQtGuiExe_LRCTOOL := QT6
   TEMPLATE_VBoxQtGuiExe_SDKS    := QT6
-  TEMPLATE_VBoxQtGuiExe_QT_MODULES := Core5Compat
  endif
  TEMPLATE_VBoxQtGuiExe_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBoxQtGuiExe_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)

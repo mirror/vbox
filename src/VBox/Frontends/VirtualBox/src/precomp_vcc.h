@@ -89,7 +89,6 @@
 #include <qbytearraylist.h>
 #include <qiterator.h>
 #include <qlist.h>
-#include <qregexp.h>
 #include <qstringlist.h>
 #include <qstringmatcher.h>
 #ifndef VBOX_IS_QT6_OR_LATER

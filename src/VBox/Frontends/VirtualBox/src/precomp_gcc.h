@@ -55,7 +55,6 @@
 #include <QtCore/qsize.h> /* 627 */
 #include <QtCore/qglobal.h> /* 591 */
 #include <QtCore/qvariant.h> /* 588 */
-#include <QtCore/qregexp.h> /* 587 */
 #include <QtCore/qversiontagging.h> /* 585 */
 #include <QtCore/qtypeinfo.h> /* 585 */
 #include <QtCore/qtcore-config.h> /* 585 */

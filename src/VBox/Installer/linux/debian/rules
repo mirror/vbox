@@ -349,7 +349,7 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
   ifeq ($(DEBUG),)
 	dh_strip --keep-debug \
 	    $(addprefix --exclude=lib,$(addsuffix VBox.so.6,\
-	      Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat Qt6DBus Qt6Xml Qt6XcbQpa Qt6Help Qt6Network Qt6Sql))
+	      Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6DBus Qt6Xml Qt6XcbQpa Qt6Help Qt6Network Qt6Sql))
   endif
 	mkdir -p $(bldbase)/$(verpkg)-dbg/usr/lib/$(package)
 	mv $(prefix)/usr/lib/$(package)/*.debug $(bldbase)/$(verpkg)-dbg/usr/lib/$(package)
