@@ -530,30 +530,6 @@ RT_C_DECLS_END
         break
 #endif
 
-/** @def AssertContinue
- * Assert that an expression is true and continue if it isn't.
- * In RT_STRICT mode it will hit a breakpoint before continuing.
- *
- * @param   expr    Expression which should be true.
- */
-#ifdef RT_STRICT
-# define AssertContinue(expr) \
-    if (RT_LIKELY(!!(expr))) \
-    { /* likely */ } \
-    else if (1) \
-    { \
-        RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
-        RTAssertPanic(); \
-        continue; \
-    } else do {} while (0)
-#else
-# define AssertContinue(expr) \
-    if (RT_LIKELY(!!(expr))) \
-    { /* likely */ } \
-    else \
-        continue
-#endif
-
 /** @def AssertBreakStmt
  * Assert that an expression is true and breaks if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before doing break.
@@ -580,6 +556,59 @@ RT_C_DECLS_END
     { \
         stmt; \
         break; \
+    } else do {} while (0)
+#endif
+
+/** @def AssertContinue
+ * Assert that an expression is true and continue if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before continuing.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#ifdef RT_STRICT
+# define AssertContinue(expr) \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else if (1) \
+    { \
+        RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
+        continue; \
+    } else do {} while (0)
+#else
+# define AssertContinue(expr) \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else \
+        continue
+#endif
+
+/** @def AssertContinueStmt
+ * Assert that an expression is true and continue if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before continuing.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute before contine in case of a failed assertion.
+ */
+#ifdef RT_STRICT
+# define AssertContinueStmt(expr, stmt) \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else if (1) \
+    { \
+        RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
+        stmt; \
+        continue; \
+    } else do {} while (0)
+#else
+# define AssertContinueStmt(expr, stmt) \
+    if (RT_LIKELY(!!(expr))) \
+    { /* likely */ } \
+    else \
+    { \
+        stmt; \
+        continue;
     } else do {} while (0)
 #endif
 
