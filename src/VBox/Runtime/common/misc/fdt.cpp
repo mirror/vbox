@@ -1688,13 +1688,13 @@ RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty,
     if (RT_FAILURE(rc))
         return rc;
 
-    va_list vaCopy;
-    va_copy(vaCopy, va);
-
     /* First pass, go over all strings and find out how much we have to add in total. */
     uint32_t cbStrings = 0;
+    va_list vaCopy;
+    va_copy(vaCopy, va);
     for (uint32_t i = 0; i < cStrings; i++)
         cbStrings += (uint32_t)strlen(va_arg(vaCopy, const char *)) + 1; /* Include terminator. */
+    va_end(vaCopy);
 
     uint32_t cbProp = RT_ALIGN_32(cbStrings + 3 * sizeof(uint32_t), sizeof(uint32_t)); /* Account for property token and the property data. */
     rc = rtFdtStructEnsureSpace(pThis, cbProp);
