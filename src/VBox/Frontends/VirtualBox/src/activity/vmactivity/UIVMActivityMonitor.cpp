@@ -80,7 +80,6 @@ class UIChart : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigExportMetricsToFile();
-    void sigDataIndexUnderCursor(int iIndex);
 
 public:
 
@@ -112,10 +111,6 @@ public:
 
     bool isAvailable() const;
     void setIsAvailable(bool fIsAvailable);
-
-    void setMouseOver(bool isOver);
-
-    void setDataIndexUnderCursor(int iIndex);
 
 protected:
 
@@ -351,22 +346,6 @@ void UIChart::setIsAvailable(bool fIsAvailable)
     update();
 }
 
-void UIChart::setMouseOver(bool isOver)
-{
-    if (!isOver)
-    {
-        m_iDataIndexUnderCursor = -1;
-        emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
-    }
-
-}
-
-void UIChart::setDataIndexUnderCursor(int iIndex)
-{
-    m_iDataIndexUnderCursor = iIndex;
-    update();
-}
-
 QSize UIChart::minimumSizeHint() const
 {
     return m_size;
@@ -393,7 +372,6 @@ bool UIChart::event(QEvent *pEvent)
         if (m_pMouseOverLabel)
             m_pMouseOverLabel->setVisible(false);
         m_iDataIndexUnderCursor = -1;
-        emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
     }
     else if (pEvent->type() == QEvent::ToolTip)
     {
@@ -441,8 +419,6 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
         m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
         m_iDataIndexUnderCursor = m_iDataIndexUnderCursor - (m_iMaximumQueueSize - iDataSize);
     }
-
-    emit sigDataIndexUnderCursor(m_iDataIndexUnderCursor);
 
     update();
     QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
@@ -1172,21 +1148,6 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
     menu.exec(mapToGlobal(point));
 }
 
-void UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged(int iIndex)
-{
-    Q_UNUSED(iIndex);
-#if 0
-    foreach (UIChart *chart, m_charts)
-    {
-        if (chart && chart != sender())
-        {
-            chart->setDataIndexUnderCursor(iIndex);
-        }
-
-    }
-#endif
-}
-
 void UIVMActivityMonitor::prepareActions()
 {
 }
@@ -1491,8 +1452,6 @@ void UIVMActivityMonitorLocal::prepareWidgets()
         UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_iMaximumQueueSize);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
-        connect(pChart, &UIChart::sigDataIndexUnderCursor,
-                this, &UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged);
         m_charts.insert(enmType, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);
@@ -2286,8 +2245,6 @@ void UIVMActivityMonitorCloud::prepareWidgets()
         UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_iMaximumQueueSize);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
-        connect(pChart, &UIChart::sigDataIndexUnderCursor,
-                this, &UIVMActivityMonitor::sltChartDataIndexUnderCursorChanged);
         m_charts.insert(enmType, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);

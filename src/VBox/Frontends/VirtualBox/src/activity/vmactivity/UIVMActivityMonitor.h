@@ -162,7 +162,6 @@ public:
 public slots:
 
         void sltExportMetricsToFile();
-        void sltChartDataIndexUnderCursorChanged(int iIndex);
 
 protected:
 
