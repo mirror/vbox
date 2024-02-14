@@ -613,8 +613,7 @@ int main(int argc, char **argv)
  */
 char *nsIDToString(nsID *guid)
 {
-    char *res = (char*)malloc(39);
-
+    char *res = (char *)malloc(39);
     if (res != NULL)
     {
         snprintf(res, 39, "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
@@ -633,8 +632,7 @@ char *nsIDToString(nsID *guid)
  */
 void printErrorInfo()
 {
-    nsresult rc;
-
+    nsresult rc = NS_ERROR_UNEXPECTED;
     nsCOMPtr<nsIExceptionService> es;
     es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
     if (NS_SUCCEEDED(rc))
