@@ -422,7 +422,7 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef VBOX_WITH_XPCOM
-    nsIComponentManager *pManager;
+    nsIComponentManager *pManager = NULL;
     hrc = NS_GetComponentManager(&pManager);
     if (FAILED(hrc))
     {
@@ -694,7 +694,7 @@ VBoxClientInitialize(const char *pszVirtualBoxClientIID, IVirtualBoxClient **ppV
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef VBOX_WITH_XPCOM
-    nsIComponentManager *pManager;
+    nsIComponentManager *pManager = NULL;
     hrc = NS_GetComponentManager(&pManager);
     if (FAILED(hrc))
     {
