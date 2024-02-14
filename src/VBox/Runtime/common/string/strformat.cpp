@@ -352,11 +352,12 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             const char *pszFormat, va_list InArgs)
 {
     char        szTmp[64]; /* Worker functions assumes 64 byte buffer! Ugly but faster. */
-    va_list     args;
     size_t      cch = 0;
     const char *pszStartOutput = pszFormat;
 
-    va_copy(args, InArgs); /* make a copy so we can reference it (AMD64 / gcc). */
+    /* make a local copy so we can reference it (AMD64 / gcc). */
+    va_list     args;
+    va_copy(args, InArgs);
 
     while (*pszFormat != '\0')
     {
@@ -860,6 +861,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
     /* terminate the output */
     pfnOutput(pvArgOutput, NULL, 0);
 
+    va_end(args);
     return cch;
 }
 RT_EXPORT_SYMBOL(RTStrFormatV);
