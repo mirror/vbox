@@ -328,23 +328,24 @@ class tdAudioTest(vbox.TestDriver):
 
             iRc  = 0;
 
-            # For Python 3.x we provide "real-time" output.
             if sys.version_info[0] >= 3:
                 while oProcess.stdout.readable(): # pylint: disable=no-member
                     sStdOut = oProcess.stdout.readline();
                     if sStdOut:
                         sStdOut = sStdOut.strip();
-                        reporter.log('%s: %s' % (sWhat, sStdOut));
+                        reporter.log('%s: %s' % (sWhat, sStdOut.rstrip('\n')));
+                    self.processEvents(0);
                     iRc = oProcess.poll();
                     if iRc is not None:
                         break;
-            else:
-                # For Python 2.x it's too much hassle to set the file descriptor options (O_NONBLOCK) and stuff,
-                # so just use communicate() here and dump everythiong all at once when finished.
-                sStdOut = oProcess.communicate();
-                if sStdOut:
-                    reporter.log('%s: %s' % (sWhat, sStdOut));
-                iRc = oProcess.poll();
+            else: # Python 2.x cruft.
+                while True:
+                    sStdOut = oProcess.stdout.readline();
+                    if  sStdOut == '' \
+                    and oProcess.poll() is not None:
+                        break;
+                    self.processEvents(0);
+                    reporter.log('%s [stdout]: %s' % (sWhat, sStdOut.rstrip('\n'),));
 
             if iRc == 0:
                 reporter.log('*** %s: exit code %d' % (sWhat, iRc));
@@ -369,7 +370,7 @@ class tdAudioTest(vbox.TestDriver):
         """
         return self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
 
-    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False, fBlocking = False):
+    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False, fBlocking = True):
         """
         Runs a binary (image) with optional admin (root) rights on the host and
         waits until it terminates.
@@ -388,7 +389,7 @@ class tdAudioTest(vbox.TestDriver):
         try:    sys.stderr.flush();
         except: pass;
 
-        if not fBlocking: # Run in same thread (blocking).
+        if fBlocking: # Run in same thread (blocking).
             fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
         else: # Run in separate thread (asynchronous).
             self.iThreadHstProcRc = -42; # Initialize thread rc.
@@ -595,14 +596,6 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
-        # Run the VKAT self test.
-        # Doesn't take long and gives us some more clue if it flies on the testboxes.
-        reporter.testStart('VKAT Selftest');
-        fRc = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ], fBlocking = True);
-        reporter.testDone();
-        if not fRc:
-            return fRc;
-
         reporter.testStart(sDesc);
 
         # Build the base command line, exclude all tests by default.
@@ -737,24 +730,33 @@ class tdAudioTest(vbox.TestDriver):
 
         if  not fSkip \
         and self.fpApiVer < 7.0:
-            reporter.log('Audio testing for non-trunk builds skipped.');
+            reporter.log('Audio testing not available for this branch, skipping.');
             fSkip = True;
-
-        reporter.log('Verbosity level is: %d' % (reporter.getVerbosity(),));
-
-        if not fSkip:
-            sVkatExe = self.getBinTool('vkat');
-            asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
-            for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
-                asArgs.extend([ '-v' ]);
-            fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
-            if not fRc:
-                # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
-                reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
 
         if fSkip:
             reporter.testDone(fSkipped = True);
             return True;
+
+        reporter.log('Verbosity level is: %d' % (reporter.getVerbosity(),));
+
+        sVkatExe = self.getBinTool('vkat');
+
+        # Run the VKAT self test.
+        # Doesn't take long and gives us some more clue if it flies on the testboxes.
+        reporter.testStart('VKAT Selftest');
+        fRc = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ]);
+        reporter.testDone();
+        if not fRc:
+            return fRc;
+
+        # Now probe the backends.
+        asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
+        for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
+            asArgs.extend([ '-v' ]);
+        fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
+        if not fRc:
+            # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
+            reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
 
         # Reconfigure the VM.
         oSession = self.openSession(oVM);
