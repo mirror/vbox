@@ -837,9 +837,9 @@ static int drvCloudTunnelExecuteRemoteCommandNoOutput(PDRVCLOUDTUNNEL pThis, con
 {
     va_list va;
     va_start(va, pcszCommand);
-    size_t cch = RTStrPrintfV(pThis->pszCommandBuffer, DRVCLOUDTUNNEL_COMMAND_BUFFER_SIZE, pcszCommand, va);
+    ssize_t const cch = RTStrPrintf2V(pThis->pszCommandBuffer, DRVCLOUDTUNNEL_COMMAND_BUFFER_SIZE, pcszCommand, va);
     va_end(va);
-    if (cch == 0)  /** @todo r=bird: WTF is this supposed to be? Checking for empty pcszCommand? */
+    if (cch <= 0)
     {
         Log(("%s: Failed to process '%s'\n", pThis->pszInstance, pcszCommand));
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
@@ -879,9 +879,9 @@ static int drvCloudTunnelExecuteRemoteCommand(PDRVCLOUDTUNNEL pThis, const char 
 {
     va_list va;
     va_start(va, pcszCommand);
-    size_t cch = RTStrPrintfV(pThis->pszCommandBuffer, DRVCLOUDTUNNEL_COMMAND_BUFFER_SIZE, pcszCommand, va);
+    ssize_t const cch = RTStrPrintf2V(pThis->pszCommandBuffer, DRVCLOUDTUNNEL_COMMAND_BUFFER_SIZE, pcszCommand, va);
     va_end(va);
-    if (cch == 0) /** @todo r=bird: WTF is this supposed to be? Checking for empty pcszCommand? */
+    if (cch <= 0)
     {
         Log(("%s: Failed to process '%s'\n", pThis->pszInstance, pcszCommand));
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
