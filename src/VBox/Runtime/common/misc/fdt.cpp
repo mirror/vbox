@@ -1712,7 +1712,7 @@ RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty,
     {
         const char * const pszSrc = va_arg(va, const char *);
         size_t const cbStr = strlen(pszSrc) + 1;
-        Assert((size_t)(pchDst - (char *)pu32) >= cbStr);
+        Assert(cbStrings - (size_t)(pchDst - (char *)pu32) >= cbStr);
         memcpy(pchDst, pszSrc, cbStr);
         pchDst += cbStr;
     }
