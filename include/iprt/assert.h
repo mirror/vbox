@@ -608,7 +608,7 @@ RT_C_DECLS_END
     else \
     { \
         stmt; \
-        continue;
+        continue; \
     } else do {} while (0)
 #endif
 
