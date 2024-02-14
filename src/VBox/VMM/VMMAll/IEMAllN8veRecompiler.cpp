@@ -3229,7 +3229,7 @@ DECL_HIDDEN_THROW(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTA
 {
     /* Double the buffer size till we meet the request. */
     uint32_t cNew = pReNative->cInstrBufAlloc;
-    AssertReturn(cNew > 0, NULL);
+    AssertStmt(cNew > 0, IEMNATIVE_DO_LONGJMP(pReNative, VERR_INTERNAL_ERROR_5)); /* impossible */
     do
         cNew *= 2;
     while (cNew < off + cInstrReq);
