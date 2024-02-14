@@ -194,7 +194,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
 
     AUDIOTESTDRVSTACK DrvStack;
     if (fProbeBackends)
-        rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
+        rc = audioTestDriverStackProbe(&DrvStack,
                                        true /* fEnabledIn */, true /* fEnabledOut */, false /* fWithDrvAudio */);
     else
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,

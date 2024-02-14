@@ -978,7 +978,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
     AUDIOTESTDRVSTACK DrvStack;
     if (fProbeBackends)
-        rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
+        rc = audioTestDriverStackProbe(&DrvStack,
                                        true /* fEnabledIn */, true /* fEnabledOut */, TstEnv.IoOpts.fWithDrvAudio); /** @todo Make in/out configurable, too. */
     else
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,

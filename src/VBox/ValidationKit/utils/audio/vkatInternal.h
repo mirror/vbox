@@ -411,7 +411,7 @@ int         AudioTestDriverStackPerformSelftest(void);
 void        audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack);
 int         audioTestDriverStackInitEx(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
 int         audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
-int         audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
+int         audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
 int         audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId);
 /** @}  */
 

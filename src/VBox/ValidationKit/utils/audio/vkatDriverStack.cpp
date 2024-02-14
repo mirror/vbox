@@ -610,30 +610,36 @@ int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, 
  *
  * @returns VBox status code.
  * @param   pDrvStack       The driver stack to initialize.
- * @param   pDrvReg         The backend driver to use.
  * @param   fEnabledIn      Whether input is enabled or not on creation time.
  * @param   fEnabledOut     Whether output is enabled or not on creation time.
  * @param   fWithDrvAudio   Whether to include DrvAudio in the stack or not.
  */
-int audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio)
+int audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio)
 {
     int rc = VERR_IPE_UNINITIALIZED_STATUS; /* Shut up MSVC. */
 
+    PCPDMDRVREG pDrvLast = NULL; /* Last probed backend. */
+
     for (size_t i = 0; i < g_cBackends; i++)
     {
-        pDrvReg = g_aBackends[i].pDrvReg;
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing for backend '%s' ...\n", g_aBackends[i].pszName);
+        PCPDMDRVREG pDrvReg = g_aBackends[i].pDrvReg;
+
+        if (   pDrvLast
+            && pDrvLast == pDrvReg) /* Check if we already probed the backend by another alias and skip if so. */
+            continue;
+
+        pDrvLast = pDrvReg;
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing for backend '%s' ...\n", pDrvReg->szName);
 
         rc = audioTestDriverStackInitEx(pDrvStack, pDrvReg, fEnabledIn, fEnabledOut, fWithDrvAudio); /** @todo Make in/out configurable, too. */
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' successful\n", g_aBackends[i].pszName);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' successful\n", pDrvReg->szName);
             return rc;
         }
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' failed with %Rrc, trying next one\n",
-                     g_aBackends[i].pszName, rc);
-        continue;
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' failed with %Rrc, trying next one\n", pDrvReg->szName, rc);
     }
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing all backends failed\n");

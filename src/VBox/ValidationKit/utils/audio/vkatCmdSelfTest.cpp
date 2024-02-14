@@ -135,12 +135,10 @@ static SELFTESTCTX g_Ctx;
  */
 int AudioTestDriverStackPerformSelftest(void)
 {
-    PCPDMDRVREG pDrvReg = AudioTestGetDefaultBackend();
-
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Testing driver stack started\n");
 
     AUDIOTESTDRVSTACK DrvStack;
-    int rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
+    int rc = audioTestDriverStackProbe(&DrvStack,
                                        true /* fEnabledIn */, true /* fEnabledOut */, false /* fWithDrvAudio */);
     RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
