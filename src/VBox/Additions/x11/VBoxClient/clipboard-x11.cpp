@@ -211,7 +211,7 @@ static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFm
 
     LogFlowFuncEnter();
 
-    int rc = VERR_NO_DATA; /* Play safe. */
+    int rc;
 
     uint32_t cbRead = 0;
 
@@ -246,7 +246,7 @@ static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFm
     }
 
     if (!cbRead)
-        rc = VERR_NO_DATA;
+        rc = VERR_SHCLPB_NO_DATA;
 
     if (RT_SUCCESS(rc))
     {

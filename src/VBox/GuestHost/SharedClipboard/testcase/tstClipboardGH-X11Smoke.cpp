@@ -32,9 +32,9 @@
 
 #include <iprt/assert.h>
 #include <iprt/env.h>
-#include <iprt/err.h>
 #include <iprt/test.h>
 
+#include <VBox/err.h>
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-x11.h>
 #include <VBox/GuestHost/clipboard-helper.h>
@@ -49,7 +49,7 @@ static DECLCALLBACK(int) tstShClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_
 static DECLCALLBACK(int) tstShClOnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
     RT_NOREF(pCtx, uFmt, ppv, pcb, pvUser);
-    return VERR_NO_DATA;
+    return VERR_SHCLPB_NO_DATA;
 }
 
 static DECLCALLBACK(int) tstShClOnSendDataToDest(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)

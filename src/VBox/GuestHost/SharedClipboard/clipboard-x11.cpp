@@ -1494,7 +1494,7 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 /**
  * Helper for clipConvertToX11Data() that will cache the data returned.
  *
- * @returns VBox status code. VERR_NO_DATA if no data available.
+ * @returns VBox status code. VERR_SHCLPB_NO_DATA if no data available.
  * @param   pCtx                The X11 clipboard context to use.
  * @param   uFmt                Clipboard format to read data in.
  * @param   ppv                 Returns an allocated buffer with data read on success.
@@ -1552,10 +1552,10 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     LogFlowFunc(("pCtx=%p, uFmt=%#x -> Cache %s\n", pCtx, uFmt, pCacheEntry ? "HIT" : "MISS"));
 
     /* Safey net in case the stuff above misbehaves
-     * (must return VERR_NO_DATA if no data available). */
+     * (must return VERR_SHCLPB_NO_DATA if no data available). */
     if (   RT_SUCCESS(rc)
         && (pv == NULL || cb == 0))
-        rc = VERR_NO_DATA;
+        rc = VERR_SHCLPB_NO_DATA;
 
     if (RT_SUCCESS(rc))
     {
@@ -1563,7 +1563,8 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
         *pcb = cb;
     }
 
-    if (RT_FAILURE(rc))
+    if (   RT_FAILURE(rc)
+        && rc != VERR_SHCLPB_NO_DATA)
         LogRel(("Shared Clipboard: Requesting data for X11 from source failed with %Rrc\n", rc));
 
     LogFlowFunc(("Returning pv=%p, cb=%RU32, rc=%Rrc\n", pv, cb, rc));
@@ -1604,7 +1605,7 @@ static void shClX11ResponseFree(PSHCLX11RESPONSE pResp)
 /**
  * Satisfies a request from X11 to convert the clipboard text to UTF-8 LF.
  *
- * @returns VBox status code. VERR_NO_DATA if no data was converted.
+ * @returns VBox status code. VERR_SHCLPB_NO_DATA if no data was converted.
  * @param  pDisplay             An X11 display structure, needed for conversions
  *                              performed by Xlib.
  * @param  pv                   The text to be converted (UCS-2 with Windows EOLs).
@@ -1632,7 +1633,7 @@ static int clipConvertUtf16ToX11Data(Display *pDisplay, PRTUTF16 pwszSrc,
 
     const size_t cwcSrc = cbSrc / sizeof(RTUTF16);
     if (!cwcSrc)
-        return VERR_NO_DATA;
+        return VERR_SHCLPB_NO_DATA;
 
     /* This may slightly overestimate the space needed. */
     size_t chDst = 0;
@@ -1865,7 +1866,8 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         *piFormatReturn = 0;
     }
 
-    if (RT_FAILURE(rc))
+    if (   RT_FAILURE(rc)
+        && rc != VERR_SHCLPB_NO_DATA)
     {
         char *pszFmts2 = ShClFormatsToStrA(pCtx->vboxFormats);
         char *pszAtomName = XGetAtomName(XtDisplay(pCtx->pWidget), *atomTarget);
@@ -2246,7 +2248,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     if (pvSrc == NULL || cbSrc == 0)
     {
         /* The clipboard selection may have changed before we could get it. */
-        rc = VERR_NO_DATA;
+        rc = VERR_SHCLPB_NO_DATA;
     }
     else if (pReq->Read.uFmtVBox == VBOX_SHCL_FMT_UNICODETEXT)
     {
@@ -2583,7 +2585,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 
     LogFlowFunc(("pReq->uFmtVBox=%#x, idxFmtX11=%#x\n", pReq->Read.uFmtVBox, pReq->Read.idxFmtX11));
 
-    int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
+    int rc = VERR_SHCLPB_NO_DATA; /* VBox thinks we have data and we don't. */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     const bool fXtBusy = clipGetXtBusy(pCtx);
@@ -2703,7 +2705,7 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
  * Reads from the X11 clipboard, internal version.
  *
  * @returns VBox status code.
- * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_SHCLPB_NO_DATA if format is supported but no data is available currently.
  * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   pEventSource        Event source to use.
@@ -2744,7 +2746,7 @@ static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEv
                     *ppResp = pResp;
                 }
                 else /* No payload given; could happen on invalid / not-expected formats. */
-                    rc = VERR_NO_DATA;
+                    rc = VERR_SHCLPB_NO_DATA;
             }
             else if (rc == VERR_SHCLPB_EVENT_FAILED)
                 rc = rcEvent;
@@ -2761,7 +2763,7 @@ static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEv
  * Reads from the X11 clipboard, extended version.
  *
  * @returns VBox status code.
- * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_SHCLPB_NO_DATA if format is supported but no data is available currently.
  * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   pEventSource        Event source to use.
@@ -2806,7 +2808,7 @@ int ShClX11ReadDataFromX11Ex(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RT
  * Reads from the X11 clipboard.
  *
  * @returns VBox status code.
- * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_SHCLPB_NO_DATA if format is supported but no data is available currently.
  * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   pEventSource        Event source to use.

@@ -102,6 +102,15 @@ static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX
 
 /**
  * Worker for a reading clipboard from the host.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
+ * @param   pCtx                Shared Clipbaord context to use.
+ * @param   uFmt                The format to read clipboard data in.
+ * @param   ppv                 Where to return the allocated data read.
+ *                              Must be free'd by the caller.
+ * @param   pcb                 Where to return number of bytes read.
+ * @param   pvUser              User-supplied context.
  */
 static DECLCALLBACK(int) vbtrReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
@@ -109,7 +118,7 @@ static DECLCALLBACK(int) vbtrReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, 
 
     LogFlowFuncEnter();
 
-    int rc = VERR_NO_DATA; /* Play safe. */
+    int rc;
 
     uint32_t cbRead = 0;
 
@@ -144,7 +153,7 @@ static DECLCALLBACK(int) vbtrReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, 
     }
 
     if (!cbRead)
-        rc = VERR_NO_DATA;
+        rc = VERR_SHCLPB_NO_DATA;
 
     if (RT_SUCCESS(rc))
     {

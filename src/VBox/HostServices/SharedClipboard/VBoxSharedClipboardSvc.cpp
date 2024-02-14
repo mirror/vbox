@@ -1385,6 +1385,7 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
  * Reads clipboard data from the guest.
  *
  * @returns VBox status code.
+ * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
  * @param   pClient             Client to request to read data form.
  * @param   fFormats            The formats being requested, OR'ed together (VBOX_SHCL_FMT_XXX).
  * @param   ppv                 Where to return the allocated data read.
@@ -1393,6 +1394,9 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
  */
 int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT fFormats, void **ppv, uint32_t *pcb)
 {
+    AssertPtrReturn(ppv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+
     LogFlowFuncEnter();
 
     /* Request data from the guest and wait for data to arrive. */
@@ -1404,25 +1408,24 @@ int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT fFormats, void **pp
         rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
         if (RT_SUCCESS(rc))
         {
-            if (   !pPayload
-                || !pPayload->cbData)
-            {
-                rc = VERR_NO_DATA;
-            }
-            else
+            if (   pPayload
+                && pPayload->cbData)
             {
                 *ppv = pPayload->pvData;
                 *pcb = pPayload->cbData;
             }
+            else
+                rc = VERR_SHCLPB_NO_DATA;
         }
 
         ShClEventRelease(pEvent);
     }
 
-    if (RT_FAILURE(rc))
+    if (   RT_FAILURE(rc)
+        && rc != VERR_SHCLPB_NO_DATA)
         LogRel(("Shared Clipboard: Reading data from guest failed with %Rrc\n", rc));
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFunc(("rc=%Rc, pv=%p, cb=%RU32", rc, *ppv, *pcb));
     return rc;
 }
 

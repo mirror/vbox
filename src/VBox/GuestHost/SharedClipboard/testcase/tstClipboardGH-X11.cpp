@@ -738,7 +738,7 @@ int main()
      */
     RTTestSub(hTest, "X11 conversion failure (timeout)");
     tstClipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, NULL,0, 8);
-    tstStringFromX11(hTest, &X11Ctx, "", VERR_NO_DATA);
+    tstStringFromX11(hTest, &X11Ctx, "", VERR_SHCLPB_NO_DATA);
 
     /*
      * No data in X11 clipboard
@@ -746,8 +746,8 @@ int main()
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, NULL, 0, 8);
     rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, VBOX_SHCL_FMT_UNICODETEXT, abBuf, sizeof(abBuf), &cbActual);
-    RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
-                     (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
+    RTTEST_CHECK_MSG(hTest, rc == VERR_SHCLPB_NO_DATA,
+                     (hTest, "Returned %Rrc instead of VERR_SHCLPB_NO_DATA\n",
                       rc));
 
     /*
@@ -764,10 +764,10 @@ int main()
      */
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
     /* Testing for 0xffff will go into handling VBOX_SHCL_FMT_UNICODETEXT, where we don't have
-     * have any data at the moment so far, so this will return VERR_NO_DATA. */
+     * have any data at the moment so far, so this will return VERR_SHCLPB_NO_DATA. */
     rc = ShClX11ReadDataFromX11(&X11Ctx, &g_EventSource, g_msTimeout, 0xffff /* vboxFormat */, abBuf, sizeof(abBuf), &cbActual);
-    RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
-                     (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
+    RTTEST_CHECK_MSG(hTest, rc == VERR_SHCLPB_NO_DATA,
+                     (hTest, "Returned %Rrc instead of VERR_SHCLPB_NO_DATA\n",
                       rc));
     /*
      * Targets failure from X11

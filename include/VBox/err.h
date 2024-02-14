@@ -3202,6 +3202,8 @@
 #define VERR_SHCLPB_GUEST_ERROR                     (-7151)
 /** Shared Clipboard event failed error. */
 #define VERR_SHCLPB_EVENT_FAILED                    (-7152)
+/** No clipboard data available for requested format. */
+#define VERR_SHCLPB_NO_DATA                         (-7153)
 /** @} */
 
 /** @name Virtual IOMMU Status Codes

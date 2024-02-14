@@ -174,14 +174,7 @@ static int vboxClipboardSvcWinDataGet(SHCLFORMAT u32Format, const void *pvSrc, u
  */
 static int vboxClipboardSvcWinReadDataFromGuestWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData)
 {
-    LogFlowFunc(("uFmt=%#x\n", uFmt));
-
-    int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFmt, ppvData, pcbData);
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Reading guest clipboard data for Windows host failed with %Rrc\n", rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return ShClSvcReadDataFromGuest(pCtx->pClient, uFmt, ppvData, pcbData);
 }
 
 static int vboxClipboardSvcWinReadDataFromGuest(PSHCLCONTEXT pCtx, UINT uWinFormat, void **ppvData, uint32_t *pcbData)
@@ -518,9 +511,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                 void    *pvData = NULL;
                 uint32_t cbData = 0;
                 int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFmtVBox, &pvData, &cbData);
-                if (   RT_SUCCESS(rc)
-                    && pvData
-                    && cbData)
+                if (RT_SUCCESS(rc))
                 {
                     /* Wrap HTML clipboard content info CF_HTML format if needed. */
                     if (uFmtVBox == VBOX_SHCL_FMT_HTML
