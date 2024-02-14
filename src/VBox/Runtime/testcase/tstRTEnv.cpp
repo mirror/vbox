@@ -87,9 +87,9 @@ int main()
     /* ditto for a clone. */
     RTENV Env = NIL_RTENV;
     CHECK_RC(RTEnvClone(&Env, RTENV_DEFAULT), VINF_SUCCESS);
-    RTENV hEnvEq = NIL_RTENV;
+    RTENV hEnvEq = RTENV_DEFAULT;
     CHECK_RC(RTEnvCreateEx(&hEnvEq, RTENV_CREATE_F_ALLOW_EQUAL_FIRST_IN_VAR), VINF_SUCCESS);
-    RTENV hEnvNoEq = NIL_RTENV;
+    RTENV hEnvNoEq = RTENV_DEFAULT;
     CHECK_RC(RTEnvCreateEx(&hEnvNoEq, 0), VINF_SUCCESS);
 
     CHECK(RTEnvExistEx(Env, k_pszPathVar));
