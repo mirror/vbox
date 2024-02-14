@@ -36,7 +36,8 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <iprt/log.h>
 #include <iprt/mem.h>
-#include <iprt/err.h>
+
+#include <VBox/err.h>
 
 #include "VBoxClient.h"
 #include "clipboard.h"
