@@ -17578,13 +17578,13 @@ static uint8_t iemAImpl_pcmpistrx_get_str_len_explicit(int64_t i64Len, uint8_t b
 /**
  * Valid/Invalid override of comparisons (Table 4-7 from 4.1.6 of SDM).
  */
-static const bool g_afCmpOverride[4][3] =
+static const bool g_afCmpOverride[4][4] =
 {
-    /*  xmm1 AND xmm2/m128 invalid      xmm1 invalid, xmm2/m128 valid       xmm1 valid, xmm2/m128 invalid */
-    {                        false,                             false,                                 false }, /* Imm8[3:2] = 00b (equal any)     */
-    {                        false,                             false,                                 false }, /* Imm8[3:2] = 01b (ranges)        */
-    {                        true,                              false,                                 false }, /* Imm8[3:2] = 10b (equal each)    */
-    {                        true,                              true,                                  false }, /* Imm8[3:2] = 11b (equal ordered) */
+    /* xmm1 AND xmm2/m128 invalid, xmm1 invalid BUT xmm2/m128 valid, xmm1 valid BUT xmm2/m128 invalid, unused dummy/padding for parfait  */
+    {                       false,                            false,                            false, false }, /* Imm8[3:2] = 00b (equal any)     */
+    {                       false,                            false,                            false, false }, /* Imm8[3:2] = 01b (ranges)        */
+    {                        true,                            false,                            false, false }, /* Imm8[3:2] = 10b (equal each)    */
+    {                        true,                             true,                            false, false }, /* Imm8[3:2] = 11b (equal ordered) */
 };
 
 DECL_FORCE_INLINE(bool) iemAImpl_pcmpxstrx_cmp_override_if_invalid(bool fCmpRes, bool fSrc1Valid, bool fSrc2Valid, uint8_t bAggOp)
@@ -17592,8 +17592,8 @@ DECL_FORCE_INLINE(bool) iemAImpl_pcmpxstrx_cmp_override_if_invalid(bool fCmpRes,
     if (fSrc1Valid && fSrc2Valid)
         return fCmpRes;
 
-    uint8_t bSrc1Valid = fSrc1Valid ? 2 : 0;
-    uint8_t bSrc2Valid = fSrc2Valid ? 1 : 0;
+    uint8_t const bSrc1Valid = fSrc1Valid ? 2 : 0;
+    uint8_t const bSrc2Valid = fSrc2Valid ? 1 : 0;
     return g_afCmpOverride[bAggOp][bSrc1Valid + bSrc2Valid];
 }
 
