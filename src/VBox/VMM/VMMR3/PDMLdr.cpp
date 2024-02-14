@@ -713,10 +713,9 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
     /*
      * Ask the support library to load it.
      */
-    void           *pvImageBase;
     RTERRINFOSTATIC ErrInfo;
-    RTErrInfoInitStatic(&ErrInfo);
-    int rc = SUPR3LoadModule(pszFilename, pszName, &pvImageBase, &ErrInfo.Core);
+    void           *pvImageBase = NULL;
+    int rc = SUPR3LoadModule(pszFilename, pszName, &pvImageBase, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
         pModule->hLdrMod = NIL_RTLDRMOD;

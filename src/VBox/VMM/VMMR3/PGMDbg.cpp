@@ -1006,14 +1006,14 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     uint32_t const  cYieldCountDownReload   = VMSTATE_IS_RUNNING(enmVMState) ? 4096 : 65536;
     uint32_t        cYieldCountDown         = cYieldCountDownReload;
     RTGCPHYS        GCPhysPrev              = NIL_RTGCPHYS;
+    PGMPTWALK       Walk                    = { NIL_RTGCPTR, NIL_RTGCPHYS, NIL_RTGCPHYS, false };
+    PGMPTWALKGST    WalkGst                 = { {}, PGMPTWALKGSTTYPE_INVALID };
     bool            fFullWalk               = true;
-    PGMPTWALK       Walk;
-    PGMPTWALKGST    WalkGst;
 
     PGM_LOCK_VOID(pVM);
     for (;; offPage = 0)
     {
-        int rc;
+        int             rc;
         if (fFullWalk)
             rc = pgmGstPtWalk(pVCpu, GCPtr, &Walk, &WalkGst);
         else
