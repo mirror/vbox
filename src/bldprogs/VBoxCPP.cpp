@@ -1975,7 +1975,7 @@ static RTEXITCODE vbcppMacroExpandGatherParameters(PVBCPP pThis, PVBCPPMACROEXP 
             /* Comment? */
             unsigned ch2 = vbcppMacroExpandPeekCh(pExp, poff);
             /** @todo This ain't right wrt line splicing. */
-            if (ch2 == '/' || ch == '*')
+            if (ch2 == '/' || ch2 == '*')
             {
                 if (ch2 == '/')
                     rcExit = vbcppMacroExpandSkipCommentLine(pThis, pExp, poff);
@@ -3958,7 +3958,7 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
     char        ch    = *pParser->pszCur++;
     char        ch2   = *pParser->pszCur;
     if (   ch == '0'
-        && (ch == 'x' || ch == 'X'))
+        && (ch2 == 'x' || ch2 == 'X'))
     {
         ch2 = *++pParser->pszCur;
         if (!RT_C_IS_XDIGIT(ch2))
