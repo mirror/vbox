@@ -1116,6 +1116,16 @@ class TestDriver(base.TestDriver):                                              
         reporter.log2('importVBoxApi finished\n')
         return self.fImportedVBoxApi;
 
+    def _printEnv(self, dEnv = os.environ, fRaw = False):
+        """
+        Prints the given environment block to log2.
+
+        Uses the default environment block if not specified explicitly.
+        Removes any control characters found to not mess up the screen output.
+        """
+        for sKey, sVal in sorted(dEnv.items()):
+            reporter.log2('%s=%s' % (sKey, sVal if fRaw else re.sub(r'[\x00-\x1f]', '', sVal)));
+
     def _startVBoxSVC(self): # pylint: disable=too-many-statements
         """ Starts VBoxSVC. """
         assert(self.oVBoxSvcProcess is None);
@@ -1134,8 +1144,7 @@ class TestDriver(base.TestDriver):                                              
         os.environ['VBOXSVC_RELEASE_LOG_FLAGS'] = 'time append';
 
         reporter.log2('VBoxSVC environment:');
-        for sKey, sVal in sorted(os.environ.items()):
-            reporter.log2('%s=%s' % (sKey, sVal));
+        self._printEnv();
 
         # Always leave a pid file behind so we can kill it during cleanup-before.
         self.sVBoxSvcPidFile = '%s/VBoxSVC.pid' % (self.sScratchPath,);
@@ -1386,8 +1395,7 @@ class TestDriver(base.TestDriver):                                              
         os.environ['VBOX_RELEASE_LOG_FLAGS'] = 'time append';
 
         reporter.log2('Self environment:');
-        for sKey, sVal in sorted(os.environ.items()):
-            reporter.log2('%s=%s' % (sKey, sVal));
+        self._printEnv();
 
         # Hack the sys.path + environment so the vboxapi can be found.
         sys.path.insert(0, self.oBuild.sInstallPath);
