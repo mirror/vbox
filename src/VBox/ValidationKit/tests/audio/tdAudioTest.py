@@ -300,8 +300,11 @@ class tdAudioTest(vbox.TestDriver):
         Inner loop which handles the execution of a host binary.
 
         Might be called synchronously in main thread or via the thread exeuction helper (asynchronous).
+
+        Returns (success status, exit code).
         """
         fRc = False;
+        iRc = -42;
 
         asEnvTmp = os.environ.copy();
         if asEnv:
@@ -321,12 +324,10 @@ class tdAudioTest(vbox.TestDriver):
 
             if not oProcess:
                 reporter.error('Starting process for "%s" failed!' % (sWhat));
-                return False;
+                return fRc, iRc;
 
             iPid = oProcess.pid;
             self.pidFileAdd(iPid, sWhat);
-
-            iRc  = 0;
 
             while True if sys.version_info[0] < 3 else oProcess.stdout.readable(): # pylint: disable=no-member
                 sStdOut = oProcess.stdout.readline();
@@ -340,37 +341,37 @@ class tdAudioTest(vbox.TestDriver):
 
             if iRc == 0:
                 reporter.log('*** %s: exit code %d' % (sWhat, iRc));
-                fRc = True;
             else:
                 reporter.log('!*! %s: exit code %d' % (sWhat, iRc));
 
+            fRc = True;
             self.pidFileRemove(iPid);
-
-            # Save thread result code.
-            self.iThreadHstProcRc = iRc;
-
         except:
             reporter.logXcpt('Executing "%s" failed!' % (sWhat));
 
         reporter.log('Executing \"%s\" on host %s' % (sWhat, 'done' if fRc else 'failed',));
-        return fRc;
+        return (fRc, iRc);
 
     def executeHstThread(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
         """
         Thread execution helper to run a process on the host.
         """
-        return self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
+        _, iRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
 
-    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False, fBlocking = True):
+        # Save thread result code.
+        self.iThreadHstProcRc = iRc;
+
+    def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False, fBlocking = True, iExpectedRc = None):
         """
         Runs a binary (image) with optional admin (root) rights on the host and
         waits until it terminates.
 
         Windows currently is not supported yet running stuff as Administrator.
 
-        Returns success status (exit code is 0).
+        Returns (success status, exit code).
         """
-        reporter.log('Executing \"%s\" on host (as admin = %s, blocking = %s)' % (sWhat, fAsAdmin, fBlocking));
+        reporter.log('Executing \"%s\" on host (as admin = %s, blocking = %s, expected rc = %d)'
+                     % (sWhat, fAsAdmin, fBlocking, iExpectedRc));
         reporter.log2('Arguments: %s' % (asArgs,));
         if asEnv:
             reporter.log2('Environment: %s' % (asEnv,));
@@ -380,8 +381,11 @@ class tdAudioTest(vbox.TestDriver):
         try:    sys.stderr.flush();
         except: pass;
 
+        fRc = False;
+        iRc = -42;
+
         if fBlocking: # Run in same thread (blocking).
-            fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
+            fRc, iRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
         else: # Run in separate thread (asynchronous).
             self.iThreadHstProcRc = -42; # Initialize thread rc.
             try:
@@ -392,11 +396,19 @@ class tdAudioTest(vbox.TestDriver):
                         break;
                     self.processEvents(0);
                 reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
+                fRc = True;
+                iRc = self.iThreadHstProcRc;
             except:
                 reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
-            fRc = self.iThreadHstProcRc == 0;
 
-        return fRc;
+        # Adjust fRc if caller expected a specific exit code.
+        if  iExpectedRc \
+        and iRc is not iExpectedRc:
+            reporter.error('Executing \"%s\" on host failed (got exit code %d, expected %d'
+                           % (sWhat, iRc, iExpectedRc,));
+            fRc = False;
+
+        return fRc, iRc;
 
     def getWinFirewallArgsDisable(self, sOsType):
         """
@@ -469,7 +481,7 @@ class tdAudioTest(vbox.TestDriver):
             #        Windows hosts than Vista.
             asArgs = self.getWinFirewallArgsDisable('vista');
             if asArgs:
-                fRc = self.executeHst('Disabling host firewall', asArgs, fAsAdmin = True);
+                fRc, _ = self.executeHst('Disabling host firewall', asArgs, fAsAdmin = True);
         else:
             reporter.log('Firewall not available on host, skipping');
             fRc = True; # Not available, just skip.
@@ -608,7 +620,7 @@ class tdAudioTest(vbox.TestDriver):
         #
         # Let VKAT on the host run synchronously.
         #
-        fRc = self.executeHst("VKAT Host", asArgs);
+        fRc, _ = self.executeHst("VKAT Host", asArgs);
 
         reporter.testDone();
 
@@ -632,7 +644,7 @@ class tdAudioTest(vbox.TestDriver):
             if self.asVkatVerifyArgs:
                 asArgs += self.asVkatVerifyArgs;
 
-            fRc = self.executeHst("VKAT Host Verify", asArgs);
+            fRc, _ = self.executeHst("VKAT Host Verify", asArgs, iExpectedRc = 0);
             if fRc:
                 reporter.log("Verification audio data successful");
             else:
@@ -735,19 +747,21 @@ class tdAudioTest(vbox.TestDriver):
         # Run the VKAT self test.
         # Doesn't take long and gives us some more clue if it flies on the testboxes.
         reporter.testStart('VKAT Selftest');
-        fRc = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ]);
+        fRc, _ = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ], iExpectedRc = 0);
         reporter.testDone();
         if not fRc:
             return fRc;
 
         # Now probe the backends.
+        reporter.testStart('VKAT Probing');
         asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
         for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
             asArgs.extend([ '-v' ]);
-        fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
-        if not fRc:
+        fRc, iRc = self.executeHst("VKAT Host Audio Probing", asArgs);
+        if iRc != 0:
             # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
             reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
+        reporter.testDone();
 
         # Reconfigure the VM.
         oSession = self.openSession(oVM);
