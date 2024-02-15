@@ -2887,7 +2887,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                             );
             if (cExtraAdvance)
                 RTPrintf("  %s, %s\n", paOpts[i].pszLong, paOpts[i + 1].pszLong);
-            else if (paOpts[i].iShort != SCMOPT_NO_UPDATE_LICENSE)
+            else if (paOpts[i].iShort != SCMOPT_NO_UPDATE_LICENSE || i + 6 >= cOpts /* paranoia */)
                 RTPrintf("  %s\n", paOpts[i].pszLong);
             else
             {

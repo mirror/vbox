@@ -475,6 +475,9 @@ int ScmStreamWriteToStdOut(PSCMSTREAM pStream)
  */
 static const char *scmStreamGetLineInternal(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol)
 {
+    *pcchLine = 0;
+    *penmEol  = SCMEOL_NONE;
+
     AssertReturn(!pStream->fWriteOrRead, NULL);
     if (RT_FAILURE(pStream->rc))
         return NULL;
