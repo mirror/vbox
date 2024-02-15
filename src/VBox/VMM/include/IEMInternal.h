@@ -94,12 +94,11 @@ RT_C_DECLS_BEGIN
  * effect of a longjmp/throw.  Since MSC marks XMM6 thru XMM15 as
  * non-volatile (and does something even more crazy for ARM), this probably
  * won't work reliably on Windows. */
-#if defined(DOXYGEN_RUNNING) /*|| defined(RT_ARCH_AMD64)*/
+#if defined(DOXYGEN_RUNNING) || (!defined(RT_OS_WINDOWS) && (defined(RT_ARCH_ARM64) /*|| defined(_RT_ARCH_AMD64)*/))
 # define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
 #endif
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
 # if !defined(IN_RING3) \
-  || !defined(RT_ARCH_AMD64) \
   || !defined(VBOX_WITH_IEM_RECOMPILER) \
   || !defined(VBOX_WITH_IEM_NATIVE_RECOMPILER)
 #  undef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
