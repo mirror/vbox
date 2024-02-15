@@ -421,7 +421,7 @@ nsJavaXPTCStub::CallMethod(PRUint16 aMethodIndex,
         rv = SetupJavaParams(paramInfo, aMethodInfo, aMethodIndex, aParams,
                              aParams[i], java_params[i], methodSig);
       } else {
-        retvalInfo = &paramInfo;
+        retvalInfo = &paramInfo; /* (parfait get confused here with paramInfo being a reference) */
       }
     }
     NS_ASSERTION(NS_SUCCEEDED(rv), "SetupJavaParams failed");
