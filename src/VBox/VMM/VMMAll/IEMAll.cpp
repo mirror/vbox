@@ -2398,8 +2398,8 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
      */
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TASK_SWITCH))
     {
-        uint32_t const uExitInfo1 = SelTss;
-        uint32_t       uExitInfo2 = uErr;
+        uint64_t const uExitInfo1 = SelTss;
+        uint64_t       uExitInfo2 = uErr;
         switch (enmTaskSwitch)
         {
             case IEMTASKSWITCH_JUMP: uExitInfo2 |= SVM_EXIT2_TASK_SWITCH_JUMP; break;
