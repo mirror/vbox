@@ -41,6 +41,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os;
 import re;
+from testdriver import reporter;
 
 
 class StorageDisk(object):
@@ -205,7 +206,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         Destroys the given storage pool.
         """
-        fRc = oExec.execBinaryNoStdOut('zpool', ('destroy', sPool));
+        fRc = oExec.execBinary('zpool', ('destroy', sPool));
         return fRc;
 
     def cleanupPoolsAndVolumes(self, oExec, sPoolIdStart, sVolIdStart):
@@ -213,28 +214,35 @@ class StorageConfigOsSolaris(StorageConfigOs):
         Cleans up any pools and volumes starting with the name in the given
         parameters.
         """
-        fRc = True;
+        reporter.log('cleanupPoolsAndVolumes starts')
+        fRc = True
         lstPools = self._getActivePoolsStartingWith(oExec, sPoolIdStart);
+        reporter.log('lstPools: %s' % lstPools)
         if lstPools is not None:
             for sPool in lstPools:
                 lstVolumes = self._getActiveVolumesInPoolStartingWith(oExec, sPool, sVolIdStart);
+                reporter.log('lstVolumes: %s' % lstVolumes)
                 if lstVolumes is not None:
                     # Destroy all the volumes first
+                    reporter.log('destroying volumes starts')
                     for sVolume in lstVolumes:
-                        fRc2 = oExec.execBinaryNoStdOut('zfs', ('destroy', sVolume));
+                        fRc2 = oExec.execBinary('zfs', ('destroy', sVolume));
                         if not fRc2:
-                            fRc = fRc2;
+                            fRc = fRc2
+                    reporter.log('destroying volumes ends')
 
                     # Destroy the pool
+                    reporter.log('destroying pools starts')
                     fRc2 = self.destroyPool(oExec, sPool);
+                    reporter.log('destroying pools ends')
                     if not fRc2:
                         fRc = fRc2;
                 else:
                     fRc = False;
         else:
             fRc = False;
-
-        return fRc;
+        reporter.log('cleanupPoolsAndVolumes is finished')
+        return fRc
 
     def createRamDisk(self, oExec, cbRamDisk):
         """
@@ -672,6 +680,7 @@ class StorageCfg(object):
         """
         Tries to cleanup any leftover pools and volumes from a failed previous run.
         """
+        reporter.log('cleanupLeftovers starts')
         if not self.oDiskCfg.isCfgStaticDir():
             return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
 
@@ -679,5 +688,5 @@ class StorageCfg(object):
         if os.path.exists(self.oDiskCfg.getDisks()):
             for sEntry in os.listdir(self.oDiskCfg.getDisks()):
                 fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
-
+        reporter.log('cleanupLeftovers ends')
         return fRc;
