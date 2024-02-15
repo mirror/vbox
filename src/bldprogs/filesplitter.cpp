@@ -345,7 +345,7 @@ static int splitFile(const char *pcszOutDir, const char *pcszContent, FILE *pFil
         free(pszFilename);
 
         pcszSearch = pcszEnd;
-    } while (rc == 0 && pcszSearch);
+    } while (rc == 0);
 
     printf("filesplitter: Out of %lu files: %lu rewritten, %lu unchanged. (%s)\n",
            cFilesWritten + cFilesUnchanged, cFilesWritten, cFilesUnchanged, pcszOutDir);
