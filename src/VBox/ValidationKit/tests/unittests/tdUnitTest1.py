@@ -400,15 +400,12 @@ class tdUnitTest1(vbox.TestDriver):
         self.oSession    = None;
         self.oTxsSession = None;
 
+        # The VirtualBox installation root directory.
         self.sVBoxInstallRoot = None;
 
         ## Testing mode being used:
-        #   "local":       Execute unit tests locally (same host, default).
-        #   "remote-copy": Copies unit tests from host to the remote, then executing it.
-        #   "remote-exec": Executes unit tests right on the remote from a given source.
-        ## @todo r=bird: 'remote-exec' and 'remote-copy' are confusing. We're presumably executing the test remotely in both
-        ## cases, the different being that in the latter case we copy from the valkit iso rather than uploading the test files.
-        ## That's hardly clear from the names or the explanation.
+        #   "local":  Execute unit tests locally (same host, default).
+        #   "remote": Executes unit tests right on the remote from a given source.
         self.sMode      = 'local';
 
         self.cSkipped   = 0;
@@ -416,8 +413,12 @@ class tdUnitTest1(vbox.TestDriver):
         self.cFailed    = 0;
 
         ## The source directory where our unit tests live.
-        # This most likely is our out/ or some staging directory and
+        #
+        # For local mode this is our out/ or some staging directory and
         # also acts the source for copying over the testcases to a remote target.
+        #
+        # For remote remote this is the ${CDROM} directory where we ship the included
+        # testcases on the Validation Kit ISO.
         self.sUnitTestsPathSrc = None;
 
         # The destination directory our unit tests live when being
@@ -456,25 +457,20 @@ class tdUnitTest1(vbox.TestDriver):
         This sets sVBoxInstallRoot and sUnitTestsPathBase and returns True/False.
         """
 
-        reporter.log2('Detecting paths ...');
+        reporter.log2('Detecting paths (mode is "%s") ...' % ("remot" if self.isRemoteMode() else "local",));
 
         #
         # We need a VBox install (/ build) to test.
         #
-        if False is True: ## @todo r=andy ?? # pylint: disable=comparison-of-constants
-            if not self.importVBoxApi():
-                return False;
-        else:
-            self._detectBuild();
-            if self.oBuild is None:
-                reporter.error('Unabled to detect the VBox build.');
-                return False;
+        if not self._detectBuild():
+            reporter.error('Unabled to detect the VBox build.');
+            return False;
 
         #
         # Where are the files installed?
         # Solaris requires special handling because of it's multi arch subdirs.
         #
-        if not self.sVBoxInstallRoot and self.sMode == 'remote-exec':
+        if not self.sVBoxInstallRoot and self.isRemoteMode():
             self.sVBoxInstallRoot = '${CDROM}/${OS}/${ARCH}';
 
         elif not self.sVBoxInstallRoot:
@@ -498,12 +494,14 @@ class tdUnitTest1(vbox.TestDriver):
         else:
             reporter.log2('VBox installation root already set to "%s"' % (self.sVBoxInstallRoot));
 
+        reporter.log('VBox installation root path: %s' % (self.sVBoxInstallRoot,));
+
         self.sVBoxInstallRoot = self._sanitizePath(self.sVBoxInstallRoot);
 
         #
         # The unittests are generally not installed, so look for them.
         #
-        if not self.sUnitTestsPathSrc and self.sMode == 'remote-exec':
+        if not self.sUnitTestsPathSrc and self.isRemoteMode():
             self.sUnitTestsPathSrc = '${CDROM}/testcase/${OS}/${ARCH}';
 
         elif not self.sUnitTestsPathSrc:
@@ -544,7 +542,8 @@ class tdUnitTest1(vbox.TestDriver):
 
         else:
             reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc))
-            reporter.log('Unit test source dir path: ', self.sUnitTestsPathSrc)
+
+        reporter.log('Unit test source dir path: %s' % (self.sUnitTestsPathSrc,));
 
         self.sUnitTestsPathSrc = self._sanitizePath(self.sUnitTestsPathSrc);
 
@@ -563,11 +562,10 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('Unit Test #1 options:');
         reporter.log('  --dryrun');
         reporter.log('      Performs a dryrun (no tests being executed).');
-        reporter.log('  --mode <local|remote-copy|remote-exec>');
+        reporter.log('  --mode <local|remote>');
         reporter.log('      Specifies the test execution mode:');
-        reporter.log('      local:       Locally on the same machine.');
-        reporter.log('      remote-copy: On remote (guest) by copying them from the local source. (BORKED!)');
-        reporter.log('      remote-exec: On remote (guest) directly (needs unit test source).');
+        reporter.log('      local:  Locally on the same machine.');
+        reporter.log('      remote: On remote (guest) directly (needs unit test source).');
         reporter.log('  --only-whitelist');
         reporter.log('      Only processes the white list.');
         reporter.log('  --quick');
@@ -590,7 +588,7 @@ class tdUnitTest1(vbox.TestDriver):
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            if asArgs[iArg] in ('local', 'remote-copy', 'remote-exec',):
+            if asArgs[iArg] in ('local', 'remote',):
                 self.sMode = asArgs[iArg];
             else:
                 raise base.InvalidOption('Argument "%s" invalid' % (asArgs[iArg]));
@@ -729,9 +727,9 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('             Mode: %s' % (self.sMode,));
         reporter.log('       Exe suffix: %s' % (self.sExeSuff,));
         reporter.log('Unit tests source: %s %s'
-                     % (self.sUnitTestsPathSrc, '(on remote)' if self.sMode == 'remote-exec' else '',));
+                     % (self.sUnitTestsPathSrc, '(on remote)' if self.isRemoteMode() else '',));
         reporter.log('VBox install root: %s %s'
-                     % (self.sVBoxInstallRoot, '(on remote)' if self.sMode == 'remote-exec' else '',));
+                     % (self.sVBoxInstallRoot, '(on remote)' if self.isRemoteMode() else '',));
         reporter.log('*********************************************************');
         reporter.log('***  PASSED: %d' % (self.cPassed,));
         reporter.log('***  FAILED: %d' % (self.cFailed,));
@@ -940,7 +938,7 @@ class tdUnitTest1(vbox.TestDriver):
         if self.isRemoteMode():
             self._logExpandString(sSrc);
             self._logExpandString(sDst);
-            if self.sMode == 'remote-exec':
+            if self.isRemoteMode():
                 self.oTxsSession.syncCopyFile(sSrc, sDst, iMode);
             else:
                 fRc = self.oTxsSession.syncUploadFile(sSrc, sDst);
@@ -1018,11 +1016,6 @@ class tdUnitTest1(vbox.TestDriver):
         # to be copied to and execute from the source directory in order to
         # work.  They also have to be executed as root, i.e. via sudo.
         #
-        # When executing test remotely we must also copy stuff over to the
-        # remote location.  Currently there is no diferent between remote-copy
-        # and remote-exec here, which it would be nice if Andy could explain...
-        #
-        ## @todo r=bird: Please explain + fix ^^.
         fHardened       = sName in self.kasHardened and self.sUnitTestsPathSrc != self.sVBoxInstallRoot;
         asFilesToRemove = []; # Stuff to clean up.
         asDirsToRemove  = []; # Ditto.
@@ -1039,10 +1032,9 @@ class tdUnitTest1(vbox.TestDriver):
             sSrc = sFilePathAbs;
             # If the testcase source does not exist for whatever reason, just mark it as skipped
             # instead of reporting an error.
-            if not self._wrapPathExists(sSrc): ## @todo r=bird: This doesn't add up for me with the two remote modes.
-                self.cSkipped += 1;            ## It seems to presuppose that we're in remote-exec mode as _wrapPathExists
-                fSkipped = True;               ## does not differentiate between the two remote modes and will always check
-                return fSkipped;               ## the path on the remote side.
+            if not self._wrapPathExists(sSrc):
+                self.cSkipped += 1;
+                return True;
 
             sDst = os.path.join(sDstDir, os.path.basename(sFilePathAbs));
             fModeExe  = 0;
@@ -1053,7 +1045,7 @@ class tdUnitTest1(vbox.TestDriver):
             self._wrapCopyFile(sSrc, sDst, fModeExe);
             asFilesToRemove.append(sDst);
 
-            # Copy required dependencies to destination .
+            # Copy required dependencies to destination.
             # Note! The testcases are statically linked, so there are no VBoxRT.dll/so/dylib
             #       to copy here.  This code can be currently be ignored.
             if self.isRemoteMode():
@@ -1066,7 +1058,7 @@ class tdUnitTest1(vbox.TestDriver):
                             self._wrapCopyFile(sSrc, sDst, fModeDeps);
                             asFilesToRemove.append(sDst);
 
-            ## @todo r=bird: The next two are check for _local_ files matching the remote path when in remote-mode.
+            ## @todo r=bird: The next two are checks for _local_ files matching the remote path when in remote-mode.
             ##               It makes for very confusing reading and is a potential for trouble.
 
             # Copy any associated .dll/.so/.dylib.
@@ -1243,9 +1235,9 @@ class tdUnitTest1(vbox.TestDriver):
         # Process the file list and run everything looking like a testcase.
         #
         if not self.fOnlyWhiteList:
-            if self.sMode in ('local', 'remote-copy'):
+            if not self.isRemoteMode():
                 asFiles = sorted(os.listdir(os.path.join(self.sUnitTestsPathSrc, sTestCaseSubDir)));
-            else: # 'remote-exec'
+            else: # 'remote'
                 ## @todo Implement remote file enumeration / directory listing.
                 reporter.error('Sorry, no remote file enumeration implemented yet!\nUse --only-whitelist instead.');
                 return;
@@ -1259,7 +1251,7 @@ class tdUnitTest1(vbox.TestDriver):
         for sFilename in asFiles:
             # When executing in remote execution mode, make sure to append the executable suffix here, as
             # the (white / black) lists do not contain any OS-specific executable suffixes.
-            if self.sMode == 'remote-exec':
+            if self.isRemoteMode():
                 sFilename = sFilename + self.sExeSuff;
             # Separate base and suffix and morph the base into something we
             # can use for reporting and array lookups.
