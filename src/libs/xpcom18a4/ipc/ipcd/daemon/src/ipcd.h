@@ -38,22 +38,10 @@
 #ifndef IPCD_H__
 #define IPCD_H__
 
-#include "ipcMessage.h"
+#include <iprt/sg.h>
 
-//
-// a client handle is used to efficiently reference a client instance object
-// used by the daemon to represent a connection with a particular client app.
-//
-// modules should treat it as an opaque type.
-//
-typedef class ipcClient *ipcClientHandle;
-
-//
-// enumeration functions may return FALSE to stop enumeration.
-//
-typedef PRBool (* ipcClientEnumFunc)       (void *closure, ipcClientHandle client, PRUint32 clientID);
-typedef PRBool (* ipcClientNameEnumFunc)   (void *closure, ipcClientHandle client, const char *name);
-typedef PRBool (* ipcClientTargetEnumFunc) (void *closure, ipcClientHandle client, const nsID &target);
+#include "ipcClient.h"
+#include "ipcMessageNew.h"
 
 //-----------------------------------------------------------------------------
 // IPC daemon methods (see struct ipcDaemonMethods)
@@ -62,35 +50,27 @@ typedef PRBool (* ipcClientTargetEnumFunc) (void *closure, ipcClientHandle clien
 // modules must access these through the ipcDaemonMethods structure.
 //-----------------------------------------------------------------------------
 
-PRStatus        IPC_DispatchMsg          (ipcClientHandle client, const nsID &target, const void *data, PRUint32 dataLen);
-PRStatus        IPC_SendMsg              (ipcClientHandle client, const nsID &target, const void *data, PRUint32 dataLen);
-ipcClientHandle IPC_GetClientByID        (PRUint32 id);
-ipcClientHandle IPC_GetClientByName      (const char *name);
-void            IPC_EnumClients          (ipcClientEnumFunc func, void *closure);
-PRUint32        IPC_GetClientID          (ipcClientHandle client);
-PRBool          IPC_ClientHasName        (ipcClientHandle client, const char *name);
-PRBool          IPC_ClientHasTarget      (ipcClientHandle client, const nsID &target);
-void            IPC_EnumClientNames      (ipcClientHandle client, ipcClientNameEnumFunc func, void *closure);
-void            IPC_EnumClientTargets    (ipcClientHandle client, ipcClientTargetEnumFunc func, void *closure);
+DECLHIDDEN(int)         IPC_SendMsg(PIPCDCLIENT pIpcClient, const nsID &target, const void *pvData, size_t cbData);
+DECLHIDDEN(int)         IPC_SendMsgSg(PIPCDCLIENT pIpcClient, const nsID &target, size_t cbTotal, PCRTSGSEG paSegs, uint32_t cSegs);
+DECLHIDDEN(PIPCDCLIENT) IPC_GetClientByID(PIPCDSTATE pIpcd, uint32_t idClient);
+DECLHIDDEN(PIPCDCLIENT) IPC_GetClientByName(PIPCDSTATE pIpcd, const char *pszName);
 
-//-----------------------------------------------------------------------------
-// other internal IPCD methods
-//-----------------------------------------------------------------------------
+DECLHIDDEN(void)        IPC_PutMsgIntoCache(PIPCDSTATE pIpcd, PIPCMSG pMsg);
 
 //
 // dispatch message
 //
-PRStatus IPC_DispatchMsg(ipcClientHandle client, const ipcMessage *msg);
+DECLHIDDEN(int) IPC_DispatchMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg);
 
 //
 // send message, takes ownership of |msg|.
 //
-PRStatus IPC_SendMsg(ipcClientHandle client, ipcMessage *msg);
+DECLHIDDEN(int) IPC_SendMsg(PIPCDCLIENT pIpcClient, PIPCMSG pMsg);
 
 //
 // dispatch notifications about client connects and disconnects
 //
-void IPC_NotifyClientUp(ipcClientHandle client);
-void IPC_NotifyClientDown(ipcClientHandle client);
+DECLHIDDEN(void) IPC_NotifyClientUp(PIPCDCLIENT pIpcClient);
+DECLHIDDEN(void) IPC_NotifyClientDown(PIPCDCLIENT pIpcClient);
 
 #endif // !IPCD_H__

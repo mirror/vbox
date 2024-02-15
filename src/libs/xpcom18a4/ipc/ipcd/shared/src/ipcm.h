@@ -38,6 +38,8 @@
 #ifndef ipcm_h__
 #define ipcm_h__
 
+#include <iprt/assertcompile.h>
+
 #include "ipcMessage.h"
 #include "ipcMessagePrimitives.h"
 
@@ -117,6 +119,7 @@ struct ipcmMessageHeader
     PRUint32 mType;
     PRUint32 mRequestIndex;
 };
+AssertCompileSize(struct ipcmMessageHeader, 8);
 
 //
 // returns IPCM message type.

@@ -41,89 +41,115 @@
 #include <iprt/list.h>
 #include <iprt/socket.h>
 
-#include "ipcMessageQ.h"
+#include "ipcMessageNew.h"
+
 #include "ipcStringList.h"
 #include "ipcIDList.h"
 
-//-----------------------------------------------------------------------------
-// ipcClient
-//
-// NOTE: this class is an implementation detail of the IPC daemon. IPC daemon
-// modules (other than the built-in IPCM module) must not access methods on
-// this class directly. use the API provided via ipcd.h instead.
-//-----------------------------------------------------------------------------
 
-class ipcClient
+/** Pointer to the IPCD manager state. */
+typedef struct IPCDSTATE *PIPCDSTATE;
+
+/**
+ * IPC daemon client state.
+ *
+ * @note Treat these as opaque and use the accessor functions below.
+ */
+typedef struct IPCDCLIENT
 {
-public:
     /** Node for the list of clients. */
-    RTLISTNODE NdClients;
-    bool     m_fUsed;
-    uint32_t m_idPoll;
-    uint32_t m_fPollEvts;
+    RTLISTNODE      NdClients;
+    /** The owning IPCD state. */
+    PIPCDSTATE      pIpcd;
+    /** Flag whether the client state is currently in use. */
+    bool            fUsed;
+    /** The poll ID for this client. */
+    uint32_t        idPoll;
+    /** Poll event flags */
+    uint32_t        fPollEvts;
 
-    void Init(uint32_t idPoll, RTSOCKET hSock);
-    void Finalize();
-
-    PRUint32 ID() const { return mID; }
-
-    void   AddName(const char *name);
-    PRBool DelName(const char *name);
-    PRBool HasName(const char *name) const { return mNames.Find(name) != NULL; }
-
-    void   AddTarget(const nsID &target);
-    PRBool DelTarget(const nsID &target);
-    PRBool HasTarget(const nsID &target) const { return mTargets.Find(target) != NULL; }
-
-    // list iterators
-    const ipcStringNode *Names()   const { return mNames.First(); }
-    const ipcIDNode     *Targets() const { return mTargets.First(); }
-
-    // returns primary client name (the one specified in the "client hello" message)
-    const char *PrimaryName() const { return mNames.First() ? mNames.First()->Value() : NULL; }
-
-    void   SetExpectsSyncReply(PRBool val) { mExpectsSyncReply = val; }
-    PRBool GetExpectsSyncReply() const     { return mExpectsSyncReply; }
-
-    //
-    // called to process a client file descriptor.  the value of pollFlags
-    // indicates the state of the socket.
-    //
-    // returns:
-    //   0                - to cancel client connection
-    //   RTPOLL_EVT_READ  - to poll for a readable socket
-    //   RTPOLL_EVT_WRITE - to poll for a writable socket
-    //   (both flags)     - to poll for either a readable or writable socket
-    //
-    // the socket is non-blocking.
-    //
-    uint32_t Process(uint32_t pollFlags);
-
-    //
-    // on success or failure, this function takes ownership of |msg| and will
-    // delete it when appropriate.
-    //
-    void EnqueueOutboundMsg(ipcMessage *msg) { mOutMsgQ.Append(msg); }
-
-private:
-    static PRUint32 gLastID;
-
-    PRUint32      mID;
-    ipcStringList mNames;
-    ipcIDList     mTargets;
-    PRBool        mExpectsSyncReply;
-
-    ipcMessage    mInMsg;    // buffer for incoming message
-    ipcMessageQ   mOutMsgQ;  // outgoing message queue
-
-    // keep track of the amount of the first message sent
-    PRUint32      mSendOffset;
-
+    /** Client ID .*/
+    uint32_t        idClient;
     /** Client socket. */
-    RTSOCKET      m_hSock;
+    RTSOCKET        hSock;
+    /** The current incoming message. */
+    IPCMSG          MsgIn;
+    /** List of outgoing messages. */
+    RTLISTANCHOR    LstMsgsOut;
+    /** How much of the current message in the output buffer was already sent. */
+    uint32_t        offMsgOutBuf;
 
-    // utility function for writing out messages.
-    int WriteMsgs();
-};
+    bool            fExpectsSyncReply;
+    ipcStringList   mNames;
+    ipcIDList       mTargets;
+} IPCDCLIENT;
+/** Pointer to an IPCD client state. */
+typedef IPCDCLIENT *PIPCDCLIENT;
+/** Pointer to a const IPCD client state. */
+typedef const IPCDCLIENT *PCIPCDCLIENT;
+
+
+DECLINLINE(PIPCDSTATE) ipcdClientGetDaemonState(PCIPCDCLIENT pThis)
+{
+    return pThis->pIpcd;
+}
+
+
+DECLINLINE(uint32_t) ipcdClientGetId(PCIPCDCLIENT pThis)
+{
+    return pThis->idClient;
+}
+
+
+DECLINLINE(void) ipcdClientEnqueueOutboundMsg(PIPCDCLIENT pThis, PIPCMSG pMsg)
+{
+    RTListAppend(&pThis->LstMsgsOut, &pMsg->NdMsg);
+}
+
+DECLINLINE(bool) ipcdClientHasName(PCIPCDCLIENT pThis, const char *pszName)
+{
+    return pThis->mNames.Find(pszName) != NULL;
+}
+
+DECLHIDDEN(void) ipcdClientAddName(PIPCDCLIENT pThis, const char *pszName);
+
+DECLHIDDEN(bool) ipcdClientDelName(PIPCDCLIENT pThis, const char *pszName);
+
+DECLINLINE(bool) ipcdClientHasTarget(PCIPCDCLIENT pThis, const nsID *target)
+{
+    return pThis->mTargets.Find(*target) != NULL;
+}
+
+DECLHIDDEN(void) ipcdClientAddTarget(PIPCDCLIENT pThis, const nsID *target);
+
+DECLHIDDEN(bool) ipcdClientDelTarget(PIPCDCLIENT pThis, const nsID *target);
+
+DECLHIDDEN(int) ipcdClientInit(PIPCDCLIENT pThis, PIPCDSTATE pIpcd, uint32_t idPoll, RTSOCKET hSock);
+
+DECLHIDDEN(void) ipcdClientDestroy(PIPCDCLIENT pThis);
+
+//
+// called to process a client file descriptor.  the value of pollFlags
+// indicates the state of the socket.
+//
+// returns:
+//   0                - to cancel client connection
+//   RTPOLL_EVT_READ  - to poll for a readable socket
+//   RTPOLL_EVT_WRITE - to poll for a writable socket
+//   (both flags)     - to poll for either a readable or writable socket
+//
+// the socket is non-blocking.
+//
+DECLHIDDEN(uint32_t) ipcdClientProcess(PIPCDCLIENT pThis, uint32_t fPollFlags);
+
+DECLINLINE(void) ipcdClientSetExpectsSyncReply(PIPCDCLIENT pThis, bool f)
+{
+    pThis->fExpectsSyncReply = f;
+}
+
+DECLINLINE(bool) ipcdClientGetExpectsSyncReply(PCIPCDCLIENT pThis)
+{
+    return pThis->fExpectsSyncReply;
+}
 
 #endif // !ipcClientUnix_h__

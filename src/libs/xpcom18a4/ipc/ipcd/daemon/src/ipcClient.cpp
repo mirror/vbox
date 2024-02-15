@@ -35,17 +35,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 #define LOG_GROUP LOG_GROUP_IPC
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/poll.h>
 #include <VBox/log.h>
 
 #include "ipcClient.h"
-#include "ipcMessage.h"
 #include "ipcd.h"
 #include "ipcm.h"
 
-PRUint32 ipcClient::gLastID = 0;
+static volatile uint32_t g_idClientLast = 0;
+
 
 //
 // called to initialize this client context
@@ -53,174 +54,111 @@ PRUint32 ipcClient::gLastID = 0;
 // assumptions:
 //  - object's memory has already been zero'd out.
 //
-void
-ipcClient::Init(uint32_t idPoll, RTSOCKET hSock)
+DECLHIDDEN(int) ipcdClientInit(PIPCDCLIENT pThis, PIPCDSTATE pIpcd, uint32_t idPoll, RTSOCKET hSock)
 {
-    mID = ++gLastID;
+    pThis->idClient = ASMAtomicIncU32(&g_idClientLast);
 
     // every client must be able to handle IPCM messages.
-    mTargets.Append(IPCM_TARGET);
+    pThis->mTargets.Append(IPCM_TARGET);
 
-    m_hSock  = hSock;
-    m_idPoll = idPoll;
-    m_fUsed  = true;
+    pThis->pIpcd     = pIpcd;
+    pThis->hSock     = hSock;
+    pThis->idPoll    = idPoll;
+    pThis->fPollEvts = RTPOLL_EVT_READ;
+    pThis->fUsed     = true;
+
+    RTListInit(&pThis->LstMsgsOut);
 
     // although it is tempting to fire off the NotifyClientUp event at this
     // time, we must wait until the client sends us a CLIENT_HELLO event.
     // see ipcCommandModule::OnClientHello.
+
+    return IPCMsgInit(&pThis->MsgIn, 0 /*cbBuf*/);
 }
 
 //
 // called when this client context is going away
 //
-void
-ipcClient::Finalize()
+DECLHIDDEN(void) ipcdClientDestroy(PIPCDCLIENT pThis)
 {
-    RTSocketClose(m_hSock);
-    m_hSock = NIL_RTSOCKET;
+    RTSocketClose(pThis->hSock);
+    pThis->hSock = NIL_RTSOCKET;
 
-    IPC_NotifyClientDown(this);
+    IPC_NotifyClientDown(pThis);
 
-    mNames.DeleteAll();
-    mTargets.DeleteAll();
+    pThis->mNames.DeleteAll();
+    pThis->mTargets.DeleteAll();
 
-    mInMsg.Reset();
-    mOutMsgQ.DeleteAll();
-    m_fUsed = false;
+    IPCMsgFree(&pThis->MsgIn, false /*fFreeStruct*/);
+    pThis->fUsed = false;
+
+    /** @todo Free all outgoing messages. */
 }
 
-void
-ipcClient::AddName(const char *name)
-{
-    LogFlowFunc(("adding client name: %s\n", name));
 
-    if (HasName(name))
+DECLHIDDEN(void) ipcdClientAddName(PIPCDCLIENT pThis, const char *pszName)
+{
+    LogFlowFunc(("adding client name: %s\n", pszName));
+
+    if (ipcdClientHasName(pThis, pszName))
         return;
 
-    mNames.Append(name);
+    pThis->mNames.Append(pszName);
 }
 
-PRBool
-ipcClient::DelName(const char *name)
+
+DECLHIDDEN(bool) ipcdClientDelName(PIPCDCLIENT pThis, const char *pszName)
 {
-    LogFlowFunc(("deleting client name: %s\n", name));
+    LogFlowFunc(("deleting client name: %s\n", pszName));
 
-    return mNames.FindAndDelete(name);
+    return pThis->mNames.FindAndDelete(pszName);
 }
 
-void
-ipcClient::AddTarget(const nsID &target)
+
+DECLHIDDEN(void) ipcdClientAddTarget(PIPCDCLIENT pThis, const nsID *target)
 {
     LogFlowFunc(("adding client target\n"));
 
-    if (HasTarget(target))
+    if (ipcdClientHasTarget(pThis, target))
         return;
 
-    mTargets.Append(target);
+    pThis->mTargets.Append(*target);
 }
 
-PRBool
-ipcClient::DelTarget(const nsID &target)
+
+DECLHIDDEN(bool) ipcdClientDelTarget(PIPCDCLIENT pThis, const nsID *target)
 {
     LogFlowFunc(("deleting client target\n"));
 
     //
     // cannot remove the IPCM target
     //
-    if (!target.Equals(IPCM_TARGET))
-        return mTargets.FindAndDelete(target);
+    if (!target->Equals(IPCM_TARGET))
+        return pThis->mTargets.FindAndDelete(*target);
 
-    return PR_FALSE;
-}
-
-//
-// called to process a client socket
-//
-// params:
-//   poll_flags - the state of the client socket
-//
-// return:
-//   0             - to end session with this client
-//   PR_POLL_READ  - to wait for the client socket to become readable
-//   PR_POLL_WRITE - to wait for the client socket to become writable
-//
-uint32_t
-ipcClient::Process(uint32_t inFlags)
-{
-    if (inFlags & RTPOLL_EVT_ERROR)
-    {
-        LogFlowFunc(("client socket appears to have closed\n"));
-        return 0;
-    }
-
-    // expect to wait for more data
-    uint32_t outFlags = RTPOLL_EVT_READ;
-
-    if (inFlags & RTPOLL_EVT_READ) {
-        LogFlowFunc(("client socket is now readable\n"));
-
-        char buf[_1K];
-        size_t cbRead = 0;
-        int vrc = RTSocketReadNB(m_hSock, &buf[0], sizeof(buf), &cbRead);
-        Assert(vrc != VINF_TRY_AGAIN);
-
-        if (RT_FAILURE(vrc) || cbRead == 0)
-            return 0; // cancel connection
-
-        const char *ptr = buf;
-        while (cbRead)
-        {
-            PRUint32 nread;
-            PRBool complete;
-
-            if (mInMsg.ReadFrom(ptr, PRUint32(cbRead), &nread, &complete) == PR_FAILURE) {
-                LogFlowFunc(("message appears to be malformed; dropping client connection\n"));
-                return 0;
-            }
-
-            if (complete)
-            {
-                IPC_DispatchMsg(this, &mInMsg);
-                mInMsg.Reset();
-            }
-
-            cbRead -= nread;
-            ptr    += nread;
-        }
-    }
-
-    if (inFlags & RTPOLL_EVT_WRITE) {
-        LogFlowFunc(("client socket is now writable\n"));
-
-        if (mOutMsgQ.First())
-            WriteMsgs();
-    }
-
-    if (mOutMsgQ.First())
-        outFlags |= RTPOLL_EVT_WRITE;
-
-    return outFlags;
+    return false;
 }
 
 //
 // called to write out any messages from the outgoing queue.
 //
-int
-ipcClient::WriteMsgs()
+static int ipcdClientWriteMsgs(PIPCDCLIENT pThis)
 {
-    while (mOutMsgQ.First())
+    while (!RTListIsEmpty(&pThis->LstMsgsOut))
     {
-        const char *buf = (const char *) mOutMsgQ.First()->MsgBuf();
-        PRInt32 bufLen = (PRInt32) mOutMsgQ.First()->MsgLen();
+        PIPCMSG pMsg         = RTListGetFirst(&pThis->LstMsgsOut, IPCMSG, NdMsg);
+        const uint8_t *pbBuf = (const uint8_t *)IPCMsgGetBuf(pMsg);
+        size_t cbBuf         = IPCMsgGetSize(pMsg);
 
-        if (mSendOffset)
+        if (pThis->offMsgOutBuf)
         {
-            buf += mSendOffset;
-            bufLen -= mSendOffset;
+            Assert(cbBuf > pThis->offMsgOutBuf);
+            pbBuf += pThis->offMsgOutBuf;
+            cbBuf -= pThis->offMsgOutBuf;
         }
 
         size_t cbWritten = 0;
-        int vrc = RTSocketWriteNB(m_hSock, buf, bufLen, &cbWritten);
+        int vrc = RTSocketWriteNB(pThis->hSock, pbBuf, cbBuf, &cbWritten);
         if (vrc == VINF_SUCCESS)
         { /* likely */ Assert(cbWritten > 0); }
         else
@@ -232,15 +170,74 @@ ipcClient::WriteMsgs()
 
         LogFlowFunc(("wrote %d bytes\n", cbWritten));
 
-        if (cbWritten == bufLen)
+        if (cbWritten == cbBuf)
         {
-            mOutMsgQ.DeleteFirst();
-            mSendOffset = 0;
+            RTListNodeRemove(&pMsg->NdMsg);
+            IPC_PutMsgIntoCache(pThis->pIpcd, pMsg);
+            pThis->offMsgOutBuf = 0;
         }
         else
-            mSendOffset += cbWritten;
+            pThis->offMsgOutBuf += cbWritten;
     }
 
     return 0;
 }
 
+DECLHIDDEN(uint32_t) ipcdClientProcess(PIPCDCLIENT pThis, uint32_t fPollFlags)
+{
+    if (fPollFlags & RTPOLL_EVT_ERROR)
+    {
+        LogFlowFunc(("client socket appears to have closed\n"));
+        return 0;
+    }
+
+    uint32_t fOutFlags = RTPOLL_EVT_READ;
+
+    if (fPollFlags & RTPOLL_EVT_READ) {
+        LogFlowFunc(("client socket is now readable\n"));
+
+        uint8_t abBuf[_1K];
+        size_t cbRead = 0;
+        int vrc = RTSocketReadNB(pThis->hSock, &abBuf[0], sizeof(abBuf), &cbRead);
+        Assert(vrc != VINF_TRY_AGAIN);
+
+        if (RT_FAILURE(vrc) || cbRead == 0)
+            return 0; // cancel connection
+
+        const uint8_t *pb = abBuf;
+        while (cbRead)
+        {
+            size_t cbProcessed;
+            bool fDone;
+
+            int vrc = IPCMsgReadFrom(&pThis->MsgIn, pb, cbRead, &cbProcessed, &fDone);
+            if (RT_FAILURE(vrc))
+            {
+                LogFlowFunc(("message appears to be malformed; dropping client connection\n"));
+                return 0;
+            }
+
+            if (fDone)
+            {
+                IPC_DispatchMsg(pThis, &pThis->MsgIn);
+                IPCMsgReset(&pThis->MsgIn);
+            }
+
+            cbRead -= cbProcessed;
+            pb     += cbProcessed;
+        }
+    }
+
+    if (fPollFlags & RTPOLL_EVT_WRITE)
+    {
+        LogFlowFunc(("client socket is now writable\n"));
+
+        if (!RTListIsEmpty(&pThis->LstMsgsOut))
+            ipcdClientWriteMsgs(pThis);
+    }
+
+    if (!RTListIsEmpty(&pThis->LstMsgsOut))
+        fOutFlags |= RTPOLL_EVT_WRITE;
+
+    return fOutFlags;
+}

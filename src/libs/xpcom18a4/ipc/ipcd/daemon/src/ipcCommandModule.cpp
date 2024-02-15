@@ -39,277 +39,226 @@
 #include <string.h>
 #include "ipcCommandModule.h"
 #include "ipcClient.h"
-#include "ipcMessage.h"
-#include "ipcMessageUtils.h"
+#include "ipcMessageNew.h"
 #include "ipcd.h"
 #include "ipcm.h"
 
 #include <VBox/log.h>
 
-struct ipcCommandModule
+typedef void FNIPCMMSGHANDLER(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg);
+/** Pointer to a IPCM message handler. */
+typedef FNIPCMMSGHANDLER *PFNIPCMMSGHANDLER;
+
+
+DECLINLINE(uint32_t) IPCM_GetType(PCIPCMSG pMsg)
 {
-    typedef void (* MsgHandler)(ipcClient *, const ipcMessage *);
+    return ((const ipcmMessageHeader *)IPCMsgGetPayload(pMsg))->mType;
+}
+
+
+DECLINLINE(uint32_t) IPCM_GetRequestIndex(PCIPCMSG pMsg)
+{
+    return ((const ipcmMessageHeader *)IPCMsgGetPayload(pMsg))->mRequestIndex;
+}
+
+//
+// message handlers
+//
+
+static DECLCALLBACK(void) ipcmOnPing(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got PING\n"));
+
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), IPCM_OK };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+}
+
+static DECLCALLBACK(void) ipcmOnClientHello(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got CLIENT_HELLO\n"));
+
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_CLIENT_ID, IPCM_GetRequestIndex(pMsg), ipcdClientGetId(pIpcClient) };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
 
     //
-    // helpers
+    // NOTE: it would almost make sense for this notification to live
+    // in the transport layer code.  however, clients expect to receive
+    // a CLIENT_ID as the first message following a CLIENT_HELLO, so we
+    // must not allow modules to see a client until after we have sent
+    // the CLIENT_ID message.
     //
+    IPC_NotifyClientUp(pIpcClient);
+}
 
-    static char **
-    BuildStringArray(const ipcStringNode *nodes)
+static DECLCALLBACK(void) ipcmOnClientAddName(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got CLIENT_ADD_NAME\n"));
+
+    int32_t status = IPCM_OK;
+    uint32_t requestIndex = IPCM_GetRequestIndex(pMsg);
+
+    const char *pszName = (const char *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    if (pszName)
     {
-        size_t count = 0;
-
-        const ipcStringNode *node;
-
-        for (node = nodes; node; node = node->mNext)
-            count++;
-
-        char **strs = (char **) malloc((count + 1) * sizeof(char *));
-        if (!strs)
-            return NULL;
-
-        count = 0;
-        for (node = nodes; node; node = node->mNext, ++count)
-            strs[count] = (char *) node->Value();
-        strs[count] = 0;
-
-        return strs;
-    }
-
-    static nsID **
-    BuildIDArray(const ipcIDNode *nodes)
-    {
-        size_t count = 0;
-
-        const ipcIDNode *node;
-
-        for (node = nodes; node; node = node->mNext)
-            count++;
-
-        nsID **ids = (nsID **) calloc(count + 1, sizeof(nsID *));
-        if (!ids)
-            return NULL;
-
-        count = 0;
-        for (node = nodes; node; node = node->mNext, ++count)
-            ids[count] = (nsID *) &node->Value();
-
-        return ids;
-    }
-
-    //
-    // message handlers
-    //
-
-    static void
-    OnPing(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got PING\n"));
-
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
-    }
-
-    static void
-    OnClientHello(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got CLIENT_HELLO\n"));
-
-        IPC_SendMsg(client, new ipcmMessageClientID(IPCM_GetRequestIndex(rawMsg), client->ID()));
-
-        //
-        // NOTE: it would almost make sense for this notification to live
-        // in the transport layer code.  however, clients expect to receive
-        // a CLIENT_ID as the first message following a CLIENT_HELLO, so we
-        // must not allow modules to see a client until after we have sent
-        // the CLIENT_ID message.
-        //
-        IPC_NotifyClientUp(client);
-    }
-
-    static void
-    OnClientAddName(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got CLIENT_ADD_NAME\n"));
-
-        PRInt32 status = IPCM_OK;
-        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
-
-        ipcMessageCast<ipcmMessageClientAddName> msg(rawMsg);
-        const char *name = msg->Name();
-        if (name) {
-            ipcClient *result = IPC_GetClientByName(msg->Name());
-            if (result) {
-                Log(("  client with such name already exists (ID = %d)\n", result->ID()));
-                status = IPCM_ERROR_ALREADY_EXISTS;
-            }
-            else
-                client->AddName(name);
-        }
-        else
-            status = IPCM_ERROR_INVALID_ARG;
-
-        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
-    }
-
-    static void
-    OnClientDelName(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got CLIENT_DEL_NAME\n"));
-
-        PRInt32 status = IPCM_OK;
-        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
-
-        ipcMessageCast<ipcmMessageClientDelName> msg(rawMsg);
-        const char *name = msg->Name();
-        if (name) {
-            if (!client->DelName(name)) {
-                Log(("  client doesn't have name '%s'\n", name));
-                status = IPCM_ERROR_NO_SUCH_DATA;
-            }
-        }
-        else
-            status = IPCM_ERROR_INVALID_ARG;
-
-        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
-    }
-
-    static void
-    OnClientAddTarget(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got CLIENT_ADD_TARGET\n"));
-
-        PRInt32 status = IPCM_OK;
-        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
-
-        ipcMessageCast<ipcmMessageClientAddTarget> msg(rawMsg);
-        if (client->HasTarget(msg->Target())) {
-            Log(("  target already defined for client\n"));
+        PIPCDCLIENT pIpcClientResult = IPC_GetClientByName(ipcdClientGetDaemonState(pIpcClient), pszName);
+        if (pIpcClientResult)
+        {
+            Log(("  client with such name already exists (ID = %d)\n", ipcdClientGetId(pIpcClientResult)));
             status = IPCM_ERROR_ALREADY_EXISTS;
         }
         else
-            client->AddTarget(msg->Target());
-
-        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
+            ipcdClientAddName(pIpcClient, pszName);
     }
+    else
+        status = IPCM_ERROR_INVALID_ARG;
 
-    static void
-    OnClientDelTarget(ipcClient *client, const ipcMessage *rawMsg)
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, requestIndex, (uint32_t)status };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+}
+
+static DECLCALLBACK(void) ipcmOnClientDelName(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got CLIENT_DEL_NAME\n"));
+
+    PRInt32 status = IPCM_OK;
+    PRUint32 requestIndex = IPCM_GetRequestIndex(pMsg);
+
+    const char *pszName = (const char *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    if (pszName)
     {
-        Log(("got CLIENT_DEL_TARGET\n"));
-
-        PRInt32 status = IPCM_OK;
-        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
-
-        ipcMessageCast<ipcmMessageClientDelTarget> msg(rawMsg);
-        if (!client->DelTarget(msg->Target())) {
-            Log(("  client doesn't have the given target\n"));
+        if (!ipcdClientDelName(pIpcClient, pszName))
+        {
+            Log(("  client doesn't have name '%s'\n", pszName));
             status = IPCM_ERROR_NO_SUCH_DATA;
         }
-
-        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
     }
+    else
+        status = IPCM_ERROR_INVALID_ARG;
 
-    static void
-    OnQueryClientByName(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got QUERY_CLIENT_BY_NAME\n"));
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status  };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+}
 
-        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
-
-        ipcMessageCast<ipcmMessageQueryClientByName> msg(rawMsg);
-
-        ipcClient *result = IPC_GetClientByName(msg->Name());
-        if (result) {
-            Log(("  client exists w/ ID = %u\n", result->ID()));
-            IPC_SendMsg(client, new ipcmMessageClientID(requestIndex, result->ID()));
-        }
-        else {
-            Log(("  client does not exist\n"));
-            IPC_SendMsg(client, new ipcmMessageResult(requestIndex, IPCM_ERROR_NO_CLIENT));
-        }
-    }
-
-#if 0
-    static void
-    OnQueryClientInfo(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got QUERY_CLIENT_INFO\n"));
-
-        ipcMessageCast<ipcmMessageQueryClientInfo> msg(rawMsg);
-        ipcClient *result = IPC_GetClientByID(msg->ClientID());
-        if (result) {
-            char **names = BuildStringArray(result->Names());
-            nsID **targets = BuildIDArray(result->Targets());
-
-            IPC_SendMsg(client, new ipcmMessageClientInfo(result->ID(),
-                                                          msg->RequestIndex(),
-                                                          (const char **) names,
-                                                          (const nsID **) targets));
-
-            free(names);
-            free(targets);
-        }
-        else {
-            Log(("  client does not exist\n"));
-            IPC_SendMsg(client, new ipcmMessageError(IPCM_ERROR_NO_CLIENT, msg->RequestIndex()));
-        }
-    }
-#endif
-
-    static void
-    OnForward(ipcClient *client, const ipcMessage *rawMsg)
-    {
-        Log(("got FORWARD\n"));
-
-        ipcMessageCast<ipcmMessageForward> msg(rawMsg);
-
-        ipcClient *dest = IPC_GetClientByID(msg->ClientID());
-        if (!dest) {
-            Log(("  destination client not found!\n"));
-            IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_ERROR_NO_CLIENT));
-            return;
-        }
-        // inform client that its message will be forwarded
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
-
-        ipcMessage *newMsg = new ipcmMessageForward(IPCM_MSG_PSH_FORWARD,
-                                                    client->ID(),
-                                                    msg->InnerTarget(),
-                                                    msg->InnerData(),
-                                                    msg->InnerDataLen());
-        IPC_SendMsg(dest, newMsg);
-    }
-};
-
-void
-IPCM_HandleMsg(ipcClient *client, const ipcMessage *rawMsg)
+static DECLCALLBACK(void) ipcmOnClientAddTarget(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
 {
-    static ipcCommandModule::MsgHandler handlers[] =
+    Log(("got CLIENT_ADD_TARGET\n"));
+
+    PRInt32 status = IPCM_OK;
+    PRUint32 requestIndex = IPCM_GetRequestIndex(pMsg);
+
+    const nsID *pidTarget = (const nsID *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    if (ipcdClientHasTarget(pIpcClient, pidTarget))
     {
-        ipcCommandModule::OnPing,
-        ipcCommandModule::OnForward,
-        ipcCommandModule::OnClientHello,
-        ipcCommandModule::OnClientAddName,
-        ipcCommandModule::OnClientDelName,
-        ipcCommandModule::OnClientAddTarget,
-        ipcCommandModule::OnClientDelTarget,
-        ipcCommandModule::OnQueryClientByName
+        Log(("  target already defined for client\n"));
+        status = IPCM_ERROR_ALREADY_EXISTS;
+    }
+    else
+        ipcdClientAddTarget(pIpcClient, pidTarget);
+
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+}
+
+static DECLCALLBACK(void) ipcmOnClientDelTarget(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got CLIENT_DEL_TARGET\n"));
+
+    PRInt32 status = IPCM_OK;
+    PRUint32 requestIndex = IPCM_GetRequestIndex(pMsg);
+
+    const nsID *pidTarget = (const nsID *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    if (!ipcdClientDelTarget(pIpcClient, pidTarget))
+    {
+        Log(("  client doesn't have the given target\n"));
+        status = IPCM_ERROR_NO_SUCH_DATA;
+    }
+
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+}
+
+static DECLCALLBACK(void) ipcmOnQueryClientByName(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got QUERY_CLIENT_BY_NAME\n"));
+
+    PRUint32 requestIndex = IPCM_GetRequestIndex(pMsg);
+
+    const char *pszName = (const char *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    PIPCDCLIENT pIpcClientResult = IPC_GetClientByName(ipcdClientGetDaemonState(pIpcClient), pszName);
+    if (pIpcClientResult)
+    {
+        Log(("  client exists w/ ID = %u\n", ipcdClientGetId(pIpcClientResult)));
+        const uint32_t aResp[3] = { IPCM_MSG_ACK_CLIENT_ID, requestIndex, ipcdClientGetId(pIpcClientResult) };
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    }
+    else
+    {
+        Log(("  client does not exist\n"));
+        const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, requestIndex, (uint32_t)IPCM_ERROR_NO_CLIENT };
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    }
+}
+
+static DECLCALLBACK(void) ipcmOnForward(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
+{
+    Log(("got FORWARD\n"));
+
+    uint32_t idClient = *(uint32_t *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
+    PIPCDCLIENT pIpcClientDst = IPC_GetClientByID(ipcdClientGetDaemonState(pIpcClient), idClient);
+    if (!pIpcClientDst)
+    {
+        Log(("  destination client not found!\n"));
+        const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)IPCM_ERROR_NO_CLIENT };
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+        return;
+    }
+    // inform client that its message will be forwarded
+    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), IPCM_OK };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+
+    uint32_t aIpcmFwdHdr[3] = { IPCM_MSG_PSH_FORWARD, IPCM_NewRequestIndex(), ipcdClientGetId(pIpcClient) };
+    RTSGSEG aSegs[2];
+
+    aSegs[0].pvSeg = &aIpcmFwdHdr[0];
+    aSegs[0].cbSeg = sizeof(aIpcmFwdHdr);
+
+    aSegs[1].pvSeg = (uint8_t *)IPCMsgGetPayload(pMsg) + sizeof(aIpcmFwdHdr);
+    aSegs[1].cbSeg = IPCMsgGetPayloadSize(pMsg) - sizeof(aIpcmFwdHdr);
+
+    IPC_SendMsgSg(pIpcClientDst, IPCM_TARGET, IPCMsgGetPayloadSize(pMsg), &aSegs[0], RT_ELEMENTS(aSegs));
+}
+
+
+DECLHIDDEN(void) IPCM_HandleMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg)
+{
+    static const PFNIPCMMSGHANDLER aHandlers[] =
+    {
+        ipcmOnPing,
+        ipcmOnForward,
+        ipcmOnClientHello,
+        ipcmOnClientAddName,
+        ipcmOnClientDelName,
+        ipcmOnClientAddTarget,
+        ipcmOnClientDelTarget,
+        ipcmOnQueryClientByName
     };
 
-    int type = IPCM_GetType(rawMsg);
-    Log(("IPCM_HandleMsg [type=%x]\n", type));
+    uint32_t u32Type = IPCM_GetType(pMsg);
+    Log(("IPCM_HandleMsg [u32Type=%x]\n", u32Type));
 
-    if (!(type & IPCM_MSG_CLASS_REQ)) {
+    if (!(u32Type & IPCM_MSG_CLASS_REQ))
+    {
         Log(("not a request -- ignoring message\n"));
         return;
     }
 
-    type &= ~IPCM_MSG_CLASS_REQ;
-    type--;
-    if (type < 0 || type >= (int) (sizeof(handlers)/sizeof(handlers[0]))) {
+    u32Type &= ~IPCM_MSG_CLASS_REQ;
+    u32Type--;
+    if (u32Type >= RT_ELEMENTS(aHandlers))
+    {
         Log(("unknown request -- ignoring message\n"));
         return;
     }
 
-    (handlers[type])(client, rawMsg);
+    aHandlers[u32Type](pIpcClient, pMsg);
 }

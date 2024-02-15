@@ -38,11 +38,9 @@
 #ifndef ipcCommandModule_h__
 #define ipcCommandModule_h__
 
-#include "ipcm.h" // for IPCM_TARGET
+#include "ipcMessageNew.h"
+#include "ipcClient.h"
 
-class ipcClient;
-class ipcMessage;
-
-void IPCM_HandleMsg(ipcClient *, const ipcMessage *);
+DECLHIDDEN(void) IPCM_HandleMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg);
 
 #endif // !ipcCommandModule_h__

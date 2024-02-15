@@ -45,20 +45,28 @@
 
 ipcMessage::~ipcMessage()
 {
-    if (mMsgHdr)
-        RTMemFree(mMsgHdr);
+    if (m_pvBuf)
+        RTMemFree(m_pvBuf);
+
+    mMsgHdr    = NULL;
+    m_pvBuf    = NULL;
+    m_cbBufMax = 0;
 }
 
 void
 ipcMessage::Reset()
 {
-    if (mMsgHdr) {
-        RTMemFree(mMsgHdr);
-        mMsgHdr = NULL;
-    }
-
-    mMsgOffset = 0;
+    mMsgHdr      = NULL;
+    mMsgOffset   = 0;
     mMsgComplete = PR_FALSE;
+
+    /* For large messages we don't want to keep the memory around forever. */
+    if (m_cbBufMax > _16K)
+    {
+        RTMemFree(m_pvBuf);
+        m_pvBuf    = NULL;
+        m_cbBufMax = 0;
+    }
 }
 
 ipcMessage *
@@ -70,7 +78,9 @@ ipcMessage::Clone() const
 
     // copy buf if non-null
     if (mMsgHdr) {
-        clone->mMsgHdr = (ipcMessageHeader *) RTMemDup(mMsgHdr, mMsgHdr->mLen);
+        clone->mMsgHdr    = (ipcMessageHeader *) RTMemDup(mMsgHdr, mMsgHdr->mLen);
+        clone->m_pvBuf    = clone->mMsgHdr;
+        clone->m_cbBufMax = mMsgHdr->mLen;
     }
     else
         clone->mMsgHdr = NULL;
@@ -84,18 +94,21 @@ ipcMessage::Clone() const
 PRStatus
 ipcMessage::Init(const nsID &target, const char *data, PRUint32 dataLen)
 {
-    if (mMsgHdr)
-        RTMemFree(mMsgHdr);
-
     mMsgComplete = PR_FALSE;
 
     // allocate message data
     PRUint32 msgLen = IPC_MSG_HEADER_SIZE + dataLen;
-    mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
-    if (!mMsgHdr) {
-        mMsgHdr = NULL;
-        return PR_FAILURE;
+    if (m_cbBufMax < msgLen)
+    {
+        void *pvNew = RTMemRealloc(m_pvBuf, msgLen);
+        if (!pvNew)
+            return PR_FAILURE;
+
+        m_pvBuf    = pvNew;
+        m_cbBufMax = msgLen;
     }
+
+    mMsgHdr = (ipcMessageHeader *)m_pvBuf;
 
     // fill in message data
     mMsgHdr->mLen = msgLen;
@@ -202,9 +215,14 @@ ipcMessage::ReadFrom(const char *buf,
                 bufLen -= count;
                 *bytesRead = count;
 
-                if (MsgLen() > IPC_MSG_GUESSED_SIZE) {
+                if (MsgLen() > m_cbBufMax) {
                     // realloc message buffer to the correct size
-                    mMsgHdr = (ipcMessageHeader *) RTMemRealloc(mMsgHdr, MsgLen());
+                    void *pvNew = RTMemRealloc(m_pvBuf, MsgLen());
+                    if (!pvNew)
+                        return PR_FAILURE;
+                    m_pvBuf    = pvNew;
+                    m_cbBufMax = MsgLen();
+                    mMsgHdr = (ipcMessageHeader *)m_pvBuf;
                 }
             }
         }
@@ -214,9 +232,16 @@ ipcMessage::ReadFrom(const char *buf,
             // not enough data available in buffer to determine allocation size
             // allocate a partial buffer
             PRUint32 msgLen = IPC_MSG_GUESSED_SIZE;
-            mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
-            if (!mMsgHdr)
-                return PR_FAILURE;
+            if (msgLen > m_cbBufMax)
+            {
+                void *pvNew = RTMemRealloc(m_pvBuf, msgLen);
+                if (!pvNew)
+                    return PR_FAILURE;
+                m_pvBuf    = pvNew;
+                m_cbBufMax = msgLen;
+                mMsgHdr = (ipcMessageHeader *)m_pvBuf;
+            }
+
             memcpy(mMsgHdr, buf, bufLen);
             mMsgOffset = bufLen;
             *bytesRead = bufLen;
@@ -225,9 +250,15 @@ ipcMessage::ReadFrom(const char *buf,
         }
         else {
             PRUint32 msgLen = *(PRUint32 *) buf;
-            mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
-            if (!mMsgHdr)
-                return PR_FAILURE;
+            if (msgLen > m_cbBufMax)
+            {
+                void *pvNew = RTMemRealloc(m_pvBuf, msgLen);
+                if (!pvNew)
+                    return PR_FAILURE;
+                m_pvBuf    = pvNew;
+                m_cbBufMax = msgLen;
+            }
+            mMsgHdr = (ipcMessageHeader *)m_pvBuf;
             mMsgHdr->mLen = msgLen;
             mMsgOffset = 0;
         }

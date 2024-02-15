@@ -99,12 +99,16 @@ public:
         , mMsgHdr(NULL)
         , mMsgOffset(0)
         , mMsgComplete(PR_FALSE)
+        , m_cbBufMax(0)
+        , m_pvBuf(NULL)
         { }
     ipcMessage(const nsID &target, const char *data, PRUint32 dataLen)
         : mNext(NULL)
         , mMetaData(0)
         , mMsgHdr(NULL)
         , mMsgOffset(0)
+        , m_cbBufMax(0)
+        , m_pvBuf(NULL)
         { Init(target, data, dataLen); }
    ~ipcMessage() NS_HIDDEN;
 
@@ -209,6 +213,9 @@ private:
     // XXX document me
     PRUint32          mMsgOffset;
     PRPackedBool      mMsgComplete;
+
+    size_t            m_cbBufMax;
+    void              *m_pvBuf;
 };
 
 #endif // !ipcMessage_h__
