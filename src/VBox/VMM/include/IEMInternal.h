@@ -85,6 +85,30 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_THROW_CATCH
 #endif
 
+/** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+ * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
+ * executing native translation blocks.
+ *
+ * This exploits the fact that we save all non-volatile registers in the TB
+ * prologue and thus just need to do the same as the TB epilogue to get the
+ * effect of a longjmp/throw.  Since MSC marks XMM6 thru XMM15 as
+ * non-volatile (and does something even more crazy for ARM), this probably
+ * won't work reliably on Windows. */
+#if defined(DOXYGEN_RUNNING) /*|| defined(RT_ARCH_AMD64)*/
+# define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+#endif
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+# if !defined(IN_RING3) \
+  || !defined(RT_ARCH_AMD64) \
+  || !defined(VBOX_WITH_IEM_RECOMPILER) \
+  || !defined(VBOX_WITH_IEM_NATIVE_RECOMPILER)
+#  undef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+# elif defined(RT_OS_WINDOWS)
+#  pragma message("VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP is not safe to use on windows")
+# endif
+#endif
+
+
 /** @def IEM_DO_LONGJMP
  *
  * Wrapper around longjmp / throw.
@@ -94,7 +118,15 @@ RT_C_DECLS_BEGIN
  */
 #if defined(IEM_WITH_SETJMP) || defined(DOXYGEN_RUNNING)
 # ifdef IEM_WITH_THROW_CATCH
-#  define IEM_DO_LONGJMP(a_pVCpu, a_rc)  throw int(a_rc)
+#  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+#   define IEM_DO_LONGJMP(a_pVCpu, a_rc) do { \
+            if ((a_pVCpu)->iem.s.pvTbFramePointerR3) \
+                iemNativeTbLongJmp((a_pVCpu)->iem.s.pvTbFramePointerR3, (a_rc)); \
+            throw int(a_rc); \
+        } while (0)
+#  else
+#   define IEM_DO_LONGJMP(a_pVCpu, a_rc) throw int(a_rc)
+#  endif
 # else
 #  define IEM_DO_LONGJMP(a_pVCpu, a_rc)  longjmp(*(a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf), (a_rc))
 # endif
@@ -1649,6 +1681,12 @@ typedef struct IEMCPU
     /** Pointer to the current translation block.
      * This can either be one being executed or one being compiled. */
     R3PTRTYPE(PIEMTB)       pCurTbR3;
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+    /** Frame pointer for the last native TB to execute. */
+    R3PTRTYPE(void *)       pvTbFramePointerR3;
+#else
+    R3PTRTYPE(void *)       pvUnusedR3;
+#endif
     /** Fixed TB used for threaded recompilation.
      * This is allocated once with maxed-out sizes and re-used afterwards. */
     R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
@@ -1797,7 +1835,7 @@ typedef struct IEMCPU
     /** Native recompiler: Number of required EFLAGS.OTHER updates. */
     STAMCOUNTER             StatNativeLivenessEflOtherRequired;
 
-    //uint64_t                au64Padding[3];
+    uint64_t                au64Padding[7];
     /** @} */
 
     /** Data TLB.
@@ -5836,6 +5874,7 @@ DECLHIDDEN(PIEMTB)  iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT;
 DECLHIDDEN(void)    iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT;
 int                 iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, uint32_t cbChunk);
 void                iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb);
+DECLASM(DECL_NO_RETURN(void)) iemNativeTbLongJmp(void *pvFramePointer, int rc) RT_NOEXCEPT;
 
 
 /** @} */

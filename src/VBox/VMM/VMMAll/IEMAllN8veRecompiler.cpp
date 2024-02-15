@@ -5947,6 +5947,11 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     pbCodeBuf[off++] = X86_OP_REX_B;            /* push r15 */
     pbCodeBuf[off++] = 0x50 + X86_GREG_x15 - 8;
 
+# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+    /* Save the frame pointer. */
+    off = iemNativeEmitStoreGprToVCpuU64Ex(pbCodeBuf, off, X86_GREG_xBP, RT_UOFFSETOF(VMCPUCC, iem.s.pvTbFramePointerR3));
+# endif
+
     off = iemNativeEmitSubGprImm(pReNative, off,    /* sub rsp, byte 28h */
                                  X86_GREG_xSP,
                                    IEMNATIVE_FRAME_ALIGN_SIZE
@@ -6001,6 +6006,12 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_REG_FIXED_PVMCPU, IEMNATIVE_CALL_ARG0_GREG);
     /* mov r27, r1  */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_REG_FIXED_PCPUMCTX, IEMNATIVE_CALL_ARG1_GREG);
+
+# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+    /* Save the frame pointer. */
+    off = iemNativeEmitStoreGprToVCpuU64Ex(pbCodeBuf, off, ARMV8_A64_REG_BP, RT_UOFFSETOF(VMCPUCC, iem.s.pvTbFramePointerR3),
+                                           ARMV8_A64_REG_X2);
+# endif
 
 #else
 # error "port me"

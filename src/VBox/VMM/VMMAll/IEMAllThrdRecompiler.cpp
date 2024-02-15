@@ -2484,6 +2484,9 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
 # else
         VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu, &pVCpu->cpum.GstCtx);
 # endif
+# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+        pVCpu->iem.s.pvTbFramePointerR3 = NULL;
+# endif
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
         { /* likely */ }
@@ -2735,6 +2738,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
         IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
             pVCpu->iem.s.cLongJumps++;
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+            pVCpu->iem.s.pvTbFramePointerR3 = NULL;
+#endif
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
 
