@@ -1116,7 +1116,7 @@ class TestDriver(base.TestDriver):                                              
         reporter.log2('importVBoxApi finished\n')
         return self.fImportedVBoxApi;
 
-    def _printEnv(self, dEnv = os.environ, fRaw = False):
+    def _printEnv(self, dEnv = os.environ, fRaw = False): # pylint: disable=dangerous-default-value
         """
         Prints the given environment block to log2.
 
