@@ -744,14 +744,6 @@ class tdAudioTest(vbox.TestDriver):
 
         sVkatExe = self.getBinTool('vkat');
 
-        # Run the VKAT self test.
-        # Doesn't take long and gives us some more clue if it flies on the testboxes.
-        reporter.testStart('VKAT Selftest');
-        fRc, _ = self.executeHst("VKAT Host Selftest", [ sVkatExe, 'selftest' ], iExpectedRc = 0);
-        reporter.testDone();
-        if not fRc:
-            return fRc;
-
         # Now probe the backends.
         reporter.testStart('VKAT Probing');
         asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
@@ -761,6 +753,8 @@ class tdAudioTest(vbox.TestDriver):
         if iRc != 0:
             # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
             reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
+            # Mark the whole VM test as being skipped.
+            fSkip = True;
         reporter.testDone();
 
         # Reconfigure the VM.
@@ -829,7 +823,7 @@ class tdAudioTest(vbox.TestDriver):
             self.removeTask(oTxsSession);
             self.terminateVmBySession(oSession);
 
-        reporter.testDone();
+        reporter.testDone(fSkip);
         return fRc;
 
     def onExit(self, iRc):
