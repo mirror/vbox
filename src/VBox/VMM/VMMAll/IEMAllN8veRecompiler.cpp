@@ -3620,31 +3620,25 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
         {
             PCIEMLIVENESSENTRY const pLivenessEntry = &pReNative->paLivenessEntries[idxCurCall - 1];
 
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
             /* Construct a mask of the guest registers in the UNUSED and XCPT_OR_CALL state. */
             AssertCompile(IEMLIVENESS_STATE_UNUSED == 1 && IEMLIVENESS_STATE_XCPT_OR_CALL == 2);
-# if 0
-            IEMLIVENESSBIT Tmp = { pLivenessEntry->Bit0.bm64 ^ pLivenessEntry->Bit1.bm64 }; /* mask of regs in either UNUSED */
-            Tmp.fEflOther &= Tmp.fEflCf; /** @todo optimize this (pair of 3 (status), pair of 4 (in other), pair of 2, pair of 1). */
-            Tmp.fEflOther &= Tmp.fEflPf;
-            Tmp.fEflOther &= Tmp.fEflAf;
-            Tmp.fEflOther &= Tmp.fEflZf;
-            Tmp.fEflOther &= Tmp.fEflSf;
-            Tmp.fEflOther &= Tmp.fEflOf;
-            Tmp.fEflCf     = 0; /* not necessary, but better safe. */
-            Tmp.fEflPf     = 0;
-            Tmp.fEflAf     = 0;
-            Tmp.fEflZf     = 0;
-            Tmp.fEflSf     = 0;
-            Tmp.fEflOf     = 0;
-            uint64_t fToFreeMask = Tmp.bm64;
-# else
             uint64_t fToFreeMask = pLivenessEntry->Bit0.bm64 ^ pLivenessEntry->Bit1.bm64; /* mask of regs in either UNUSED */
+#else
+            /* Construct a mask of the registers not in the read or write state.
+               Note! We could skips writes, if they aren't from us, as this is just
+                     a hack to prevent trashing registers that have just been written
+                     or will be written when we retire the current instruction. */
+            uint64_t fToFreeMask = ~pLivenessEntry->aBits[IEMLIVENESS_BIT_READ].bm64
+                                 & ~pLivenessEntry->aBits[IEMLIVENESS_BIT_WRITE].bm64
+                                 & IEMLIVENESSBIT_MASK;
+#endif
+            /* Merge EFLAGS. */
             uint64_t fTmp = fToFreeMask & (fToFreeMask >> 3);   /* AF2,PF2,CF2,Other2 = AF,PF,CF,Other & OF,SF,ZF,AF */
             fTmp &= fTmp >> 2;                                  /*         CF3,Other3 = AF2,PF2 & CF2,Other2  */
             fTmp &= fTmp >> 1;                                  /*             Other4 = CF3 & Other3 */
             fToFreeMask &= RT_BIT_64(kIemNativeGstReg_EFlags) - 1;
             fToFreeMask |= fTmp & RT_BIT_64(kIemNativeGstReg_EFlags);
-# endif
 
             /* If it matches any shadowed registers. */
             if (pReNative->Core.bmGstRegShadows & fToFreeMask)
@@ -3979,7 +3973,9 @@ iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint64_t 
     return idxReg;
 }
 
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
 
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
 /**
  * Helper for iemNativeLivenessGetStateByGstReg.
  *
@@ -4009,25 +4005,32 @@ iemNativeLivenessMergeExpandedEFlagsState(uint32_t fMergedStateExp2)
 
     return IEMLIVENESS_STATE_UNUSED;
 }
+# endif /* !IEMLIVENESS_EXTENDED_LAYOUT */
 
-#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
 
 DECL_FORCE_INLINE(uint32_t)
 iemNativeLivenessGetStateByGstRegEx(PCIEMLIVENESSENTRY pLivenessEntry, unsigned enmGstRegEx)
 {
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
     return ((pLivenessEntry->Bit0.bm64 >> enmGstRegEx) & 1)
          | (((pLivenessEntry->Bit1.bm64 >> enmGstRegEx) << 1) & 2);
+# else
+    return ( (pLivenessEntry->Bit0.bm64 >> enmGstRegEx)       & 1)
+         | (((pLivenessEntry->Bit1.bm64 >> enmGstRegEx) << 1) & 2)
+         | (((pLivenessEntry->Bit2.bm64 >> enmGstRegEx) << 2) & 4)
+         | (((pLivenessEntry->Bit3.bm64 >> enmGstRegEx) << 2) & 8);
+# endif
 }
 
 
 DECL_FORCE_INLINE(uint32_t)
 iemNativeLivenessGetStateByGstReg(PCIEMLIVENESSENTRY pLivenessEntry, IEMNATIVEGSTREG enmGstReg)
 {
-    uint32_t uRet = ((pLivenessEntry->Bit0.bm64 >> (unsigned)enmGstReg) & 1)
-                  | (((pLivenessEntry->Bit1.bm64 >> (unsigned)enmGstReg) << 1) & 2);
+    uint32_t uRet = iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, (unsigned)enmGstReg);
     if (enmGstReg == kIemNativeGstReg_EFlags)
     {
         /* Merge the eflags states to one. */
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
         uRet  = RT_BIT_32(uRet);
         uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflCf | (pLivenessEntry->Bit1.fEflCf << 1));
         uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflPf | (pLivenessEntry->Bit1.fEflPf << 1));
@@ -4036,6 +4039,15 @@ iemNativeLivenessGetStateByGstReg(PCIEMLIVENESSENTRY pLivenessEntry, IEMNATIVEGS
         uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflSf | (pLivenessEntry->Bit1.fEflSf << 1));
         uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflOf | (pLivenessEntry->Bit1.fEflOf << 1));
         uRet  = iemNativeLivenessMergeExpandedEFlagsState(uRet);
+# else
+        AssertCompile(IEMLIVENESSBIT_IDX_EFL_OTHER == (unsigned)kIemNativeGstReg_EFlags);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_CF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_PF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_AF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_ZF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_SF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_OF);
+# endif
     }
     return uRet;
 }
@@ -4264,7 +4276,9 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
               || enmGstReg == kIemNativeGstReg_Pc
               || (enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
                   ? IEMLIVENESS_STATE_IS_CLOBBER_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg))
-                  : IEMLIVENESS_STATE_IS_ACCESS_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg)) ),
+                  : enmIntendedUse == kIemNativeGstRegUse_ForUpdate
+                  ? IEMLIVENESS_STATE_IS_MODIFY_EXPECTED( iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg))
+                  : IEMLIVENESS_STATE_IS_INPUT_EXPECTED(  iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg)) ),
               ("%s - %u\n", g_aGstShadowInfo[enmGstReg].pszName, iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg)));
 #endif
     RT_NOREF(fSkipLivenessAssert);
@@ -4439,7 +4453,7 @@ iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, u
     Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
 #ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
     AssertMsg(   pReNative->idxCurCall == 0
-              || IEMLIVENESS_STATE_IS_ACCESS_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg))
+              || IEMLIVENESS_STATE_IS_INPUT_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg))
               || enmGstReg == kIemNativeGstReg_Pc,
               ("%s - %u\n", g_aGstShadowInfo[enmGstReg].pszName, iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg)));
 #endif
@@ -5429,21 +5443,19 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
 
 
 /**
- * Emits code to check if the content of @a idxAddrReg is within the limit of
- * idxSegReg, raising a \#GP(0) if it isn't.
+ * Emits code to check if that the content of @a idxAddrReg is within the limit
+ * of CS, raising a \#GP(0) if it isn't.
  *
  * @returns New code buffer offset; throws VBox status code on error.
  * @param   pReNative       The native recompile state.
  * @param   off             The code buffer offset.
  * @param   idxAddrReg      The host register (32-bit) with the address to
  *                          check.
- * @param   idxSegReg       The segment register (X86_SREG_XXX) to check
- *                          against.
  * @param   idxInstr        The current instruction.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                    uint8_t idxAddrReg, uint8_t idxSegReg, uint8_t idxInstr)
+iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                      uint8_t idxAddrReg, uint8_t idxInstr)
 {
     /*
      * Make sure we don't have any outstanding guest register writes as we may
@@ -5457,16 +5469,14 @@ iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNativ
     RT_NOREF(idxInstr);
 #endif
 
-    AssertStmt(idxSegReg == X86_SREG_CS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1));
+    uint8_t const idxRegCsLim = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS),
+                                                                kIemNativeGstRegUse_ReadOnly);
 
-    uint8_t const iTmpLimReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
-                                                               (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + idxSegReg),
-                                                               kIemNativeGstRegUse_ForUpdate);
-
-    off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, iTmpLimReg);
+    off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, idxRegCsLim);
     off = iemNativeEmitJaToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
 
-    iemNativeRegFreeTmp(pReNative, iTmpLimReg);
+    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
     return off;
 }
 
@@ -6123,8 +6133,8 @@ iemNativeEmitFinishInstructionFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t
                   <= UINT32_MAX);
 #ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
     AssertMsg(   pReNative->idxCurCall == 0
-              || IEMLIVENESS_STATE_IS_ACCESS_EXPECTED(iemNativeLivenessGetStateByGstRegEx(&pReNative->paLivenessEntries[pReNative->idxCurCall - 1], kIemNativeGstReg_EFlags/*_Other*/)),
-              ("Efl_Other - %u\n", iemNativeLivenessGetStateByGstRegEx(&pReNative->paLivenessEntries[pReNative->idxCurCall - 1], kIemNativeGstReg_EFlags/*_Other*/)));
+              || IEMLIVENESS_STATE_IS_INPUT_EXPECTED(iemNativeLivenessGetStateByGstRegEx(&pReNative->paLivenessEntries[pReNative->idxCurCall - 1], IEMLIVENESSBIT_IDX_EFL_OTHER)),
+              ("Efl_Other - %u\n", iemNativeLivenessGetStateByGstRegEx(&pReNative->paLivenessEntries[pReNative->idxCurCall - 1], IEMLIVENESSBIT_IDX_EFL_OTHER)));
 #endif
 
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -6377,7 +6387,7 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 
     /* Perform limit checking, potentially raising #GP(0) and exit the TB. */
 /** @todo we can skip this in 32-bit FLAT mode. */
-    off = iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, X86_SREG_CS, idxInstr);
+    off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
 
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
@@ -6429,7 +6439,7 @@ iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, 
     /* Perform the addition, clamp the result, check limit (may #GP(0) + exit TB) and store the result. */
     off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
     off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
-    off = iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, X86_SREG_CS, idxInstr);
+    off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
     /* Free but don't flush the PC register. */
@@ -6532,7 +6542,7 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
     /* Check limit (may #GP(0) + exit TB). */
     if (!f64Bit)
 /** @todo we can skip this test in FLAT 32-bit mode. */
-        off = iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, X86_SREG_CS, idxInstr);
+        off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
     /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
     else if (cbVar > sizeof(uint32_t))
         off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
@@ -9791,24 +9801,52 @@ DECLINLINE(void) iemNativeEFlagsOptimizationStats(PIEMRECOMPILERSTATE pReNative,
     if (fEflOutput)
     {
         PVMCPUCC const pVCpu = pReNative->pVCpu;
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
         IEMLIVENESSBIT const LivenessBit0 = pReNative->paLivenessEntries[pReNative->idxCurCall].Bit0;
         IEMLIVENESSBIT const LivenessBit1 = pReNative->paLivenessEntries[pReNative->idxCurCall].Bit1;
         AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
-# define CHECK_FLAG_AND_UPDATE_STATS(a_fEfl, a_fLivenessMember, a_CoreStatName) \
+#  define CHECK_FLAG_AND_UPDATE_STATS(a_fEfl, a_fLivenessMember, a_CoreStatName) \
             if (fEflOutput & (a_fEfl)) \
             { \
                 if (LivenessBit0.a_fLivenessMember | LivenessBit1.a_fLivenessMember) \
-                    STAM_COUNTER_INC(&pVCpu->iem.s. a_CoreStatName ## Required); \
+                    STAM_COUNTER_INC(&pVCpu->iem.s.a_CoreStatName ## Required); \
                 else \
-                    STAM_COUNTER_INC(&pVCpu->iem.s. a_CoreStatName ## Skippable); \
+                    STAM_COUNTER_INC(&pVCpu->iem.s.a_CoreStatName ## Skippable); \
             } else do { } while (0)
+# else
+        PCIEMLIVENESSENTRY const pLivenessEntry       = &pReNative->paLivenessEntries[pReNative->idxCurCall];
+        IEMLIVENESSBIT const     LivenessClobbered    =
+        {
+              pLivenessEntry->aBits[IEMLIVENESS_BIT_WRITE].bm64
+            & ~(  pLivenessEntry->aBits[IEMLIVENESS_BIT_READ].bm64
+                | pLivenessEntry->aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64
+                | pLivenessEntry->aBits[IEMLIVENESS_BIT_OTHER].bm64)
+        };
+        IEMLIVENESSBIT const     LivenessDelayable =
+        {
+              pLivenessEntry->aBits[IEMLIVENESS_BIT_WRITE].bm64
+            & pLivenessEntry->aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64
+            & ~(  pLivenessEntry->aBits[IEMLIVENESS_BIT_READ].bm64
+                | pLivenessEntry->aBits[IEMLIVENESS_BIT_OTHER].bm64)
+        };
+#  define CHECK_FLAG_AND_UPDATE_STATS(a_fEfl, a_fLivenessMember, a_CoreStatName) \
+            if (fEflOutput & (a_fEfl)) \
+            { \
+                if (LivenessClobbered.a_fLivenessMember) \
+                    STAM_COUNTER_INC(&pVCpu->iem.s.a_CoreStatName ## Skippable); \
+                else if (LivenessDelayable.a_fLivenessMember) \
+                    STAM_COUNTER_INC(&pVCpu->iem.s.a_CoreStatName ## Delayable); \
+                else \
+                    STAM_COUNTER_INC(&pVCpu->iem.s.a_CoreStatName ## Required); \
+            } else do { } while (0)
+# endif
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_CF, fEflCf, StatNativeLivenessEflCf);
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_PF, fEflPf, StatNativeLivenessEflPf);
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_AF, fEflAf, StatNativeLivenessEflAf);
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_ZF, fEflZf, StatNativeLivenessEflZf);
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_SF, fEflSf, StatNativeLivenessEflSf);
         CHECK_FLAG_AND_UPDATE_STATS(X86_EFL_OF, fEflOf, StatNativeLivenessEflOf);
-        CHECK_FLAG_AND_UPDATE_STATS(~X86_EFL_STATUS_BITS, fEflOther, StatNativeLivenessEflOther);
+        //CHECK_FLAG_AND_UPDATE_STATS(~X86_EFL_STATUS_BITS, fEflOther, StatNativeLivenessEflOther);
 # undef CHECK_FLAG_AND_UPDATE_STATS
     }
     RT_NOREF(fEflInput);
@@ -9835,19 +9873,21 @@ iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
     {
         PCIEMLIVENESSENTRY const pLivenessEntry = &pReNative->paLivenessEntries[pReNative->idxCurCall - 1];
         uint32_t const           fBoth          = fEflInput | fEflOutput;
-# define ASSERT_ONE_EFL(a_fElfConst, a_offField) \
+# define ASSERT_ONE_EFL(a_fElfConst, a_idxField) \
             AssertMsg(   !(fBoth & (a_fElfConst)) \
                       || (!(fEflInput & (a_fElfConst)) \
-                          ? IEMLIVENESS_STATE_IS_CLOBBER_EXPECTED(iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, kIemNativeGstReg_EFlags + (a_offField))) \
-                          : IEMLIVENESS_STATE_IS_ACCESS_EXPECTED( iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, kIemNativeGstReg_EFlags + (a_offField))) ), \
-                      ("%s - %u\n", #a_fElfConst, iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, kIemNativeGstReg_EFlags + (a_offField))))
-        ASSERT_ONE_EFL(~(uint32_t)X86_EFL_STATUS_BITS, 0);
-        ASSERT_ONE_EFL(X86_EFL_CF, 1);
-        ASSERT_ONE_EFL(X86_EFL_PF, 2);
-        ASSERT_ONE_EFL(X86_EFL_AF, 3);
-        ASSERT_ONE_EFL(X86_EFL_ZF, 4);
-        ASSERT_ONE_EFL(X86_EFL_SF, 5);
-        ASSERT_ONE_EFL(X86_EFL_OF, 6);
+                          ? IEMLIVENESS_STATE_IS_CLOBBER_EXPECTED(iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, a_idxField)) \
+                          : !(fEflOutput & (a_fElfConst)) \
+                          ? IEMLIVENESS_STATE_IS_INPUT_EXPECTED(  iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, a_idxField)) \
+                          : IEMLIVENESS_STATE_IS_MODIFY_EXPECTED( iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, a_idxField)) ), \
+                      ("%s - %u\n", #a_fElfConst, iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, a_idxField)))
+        ASSERT_ONE_EFL(~(uint32_t)X86_EFL_STATUS_BITS, IEMLIVENESSBIT_IDX_EFL_OTHER);
+        ASSERT_ONE_EFL(X86_EFL_CF, IEMLIVENESSBIT_IDX_EFL_CF);
+        ASSERT_ONE_EFL(X86_EFL_PF, IEMLIVENESSBIT_IDX_EFL_PF);
+        ASSERT_ONE_EFL(X86_EFL_AF, IEMLIVENESSBIT_IDX_EFL_AF);
+        ASSERT_ONE_EFL(X86_EFL_ZF, IEMLIVENESSBIT_IDX_EFL_ZF);
+        ASSERT_ONE_EFL(X86_EFL_SF, IEMLIVENESSBIT_IDX_EFL_SF);
+        ASSERT_ONE_EFL(X86_EFL_OF, IEMLIVENESSBIT_IDX_EFL_OF);
 # undef ASSERT_ONE_EFL
     }
 # endif
@@ -13669,8 +13709,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 
         /* The initial (final) entry. */
         idxCall--;
-        paLivenessEntries[idxCall].Bit0.bm64 = IEMLIVENESSBIT0_ALL_UNUSED;
-        paLivenessEntries[idxCall].Bit1.bm64 = IEMLIVENESSBIT1_ALL_UNUSED;
+        IEM_LIVENESS_RAW_INIT_AS_UNUSED(&paLivenessEntries[idxCall]);
 
         /* Loop backwards thru the calls and fill in the other entries. */
         PCIEMTHRDEDCALLENTRY pCallEntry = &pTb->Thrd.paCalls[idxCall];
@@ -13781,7 +13820,11 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             if (LogIs2Enabled())
             {
                 PCIEMLIVENESSENTRY pLivenessEntry = &pReNative->paLivenessEntries[idxCurCall];
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
                 static const char s_achState[] = "CUXI";
+# else
+                static const char s_achState[] = "UxRrWwMmCcQqKkNn";
+# endif
 
                 char szGpr[17];
                 for (unsigned i = 0; i < 16; i++)

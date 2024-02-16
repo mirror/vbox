@@ -50,17 +50,27 @@
 /*
  * BEGIN & END as well as internal workers.
  */
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
+# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
     { \
         /* Define local variables that we use to accumulate the liveness state changes in. */ \
         IEMLIVENESSBIT  LiveStateBit0   = { 0 }; \
         IEMLIVENESSBIT  LiveStateBit1   = { 0 }; \
         IEMLIVENESSBIT  LiveMask        = { 0 }; \
         bool            fDoneXpctOrCall = false
+#else
+# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+    { \
+        /* Define local variables that we use to accumulate the liveness state changes in. */ \
+        IEMLIVENESSENTRY LiveState       = { { 0, 0, 0, 0 } }; \
+        IEMLIVENESSBIT   LiveMask        = { 0 }; \
+        bool             fDoneXpctOrCall = false
+#endif
 
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
 AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 AssertCompile(IEMLIVENESSBIT0_XCPT_OR_CALL == 0 && IEMLIVENESSBIT1_XCPT_OR_CALL != 0);
-#define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
+# define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
             if (!fDoneXpctOrCall) \
             { \
                 LiveStateBit0.bm64 |= pIncoming->Bit0.bm64 & pIncoming->Bit1.bm64 & ~LiveMask.bm64; \
@@ -70,59 +80,126 @@ AssertCompile(IEMLIVENESSBIT0_XCPT_OR_CALL == 0 && IEMLIVENESSBIT1_XCPT_OR_CALL 
                 fDoneXpctOrCall  = true;                /* when compiling with gcc and cl.exe on x86 - may on arm, though. */ \
             } \
         } while (0)
+#else
+# define IEM_LIVENESS_MARK_XCPT_OR_CALL() do { \
+            if (!fDoneXpctOrCall) \
+            { \
+                LiveState.aBits[IEMLIVENESS_BIT_READ].bm64 |= pIncoming->aBits[IEMLIVENESS_BIT_READ].bm64 & ~LiveMask.bm64; \
+                LiveState.aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64 |= IEMLIVENESSBIT_MASK; \
+                LiveMask.bm64   |= IEMLIVENESSBIT_MASK; \
+                fDoneXpctOrCall  = true; \
+            } \
+        } while (0)
+#endif
 
 
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
 AssertCompile(IEMLIVENESS_STATE_CLOBBERED == 0);
-#define IEM_LIVENESS_ALL_EFLAGS_CLOBBERED() do { \
+# define IEM_LIVENESS_ALL_EFLAGS_CLOBBER() do { \
             LiveMask.bm64       |= IEMLIVENESSBIT_ALL_EFL_MASK; \
         } while (0)
 AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
-#define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
+# define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
             LiveStateBit0.bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
             LiveStateBit1.bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
             LiveMask.bm64       |= IEMLIVENESSBIT_ALL_EFL_MASK; \
         } while (0)
+# define IEM_LIVENESS_ALL_EFLAGS_MODIFY() IEM_LIVENESS_ALL_EFLAGS_INPUT()
+#else
+# define IEM_LIVENESS_ALL_EFLAGS_CLOBBER() do { \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].bm64 |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+            LiveMask.bm64                               |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+        } while (0)
+# define IEM_LIVENESS_ALL_EFLAGS_INPUT() do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+            LiveMask.bm64                               |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+        } while (0)
+# define IEM_LIVENESS_ALL_EFLAGS_MODIFY() do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].bm64  |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].bm64 |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+            LiveMask.bm64                               |= IEMLIVENESSBIT_ALL_EFL_MASK; \
+        } while (0)
+#endif
 
 
-#define IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Name) do { \
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
+# define IEM_LIVENESS_ONE_EFLAG_CLOBBER(a_Name) do { \
             LiveMask.a_Name       |= 1; \
         } while (0)
-#define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
+# define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
             LiveStateBit0.a_Name  |= 1; \
             LiveStateBit1.a_Name  |= 1; \
             LiveMask.a_Name       |= 1; \
         } while (0)
+# define IEM_LIVENESS_ONE_EFLAG_MODIFY(a_Name) IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name)
+#else
+# define IEM_LIVENESS_ONE_EFLAG_CLOBBER(a_Name) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].a_Name |= 1; \
+            LiveMask.a_Name                               |= 1; \
+        } while (0)
+# define IEM_LIVENESS_ONE_EFLAG_INPUT(a_Name) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].a_Name  |= 1; \
+            LiveMask.a_Name                               |= 1; \
+        } while (0)
+# define IEM_LIVENESS_ONE_EFLAG_MODIFY(a_Name) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].a_Name  |= 1; \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].a_Name |= 1; \
+            LiveMask.a_Name                               |= 1; \
+        } while (0)
+#endif
 
 
 /* Generic bitmap (bmGpr, bmSegBase, ++) setters. */
-#define IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(a_Part, a_bmMember, a_iElement) do { \
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
+# define IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(a_bmMember, a_iElement) do { \
             LiveMask.a_bmMember  |= RT_BIT_64(a_iElement); \
         } while (0)
-#define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_Part, a_bmMember, a_iElement) do { \
+# define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_bmMember, a_iElement) do { \
             LiveStateBit0.a_bmMember  |= RT_BIT_64(a_iElement); \
             LiveStateBit1.a_bmMember  |= RT_BIT_64(a_iElement); \
             LiveMask.a_bmMember       |= RT_BIT_64(a_iElement); \
         } while (0)
+# define IEM_LIVENESS_BITMAP_MEMBER_MODIFY(a_bmMember, a_iElement) IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_bmMember, a_iElement)
+#else
+# define IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(a_bmMember, a_iElement) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].a_bmMember |= RT_BIT_64(a_iElement); \
+            LiveMask.a_bmMember                               |= RT_BIT_64(a_iElement); \
+        } while (0)
+# define IEM_LIVENESS_BITMAP_MEMBER_INPUT(a_bmMember, a_iElement) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].a_bmMember  |= RT_BIT_64(a_iElement); \
+            LiveMask.a_bmMember                               |= RT_BIT_64(a_iElement); \
+        } while (0)
+# define IEM_LIVENESS_BITMAP_MEMBER_MODIFY(a_bmMember, a_iElement) do { \
+            LiveState.aBits[IEMLIVENESS_BIT_READ].a_bmMember  |= RT_BIT_64(a_iElement); \
+            LiveState.aBits[IEMLIVENESS_BIT_WRITE].a_bmMember |= RT_BIT_64(a_iElement); \
+            LiveMask.a_bmMember                               |= RT_BIT_64(a_iElement); \
+        } while (0)
+#endif
 
 
-#define IEM_LIVENESS_GPR_CLOBBERED(a_idxGpr)        IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(1, bmGprs, a_idxGpr)
-#define IEM_LIVENESS_GPR_INPUT(a_idxGpr)            IEM_LIVENESS_BITMAP_MEMBER_INPUT(    1, bmGprs, a_idxGpr)
+#define IEM_LIVENESS_GPR_CLOBBER(a_idxGpr)          IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmGprs, a_idxGpr)
+#define IEM_LIVENESS_GPR_INPUT(a_idxGpr)            IEM_LIVENESS_BITMAP_MEMBER_INPUT(  bmGprs, a_idxGpr)
+#define IEM_LIVENESS_GPR_MODIFY(a_idxGpr)           IEM_LIVENESS_BITMAP_MEMBER_MODIFY( bmGprs, a_idxGpr)
 
 
-#define IEM_LIVENESS_SEG_BASE_CLOBBERED(a_iSeg)     IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(1, bmSegBase, a_iSeg)
-#define IEM_LIVENESS_SEG_BASE_INPUT(a_iSeg)         IEM_LIVENESS_BITMAP_MEMBER_INPUT(    1, bmSegBase, a_iSeg)
+#define IEM_LIVENESS_SEG_BASE_CLOBBER(a_iSeg)       IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmSegBase, a_iSeg)
+#define IEM_LIVENESS_SEG_BASE_INPUT(a_iSeg)         IEM_LIVENESS_BITMAP_MEMBER_INPUT(  bmSegBase, a_iSeg)
+#define IEM_LIVENESS_SEG_BASE_MODIFY(a_iSeg)        IEM_LIVENESS_BITMAP_MEMBER_MODIFY( bmSegBase, a_iSeg)
 
 
-#define IEM_LIVENESS_SEG_ATTRIB_CLOBBERED(a_iSeg)   IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(1, bmSegAttrib, a_iSeg)
-#define IEM_LIVENESS_SEG_ATTRIB_INPUT(a_iSeg)       IEM_LIVENESS_BITMAP_MEMBER_INPUT(    1, bmSegAttrib, a_iSeg)
+#define IEM_LIVENESS_SEG_ATTRIB_CLOBBER(a_iSeg)     IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmSegAttrib, a_iSeg)
+#define IEM_LIVENESS_SEG_ATTRIB_INPUT(a_iSeg)       IEM_LIVENESS_BITMAP_MEMBER_INPUT(  bmSegAttrib, a_iSeg)
+#define IEM_LIVENESS_SEG_ATTRIB_MODIFY(a_iSeg)      IEM_LIVENESS_BITMAP_MEMBER_MODFIY( bmSegAttrib, a_iSeg)
 
 
-#define IEM_LIVENESS_SEG_LIMIT_CLOBBERED(a_iSeg)    IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(2, bmSegLimit, a_iSeg)
-#define IEM_LIVENESS_SEG_LIMIT_INPUT(a_iSeg)        IEM_LIVENESS_BITMAP_MEMBER_INPUT(    2, bmSegLimit, a_iSeg)
+#define IEM_LIVENESS_SEG_LIMIT_CLOBBER(a_iSeg)      IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmSegLimit, a_iSeg)
+#define IEM_LIVENESS_SEG_LIMIT_INPUT(a_iSeg)        IEM_LIVENESS_BITMAP_MEMBER_INPUT(  bmSegLimit, a_iSeg)
+#define IEM_LIVENESS_SEG_LIMIT_MODIFY(a_iSeg)       IEM_LIVENESS_BITMAP_MEMBER_MODIFY( bmSegLimit, a_iSeg)
 
 
-#define IEM_LIVENESS_SEG_SEL_CLOBBERED(a_iSeg)      IEM_LIVENESS_BITMAP_MEMBER_CLOBBERED(2, bmSegSel, a_iSeg)
-#define IEM_LIVENESS_SEG_SEL_INPUT(a_iSeg)          IEM_LIVENESS_BITMAP_MEMBER_INPUT(    2, bmSegSel, a_iSeg)
+#define IEM_LIVENESS_SEG_SEL_CLOBBER(a_iSeg)        IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmSegSel, a_iSeg)
+#define IEM_LIVENESS_SEG_SEL_INPUT(a_iSeg)          IEM_LIVENESS_BITMAP_MEMBER_INPUT(  bmSegSel, a_iSeg)
+#define IEM_LIVENESS_SEG_SEL_MODIFY(a_iSeg)         IEM_LIVENESS_BITMAP_MEMBER_MODIFY( bmSegSel, a_iSeg)
 
 
 #define IEM_LIVENESS_MEM(a_iSeg) do { \
@@ -136,12 +213,12 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_LIVENESS_STACK() do { \
         IEM_LIVENESS_MEM(X86_SREG_SS); \
-        IEM_LIVENESS_GPR_INPUT(X86_GREG_xSP); \
+        IEM_LIVENESS_GPR_MODIFY(X86_GREG_xSP); \
     } while (0)
 
 #define IEM_LIVENESS_STACK_FLAT() do { \
         IEM_LIVENESS_MEM_FLAT(); \
-        IEM_LIVENESS_GPR_INPUT(X86_GREG_xSP); \
+        IEM_LIVENESS_GPR_MODIFY(X86_GREG_xSP); \
     } while (0)
 
 
@@ -154,7 +231,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_LIVENESS_PC32_JMP_WITH_FLAGS()  IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_ONE_EFLAG_INPUT(fEflOther); IEM_LIVENESS_SEG_LIMIT_INPUT(X86_SREG_CS)
 #define IEM_LIVENESS_PC64_JMP_WITH_FLAGS()  IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_ONE_EFLAG_INPUT(fEflOther)
 
-#define IEM_MC_END() \
+#ifndef IEMLIVENESS_EXTENDED_LAYOUT
+# define IEM_MC_END() \
         /* Combine the incoming state with what we've accumulated in this block. */ \
         /* We can help the compiler by skipping OR'ing when having applied XPCT_OR_CALL, */ \
         /* since that already imports all the incoming state. Saves a lot with cl.exe. */ \
@@ -169,6 +247,26 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
             pOutgoing->Bit1.bm64 = LiveStateBit1.bm64; \
         } \
     }
+#else
+# define IEM_MC_END() \
+        /* Combine the incoming state with what we've accumulated in this block. */ \
+        /* We can help the compiler by skipping OR'ing when having applied XPCT_OR_CALL, */ \
+        /* since that already imports all the incoming state. Saves a lot with cl.exe. */ \
+        if (!fDoneXpctOrCall) \
+        { \
+            pOutgoing->aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64 = LiveState.aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64 \
+                                                         | (~LiveMask.bm64 & pIncoming->aBits[IEMLIVENESS_BIT_POT_XCPT_OR_CALL].bm64); \
+            pOutgoing->aBits[IEMLIVENESS_BIT_READ].bm64  = LiveState.aBits[IEMLIVENESS_BIT_READ].bm64 \
+                                                         | (~LiveMask.bm64 & pIncoming->aBits[IEMLIVENESS_BIT_READ].bm64); \
+            pOutgoing->aBits[IEMLIVENESS_BIT_WRITE].bm64 = LiveState.aBits[IEMLIVENESS_BIT_WRITE].bm64 \
+                                                         | (~LiveMask.bm64 & pIncoming->aBits[IEMLIVENESS_BIT_WRITE].bm64); \
+            pOutgoing->aBits[IEMLIVENESS_BIT_OTHER].bm64 = LiveState.aBits[IEMLIVENESS_BIT_OTHER].bm64 \
+                                                         | (~LiveMask.bm64 & pIncoming->aBits[IEMLIVENESS_BIT_OTHER].bm64); \
+        } \
+        else \
+            *pOutgoing = LiveState; \
+    }
+#endif
 
 /*
  * The native MC variants.
@@ -317,12 +415,12 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FETCH_GREG_U8_SX_U16_THREADED(a_u16Dst, a_iGRegEx)   IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
 #define IEM_MC_FETCH_GREG_U8_SX_U32_THREADED(a_u32Dst, a_iGRegEx)   IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
 #define IEM_MC_FETCH_GREG_U8_SX_U64_THREADED(a_u64Dst, a_iGRegEx)   IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
-#define IEM_MC_STORE_GREG_U8_THREADED(a_iGRegEx, a_u8Value)         IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
-#define IEM_MC_STORE_GREG_U8_CONST_THREADED(a_iGRegEx, a_u8Value)   IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
-#define IEM_MC_REF_GREG_U8_THREADED(a_pu8Dst, a_iGRegEx)            IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
+#define IEM_MC_STORE_GREG_U8_THREADED(a_iGRegEx, a_u8Value)         IEM_LIVENESS_GPR_MODIFY(a_iGRegEx & 15)
+#define IEM_MC_STORE_GREG_U8_CONST_THREADED(a_iGRegEx, a_u8Value)   IEM_LIVENESS_GPR_MODIFY(a_iGRegEx & 15)
+#define IEM_MC_REF_GREG_U8_THREADED(a_pu8Dst, a_iGRegEx)            IEM_LIVENESS_GPR_MODIFY(a_iGRegEx & 15)
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL_THREADED(a_u8Value, a_iGRegEx)  IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
-#define IEM_MC_AND_GREG_U8_THREADED(a_iGRegEx, a_u8Value)           IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
-#define IEM_MC_OR_GREG_U8_THREADED(a_iGRegEx, a_u8Value)            IEM_LIVENESS_GPR_INPUT(a_iGRegEx & 15)
+#define IEM_MC_AND_GREG_U8_THREADED(a_iGRegEx, a_u8Value)           IEM_LIVENESS_GPR_MODIFY(a_iGRegEx & 15)
+#define IEM_MC_OR_GREG_U8_THREADED(a_iGRegEx, a_u8Value)            IEM_LIVENESS_GPR_MODIFY(a_iGRegEx & 15)
 
 
 /*
@@ -412,38 +510,41 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                                  NOP()
 #define IEM_MC_FETCH_FCW(a_u16Fcw)                                  NOP()
 
-#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)                  IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)                  IEM_LIVENESS_GPR_CLOBBERED(a_iGReg)
-#define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)                  IEM_LIVENESS_GPR_CLOBBERED(a_iGReg)
-#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)                  IEM_LIVENESS_GPR_CLOBBERED(a_iGReg)
-#define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16Const)            IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_STORE_GREG_U32_CONST(a_iGReg, a_u32Const)            IEM_LIVENESS_GPR_CLOBBERED(a_iGReg)
-#define IEM_MC_STORE_GREG_U64_CONST(a_iGReg, a_u32Const)            IEM_LIVENESS_GPR_CLOBBERED(a_iGReg)
+#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)                  IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
+#define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
+#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
+#define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16Const)            IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_STORE_GREG_U32_CONST(a_iGReg, a_u32Const)            IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
+#define IEM_MC_STORE_GREG_U64_CONST(a_iGReg, a_u32Const)            IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
 #define IEM_MC_STORE_GREG_PAIR_U32(a_iGRegLo, a_iGRegHi, a_u64Value) \
-    do { IEM_LIVENESS_GPR_CLOBBERED(a_iGRegLo); IEM_LIVENESS_GPR_CLOBBERED(a_iGRegHi); } while(0)
+    do { IEM_LIVENESS_GPR_CLOBBER(a_iGRegLo); IEM_LIVENESS_GPR_CLOBBER(a_iGRegHi); } while(0)
 #define IEM_MC_STORE_GREG_PAIR_U64(a_iGRegLo, a_iGRegHi, a_u128Value) \
-    do { IEM_LIVENESS_GPR_CLOBBERED(a_iGRegLo); IEM_LIVENESS_GPR_CLOBBERED(a_iGRegHi); } while(0)
-#define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)                         IEM_LIVENESS_GPR_INPUT(a_iGReg) /** @todo This isn't always the case... */
+    do { IEM_LIVENESS_GPR_CLOBBER(a_iGRegLo); IEM_LIVENESS_GPR_CLOBBER(a_iGRegHi); } while(0)
+#define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)                         IEM_LIVENESS_GPR_MODIFY(a_iGReg) /** @todo This isn't always the case... */
 
-#define IEM_MC_STORE_SREG_BASE_U64(a_iSReg, a_u64Value)             IEM_LIVENESS_SEG_BASE_CLOBBERED(a_iSReg)
-#define IEM_MC_STORE_SREG_BASE_U32(a_iSReg, a_u32Value)             IEM_LIVENESS_SEG_BASE_CLOBBERED(a_iSReg)
+#define IEM_MC_STORE_SREG_BASE_U64(a_iSReg, a_u64Value)             IEM_LIVENESS_SEG_BASE_CLOBBER(a_iSReg)
+#define IEM_MC_STORE_SREG_BASE_U32(a_iSReg, a_u32Value)             IEM_LIVENESS_SEG_BASE_CLOBBER(a_iSReg)
 #define IEM_MC_STORE_FPUREG_R80_SRC_REF(a_iSt, a_pr80Src)           NOP()
 
 
-#define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_U16_CONST(a_pu16Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_U32_CONST(a_pu32Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_U64_CONST(a_pu64Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_REF_EFLAGS(a_pEFlags)                                IEM_LIVENESS_ALL_EFLAGS_INPUT()
+#define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_REF_GREG_U16_CONST(a_pu16Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT( a_iGReg)
+#define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_REF_GREG_U32_CONST(a_pu32Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT( a_iGReg)
+#define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT( a_iGReg)
+#define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_REF_GREG_U64_CONST(a_pu64Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT( a_iGReg)
+#define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)               IEM_LIVENESS_GPR_INPUT( a_iGReg)
+#define IEM_MC_REF_EFLAGS(a_pEFlags)                                IEM_LIVENESS_ALL_EFLAGS_MODIFY()
+#undef IEM_MC_REF_EFLAGS /* unused */
 #define IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, a_fEfl, a_Member) \
-        if ((a_fEflInput) & (a_fEfl))           IEM_LIVENESS_ONE_EFLAG_INPUT(a_Member); \
-        else if ((a_fEflOutput) & (a_fEfl)) IEM_LIVENESS_ONE_EFLAG_CLOBBERED(a_Member)
+        if ((a_fEflInput) & (a_fEfl)) { \
+            if ((a_fEflOutput) & (a_fEfl))       IEM_LIVENESS_ONE_EFLAG_MODIFY(a_Member); \
+            else                                  IEM_LIVENESS_ONE_EFLAG_INPUT(a_Member); \
+        } else if ((a_fEflOutput) & (a_fEfl)) IEM_LIVENESS_ONE_EFLAG_CLOBBER(a_Member)
 #define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) do { \
         IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_CF, fEflCf); \
         IEMLIVENESS_EFL_HLP(a_fEflInput, a_fEflOutput, X86_EFL_PF, fEflPf); \
@@ -459,18 +560,18 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                                 NOP()
 
 
-#define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 
-#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 #define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)                NOP()
 
-#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)           IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)           IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)           IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)           IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)           IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)           IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 #define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16)          NOP()
 #define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32)          NOP()
 #define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64)          NOP()
@@ -502,13 +603,13 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_OR_2LOCS_U32(a_u32Local, a_u32Mask)                  NOP()
 
-#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 
-#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
-#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)                     IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
+#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)                     IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 
 #define IEM_MC_BSWAP_LOCAL_U16(a_u16Local)                          NOP()
 #define IEM_MC_BSWAP_LOCAL_U32(a_u32Local)                          NOP()
@@ -525,8 +626,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
         else { AssertFailed();           IEM_LIVENESS_ALL_EFLAG_INPUT(); } \
     } while (0)
 #define IEM_MC_FLIP_EFL_BIT(a_fBit) do { \
-        if ((a_fBit) == X86_EFL_CF)      IEM_LIVENESS_ONE_EFLAG_INPUT(fEflCf); \
-        else { AssertFailed();           IEM_LIVENESS_ALL_EFLAG_INPUT(); } \
+        if ((a_fBit) == X86_EFL_CF)      IEM_LIVENESS_ONE_EFLAG_MODIFY(fEflCf); \
+        else { AssertFailed();           IEM_LIVENESS_ALL_EFLAG_MODIFY(); } \
     } while (0)
 
 #define IEM_MC_CLEAR_FSW_EX()                                       NOP()
@@ -796,24 +897,24 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_PUSH_U32_SREG(a_uSegVal)              IEM_LIVENESS_STACK()
 #define IEM_MC_PUSH_U64(a_u64Value)                  IEM_LIVENESS_STACK()
 
-#define IEM_MC_POP_GREG_U16(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_INPUT(a_iGReg); } while (0)
-#define IEM_MC_POP_GREG_U32(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_CLOBBERED(a_iGReg); } while (0)
-#define IEM_MC_POP_GREG_U64(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_CLOBBERED(a_iGReg); } while (0)
+#define IEM_MC_POP_GREG_U16(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_MODIFY(a_iGReg); } while (0)
+#define IEM_MC_POP_GREG_U32(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_CLOBBER(a_iGReg); } while (0)
+#define IEM_MC_POP_GREG_U64(a_iGReg)            do { IEM_LIVENESS_STACK();  IEM_LIVENESS_GPR_CLOBBER(a_iGReg); } while (0)
 
 /* 32-bit flat stack push and pop: */
 #define IEM_MC_FLAT32_PUSH_U16(a_u16Value)           IEM_LIVENESS_STACK_FLAT()
 #define IEM_MC_FLAT32_PUSH_U32(a_u32Value)           IEM_LIVENESS_STACK_FLAT()
 #define IEM_MC_FLAT32_PUSH_U32_SREG(a_uSegVal)       IEM_LIVENESS_STACK_FLAT()
 
-#define IEM_MC_FLAT32_POP_GREG_U16(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_INPUT(a_iGReg); } while (0)
-#define IEM_MC_FLAT32_POP_GREG_U32(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_CLOBBERED(a_iGReg); } while (0)
+#define IEM_MC_FLAT32_POP_GREG_U16(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_MODIFY(a_iGReg); } while (0)
+#define IEM_MC_FLAT32_POP_GREG_U32(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_CLOBBER(a_iGReg); } while (0)
 
 /* 64-bit flat stack push and pop: */
 #define IEM_MC_FLAT64_PUSH_U16(a_u16Value)           IEM_LIVENESS_STACK_FLAT()
 #define IEM_MC_FLAT64_PUSH_U64(a_u64Value)           IEM_LIVENESS_STACK_FLAT()
 
-#define IEM_MC_FLAT64_POP_GREG_U16(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_INPUT(a_iGReg); } while (0)
-#define IEM_MC_FLAT64_POP_GREG_U64(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_CLOBBERED(a_iGReg); } while (0)
+#define IEM_MC_FLAT64_POP_GREG_U16(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_MODIFY(a_iGReg); } while (0)
+#define IEM_MC_FLAT64_POP_GREG_U64(a_iGReg)     do { IEM_LIVENESS_STACK_FLAT(); IEM_LIVENESS_GPR_CLOBBER(a_iGReg); } while (0)
 
 
 #define IEM_MC_MEM_MAP_U8_ATOMIC(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)                    IEM_LIVENESS_MEM(a_iSeg)

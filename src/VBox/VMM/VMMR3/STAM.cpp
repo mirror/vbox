@@ -986,7 +986,7 @@ static void stamR3PctOfSumRefresh(PSTAMDESC pDesc, PSTAMSUMSAMPLE pSum)
     /*
      * Sum it up with the rest.
      */
-    uint64_t  uSum = uValue;
+    uint64_t  uSum = pSum->fAddValueToSum ? uValue : 0;
     uintptr_t i    = pSum->cSummands;
     while (i-- > 1)
     {
@@ -1196,15 +1196,16 @@ static int stamR3RegisterPctOfSumEnumCallbackForSummands(PSTAMDESC pDesc, void *
  *                              summed up and used to divide @a pszName by when
  *                              calculating the percentage.  These must have
  *                              compatible types.
- *
- *                              The @a pszName is implicitly included in the sum.
- *
+ * @param   fAddValueToSum      Whether to add @a pszValue to the values that
+ *                              @a pszSummandPattern specifies (@c true) or not
+ *                              (@c false).
  * @param   pszDesc             Sample description.
  * @param   pszName             The sample name format string.
  * @param   va                  Arguments to the format string.
  */
 VMMR3DECL(int) STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
-                                       const char *pszSummandPattern, const char *pszDesc, const char *pszName, va_list va)
+                                       bool fAddValueToSum, const char *pszSummandPattern, const char *pszDesc,
+                                       const char *pszName, va_list va)
 {
     char   szFormattedName[STAM_MAX_NAME_LEN + 8];
     size_t cch = RTStrPrintfV(szFormattedName, sizeof(szFormattedName), pszName, va);
@@ -1233,6 +1234,7 @@ VMMR3DECL(int) STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, 
     pSum->cSummandsAlloc = cMaxSummands;
     pSum->enmType        = STAMTYPE_COUNTER;
     pSum->enmUnit        = enmUnit;
+    pSum->fAddValueToSum = fAddValueToSum;
 
     STAM_LOCK_WR(pUVM);
 
@@ -1281,19 +1283,21 @@ VMMR3DECL(int) STAMR3RegisterPctOfSumV(PUVM pUVM, STAMVISIBILITY enmVisibility, 
  *                              summed up and used to divide @a pszName by when
  *                              calculating the percentage.  These must have
  *                              compatible types.
- *
- *                              The @a pszName is implicitly included in the sum.
- *
+ * @param   fAddValueToSum      Whether to add @a pszValue to the values that
+ *                              @a pszSummandPattern specifies (@c true) or not
+ *                              (@c false).
  * @param   pszDesc             Sample description.
  * @param   pszName             The sample name format string.
  * @param   ...                 Arguments to the format string.
  */
 VMMR3DECL(int) STAMR3RegisterPctOfSum(PUVM pUVM, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszValue,
-                                      const char *pszSummandPattern, const char *pszDesc, const char *pszName, ...)
+                                      bool fAddValueToSum, const char *pszSummandPattern, const char *pszDesc,
+                                      const char *pszName, ...)
 {
     va_list va;
     va_start(va, pszName);
-    int rc = STAMR3RegisterPctOfSumV(pUVM, enmVisibility, enmUnit, pszValue, pszSummandPattern, pszDesc, pszName, va);
+    int rc = STAMR3RegisterPctOfSumV(pUVM, enmVisibility, enmUnit, pszValue, fAddValueToSum, pszSummandPattern,
+                                     pszDesc, pszName, va);
     va_end(va);
     return rc;
 }

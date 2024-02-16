@@ -98,7 +98,9 @@ typedef struct STAMSUMSAMPLE
     /** The type of the first sample. */
     uint8_t             enmTypeFirst;
     /** Used to decide the unit when gathering summands during registration. */
-    uint8_t             enmUnit;
+    uint8_t             enmUnit : 7;
+    /** Used by pct-of-sum to decide whether to include the value in the sum. */
+    uint8_t             fAddValueToSum : 1;
     /** Max number of items paSummands can hold. */
     uint8_t             cSummandsAlloc;
     /** The number of summands in paSummands. */
