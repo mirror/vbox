@@ -246,6 +246,11 @@ bool AudioSettings::i_canChangeSettings(void)
     return true;
 }
 
+/**
+ * Returns a (weak) pointer of the audio setting's machine object.
+ *
+ * @returns Wweak pointer of the audio setting's machine object.
+ */
 Machine *AudioSettings::i_getMachine(void)
 {
     return m->pMachine; // m->pMachine is const, needs no locking
