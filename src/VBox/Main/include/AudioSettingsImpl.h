@@ -64,6 +64,7 @@ public:
 
     // public methods only for internal purposes
     bool     i_canChangeSettings(void);
+    Machine *i_getMachine(void);
     void     i_onAdapterChanged(IAudioAdapter *pAdapter);
     void     i_onHostDeviceChanged(IHostAudioDevice *pDevice, bool fIsNew, AudioDeviceState_T enmState, IVirtualBoxErrorInfo *pErrInfo);
     void     i_onSettingsChanged(void);
