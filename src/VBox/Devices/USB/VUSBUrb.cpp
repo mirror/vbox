@@ -721,7 +721,7 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
                  cbReq, RT_UOFFSETOF_DYN(VUSBCTRLEXTRA, Urb.abData[cbReq])));
             return false;
         }
-        if (pExtra != pNew)
+        if (pExtra != pNew) /* (parfait is wrong about pNew leak here) */
         {
             LogFunc(("Reallocated %u -> %u\n", pExtra->cbMax, cbReq));
             pNew->pMsg = (PVUSBSETUP)pNew->Urb.abData;
