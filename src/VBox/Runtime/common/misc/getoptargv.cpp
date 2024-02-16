@@ -442,13 +442,13 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
         RTMemFree(pszDup);
         papszArgs = (char **)RTMemAlloc(1 * sizeof(char *));
         if (!papszArgs)
-            return VERR_NO_MEMORY;
+            return VERR_NO_MEMORY; /* (parfait is wrong about leak here (of other papszArgs alloc)) */
     }
     papszArgs[iArg] = NULL;
 
     *pcArgs     = iArg;
     *ppapszArgv = papszArgs;
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* (parfait is wrong about any pszDup & papszArgv leaks here, they are intentional) */
 }
 
 
