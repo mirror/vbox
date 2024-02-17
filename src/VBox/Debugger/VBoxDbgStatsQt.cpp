@@ -36,6 +36,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QLabel>
+#include <QCheckBox>
 #include <QClipboard>
 #include <QApplication>
 #include <QHBoxLayout>
@@ -44,6 +45,7 @@
 #include <QAction>
 #include <QContextMenuEvent>
 #include <QHeaderView>
+#include <QSortFilterProxyModel>
 
 #include <iprt/errcore.h>
 #include <VBox/log.h>
@@ -59,6 +61,9 @@
 *********************************************************************************************************************************/
 /** The number of column. */
 #define DBGGUI_STATS_COLUMNS    9
+
+/** Enables the sorting and filtering. */
+#define VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
 
 
 /*********************************************************************************************************************************
@@ -544,22 +549,33 @@ public:
      */
     void logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const;
 
-protected:
     /** Gets the unit. */
     static QString strUnit(PCDBGGUISTATSNODE pNode);
     /** Gets the value/times. */
     static QString strValueTimes(PCDBGGUISTATSNODE pNode);
+    /** Gets the value/times. */
+    static uint64_t getValueTimesAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the minimum value. */
     static QString strMinValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the minimum value. */
+    static uint64_t getMinValueAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the average value. */
     static QString strAvgValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the average value. */
+    static uint64_t getAvgValueAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the maximum value. */
     static QString strMaxValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the maximum value. */
+    static uint64_t getMaxValueAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the total value. */
     static QString strTotalValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the total value. */
+    static uint64_t getTotalValueAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the delta value. */
     static QString strDeltaValue(PCDBGGUISTATSNODE pNode);
 
+
+protected:
     /**
      * Destroys a node and all its children.
      *
@@ -584,15 +600,15 @@ public:
 
     /** @name Overridden QAbstractItemModel methods
      * @{ */
-    virtual int columnCount(const QModelIndex &a_rParent) const;
-    virtual QVariant data(const QModelIndex &a_rIndex, int a_eRole) const;
-    virtual Qt::ItemFlags flags(const QModelIndex &a_rIndex) const;
-    virtual bool hasChildren(const QModelIndex &a_rParent) const;
-    virtual QVariant headerData(int a_iSection, Qt::Orientation a_ePrientation, int a_eRole) const;
-    virtual QModelIndex index(int a_iRow, int a_iColumn, const QModelIndex &a_rParent) const;
-    virtual QModelIndex parent(const QModelIndex &a_rChild) const;
-    virtual int rowCount(const QModelIndex &a_rParent) const;
-    ///virtual void sort(int a_iColumn, Qt::SortOrder a_eOrder);
+    virtual int columnCount(const QModelIndex &a_rParent) const RT_OVERRIDE;
+    virtual QVariant data(const QModelIndex &a_rIndex, int a_eRole) const RT_OVERRIDE;
+    virtual Qt::ItemFlags flags(const QModelIndex &a_rIndex) const RT_OVERRIDE;
+    virtual bool hasChildren(const QModelIndex &a_rParent) const RT_OVERRIDE;
+    virtual QVariant headerData(int a_iSection, Qt::Orientation a_ePrientation, int a_eRole) const RT_OVERRIDE;
+    virtual QModelIndex index(int a_iRow, int a_iColumn, const QModelIndex &a_rParent) const RT_OVERRIDE;
+    virtual QModelIndex parent(const QModelIndex &a_rChild) const RT_OVERRIDE;
+    virtual int rowCount(const QModelIndex &a_rParent) const RT_OVERRIDE;
+    ///virtual void sort(int a_iColumn, Qt::SortOrder a_eOrder) RT_OVERRIDE;
     /** @}  */
 };
 
@@ -639,6 +655,52 @@ protected:
     /** The VMM function table. */
     PCVMMR3VTABLE m_pVMM;
 };
+
+
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+/**
+ * Model using the VM / STAM interface as data source.
+ */
+class VBoxDbgStatsSortFileProxyModel : public QSortFilterProxyModel
+{
+public:
+    /**
+     * Constructor.
+     *
+     * @param   a_pParent       The parent object.
+     */
+    VBoxDbgStatsSortFileProxyModel(QObject *a_pParent);
+
+    /** Destructor */
+    virtual ~VBoxDbgStatsSortFileProxyModel()
+    {}
+
+    /** Sets whether or not to show unused rows (all zeros). */
+    void setShowUnusedRows(bool a_fHide);
+
+protected:
+    /**
+     * Converts an index to a node pointer.
+     *
+     * @returns Pointer to the node, NULL if invalid reference.
+     * @param   a_rIndex        Reference to the index
+     */
+    inline PDBGGUISTATSNODE nodeFromIndex(const QModelIndex &a_rIndex) const
+    {
+        if (RT_LIKELY(a_rIndex.isValid()))
+            return (PDBGGUISTATSNODE)a_rIndex.internalPointer();
+        return NULL;
+    }
+
+    /** Does the row filtering. */
+    bool filterAcceptsRow(int a_iSrcRow,  const QModelIndex &a_rSrcParent) const RT_OVERRIDE;
+    /** For implementing the sorting. */
+    bool lessThan(const QModelIndex &a_rSrcLeft, const QModelIndex &a_rSrcRight) const RT_OVERRIDE;
+
+    /** Whether to show unused rows (all zeros) or not. */
+    bool m_fShowUnusedRows;
+};
+#endif /* VBOXDBG_WITH_SORTED_AND_FILTERED_STATS */
 
 
 /*********************************************************************************************************************************
@@ -974,7 +1036,7 @@ VBoxDbgStatsModel::createAndInsert(PDBGGUISTATSNODE pParent, const char *pszName
         pNode = createAndInsertNode(pParent, pszName, cchName, iPosition);
     else
     {
-        beginInsertRows(createIndex(pParent->iSelf, 0, pParent), 0, 0);
+        beginInsertRows(createIndex(pParent->iSelf, 0, pParent), iPosition, iPosition);
         pNode = createAndInsertNode(pParent, pszName, cchName, iPosition);
         endInsertRows();
     }
@@ -2218,7 +2280,7 @@ VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &a_rParent) co
     }
 
     /* root?  */
-    AssertReturn(a_rParent.isValid(), QModelIndex());
+    AssertReturn(a_rParent.isValid() || (iRow == 0 && iColumn >= 0), QModelIndex());
     AssertMsgReturn(iRow == 0 && (unsigned)iColumn < DBGGUI_STATS_COLUMNS, ("iRow=%d iColumn=%d", iRow, iColumn), QModelIndex());
     return createIndex(0, iColumn, m_pRoot);
 }
@@ -2367,6 +2429,62 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ uint64_t
+VBoxDbgStatsModel::getValueTimesAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_COUNTER:
+            return pNode->Data.Counter.c;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            return pNode->Data.Profile.cPeriods;
+
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+            return RT_MAKE_U64(pNode->Data.RatioU32.u32A, pNode->Data.RatioU32.u32B);
+
+        case STAMTYPE_CALLBACK:
+            return UINT64_MAX;
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            return pNode->Data.u8;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            return pNode->Data.u16;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            return pNode->Data.u32;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            return pNode->Data.u64;
+
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
+            return pNode->Data.f;
+
+        default:
+            AssertMsgFailed(("%d\n", pNode->enmType));
+            RT_FALL_THRU();
+        case STAMTYPE_INVALID:
+            return UINT64_MAX;
+    }
+}
+
+
 /*static*/ QString
 VBoxDbgStatsModel::strMinValue(PCDBGGUISTATSNODE pNode)
 {
@@ -2381,6 +2499,22 @@ VBoxDbgStatsModel::strMinValue(PCDBGGUISTATSNODE pNode)
             return "0"; /* cTicksMin is set to UINT64_MAX */
         default:
             return "";
+    }
+}
+
+
+/*static*/ uint64_t
+VBoxDbgStatsModel::getMinValueAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (pNode->Data.Profile.cPeriods)
+                return pNode->Data.Profile.cTicksMin;
+            return 0; /* cTicksMin is set to UINT64_MAX */
+        default:
+            return UINT64_MAX;
     }
 }
 
@@ -2403,6 +2537,23 @@ VBoxDbgStatsModel::strAvgValue(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ uint64_t
+VBoxDbgStatsModel::getAvgValueAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (pNode->Data.Profile.cPeriods)
+                return pNode->Data.Profile.cTicks / pNode->Data.Profile.cPeriods;
+            return 0;
+        default:
+            return UINT64_MAX;
+    }
+}
+
+
+
 /*static*/ QString
 VBoxDbgStatsModel::strMaxValue(PCDBGGUISTATSNODE pNode)
 {
@@ -2419,6 +2570,20 @@ VBoxDbgStatsModel::strMaxValue(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ uint64_t
+VBoxDbgStatsModel::getMaxValueAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            return pNode->Data.Profile.cTicksMax;
+        default:
+            return UINT64_MAX;
+    }
+}
+
+
 /*static*/ QString
 VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
 {
@@ -2431,6 +2596,20 @@ VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
             return formatNumber(sz, pNode->Data.Profile.cTicks);
         default:
             return "";
+    }
+}
+
+
+/*static*/ uint64_t
+VBoxDbgStatsModel::getTotalValueAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            return pNode->Data.Profile.cTicks;
+        default:
+            return UINT64_MAX;
     }
 }
 
@@ -2855,6 +3034,189 @@ VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
 
 /*
  *
+ *      V B o x D b g S t a t s S o r t F i l e P r o x y M o d e l
+ *      V B o x D b g S t a t s S o r t F i l e P r o x y M o d e l
+ *      V B o x D b g S t a t s S o r t F i l e P r o x y M o d e l
+ *
+ *
+ */
+
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+
+VBoxDbgStatsSortFileProxyModel::VBoxDbgStatsSortFileProxyModel(QObject *a_pParent)
+    : QSortFilterProxyModel(a_pParent)
+    , m_fShowUnusedRows(false)
+{
+
+}
+
+
+bool
+VBoxDbgStatsSortFileProxyModel::filterAcceptsRow(int a_iSrcRow, const QModelIndex &a_rSrcParent) const
+{
+    if (!m_fShowUnusedRows)
+    {
+        PDBGGUISTATSNODE const pParent = nodeFromIndex(a_rSrcParent);
+        if (pParent)
+        {
+            if ((unsigned)a_iSrcRow < pParent->cChildren)
+            {
+                PDBGGUISTATSNODE const pNode = pParent->papChildren[a_iSrcRow];
+                if (pNode) /* paranoia */
+                {
+                    /* Only relevant for leaf nodes. */
+                    if (pNode->cChildren == 0)
+                    {
+                        if (pNode->enmState != kDbgGuiStatsNodeState_kInvalid)
+                        {
+                            if (pNode->i64Delta == 0)
+                            {
+                                /* Is the cached statistics value zero? */
+                                switch (pNode->enmType)
+                                {
+                                    case STAMTYPE_COUNTER:
+                                        if (pNode->Data.Counter.c != 0)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_PROFILE:
+                                    case STAMTYPE_PROFILE_ADV:
+                                        if (pNode->Data.Profile.cPeriods)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_RATIO_U32:
+                                    case STAMTYPE_RATIO_U32_RESET:
+                                        if (pNode->Data.RatioU32.u32A || pNode->Data.RatioU32.u32B)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_CALLBACK:
+                                        if (pNode->Data.pStr && !pNode->Data.pStr->isEmpty())
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_U8:
+                                    case STAMTYPE_U8_RESET:
+                                    case STAMTYPE_X8:
+                                    case STAMTYPE_X8_RESET:
+                                        if (pNode->Data.u8)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_U16:
+                                    case STAMTYPE_U16_RESET:
+                                    case STAMTYPE_X16:
+                                    case STAMTYPE_X16_RESET:
+                                        if (pNode->Data.u16)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_U32:
+                                    case STAMTYPE_U32_RESET:
+                                    case STAMTYPE_X32:
+                                    case STAMTYPE_X32_RESET:
+                                        if (pNode->Data.u32)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_U64:
+                                    case STAMTYPE_U64_RESET:
+                                    case STAMTYPE_X64:
+                                    case STAMTYPE_X64_RESET:
+                                        if (pNode->Data.u64)
+                                            break;
+                                        return false;
+
+                                    case STAMTYPE_BOOL:
+                                    case STAMTYPE_BOOL_RESET:
+                                        /* not possible to detect */
+                                        return false;
+
+                                    case STAMTYPE_INVALID:
+                                        break;
+
+                                    default:
+                                        AssertMsgFailedBreak(("enmType=%d\n", pNode->enmType));
+                                }
+                            }
+                        }
+                        else
+                            return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+bool
+VBoxDbgStatsSortFileProxyModel::lessThan(const QModelIndex &a_rSrcLeft, const QModelIndex &a_rSrcRight) const
+{
+    PCDBGGUISTATSNODE const pLeft  = nodeFromIndex(a_rSrcLeft);
+    PCDBGGUISTATSNODE const pRight = nodeFromIndex(a_rSrcRight);
+    if (pLeft == pRight)
+        return false;
+    if (pLeft && pRight)
+    {
+        if (pLeft->pParent == pRight->pParent)
+        {
+            switch (a_rSrcLeft.column())
+            {
+                case 0:
+                    return RTStrCmp(pLeft->pszName, pRight->pszName) < 0;
+                case 1:
+                    return RTStrCmp(pLeft->pszUnit, pRight->pszUnit) < 0;
+                case 2:
+                    return VBoxDbgStatsModel::getValueTimesAsUInt(pLeft) < VBoxDbgStatsModel::getValueTimesAsUInt(pRight);
+                case 3:
+                    return pLeft->i64Delta < pRight->i64Delta;
+                case 4:
+                    return VBoxDbgStatsModel::getMinValueAsUInt(pLeft) < VBoxDbgStatsModel::getMinValueAsUInt(pRight);
+                case 5:
+                    return VBoxDbgStatsModel::getAvgValueAsUInt(pLeft) < VBoxDbgStatsModel::getAvgValueAsUInt(pRight);
+                case 6:
+                    return VBoxDbgStatsModel::getMaxValueAsUInt(pLeft) < VBoxDbgStatsModel::getMaxValueAsUInt(pRight);
+                case 7:
+                    return VBoxDbgStatsModel::getTotalValueAsUInt(pLeft) < VBoxDbgStatsModel::getTotalValueAsUInt(pRight);
+                case 8:
+                    if (pLeft->pDescStr == pRight->pDescStr)
+                        return false;
+                    if (!pLeft->pDescStr)
+                        return true;
+                    if (!pRight->pDescStr)
+                        return false;
+                    return *pLeft->pDescStr < *pRight->pDescStr;
+                default:
+                    AssertCompile(DBGGUI_STATS_COLUMNS == 9);
+                    return true;
+            }
+        }
+        return false;
+    }
+    return !pLeft;
+}
+
+
+void
+VBoxDbgStatsSortFileProxyModel::setShowUnusedRows(bool a_fHide)
+{
+    if (a_fHide != m_fShowUnusedRows)
+    {
+        m_fShowUnusedRows = a_fHide;
+        invalidateRowsFilter();
+    }
+}
+
+
+#endif /* VBOXDBG_WITH_SORTED_AND_FILTERED_STATS */
+
+
+
+/*
+ *
  *      V B o x D b g S t a t s V i e w
  *      V B o x D b g S t a t s V i e w
  *      V B o x D b g S t a t s V i e w
@@ -2863,23 +3225,41 @@ VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
  */
 
 
-VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_pModel, VBoxDbgStats *a_pParent/* = NULL*/)
-    : QTreeView(a_pParent), VBoxDbgBase(a_pDbgGui), m_pModel(a_pModel), m_PatStr(), m_pParent(a_pParent),
-    m_pLeafMenu(NULL), m_pBranchMenu(NULL), m_pViewMenu(NULL), m_pCurMenu(NULL), m_CurIndex()
-
+VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_pVBoxModel,
+                                   VBoxDbgStatsSortFileProxyModel *a_pProxyModel, VBoxDbgStats *a_pParent/* = NULL*/)
+    : QTreeView(a_pParent)
+    , VBoxDbgBase(a_pDbgGui)
+    , m_pVBoxModel(a_pVBoxModel)
+    , m_pProxyModel(a_pProxyModel)
+    , m_pModel(NULL)
+    , m_PatStr()
+    , m_pParent(a_pParent)
+    , m_pLeafMenu(NULL)
+    , m_pBranchMenu(NULL)
+    , m_pViewMenu(NULL)
+    , m_pCurMenu(NULL)
+    , m_CurIndex()
 {
     /*
      * Set the model and view defaults.
      */
     setRootIsDecorated(true);
+    if (a_pProxyModel)
+    {
+        m_pModel = a_pProxyModel;
+        a_pProxyModel->setSourceModel(a_pVBoxModel);
+    }
+    else
+        m_pModel = a_pVBoxModel;
     setModel(m_pModel);
-    QModelIndex RootIdx = m_pModel->getRootIndex(); /* This should really be QModelIndex(), but Qt on darwin does wrong things then. */
+    QModelIndex RootIdx = myGetRootIndex(); /* This should really be QModelIndex(), but Qt on darwin does wrong things then. */
     setRootIndex(RootIdx);
     setItemsExpandable(true);
     setAlternatingRowColors(true);
     setSelectionBehavior(SelectRows);
     setSelectionMode(SingleSelection);
-    /// @todo sorting setSortingEnabled(true);
+    if (a_pProxyModel)
+        setSortingEnabled(true);
 
     /*
      * Create and setup the actions.
@@ -2969,7 +3349,8 @@ VBoxDbgStatsView::~VBoxDbgStatsView()
     m_CurIndex = QModelIndex();
 
 #define DELETE_IT(m) if (m) { delete m; m = NULL; } else do {} while (0)
-    DELETE_IT(m_pModel);
+    DELETE_IT(m_pProxyModel);
+    DELETE_IT(m_pVBoxModel);
 
     DELETE_IT(m_pLeafMenu);
     DELETE_IT(m_pBranchMenu);
@@ -2991,8 +3372,20 @@ void
 VBoxDbgStatsView::updateStats(const QString &rPatStr)
 {
     m_PatStr = rPatStr;
-    if (m_pModel->updateStatsByPattern(rPatStr))
-        setRootIndex(m_pModel->getRootIndex()); /* hack */
+    if (m_pVBoxModel->updateStatsByPattern(rPatStr))
+        setRootIndex(myGetRootIndex()); /* hack */
+}
+
+
+void
+VBoxDbgStatsView::setShowUnusedRows(bool a_fHide)
+{
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    if (m_pProxyModel)
+        m_pProxyModel->setShowUnusedRows(a_fHide);
+#else
+    RT_NOREF_PV(a_fHide);
+#endif
 }
 
 
@@ -3015,9 +3408,19 @@ VBoxDbgStatsView::expandMatchingCallback(PDBGGUISTATSNODE pNode, QModelIndex con
 {
     VBoxDbgStatsView *pThis = (VBoxDbgStatsView *)pvUser;
 
-    pThis->setExpanded(a_rIndex, true);
+    QModelIndex ParentIndex; /* this isn't 100% optimal */
+    if (pThis->m_pProxyModel)
+    {
+        QModelIndex const ProxyIndex = pThis->m_pProxyModel->mapFromSource(a_rIndex);
 
-    QModelIndex ParentIndex = pThis->m_pModel->parent(a_rIndex);
+        ParentIndex = pThis->m_pModel->parent(ProxyIndex);
+    }
+    else
+    {
+        pThis->setExpanded(a_rIndex, true);
+
+        ParentIndex = pThis->m_pModel->parent(a_rIndex);
+    }
     while (ParentIndex.isValid() && !pThis->isExpanded(ParentIndex))
     {
         pThis->setExpanded(ParentIndex, true);
@@ -3032,7 +3435,7 @@ VBoxDbgStatsView::expandMatchingCallback(PDBGGUISTATSNODE pNode, QModelIndex con
 void
 VBoxDbgStatsView::expandMatching(const QString &rPatStr)
 {
-    m_pModel->iterateStatsByPattern(rPatStr, expandMatchingCallback, this);
+    m_pVBoxModel->iterateStatsByPattern(rPatStr, expandMatchingCallback, this);
 }
 
 
@@ -3080,7 +3483,7 @@ VBoxDbgStatsView::contextMenuEvent(QContextMenuEvent *a_pEvt)
         pMenu = m_pLeafMenu;
     if (pMenu)
     {
-        m_pRefreshAct->setEnabled(!Idx.isValid() || Idx == m_pModel->getRootIndex());
+        m_pRefreshAct->setEnabled(!Idx.isValid() || Idx == myGetRootIndex());
         m_CurIndex = Idx;
         m_pCurMenu = pMenu;
 
@@ -3095,6 +3498,15 @@ VBoxDbgStatsView::contextMenuEvent(QContextMenuEvent *a_pEvt)
 }
 
 
+QModelIndex
+VBoxDbgStatsView::myGetRootIndex(void) const
+{
+    if (!m_pProxyModel)
+        return m_pVBoxModel->getRootIndex();
+    return m_pProxyModel->mapFromSource(m_pVBoxModel->getRootIndex());
+}
+
+
 void
 VBoxDbgStatsView::headerContextMenuRequested(const QPoint &a_rPos)
 {
@@ -3104,7 +3516,7 @@ VBoxDbgStatsView::headerContextMenuRequested(const QPoint &a_rPos)
     if (m_pViewMenu)
     {
         m_pRefreshAct->setEnabled(true);
-        m_CurIndex = m_pModel->getRootIndex();
+        m_CurIndex = myGetRootIndex();
         m_pCurMenu = m_pViewMenu;
 
         m_pViewMenu->exec(header()->mapToGlobal(a_rPos));
@@ -3139,13 +3551,17 @@ void
 VBoxDbgStatsView::actRefresh()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
+    if (!Idx.isValid() || Idx == myGetRootIndex())
     {
-        if (m_pModel->updateStatsByPattern(m_PatStr))
-            setRootIndex(m_pModel->getRootIndex()); /* hack */
+        if (m_pVBoxModel->updateStatsByPattern(m_PatStr))
+            setRootIndex(myGetRootIndex()); /* hack */
     }
     else
-        m_pModel->updateStatsByIndex(Idx);
+    {
+        if (m_pProxyModel)
+            Idx = m_pProxyModel->mapToSource(Idx);
+        m_pVBoxModel->updateStatsByIndex(Idx);
+    }
 }
 
 
@@ -3153,10 +3569,14 @@ void
 VBoxDbgStatsView::actReset()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
-        m_pModel->resetStatsByPattern(m_PatStr);
+    if (!Idx.isValid() || Idx == myGetRootIndex())
+        m_pVBoxModel->resetStatsByPattern(m_PatStr);
     else
-        m_pModel->resetStatsByIndex(Idx);
+    {
+        if (m_pProxyModel)
+            Idx = m_pProxyModel->mapToSource(Idx);
+        m_pVBoxModel->resetStatsByIndex(Idx);
+    }
 }
 
 
@@ -3164,7 +3584,9 @@ void
 VBoxDbgStatsView::actCopy()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    m_pModel->copyTreeToClipboard(Idx);
+    if (m_pProxyModel)
+        Idx = m_pProxyModel->mapToSource(Idx);
+    m_pVBoxModel->copyTreeToClipboard(Idx);
 }
 
 
@@ -3172,7 +3594,9 @@ void
 VBoxDbgStatsView::actToLog()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    m_pModel->logTree(Idx, false /* a_fReleaseLog */);
+    if (m_pProxyModel)
+        Idx = m_pProxyModel->mapToSource(Idx);
+    m_pVBoxModel->logTree(Idx, false /* a_fReleaseLog */);
 }
 
 
@@ -3180,7 +3604,9 @@ void
 VBoxDbgStatsView::actToRelLog()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    m_pModel->logTree(Idx, true /* a_fReleaseLog */);
+    if (m_pProxyModel)
+        Idx = m_pProxyModel->mapToSource(Idx);
+    m_pVBoxModel->logTree(Idx, true /* a_fReleaseLog */);
 }
 
 
@@ -3254,11 +3680,23 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL
     pSB->setMaximumSize(pSB->sizeHint());
     connect(pSB, SIGNAL(valueChanged(int)), this, SLOT(setRefresh(int)));
 
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    QCheckBox *pCheckBox = new QCheckBox("Show unused");
+    pHLayout->addWidget(pCheckBox);
+    pCheckBox->setMaximumSize(pCheckBox->sizeHint());
+    connect(pCheckBox, SIGNAL(stateChanged(int)), this, SLOT(sltShowUnusedRowsChanged(int)));
+#endif
+
     /*
      * Create the tree view and setup the layout.
      */
     VBoxDbgStatsModelVM *pModel = new VBoxDbgStatsModelVM(a_pDbgGui, m_PatStr, NULL, a_pDbgGui->getVMMFunctionTable());
-    m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, this);
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    VBoxDbgStatsSortFileProxyModel *pProxyModel = new VBoxDbgStatsSortFileProxyModel(this);
+    m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, pProxyModel, this);
+#else
+    m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, NULL, this);
+#endif
 
     QWidget *pHBox = new QWidget;
     pHBox->setLayout(pHLayout);
@@ -3367,4 +3805,15 @@ VBoxDbgStats::actFocusToPat()
 {
     if (!m_pPatCB->hasFocus())
         m_pPatCB->setFocus(Qt::ShortcutFocusReason);
+}
+
+
+void
+VBoxDbgStats::sltShowUnusedRowsChanged(int a_iState)
+{
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    m_pView->setShowUnusedRows(a_iState != Qt::Unchecked);
+#else
+    RT_NOREF_PV(a_iState);
+#endif
 }

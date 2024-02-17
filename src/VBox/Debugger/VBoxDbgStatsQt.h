@@ -40,6 +40,7 @@
 
 class VBoxDbgStats;
 class VBoxDbgStatsModel;
+class VBoxDbgStatsSortFileProxyModel;
 
 /** Pointer to a statistics sample. */
 typedef struct DBGGUISTATSNODE *PDBGGUISTATSNODE;
@@ -60,18 +61,22 @@ public:
     /**
      * Creates a VM statistics list view widget.
      *
-     * @param   a_pDbgGui   Pointer to the debugger gui object.
-     * @param   a_pModel    The model. Will take ownership of this and delete it together
-     *                      with the view later
-     * @param   a_pParent   Parent widget.
+     * @param   a_pDbgGui       Pointer to the debugger gui object.
+     * @param   a_pModel        The model. Will take ownership of this and delete it
+     *                          together with the view later
+     * @param   a_pProxyModel   The proxy model object to use for sorting and
+     *                          filtering.
+     * @param   a_pParent       Parent widget.
      */
-    VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_pModel, VBoxDbgStats *a_pParent = NULL);
+    VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_pModel, VBoxDbgStatsSortFileProxyModel *a_pProxyModel,
+                     VBoxDbgStats *a_pParent = NULL);
 
     /** Destructor. */
     virtual ~VBoxDbgStatsView();
 
     /**
      * Updates the view with current information from STAM.
+     *
      * This will indirectly update the m_PatStr.
      *
      * @param   rPatStr     Selection pattern. NULL means everything, see STAM for further details.
@@ -79,7 +84,16 @@ public:
     void updateStats(const QString &rPatStr);
 
     /**
+     * Shows or hides the unused rows.
+     *
+     * @param   a_fShow     Whether to show (@c true) or hide (@c false) unused
+     *                      rows.
+     */
+    void setShowUnusedRows(bool a_fShow);
+
+    /**
      * Resets the stats items matching the specified pattern.
+     *
      * This pattern doesn't have to be the one used for update, thus m_PatStr isn't updated.
      *
      * @param   rPatStr     Selection pattern. NULL means everything, see STAM for further details.
@@ -120,6 +134,15 @@ protected:
      */
     virtual void contextMenuEvent(QContextMenuEvent *a_pEvt);
 
+    /**
+     * Gets the model index of the root node.
+     *
+     * This takes proxy / no-proxy into account.
+     *
+     * @returns root index for.
+     */
+    QModelIndex myGetRootIndex(void) const;
+
 protected slots:
     /**
      * Slot for handling the view/header context menu.
@@ -142,7 +165,11 @@ protected slots:
 
 protected:
     /** Pointer to the data model. */
-    VBoxDbgStatsModel *m_pModel;
+    VBoxDbgStatsModel *m_pVBoxModel;
+    /** Pointer to the proxy data model for sorting & filtering. */
+    VBoxDbgStatsSortFileProxyModel *m_pProxyModel;
+    /** Either m_pVBoxModel or m_pProxyModel. */
+    QAbstractItemModel *m_pModel;
     /** The current selection pattern. */
     QString m_PatStr;
     /** The parent widget. */
@@ -248,6 +275,9 @@ protected slots:
      * Change the focus to the pattern combo box.
      */
     void actFocusToPat();
+
+    /** The 'show unused rows' checkbox changed. */
+    void sltShowUnusedRowsChanged(int a_iState);
 
 protected:
 
