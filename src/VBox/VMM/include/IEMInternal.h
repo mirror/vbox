@@ -1862,6 +1862,11 @@ typedef struct IEMCPU
     IEMINSTRSTATS           StatsRZ;
     /** Instruction statistics for ring-3. */
     IEMINSTRSTATS           StatsR3;
+# ifdef VBOX_WITH_IEM_RECOMPILER
+    /** Statistics per threaded function call.
+     * Updated by both the threaded and native recompilers. */
+    uint32_t                acThreadedFuncStats[0x5000 /*20480*/];
+# endif
 #endif
 } IEMCPU;
 AssertCompileMemberOffset(IEMCPU, cActiveMappings, 0x4f);

@@ -50,8 +50,9 @@
 #include <iprt/getopt.h>
 #include <iprt/string.h>
 
-#ifdef VBOX_WITH_IEM_RECOMPILER
+#if defined(VBOX_WITH_STATISTICS) && defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 # include "IEMN8veRecompiler.h"
+# include "IEMThreadedFunctions.h"
 #endif
 
 
@@ -546,6 +547,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                             STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-R3/" #a_Name, idCpu);
 #  include "IEMInstructionStatisticsTmpl.h"
 #  undef IEM_DO_INSTR_STAT
+# endif
+
+# if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_STATISTICS)
+        /* Threaded function statistics: */
+        for (unsigned i = 1; i < (unsigned)kIemThreadedFunc_End; i++)
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.acThreadedFuncStats[i], STAMTYPE_U32_RESET, STAMVISIBILITY_USED,
+                            STAMUNIT_COUNT, NULL, "/IEM/CPU%u/ThrdFuncs/%s", idCpu, g_apszIemThreadedFunctionStats[i]);
 # endif
 
 #endif /* !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) - quick fix for stupid structure duplication non-sense */

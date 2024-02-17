@@ -2533,6 +2533,10 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
                   pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,
                   g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
 #endif
+#ifdef VBOX_WITH_STATISTICS
+            AssertCompile(RT_ELEMENTS(pVCpu->iem.s.acThreadedFuncStats) >= kIemThreadedFunc_End);
+            pVCpu->iem.s.acThreadedFuncStats[pCallEntry->enmFunction] += 1;
+#endif
             VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
                                                                                               pCallEntry->auParams[0],
                                                                                               pCallEntry->auParams[1],

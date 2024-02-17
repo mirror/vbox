@@ -647,6 +647,28 @@ class ThreadedFunctionVariation(object):
             return '%s%s' % ( sName, self.sVariation, );
         return '%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
 
+    def getThreadedFunctionStatisticsName(self):
+        sName = self.oParent.oMcBlock.sFunction;
+        if sName.startswith('iemOp_'):
+            sName = sName[len('iemOp_'):];
+
+        sVarNm = self.sVariation;
+        if sVarNm:
+            if sVarNm.startswith('_'):
+                sVarNm = sVarNm[1:];
+            if sVarNm.endswith('_Jmp'):
+                sVarNm = sVarNm[:-4];
+                sName += '_Jmp';
+            elif sVarNm.endswith('_NoJmp'):
+                sVarNm = sVarNm[:-6];
+                sName += '_NoJmp';
+        else:
+            sVarNm = 'DeferToCImpl';
+
+        if self.oParent.oMcBlock.iInFunction == 0:
+            return '%s/%s' % ( sVarNm, sName );
+        return '%s/%s_%s' % ( sVarNm, sName, self.oParent.oMcBlock.iInFunction, );
+
     def isWithFlagsCheckingAndClearingVariation(self):
         """
         Checks if this is a variation that checks and clears EFLAGS.
@@ -2427,10 +2449,13 @@ class IEMThreadedGenerator(object):
         # Prototype the function table.
         asLines += [
             'extern const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End];',
+            'extern uint8_t const            g_acIemThreadedFunctionUsedArgs[kIemThreadedFunc_End];',
             '#if defined(IN_RING3) || defined(LOG_ENABLED)',
             'extern const char * const       g_apszIemThreadedFunctions[kIemThreadedFunc_End];',
             '#endif',
-            'extern uint8_t const            g_acIemThreadedFunctionUsedArgs[kIemThreadedFunc_End];',
+            '#if defined(IN_RING3)',
+            'extern const char * const       g_apszIemThreadedFunctionStats[kIemThreadedFunc_End];',
+            '#endif',
         ];
 
         oOut.write('\n'.join(asLines));
@@ -2551,14 +2576,6 @@ class IEMThreadedGenerator(object):
             '{',
             '    /*Invalid*/ NULL,',
         ];
-        asNameTable = [
-            '/**',
-            ' * Function name table.',
-            ' */',
-            'const char * const g_apszIemThreadedFunctions[kIemThreadedFunc_End] =',
-            '{',
-            '    "Invalid",',
-        ];
         asArgCntTab = [
             '/**',
             ' * Argument count table.',
@@ -2567,7 +2584,23 @@ class IEMThreadedGenerator(object):
             '{',
             '    0, /*Invalid*/',
         ];
-        aasTables = (asFuncTable, asNameTable, asArgCntTab,);
+        asNameTable = [
+            '/**',
+            ' * Function name table.',
+            ' */',
+            'const char * const g_apszIemThreadedFunctions[kIemThreadedFunc_End] =',
+            '{',
+            '    "Invalid",',
+        ];
+        asStatTable = [
+            '/**',
+            ' * Function statistics name table.',
+            ' */',
+            'const char * const g_apszIemThreadedFunctionStats[kIemThreadedFunc_End] =',
+            '{',
+            '    NULL,',
+        ];
+        aasTables = (asFuncTable, asArgCntTab, asNameTable, asStatTable,);
 
         for asTable in aasTables:
             asTable.extend((
@@ -2578,8 +2611,9 @@ class IEMThreadedGenerator(object):
             ));
         for sFuncNm, cArgs, _ in self.katBltIns:
             asFuncTable.append('    iemThreadedFunc_BltIn_%s,' % (sFuncNm,));
-            asNameTable.append('    "BltIn_%s",' % (sFuncNm,));
             asArgCntTab.append('    %d, /*BltIn_%s*/' % (cArgs, sFuncNm,));
+            asNameTable.append('    "BltIn_%s",' % (sFuncNm,));
+            asStatTable.append('    "BltIn/%s",' % (sFuncNm,));
 
         iThreadedFunction = 1 + len(self.katBltIns);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -2599,6 +2633,7 @@ class IEMThreadedGenerator(object):
                     asFuncTable.append('    /*%4u*/ %s,' % (iThreadedFunction, sName,));
                     asNameTable.append('    /*%4u*/ "%s",' % (iThreadedFunction, sName,));
                     asArgCntTab.append('    /*%4u*/ %d, /*%s*/' % (iThreadedFunction, oVariation.cMinParams, sName,));
+                    asStatTable.append('    "%s",' % (oVariation.getThreadedFunctionStatisticsName(),));
 
         for asTable in aasTables:
             asTable.append('};');
@@ -2611,15 +2646,20 @@ class IEMThreadedGenerator(object):
         oOut.write('\n'.join(asFuncTable));
         oOut.write(  '\n'
                    + '\n'
+                   + '\n');
+        oOut.write('\n'.join(asArgCntTab));
+        oOut.write(  '\n'
                    + '\n'
                    + '#if defined(IN_RING3) || defined(LOG_ENABLED)\n');
         oOut.write('\n'.join(asNameTable));
         oOut.write(  '\n'
                    + '#endif /* IN_RING3 || LOG_ENABLED */\n'
                    + '\n'
-                   + '\n');
-        oOut.write('\n'.join(asArgCntTab));
-        oOut.write('\n');
+                   + '\n'
+                   + '#if defined(IN_RING3)\n');
+        oOut.write('\n'.join(asStatTable));
+        oOut.write(  '\n'
+                   + '#endif /* IN_RING3 */\n');
 
         return True;
 

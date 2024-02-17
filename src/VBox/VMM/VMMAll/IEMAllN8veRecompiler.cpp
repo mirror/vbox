@@ -5656,6 +5656,31 @@ iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRD
     return off;
 }
 
+#ifdef VBOX_WITH_STATISTICS
+/**
+ * Emits code to update the thread call statistics.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitThreadCallStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
+{
+    /*
+     * Update threaded function stats.
+     */
+    uint32_t const offVCpu = RT_UOFFSETOF_DYN(VMCPUCC, iem.s.acThreadedFuncStats[pCallEntry->enmFunction]);
+    AssertCompile(sizeof(pReNative->pVCpu->iem.s.acThreadedFuncStats[pCallEntry->enmFunction]) == sizeof(uint32_t));
+# if defined(RT_ARCH_ARM64)
+    uint8_t const idxTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const idxTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+    off = iemNativeEmitIncU32CounterInVCpu(pReNative, off, idxTmp1, idxTmp2, offVCpu);
+    iemNativeRegFreeTmp(pReNative, idxTmp1);
+    iemNativeRegFreeTmp(pReNative, idxTmp2);
+# else
+    off = iemNativeEmitIncU32CounterInVCpu(pReNative, off, UINT8_MAX, UINT8_MAX, offVCpu);
+# endif
+    return off;
+}
+#endif /* VBOX_WITH_STATISTICS */
+
 
 /**
  * Emits the code at the CheckBranchMiss label.
@@ -13772,7 +13797,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 #endif
 
             /*
-             * Debug info and assembly markup.
+             * Debug info, assembly markup and statistics.
              */
 #if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || !defined(IEMNATIVE_WITH_BLTIN_CHECKMODE)
             if (pCallEntry->enmFunction == kIemThreadedFunc_BltIn_CheckMode)
@@ -13796,6 +13821,9 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 #endif
 #if defined(VBOX_STRICT)
             iemNativeRegAssertSanity(pReNative);
+#endif
+#ifdef VBOX_WITH_STATISTICS
+            off = iemNativeEmitThreadCallStats(pReNative, off, pCallEntry);
 #endif
 
             /*
