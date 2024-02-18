@@ -1185,8 +1185,7 @@ int pdmR3BlkCacheInit(PVM pVM)
         RTCritSectDelete(&pBlkCacheGlobal->CritSect);
     }
 
-    if (pBlkCacheGlobal)
-        RTMemFree(pBlkCacheGlobal);
+    RTMemFree(pBlkCacheGlobal);
 
     LogFlowFunc((": returns rc=%Rrc\n", rc));
     return rc;
