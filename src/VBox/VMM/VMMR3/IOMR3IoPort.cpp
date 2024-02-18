@@ -386,7 +386,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
         for (size_t i = 0;; i++)
         {
             const char *pszIn  = paExtDescs[i].pszIn;
-            const char *pszOut = paExtDescs[i].pszIn;
+            const char *pszOut = paExtDescs[i].pszOut;
             if (!pszIn && !pszOut)
                 break;
             AssertReturn(i < _8K, VERR_OUT_OF_RANGE);
