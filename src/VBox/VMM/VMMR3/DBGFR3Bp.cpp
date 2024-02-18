@@ -2207,8 +2207,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             if (RT_SUCCESS(rc))
             {
                 rc = VINF_DBGF_BP_ALREADY_EXIST;
-                if (phBp)
-                    *phBp = hBp;
+                *phBp = hBp;
             }
             return rc;
         }
@@ -2331,8 +2330,7 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
-            if (phBp)
-                *phBp = hBp;
+            *phBp = hBp;
         }
         return rc;
     }
@@ -2358,8 +2356,7 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                 rc = dbgfR3BpArm(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
-                if (phBp)
-                    *phBp = hBp;
+                *phBp = hBp;
                 return VINF_SUCCESS;
             }
 
@@ -2463,8 +2460,7 @@ VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
-            if (phBp)
-                *phBp = hBp;
+            *phBp = hBp;
         }
         return rc;
     }
