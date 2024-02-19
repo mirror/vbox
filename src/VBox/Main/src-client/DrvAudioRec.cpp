@@ -503,8 +503,8 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
     PRTCIRCBUF pCircBuf    = pStreamAV->pCircBuf;
     AssertPtr(pCircBuf);
-
-    uint32_t cbToWrite = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
+    uint32_t const cbFree    = (uint32_t)RTCircBufFree(pCircBuf);
+    uint32_t       cbToWrite = RT_MIN(cbBuf, cbFree);
     AssertReturn(cbToWrite, VERR_BUFFER_OVERFLOW);
 
     /*
