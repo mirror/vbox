@@ -1112,7 +1112,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--accelerated3d=on | off</option></term>
+          <term><option>--accelerate-3d=on | off</option></term>
           <listitem><para>
               Enables or disables hardware 3D acceleration for the
               graphics adapter variants which support it. This option
@@ -1121,7 +1121,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--accelerated2dvideo=on | off</option></term>
+          <term><option>--accelerate-2d-video=on | off</option></term>
           <listitem><para>
               Enables or disables 2D video acceleration for the graphics
               adapter variants which support it. This option has an effect

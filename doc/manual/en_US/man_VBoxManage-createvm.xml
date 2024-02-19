@@ -121,7 +121,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--group=<replaceable>group-ID</replaceable>[,...]</option></term>
+        <term><option>--groups=<replaceable>group-ID</replaceable>[,...]</option></term>
         <listitem><para>
             Assigns the VM to the specified groups. If you specify more
             than one group, separate each group name with a comma.

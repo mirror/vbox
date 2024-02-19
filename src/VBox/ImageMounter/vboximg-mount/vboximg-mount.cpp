@@ -254,7 +254,7 @@ briefUsage()
     );
     RTPrintf("\n"
       "vboximg-mount is a utility to make VirtualBox disk images available to the host\n"
-      "operating system for privileged or non-priviliged access. Any version of the\n"
+      "operating system for privileged or non-privileged access. Any version of the\n"
       "disk can be mounted from its available history of snapshots.\n"
       "\n"
       "If the user specifies a base image identifier using the --image option, only\n"
@@ -1002,7 +1002,7 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
                 AccessMode_ReadOnly, false /* forceNewUuid */, pVDiskMedium.asOutParam()));
 
         if (FAILED(hrc))
-            return RTMsgErrorExitFailure("\nCould't find specified VirtualBox base or snapshot disk image:\n%s",
+            return RTMsgErrorExitFailure("\nCouldn't find specified VirtualBox base or snapshot disk image:\n%s",
                  g_vboximgOpts.pszImageUuidOrPath);
 
 
