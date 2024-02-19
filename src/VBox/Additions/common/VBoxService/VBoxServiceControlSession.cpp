@@ -1633,7 +1633,7 @@ static int vgsvcGstCtrlSessionHandleShutdown(PVBOXSERVICECTRLSESSION pSession, P
         }
         else
         {
-            int fSystemShutdown = RTSYSTEM_SHUTDOWN_PLANNED;
+            uint32_t fSystemShutdown = RTSYSTEM_SHUTDOWN_PLANNED;
 
             /* Translate SHUTDOWN_FLAG_ into RTSYSTEM_SHUTDOWN_ flags. */
             if (fAction & GUEST_SHUTDOWN_FLAG_REBOOT)
