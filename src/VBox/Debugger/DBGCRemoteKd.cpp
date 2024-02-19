@@ -4291,7 +4291,7 @@ static DECLCALLBACK(int) dbgcKdOutput(void *pvUser, const char *pachChars, size_
  * @returns VBox status code.
  * @param   pThis   Pointer to the KD context.
  */
-int dbgcKdRun(PKDCTX pThis)
+static int dbgcKdRun(PKDCTX pThis)
 {
     /*
      * We're ready for commands now.
@@ -4345,14 +4345,13 @@ int dbgcKdRun(PKDCTX pThis)
              * Wait for input.
              */
             if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, 1000))
-            {
                 rc = dbgcKdCtxRecv(pThis);
-                if (RT_FAILURE(rc))
-                    break;
-            }
             else if (   pThis->msRecvTimeout != RT_INDEFINITE_WAIT
                      && (RTTimeMilliTS() - pThis->tsRecvLast >= pThis->msRecvTimeout))
                 rc = dbgcKdCtxRecvTimeout(pThis);
+
+            if (RT_FAILURE(rc))
+                break;
         }
         else
             break;

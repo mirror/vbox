@@ -95,7 +95,7 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
  * @returns Number of unallocated bytes.
  * @param   pDbgc               The DBGC instance.
  */
-size_t dbgcGetFreeScratchSpace(PDBGC pDbgc)
+static size_t dbgcGetFreeScratchSpace(PDBGC pDbgc)
 {
     return sizeof(pDbgc->achScratch) - (pDbgc->pszScratch - &pDbgc->achScratch[0]);
 }
@@ -108,7 +108,7 @@ size_t dbgcGetFreeScratchSpace(PDBGC pDbgc)
  * @param   pDbgc               The DBGC instance.
  * @param   cbRequested         The number of bytes to allocate.
  */
-char *dbgcAllocStringScatch(PDBGC pDbgc, size_t cbRequested)
+static char *dbgcAllocStringScatch(PDBGC pDbgc, size_t cbRequested)
 {
     if (cbRequested > dbgcGetFreeScratchSpace(pDbgc))
         return NULL;
@@ -1090,9 +1090,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
      * The parse loop.
      */
     PDBGCVAR        pArg        = &pDbgc->aArgs[pDbgc->iArg];
-    PCDBGCVARDESC   pPrevDesc   = NULL;
     unsigned        cCurDesc    = 0;
-    unsigned        iVar        = 0;
     unsigned        iVarDesc    = 0;
     *pcArgs = 0;
     do
@@ -1262,7 +1260,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
                 rc = dbgcCheckAndTypePromoteArgument(pDbgc, paVarDescs[iVarDesc].enmCategory, pArg);
             if (RT_SUCCESS(rc))
             {
-                pArg->pDesc = pPrevDesc = &paVarDescs[iVarDesc];
+                pArg->pDesc = &paVarDescs[iVarDesc];
                 cCurDesc++;
                 RTMemFree(pszArgsCopy);
                 break;
@@ -1294,7 +1292,6 @@ static int dbgcProcessArguments(PDBGC pDbgc, const char *pszCmdOrFunc,
         /*
          * Next argument.
          */
-        iVar++;
         pArg++;
         pDbgc->iArg++;
         *pcArgs += 1;

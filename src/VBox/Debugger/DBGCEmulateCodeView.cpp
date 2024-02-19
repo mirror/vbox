@@ -1590,8 +1590,10 @@ static void dbgcCmdUnassembleCfgDumpCalcBbSize(DBGFFLOWBB hFlowBb, PDBGCFLOWBBDU
         DBGFR3FlowBbQueryError(hFlowBb, &pszErr);
         if (pszErr)
         {
+            uint32_t cchErr = (uint32_t)strlen(pszErr);
+
             pDumpBb->cchHeight++;
-            pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pszErr));
+            pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, cchErr);
         }
     }
     for (unsigned i = 0; i < cInstr; i++)
@@ -1599,7 +1601,9 @@ static void dbgcCmdUnassembleCfgDumpCalcBbSize(DBGFFLOWBB hFlowBb, PDBGCFLOWBBDU
         const char *pszInstr = NULL;
         int rc = DBGFR3FlowBbQueryInstr(hFlowBb, i, NULL, NULL, &pszInstr);
         AssertRC(rc);
-        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pszInstr));
+
+        uint32_t cchInstr = (uint32_t)strlen(pszInstr);
+        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, cchInstr);
     }
     pDumpBb->cchWidth += 4; /* Include spacing and border left and right. */
 }
@@ -1757,7 +1761,6 @@ static void dbgcCmdUnassembleCfgDumpBranchTbl(PDBGCFLOWBRANCHTBLDUMP pDumpBranch
 /**
  * Fills in the dump states for the basic blocks and branch tables.
  *
- * @returns VBox status code.
  * @param   hFlowIt             The control flow graph iterator handle.
  * @param   hFlowBranchTblIt    The control flow graph branch table iterator handle.
  * @param   paDumpBb            The array of basic block dump states.
@@ -1765,9 +1768,9 @@ static void dbgcCmdUnassembleCfgDumpBranchTbl(PDBGCFLOWBRANCHTBLDUMP pDumpBranch
  * @param   cBbs                Number of basic blocks.
  * @param   cBranchTbls         Number of branch tables.
  */
-static int dbgcCmdUnassembleCfgDumpCalcDimensions(DBGFFLOWIT hFlowIt, DBGFFLOWBRANCHTBLIT hFlowBranchTblIt,
-                                                  PDBGCFLOWBBDUMP paDumpBb, PDBGCFLOWBRANCHTBLDUMP paDumpBranchTbl,
-                                                  uint32_t cBbs, uint32_t cBranchTbls)
+static void dbgcCmdUnassembleCfgDumpCalcDimensions(DBGFFLOWIT hFlowIt, DBGFFLOWBRANCHTBLIT hFlowBranchTblIt,
+                                                   PDBGCFLOWBBDUMP paDumpBb, PDBGCFLOWBRANCHTBLDUMP paDumpBranchTbl,
+                                                   uint32_t cBbs, uint32_t cBranchTbls)
 {
     RT_NOREF2(cBbs, cBranchTbls);
 
@@ -1794,8 +1797,6 @@ static int dbgcCmdUnassembleCfgDumpCalcDimensions(DBGFFLOWIT hFlowIt, DBGFFLOWBR
             hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
         }
     }
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -1828,8 +1829,8 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
 
     if (RT_SUCCESS(rc))
     {
-        rc = dbgcCmdUnassembleCfgDumpCalcDimensions(hCfgIt, hFlowBranchTblIt, paDumpBb, paDumpBranchTbl,
-                                                    cBbs, cBranchTbls);
+        dbgcCmdUnassembleCfgDumpCalcDimensions(hCfgIt, hFlowBranchTblIt, paDumpBb, paDumpBranchTbl,
+                                               cBbs, cBranchTbls);
 
         /* Calculate the ASCII screen dimensions and create one. */
         uint32_t cchWidth = 0;
@@ -2166,11 +2167,12 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             return DBGCCmdHlpFail(pCmdHlp, pCmd, "Unknown range type %d", pDbgc->DisasmPos.enmRangeType);
     }
 
+    int rc;
+#if 0 /** @todo Unused right now. */
     /*
      * Convert physical and host addresses to guest addresses.
      */
     RTDBGAS hDbgAs = pDbgc->hDbgAs;
-    int rc;
     switch (pDbgc->DisasmPos.enmType)
     {
         case DBGCVAR_TYPE_GC_FLAT:
@@ -2191,6 +2193,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         }
         default: AssertFailed(); break;
     }
+#endif
 
     DBGFADDRESS CurAddr;
     if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
@@ -3162,7 +3165,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 return VINF_SUCCESS;
         }
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -5066,7 +5069,7 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  * @param   paVars  The array of variables to convert.
  * @param   cVars   The number of variables.
  */
-int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t cbUnit, PCDBGCVAR paVars, unsigned cVars)
+static int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t cbUnit, PCDBGCVAR paVars, unsigned cVars)
 {
     union
     {
@@ -6643,11 +6646,13 @@ static DECLCALLBACK(int) dbgcCmdTraceFlowEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
         pDbgc->DisasmPos = paArgs[0];
     pDbgc->pLastPos = &pDbgc->DisasmPos;
 
+
+    int rc;
+#if 0 /** @todo unused right now */
     /*
      * Convert physical and host addresses to guest addresses.
      */
     RTDBGAS hDbgAs = pDbgc->hDbgAs;
-    int rc;
     switch (pDbgc->DisasmPos.enmType)
     {
         case DBGCVAR_TYPE_GC_FLAT:
@@ -6668,6 +6673,7 @@ static DECLCALLBACK(int) dbgcCmdTraceFlowEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
         }
         default: AssertFailed(); break;
     }
+#endif
 
     DBGFADDRESS CurAddr;
     if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE

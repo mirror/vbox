@@ -1381,10 +1381,10 @@ static int dbgcGdbStubCtxPktProcessQueryThreadInfoWorker(PGDBSTUBCTX pThis)
 
             if (RT_SUCCESS(rc))
                 rc = dbgcGdbStubCtxReplySendData(pThis, &achReply[0], cchStr);
+            if (RT_SUCCESS(rc))
+                rc = dbgcGdbStubCtxReplySendEnd(pThis);
             pThis->idCpuNextThrdInfoQuery++;
         }
-
-        rc = dbgcGdbStubCtxReplySendEnd(pThis);
     }
 
     return rc;
@@ -1452,7 +1452,7 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryThreadExtraInfo(PGDBSTUBCT
         || pbArgs[0] != ',')
         return VERR_NET_PROTOCOL_ERROR;
 
-    cbArgs--;
+    /*cbArgs--;*/ /* Not used */
     pbArgs++;
 
     /* We know there is an # character denoting the end so the following must return with VWRN_TRAILING_CHARS. */
@@ -1566,7 +1566,7 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessVCont(PGDBSTUBCTX pThis, const 
         return dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
 
     pbArgs++;
-    cbArgs--;
+    /*cbArgs--;*/ /* Not used */
 
     /** @todo For now we don't care about multiple threads and ignore thread IDs and multiple actions. */
     switch (pbArgs[0])
@@ -2419,6 +2419,10 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
                     rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r eflags.rf = 1");
             }
 
+            if (RT_FAILURE(rc))
+                pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Executing the breakpoint %u (%s) failed with %Rrc!\n",
+                                        pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx), rc);
+
             rc = dbgcGdbStubCtxReplySendSigTrap(pThis);
             break;
         }
@@ -2551,7 +2555,7 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
  * @returns VBox status code.
  * @param   pThis   Pointer to the GDB stub context.
  */
-int dbgcGdbStubRun(PGDBSTUBCTX pThis)
+static int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 {
     /* Select the register set based on the CPU mode. */
     CPUMMODE enmMode   = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);

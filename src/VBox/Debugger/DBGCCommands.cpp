@@ -1312,7 +1312,7 @@ static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
     {
         "none", "bytes", "elements"
     };
-    int rc;
+    int rc = VINF_SUCCESS;
 
     for (unsigned iArg = 0; iArg < cArgs; iArg++)
     {
@@ -1425,7 +1425,7 @@ static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
     } /* arg loop */
 
     NOREF(pCmd); NOREF(pUVM);
-    return 0;
+    return rc;
 }
 
 
