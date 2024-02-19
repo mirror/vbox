@@ -378,7 +378,7 @@ nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Init(PRUint32 initSize)
   int vrc = RTSemFastMutexCreate(&this->mLock);
   NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "Error creating lock during nsBaseHashtableL::Init()");
 
-  return (this->mLock != NIL_RTSEMFASTMUTEX);
+  return RT_SUCCESS(vrc);
 }
 
 template<class KeyClass,class DataType,class UserDataType>
