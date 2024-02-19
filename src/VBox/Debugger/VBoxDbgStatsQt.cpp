@@ -718,13 +718,17 @@ public:
     /**
      * Constructor.
      *
+     * @param   a_pszAdvFilter  Configuration string from the command line or such.
      * @param   a_pParent       The parent object.
      */
-    VBoxDbgStatsSortFileProxyModel(QObject *a_pParent);
+    VBoxDbgStatsSortFileProxyModel(const char *a_pszAdvFilter, QObject *a_pParent);
 
     /** Destructor */
     virtual ~VBoxDbgStatsSortFileProxyModel()
     {}
+
+    /** Gets the unused-rows visibility status. */
+    bool isShowingUnusedRows() const { return m_fShowUnusedRows; }
 
     /** Sets whether or not to show unused rows (all zeros). */
     void setShowUnusedRows(bool a_fHide);
@@ -3878,7 +3882,7 @@ VBoxDbgStatsView::actFilter()
      */
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
     if (Idx.isValid())
-        Idx == myGetRootIndex();
+        Idx = myGetRootIndex();
     Idx = m_pProxyModel->mapToSource(Idx);
     PDBGGUISTATSNODE pNode = m_pVBoxModel->nodeFromIndex(Idx);
     if (pNode)
@@ -4086,7 +4090,7 @@ VBoxDbgStatsFilterDialog::validateAndAccept()
 
 
 VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL*/, const char *pszExpand /*= NULL*/,
-                           unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
+                           const char *pszAdvFilter /*= NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
     : VBoxDbgBaseWindow(a_pDbgGui, pParent, "Statistics")
     , m_PatStr(pszFilter), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
@@ -4148,6 +4152,7 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL
 #ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
     VBoxDbgStatsSortFileProxyModel *pProxyModel = new VBoxDbgStatsSortFileProxyModel(this);
     m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, pProxyModel, this);
+    pCheckBox->setCheckState(pProxyModel->isShowingUnusedRows() ? Qt::Checked : Qt::Unchecked)
 #else
     m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, NULL, this);
 #endif

@@ -181,13 +181,14 @@ VBoxDbgGui::setMenu(QMenu *pMenu)
 
 
 int
-VBoxDbgGui::showStatistics(const char *pszFilter, const char *pszExpand)
+VBoxDbgGui::showStatistics(const char *pszFilter, const char *pszExpand, const char *pszAdvFilter)
 {
     if (!m_pDbgStats)
     {
         m_pDbgStats = new VBoxDbgStats(this,
                                        pszFilter && *pszFilter ? pszFilter :  "*",
                                        pszExpand && *pszExpand ? pszExpand : NULL,
+                                       pszAdvFilter && *pszAdvFilter ? pszAdvFilter : NULL,
                                        2, m_pParent);
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionWindowInitial(m_pDbgStats, "DbgStats", VBoxDbgBaseWindow::kAttractionVmRight);
