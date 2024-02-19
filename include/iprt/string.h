@@ -104,7 +104,11 @@ char *strpbrk(const char *pszStr, const char *pszChars);
 RT_C_DECLS_END
 #endif
 
-#if (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)) && !defined(IPRT_NO_CRT)
+#if !defined(IPRT_NO_CRT) \
+ && (   defined(RT_OS_DARWIN) \
+     || (defined(RT_OS_OS2) && (!defined(_GNU_SOURCE) || !defined(__GNUC__))) \
+     || defined(RT_OS_SOLARIS) \
+     || defined(RT_OS_WINDOWS))
 RT_C_DECLS_BEGIN
 # if !defined(RT_OS_DARWIN) || RT_CLANG_PREREQ(7 /* whatever post gcc-4.2 */, 0)
 RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb);
