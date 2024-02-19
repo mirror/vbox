@@ -605,7 +605,7 @@ RT_C_DECLS_END
 # define AssertContinueStmt(expr, stmt) \
     if (RT_LIKELY(!!(expr))) \
     { /* likely */ } \
-    else \
+    else if (1) \
     { \
         stmt; \
         continue; \
