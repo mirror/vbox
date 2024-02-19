@@ -311,7 +311,7 @@ static DECLCALLBACK(int) shClSvcWinTransferOnInitializeCallback(PSHCLTRANSFERCAL
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
-            rc = SharedClipboardWinTransferSet(&pCtx->Win, pTransfer);
+            rc = SharedClipboardWinTransferHandOffToDataObject(&pCtx->Win, pTransfer);
             break;
         }
 
@@ -1104,4 +1104,3 @@ static DECLCALLBACK(int) shClSvcWinTransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
     return rc;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
