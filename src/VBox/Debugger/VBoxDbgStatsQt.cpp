@@ -32,20 +32,26 @@
 #define LOG_GROUP LOG_GROUP_DBGG
 #include "VBoxDbgStatsQt.h"
 
-#include <QLocale>
-#include <QPushButton>
-#include <QSpinBox>
-#include <QLabel>
+#include <QAction>
+#include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
-#include <QApplication>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QKeySequence>
-#include <QAction>
 #include <QContextMenuEvent>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QGroupBox>
+#include <QGridLayout>
+#include <QHBoxLayout>
 #include <QHeaderView>
+#include <QKeySequence>
+#include <QLabel>
+#include <QLineEdit>
+#include <QLocale>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QSortFilterProxyModel>
+#include <QSpinBox>
+#include <QVBoxLayout>
 
 #include <iprt/errcore.h>
 #include <VBox/log.h>
@@ -103,6 +109,44 @@ typedef enum DBGGUISTATSNODESTATE
 
 
 /**
+ * Filtering data.
+ */ 
+typedef struct VBoxGuiStatsFilterData
+{
+    /** Number of instances. */
+    static uint32_t volatile s_cInstances;
+    uint64_t            uMinValue;
+    uint64_t            uMaxValue;
+    QRegularExpression *pRegexName;
+
+    VBoxGuiStatsFilterData()
+        : uMinValue(0)
+        , uMaxValue(UINT64_MAX)
+        , pRegexName(NULL)
+    {
+        s_cInstances += 1;
+    }
+
+    ~VBoxGuiStatsFilterData()
+    {
+        if (pRegexName)
+        {
+            delete pRegexName;
+            pRegexName = NULL;
+        }
+        s_cInstances -= 1;
+    }
+
+    bool isAllDefaults(void) const
+    {
+        return (uMinValue == 0 || uMinValue == UINT64_MAX)
+            && (uMaxValue == 0 || uMaxValue == UINT64_MAX)
+            && pRegexName == NULL;
+    }
+} VBoxGuiStatsFilterData;
+
+
+/**
  * A tree node representing a statistic sample.
  *
  * The nodes carry a reference to the parent and to its position among its
@@ -120,8 +164,20 @@ typedef struct DBGGUISTATSNODE
     uint32_t                cChildren;
     /** Our index among the parent's children. */
     uint32_t                iSelf;
+    /** Sub-tree filtering config (typically NULL). */
+    VBoxGuiStatsFilterData *pFilter;
     /** The unit string. (not allocated) */
     const char             *pszUnit;
+    /** The delta. */
+    int64_t                 i64Delta;
+    /** The name. */
+    char                   *pszName;
+    /** The length of the name. */
+    size_t                  cchName;
+    /** The description string. */
+    QString                *pDescStr;
+    /** The node state. */
+    DBGGUISTATENODESTATE    enmState;
     /** The data type.
      * For filler nodes not containing data, this will be set to STAMTYPE_INVALID. */
     STAMTYPE                enmType;
@@ -149,16 +205,6 @@ typedef struct DBGGUISTATSNODE
         /** STAMTYPE_CALLBACK. */
         QString            *pStr;
     } Data;
-    /** The delta. */
-    int64_t                 i64Delta;
-    /** The name. */
-    char                   *pszName;
-    /** The length of the name. */
-    size_t                  cchName;
-    /** The description string. */
-    QString                *pDescStr;
-    /** The node state. */
-    DBGGUISTATENODESTATE    enmState;
 } DBGGUISTATSNODE;
 
 
@@ -387,6 +433,7 @@ protected:
     static DECLCALLBACK(int) updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
                                             const char *pszUnit, STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
 
+public:
     /**
      * Calculates the full path of a node.
      *
@@ -398,6 +445,7 @@ protected:
      */
     static ssize_t getNodePath(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch);
 
+protected:
     /**
      * Calculates the full path of a node, returning the string pointer.
      *
@@ -555,6 +603,8 @@ public:
     static QString strValueTimes(PCDBGGUISTATSNODE pNode);
     /** Gets the value/times. */
     static uint64_t getValueTimesAsUInt(PCDBGGUISTATSNODE pNode);
+    /** Gets the value/avg. */
+    static uint64_t getValueOrAvgAsUInt(PCDBGGUISTATSNODE pNode);
     /** Gets the minimum value. */
     static QString strMinValue(PCDBGGUISTATSNODE pNode);
     /** Gets the minimum value. */
@@ -583,6 +633,7 @@ protected:
      */
     static void destroyNode(PDBGGUISTATSNODE a_pNode);
 
+public:
     /**
      * Converts an index to a node pointer.
      *
@@ -656,8 +707,8 @@ protected:
     PCVMMR3VTABLE m_pVMM;
 };
 
-
 #ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+
 /**
  * Model using the VM / STAM interface as data source.
  */
@@ -677,6 +728,11 @@ public:
 
     /** Sets whether or not to show unused rows (all zeros). */
     void setShowUnusedRows(bool a_fHide);
+
+    /**
+     * Notification that a filter has been added, removed or modified.
+     */
+    void notifyFilterChanges();
 
 protected:
     /**
@@ -700,7 +756,75 @@ protected:
     /** Whether to show unused rows (all zeros) or not. */
     bool m_fShowUnusedRows;
 };
+
+
+/**
+ * Dialog for sub-tree filtering config.
+ */
+class VBoxDbgStatsFilterDialog : public QDialog
+{
+public:
+    /**
+     * Constructor.
+     *
+     * @param   a_pNode     The node to configure filtering for.
+     */
+    VBoxDbgStatsFilterDialog(QWidget *a_pParent, PCDBGGUISTATSNODE a_pNode);
+
+    /** Destructor. */
+    virtual ~VBoxDbgStatsFilterDialog();
+
+    /**
+     * Returns a copy of the filter data or NULL if all defaults.
+     */
+    VBoxGuiStatsFilterData *dupFilterData(void) const;
+
+protected slots:
+
+    /** Validates and (maybe) accepts the dialog data. */
+    void validateAndAccept(void);
+
+protected:
+    /**
+     * Validates and converts the content of an uint64_t entry field.s
+     *
+     * @returns The converted value (or default)
+     * @param   a_pField        The entry field widget.
+     * @param   a_uDefault      The default return value.
+     * @param   a_pszField      The field name (for error messages).
+     * @param   a_pLstErrors    The error list to append validation errors to.
+     */
+    static uint64_t validateUInt64Field(QLineEdit const *a_pField, uint64_t a_uDefault,
+                                        const char *a_pszField, QStringList *a_pLstErrors);
+
+
+private:
+    /** The filter data. */
+    VBoxGuiStatsFilterData m_Data;
+
+    /** The minium value/average entry field. */
+    QLineEdit *m_pValueAvgMin;
+    /** The maxium value/average entry field. */
+    QLineEdit *m_pValueAvgMax;
+    /** The name filtering regexp entry field. */
+    QLineEdit *m_pNameRegExp;
+
+    /** Regular expression for validating the uint64_t entry fields. */
+    static QRegularExpression const s_UInt64ValidatorRegExp;
+
+    /**
+     * Creates an entry field for a uint64_t value.
+     */
+    static QLineEdit *createUInt64LineEdit(uint64_t uValue);
+};
+
 #endif /* VBOXDBG_WITH_SORTED_AND_FILTERED_STATS */
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/*static*/ uint32_t volatile VBoxGuiStatsFilterData::s_cInstances = 0;
 
 
 /*********************************************************************************************************************************
@@ -938,6 +1062,15 @@ VBoxDbgStatsModel::destroyNode(PDBGGUISTATSNODE a_pNode)
         a_pNode->pDescStr = NULL;
     }
 
+    VBoxGuiStatsFilterData const *pFilter = a_pNode->pFilter;
+    if (!pFilter)
+    { /* likely */ }
+    else
+    {
+        delete pFilter;
+        a_pNode->pFilter = NULL;
+    }
+
 #ifdef VBOX_STRICT
     /* poison it. */
     a_pNode->pParent++;
@@ -945,6 +1078,7 @@ VBoxDbgStatsModel::destroyNode(PDBGGUISTATSNODE a_pNode)
     a_pNode->pDescStr++;
     a_pNode->papChildren++;
     a_pNode->cChildren = 8442;
+    a_pNode->pFilter++;
 #endif
 
     /* Finally ourselves */
@@ -2485,6 +2619,64 @@ VBoxDbgStatsModel::getValueTimesAsUInt(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ uint64_t
+VBoxDbgStatsModel::getValueOrAvgAsUInt(PCDBGGUISTATSNODE pNode)
+{
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_COUNTER:
+            return pNode->Data.Counter.c;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (pNode->Data.Profile.cPeriods)
+                return pNode->Data.Profile.cTicks / pNode->Data.Profile.cPeriods;
+            return 0;
+
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+            return RT_MAKE_U64(pNode->Data.RatioU32.u32A, pNode->Data.RatioU32.u32B);
+
+        case STAMTYPE_CALLBACK:
+            return UINT64_MAX;
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            return pNode->Data.u8;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            return pNode->Data.u16;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            return pNode->Data.u32;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            return pNode->Data.u64;
+
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
+            return pNode->Data.f;
+
+        default:
+            AssertMsgFailed(("%d\n", pNode->enmType));
+            RT_FALL_THRU();
+        case STAMTYPE_INVALID:
+            return UINT64_MAX;
+    }
+}
+
+
 /*static*/ QString
 VBoxDbgStatsModel::strMinValue(PCDBGGUISTATSNODE pNode)
 {
@@ -2675,7 +2867,9 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
         switch (iCol)
         {
             case 0:
-                return QString(pNode->pszName);
+                if (!pNode->pFilter)
+                    return QString(pNode->pszName);
+                return QString(pNode->pszName) + " (*)";
             case 1:
                 return strUnit(pNode);
             case 2:
@@ -3054,15 +3248,21 @@ VBoxDbgStatsSortFileProxyModel::VBoxDbgStatsSortFileProxyModel(QObject *a_pParen
 bool
 VBoxDbgStatsSortFileProxyModel::filterAcceptsRow(int a_iSrcRow, const QModelIndex &a_rSrcParent) const
 {
-    if (!m_fShowUnusedRows)
+    /*
+     * Locate the node.
+     */
+    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rSrcParent);
+    if (pParent)
     {
-        PDBGGUISTATSNODE const pParent = nodeFromIndex(a_rSrcParent);
-        if (pParent)
+        if ((unsigned)a_iSrcRow < pParent->cChildren)
         {
-            if ((unsigned)a_iSrcRow < pParent->cChildren)
+            PDBGGUISTATSNODE const pNode = pParent->papChildren[a_iSrcRow];
+            if (pNode) /* paranoia */
             {
-                PDBGGUISTATSNODE const pNode = pParent->papChildren[a_iSrcRow];
-                if (pNode) /* paranoia */
+                /*
+                 * Apply the global unused-row filter.
+                 */
+                if (!m_fShowUnusedRows)
                 {
                     /* Only relevant for leaf nodes. */
                     if (pNode->cChildren == 0)
@@ -3145,6 +3345,31 @@ VBoxDbgStatsSortFileProxyModel::filterAcceptsRow(int a_iSrcRow, const QModelInde
                             return false;
                     }
                 }
+
+                /*
+                 * Look for additional filtering rules among the ancestors.
+                 */
+                if (VBoxGuiStatsFilterData::s_cInstances > 0 /* quick & dirty optimization */)
+                {
+                    VBoxGuiStatsFilterData const *pFilter = pParent->pFilter;
+                    while (!pFilter && (pParent = pParent->pParent) != NULL)
+                        pFilter = pParent->pFilter;
+                    if (pFilter)
+                    {
+                        if (pFilter->uMinValue > 0 || pFilter->uMaxValue != UINT64_MAX)
+                        {
+                            uint64_t const uValue = VBoxDbgStatsModel::getValueTimesAsUInt(pNode);
+                            if (   uValue < pFilter->uMinValue
+                                || uValue > pFilter->uMaxValue)
+                                return false;
+                        }
+                        if (pFilter->pRegexName)
+                        {
+                            if (!pFilter->pRegexName->match(pNode->pszName).hasMatch())
+                                return false;
+                        }
+                    }
+                }
             }
         }
     }
@@ -3211,6 +3436,13 @@ VBoxDbgStatsSortFileProxyModel::setShowUnusedRows(bool a_fHide)
 }
 
 
+void
+VBoxDbgStatsSortFileProxyModel::notifyFilterChanges()
+{
+    invalidateRowsFilter();
+}
+
+
 #endif /* VBOXDBG_WITH_SORTED_AND_FILTERED_STATS */
 
 
@@ -3264,14 +3496,17 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     /*
      * Create and setup the actions.
      */
-    m_pExpandAct   = new QAction("Expand Tree", this);
-    m_pCollapseAct = new QAction("Collapse Tree", this);
-    m_pRefreshAct  = new QAction("&Refresh", this);
-    m_pResetAct    = new QAction("Rese&t", this);
-    m_pCopyAct     = new QAction("&Copy", this);
-    m_pToLogAct    = new QAction("To &Log", this);
-    m_pToRelLogAct = new QAction("T&o Release Log", this);
-    m_pAdjColumns  = new QAction("&Adjust Columns", this);
+    m_pExpandAct     = new QAction("Expand Tree", this);
+    m_pCollapseAct   = new QAction("Collapse Tree", this);
+    m_pRefreshAct    = new QAction("&Refresh", this);
+    m_pResetAct      = new QAction("Rese&t", this);
+    m_pCopyAct       = new QAction("&Copy", this);
+    m_pToLogAct      = new QAction("To &Log", this);
+    m_pToRelLogAct   = new QAction("T&o Release Log", this);
+    m_pAdjColumnsAct = new QAction("&Adjust Columns", this);
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    m_pFilterAct     = new QAction("&Filter...", this);
+#endif
 
     m_pCopyAct->setShortcut(QKeySequence::Copy);
     m_pExpandAct->setShortcut(QKeySequence("Ctrl+E"));
@@ -3280,7 +3515,10 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     m_pResetAct->setShortcut(QKeySequence("Alt+R"));
     m_pToLogAct->setShortcut(QKeySequence("Ctrl+Z"));
     m_pToRelLogAct->setShortcut(QKeySequence("Alt+Z"));
-    m_pAdjColumns->setShortcut(QKeySequence("Ctrl+A"));
+    m_pAdjColumnsAct->setShortcut(QKeySequence("Ctrl+A"));
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    //m_pFilterAct->setShortcut(QKeySequence("Ctrl+?"));
+#endif
 
     addAction(m_pCopyAct);
     addAction(m_pExpandAct);
@@ -3289,16 +3527,22 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     addAction(m_pResetAct);
     addAction(m_pToLogAct);
     addAction(m_pToRelLogAct);
-    addAction(m_pAdjColumns);
+    addAction(m_pAdjColumnsAct);
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    addAction(m_pFilterAct);
+#endif
 
-    connect(m_pExpandAct,   SIGNAL(triggered(bool)), this, SLOT(actExpand()));
-    connect(m_pCollapseAct, SIGNAL(triggered(bool)), this, SLOT(actCollapse()));
-    connect(m_pRefreshAct,  SIGNAL(triggered(bool)), this, SLOT(actRefresh()));
-    connect(m_pResetAct,    SIGNAL(triggered(bool)), this, SLOT(actReset()));
-    connect(m_pCopyAct,     SIGNAL(triggered(bool)), this, SLOT(actCopy()));
-    connect(m_pToLogAct,    SIGNAL(triggered(bool)), this, SLOT(actToLog()));
-    connect(m_pToRelLogAct, SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
-    connect(m_pAdjColumns,  SIGNAL(triggered(bool)), this, SLOT(actAdjColumns()));
+    connect(m_pExpandAct,     SIGNAL(triggered(bool)), this, SLOT(actExpand()));
+    connect(m_pCollapseAct,   SIGNAL(triggered(bool)), this, SLOT(actCollapse()));
+    connect(m_pRefreshAct,    SIGNAL(triggered(bool)), this, SLOT(actRefresh()));
+    connect(m_pResetAct,      SIGNAL(triggered(bool)), this, SLOT(actReset()));
+    connect(m_pCopyAct,       SIGNAL(triggered(bool)), this, SLOT(actCopy()));
+    connect(m_pToLogAct,      SIGNAL(triggered(bool)), this, SLOT(actToLog()));
+    connect(m_pToRelLogAct,   SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
+    connect(m_pAdjColumnsAct, SIGNAL(triggered(bool)), this, SLOT(actAdjColumns()));
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    connect(m_pFilterAct,     SIGNAL(triggered(bool)), this, SLOT(actFilter()));
+#endif
 
 
     /*
@@ -3322,6 +3566,10 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     m_pBranchMenu->addSeparator();
     m_pBranchMenu->addAction(m_pExpandAct);
     m_pBranchMenu->addAction(m_pCollapseAct);
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    m_pBranchMenu->addSeparator();
+    m_pBranchMenu->addAction(m_pFilterAct);
+#endif
 
     m_pViewMenu = new QMenu();
     m_pViewMenu->addAction(m_pCopyAct);
@@ -3333,7 +3581,10 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     m_pViewMenu->addAction(m_pExpandAct);
     m_pViewMenu->addAction(m_pCollapseAct);
     m_pViewMenu->addSeparator();
-    m_pViewMenu->addAction(m_pAdjColumns);
+    m_pViewMenu->addAction(m_pAdjColumnsAct);
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    m_pViewMenu->addAction(m_pFilterAct);
+#endif    
 
     /* the header menu */
     QHeaderView *pHdrView = header();
@@ -3363,7 +3614,8 @@ VBoxDbgStatsView::~VBoxDbgStatsView()
     DELETE_IT(m_pCopyAct);
     DELETE_IT(m_pToLogAct);
     DELETE_IT(m_pToRelLogAct);
-    DELETE_IT(m_pAdjColumns);
+    DELETE_IT(m_pAdjColumnsAct);
+    DELETE_IT(m_pFilterAct);
 #undef DELETE_IT
 }
 
@@ -3617,6 +3869,208 @@ VBoxDbgStatsView::actAdjColumns()
 }
 
 
+void
+VBoxDbgStatsView::actFilter()
+{
+#ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
+    /*
+     * Get the node it applies to.
+     */
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    if (Idx.isValid())
+        Idx == myGetRootIndex();
+    Idx = m_pProxyModel->mapToSource(Idx);
+    PDBGGUISTATSNODE pNode = m_pVBoxModel->nodeFromIndex(Idx);
+    if (pNode)
+    {
+        /*
+         * Display dialog (modal).
+         */
+        VBoxDbgStatsFilterDialog Dialog(this, pNode);
+        if (Dialog.exec() == QDialog::Accepted)
+        {
+            /** @todo it is possible that pNode is invalid now! */
+            VBoxGuiStatsFilterData * const pOldFilter = pNode->pFilter;
+            pNode->pFilter = Dialog.dupFilterData();
+            if (pOldFilter)
+                delete pOldFilter;
+            m_pProxyModel->notifyFilterChanges();
+        }
+    }
+#endif
+}
+
+
+
+
+
+
+/*
+ *
+ *      V B o x D b g S t a t s F i l t e r D i a l o g
+ *      V B o x D b g S t a t s F i l t e r D i a l o g
+ *      V B o x D b g S t a t s F i l t e r D i a l o g
+ *
+ *
+ */
+
+/* static */ QRegularExpression const VBoxDbgStatsFilterDialog::s_UInt64ValidatorRegExp("^([0-9]*|0[Xx][0-9a-fA-F]*)$");
+
+
+/*static*/ QLineEdit *
+VBoxDbgStatsFilterDialog::createUInt64LineEdit(uint64_t uValue)
+{
+    QLineEdit *pRet = new QLineEdit;
+    if (uValue == 0 || uValue == UINT64_MAX)
+        pRet->setText("");
+    else
+        pRet->setText(QString().number(uValue));
+    pRet->setValidator(new QRegularExpressionValidator(s_UInt64ValidatorRegExp));
+    return pRet;
+}
+
+
+VBoxDbgStatsFilterDialog::VBoxDbgStatsFilterDialog(QWidget *a_pParent, PCDBGGUISTATSNODE a_pNode)
+    : QDialog(a_pParent)
+{
+    /* Set the window title. */
+    static char s_szTitlePfx[] = "Filtering - ";
+    char szTitle[1024 + 128];
+    memcpy(szTitle, s_szTitlePfx, sizeof(s_szTitlePfx));
+    VBoxDbgStatsModel::getNodePath(a_pNode, &szTitle[sizeof(s_szTitlePfx) - 1], sizeof(szTitle) - sizeof(s_szTitlePfx));
+    setWindowTitle(szTitle);
+
+
+    /* Copy the old data if any. */
+    VBoxGuiStatsFilterData const * const pOldFilter = a_pNode->pFilter;
+    if (pOldFilter)
+    {
+        m_Data.uMinValue = pOldFilter->uMinValue;
+        m_Data.uMaxValue = pOldFilter->uMaxValue;
+        if (pOldFilter->pRegexName)
+            m_Data.pRegexName = new QRegularExpression(*pOldFilter->pRegexName);
+    }
+
+    /* Configure the dialog... */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+
+    /* The value / average range: */
+    QGroupBox   *pValueAvgGrpBox = new QGroupBox("Value / Average");
+    QGridLayout *pValAvgLayout   = new QGridLayout;
+    QLabel      *pLabel          = new QLabel("Min");
+    m_pValueAvgMin = createUInt64LineEdit(m_Data.uMinValue);
+    pLabel->setBuddy(m_pValueAvgMin);
+    pValAvgLayout->addWidget(pLabel, 0, 0);
+    pValAvgLayout->addWidget(m_pValueAvgMin, 0, 1);
+
+    pLabel = new QLabel("Max");
+    m_pValueAvgMax = createUInt64LineEdit(m_Data.uMaxValue);
+    pLabel->setBuddy(m_pValueAvgMax);
+    pValAvgLayout->addWidget(pLabel, 1, 0);
+    pValAvgLayout->addWidget(m_pValueAvgMax, 1, 1);
+
+    pValueAvgGrpBox->setLayout(pValAvgLayout);
+    pMainLayout->addWidget(pValueAvgGrpBox);
+
+    /* The name filter. */
+    QGroupBox   *pNameGrpBox = new QGroupBox("Name RegExp");
+    QHBoxLayout *pNameLayout = new QHBoxLayout();
+    m_pNameRegExp = new QLineEdit;
+    if (m_Data.pRegexName)
+        m_pNameRegExp->setText(m_Data.pRegexName->pattern());
+    else
+        m_pNameRegExp->setText("");
+    m_pNameRegExp->setToolTip("Regular expression matching basenames (no parent) to show.");
+    pNameLayout->addWidget(m_pNameRegExp);
+    pNameGrpBox->setLayout(pNameLayout);
+    pMainLayout->addWidget(pNameGrpBox);
+
+    /* Buttons. */
+    QDialogButtonBox *pButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+    connect(pButtonBox, &QDialogButtonBox::rejected, this, &VBoxDbgStatsFilterDialog::reject);
+    connect(pButtonBox, &QDialogButtonBox::accepted, this, &VBoxDbgStatsFilterDialog::validateAndAccept);
+    pMainLayout->addWidget(pButtonBox);
+}
+
+
+VBoxDbgStatsFilterDialog::~VBoxDbgStatsFilterDialog()
+{
+    /* anything? */
+}
+
+
+VBoxGuiStatsFilterData *
+VBoxDbgStatsFilterDialog::dupFilterData(void) const
+{
+    if (m_Data.isAllDefaults())
+        return NULL;
+    VBoxGuiStatsFilterData *pRet = new VBoxGuiStatsFilterData();
+    pRet->uMinValue  = m_Data.uMinValue;
+    pRet->uMaxValue  = m_Data.uMaxValue;
+    if (m_Data.pRegexName)
+        pRet->pRegexName = new QRegularExpression(*m_Data.pRegexName);
+    return pRet;
+}
+
+
+uint64_t
+VBoxDbgStatsFilterDialog::validateUInt64Field(QLineEdit const *a_pField, uint64_t a_uDefault,
+                                              const char *a_pszField, QStringList *a_pLstErrors)
+{
+    QString Str = a_pField->text().trimmed();
+    if (!Str.isEmpty())
+    {
+        QByteArray const   StrAsUtf8 = Str.toUtf8();
+        const char * const pszString = StrAsUtf8.constData();
+        uint64_t uValue = a_uDefault;
+        int vrc = RTStrToUInt64Full(pszString, 0, &uValue);
+        if (vrc == VINF_SUCCESS)
+            return uValue;
+        char szMsg[128];
+        RTStrPrintf(szMsg, sizeof(szMsg), "Invalid %s value: %Rrc - ", a_pszField, vrc);
+        a_pLstErrors->append(QString(szMsg) + Str);
+    }
+
+    return a_uDefault;
+}
+
+
+void
+VBoxDbgStatsFilterDialog::validateAndAccept()
+{
+    QStringList LstErrors;
+
+    /* The numeric fields. */
+    m_Data.uMinValue = validateUInt64Field(m_pValueAvgMin, 0,           "minimum value/avg", &LstErrors);
+    m_Data.uMaxValue = validateUInt64Field(m_pValueAvgMax, UINT64_MAX,  "maximum value/avg", &LstErrors);
+
+    /* The name regexp. */
+    QString Str = m_pNameRegExp->text().trimmed();
+    if (!Str.isEmpty())
+    {
+        if (!m_Data.pRegexName)
+            m_Data.pRegexName = new QRegularExpression();
+        m_Data.pRegexName->setPattern(Str);
+        if (!m_Data.pRegexName->isValid())
+            LstErrors.append("Invalid regular expression");
+    }
+    else if (m_Data.pRegexName)
+    {
+        delete m_Data.pRegexName;
+        m_Data.pRegexName = NULL;
+    }
+
+    /* Dismiss the dialog if everything is fine, otherwise complain and keep it open. */
+    if (LstErrors.isEmpty())
+        emit accept();
+    else
+    {
+        QMessageBox MsgBox(QMessageBox::Critical, "Invalid input", LstErrors.join("\n"), QMessageBox::Ok);
+        MsgBox.exec();
+    }
+}
+
 
 
 
@@ -3817,3 +4271,4 @@ VBoxDbgStats::sltShowUnusedRowsChanged(int a_iState)
     RT_NOREF_PV(a_iState);
 #endif
 }
+

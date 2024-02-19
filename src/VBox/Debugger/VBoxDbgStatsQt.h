@@ -160,6 +160,7 @@ protected slots:
     void actToLog();
     void actToRelLog();
     void actAdjColumns();
+    void actFilter();
     /** @} */
 
 
@@ -203,7 +204,9 @@ protected:
     /** To Release Log action. */
     QAction *m_pToRelLogAct;
     /** Adjust the columns. */
-    QAction *m_pAdjColumns;
+    QAction *m_pAdjColumnsAct;
+    /** Filter sub-tree action. */
+    QAction *m_pFilterAct;
 #if 0
     /** Save Tree (to file) action. */
     QAction *m_SaveFileAct;
