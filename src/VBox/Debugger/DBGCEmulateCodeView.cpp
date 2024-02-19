@@ -3845,6 +3845,7 @@ static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool
 #if defined(VBOX_VMM_TARGET_ARMV8)
     AssertReleaseFailed();
     RT_NOREF(pDbgc, pfPAE, pfLME, pfPSE, pfPGE, pfNXE);
+    *pfPAE = *pfLME = *pfPSE = *pfPGE = *pfNXE = false;
     return ~(RTGCPHYS)0;
 #else
     PVMCPU      pVCpu = VMMR3GetCpuByIdU(pDbgc->pUVM, pDbgc->idCpu);
@@ -3882,6 +3883,7 @@ static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, boo
 #if defined(VBOX_VMM_TARGET_ARMV8)
     RT_NOREF(pDbgc, pfPAE, pfLME, pfPSE, pfPGE, pfNXE);
     AssertReleaseFailed();
+    *pfPAE = *pfLME = *pfPSE = *pfPGE = *pfNXE = false;
     return ~(RTHCPHYS)0;
 #else
     PVMCPU pVCpu = VMMR3GetCpuByIdU(pDbgc->pUVM, pDbgc->idCpu);
