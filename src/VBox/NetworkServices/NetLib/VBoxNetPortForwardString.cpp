@@ -74,34 +74,29 @@ static int netPfStrAddressParse(char *pszRaw, size_t cchRaw,
     AssertPtrReturn(pszAddress, -1);
     AssertReturn(pszRaw[0] == PF_ADDRESS_FIELD_STARTS, -1);
 
-    if (pszRaw[0] == PF_ADDRESS_FIELD_STARTS)
-    {
-        /* shift pszRaw to next symbol */
-        pszRaw++;
-        cchRaw--;
+    /* shift pszRaw to next symbol */
+    pszRaw++;
+    cchRaw--;
 
+    /* we shouldn't face with ending here */
+    AssertReturn(cchRaw > 0, VERR_INVALID_PARAMETER);
 
-        /* we shouldn't face with ending here */
-        AssertReturn(cchRaw > 0, VERR_INVALID_PARAMETER);
+    char *pszEndOfAddress = RTStrStr(pszRaw, PF_STR_ADDRESS_FIELD_ENDS);
 
-        char *pszEndOfAddress = RTStrStr(pszRaw, PF_STR_ADDRESS_FIELD_ENDS);
+    /* no pair closing sign */
+    AssertPtrReturn(pszEndOfAddress, VERR_INVALID_PARAMETER);
 
-        /* no pair closing sign */
-        AssertPtrReturn(pszEndOfAddress, VERR_INVALID_PARAMETER);
+    cchField = pszEndOfAddress - pszRaw;
 
-        cchField = pszEndOfAddress - pszRaw;
+    /* field should be less then the rest of the string */
+    AssertReturn(cchField < cchRaw, VERR_INVALID_PARAMETER);
 
-        /* field should be less then the rest of the string */
-        AssertReturn(cchField < cchRaw, VERR_INVALID_PARAMETER);
-
-        if (cchField != 0)
-            RTStrCopy(pszAddress, RT_MIN(cchField + 1, (size_t)cbAddress), pszRaw);
-        else if (!fEmptyAcceptable)
-            return -1;
-    }
+    if (cchField != 0)
+        RTStrCopy(pszAddress, RT_MIN(cchField + 1, (size_t)cbAddress), pszRaw);
+    else if (!fEmptyAcceptable)
+        return -1;
 
     AssertReturn(pszRaw[cchField] == PF_ADDRESS_FIELD_ENDS, -1);
-
     return (int)cchField + 2; /* length of the field and closing braces */
 }
 
@@ -289,9 +284,7 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
     char *pszRawBegin = pszRaw;
 
     /* name */
-    if (pszRaw[idxRaw] == PF_FIELD_SEPARATOR)
-        idxRaw = 1; /* begin of the next segment */
-    else
+    if (pszRaw[idxRaw] != PF_FIELD_SEPARATOR)
     {
         char *pszEndOfName = RTStrStr(pszRaw + 1, PF_STR_FIELD_SEPARATOR);
         if (!pszEndOfName)
@@ -376,7 +369,6 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
 
 invalid_parameter:
     RTStrFree(pszRawBegin);
-    if (pPfr)
-        RT_ZERO(*pPfr);
+    RT_ZERO(*pPfr);
     return VERR_INVALID_PARAMETER;
 }
