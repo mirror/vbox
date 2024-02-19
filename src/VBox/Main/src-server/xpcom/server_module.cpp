@@ -74,7 +74,7 @@
 
 
 /** Name of the server executable. */
-const char g_szVBoxSVC_exe[] = RTPATH_SLASH_STR "VBoxSVC" HOSTSUFF_EXE;
+static const char g_szVBoxSVC_exe[] = "VBoxSVC" HOSTSUFF_EXE;
 
 enum
 {
@@ -203,26 +203,25 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
                     componentDir->GetNativePath(path);
 
                     LogFlowFunc(("component directory = \"%s\"\n", path.get()));
-                    AssertBreakStmt(path.Length() + strlen(g_szVBoxSVC_exe) < RTPATH_MAX,
-                                    rc = NS_ERROR_FAILURE);
 
 #if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_HARDENING)
-                    char achKernArch[128];
-                    int cbKernArch = sysinfo(SI_ARCHITECTURE_K, achKernArch, sizeof(achKernArch));
-                    if (cbKernArch > 0)
-                    {
-                        sprintf(g_szVBoxSVCPath, "/opt/VirtualBox/%s%s", achKernArch, g_szVBoxSVC_exe);
-                        g_fIsVBoxSVCPathSet = true;
-                    }
-                    else
-                        rc = NS_ERROR_UNEXPECTED;
+                    char szKernArch[128];
+                    int  cbKernArch = sysinfo(SI_ARCHITECTURE_K, szKernArch, sizeof(szKernArch));
+                    AssertBreakStmt(cbKernArch > 0, rc = NS_ERROR_UNEXPECTED);
+# ifdef VBOX_PATH_APP_PRIVATE
+                    sprintf(g_szVBoxSVCPath, VBOX_PATH_APP_PRIVATE "/%s/%s", szKernArch, g_szVBoxSVC_exe);
+# else
+                    sprintf(g_szVBoxSVCPath, "/opt/VirtualBox/%s/%s", szKernArch, g_szVBoxSVC_exe);
+# endif
+                    g_fIsVBoxSVCPathSet = true;
 #else
                     int vrc = RTStrCopy(g_szVBoxSVCPath, sizeof(g_szVBoxSVCPath), path.get());
                     AssertRCBreakStmt(vrc, rc = NS_ERROR_FAILURE);
-                    RTPathStripFilename(g_szVBoxSVCPath);
-                    vrc = RTStrCat(g_szVBoxSVCPath, sizeof(g_szVBoxSVCPath), g_szVBoxSVC_exe);
-                    AssertRCBreakStmt(vrc, rc = NS_ERROR_FAILURE);
 
+                    RTPathStripFilename(g_szVBoxSVCPath); /* ".." to the parent directory */
+
+                    vrc = RTPathAppend(g_szVBoxSVCPath, sizeof(g_szVBoxSVCPath), g_szVBoxSVC_exe);
+                    AssertRCBreakStmt(vrc, rc = NS_ERROR_FAILURE);
                     g_fIsVBoxSVCPathSet = true;
 #endif
                 }
