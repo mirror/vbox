@@ -912,7 +912,7 @@ static const char *dxbcVmwareOpcodeTypeToString(uint32_t value)
 
 /* This is the central step in the MD5 algorithm. */
 #define MD5STEP(f, w, x, y, z, data, s) \
-    ( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
+    ( w += f(x, y, z) + (data),  w = w<<s | w>>(32-s),  w += x )
 
 
 /**

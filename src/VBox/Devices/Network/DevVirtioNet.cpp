@@ -138,14 +138,14 @@ static const VIRTIO_FEATURES_LIST s_aDevSpecificFeatures[] =
 
 #ifdef VIRTIONET_WITH_GSO
 # define VIRTIONET_HOST_FEATURES_GSO    \
-      VIRTIONET_F_CSUM                  \
+    ( VIRTIONET_F_CSUM                  \
     | VIRTIONET_F_HOST_TSO4             \
     | VIRTIONET_F_HOST_TSO6             \
     | VIRTIONET_F_HOST_UFO              \
     | VIRTIONET_F_GUEST_TSO4            \
     | VIRTIONET_F_GUEST_TSO6            \
     | VIRTIONET_F_GUEST_UFO             \
-    | VIRTIONET_F_GUEST_CSUM                                   /* @bugref(4796) Guest must handle partial chksums   */
+    | VIRTIONET_F_GUEST_CSUM)                                  /* @bugref(4796) Guest must handle partial chksums   */
 #else
 # define VIRTIONET_HOST_FEATURES_GSO
 #endif

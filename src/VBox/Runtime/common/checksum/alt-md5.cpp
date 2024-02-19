@@ -104,7 +104,7 @@ DECL_FORCE_INLINE(uint32_t) F4(uint32_t x, uint32_t y, uint32_t z)
 
 /* This is the central step in the MD5 algorithm. */
 #define MD5STEP(f, w, x, y, z, data, s) \
-    ( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
+    ( w += f(x, y, z) + (data),  w = w<<s | w>>(32-s),  w += x )
 
 
 /**
