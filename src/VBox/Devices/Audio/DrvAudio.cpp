@@ -4838,14 +4838,17 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         char         szNm[48];
         PDRVAUDIOCFG pAudioCfg = iDir == 0 ? &pThis->CfgIn : &pThis->CfgOut;
         const char  *pszDir    = iDir == 0 ? "In"           : "Out";
+        size_t const cbDir     = iDir == 0 ? sizeof("In")   : sizeof("Out");
 
 #define QUERY_VAL_RET(a_Width, a_szName, a_pValue, a_uDefault, a_ExprValid, a_szValidRange) \
             do { \
-                AssertCompile(sizeof(szNm) - 1 >= (sizeof(a_szName) - 1) + (sizeof("Out") - 1)); \
-                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, RTStrCopy2(szNm, sizeof(szNm), a_szName), a_pValue); \
+                AssertCompile(sizeof(szNm) >= sizeof(a_szName "Out")); \
+                memcpy(szNm, a_szName, sizeof(a_szName)); \
+                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, szNm, a_pValue); \
                 if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                 { \
-                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, RTStrCat2(szNm, sizeof(szNm), pszDir), a_pValue); \
+                    memcpy(&szNm[sizeof(a_szName) - 1], pszDir, cbDir); \
+                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, szNm, a_pValue); \
                     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                     { \
                         *(a_pValue) = a_uDefault; \
