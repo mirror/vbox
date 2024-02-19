@@ -76,10 +76,9 @@ static const RTGETOPTDEF g_aRegisterVMOptions[] =
 RTEXITCODE handleRegisterVM(HandlerArg *a)
 {
     HRESULT hrc;
-    const char *VMName = NULL;
 
-    Bstr bstrVMName;
-    Bstr bstrPasswordFile;
+    const char *pszVmFile = NULL;
+    const char *pszPasswordFile = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -92,12 +91,12 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
         switch (c)
         {
             case 'p':   // --password
-                bstrPasswordFile = ValueUnion.psz;
+                pszPasswordFile = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (bstrVMName.isEmpty())
-                    VMName = ValueUnion.psz;
+                if (!pszVmFile)
+                    pszVmFile = ValueUnion.psz;
                 else
                     return errorSyntax(Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
@@ -119,9 +118,9 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
 
     Utf8Str strPassword;
 
-    if (bstrPasswordFile.isNotEmpty())
+    if (pszPasswordFile)
     {
-        if (bstrPasswordFile == "-")
+        if (pszPasswordFile[0] == '-' && pszPasswordFile[1] == '\0')
         {
             /* Get password from console. */
             RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, Misc::tr("Enter password:"));
@@ -130,7 +129,7 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
         }
         else
         {
-            RTEXITCODE rcExit = readPasswordFile(a->argv[3], &strPassword);
+            RTEXITCODE rcExit = readPasswordFile(pszPasswordFile, &strPassword);
             if (rcExit == RTEXITCODE_FAILURE)
                 return RTMsgErrorExitFailure(Misc::tr("Failed to read password from file"));
         }
@@ -140,16 +139,16 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
     /** @todo Ugly hack to get both the API interpretation of relative paths
      * and the client's interpretation of relative paths. Remove after the API
      * has been redesigned. */
-    hrc = a->virtualBox->OpenMachine(Bstr(a->argv[0]).raw(),
+    hrc = a->virtualBox->OpenMachine(Bstr(pszVmFile).raw(),
                                      Bstr(strPassword).raw(),
                                      machine.asOutParam());
-    if (FAILED(hrc) && !RTPathStartsWithRoot(a->argv[0]))
+    if (FAILED(hrc) && !RTPathStartsWithRoot(pszVmFile))
     {
         char szVMFileAbs[RTPATH_MAX] = "";
-        int vrc = RTPathAbs(a->argv[0], szVMFileAbs, sizeof(szVMFileAbs));
+        int vrc = RTPathAbs(pszVmFile, szVMFileAbs, sizeof(szVMFileAbs));
         if (RT_FAILURE(vrc))
             return RTMsgErrorExitFailure(Misc::tr("Failed to convert \"%s\" to an absolute path: %Rrc"),
-                                         a->argv[0], vrc);
+                                         pszVmFile, vrc);
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs).raw(),
                                                Bstr(strPassword).raw(),
                                                machine.asOutParam()));
