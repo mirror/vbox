@@ -1413,6 +1413,8 @@ int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT fFormats, void **pp
             {
                 *ppv = pPayload->pvData;
                 *pcb = pPayload->cbData;
+
+                LogFlowFunc(("pv=%p, cb=%RU32\n", pPayload->pvData, pPayload->cbData));
             }
             else
                 rc = VERR_SHCLPB_NO_DATA;
@@ -1424,8 +1426,6 @@ int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT fFormats, void **pp
     if (   RT_FAILURE(rc)
         && rc != VERR_SHCLPB_NO_DATA)
         LogRel(("Shared Clipboard: Reading data from guest failed with %Rrc\n", rc));
-
-    LogFlowFunc(("rc=%Rc, pv=%p, cb=%RU32", rc, *ppv, *pcb));
     return rc;
 }
 
