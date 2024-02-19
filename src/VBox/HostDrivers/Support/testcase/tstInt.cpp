@@ -71,19 +71,18 @@ int main(int argc, char **argv)
     RTR3InitExe(argc, &argv, 0);
     PSUPDRVSESSION pSession;
     int rc = SUPR3Init(&pSession);
-    rcRet += rc != 0;
     RTPrintf("tstInt: SUPR3Init -> rc=%Rrc\n", rc);
+    if (RT_FAILURE(rc))
+        return 1;
+
     char szFile[RTPATH_MAX];
+    rc = RTPathExecDir(szFile, sizeof(szFile));
     if (RT_SUCCESS(rc))
-        rc = RTPathExecDir(szFile, sizeof(szFile));
+        rc = RTPathAppend(szFile, sizeof(szFile), "VMMR0.r0");
 
     char szAbsFile[RTPATH_MAX];
     if (RT_SUCCESS(rc))
-    {
-        rc = RTPathAppend(szFile, sizeof(szFile), "VMMR0.r0");
-        if (RT_SUCCESS(rc))
-            rc = RTPathAbs(szFile, szAbsFile, sizeof(szAbsFile));
-    }
+        rc = RTPathAbs(szFile, szAbsFile, sizeof(szAbsFile));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -233,10 +232,12 @@ int main(int argc, char **argv)
         rcRet += rc != 0;
         RTPrintf("tstInt: SUPR3Term -> rc=%Rrc\n", rc);
     }
+    else
+    {
+        RTPrintf("tstInt: Failed to construct VMMR0.r0 path: %Rrc\n", rc);
+        rcRet++;
+    }
 
-    if (RT_FAILURE(rc))
-        RTPrintf("Failed with rc=%Rrc\n", rc);
-
-    return !!rc;
+    return rcRet;
 }
 
