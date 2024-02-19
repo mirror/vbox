@@ -596,31 +596,28 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
          * NT and W2K.)  Prefer the image name rather than the module name, since
          * the latter can be normalized or using a different name (e.g. 'nt').
          */
-        const char *pszExt = NULL;
+        const char *pszExtSuff = NULL;
+        size_t      cchExtSuff = 0;
         if (pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_DBG)
-            pszExt = ".dbg";
+            pszExtSuff = ".dbg", cchExtSuff = sizeof(".dbg") - 1;
         else if (   pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_PDB20
                  || pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_PDB70)
-            pszExt = ".pdb";
-        if (pszExt)
+            pszExtSuff = ".pdb", cchExtSuff = sizeof(".pdb") - 1;
+        if (pszExtSuff)
         {
             const char * const pszName = pDbgMod->pszImgFile
                                        ? RTPathFilenameEx(pDbgMod->pszImgFile, RTPATH_STR_F_STYLE_DOS)
                                        : pDbgMod->pszName;
             if (pszName)
             {
-                size_t const cchName       = strlen(pszName);
-                size_t const cchExtFileBuf = cchName + strlen(pszExt) + 1;
-
-                char *pszExtFileBuf = (char *)alloca(cchExtFileBuf);
-                AssertPtrReturn(pszExtFileBuf, VERR_NO_MEMORY);
-
-                memcpy(pszExtFileBuf, pszName, cchName + 1);
-                RTPathStripSuffix(pszExtFileBuf);
-                int rc2 = RTStrCat(pszExtFileBuf, cchExtFileBuf, pszExt);
-                AssertRCReturn(rc2, rc2);
-
-                pszExtFile = pszExtFileBuf;
+                const char * const  pszOldSuff    = RTPathSuffix(pszName);
+                size_t const        cchName       = pszOldSuff ? (size_t)(pszOldSuff - pszName) : strlen(pszName);
+                char * const        pszExtFileBuf = (char *)alloca(cchName + cchExtSuff + 1);
+                if (pszExtFileBuf)
+                {
+                    memcpy(mempcpy(pszExtFileBuf, pszName, cchName), pszExtSuff, cchExtSuff + 1);
+                    pszExtFile = pszExtFileBuf;
+                }
             }
         }
         if (!pszExtFile)
