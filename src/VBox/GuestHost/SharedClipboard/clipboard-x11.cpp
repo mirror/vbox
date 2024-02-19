@@ -1586,8 +1586,11 @@ static void shClX11ResponseFree(PSHCLX11RESPONSE pResp)
     {
         case SHCLX11EVENTTYPE_READ:
         {
-            Assert(pResp->Read.cbData);
-            RTMemFree(pResp->Read.pvData);
+            if (pResp->Read.pvData)
+            {
+                Assert(pResp->Read.cbData);
+                RTMemFree(pResp->Read.pvData);
+            }
             break;
         }
 
