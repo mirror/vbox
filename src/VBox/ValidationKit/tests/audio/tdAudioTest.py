@@ -330,10 +330,14 @@ class tdAudioTest(vbox.TestDriver):
             self.pidFileAdd(iPid, sWhat);
 
             while True if sys.version_info[0] < 3 else oProcess.stdout.readable(): # pylint: disable=no-member
-                sStdOut = oProcess.stdout.readline();
-                if sStdOut:
-                    sStdOut = sStdOut.strip();
-                    reporter.log('%s [stdout]: %s' % (sWhat, sStdOut.rstrip('\n'),));
+                try:
+                    sStdOut = oProcess.stdout.readline();
+                    if  sStdOut \
+                    and isinstance(sStdOut, str):
+                        sStdOut = sStdOut.strip();
+                        reporter.log('%s [stdout]: %s' % (sWhat, sStdOut.rstrip('\n'),));
+                except:
+                    reporter.log('%s [stdout]: <Unable to read output>' % (sWhat,));
                 self.processEvents(0);
                 iRc = oProcess.poll();
                 if iRc is not None:
