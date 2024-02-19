@@ -409,20 +409,6 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, RTMSINTERVAL msTimeout)
     return PR_SUCCESS;
 }  /* PR_WaitCondVar */
 
-static PRStatus PR_NotifyCondVar(PRCondVar *cvar)
-{
-    Assert(cvar != NULL);   
-    pt_PostNotifyToCvar(cvar, PR_FALSE);
-    return PR_SUCCESS;
-}  /* PR_NotifyCondVar */
-
-static PRStatus PR_NotifyAllCondVar(PRCondVar *cvar)
-{
-    Assert(cvar != NULL);
-    pt_PostNotifyToCvar(cvar, PR_TRUE);
-    return PR_SUCCESS;
-}  /* PR_NotifyAllCondVar */
-
 /**************************************************************/
 /**************************************************************/
 /***************************MONITORS***************************/

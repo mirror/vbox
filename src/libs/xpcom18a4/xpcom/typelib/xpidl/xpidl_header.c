@@ -280,6 +280,9 @@ interface(TreeState *state)
           "interface. */\n", state->file);
     fputs("#define NS_DECL_", state->file);
     classNameUpper = xpidl_strdup(className);
+    if (!classNameUpper)
+        FAIL;
+
     for (cp = classNameUpper; *cp != '\0'; cp++)
         *cp = toupper(*cp);
     fprintf(state->file, "%s \\\n", classNameUpper);

@@ -1811,57 +1811,6 @@ NS_IMETHODIMP xptiInterfaceInfoManager::EnumerateInterfaces(nsIEnumerator **_ret
     return array->Enumerate(_retval);
 }
 
-#ifdef VBOX
-/*
- * From nsprpub, only caller below.
- *
- * @todo r=aeichner Implement an IPRT equivalent and replace.
- */
-static char *PL_strnstr(const char *big, const char *little, PRUint32 max)
-{
-    size_t ll;
-
-    if( ((const char *)0 == big) || ((const char *)0 == little) ) return (char *)0;
-    if( ((char)0 == *big) || ((char)0 == *little) ) return (char *)0;
-
-    ll = strlen(little);
-    if( ll > (size_t)max ) return (char *)0;
-    max -= (PRUint32)ll;
-    max++;
-
-    for( ; max && *big; big++, max-- )
-        if( *little == *big )
-            if( 0 == strncmp(big, little, ll) )
-                return (char *)big;
-
-    return (char *)0;
-}
-#endif
-
-struct ArrayAndPrefix
-{
-    nsISupportsArray* array;
-    const char*       prefix;
-    PRUint32          length;
-};
-
-PR_STATIC_CALLBACK(PLDHashOperator)
-xpti_ArrayPrefixAppender(PLDHashTable *table, PLDHashEntryHdr *hdr,
-                         PRUint32 number, void *arg)
-{
-    xptiInterfaceEntry* entry = ((xptiHashEntry*)hdr)->value;
-    ArrayAndPrefix* args = (ArrayAndPrefix*) arg;
-
-    const char* name = entry->GetTheName();
-    if(name != PL_strnstr(name, args->prefix, args->length))
-        return PL_DHASH_NEXT;
-
-    nsCOMPtr<nsIInterfaceInfo> ii;
-    if(NS_SUCCEEDED(EntryToInfo(entry, getter_AddRefs(ii))))
-        args->array->AppendElement(ii);
-    return PL_DHASH_NEXT;
-}
-
 /* void autoRegisterInterfaces (); */
 NS_IMETHODIMP xptiInterfaceInfoManager::AutoRegisterInterfaces()
 {

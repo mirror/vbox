@@ -48,7 +48,9 @@
 // forward declration
 static int DoMultipleInheritenceTest(int rcExit);
 static int DoMultipleInheritenceTest2(int rcExit);
+#if 0 /*unused*/
 static void DoSpeedTest();
+#endif
 
 
 #include <iprt/string.h>
@@ -1412,6 +1414,7 @@ static int DoMultipleInheritenceTest2(int rcExit)
     return rcExit;
 }
 
+#if 0 /*unused*/
 static void DoSpeedTest()
 {
     InvokeTestTarget *test = new InvokeTestTarget();
@@ -1463,3 +1466,4 @@ static void DoSpeedTest()
             (double)(interval_invoke-interval_direct)/(double)RT_NS_1SEC,
             (double)(interval_invoke-interval_direct)/(double)interval_invoke*100);
 }
+#endif

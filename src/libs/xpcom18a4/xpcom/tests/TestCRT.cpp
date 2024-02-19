@@ -40,6 +40,7 @@
 #include "nsString.h"
 #include <stdlib.h>
 
+#ifdef DEBUG
 // The return from strcmp etc is only defined to be postive, zero or
 // negative. The magnitude of a non-zero return is irrelevant.
 static PRIntn sign(PRIntn val) {
@@ -52,7 +53,7 @@ static PRIntn sign(PRIntn val) {
 	    return -1;
     }
 }
-
+#endif
 
 // Verify that nsCRT versions of string comparison routines get the
 // same answers as the native non-unicode versions. We only pass in
