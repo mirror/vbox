@@ -623,7 +623,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                             bool const fStarted = AudioTestBeaconGetRemaining(&Beacon) == AudioTestBeaconGetSize(&Beacon);
 
                             uint32_t const cbBeaconRemaining = AudioTestBeaconGetRemaining(&Beacon);
-                            AssertBreakStmt(cbBeaconRemaining, VERR_WRONG_ORDER);
+                            AssertBreakStmt(cbBeaconRemaining, rc = VERR_WRONG_ORDER);
 
                             /* Limit to exactly one beacon (pre or post). */
                             uint32_t const cbToWrite = RT_MIN(sizeof(abBuf), RT_MIN(cbCanWrite, cbBeaconRemaining));

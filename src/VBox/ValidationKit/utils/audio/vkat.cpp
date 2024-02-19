@@ -524,7 +524,7 @@ static int audioTestOne(PAUDIOTESTENV pTstEnv, PAUDIOTESTDESC pTstDesc)
 
         if (RT_SUCCESS(rc2))
         {
-            AssertPtrBreakStmt(pTstDesc->pfnExec, VERR_INVALID_POINTER);
+            AssertPtrBreakStmt(pTstDesc->pfnExec, rc = VERR_INVALID_POINTER);
             rc2 = pTstDesc->pfnExec(pTstEnv, pvCtx, &TstParms);
             if (RT_FAILURE(rc2))
                 RTTestFailed(g_hTest, "Test #%RU32 execution failed with %Rrc\n", pTstEnv->idxTest, rc2);

@@ -5119,7 +5119,7 @@ static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThr
         uint64_t offFile;
         uint32_t cbMax;
     } aRuns[] = { { 0, 127 }, { cbFile - cbBuf, UINT32_MAX }, { 0, UINT32_MAX -1 }};
-    for (uint32_t i = 0; i < RT_ELEMENTS(aRuns); i++, bFiller)
+    for (uint32_t i = 0; i < RT_ELEMENTS(aRuns); i++, bFiller++)
     {
         fsPerfFillWriteBuf(aRuns[i].offFile, pbBuf, cbBuf, bFiller);
         fsPerfCheckReadBuf(__LINE__, aRuns[i].offFile, pbBuf, cbBuf, bFiller);
