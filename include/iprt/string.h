@@ -2377,17 +2377,6 @@ RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc);
 /**
  * String copy with overflow handling.
  *
- * @return  Pointer to \a pszDst on success, or NULL on failure.
- *
- * @param   pszDst              The destination buffer.
- * @param   cbDst               The size of the destination buffer (in bytes).
- * @param   pszSrc              The source string.  NULL is not OK.
- */
-RTDECL(char *) RTStrCopy2(char *pszDst, size_t cbDst, const char *pszSrc);
-
-/**
- * String copy with overflow handling.
- *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
  *          buffer will contain as much of the string as it can hold, fully
@@ -2456,17 +2445,6 @@ RTDECL(int) RTStrCopyPEx(char **ppszDst, size_t *pcbDst, const char *pszSrc, siz
  * @param   pszSrc              The source string.  NULL is not OK.
  */
 RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc);
-
-/**
- * String concatenation with overflow handling.
- *
- * @return  Pointer to \a pszDst on success, or NULL on failure.
- *
- * @param   pszDst              The destination buffer.
- * @param   cbDst               The size of the destination buffer (in bytes).
- * @param   pszSrc              The source string.  NULL is not OK.
- */
-RTDECL(char *) RTStrCat2(char *pszDst, size_t cbDst, const char *pszSrc);
 
 /**
  * String concatenation with overflow handling.
