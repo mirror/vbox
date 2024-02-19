@@ -245,7 +245,7 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
             AssertRCReturn(rc, rc);
 
             bIrq        = (uint8_t)iIrqTmp;
-            PortAddress = (uint32_t)uPortAddressTmp;
+            PortAddress = (RTIOPORT)uPortAddressTmp;
         }
         else
         {

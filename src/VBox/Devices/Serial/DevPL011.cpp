@@ -707,8 +707,9 @@ static void pl011R3RecvFifoFill(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL0
     LogFlowFunc(("pThis=%#p\n", pThis));
 
     PPL011FIFO pFifo = &pThis->FifoRecv;
-    size_t cbFill = RT_MIN(pl011FifoFreeGet(pFifo),
-                           ASMAtomicReadU32(&pThis->cbAvailRdr));
+    size_t const cbFifoFree = pl011FifoFreeGet(pFifo);
+    uint32_t const cbAvailRdr = ASMAtomicReadU32(&pThis->cbAvailRdr);
+    size_t const cbFill = RT_MIN(cbFifoFree, cbAvailRdr);
     size_t cbFilled = 0;
 
     while (cbFilled < cbFill)
@@ -1472,7 +1473,10 @@ static DECLCALLBACK(int) pl011R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     if (RT_SUCCESS(rc))
         rc = pl011R3FifoLoadExec(pHlp, &pThis->FifoRecv, pSSM);
     if (RT_SUCCESS(rc))
+    {
         rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerTxUnconnected, pSSM);
+        AssertRCReturn(rc, rc);
+    }
 
     /* The marker. */
     uint32_t u32;

@@ -331,6 +331,12 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                     ASMAtomicWriteZ(&pThis->cbRemaining, cbRead);
                     /* Notify the upper device/driver. */
                     rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("Char#%d: Notifying upper driver about available data failed with %Rrc\n",
+                                pDrvIns->iInstance, rc));
+                        break;
+                    }
                 }
             }
         }

@@ -276,7 +276,9 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
 
             /* Adjust remaining time to wait. */
             uint64_t tsPollSpanMs = RTTimeMilliTS() - tsStartMs;
-            cMillies -= RT_MIN(cMillies, tsPollSpanMs);
+            Assert(tsPollSpanMs == (RTMSINTERVAL)tsPollSpanMs);
+
+            cMillies -= RT_MIN(cMillies, (RTMSINTERVAL)tsPollSpanMs);
             if (RT_SUCCESS(rc))
             {
                 if (idHnd == DRVTCP_POLLSET_ID_WAKEUP)
