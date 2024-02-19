@@ -274,16 +274,16 @@ static DECLCALLBACK(int) dbgfR3PlugInLoadCallback(const char *pchPath, size_t cc
     size_t const cchModule = cchPath + sizeof(RTPATH_SLASH_STR) + sizeof(DBGF_PLUG_IN_PREFIX) + pPlugIn->cchName + cchSuff + 4;
     char        *pszModule = (char *)alloca(cchModule);
     AssertReturn(pszModule, VERR_TRY_AGAIN);
+
     memcpy(pszModule, pchPath, cchPath);
     pszModule[cchPath] = '\0';
 
     int rc = RTPathAppend(pszModule, cchModule, DBGF_PLUG_IN_PREFIX);
-    AssertRCReturn(rc, VERR_TRY_AGAIN);
-    rc = RTStrCat(pszModule, cchModule, pPlugIn->szName);
-    AssertRCReturn(rc, VERR_TRY_AGAIN);
-    rc = RTStrCat(pszModule, cchModule, pszSuff);
-    AssertRCReturn(rc, VERR_TRY_AGAIN);
-    Assert(strlen(pszModule) < cchModule - 4);
+    AssertRCReturn(rc, VERR_TRY_AGAIN); /* (This cannot possibly fail, just usual paranoia convention.) */
+    size_t const cchWithPrefix = cchPath + strlen(&pszModule[cchPath]); /* (May have added a slash.) */
+
+    Assert(cchWithPrefix + pPlugIn->cchName + cchSuff < cchModule - 4);
+    memcpy(mempcpy(&pszModule[cchWithPrefix], pPlugIn->szName, pPlugIn->cchName), pszSuff, cchSuff + 1);
 
     if (RTPathExists(pszModule))
     {
