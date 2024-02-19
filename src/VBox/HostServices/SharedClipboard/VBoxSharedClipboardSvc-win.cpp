@@ -311,25 +311,7 @@ static DECLCALLBACK(int) shClSvcWinTransferOnInitializeCallback(PSHCLTRANSFERCAL
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
-            rc = RTCritSectEnter(&pCtx->Win.CritSect);
-            if (RT_SUCCESS(rc))
-            {
-                SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
-                if (pObj)
-                {
-                    rc = pObj->SetTransfer(pTransfer);
-                    if (RT_SUCCESS(rc))
-                        rc = pObj->SetStatus(SharedClipboardWinDataObject::Running);
-
-                    pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
-                }
-                else
-                    AssertMsgFailed(("No data object in flight!\n"));
-
-                int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
-                AssertRC(rc2);
-            }
-
+            rc = SharedClipboardWinTransferSet(&pCtx->Win, pTransfer);
             break;
         }
 

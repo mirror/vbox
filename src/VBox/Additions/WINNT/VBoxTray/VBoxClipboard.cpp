@@ -178,28 +178,20 @@ static DECLCALLBACK(int) vbtrShClTransferInitializeCallback(PSHCLTRANSFERCALLBAC
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    switch(ShClTransferGetDir(pCbCtx->pTransfer))
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    switch(ShClTransferGetDir(pTransfer))
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
-            SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
-            if (pObj)
-            {
-                rc = pObj->SetTransfer(pCbCtx->pTransfer);
-                if (RT_SUCCESS(rc))
-                    rc = pObj->SetStatus(SharedClipboardWinDataObject::Running);
-
-                pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
-            }
-            else
-                AssertMsgFailed(("No data object in flight!\n"));
-
+            rc = SharedClipboardWinTransferHandOffToDataObject(&pCtx->Win, pTransfer);
             break;
         }
 
         case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
         {
-            rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pCbCtx->pTransfer);
+            rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
             break;
         }
 
