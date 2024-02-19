@@ -879,7 +879,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
             case VINF_EM_DBG_STEP:
                 if (   pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
                     || pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
-                    AssertLogRelMsgFailedStmt(("Bad EM state."), VERR_EM_INTERNAL_ERROR);
+                    AssertLogRelMsgFailedStmt(("Bad EM state."), rc = VERR_EM_INTERNAL_ERROR);
 #if !defined(VBOX_VMM_TARGET_ARMV8)
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
                     rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);

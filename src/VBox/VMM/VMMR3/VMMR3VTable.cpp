@@ -70,7 +70,7 @@ static const VMMR3VTABLE g_VMMR3VTable =
 static DECLCALLBACK(int) vmmR3ReservedVTableEntry(void)
 {
     void * volatile pvCaller = ASMReturnAddress();
-    AssertLogRel(("Reserved VMM function table entry called from %p!\n", pvCaller ));
+    AssertLogRelMsgFailed(("Reserved VMM function table entry called from %p!\n", pvCaller ));
     return VERR_INTERNAL_ERROR;
 }
 

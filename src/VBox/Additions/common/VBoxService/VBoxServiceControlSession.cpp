@@ -1439,9 +1439,9 @@ static int vgsvcGstCtrlSessionHandleDirList(const PVBOXSERVICECTRLSESSION pSessi
 
                         if (cbBufSize - cbBufUsed < cbTotal) /* Grow buffer, if needed. */
                         {
-                            AssertBreakStmt(cbTotal <= cbGrowSize, VERR_BUFFER_OVERFLOW);
+                            AssertBreakStmt(cbTotal <= cbGrowSize, rc = VERR_BUFFER_OVERFLOW);
                             pvBuf      = RTMemRealloc(pvBuf, cbBufSize + cbGrowSize);
-                            AssertPtrBreakStmt(pvBuf, VERR_NO_MEMORY);
+                            AssertPtrBreakStmt(pvBuf, rc = VERR_NO_MEMORY);
                             cbBufSize += cbGrowSize;
                         }
 

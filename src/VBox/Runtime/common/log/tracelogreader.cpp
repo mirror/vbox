@@ -1180,7 +1180,7 @@ static size_t rtTraceLogRdrEvtItemGetSz(PRTTRACELOGRDRINT pThis, PCRTTRACELOGEVT
             if (pEvtItemDesc->cbRawData == 0)
             {
                 cbRet = pacbRawData[*pidxRawData];
-                *pidxRawData++;
+                pidxRawData++;
             }
             else
                 cbRet = pEvtItemDesc->cbRawData;

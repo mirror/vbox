@@ -1007,7 +1007,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
             break;
 
         pvChunk += cbChunk;
-        AssertBreakStmt(cbData >= cbChunk, VERR_BUFFER_UNDERFLOW);
+        AssertBreakStmt(cbData >= cbChunk, vrc = VERR_BUFFER_UNDERFLOW);
         cbData  -= cbChunk;
     }
 

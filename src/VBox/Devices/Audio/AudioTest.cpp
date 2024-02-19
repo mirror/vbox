@@ -2382,7 +2382,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
             fInDiff = false;
         }
 
-        AssertBreakStmt(cbToCompare >= cbReadA, VERR_INTERNAL_ERROR);
+        AssertBreakStmt(cbToCompare >= cbReadA, rc = VERR_INTERNAL_ERROR);
         cbToCompare -= cbReadA;
         offCur      += cbReadA;
     }

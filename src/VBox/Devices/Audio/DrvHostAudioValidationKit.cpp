@@ -1405,7 +1405,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                 bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
                 uint32_t const cbBeaconRemaining = AudioTestBeaconGetRemaining(pBeacon);
-                AssertBreakStmt(cbBeaconRemaining, VERR_WRONG_ORDER);
+                AssertBreakStmt(cbBeaconRemaining, rc = VERR_WRONG_ORDER);
 
                 /* Limit to exactly one beacon (pre or post). */
                 uint32_t const cbToWrite = RT_MIN(cbBuf, cbBeaconRemaining);

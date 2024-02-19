@@ -2282,7 +2282,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
         else
             pszDstCur = RTStrDup(pszDst);
 
-        AssertPtrBreakStmt(pszDstCur, VERR_NO_MEMORY);
+        AssertPtrBreakStmt(pszDstCur, hrc = E_OUTOFMEMORY);
 
         if (pCtx->cVerbose)
             RTPrintf(GuestCtrl::tr("Renaming %s \"%s\" to \"%s\" ...\n"),
