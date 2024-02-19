@@ -46,27 +46,27 @@ typedef FNHGSMINOTIFYGUEST *PFNHGSMINOTIFYGUEST;
  * Public Host API for virtual devices.
  */
 
-int   HGSMICreate(PHGSMIINSTANCE *ppIns,
-                  PPDMDEVINS      pDevIns,
-                  const char     *pszName,
-                  HGSMIOFFSET     offBase,
-                  uint8_t        *pu8MemBase,
-                  HGSMISIZE       cbMem,
-                  PFNHGSMINOTIFYGUEST pfnNotifyGuest,
-                  void           *pvNotifyGuest,
-                  size_t         cbContext);
-void  HGSMIDestroy(PHGSMIINSTANCE pIns);
-void *HGSMIContext(PHGSMIINSTANCE pIns);
+DECLHIDDEN(int) HGSMICreate(PHGSMIINSTANCE *ppIns,
+                            PPDMDEVINS      pDevIns,
+                            const char     *pszName,
+                            HGSMIOFFSET     offBase,
+                            uint8_t        *pu8MemBase,
+                            HGSMISIZE       cbMem,
+                            PFNHGSMINOTIFYGUEST pfnNotifyGuest,
+                            void           *pvNotifyGuest,
+                            size_t         cbContext);
+DECLHIDDEN(void)   HGSMIDestroy(PHGSMIINSTANCE pIns);
+DECLHIDDEN(void *) HGSMIContext(PHGSMIINSTANCE pIns);
 
-void RT_UNTRUSTED_VOLATILE_GUEST *HGSMIOffsetToPointerHost(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
-HGSMIOFFSET HGSMIPointerToOffsetHost(PHGSMIINSTANCE pIns, const void RT_UNTRUSTED_VOLATILE_GUEST *pv);
-bool        HGSMIIsOffsetValid(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
-HGSMIOFFSET HGSMIGetAreaOffset(PHGSMIINSTANCE pIns);
-HGSMIOFFSET HGSMIGetAreaSize(PHGSMIINSTANCE pIns);
+DECLHIDDEN(void RT_UNTRUSTED_VOLATILE_GUEST *) HGSMIOffsetToPointerHost(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
+DECLHIDDEN(HGSMIOFFSET) HGSMIPointerToOffsetHost(PHGSMIINSTANCE pIns, const void RT_UNTRUSTED_VOLATILE_GUEST *pv);
+DECLHIDDEN(bool)        HGSMIIsOffsetValid(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
+DECLHIDDEN(HGSMIOFFSET) HGSMIGetAreaOffset(PHGSMIINSTANCE pIns);
+DECLHIDDEN(HGSMIOFFSET) HGSMIGetAreaSize(PHGSMIINSTANCE pIns);
 
 
-int   HGSMIHostChannelRegister(PHGSMIINSTANCE pIns, uint8_t u8Channel,
-                               PFNHGSMICHANNELHANDLER pfnChannelHandler, void *pvChannelHandler);
+DECLHIDDEN(int) HGSMIHostChannelRegister(PHGSMIINSTANCE pIns, uint8_t u8Channel,
+                                         PFNHGSMICHANNELHANDLER pfnChannelHandler, void *pvChannelHandler);
 #if 0 /* unused */
 int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               const char *pszChannel,
@@ -75,28 +75,28 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               uint8_t *pu8Channel);
 #endif
 
-int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHeap, HGSMISIZE RT_UNTRUSTED_GUEST cbHeap);
+DECLHIDDEN(int) HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHeap, HGSMISIZE RT_UNTRUSTED_GUEST cbHeap);
 
 /*
  * Virtual hardware IO handlers.
  */
 
 /* Guests passes a new command buffer to the host. */
-void HGSMIGuestWrite(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
+DECLHIDDEN(void) HGSMIGuestWrite(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
 
 /* Guest reads information about guest buffers. */
-HGSMIOFFSET HGSMIGuestRead(PHGSMIINSTANCE pIns);
+DECLHIDDEN(HGSMIOFFSET) HGSMIGuestRead(PHGSMIINSTANCE pIns);
 
 /* Guest reads the host FIFO to get a command. */
-HGSMIOFFSET HGSMIHostRead(PHGSMIINSTANCE pIns);
+DECLHIDDEN(HGSMIOFFSET) HGSMIHostRead(PHGSMIINSTANCE pIns);
 
 /* Guest reports that the command at this offset has been processed.  */
-void HGSMIHostWrite(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
+DECLHIDDEN(void) HGSMIHostWrite(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
 
-void HGSMISetHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
-uint32_t HGSMIGetHostGuestFlags(HGSMIINSTANCE *pIns);
+DECLHIDDEN(void) HGSMISetHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
+DECLHIDDEN(uint32_t) HGSMIGetHostGuestFlags(HGSMIINSTANCE *pIns);
 
-void HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
+DECLHIDDEN(void) HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
 
 /*
  * Low level interface for submitting buffers to the guest.
@@ -106,17 +106,22 @@ void HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
  */
 
 /* Allocate a buffer in the host heap. */
-int HGSMIHostCommandAlloc(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST **ppvData, HGSMISIZE cbData,
-                          uint8_t u8Channel, uint16_t u16ChannelInfo);
-int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData, bool fDoIrq);
-int HGSMIHostCommandFree(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
+DECLHIDDEN(int) HGSMIHostCommandAlloc(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST **ppvData, HGSMISIZE cbData,
+                                      uint8_t u8Channel, uint16_t u16ChannelInfo);
+DECLHIDDEN(int) HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData, bool fDoIrq);
+DECLHIDDEN(int) HGSMIHostCommandFree(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
 
-int HGSMIHostLoadStateExec(const struct PDMDEVHLPR3 *pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version);
-int HGSMIHostSaveStateExec(const struct PDMDEVHLPR3 *pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
+DECLHIDDEN(int) HGSMIHostLoadStateExec(const struct PDMDEVHLPR3 *pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version);
+DECLHIDDEN(int) HGSMIHostSaveStateExec(const struct PDMDEVHLPR3 *pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
 
 #ifdef VBOX_WITH_WDDM
-int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvMem, bool fDoIrq);
+DECLHIDDEN(int) HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvMem, bool fDoIrq);
 #endif
+
+/* @return host-guest flags that were set on reset
+ * this allows the caller to make further cleaning when needed,
+ * e.g. reset the IRQ */
+DECLHIDDEN(uint32_t) HGSMIReset(PHGSMIINSTANCE pIns);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_HGSMI_HGSMIHost_h */
 

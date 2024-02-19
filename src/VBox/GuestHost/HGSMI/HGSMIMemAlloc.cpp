@@ -584,7 +584,7 @@ void HGSMIMAUninit(HGSMIMADATA *pMA)
     RT_ZERO(*pMA);
 }
 
-HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void RT_UNTRUSTED_VOLATILE_GUEST *pv)
+static HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void RT_UNTRUSTED_VOLATILE_GUEST *pv)
 {
     uintptr_t off = (uintptr_t)pv - (uintptr_t)pMA->area.pu8Base;
     if (off < pMA->area.cbArea)

@@ -726,11 +726,6 @@ int     VBVAGetInfoViewAndScreen(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t 
                                  VBVAINFOVIEW *pView, VBVAINFOSCREEN *pScreen);
 #endif
 
-/* @return host-guest flags that were set on reset
- * this allows the caller to make further cleaning when needed,
- * e.g. reset the IRQ */
-uint32_t HGSMIReset(PHGSMIINSTANCE pIns);
-
 # ifdef VBOX_WITH_VIDEOHWACCEL
 DECLCALLBACK(int) vbvaR3VHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                  VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
