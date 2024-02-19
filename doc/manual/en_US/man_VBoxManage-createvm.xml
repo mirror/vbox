@@ -56,7 +56,7 @@
       </group></arg>
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
       <arg>--default</arg>
-      <arg>--group=<replaceable>group-ID</replaceable><arg rep="repeat">,</arg></arg>
+      <arg>--groups=<replaceable>group-ID</replaceable><arg rep="repeat">,</arg></arg>
       <arg>--ostype=<replaceable>ostype</replaceable></arg>
       <arg>--register</arg>
       <arg>--uuid=<replaceable>uuid</replaceable></arg>
