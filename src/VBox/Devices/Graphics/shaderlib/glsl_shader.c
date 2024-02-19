@@ -192,6 +192,7 @@ struct glsl_vshader_private
     UINT                            num_gl_shaders, shader_array_size;
 };
 
+#ifdef LOG_ENABLED
 static const char *debug_gl_shader_type(GLenum type)
 {
     switch (type)
@@ -205,6 +206,7 @@ static const char *debug_gl_shader_type(GLenum type)
             return wine_dbg_sprintf("UNKNOWN(%#x)", type);
     }
 }
+#endif
 
 /* Extract a line from the info log.
  * Note that this modifies the source string. */

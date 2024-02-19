@@ -432,6 +432,7 @@ typedef enum D3D11_TEXTURECUBE_FACE {
 #endif
 
 
+#if 0 /* unused */
 DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
 {
     D3D11_TEXTURECUBE_FACE Face;
@@ -447,6 +448,7 @@ DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
     }
     return Face;
 }
+#endif
 
 /* This is to workaround issues with X8 formats, because they can't be used in some operations. */
 #define DX_REPLACE_X8_WITH_A8

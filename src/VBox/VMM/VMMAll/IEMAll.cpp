@@ -5699,7 +5699,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
     return VINF_SUCCESS;
 }
 
-
+#if 0 /*unused*/
 /**
  * Looks up a memory mapping entry.
  *
@@ -5723,7 +5723,7 @@ DECLINLINE(int) iemMapLookup(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess)
         return 2;
     return VERR_NOT_FOUND;
 }
-
+#endif
 
 /**
  * Finds a free memmap entry when using iNextMapping doesn't work.

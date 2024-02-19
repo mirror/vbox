@@ -1952,6 +1952,7 @@ DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtr
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * Unmaps the guest CR3.
  *
@@ -1965,6 +1966,7 @@ DECLINLINE(int) pgmGstUnmapCr3(PVMCPUCC pVCpu)
     AssertReturn(g_aPgmBothModeData[idxBth].pfnUnmapCR3, VERR_PGM_MODE_IPE);
     return g_aPgmBothModeData[idxBth].pfnUnmapCR3(pVCpu);
 }
+#endif
 
 
 /**

@@ -232,6 +232,7 @@ glMultiTexCoordFunc multi_texcoord_funcs[WINED3D_FFP_EMIT_COUNT];
  * IWineD3D parts follows
  **********************************************************/
 
+#ifndef VBOX_WITH_VMSVGA
 /* GL locking is done by the caller */
 static inline BOOL test_arb_vs_offset_limit(const struct wined3d_gl_info *gl_info)
 {
@@ -266,6 +267,7 @@ static inline BOOL test_arb_vs_offset_limit(const struct wined3d_gl_info *gl_inf
 
     return ret;
 }
+#endif
 
 static DWORD ver_for_ext(GL_SupportedExt ext)
 {
@@ -467,6 +469,7 @@ static BOOL match_apple_nvts(const struct wined3d_gl_info *gl_info, const char *
     return gl_info->supported[NV_TEXTURE_SHADER];
 }
 
+#ifndef VBOX_WITH_VMSVGA
 /* A GL context is provided by the caller */
 static BOOL match_broken_nv_clip(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
         enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
@@ -513,6 +516,7 @@ static BOOL match_broken_nv_clip(const struct wined3d_gl_info *gl_info, const ch
     LEAVE_GL();
     return ret;
 }
+#endif
 
 /* Context activation is done by the caller. */
 static BOOL match_fbo_tex_update(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
@@ -693,10 +697,12 @@ static void quirk_apple_nvts(struct wined3d_gl_info *gl_info)
     gl_info->supported[NV_TEXTURE_SHADER2] = FALSE;
 }
 
+#ifndef VBOX_WITH_VMSVGA
 static void quirk_disable_nvvp_clip(struct wined3d_gl_info *gl_info)
 {
     gl_info->quirks |= WINED3D_QUIRK_NV_CLIP_BROKEN;
 }
+#endif
 
 static void quirk_fbo_tex_update(struct wined3d_gl_info *gl_info)
 {

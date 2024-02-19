@@ -81,13 +81,14 @@ fail:
     return E_OUTOFMEMORY;
 }
 
+#if 0 /*unused*/
 static inline void stateblock_set_bits(DWORD *map, UINT map_size)
 {
     DWORD mask = (1 << (map_size & 0x1f)) - 1;
     memset(map, 0xff, (map_size >> 5) * sizeof(*map));
     if (mask) map[map_size >> 5] = mask;
 }
-
+#endif
 
 HRESULT stateblock_init(IWineD3DStateBlockImpl *stateblock, IWineD3DDeviceImpl *device, WINED3DSTATEBLOCKTYPE type)
 {
