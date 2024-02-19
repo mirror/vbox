@@ -288,14 +288,14 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialize
  *
  * For G->H: Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
  * For H->G: Called on transfer intialization to populate the transfer's root list.
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(void) shClSvcWinTransferOnInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcWinTransferOnInitializeCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -345,6 +345,7 @@ static DECLCALLBACK(void) shClSvcWinTransferOnInitializedCallback(PSHCLTRANSFERC
     }
 
     LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -856,9 +857,9 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
         pClient->Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
         pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-        pClient->Transfers.Callbacks.pfnOnCreated     = shClSvcWinTransferOnCreatedCallback;
-        pClient->Transfers.Callbacks.pfnOnInitialized = shClSvcWinTransferOnInitializedCallback;
-        pClient->Transfers.Callbacks.pfnOnDestroy     = shClSvcWinTransferOnDestroyCallback;
+        pClient->Transfers.Callbacks.pfnOnCreated    = shClSvcWinTransferOnCreatedCallback;
+        pClient->Transfers.Callbacks.pfnOnInitialize = shClSvcWinTransferOnInitializeCallback;
+        pClient->Transfers.Callbacks.pfnOnDestroy    = shClSvcWinTransferOnDestroyCallback;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     }
     else

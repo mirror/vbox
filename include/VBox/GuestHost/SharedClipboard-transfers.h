@@ -809,7 +809,8 @@ typedef SHCLTRANSFERCALLBACKCTX *PSHCLTRANSFERCALLBACKCTX;
 /**
  * Shared Clipboard transfer callback table.
  *
- * All callbacks are optional (hence all returning void).
+ * All callbacks are optional.
+ * Callbacks which can veto the caller have a return value.
  */
 typedef struct _SHCLTRANSFERCALLBACKS
 {
@@ -819,6 +820,13 @@ typedef struct _SHCLTRANSFERCALLBACKS
      * @param   pCbCtx              Pointer to callback context to use.
      */
     DECLCALLBACKMEMBER(void,  pfnOnCreated,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
+    /**
+     * Called when the transfer gets initialized.
+     *
+     * @return  VBox status code. On error the intialization will will be treated as failed.
+     * @param   pCbCtx              Pointer to callback context to use.
+    */
+    DECLCALLBACKMEMBER(int,  pfnOnInitialize,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
     /**
      * Called after the transfer got initialized.
      *

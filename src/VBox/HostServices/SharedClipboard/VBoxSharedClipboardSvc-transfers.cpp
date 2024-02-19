@@ -2409,13 +2409,6 @@ int ShClSvcTransferInit(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
                  enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "guest -> host" : "host -> guest"));
 
         rc = ShClTransferInit(pTransfer);
-        if (RT_SUCCESS(rc))
-        {
-            /* Sanity: Make sure that the transfer we're gonna report as INITIALIZED to the guest
-             *         actually has some root entries set, as the guest can query for those at any time then. */
-            if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
-                AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set\n"), rc = VERR_WRONG_ORDER);
-        }
     }
     else
         rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;

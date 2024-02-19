@@ -88,7 +88,7 @@ static DECLCALLBACK(int) shClSvcX11RequestDataFromSourceCallback(PSHCLCONTEXT pC
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
-static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(int)  shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
 static DECLCALLBACK(void) shClSvcX11TransferOnDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
 static DECLCALLBACK(void) shClSvcX11TransferOnUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx);
 
@@ -177,7 +177,7 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
                 pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
                 pClient->Transfers.Callbacks.pfnOnCreated      = shClSvcX11TransferOnCreatedCallback;
-                pClient->Transfers.Callbacks.pfnOnInitialized  = shClSvcX11TransferOnInitCallback;
+                pClient->Transfers.Callbacks.pfnOnInitialize   = shClSvcX11TransferOnInitCallback;
                 pClient->Transfers.Callbacks.pfnOnDestroy      = shClSvcX11TransferOnDestroyCallback;
                 pClient->Transfers.Callbacks.pfnOnUnregistered = shClSvcX11TransferOnUnregisteredCallback;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -410,14 +410,14 @@ static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLB
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialize
  *
  * For G->H: Starts the HTTP server if not done yet and registers the transfer with it.
  * For H->G: Called on transfer intialization to populate the transfer's root list.
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(int) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -454,6 +454,7 @@ static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACK
     }
 
     LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**

@@ -2151,18 +2151,7 @@ static int vbglR3ClipboardTransferInit(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER 
      * provider functions. */
     int rc = ShClTransferSetProvider(pTransfer, &Provider);
     if (RT_SUCCESS(rc))
-    {
         rc = ShClTransferInit(pTransfer);
-        if (RT_SUCCESS(rc))
-        {
-            /* As soon as we report the INITIALIZED state to the host, the host can start reading stuff from the transfer.
-             * So make sure that we really are ready here. */
-            if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
-                AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("No root entries set yet!\n"
-                                                                  "Those have to be present as soon we report the transfer as being INITIALIZED to the host\n"),
-                              rc = VERR_WRONG_ORDER);
-        }
-    }
 
     SHCLTRANSFERID const idTransfer = ShClTransferGetID(pTransfer);
 

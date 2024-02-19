@@ -1232,15 +1232,28 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer)
     pTransfer->Thread.fStop      = false;
     pTransfer->Thread.fCancelled = false;
 
-    int rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_INITIALIZED);
-
-    shClTransferUnlock(pTransfer);
+    int rc = VINF_SUCCESS;
+    if (pTransfer->Callbacks.pfnOnInitialize)
+        rc = pTransfer->Callbacks.pfnOnInitialize(&pTransfer->CallbackCtx);
 
     if (RT_SUCCESS(rc))
     {
-        if (pTransfer->Callbacks.pfnOnInitialized)
+        /* Sanity: Make sure that the transfer we're gonna report as INITIALIZED
+         *         actually has some root entries set, as the other side can query for those at any time then. */
+        if (pTransfer->State.enmDir == SHCLTRANSFERDIR_TO_REMOTE)
+            AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set\n"), rc = VERR_WRONG_ORDER);
+
+        rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_INITIALIZED);
+
+        if (   RT_SUCCESS(rc)
+            && pTransfer->Callbacks.pfnOnInitialized)
             pTransfer->Callbacks.pfnOnInitialized(&pTransfer->CallbackCtx);
     }
+
+    shClTransferUnlock(pTransfer);
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Shared Clipboard: Initialziation of transfer failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1574,6 +1587,7 @@ static void shClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst, PSHC
             pCallbacksDst->a_pfnCallback = pCallbacksSrc->a_pfnCallback
 
         SET_CALLBACK(pfnOnCreated);
+        SET_CALLBACK(pfnOnInitialize);
         SET_CALLBACK(pfnOnInitialized);
         SET_CALLBACK(pfnOnDestroy);
         SET_CALLBACK(pfnOnStarted);
@@ -1774,22 +1788,12 @@ PCSHCLLISTENTRY ShClTransferRootsEntryGet(PSHCLTRANSFER pTransfer, uint64_t uInd
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to read root list for.
- *                              Must be in STARTED state.
  */
 int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
-
-#ifdef DEBUG
-    shClTransferLock(pTransfer);
-    AssertMsgReturn(   pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED
-                    || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
-                    ("Cannot read root list in status %s\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
-                    VERR_WRONG_ORDER);
-    shClTransferUnlock(pTransfer);
-#endif
 
     int rc;
     if (pTransfer->ProviderIface.pfnRootListRead)
