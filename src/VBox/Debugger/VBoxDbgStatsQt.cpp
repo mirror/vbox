@@ -3878,7 +3878,7 @@ VBoxDbgStatsView::actFilter()
      */
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
     if (Idx.isValid())
-        Idx == myGetRootIndex();
+        Idx = myGetRootIndex();
     Idx = m_pProxyModel->mapToSource(Idx);
     PDBGGUISTATSNODE pNode = m_pVBoxModel->nodeFromIndex(Idx);
     if (pNode)
