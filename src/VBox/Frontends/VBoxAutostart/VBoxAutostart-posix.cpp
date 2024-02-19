@@ -225,7 +225,7 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
     }
 
     /* complete the line. */
-    LONG iRc = E_FAIL;
+    LONG iRc = (LONG)E_FAIL;
     hrc = progress->COMGETTER(ResultCode)(&iRc);
     if (SUCCEEDED(hrc))
     {
@@ -238,7 +238,7 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
             RTStrmPrintf(g_pStdErr, "\n");
             RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
         }
-        hrc = iRc;
+        hrc = (HRESULT)iRc;
     }
     else
     {

@@ -104,13 +104,15 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
          */
         for (size_t i = 0; i < machines.size(); ++i)
         {
-            if (machines[i])
+            ComPtr<IMachine> pMachine = machines[i];
+
+            if (pMachine.isNotNull())
             {
                 Bstr strName;
-                CHECK_ERROR_BREAK(machines[i], COMGETTER(Name)(strName.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, COMGETTER(Name)(strName.asOutParam()));
 
                 BOOL fAccessible;
-                CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible)(&fAccessible));
+                CHECK_ERROR_BREAK(pMachine, COMGETTER(Accessible)(&fAccessible));
                 if (!fAccessible)
                 {
                     autostartSvcLogVerbose(1, "Machine '%ls' is not accessible, skipping\n", strName.raw());
@@ -120,11 +122,11 @@ DECLHIDDEN(int) autostartStartMain(PCFGAST pCfgAst)
                 AUTOSTARTVM autostartVM;
 
                 BOOL fAutostart;
-                CHECK_ERROR_BREAK(machines[i], COMGETTER(AutostartEnabled)(&fAutostart));
+                CHECK_ERROR_BREAK(pMachine, COMGETTER(AutostartEnabled)(&fAutostart));
                 if (fAutostart)
                 {
-                    CHECK_ERROR_BREAK(machines[i], COMGETTER(Id)(autostartVM.strId.asOutParam()));
-                    CHECK_ERROR_BREAK(machines[i], COMGETTER(AutostartDelay)(&autostartVM.uStartupDelay));
+                    CHECK_ERROR_BREAK(pMachine, COMGETTER(Id)(autostartVM.strId.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, COMGETTER(AutostartDelay)(&autostartVM.uStartupDelay));
 
                     listVM.push_back(autostartVM);
                 }

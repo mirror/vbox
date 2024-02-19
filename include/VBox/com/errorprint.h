@@ -301,9 +301,9 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         hrc = progress->COMGETTER(ResultCode)(&iRc); \
         if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
+            if (SUCCEEDED(hrc)) hrc = (HRESULT)iRc; else iRc = (LONG)hrc; \
             RTMsgError msg; \
-            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, (HRESULT)iRc, __FILE__, __LINE__); \
         } \
     } while (0)
 
@@ -320,9 +320,9 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         hrc = progress->COMGETTER(ResultCode)(&iRc); \
         if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
+            if (SUCCEEDED(hrc)) hrc = (HRESULT)iRc; else iRc = (LONG)hrc; \
             RTMsgError msg; \
-            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, (HRESULT)iRc, __FILE__, __LINE__); \
             break; \
         } \
     })
@@ -334,9 +334,9 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         hrc = progress->COMGETTER(ResultCode)(&iRc); \
         if (FAILED(hrc) || FAILED(iRc)) \
         { \
-            if (SUCCEEDED(hrc)) hrc = iRc; else iRc = hrc; \
+            if (SUCCEEDED(hrc)) hrc = (HRESULT)iRc; else iRc = (LONG)hrc; \
             RTMsgError msg; \
-            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, (HRESULT)iRc, __FILE__, __LINE__); \
             break; \
         } \
     } \
@@ -357,7 +357,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
         { \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, \
-                                            SUCCEEDED(hrcCheck) ? iRc : hrcCheck, __FILE__, __LINE__); \
+                                            SUCCEEDED(hrcCheck) ? (HRESULT)iRc : hrcCheck, __FILE__, __LINE__); \
             return (ret); \
         } \
     } while (0)
