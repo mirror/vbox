@@ -2305,26 +2305,24 @@ void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
             throw xml::LogicError(RT_SRC_POS);
 
         /* Construct both filenames first to ease error handling.  */
+        size_t const cchFilename = strlen(pcszFilename);
+        size_t const cchTmpSuff  = strlen(s_pszTmpSuff);
+        size_t const cchPrevSuff = strlen(s_pszPrevSuff);
+        AssertStmt(cchFilename + RT_MAX(cchTmpSuff, cchPrevSuff) < RTPATH_MAX,
+                   throw EIPRTFailure(VERR_BUFFER_OVERFLOW, "filename to long (%zu)", cchFilename));
+
         char szTmpFilename[RTPATH_MAX];
-        int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - strlen(s_pszTmpSuff), pcszFilename);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCopy");
-        rc = RTStrCat(szTmpFilename, sizeof(szTmpFilename), s_pszTmpSuff);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCat");
+        memcpy(mempcpy(szTmpFilename, pcszFilename, cchFilename), s_pszTmpSuff, cchTmpSuff + 1);
 
         char szPrevFilename[RTPATH_MAX];
-        rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - strlen(s_pszPrevSuff), pcszFilename);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCopy");
-        strcat(szPrevFilename, s_pszPrevSuff);
+        memcpy(mempcpy(szPrevFilename, pcszFilename, cchFilename), s_pszPrevSuff, cchPrevSuff + 1);
 
         /* Write the XML document to the temporary file.  */
         writeInternal(szTmpFilename, fSafe);
 
         /* Make a backup of any existing file (ignore failure). */
         uint64_t cbPrevFile;
-        rc = RTFileQuerySizeByPath(pcszFilename, &cbPrevFile);
+        int rc = RTFileQuerySizeByPath(pcszFilename, &cbPrevFile);
         if (RT_SUCCESS(rc) && cbPrevFile >= 16)
             RTFileRename(pcszFilename, szPrevFilename, RTPATHRENAME_FLAGS_REPLACE);
 
