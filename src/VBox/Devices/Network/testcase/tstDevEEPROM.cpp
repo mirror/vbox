@@ -128,6 +128,7 @@ public:
     void tearDown()
     {
         delete eeprom;
+        eeprom = NULL;
     }
 
     void testSize()

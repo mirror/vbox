@@ -96,6 +96,7 @@ public:
     void tearDown()
     {
         delete phy;
+        phy = NULL;
     }
 
     void testSize()
