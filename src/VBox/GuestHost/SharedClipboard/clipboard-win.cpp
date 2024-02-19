@@ -1217,7 +1217,7 @@ int SharedClipboardWinTransferHandOffToDataObject(PSHCLWINCTX pWinCtx, PSHCLTRAN
         else
         {
             AssertMsgFailed(("No data object in flight (yet)!\n"));
-            rc = VERR_WRONG_ORDER);
+            rc = VERR_WRONG_ORDER;
         }
 
         int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
