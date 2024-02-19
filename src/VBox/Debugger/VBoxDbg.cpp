@@ -219,17 +219,15 @@ DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, u
  * Shows the default statistics window.
  *
  * @returns VBox status code.
- * @param   pGui            The instance returned by DBGGuiCreate().
- * @param   pszFilter       Filter pattern.
- * @param   pszExpand       Expand pattern.
- * @param   pszAdvFilter    Advanced filter configuration string (min/max/regexp
- *                          on sub-trees).
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pszFilter   Filter pattern.
+ * @param   pszExpand   Expand pattern.
  */
-DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand, const char *pszAdvFilter)
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand)
 {
     AssertReturn(pGui, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pGui->u32Magic == DBGGUI_MAGIC, ("u32Magic=%#x\n", pGui->u32Magic), VERR_INVALID_PARAMETER);
-    return pGui->pVBoxDbgGui->showStatistics(pszFilter, pszExpand, pszAdvFilter);
+    return pGui->pVBoxDbgGui->showStatistics(pszFilter, pszExpand);
 }
 
 
