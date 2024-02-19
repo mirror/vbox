@@ -111,12 +111,12 @@
             </DiskConfiguration>
 
             <UserData>
-                <ProductKey>
 @@VBOX_COND_HAS_PRODUCT_KEY@@
+                <ProductKey>
                     <Key>@@VBOX_INSERT_PRODUCT_KEY_ELEMENT@@</Key>
-@@VBOX_COND_END@@
                     <WillShowUI>OnError</WillShowUI>
                 </ProductKey>
+@@VBOX_COND_END@@
                 <AcceptEula>true</AcceptEula>
             </UserData>
 
