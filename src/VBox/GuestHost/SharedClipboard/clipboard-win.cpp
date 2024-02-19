@@ -1202,17 +1202,17 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
  */
 int SharedClipboardWinTransferHandOffToDataObject(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
-    int rc = RTCritSectEnter(&pCtx->Win.CritSect);
+    int rc = RTCritSectEnter(&pWinCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
-        SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
+        SharedClipboardWinDataObject *pObj = pWinCtx->pDataObjInFlight;
         if (pObj)
         {
             rc = pObj->SetTransfer(pTransfer);
             if (RT_SUCCESS(rc))
                 rc = pObj->SetStatus(SharedClipboardWinDataObject::Running);
 
-            pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
+            pWinCtx->pDataObjInFlight = NULL; /* Hand off to Windows. */
         }
         else
         {
@@ -1220,7 +1220,7 @@ int SharedClipboardWinTransferHandOffToDataObject(PSHCLWINCTX pWinCtx, PSHCLTRAN
             rc = VERR_WRONG_ORDER);
         }
 
-        int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
+        int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
         AssertRC(rc2);
     }
 
