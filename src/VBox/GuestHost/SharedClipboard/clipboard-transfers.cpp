@@ -1376,8 +1376,8 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
     if (pTransfer->cListHandles == pTransfer->cMaxListHandles)
         return VERR_SHCLPB_MAX_LISTS_REACHED;
 
-     int rc;
-     if (pTransfer->ProviderIface.pfnListOpen)
+    int rc;
+    if (pTransfer->ProviderIface.pfnListOpen)
         rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, phList);
     else
         rc = VERR_NOT_SUPPORTED;
