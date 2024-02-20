@@ -7165,8 +7165,9 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         break;
     }
 
+    if (RT_FAILURE(rcParse))
+        LogRelMax(16, ("VMSVGA: command %d: %Rrc\n", enmCmdId, rcParse));
     return VINF_SUCCESS;
-//    return rcParse;
 }
 # undef VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
 #endif /* VBOX_WITH_VMSVGA3D */
