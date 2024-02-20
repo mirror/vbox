@@ -70,7 +70,7 @@ class tdUnitTest1(vbox.TestDriver):
     kdTestCasesBuggyPerOs = {
         'darwin': {
             'testcase/tstX86-1': '',                                # 'FSTP M32R, ST0' fails; no idea why.
-            'testcase/tstInt':                        '>=7.0.0',    # Driverless package.
+            'tstInt':                                 '>=7.0.0',    # Driverless package.
             'testcase/tstLow':                        '>=7.0.0',    # Driverless package.
             'testcase/tstPin':                        '>=7.0.0',    # Driverless package.
             'testcase/tstIntNet-1':                   '>=7.0.0',    # Driverless package.
