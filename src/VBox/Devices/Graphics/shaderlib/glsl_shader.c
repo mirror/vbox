@@ -49,6 +49,10 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d_constants);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_caps);
 WINE_DECLARE_DEBUG_CHANNEL(d3d);
 
+#ifdef VBOX
+# include <iprt/string.h>
+#endif
+
 #ifdef VBOX_WITH_VMSVGA
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include <VBox/log.h>
@@ -4735,6 +4739,11 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
     char glsl_name[8];
     struct ps_compile_args ps_compile_args;
     struct vs_compile_args vs_compile_args;
+
+#ifdef VBOX
+    RT_ZERO(ps_compile_args);
+    RT_ZERO(vs_compile_args);
+#endif
 
     if (vshader) find_vs_compile_args((IWineD3DVertexShaderImpl *)vshader, device->stateBlock, &vs_compile_args);
     if (pshader) find_ps_compile_args((IWineD3DPixelShaderImpl *)pshader, device->stateBlock, &ps_compile_args);
