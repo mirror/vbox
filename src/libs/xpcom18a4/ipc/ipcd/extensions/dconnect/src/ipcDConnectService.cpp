@@ -3116,9 +3116,9 @@ ipcDConnectService::Init()
 
 #if defined(DCONNECT_MULTITHREADED)
 # if defined(DCONNECT_WITH_IPRT_REQ_POOL)
-  int vrc = RTReqPoolCreate(1024 /*cMaxThreads*/, 10*RT_MS_1SEC /*cMsMinIdle*/,
-                            8 /*cThreadsPushBackThreshold */, RT_MS_1SEC /* cMsMaxPushBack */,
-                            "DCon", &mhReqPool);
+  vrc = RTReqPoolCreate(1024 /*cMaxThreads*/, 10*RT_MS_1SEC /*cMsMinIdle*/,
+                        8 /*cThreadsPushBackThreshold */, RT_MS_1SEC /* cMsMaxPushBack */,
+                        "DCon", &mhReqPool);
   if (RT_FAILURE(vrc))
   {
     mhReqPool = NIL_RTREQPOOL;
