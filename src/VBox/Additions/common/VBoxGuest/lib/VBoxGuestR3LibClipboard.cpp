@@ -1210,7 +1210,9 @@ VBGLR3DECL(int) VbglR3ClipboardTransferListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHC
 
     rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
+    {
         rc = Msg.uHandle.GetUInt64(phList); AssertRC(rc);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
