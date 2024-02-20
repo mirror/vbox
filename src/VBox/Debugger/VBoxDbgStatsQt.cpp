@@ -110,7 +110,7 @@ typedef enum DBGGUISTATSNODESTATE
 
 /**
  * Filtering data.
- */ 
+ */
 typedef struct VBoxGuiStatsFilterData
 {
     /** Number of instances. */
