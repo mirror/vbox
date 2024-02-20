@@ -2299,9 +2299,10 @@ void UISession::dbgDestroy()
 
 void UISession::dbgShowStatistics()
 {
-    const QByteArray &expandBytes = uiCommon().getDebuggerStatisticsExpand().toUtf8();
     const QByteArray &filterBytes = uiCommon().getDebuggerStatisticsFilter().toUtf8();
-    m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui, filterBytes.constData(), expandBytes.constData());
+    const QByteArray &expandBytes = uiCommon().getDebuggerStatisticsExpand().toUtf8();
+    const QByteArray &configBytes = uiCommon().getDebuggerStatisticsConfig().toUtf8();
+    m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui, filterBytes.constData(), expandBytes.constData(), configBytes.constData());
 }
 
 void UISession::dbgShowCommandLine()

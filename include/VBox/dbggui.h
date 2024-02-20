@@ -68,7 +68,7 @@ typedef struct DBGGUIVT
     /** @copydoc DBGGuiAdjustRelativePos */
     DECLCALLBACKMEMBER(void, pfnAdjustRelativePos,(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy));
     /** @copydoc DBGGuiShowStatistics */
-    DECLCALLBACKMEMBER(int, pfnShowStatistics,(PDBGGUI pGui, const char *pszFilter, const char *pszExpand));
+    DECLCALLBACKMEMBER(int, pfnShowStatistics,(PDBGGUI pGui, const char *pszFilter, const char *pszExpand, const char *pszConfig));
     /** @copydoc DBGGuiShowCommandLine */
     DECLCALLBACKMEMBER(int, pfnShowCommandLine,(PDBGGUI pGui));
     /** @copydoc DBGGuiSetParent */
@@ -151,8 +151,10 @@ DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, u
  * @param   pGui        The instance returned by DBGGuiCreate().
  * @param   pszFilter   Filter pattern.
  * @param   pszExpand   Expand pattern.
+ * @param   pszConfig   Advanced filter configuration (min/max/regexp on
+ *                      sub-trees) and more.
  */
-DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand);
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand, const char *pszConfig);
 
 /**
  * Shows the default command line window.

@@ -104,8 +104,10 @@ public:
      * @returns VBox status code.
      * @param   pszFilter   Filter pattern.
      * @param   pszExpand   Expand pattern.
+     * @param   pszConfig   Advanced filter configuration (min/max/regexp on
+     *                      sub-trees) and more.
      */
-    int showStatistics(const char *pszFilter, const char *pszExpand);
+    int showStatistics(const char *pszFilter, const char *pszExpand, const char *pszConfig);
 
     /**
      * Show the console window (aka. command line), creating it if necessary.

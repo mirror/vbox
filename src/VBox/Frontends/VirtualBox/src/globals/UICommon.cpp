@@ -594,6 +594,17 @@ void UICommon::prepare()
             enmOptType = OptType_VMRunner;
             m_strDbgStatisticsFilter = arguments.at(i).section('=', 1);
         }
+        else if (!::strcmp(arg, "--statistics-config") || !::strcmp(arg, "--stats-config"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+                m_strDbgStatisticsConfig = arguments.at(i);
+        }
+        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-config=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-config=")))
+        {
+            enmOptType = OptType_VMRunner;
+            m_strDbgStatisticsConfig = arguments.at(i).section('=', 1);
+        }
         else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
             enmOptType = OptType_VMRunner;

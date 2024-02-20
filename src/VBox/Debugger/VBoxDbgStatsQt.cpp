@@ -143,6 +143,28 @@ typedef struct VBoxGuiStatsFilterData
             && (uMaxValue == 0 || uMaxValue == UINT64_MAX)
             && pRegexName == NULL;
     }
+
+    void reset(void)
+    {
+        uMinValue = 0;
+        uMaxValue = UINT64_MAX;
+        if (pRegexName)
+        {
+            delete pRegexName;
+            pRegexName = NULL;
+        }
+    }
+
+    struct VBoxGuiStatsFilterData *duplicate(void) const
+    {
+        VBoxGuiStatsFilterData *pDup = new VBoxGuiStatsFilterData();
+        pDup->uMinValue = uMinValue;
+        pDup->uMaxValue = uMaxValue;
+        if (pRegexName)
+            pDup->pRegexName = new QRegularExpression(*pRegexName);
+        return pDup;
+    }
+
 } VBoxGuiStatsFilterData;
 
 
@@ -253,15 +275,19 @@ private:
     /** Inserted or/and removed nodes during the update. */
     bool m_fUpdateInsertRemove;
 
+    /** Container indexed by node path and giving a filter config in return. */
+    QHash<QString, VBoxGuiStatsFilterData *> m_FilterHash;
 
 public:
     /**
      * Constructor.
      *
-     * @param   a_pParent       The parent object. See QAbstractItemModel in the Qt
-     *                          docs for details.
+     * @param   a_pszConfig Advanced filter configuration (min/max/regexp on
+     *                      sub-trees) and more.
+     * @param   a_pParent   The parent object. See QAbstractItemModel in the Qt
+     *                      docs for details.
      */
-    VBoxDbgStatsModel(QObject *a_pParent);
+    VBoxDbgStatsModel(const char *a_pszConfig, QObject *a_pParent);
 
     /**
      * Destructor.
@@ -357,14 +383,16 @@ protected:
     void setRootNode(PDBGGUISTATSNODE a_pRoot);
 
     /** Creates the root node. */
-    static PDBGGUISTATSNODE createRootNode(void);
+    PDBGGUISTATSNODE createRootNode(void);
 
     /** Creates and insert a node under the given parent. */
-    static PDBGGUISTATSNODE createAndInsertNode(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition);
+    PDBGGUISTATSNODE createAndInsertNode(PDBGGUISTATSNODE pParent, const char *pchName, size_t cchName, uint32_t iPosition,
+                                         const char *pchFullName, size_t cchFullName);
 
     /** Creates and insert a node under the given parent with correct Qt
      * signalling. */
-    PDBGGUISTATSNODE createAndInsert(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition);
+    PDBGGUISTATSNODE createAndInsert(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition,
+                                     const char *pchFullName, size_t cchFullName);
 
     /**
      * Resets the node to a pristine state.
@@ -409,7 +437,7 @@ protected:
      * @returns The current node.
      * @param   pszName     The name of the tree element to update.
      */
-    PDBGGUISTATSNODE updateCallbackHandleOutOfOrder(const char *pszName);
+    PDBGGUISTATSNODE updateCallbackHandleOutOfOrder(const char * const pszName);
 
     /**
      * updateCallback() worker taking care of tail insertions.
@@ -647,6 +675,14 @@ public:
         return NULL;
     }
 
+protected:
+    /**
+     * Populates m_FilterHash with configurations from @a a_pszConfig.
+     *
+     * @note This currently only work at construction time.
+     */
+    void loadFilterConfig(const char *a_pszConfig);
+
 public:
 
     /** @name Overridden QAbstractItemModel methods
@@ -675,10 +711,13 @@ public:
      *
      * @param   a_pDbgGui       Pointer to the debugger gui object.
      * @param   a_rPatStr       The selection pattern.
-     * @param   a_pParent       The parent object. NULL is fine.
+     * @param   a_pszConfig     Advanced filter configuration (min/max/regexp on
+     *                          sub-trees) and more.
      * @param   a_pVMM          The VMM function table.
+     * @param   a_pParent       The parent object. NULL is fine and default.
      */
-    VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE a_pVMM);
+    VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, const char *a_pszConfig,
+                        PCVMMR3VTABLE a_pVMM, QObject *a_pParent = NULL);
 
     /** Destructor */
     virtual ~VBoxDbgStatsModelVM();
@@ -687,6 +726,12 @@ public:
     virtual void resetStatsByPattern(const QString &a_rPatStr);
 
 protected:
+    typedef struct
+    {
+        PDBGGUISTATSNODE     pRoot;
+        VBoxDbgStatsModelVM *pThis;
+    } CreateNewTreeCallbackArgs_T;
+
     /**
      * Enumeration callback used by createNewTree.
      */
@@ -725,6 +770,9 @@ public:
     /** Destructor */
     virtual ~VBoxDbgStatsSortFileProxyModel()
     {}
+
+    /** Gets the unused-rows visibility status. */
+    bool isShowingUnusedRows() const { return m_fShowUnusedRows; }
 
     /** Sets whether or not to show unused rows (all zeros). */
     void setShowUnusedRows(bool a_fHide);
@@ -998,10 +1046,18 @@ static void formatSortKeySigned(char *psz, int64_t i64)
  */
 
 
-VBoxDbgStatsModel::VBoxDbgStatsModel(QObject *a_pParent)
-    : QAbstractItemModel(a_pParent),
-    m_pRoot(NULL), m_iUpdateChild(UINT32_MAX), m_pUpdateParent(NULL), m_cchUpdateParent(0)
+VBoxDbgStatsModel::VBoxDbgStatsModel(const char *a_pszConfig, QObject *a_pParent)
+    : QAbstractItemModel(a_pParent)
+    , m_pRoot(NULL)
+    , m_iUpdateChild(UINT32_MAX)
+    , m_pUpdateParent(NULL)
+    , m_cchUpdateParent(0)
 {
+    /*
+     * Parse the advance filtering string as best as we can and
+     * populate the map of pending node filter configs with it.
+     */
+    loadFilterConfig(a_pszConfig);
 }
 
 
@@ -1087,7 +1143,7 @@ VBoxDbgStatsModel::destroyNode(PDBGGUISTATSNODE a_pNode)
 }
 
 
-/*static*/ PDBGGUISTATSNODE
+PDBGGUISTATSNODE
 VBoxDbgStatsModel::createRootNode(void)
 {
     PDBGGUISTATSNODE pRoot = (PDBGGUISTATSNODE)RTMemAllocZ(sizeof(DBGGUISTATSNODE));
@@ -1099,13 +1155,15 @@ VBoxDbgStatsModel::createRootNode(void)
     pRoot->pszName = (char *)RTMemDup("/", sizeof("/"));
     pRoot->cchName = 1;
     pRoot->enmState = kDbgGuiStatsNodeState_kRoot;
+    pRoot->pFilter = m_FilterHash.take("/");
 
     return pRoot;
 }
 
 
-/*static*/ PDBGGUISTATSNODE
-VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition)
+PDBGGUISTATSNODE
+VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *pchName, size_t cchName, uint32_t iPosition,
+                                       const char *pchFullName, size_t cchFullName)
 {
     /*
      * Create it.
@@ -1116,9 +1174,15 @@ VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *psz
     pNode->iSelf = UINT32_MAX;
     pNode->enmType = STAMTYPE_INVALID;
     pNode->pszUnit = "";
-    pNode->pszName = (char *)RTMemDupEx(pszName, cchName, 1);
+    pNode->pszName = (char *)RTMemDupEx(pchName, cchName, 1);
     pNode->cchName = cchName;
     pNode->enmState = kDbgGuiStatsNodeState_kVisible;
+    if (m_FilterHash.size() > 0 && cchFullName > 0)
+    {
+        char *pszTmp = RTStrDupN(pchFullName, cchFullName);
+        pNode->pFilter = m_FilterHash.take(QString(pszTmp));
+        RTStrFree(pszTmp);
+    }
 
     /*
      * Do we need to expand the array?
@@ -1163,15 +1227,16 @@ VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *psz
 
 
 PDBGGUISTATSNODE
-VBoxDbgStatsModel::createAndInsert(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition)
+VBoxDbgStatsModel::createAndInsert(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition,
+                                   const char *pchFullName, size_t cchFullName)
 {
     PDBGGUISTATSNODE pNode;
     if (m_fUpdateInsertRemove)
-        pNode = createAndInsertNode(pParent, pszName, cchName, iPosition);
+        pNode = createAndInsertNode(pParent, pszName, cchName, iPosition, pchFullName, cchFullName);
     else
     {
         beginInsertRows(createIndex(pParent->iSelf, 0, pParent), iPosition, iPosition);
-        pNode = createAndInsertNode(pParent, pszName, cchName, iPosition);
+        pNode = createAndInsertNode(pParent, pszName, cchName, iPosition, pchFullName, cchFullName);
         endInsertRows();
     }
     return pNode;
@@ -1735,7 +1800,7 @@ VBoxDbgStatsModel::createDiffTree(PDBGGUISTATSNODE pTree1, PDBGGUISTATSNODE pTre
 
 
 PDBGGUISTATSNODE
-VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
+VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char * const pszName)
 {
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     char szStrict[1024];
@@ -1800,7 +1865,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
         if (!pNode->cChildren)
         {
             /* first child */
-            pNode = createAndInsert(pNode, pszSubName, cchSubName, 0);
+            pNode = createAndInsert(pNode, pszSubName, cchSubName, 0, pszName, pszEnd - pszName);
             AssertReturn(pNode, NULL);
         }
         else
@@ -1826,7 +1891,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
                     iStart = i + 1;
                     if (iStart > iLast)
                     {
-                        pNode = createAndInsert(pNode, pszSubName, cchSubName, iStart);
+                        pNode = createAndInsert(pNode, pszSubName, cchSubName, iStart, pszName, pszEnd - pszName);
                         AssertReturn(pNode, NULL);
                         break;
                     }
@@ -1836,7 +1901,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
                     iLast = i - 1;
                     if (iLast < iStart)
                     {
-                        pNode = createAndInsert(pNode, pszSubName, cchSubName, i);
+                        pNode = createAndInsert(pNode, pszSubName, cchSubName, i, pszName, pszEnd - pszName);
                         AssertReturn(pNode, NULL);
                         break;
                     }
@@ -1921,7 +1986,7 @@ VBoxDbgStatsModel::updateCallbackHandleTail(const char *pszName)
             ||  strncmp(pNode->papChildren[pNode->cChildren - 1]->pszName, pszCur, cchCur)
             ||  pNode->papChildren[pNode->cChildren - 1]->pszName[cchCur])
         {
-            pNode = createAndInsert(pNode, pszCur, pszNext - pszCur, pNode->cChildren);
+            pNode = createAndInsert(pNode, pszCur, pszNext - pszCur, pNode->cChildren, pszName, pszNext - pszName);
             AssertReturn(pNode, NULL);
         }
         else
@@ -3092,6 +3157,85 @@ VBoxDbgStatsModel::logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const
 }
 
 
+void
+VBoxDbgStatsModel::loadFilterConfig(const char *a_pszConfig)
+{
+    /* Skip empty stuff. */
+    if (!a_pszConfig)
+        return;
+    a_pszConfig = RTStrStripL(a_pszConfig);
+    if (!*a_pszConfig)
+        return;
+
+    /*
+     * The list elements are separated by colons.  Paths must start with '/' to
+     * be accepted as such.
+     *
+     * Example: "/;min=123;max=9348;name='.*cmp.*';/CPUM;"
+     */
+    char * const pszDup  = RTStrDup(a_pszConfig);
+    AssertReturnVoid(pszDup);
+    char        *psz     = pszDup;
+    const char  *pszPath = NULL;
+    VBoxGuiStatsFilterData Data;
+    do
+    {
+        /* Split out this item, strip it and move 'psz' to the next one. */
+        char *pszItem = psz;
+        psz = strchr(psz, ';');
+        if (psz)
+            *psz++ = '\0';
+        else
+            psz = strchr(psz, '\0');
+        pszItem = RTStrStrip(pszItem);
+
+        /* Is it a path or a variable=value pair. */
+        if (*pszItem == '/')
+        {
+            if (pszPath && !Data.isAllDefaults())
+                m_FilterHash[QString(pszPath)] = Data.duplicate();
+            Data.reset();
+            pszPath = pszItem;
+        }
+        else
+        {
+            /* Split out the value, if any.  */
+            char *pszValue = strchr(pszItem, '=');
+            if (pszValue)
+            {
+                *pszValue++ = '\0';
+                pszValue = RTStrStripL(pszValue);
+                RTStrStripR(pszItem);
+
+                /* Switch on the variable name. */
+                uint64_t const uValue = RTStrToUInt64(pszValue);
+                if (strcmp(pszItem, "min") == 0)
+                    Data.uMinValue = uValue;
+                else if (strcmp(pszItem, "max") == 0)
+                    Data.uMaxValue = uValue != 0 ? uValue : UINT64_MAX;
+                else if (strcmp(pszItem, "name") == 0)
+                {
+                    if (!Data.pRegexName)
+                        Data.pRegexName = new QRegularExpression(QString(pszValue));
+                    else
+                        Data.pRegexName->setPattern(QString(pszValue));
+                    if (!Data.pRegexName->isValid())
+                    {
+                        delete Data.pRegexName;
+                        Data.pRegexName = NULL;
+                    }
+                }
+            }
+            /* else: Currently no variables w/o values. */
+        }
+    } while (*psz != '\0');
+
+    /* Add the final entry, if any. */
+    if (pszPath && !Data.isAllDefaults())
+        m_FilterHash[QString(pszPath)] = Data.duplicate();
+
+    RTStrFree(pszDup);
+}
 
 
 
@@ -3107,8 +3251,9 @@ VBoxDbgStatsModel::logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const
  */
 
 
-VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE a_pVMM)
-    : VBoxDbgStatsModel(a_pParent), VBoxDbgBase(a_pDbgGui), m_pVMM(a_pVMM)
+VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, const char *a_pszConfig,
+                                         PCVMMR3VTABLE a_pVMM, QObject *a_pParent /*= NULL*/)
+    : VBoxDbgStatsModel(a_pszConfig, a_pParent), VBoxDbgBase(a_pDbgGui), m_pVMM(a_pVMM)
 {
     /*
      * Create a model containing the STAM entries matching the pattern.
@@ -3153,7 +3298,7 @@ VBoxDbgStatsModelVM::resetStatsByPattern(QString const &a_rPatStr)
 VBoxDbgStatsModelVM::createNewTreeCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
                                            const char *pszUnit, STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser)
 {
-    PDBGGUISTATSNODE pRoot = (PDBGGUISTATSNODE)pvUser;
+    CreateNewTreeCallbackArgs_T * const pArgs = (CreateNewTreeCallbackArgs_T *)pvUser;
     Log3(("createNewTreeCallback: %s\n", pszName));
     RT_NOREF(enmUnit);
 
@@ -3169,7 +3314,7 @@ VBoxDbgStatsModelVM::createNewTreeCallback(const char *pszName, STAMTYPE enmType
      * stuff the data into.
      */
     AssertReturn(*pszName == '/' && pszName[1] != '/', VERR_INTERNAL_ERROR);
-    PDBGGUISTATSNODE pNode = pRoot;
+    PDBGGUISTATSNODE pNode = pArgs->pRoot;
     const char *pszCur = pszName + 1;
     while (*pszCur)
     {
@@ -3184,7 +3329,7 @@ VBoxDbgStatsModelVM::createNewTreeCallback(const char *pszName, STAMTYPE enmType
             ||  strncmp(pNode->papChildren[pNode->cChildren - 1]->pszName, pszCur, cchCur)
             ||  pNode->papChildren[pNode->cChildren - 1]->pszName[cchCur])
         {
-            pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, UINT32_MAX);
+            pNode = pArgs->pThis->createAndInsertNode(pNode, pszCur, pszNext - pszCur, UINT32_MAX, pszName, pszNext - pszName);
             if (!pNode)
                 return VERR_NO_MEMORY;
         }
@@ -3208,7 +3353,8 @@ VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
     PDBGGUISTATSNODE pRoot = createRootNode();
     if (pRoot)
     {
-        int rc = stamEnum(a_rPatStr, createNewTreeCallback, pRoot);
+        CreateNewTreeCallbackArgs_T Args = { pRoot, this };
+        int rc = stamEnum(a_rPatStr, createNewTreeCallback, &Args);
         if (RT_SUCCESS(rc))
             return pRoot;
 
@@ -3877,7 +4023,7 @@ VBoxDbgStatsView::actFilter()
      * Get the node it applies to.
      */
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
-    if (Idx.isValid())
+    if (!Idx.isValid())
         Idx = myGetRootIndex();
     Idx = m_pProxyModel->mapToSource(Idx);
     PDBGGUISTATSNODE pNode = m_pVBoxModel->nodeFromIndex(Idx);
@@ -4005,12 +4151,7 @@ VBoxDbgStatsFilterDialog::dupFilterData(void) const
 {
     if (m_Data.isAllDefaults())
         return NULL;
-    VBoxGuiStatsFilterData *pRet = new VBoxGuiStatsFilterData();
-    pRet->uMinValue  = m_Data.uMinValue;
-    pRet->uMaxValue  = m_Data.uMaxValue;
-    if (m_Data.pRegexName)
-        pRet->pRegexName = new QRegularExpression(*m_Data.pRegexName);
-    return pRet;
+    return m_Data.duplicate();
 }
 
 
@@ -4086,7 +4227,7 @@ VBoxDbgStatsFilterDialog::validateAndAccept()
 
 
 VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL*/, const char *pszExpand /*= NULL*/,
-                           unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
+                           const char *pszConfig /*= NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
     : VBoxDbgBaseWindow(a_pDbgGui, pParent, "Statistics")
     , m_PatStr(pszFilter), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
@@ -4144,10 +4285,11 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL
     /*
      * Create the tree view and setup the layout.
      */
-    VBoxDbgStatsModelVM *pModel = new VBoxDbgStatsModelVM(a_pDbgGui, m_PatStr, NULL, a_pDbgGui->getVMMFunctionTable());
+    VBoxDbgStatsModelVM *pModel = new VBoxDbgStatsModelVM(a_pDbgGui, m_PatStr, pszConfig, a_pDbgGui->getVMMFunctionTable());
 #ifdef VBOXDBG_WITH_SORTED_AND_FILTERED_STATS
     VBoxDbgStatsSortFileProxyModel *pProxyModel = new VBoxDbgStatsSortFileProxyModel(this);
     m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, pProxyModel, this);
+    pCheckBox->setCheckState(pProxyModel->isShowingUnusedRows() ? Qt::Checked : Qt::Unchecked);
 #else
     m_pView = new VBoxDbgStatsView(a_pDbgGui, pModel, NULL, this);
 #endif

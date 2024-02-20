@@ -243,11 +243,14 @@ public:
      *                          (See STAM for details.)
      * @param   pszExpand       Initial expansion pattern. NULL means nothing is
      *                          expanded.
+     * @param   pszConfig       Advanced filter configuration (min/max/regexp on
+     *                          sub-trees) and more.
+     *
      * @param   uRefreshRate    The refresh rate. 0 means not to refresh and is the default.
      * @param   pParent         Parent widget.
      */
     VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter = NULL, const char *pszExpand = NULL,
-                 unsigned uRefreshRate = 0, QWidget *pParent = NULL);
+                 const char *pszConfig = NULL, unsigned uRefreshRate = 0, QWidget *pParent = NULL);
 
     /** Destructor. */
     virtual ~VBoxDbgStats();

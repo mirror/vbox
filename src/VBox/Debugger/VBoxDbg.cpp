@@ -222,12 +222,14 @@ DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, u
  * @param   pGui        The instance returned by DBGGuiCreate().
  * @param   pszFilter   Filter pattern.
  * @param   pszExpand   Expand pattern.
+ * @param   pszConfig   Advanced filter configuration (min/max/regexp on
+ *                      sub-trees) and more.
  */
-DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand)
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand, const char *pszConfig)
 {
     AssertReturn(pGui, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pGui->u32Magic == DBGGUI_MAGIC, ("u32Magic=%#x\n", pGui->u32Magic), VERR_INVALID_PARAMETER);
-    return pGui->pVBoxDbgGui->showStatistics(pszFilter, pszExpand);
+    return pGui->pVBoxDbgGui->showStatistics(pszFilter, pszExpand, pszConfig);
 }
 
 

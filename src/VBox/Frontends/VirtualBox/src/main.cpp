@@ -285,6 +285,7 @@ static void ShowHelp()
         "  --debug-statistics         like --dbg and show statistics window at VM startup\n"
         "  --statistics-expand <pat>  expand the matching statistics (can be repeated)\n"
         "  --statistics-filter <pat>  statistics filter\n"
+        "  --statistics-config <str>  statistics configuration\n"
         "  --no-debug                 disable the GUI debug menu and debug windows\n"
         "  --start-paused             start the VM in the paused state\n"
         "  --start-running            start the VM running (for overriding --debug*)\n"
