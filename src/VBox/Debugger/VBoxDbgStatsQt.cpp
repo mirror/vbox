@@ -566,25 +566,29 @@ protected:
      */
     static void destroyTree(PDBGGUISTATSNODE a_pRoot);
 
+public:
     /**
      * Stringifies exactly one node, no children.
      *
      * This is for logging and clipboard.
      *
-     * @param   a_pNode     The node.
-     * @param   a_rString   The string to append the stringified node to.
+     * @param   a_pNode         The node.
+     * @param   a_rString       The string to append the stringified node to.
+     * @param   a_cchNameWidth  The width of the basename.
      */
-    static void stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString);
+    static void stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString, size_t a_cchNameWidth);
 
+protected:
     /**
      * Stringifies a node and its children.
      *
      * This is for logging and clipboard.
      *
-     * @param   a_pNode     The node.
-     * @param   a_rString   The string to append the stringified node to.
+     * @param   a_pNode         The node.
+     * @param   a_rString       The string to append the stringified node to.
+     * @param   a_cchNameWidth  The width of the basename.
      */
-    static void stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString);
+    static void stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString, size_t a_cchNameWidth);
 
 public:
     /**
@@ -605,25 +609,7 @@ public:
      */
     void xmlifyTree(QModelIndex &a_rRoot, QString &a_rString) const;
 
-    /**
-     * Puts the stringified tree on the clipboard.
-     *
-     * @param   a_rRoot         Where to start. Use QModelIndex() to start at the root.
-     */
-    void copyTreeToClipboard(QModelIndex &a_rRoot) const;
-
-
-protected:
-    /** Worker for logTree. */
-    static void logNode(PDBGGUISTATSNODE a_pNode, bool a_fReleaseLog);
-
 public:
-    /** Logs a (sub-)tree.
-     *
-     * @param   a_rRoot         Where to start. Use QModelIndex() to start at the root.
-     * @param   a_fReleaseLog   Whether to use the release log (true) or the debug log (false).
-     */
-    void logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const;
 
     /** Gets the unit. */
     static QString strUnit(PCDBGGUISTATSNODE pNode);
@@ -782,18 +768,41 @@ public:
      */
     void notifyFilterChanges();
 
+    /**
+     * Converts the specified tree to string.
+     *
+     * This is for logging and clipboard.
+     *
+     * @param   a_rRoot         Where to start. Use QModelIndex() to start at the root.
+     * @param   a_rString       Where to return to return the string dump.
+     * @param   a_cchNameWidth  The width of the basename.
+     */
+    void stringifyTree(QModelIndex const &a_rRoot, QString &a_rString, size_t a_cchNameWidth = 0) const;
+
 protected:
     /**
-     * Converts an index to a node pointer.
+     * Converts a source index to a node pointer.
      *
      * @returns Pointer to the node, NULL if invalid reference.
-     * @param   a_rIndex        Reference to the index
+     * @param   a_rSrcIndex     Reference to the source index.
      */
-    inline PDBGGUISTATSNODE nodeFromIndex(const QModelIndex &a_rIndex) const
+    inline PDBGGUISTATSNODE nodeFromSrcIndex(const QModelIndex &a_rSrcIndex) const
     {
-        if (RT_LIKELY(a_rIndex.isValid()))
-            return (PDBGGUISTATSNODE)a_rIndex.internalPointer();
+        if (RT_LIKELY(a_rSrcIndex.isValid()))
+            return (PDBGGUISTATSNODE)a_rSrcIndex.internalPointer();
         return NULL;
+    }
+
+    /**
+     * Converts a proxy index to a node pointer.
+     *
+     * @returns Pointer to the node, NULL if invalid reference.
+     * @param   a_rProxyIndex   The reference to the proxy index.
+     */
+    inline PDBGGUISTATSNODE nodeFromProxyIndex(const QModelIndex &a_rProxyIndex) const
+    {
+        QModelIndex const SrcIndex = mapToSource(a_rProxyIndex);
+        return nodeFromSrcIndex(SrcIndex);
     }
 
     /** Does the row filtering. */
@@ -2981,7 +2990,7 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
 
 
 /*static*/ void
-VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString)
+VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString, size_t a_cchNameWidth)
 {
     /*
      * Get the path, padding it to 32-chars and add it to the string.
@@ -2989,13 +2998,20 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
     char szBuf[1024];
     ssize_t off = getNodePath(a_pNode, szBuf, sizeof(szBuf) - 2);
     AssertReturnVoid(off >= 0);
-    if (off < 32)
-    {
-        memset(&szBuf[off], ' ', 32 - off);
-        szBuf[32] = '\0';
-        off = 32;
-    }
     szBuf[off++] = ' ';
+    ssize_t cchPadding = (ssize_t)(a_cchNameWidth - a_pNode->cchName);
+    if (off < 32 && 32 - off > cchPadding)
+        cchPadding = 32 - off;
+    if (cchPadding > 0)
+    {
+        if (off + (size_t)cchPadding + 1 >= sizeof(szBuf))
+            cchPadding = sizeof(szBuf) - off - 1;
+        if (cchPadding > 0)
+        {
+            memset(&szBuf[off], ' ', cchPadding);
+            off += (size_t)cchPadding;
+        }
+    }
     szBuf[off]   = '\0';
     a_rString += szBuf;
 
@@ -3007,7 +3023,7 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
     switch (a_pNode->enmType)
     {
         case STAMTYPE_COUNTER:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8llu %s", a_pNode->Data.Counter.c, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%'11llu %s", a_pNode->Data.Counter.c, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_PROFILE:
@@ -3015,16 +3031,17 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
         {
             uint64_t u64 = a_pNode->Data.Profile.cPeriods ? a_pNode->Data.Profile.cPeriods : 1;
             RTStrPrintf(szBuf, sizeof(szBuf),
-                        "%8llu %s (%12llu ticks, %7llu times, max %9llu, min %7lld)",
+                        "%'11llu %s (%'14llu ticks, %'9llu times, max %'12llu, min %'9lld)",
                         a_pNode->Data.Profile.cTicks / u64, a_pNode->pszUnit,
-                        a_pNode->Data.Profile.cTicks, a_pNode->Data.Profile.cPeriods, a_pNode->Data.Profile.cTicksMax, a_pNode->Data.Profile.cTicksMin);
+                        a_pNode->Data.Profile.cTicks, a_pNode->Data.Profile.cPeriods,
+                        a_pNode->Data.Profile.cTicksMax, a_pNode->Data.Profile.cTicksMin);
             break;
         }
 
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:
             RTStrPrintf(szBuf, sizeof(szBuf),
-                        "%8u:%-8u %s",
+                        "%'8u:%-'8u %s",
                         a_pNode->Data.RatioU32.u32A, a_pNode->Data.RatioU32.u32B, a_pNode->pszUnit);
             break;
 
@@ -3036,42 +3053,42 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
 
         case STAMTYPE_U8:
         case STAMTYPE_U8_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u8, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%11u %s", a_pNode->Data.u8, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_X8:
         case STAMTYPE_X8_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u8, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%11x %s", a_pNode->Data.u8, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_U16:
         case STAMTYPE_U16_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u16, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%'11u %s", a_pNode->Data.u16, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_X16:
         case STAMTYPE_X16_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u16, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%11x %s", a_pNode->Data.u16, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_U32:
         case STAMTYPE_U32_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u32, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%'11u %s", a_pNode->Data.u32, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_X32:
         case STAMTYPE_X32_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u32, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%11x %s", a_pNode->Data.u32, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_U64:
         case STAMTYPE_U64_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8llu %s", a_pNode->Data.u64, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%'11llu %s", a_pNode->Data.u64, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_X64:
         case STAMTYPE_X64_RESET:
-            RTStrPrintf(szBuf, sizeof(szBuf), "%8llx %s", a_pNode->Data.u64, a_pNode->pszUnit);
+            RTStrPrintf(szBuf, sizeof(szBuf), "%'11llx %s", a_pNode->Data.u64, a_pNode->pszUnit);
             break;
 
         case STAMTYPE_BOOL:
@@ -3089,20 +3106,24 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
 
 
 /*static*/ void
-VBoxDbgStatsModel::stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString)
+VBoxDbgStatsModel::stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString, size_t a_cchNameWidth)
 {
     /* this node (if it has data) */
     if (a_pNode->enmType != STAMTYPE_INVALID)
     {
         if (!a_rString.isEmpty())
             a_rString += "\n";
-        stringifyNodeNoRecursion(a_pNode, a_rString);
+        stringifyNodeNoRecursion(a_pNode, a_rString, a_cchNameWidth);
     }
 
     /* the children */
     uint32_t const cChildren = a_pNode->cChildren;
+    a_cchNameWidth = 0;
     for (uint32_t i = 0; i < cChildren; i++)
-        stringifyNode(a_pNode->papChildren[i], a_rString);
+        if (a_cchNameWidth < a_pNode->papChildren[i]->cchName)
+            a_cchNameWidth = a_pNode->papChildren[i]->cchName;
+    for (uint32_t i = 0; i < cChildren; i++)
+        stringifyNode(a_pNode->papChildren[i], a_rString, a_cchNameWidth);
 }
 
 
@@ -3111,50 +3132,7 @@ VBoxDbgStatsModel::stringifyTree(QModelIndex &a_rRoot, QString &a_rString) const
 {
     PDBGGUISTATSNODE pRoot = a_rRoot.isValid() ? nodeFromIndex(a_rRoot) : m_pRoot;
     if (pRoot)
-        stringifyNode(pRoot, a_rString);
-}
-
-
-void
-VBoxDbgStatsModel::copyTreeToClipboard(QModelIndex &a_rRoot) const
-{
-    QString String;
-    stringifyTree(a_rRoot, String);
-
-    QClipboard *pClipboard = QApplication::clipboard();
-    if (pClipboard)
-        pClipboard->setText(String, QClipboard::Clipboard);
-}
-
-
-/*static*/ void
-VBoxDbgStatsModel::logNode(PDBGGUISTATSNODE a_pNode, bool a_fReleaseLog)
-{
-    /* this node (if it has data) */
-    if (a_pNode->enmType != STAMTYPE_INVALID)
-    {
-        QString SelfStr;
-        stringifyNodeNoRecursion(a_pNode, SelfStr);
-        QByteArray SelfByteArray = SelfStr.toUtf8();
-        if (a_fReleaseLog)
-            RTLogRelPrintf("%s\n", SelfByteArray.constData());
-        else
-            RTLogPrintf("%s\n", SelfByteArray.constData());
-    }
-
-    /* the children */
-    uint32_t const cChildren = a_pNode->cChildren;
-    for (uint32_t i = 0; i < cChildren; i++)
-        logNode(a_pNode->papChildren[i], a_fReleaseLog);
-}
-
-
-void
-VBoxDbgStatsModel::logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const
-{
-    PDBGGUISTATSNODE pRoot = a_rRoot.isValid() ? nodeFromIndex(a_rRoot) : m_pRoot;
-    if (pRoot)
-        logNode(pRoot, a_fReleaseLog);
+        stringifyNode(pRoot, a_rString, 0);
 }
 
 
@@ -3398,7 +3376,7 @@ VBoxDbgStatsSortFileProxyModel::filterAcceptsRow(int a_iSrcRow, const QModelInde
     /*
      * Locate the node.
      */
-    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rSrcParent);
+    PDBGGUISTATSNODE pParent = nodeFromSrcIndex(a_rSrcParent);
     if (pParent)
     {
         if ((unsigned)a_iSrcRow < pParent->cChildren)
@@ -3527,8 +3505,8 @@ VBoxDbgStatsSortFileProxyModel::filterAcceptsRow(int a_iSrcRow, const QModelInde
 bool
 VBoxDbgStatsSortFileProxyModel::lessThan(const QModelIndex &a_rSrcLeft, const QModelIndex &a_rSrcRight) const
 {
-    PCDBGGUISTATSNODE const pLeft  = nodeFromIndex(a_rSrcLeft);
-    PCDBGGUISTATSNODE const pRight = nodeFromIndex(a_rSrcRight);
+    PCDBGGUISTATSNODE const pLeft  = nodeFromSrcIndex(a_rSrcLeft);
+    PCDBGGUISTATSNODE const pRight = nodeFromSrcIndex(a_rSrcRight);
     if (pLeft == pRight)
         return false;
     if (pLeft && pRight)
@@ -3589,6 +3567,42 @@ VBoxDbgStatsSortFileProxyModel::notifyFilterChanges()
     invalidateRowsFilter();
 }
 
+
+void
+VBoxDbgStatsSortFileProxyModel::stringifyTree(QModelIndex const &a_rRoot, QString &a_rString, size_t a_cchNameWidth) const
+{
+    /* The node itself. */
+    PDBGGUISTATSNODE pNode = nodeFromProxyIndex(a_rRoot);
+    if (pNode)
+    {
+        if (pNode->enmType != STAMTYPE_INVALID)
+        {
+            if (!a_rString.isEmpty())
+                a_rString += "\n";
+            VBoxDbgStatsModel::stringifyNodeNoRecursion(pNode, a_rString, a_cchNameWidth);
+        }
+    }
+
+    /* The children. */
+    int const cChildren = rowCount(a_rRoot);
+    if (cChildren > 0)
+    {
+        a_cchNameWidth = 0;
+        for (int iChild = 0; iChild < cChildren; iChild++)
+        {
+            QModelIndex const ChildIdx = index(iChild, 0, a_rRoot);
+            pNode = nodeFromProxyIndex(ChildIdx);
+            if (pNode && a_cchNameWidth < pNode->cchName)
+                a_cchNameWidth = pNode->cchName;
+        }
+
+        for (int iChild = 0; iChild < cChildren; iChild++)
+        {
+            QModelIndex const ChildIdx = index(iChild, 0, a_rRoot);
+            stringifyTree(ChildIdx, a_rString, a_cchNameWidth);
+        }
+    }
+}
 
 #endif /* VBOXDBG_WITH_SORTED_AND_FILTERED_STATS */
 
@@ -3983,9 +3997,16 @@ void
 VBoxDbgStatsView::actCopy()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+
+    QString     String;
     if (m_pProxyModel)
-        Idx = m_pProxyModel->mapToSource(Idx);
-    m_pVBoxModel->copyTreeToClipboard(Idx);
+        m_pProxyModel->stringifyTree(Idx, String);
+    else
+        m_pVBoxModel->stringifyTree(Idx, String);
+
+    QClipboard *pClipboard = QApplication::clipboard();
+    if (pClipboard)
+        pClipboard->setText(String, QClipboard::Clipboard);
 }
 
 
@@ -3993,9 +4014,15 @@ void
 VBoxDbgStatsView::actToLog()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+
+    QString     String;
     if (m_pProxyModel)
-        Idx = m_pProxyModel->mapToSource(Idx);
-    m_pVBoxModel->logTree(Idx, false /* a_fReleaseLog */);
+        m_pProxyModel->stringifyTree(Idx, String);
+    else
+        m_pVBoxModel->stringifyTree(Idx, String);
+
+    QByteArray SelfByteArray = String.toUtf8();
+    RTLogPrintf("%s\n", SelfByteArray.constData());
 }
 
 
@@ -4003,9 +4030,15 @@ void
 VBoxDbgStatsView::actToRelLog()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+
+    QString     String;
     if (m_pProxyModel)
-        Idx = m_pProxyModel->mapToSource(Idx);
-    m_pVBoxModel->logTree(Idx, true /* a_fReleaseLog */);
+        m_pProxyModel->stringifyTree(Idx, String);
+    else
+        m_pVBoxModel->stringifyTree(Idx, String);
+
+    QByteArray SelfByteArray = String.toUtf8();
+    RTLogRelPrintf("%s\n", SelfByteArray.constData());
 }
 
 
