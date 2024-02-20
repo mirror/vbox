@@ -816,6 +816,7 @@ public:
      * Constructor.
      *
      * @param   a_pNode     The node to configure filtering for.
+     * @param   a_pParent   The parent object.
      */
     VBoxDbgStatsFilterDialog(QWidget *a_pParent, PCDBGGUISTATSNODE a_pNode);
 
