@@ -43,6 +43,8 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
+
 #include "VBoxSharedClipboardSvc-internal.h"
 #include "VBoxSharedClipboardSvc-transfers.h"
 
@@ -325,7 +327,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
             pMsg->idCtx = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                    pEvent->idEvent);
 
-            rc = shClSvcTransferSetListOpen(pMsg->cParms, pMsg->aParms, pMsg->idCtx, pOpenParms);
+            rc = ShClTransferTransformPath(pOpenParms->pszPath, pOpenParms->cbPath);
+            if (RT_SUCCESS(rc))
+                rc = shClSvcTransferSetListOpen(pMsg->cParms, pMsg->aParms, pMsg->idCtx, pOpenParms);
             if (RT_SUCCESS(rc))
             {
                 shClSvcClientLock(pClient);
@@ -603,43 +607,47 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOB
         {
             LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
 
-            const uint32_t cbPath = (uint32_t)strlen(pCreateParms->pszPath) + 1; /* Include terminating zero */
-
-            HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                     pCtx->pTransfer->State.uID, pEvent->idEvent));
-            HGCMSvcSetU64(&pMsg->aParms[1], 0); /* uHandle */
-            HGCMSvcSetPv (&pMsg->aParms[2], pCreateParms->pszPath, cbPath);
-            HGCMSvcSetU32(&pMsg->aParms[3], pCreateParms->fCreate);
-
-            shClSvcClientLock(pClient);
-
-            shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
-            rc = shClSvcClientWakeup(pClient);
-
-            shClSvcClientUnlock(pClient);
-
+            rc = ShClTransferTransformPath(pCreateParms->pszPath, pCreateParms->cbPath);
             if (RT_SUCCESS(rc))
             {
-                int               rcEvent;
-                PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
+                const uint32_t cbPath = (uint32_t)strlen(pCreateParms->pszPath) + 1; /* Include terminating zero */
+
+                HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                         pCtx->pTransfer->State.uID, pEvent->idEvent));
+                HGCMSvcSetU64(&pMsg->aParms[1], 0); /* uHandle */
+                HGCMSvcSetPv (&pMsg->aParms[2], pCreateParms->pszPath, cbPath);
+                HGCMSvcSetU32(&pMsg->aParms[3], pCreateParms->fCreate);
+
+                shClSvcClientLock(pClient);
+
+                shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+                rc = shClSvcClientWakeup(pClient);
+
+                shClSvcClientUnlock(pClient);
+
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(pPayload->cbData == sizeof(SHCLREPLY));
+                    int               rcEvent;
+                    PSHCLEVENTPAYLOAD pPayload;
+                    rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        Assert(pPayload->cbData == sizeof(SHCLREPLY));
 
-                    PSHCLREPLY pReply = (PSHCLREPLY)pPayload->pvData;
-                    AssertPtr(pReply);
+                        PSHCLREPLY pReply = (PSHCLREPLY)pPayload->pvData;
+                        AssertPtr(pReply);
 
-                    Assert(pReply->uType == VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_OPEN);
+                        Assert(pReply->uType == VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_OPEN);
 
-                    LogFlowFunc(("hObj=%RU64\n", pReply->u.ObjOpen.uHandle));
+                        LogFlowFunc(("hObj=%RU64\n", pReply->u.ObjOpen.uHandle));
 
-                    *phObj = pReply->u.ObjOpen.uHandle;
+                        *phObj = pReply->u.ObjOpen.uHandle;
 
-                    ShClPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
+                    }
+                    else
+                        rc = rcEvent;
                 }
-                else
-                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);

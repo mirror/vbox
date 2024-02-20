@@ -989,7 +989,8 @@ typedef struct _VBoxShClListOpenMsg
     HGCMFunctionParameter fList;
     /** pointer, in: Filter string. */
     HGCMFunctionParameter pvFilter;
-    /** pointer, in: Listing poth. If empty or NULL the listing's root path will be opened. */
+    /** pointer, in: Listing path. If empty or NULL the listing's root path will be opened.
+     *  We always use UNIX-style paths. */
     HGCMFunctionParameter pvPath;
     /** uint64_t, out: List handle. */
     HGCMFunctionParameter uHandle;
@@ -1109,7 +1110,8 @@ typedef struct _VBoxShClObjOpenMsg
     HGCMFunctionParameter uContext;
     /** uint64_t, out: Object handle. */
     HGCMFunctionParameter uHandle;
-    /** pointer, in: Absoulte path of object to open/create. */
+    /** pointer, in: Absoulte path of object to open/create.
+     *  We always use UNIX-style paths. */
     HGCMFunctionParameter szPath;
     /** uint32_t in: Open / Create flags of type SHCL_OBJ_CF_. */
     HGCMFunctionParameter fCreate;

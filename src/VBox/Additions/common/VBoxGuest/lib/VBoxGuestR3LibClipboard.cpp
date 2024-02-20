@@ -1195,6 +1195,9 @@ VBGLR3DECL(int) VbglR3ClipboardTransferListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHC
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
     AssertPtrReturn(phList,     VERR_INVALID_POINTER);
 
+    int rc = ShClTransferTransformPath(pOpenParms->pszPath, pOpenParms->cbPath);
+    AssertRCReturn(rc, rc);
+
     VBoxShClListOpenMsg Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_OPEN, VBOX_SHCL_CPARMS_LIST_OPEN);
@@ -1205,11 +1208,9 @@ VBGLR3DECL(int) VbglR3ClipboardTransferListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHC
     Msg.pvPath.SetPtr(pOpenParms->pszPath, pOpenParms->cbPath);
     Msg.uHandle.SetUInt64(0);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
-    {
         rc = Msg.uHandle.GetUInt64(phList); AssertRC(rc);
-    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1700,6 +1701,9 @@ VBGLR3DECL(int) VbglR3ClipboardTransferObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     AssertPtrReturn(pCreateParms, VERR_INVALID_POINTER);
     AssertPtrReturn(phObj,        VERR_INVALID_POINTER);
 
+    int rc = ShClTransferTransformPath(pCreateParms->pszPath, pCreateParms->cbPath);
+    AssertRCReturn(rc, rc);
+
     VBoxShClObjOpenMsg Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_OPEN, VBOX_SHCL_CPARMS_OBJ_OPEN);
@@ -1709,11 +1713,9 @@ VBGLR3DECL(int) VbglR3ClipboardTransferObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     Msg.szPath.SetPtr((void *)pCreateParms->pszPath, pCreateParms->cbPath);
     Msg.fCreate.SetUInt32(pCreateParms->fCreate);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
-    {
         Msg.uHandle.GetUInt64(phObj);
-    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

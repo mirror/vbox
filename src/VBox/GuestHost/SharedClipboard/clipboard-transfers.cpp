@@ -3370,6 +3370,27 @@ const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
 }
 
 /**
+ * Transforms a path so that it can be sent over to the other party.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Path to transform. Will be modified in place.
+ * @param   cbPath              Size (in bytes) of \a pszPath.
+ *
+ * @note    Shared Clipboard file paths always are sent over as UNIX-style paths.
+ *          Sending over back slashes ('\') could happen on non-Windows OSes as part of a path or file name.
+ */
+int ShClTransferTransformPath(char *pszPath, size_t cbPath)
+{
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    RT_NOREF(cbPath);
+    RTPathChangeToUnixSlashes(pszPath, true /* fForce */);
+#else
+    RT_NOREF(pszPath, cbPath);
+#endif
+    return VINF_SUCCESS;
+}
+
+/**
  * Validates whether a given path matches our set of rules or not.
  *
  * @returns VBox status code.
