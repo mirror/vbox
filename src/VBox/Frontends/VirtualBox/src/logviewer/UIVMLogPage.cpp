@@ -324,7 +324,7 @@ int UIVMLogPage::logFileId() const
 void UIVMLogPage::scrollToEnd()
 {
     if (m_pTextEdit)
-        m_pTextEdit->scrollToEnd();
+        m_pTextEdit->scrollToBottom();
 }
 
 void UIVMLogPage::saveScrollBarPosition()

@@ -32,6 +32,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
+#include <QLabel>
 #include <QScrollBar>
 #include <QStyle>
 #include <QTextBlock>
@@ -40,6 +41,9 @@
 #include "UIIconPool.h"
 #include "UIVMLogViewerTextEdit.h"
 #include "UIVMLogViewerWidget.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 /** We use a modified scrollbar style for our QPlainTextEdits to get the
     markings on the scrollbars correctly. The default scrollbarstyle does not
@@ -67,6 +71,28 @@ const QString horizontalScrollBarStyle("QScrollBar:horizontal {"
                                        "QScrollBar::sub-line:horizontal {"
                                        "height: 0px;}");
 
+/*********************************************************************************************************************************
+*   UILogScrollLabel definition.                                                                                             *
+*********************************************************************************************************************************/
+
+class UILogScrollLabel : public QLabel
+{
+    Q_OBJECT;
+
+public:
+
+    UILogScrollLabel(QWidget *pParent);
+    void setOpacity(float fOpacity);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+
+private:
+
+    float m_fOpacity;
+};
+
 
 /*********************************************************************************************************************************
 *   UIIndicatorScrollBar definition.                                                                                             *
@@ -92,6 +118,34 @@ private:
        where we draw a horizontal line. Values are in [0.0, 1.0]*/
     QVector<float> m_markingsVector;
 };
+
+
+/*********************************************************************************************************************************
+*   UILogScrollLabel definition.                                                                                             *
+*********************************************************************************************************************************/
+
+UILogScrollLabel::UILogScrollLabel(QWidget *pParent)
+    : QLabel(pParent)
+    , m_fOpacity(1.f)
+{
+}
+
+void UILogScrollLabel::setOpacity(float fOpacity)
+{
+    if (m_fOpacity == fOpacity)
+        return;
+    m_fOpacity = fOpacity;
+    update();
+}
+
+void UILogScrollLabel::paintEvent(QPaintEvent *pEvent)
+{
+    Q_UNUSED(pEvent);
+    QPainter painter(this);
+    painter.setBrush(Qt::red);
+    painter.setOpacity(m_fOpacity);
+    painter.drawPixmap(0, 0, pixmap());
+}
 
 
 /*********************************************************************************************************************************
@@ -203,6 +257,8 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_bWrapLines(true)
     , m_bHasContextMenu(false)
     , m_iVerticalScrollBarValue(0)
+    , m_pScrollToBottomLabel(0)
+    , m_pScrollToTopLabel(0)
 {
     configure();
     prepare();
@@ -221,6 +277,7 @@ void UIVMLogViewerTextEdit::configure()
     /* Configure this' wrap mode: */
     setWrapLines(false);
     setReadOnly(true);
+    m_originalCursor = cursor();
 }
 
 void UIVMLogViewerTextEdit::prepare()
@@ -232,6 +289,22 @@ void UIVMLogViewerTextEdit::prepare()
 void UIVMLogViewerTextEdit::prepareWidgets()
 {
     m_pLineNumberArea = new UILineNumberArea(this);
+    AssertReturnVoid(m_pLineNumberArea);
+
+    m_pScrollToBottomLabel = new UILogScrollLabel(this);
+    m_pScrollToTopLabel = new UILogScrollLabel(this);
+    AssertReturnVoid(m_pScrollToBottomLabel);
+    AssertReturnVoid(m_pScrollToTopLabel);
+
+    m_pScrollToBottomLabel->installEventFilter(this);
+    m_pScrollToTopLabel->installEventFilter(this);
+
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+    m_pScrollToBottomLabel->setPixmap(UIIconPool::iconSet(":/vm_discard_32px.png").pixmap(iIconMetric, iIconMetric));
+    m_pScrollToBottomLabel->setOpacity(0.4);
+
+    m_pScrollToTopLabel->setPixmap(UIIconPool::iconSet(":/file_manager_go_up_24px.png").pixmap(iIconMetric, iIconMetric));
+    m_pScrollToTopLabel->setOpacity(0.4);
 
     connect(this, &UIVMLogViewerTextEdit::blockCountChanged, this, &UIVMLogViewerTextEdit::sltUpdateLineNumberAreaWidth);
     connect(this, &UIVMLogViewerTextEdit::updateRequest, this, &UIVMLogViewerTextEdit::sltHandleUpdateRequest);
@@ -338,6 +411,43 @@ void UIVMLogViewerTextEdit::retranslateUi()
     m_strBackgroungText = QString(UIVMLogViewerWidget::tr("Filtered"));
 }
 
+bool UIVMLogViewerTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (pObject == m_pScrollToBottomLabel || pObject == m_pScrollToTopLabel)
+    {
+        UILogScrollLabel *pLabel = qobject_cast<UILogScrollLabel*>(pObject);
+        if (pLabel)
+        {
+            switch(pEvent->type())
+            {
+                case (QEvent::Enter):
+                {
+                    setCursor(Qt::PointingHandCursor);
+                    pLabel->setOpacity(1.0);
+                    break;
+                }
+                case (QEvent::Leave):
+                {
+                    setCursor(m_originalCursor);
+                    pLabel->setOpacity(0.4);
+                    break;
+                }
+                case (QEvent::MouseButtonPress):
+                {
+                    if (pObject == m_pScrollToBottomLabel)
+                        scrollToBottom();
+                    else
+                        scrollToTop();
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+    return QIWithRetranslateUI<QPlainTextEdit>::eventFilter(pObject, pEvent);
+}
+
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     /* If shown text is filtered, do not create Bookmark action since
@@ -383,6 +493,31 @@ void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
         QRect cr = contentsRect();
         m_pLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
     }
+
+   if (m_pScrollToBottomLabel && m_pScrollToTopLabel)
+   {
+       QScrollBar *pVScrollBar = verticalScrollBar();
+       QScrollBar *pHScrollBar = horizontalScrollBar();
+
+       int iMarginX = 0;
+       if (pVScrollBar)
+           iMarginX = pVScrollBar->width();
+       if (iMarginX == 0)
+           iMarginX = m_pScrollToBottomLabel->width();
+       iMarginX += 2 * QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+       int iMarginY = 0;
+       if (pHScrollBar)
+           iMarginY = pHScrollBar->height();
+       if (iMarginY == 0)
+           iMarginY = m_pScrollToTopLabel->height();
+
+
+       m_pScrollToBottomLabel->move(width() - iMarginX - m_pScrollToBottomLabel->width(),
+                                     0.5 * m_pScrollToBottomLabel->height());
+
+       m_pScrollToTopLabel->move(width() - iMarginX - m_pScrollToTopLabel->width(),
+                                  height() - iMarginY - 1.5 * m_pScrollToTopLabel->height());
+   }
 }
 
 void UIVMLogViewerTextEdit::mouseMoveEvent(QMouseEvent *pEvent)
@@ -451,9 +586,15 @@ void UIVMLogViewerTextEdit::scrollToLine(int lineNumber)
     setTextCursor(cursor);
 }
 
-void UIVMLogViewerTextEdit::scrollToEnd()
+void UIVMLogViewerTextEdit::scrollToBottom()
 {
     moveCursor(QTextCursor::End);
+    ensureCursorVisible();
+}
+
+void UIVMLogViewerTextEdit::scrollToTop()
+{
+    moveCursor(QTextCursor::Start);
     ensureCursorVisible();
 }
 
