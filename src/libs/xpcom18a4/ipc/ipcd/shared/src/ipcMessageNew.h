@@ -120,11 +120,42 @@ typedef struct IPCMSG
     uint32_t                offAppend;
     /** Flag whether the message is complete and the buffer is therefore readonly right now. */
     bool                    fReadonly;
+    /** Flag whether the message is living on the stack and shouldn't be freed. */
+    bool                    fStack;
+    /** Some metadata which is up to the user to use. */
+    uintptr_t               upUser;
 } IPCMSG;
 /** Pointer to an IPC message. */
 typedef IPCMSG *PIPCMSG;
 /** Pointer to a const IPC message. */
 typedef const IPCMSG *PCIPCMSG;
+
+
+DECLINLINE(PIPCMSGHDR) IPCMsgHdrInit(PIPCMSGHDR pMsgHdr, const nsID &target, size_t cbPayload)
+{
+    Assert(cbPayload == (uint32_t)cbPayload);
+
+    pMsgHdr->cbMsg      = sizeof(*pMsgHdr) + (uint32_t)cbPayload;
+    pMsgHdr->u16Version = IPC_MSG_HDR_VERSION;
+    pMsgHdr->u16Flags   = 0;
+    pMsgHdr->idTarget   = target;
+
+    return pMsgHdr;
+} 
+
+
+DECLINLINE(void) IPCMsgInitStack(PIPCMSG pThis, const nsID &target, const void *pvData, size_t cbData)
+{
+    pThis->fStack              = true;
+    pThis->fReadonly           = true;
+    pThis->pbBuf               = (uint8_t *)pvData;
+    pThis->cbBuf               = sizeof(*pThis->pMsgHdr) + cbData;
+    pThis->pMsgHdr             = (PIPCMSGHDR)pThis->pbBuf;
+    pThis->pMsgHdr->cbMsg      = sizeof(*pThis->pMsgHdr) + cbData;
+    pThis->pMsgHdr->u16Version = IPC_MSG_HDR_VERSION;
+    pThis->pMsgHdr->u16Flags   = 0;
+    pThis->pMsgHdr->idTarget   = target;
+}
 
 
 DECLINLINE(int) IPCMsgInit(PIPCMSG pThis, size_t cbBuf)
@@ -155,6 +186,8 @@ DECLINLINE(PIPCMSG) IPCMsgAlloc(size_t cbMsg)
     if (RT_UNLIKELY(!pThis))
         return NULL;
 
+    pThis->fStack = false;
+
     if (cbMsg)
     {
         pThis->pbBuf = (uint8_t *)RTMemAlloc(sizeof(*pThis->pMsgHdr) + cbMsg);
@@ -179,6 +212,10 @@ DECLINLINE(PIPCMSG) IPCMsgAlloc(size_t cbMsg)
  */
 DECLINLINE(void) IPCMsgFree(PIPCMSG pThis, bool fFreeStruct)
 {
+    /* Stack based messages are never freed. */
+    if (pThis->fStack)
+        return;
+
     if (pThis->pbBuf)
         RTMemFree(pThis->pbBuf);
     pThis->pbBuf     = NULL;
@@ -315,6 +352,18 @@ DECLINLINE(void) IPCMsgSetFlag(PIPCMSG pThis, uint16_t fFlag)
 
 
 /**
+ * Clears the given flag in the message header.
+ *
+ * @param   pThis       The IPC message.
+ * @param   fFlag       The flag to clear.
+ */
+DECLINLINE(void) IPCMsgClearFlag(PIPCMSG pThis, uint16_t fFlag)
+{
+    pThis->pMsgHdr->u16Flags &= ~fFlag;
+}
+
+
+/**
  * Init worker for a given message frame.
  *
  * @param   pThis       The message to initialize.
@@ -372,6 +421,8 @@ DECLINLINE(PIPCMSG) IPCMsgNewSg(const nsID &target, size_t cbTotal, PCRTSGSEG pa
  */
 DECLINLINE(int) IPCMsgInitSg(PIPCMSG pThis, const nsID &target, size_t cbTotal, PCRTSGSEG paSegs, uint32_t cSegs)
 {
+    Assert(!pThis->fStack);
+
     uint32_t cbMsg = sizeof(*pThis->pMsgHdr) + cbTotal;
     if (pThis->cbBuf < cbMsg)
     {
@@ -388,6 +439,33 @@ DECLINLINE(int) IPCMsgInitSg(PIPCMSG pThis, const nsID &target, size_t cbTotal, 
 }
 
 
+DECLINLINE(PIPCMSG) IPCMsgClone(PCIPCMSG pThis)
+{
+    size_t cbPayload = pThis->pMsgHdr->cbMsg - sizeof(*pThis->pMsgHdr);
+    PIPCMSG pClone = IPCMsgAlloc(cbPayload);
+    if (!pClone)
+        return NULL;
+
+    pClone->pMsgHdr = (PIPCMSGHDR)pClone->pbBuf;
+    *pClone->pMsgHdr = *pThis->pMsgHdr;
+    pClone->upUser = pThis->upUser;
+    memcpy(pClone->pMsgHdr + 1, pThis->pMsgHdr + 1, cbPayload);
+    return pClone;
+}
+
+
+DECLINLINE(int) IPCMsgCloneWithMsg(PCIPCMSG pThis, PIPCMSG pClone)
+{
+    RTSGSEG Seg;
+    Seg.pvSeg = (void *)IPCMsgGetPayload(pThis);
+    Seg.cbSeg = IPCMsgGetPayloadSize(pThis);
+
+    pClone->upUser = pThis->upUser;
+    return IPCMsgInitSg(pClone, *IPCMsgGetTarget(pThis),
+                        Seg.cbSeg, &Seg, 1 /*cSeg*/);
+}
+
+
 /**
  * Reads data for the given message from the given buffer.
  *
@@ -400,6 +478,8 @@ DECLINLINE(int) IPCMsgInitSg(PIPCMSG pThis, const nsID &target, size_t cbTotal, 
  */
 DECLINLINE(int) IPCMsgReadFrom(PIPCMSG pThis, const void *pvData, size_t cbData, size_t *pcbRead, bool *pfDone)
 {
+    Assert(!pThis->fStack);
+
     size_t cbHdrRead = 0;
     if (!pThis->pMsgHdr)
     {

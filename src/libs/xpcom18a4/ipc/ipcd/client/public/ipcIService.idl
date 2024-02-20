@@ -119,12 +119,6 @@ interface ipcIService : nsISupports
     unsigned long resolveClientName(in string aName);
 
 
-    /**
-     * tests whether a particular client is connected to the IPC daemon.
-     */
-    boolean clientExists(in unsigned long aClientID);
-
-
     // XXX need other functions to enumerate clients, clients implementing targets, etc.
     // enumerator getClients();
     // enumerator getClientsSupportingTarget(in nsIDRef aTarget);

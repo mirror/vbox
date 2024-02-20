@@ -39,8 +39,7 @@
 #define ipcConnection_h__
 
 #include "nscore.h"
-
-class ipcMessage;
+#include "ipcMessageNew.h"
 
 #define IPC_METHOD_PRIVATE_(type)   NS_HIDDEN_(type)
 #define IPC_METHOD_PRIVATE          IPC_METHOD_PRIVATE_(nsresult)
@@ -87,7 +86,7 @@ IPC_METHOD_PRIVATE IPC_Disconnect();
  *
  * NOTE: This function may be called on any thread.
  */
-IPC_METHOD_PRIVATE IPC_SendMsg(ipcMessage *msg);
+IPC_METHOD_PRIVATE IPC_SendMsg(PIPCMSG pMsg);
 
 /**
  * IPC_DoCallback
@@ -139,9 +138,17 @@ IPC_METHOD_PRIVATE_(void) IPC_OnConnectionEnd(nsresult error);
  * IPC_OnMessageAvailable
  *
  * This function is called whenever an incoming message is read from the IPC
- * daemon.  The ipcMessage object, |msg|, must be deleted by the implementation
- * of IPC_OnMessageAvailable when the object is no longer needed.
+ * daemon.  The implementer of this method must not assume ownership over the
+ * message.
  */
-IPC_METHOD_PRIVATE_(void) IPC_OnMessageAvailable(ipcMessage *msg);
+DECLHIDDEN(void) IPC_OnMessageAvailable(PCIPCMSG pMsg);
+
+/**
+ * IPC_MsgFree
+ *
+ * This function is called whenever an outgoing message was sent by the
+ * connection code and the message can be freed.
+ */
+DECLHIDDEN(void) IPC_MsgFree(PIPCMSG pMsg);
 
 #endif // ipcConnection_h__

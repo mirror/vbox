@@ -78,11 +78,13 @@ ipcService::ResolveClientName(const char *aName, PRUint32 *aID)
     return IPC_ResolveClientName(aName, aID);
 }
 
+#if 0 /*unused*/
 NS_IMETHODIMP
 ipcService::ClientExists(PRUint32 aClientID, PRBool *aResult)
 {
     return IPC_ClientExists(aClientID, aResult);
 }
+#endif
 
 NS_IMETHODIMP
 ipcService::DefineTarget(const nsID &aTarget, ipcIMessageObserver *aObserver,

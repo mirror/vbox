@@ -38,6 +38,7 @@
 #include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/env.h>
+#include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/pipe.h>
 #include <iprt/poll.h>
@@ -56,7 +57,8 @@
 #include <stdio.h> /* fprintf below */
 
 #include "ipcConnection.h"
-#include "ipcMessageQ.h"
+#include "ipcMessageNew.h"
+#include "ipcList.h"
 #include "ipcConfig.h"
 
 
@@ -128,10 +130,13 @@ struct ipcConnectionState
     RTSOCKET     hSockConn;
     RTPOLLSET    hPollSet;
     ipcCallbackQ callback_queue;
-    ipcMessageQ  send_queue;
-    PRUint32     send_offset; // amount of send_queue.First() already written.
-    ipcMessage  *in_msg;
     bool         fShutdown;
+    /** The list of messages waiting for sending out. */
+    RTLISTANCHOR LstMsgsOut;
+    /** Number of bytes in the message of the first message on the list which was already sent. */
+    size_t       offSendFirst;
+    /** The message currently being received. */
+    IPCMSG       MsgIn;
 };
 
 #define SOCK 0
@@ -145,10 +150,15 @@ static void ConnDestroy(ipcConnectionState *s)
     RTPipeClose(s->hWakeupPipeW);
     RTSocketClose(s->hSockConn);
 
-    if (s->in_msg)
-        delete s->in_msg;
+    IPCMsgFree(&s->MsgIn, false /*fFreeStruct*/);
 
-    s->send_queue.DeleteAll();
+    PIPCMSG pIt, pItNext;
+    RTListForEachSafe(&s->LstMsgsOut, pIt, pItNext, IPCMSG, NdMsg)
+    {
+        RTListNodeRemove(&pIt->NdMsg);
+        IPCMsgFree(pIt, true /*fFreeStruct*/);
+    }
+
     RTMemFree(s);
 }
 
@@ -158,49 +168,53 @@ static ipcConnectionState *ConnCreate(RTSOCKET hSockConn)
     if (!s)
       return NULL;
 
-    s->send_offset = 0;
-    s->in_msg = NULL;
-    s->fShutdown = false;
+    RTListInit(&s->LstMsgsOut);
+    s->offSendFirst = 0;
+    s->fShutdown    = false;
 
-    int vrc = RTCritSectInit(&s->CritSect);
+    int vrc = IPCMsgInit(&s->MsgIn, 0 /*cbBuf*/);
     if (RT_SUCCESS(vrc))
     {
-        vrc = RTPollSetCreate(&s->hPollSet);
+        vrc = RTCritSectInit(&s->CritSect);
         if (RT_SUCCESS(vrc))
         {
-            RTPIPE hPipeR;
-
-            vrc = RTPipeCreate(&s->hWakeupPipeR, &s->hWakeupPipeW, 0 /*fFlags*/);
+            vrc = RTPollSetCreate(&s->hPollSet);
             if (RT_SUCCESS(vrc))
             {
-                vrc = RTPollSetAddSocket(s->hPollSet, hSockConn, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, SOCK);
+                vrc = RTPipeCreate(&s->hWakeupPipeR, &s->hWakeupPipeW, 0 /*fFlags*/);
                 if (RT_SUCCESS(vrc))
                 {
-                    vrc = RTPollSetAddPipe(s->hPollSet, s->hWakeupPipeR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, POLL);
+                    vrc = RTPollSetAddSocket(s->hPollSet, hSockConn, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, SOCK);
                     if (RT_SUCCESS(vrc))
                     {
-                        vrc = RTSocketSetInheritance(hSockConn, false /*fInheritable*/);
+                        vrc = RTPollSetAddPipe(s->hPollSet, s->hWakeupPipeR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, POLL);
                         if (RT_SUCCESS(vrc))
                         {
-                            s->hSockConn = hSockConn;
-                            return s;
+                            vrc = RTSocketSetInheritance(hSockConn, false /*fInheritable*/);
+                            if (RT_SUCCESS(vrc))
+                            {
+                                s->hSockConn = hSockConn;
+                                return s;
+                            }
+
+                            LogFlowFunc(("coudn't make IPC socket non-inheritable [err=%Rrc]\n", vrc));
+                            vrc = RTPollSetRemove(s->hPollSet, POLL); AssertRC(vrc);
                         }
 
-                        LogFlowFunc(("coudn't make IPC socket non-inheritable [err=%Rrc]\n", vrc));
-                        vrc = RTPollSetRemove(s->hPollSet, POLL); AssertRC(vrc);
+                        vrc = RTPollSetRemove(s->hPollSet, SOCK); AssertRC(vrc);
                     }
 
-                    vrc = RTPollSetRemove(s->hPollSet, SOCK); AssertRC(vrc);
+                    vrc = RTPipeClose(s->hWakeupPipeR); AssertRC(vrc);
+                    vrc = RTPipeClose(s->hWakeupPipeW); AssertRC(vrc);
                 }
 
-                vrc = RTPipeClose(s->hWakeupPipeR); AssertRC(vrc);
-                vrc = RTPipeClose(s->hWakeupPipeW); AssertRC(vrc);
+                vrc = RTPollSetDestroy(s->hPollSet); AssertRC(vrc);
             }
 
-            vrc = RTPollSetDestroy(s->hPollSet); AssertRC(vrc);
+            RTCritSectDelete(&s->CritSect);
         }
 
-        RTCritSectDelete(&s->CritSect);
+        IPCMsgFree(&s->MsgIn, false /*fFreeStruct*/);
     }
 
     return NULL;
@@ -235,38 +249,24 @@ static nsresult ConnRead(ipcConnectionState *s)
         const char *pdata = buf;
         while (cbRead)
         {
-            PRUint32 bytesRead;
-            PRBool fComplete = PR_FALSE;
+            size_t cbProcessed = 0;
+            bool fComplete = false;
 
-            /* No message frame available? Allocate a new one. */
-            if (!s->in_msg)
-            {
-                s->in_msg = new ipcMessage;
-                if (RT_UNLIKELY(!s->in_msg))
-                {
-                    rv = NS_ERROR_OUT_OF_MEMORY;
-                    break;
-                }
-            }
-
-            if (s->in_msg->ReadFrom(pdata, cbRead, &bytesRead, &fComplete) != PR_SUCCESS)
+            if (IPCMsgReadFrom(&s->MsgIn, pdata, cbRead, &cbProcessed, &fComplete) != VINF_SUCCESS)
             {
                 LogFlowFunc(("error reading IPC message\n"));
                 rv = NS_ERROR_UNEXPECTED;
                 break;
             }
 
-            Assert(cbRead >= bytesRead);
-            cbRead -= bytesRead;
-            pdata  += bytesRead;
+            Assert(cbRead >= cbProcessed);
+            cbRead -= cbProcessed;
+            pdata  += cbProcessed;
 
             if (fComplete)
             {
-                // protect against weird re-entrancy cases...
-                ipcMessage *m = s->in_msg;
-                s->in_msg = NULL;
-
-                IPC_OnMessageAvailable(m);
+                IPC_OnMessageAvailable(&s->MsgIn);
+                IPCMsgReset(&s->MsgIn);
             }
         }
     }
@@ -280,36 +280,40 @@ static nsresult ConnWrite(ipcConnectionState *s)
 
     RTCritSectEnter(&s->CritSect);
 
-    // write one message and then return.
-    if (s->send_queue.First())
+    /* Write as much as we can. */
+    while (!RTListIsEmpty(&s->LstMsgsOut))
     {
         size_t cbWritten = 0;
+        PIPCMSG pMsg = RTListGetFirst(&s->LstMsgsOut, IPCMSG, NdMsg);
         int vrc = RTSocketWriteNB(s->hSockConn,
-                                  s->send_queue.First()->MsgBuf() + s->send_offset,
-                                  s->send_queue.First()->MsgLen() - s->send_offset,
+                                  (const uint8_t *)IPCMsgGetBuf(pMsg) + s->offSendFirst,
+                                  IPCMsgGetSize(pMsg) - s->offSendFirst,
                                   &cbWritten);
         if (vrc == VINF_SUCCESS && cbWritten)
         {
-            s->send_offset += cbWritten;
-            if (s->send_offset == s->send_queue.First()->MsgLen())
+            s->offSendFirst += cbWritten;
+            if (s->offSendFirst == IPCMsgGetSize(pMsg))
             {
-                s->send_queue.DeleteFirst();
-                s->send_offset = 0;
-
-                /* if the send queue is empty, then we need to stop trying to write. */
-                if (s->send_queue.IsEmpty())
-                {
-                    vrc = RTPollSetEventsChange(s->hPollSet, SOCK, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR);
-                    AssertRC(vrc);
-                }
+                RTListNodeRemove(&pMsg->NdMsg);
+                IPC_MsgFree(pMsg);
+                s->offSendFirst = 0;
             }
         }
-        else if (vrc != VINF_TRY_AGAIN)
+        else if (vrc == VINF_TRY_AGAIN)
+            break;
+        else
         {
             Assert(RT_FAILURE(vrc));
             LogFlowFunc(("error writing to socket [err=%Rrc]\n", vrc));
             rv = NS_ERROR_UNEXPECTED;
         }
+    }
+
+    /* if the send queue is empty, then we need to stop trying to write. */
+    if (RTListIsEmpty(&s->LstMsgsOut))
+    {
+        int vrc = RTPollSetEventsChange(s->hPollSet, SOCK, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR);
+        AssertRC(vrc);
     }
 
     RTCritSectLeave(&s->CritSect);
@@ -374,7 +378,7 @@ static DECLCALLBACK(int) ipcConnThread(RTTHREAD hSelf, void *pvArg)
 
                 RTCritSectEnter(&s->CritSect);
 
-                if (!s->send_queue.IsEmpty())
+                if (!RTListIsEmpty(&s->LstMsgsOut))
                 {
                     vrc = RTPollSetEventsChange(s->hPollSet, SOCK, RTPOLL_EVT_READ | RTPOLL_EVT_WRITE | RTPOLL_EVT_ERROR);
                     AssertRC(vrc);
@@ -386,7 +390,7 @@ static DECLCALLBACK(int) ipcConnThread(RTTHREAD hSelf, void *pvArg)
                 // check if we should exit this thread.  delay processing a shutdown
                 // request until after all queued up messages have been sent and until
                 // after all queued up callbacks have been run.
-                if (s->fShutdown && s->send_queue.IsEmpty() && s->callback_queue.IsEmpty())
+                if (s->fShutdown && RTListIsEmpty(&s->LstMsgsOut) && s->callback_queue.IsEmpty())
                     rv = NS_ERROR_ABORT;
 
                 RTCritSectLeave(&s->CritSect);
@@ -558,13 +562,13 @@ nsresult IPC_Disconnect()
     return NS_OK;
 }
 
-nsresult IPC_SendMsg(ipcMessage *msg)
+nsresult IPC_SendMsg(PIPCMSG pMsg)
 {
     if (!gConnState || !gConnThread)
       return NS_ERROR_NOT_INITIALIZED;
 
     RTCritSectEnter(&gConnState->CritSect);
-    gConnState->send_queue.Append(msg);
+    RTListAppend(&gConnState->LstMsgsOut, &pMsg->NdMsg);
     size_t cbWrittenIgn = 0;
     int vrc = RTPipeWrite(gConnState->hWakeupPipeW, &magicChar, sizeof(magicChar), &cbWrittenIgn);
     AssertRC(vrc);

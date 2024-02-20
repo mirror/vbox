@@ -115,10 +115,10 @@ static Status AcquireDaemonLock(PIPCDSTATE pThis, const char *baseDir)
 {
     const char lockName[] = "lock";
 
-    int dirLen = strlen(baseDir);
-    int len = dirLen            // baseDir
-            + 1                 // "/"
-            + sizeof(lockName); // "lock"
+    size_t dirLen = strlen(baseDir);
+    size_t len = dirLen            // baseDir
+               + 1                 // "/"
+               + sizeof(lockName); // "lock"
 
     //
     // Security checks for the directory
@@ -409,7 +409,7 @@ DECLHIDDEN(int) IPC_DispatchMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg)
 
     // remember if client is expecting SYNC_REPLY.  we'll add that flag to the
     // next message sent to the client.
-    if (IPCMsgIsFlagSet(pMsg, IPC_MSG_FLAG_SYNC_QUERY))
+    if (IPCMsgIsFlagSet(pMsg, IPC_MSG_HDR_FLAG_SYNC_QUERY))
     {
         Assert(!ipcdClientGetExpectsSyncReply(pIpcClient));
         // XXX shouldn't we remember the TargetID as well, and only set the
@@ -431,7 +431,7 @@ DECLHIDDEN(int) IPC_SendMsg(PIPCDCLIENT pIpcClient, PIPCMSG pMsg)
 
     // add SYNC_REPLY flag to message if client is expecting...
     if (ipcdClientGetExpectsSyncReply(pIpcClient)) {
-        pMsg->pMsgHdr->u16Flags |= IPC_MSG_FLAG_SYNC_REPLY;
+        pMsg->pMsgHdr->u16Flags |= IPC_MSG_HDR_FLAG_SYNC_REPLY;
         ipcdClientSetExpectsSyncReply(pIpcClient, false);
     }
 
@@ -590,8 +590,8 @@ static int ipcdInit(PIPCDSTATE pThis, const char *pszSocketPath)
             // don't notify the parent to cause it to fail in PR_Read() after
             // we terminate
             if (status != ELockFileOwner)
-                printf("Cannot create a lock file for '%s'.\n"
-                        "Check permissions.\n", addr.sun_path);
+                RTMsgError("Cannot create a lock file for '%s'.\n"
+                           "Check permissions.\n", addr.sun_path);
             return VERR_INVALID_PARAMETER;
         }
     }

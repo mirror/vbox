@@ -52,7 +52,6 @@ static const char kDefaultSocketSuffix[] = "-ipc/ipcd";
 void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
 {
     const char *logName;
-    int len;
 
     char *pszDst = buf;
     size_t cbDst = bufLen;

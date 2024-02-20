@@ -359,7 +359,8 @@ static void PR_DestroyCondVar(PRCondVar *cvar)
 {
     if (0 > ASMAtomicDecS32(&cvar->notify_pending))
     {
-        PRIntn rv = pthread_cond_destroy(&cvar->cv); Assert(0 == rv);
+        PRIntn rv = pthread_cond_destroy(&cvar->cv);
+        Assert(0 == rv); RT_NOREF(rv);
         PR_DELETE(cvar);
     }
 }  /* PR_DestroyCondVar */

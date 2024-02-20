@@ -50,17 +50,6 @@ typedef void FNIPCMMSGHANDLER(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg);
 typedef FNIPCMMSGHANDLER *PFNIPCMMSGHANDLER;
 
 
-DECLINLINE(uint32_t) IPCM_GetType(PCIPCMSG pMsg)
-{
-    return ((const ipcmMessageHeader *)IPCMsgGetPayload(pMsg))->mType;
-}
-
-
-DECLINLINE(uint32_t) IPCM_GetRequestIndex(PCIPCMSG pMsg)
-{
-    return ((const ipcmMessageHeader *)IPCMsgGetPayload(pMsg))->mRequestIndex;
-}
-
 //
 // message handlers
 //
@@ -69,16 +58,16 @@ static DECLCALLBACK(void) ipcmOnPing(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_N
 {
     Log(("got PING\n"));
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), IPCM_OK };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg) }, IPCM_OK }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 }
 
 static DECLCALLBACK(void) ipcmOnClientHello(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
 {
     Log(("got CLIENT_HELLO\n"));
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_CLIENT_ID, IPCM_GetRequestIndex(pMsg), ipcdClientGetId(pIpcClient) };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGCLIENTID IcmpRes = { { IPCM_MSG_ACK_CLIENT_ID, IPCM_GetRequestIndex(pMsg) }, ipcdClientGetId(pIpcClient) };
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcmpRes, sizeof(IcmpRes));
 
     //
     // NOTE: it would almost make sense for this notification to live
@@ -112,8 +101,8 @@ static DECLCALLBACK(void) ipcmOnClientAddName(PIPCDCLIENT pIpcClient, PCIPCMSG p
     else
         status = IPCM_ERROR_INVALID_ARG;
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, requestIndex, (uint32_t)status };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, status }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 }
 
 static DECLCALLBACK(void) ipcmOnClientDelName(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
@@ -135,8 +124,8 @@ static DECLCALLBACK(void) ipcmOnClientDelName(PIPCDCLIENT pIpcClient, PCIPCMSG p
     else
         status = IPCM_ERROR_INVALID_ARG;
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status  };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, status }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 }
 
 static DECLCALLBACK(void) ipcmOnClientAddTarget(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
@@ -155,8 +144,8 @@ static DECLCALLBACK(void) ipcmOnClientAddTarget(PIPCDCLIENT pIpcClient, PCIPCMSG
     else
         ipcdClientAddTarget(pIpcClient, pidTarget);
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, status }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 }
 
 static DECLCALLBACK(void) ipcmOnClientDelTarget(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
@@ -173,8 +162,8 @@ static DECLCALLBACK(void) ipcmOnClientDelTarget(PIPCDCLIENT pIpcClient, PCIPCMSG
         status = IPCM_ERROR_NO_SUCH_DATA;
     }
 
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)status };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, status }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 }
 
 static DECLCALLBACK(void) ipcmOnQueryClientByName(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) RT_NOTHROW_DEF
@@ -188,14 +177,14 @@ static DECLCALLBACK(void) ipcmOnQueryClientByName(PIPCDCLIENT pIpcClient, PCIPCM
     if (pIpcClientResult)
     {
         Log(("  client exists w/ ID = %u\n", ipcdClientGetId(pIpcClientResult)));
-        const uint32_t aResp[3] = { IPCM_MSG_ACK_CLIENT_ID, requestIndex, ipcdClientGetId(pIpcClientResult) };
-        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+        const IPCMMSGCLIENTID IcmpRes = { { IPCM_MSG_ACK_CLIENT_ID, requestIndex }, ipcdClientGetId(pIpcClientResult) };
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcmpRes, sizeof(IcmpRes));
     }
     else
     {
         Log(("  client does not exist\n"));
-        const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, requestIndex, (uint32_t)IPCM_ERROR_NO_CLIENT };
-        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+        const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, IPCM_ERROR_NO_CLIENT }; 
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
     }
 }
 
@@ -203,18 +192,20 @@ static DECLCALLBACK(void) ipcmOnForward(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) R
 {
     Log(("got FORWARD\n"));
 
+    PRUint32 requestIndex = IPCM_GetRequestIndex(pMsg);
+
     uint32_t idClient = *(uint32_t *)((uint8_t *)IPCMsgGetPayload(pMsg) + 2 * sizeof(uint32_t));
     PIPCDCLIENT pIpcClientDst = IPC_GetClientByID(ipcdClientGetDaemonState(pIpcClient), idClient);
     if (!pIpcClientDst)
     {
         Log(("  destination client not found!\n"));
-        const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), (uint32_t)IPCM_ERROR_NO_CLIENT };
-        IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+        const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, IPCM_ERROR_NO_CLIENT }; 
+        IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
         return;
     }
     // inform client that its message will be forwarded
-    const uint32_t aResp[3] = { IPCM_MSG_ACK_RESULT, IPCM_GetRequestIndex(pMsg), IPCM_OK };
-    IPC_SendMsg(pIpcClient, IPCM_TARGET, &aResp[0], sizeof(aResp));
+    const IPCMMSGRESULT IcpmRes = { { IPCM_MSG_ACK_RESULT, requestIndex }, IPCM_OK }; 
+    IPC_SendMsg(pIpcClient, IPCM_TARGET, &IcpmRes, sizeof(IcpmRes));
 
     uint32_t aIpcmFwdHdr[3] = { IPCM_MSG_PSH_FORWARD, IPCM_NewRequestIndex(), ipcdClientGetId(pIpcClient) };
     RTSGSEG aSegs[2];

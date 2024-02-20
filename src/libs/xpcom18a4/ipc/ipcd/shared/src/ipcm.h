@@ -40,8 +40,7 @@
 
 #include <iprt/assertcompile.h>
 
-#include "ipcMessage.h"
-#include "ipcMessagePrimitives.h"
+#include "ipcMessageNew.h"
 
 //-----------------------------------------------------------------------------
 
@@ -114,36 +113,34 @@ extern const nsID IPCM_TARGET;
 //
 // IPCM header
 //
-struct ipcmMessageHeader
+typedef struct IPCMMSGHDR
 {
-    PRUint32 mType;
-    PRUint32 mRequestIndex;
-};
-AssertCompileSize(struct ipcmMessageHeader, 8);
+    uint32_t u32Type;
+    uint32_t u32RequestIndex;
+} IPCMMSGHDR;
+AssertCompileSize(struct IPCMMSGHDR, 8);
+/** Pointer to an IPCM header. */
+typedef IPCMMSGHDR *PIPCMMSGHDR;
+/** Pointer to a const IPCM header. */
+typedef const IPCMMSGHDR *PCIPCMMSGHDR;
 
-//
-// returns IPCM message type.
-//
-static inline int
-IPCM_GetType(const ipcMessage *msg)
+
+DECLINLINE(uint32_t) IPCM_GetType(PCIPCMSG pMsg)
 {
-    return ((const ipcmMessageHeader *) msg->Data())->mType;
+    return ((PCIPCMMSGHDR)IPCMsgGetPayload(pMsg))->u32Type;
 }
 
-//
-// return IPCM message request index.
-//
-static inline PRUint32
-IPCM_GetRequestIndex(const ipcMessage *msg)
+
+DECLINLINE(uint32_t) IPCM_GetRequestIndex(PCIPCMSG pMsg)
 {
-    return ((const ipcmMessageHeader *) msg->Data())->mRequestIndex;
+    return ((PCIPCMMSGHDR)IPCMsgGetPayload(pMsg))->u32RequestIndex;
 }
+
 
 //
 // return a request index that is unique to this process.
 //
-NS_HIDDEN_(PRUint32)
-IPCM_NewRequestIndex();
+DECLHIDDEN(uint32_t) IPCM_NewRequestIndex();
 
 //-----------------------------------------------------------------------------
 
@@ -321,185 +318,147 @@ IPCM_NewRequestIndex();
 // sender of the IPCM_MSG_REQ_FORWARD message.
 //
 
-//-----------------------------------------------------------------------------
-
-//
-// NOTE: This file declares some helper classes that simplify constructing
-//       and parsing IPCM messages.  Each class subclasses ipcMessage, but
-//       adds no additional member variables.  |operator new| should be used
-//       to allocate one of the IPCM helper classes, e.g.:
-//
-//          ipcMessage *msg = new ipcmMessageClientHello("foo");
-//
-//       Given an arbitrary ipcMessage, it can be parsed using logic similar
-//       to the following:
-//
-//          void func(const ipcMessage *unknown)
-//          {
-//            if (unknown->Topic().Equals(IPCM_TARGET)) {
-//              if (IPCM_GetMsgType(unknown) == IPCM_MSG_TYPE_CLIENT_ID) {
-//                ipcMessageCast<ipcmMessageClientID> msg(unknown);
-//                printf("Client ID: %u\n", msg->ClientID());
-//              }
-//            }
-//          }
-//
-
 // REQUESTS
 
-class ipcmMessagePing : public ipcMessage_DWORD_DWORD
+/** The ping message consists of just the header. */
+typedef IPCMMSGHDR IPCMMSGPING;
+typedef IPCMMSGPING *PIPCMMSGPING;
+
+DECLINLINE(void) IPCMMsgPingInit(PIPCMMSGPING pThis)
 {
-public:
-    ipcmMessagePing()
-        : ipcMessage_DWORD_DWORD(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_PING,
-            IPCM_NewRequestIndex()) {}
-};
+    pThis->u32Type         = IPCM_MSG_REQ_PING;
+    pThis->u32RequestIndex = IPCM_NewRequestIndex();
+}
 
-class ipcmMessageForward : public ipcMessage
+
+/** The client hello message consists of just the header. */
+typedef IPCMMSGHDR IPCMMSGCLIENTHELLO;
+typedef IPCMMSGCLIENTHELLO *PIPCMMSGCLIENTHELLO;
+
+DECLINLINE(void) IPCMMsgClientHelloInit(PIPCMMSGCLIENTHELLO pThis)
 {
-public:
-    // @param type        the type of this message: IPCM_MSG_{REQ,PSH}_FORWARD
-    // @param clientID    the client id of the sender or receiver
-    // @param target      the message target
-    // @param data        the message data
-    // @param dataLen     the message data length
-    ipcmMessageForward(PRUint32 type,
-                       PRUint32 clientID,
-                       const nsID &target,
-                       const char *data,
-                       PRUint32 dataLen) NS_HIDDEN;
+    pThis->u32Type         = IPCM_MSG_REQ_CLIENT_HELLO;
+    pThis->u32RequestIndex = IPCM_NewRequestIndex();
+}
 
-    // set inner message data, constrained to the data length passed
-    // to this class's constructor.
-    NS_HIDDEN_(void) SetInnerData(PRUint32 offset, const char *data, PRUint32 dataLen);
 
-    NS_HIDDEN_(PRUint32)     ClientID() const;
-    NS_HIDDEN_(const nsID &) InnerTarget() const;
-    NS_HIDDEN_(const char *) InnerData() const;
-    NS_HIDDEN_(PRUint32)     InnerDataLen() const;
-};
-
-class ipcmMessageClientHello : public ipcMessage_DWORD_DWORD
+typedef struct IPCMMSGFORWARD
 {
-public:
-    ipcmMessageClientHello()
-        : ipcMessage_DWORD_DWORD(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_CLIENT_HELLO,
-            IPCM_NewRequestIndex()) {}
-};
+    IPCMMSGHDR          Hdr;
+    uint32_t            u32ClientId;
+} IPCMMSGFORWARD;
+AssertCompileSize(IPCMMSGFORWARD, 3 * sizeof(uint32_t));
+typedef IPCMMSGFORWARD *PIPCMMSGFORWARD;
+typedef const IPCMMSGFORWARD *PCIPCMMSGFORWARD;
 
-class ipcmMessageClientAddName : public ipcMessage_DWORD_DWORD_STR
+
+DECLINLINE(int) ipcmMsgInitHdrStr(PIPCMSG pMsg, uint32_t u32Type, const char *psz)
 {
-public:
-    ipcmMessageClientAddName(const char *name)
-        : ipcMessage_DWORD_DWORD_STR(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_CLIENT_ADD_NAME,
-            IPCM_NewRequestIndex(),
-            name) {}
+    size_t cbStr = strlen(psz) + 1; /* Includes terminator. */
+    const IPCMMSGHDR Hdr = { u32Type, IPCM_NewRequestIndex() };
+    RTSGSEG aSegs[2];
 
-    const char *Name() const { return Third(); }
-};
+    aSegs[0].pvSeg = (void *)&Hdr;
+    aSegs[0].cbSeg = sizeof(Hdr);
 
-class ipcmMessageClientDelName : public ipcMessage_DWORD_DWORD_STR
+    aSegs[1].pvSeg = (void *)psz;
+    aSegs[1].cbSeg = cbStr;
+    return IPCMsgInitSg(pMsg, IPCM_TARGET, cbStr + sizeof(Hdr), &aSegs[0], RT_ELEMENTS(aSegs));
+}
+
+
+DECLINLINE(int) IPCMMsgClientAddNameInit(PIPCMSG pMsg, const char *pszName)
 {
-public:
-    ipcmMessageClientDelName(const char *name)
-        : ipcMessage_DWORD_DWORD_STR(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_CLIENT_DEL_NAME,
-            IPCM_NewRequestIndex(),
-            name) {}
+    return ipcmMsgInitHdrStr(pMsg, IPCM_MSG_REQ_CLIENT_ADD_NAME, pszName);
+}
 
-    const char *Name() const { return Third(); }
-};
 
-class ipcmMessageClientAddTarget : public ipcMessage_DWORD_DWORD_ID
+DECLINLINE(int) IPCMMsgClientDelNameInit(PIPCMSG pMsg, const char *pszName)
 {
-public:
-    ipcmMessageClientAddTarget(const nsID &target)
-        : ipcMessage_DWORD_DWORD_ID(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_CLIENT_ADD_TARGET,
-            IPCM_NewRequestIndex(),
-            target) {}
+    return ipcmMsgInitHdrStr(pMsg, IPCM_MSG_REQ_CLIENT_DEL_NAME, pszName);
+}
 
-    const nsID &Target() const { return Third(); }
-};
 
-class ipcmMessageClientDelTarget : public ipcMessage_DWORD_DWORD_ID
+typedef struct IPCMMSGCLIENTADDDELTARGET
 {
-public:
-    ipcmMessageClientDelTarget(const nsID &target)
-        : ipcMessage_DWORD_DWORD_ID(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_CLIENT_ADD_TARGET,
-            IPCM_NewRequestIndex(),
-            target) {}
+    IPCMMSGHDR          Hdr;
+    nsID                idTarget;
+} IPCMMSGCLIENTADDDELTARGET;
+AssertCompileSize(IPCMMSGCLIENTADDDELTARGET, 2 * sizeof(uint32_t) + sizeof(nsID));
+typedef IPCMMSGCLIENTADDDELTARGET *PIPCMMSGCLIENTADDDELTARGET;
+typedef const IPCMMSGCLIENTADDDELTARGET *PCIPCMMSGCLIENTADDDELTARGET;
 
-    const nsID &Target() const { return Third(); }
-};
-
-class ipcmMessageQueryClientByName : public ipcMessage_DWORD_DWORD_STR
+DECLINLINE(void) IPCMMsgAddTargetInit(PIPCMMSGCLIENTADDDELTARGET pThis, const nsID &target)
 {
-public:
-    ipcmMessageQueryClientByName(const char *name)
-        : ipcMessage_DWORD_DWORD_STR(
-            IPCM_TARGET,
-            IPCM_MSG_REQ_QUERY_CLIENT_BY_NAME,
-            IPCM_NewRequestIndex(),
-            name) {}
+    pThis->Hdr.u32Type         = IPCM_MSG_REQ_CLIENT_ADD_TARGET;
+    pThis->Hdr.u32RequestIndex = IPCM_NewRequestIndex();
+    pThis->idTarget            = target;
+}
 
-    const char *Name() const { return Third(); }
-    PRUint32 RequestIndex() const { return Second(); }
-};
+
+DECLINLINE(void) IPCMMsgDelTargetInit(PIPCMMSGCLIENTADDDELTARGET pThis, const nsID &target)
+{
+    pThis->Hdr.u32Type         = IPCM_MSG_REQ_CLIENT_DEL_TARGET;
+    pThis->Hdr.u32RequestIndex = IPCM_NewRequestIndex();
+    pThis->idTarget            = target;
+}
+
+
+DECLINLINE(int) IPCMMsgQueryClientByNameInit(PIPCMSG pMsg, const char *pszName)
+{
+    return ipcmMsgInitHdrStr(pMsg, IPCM_MSG_REQ_QUERY_CLIENT_BY_NAME, pszName);
+}
+
 
 // ACKNOWLEDGEMENTS
 
-class ipcmMessageResult : public ipcMessage_DWORD_DWORD_DWORD
+typedef struct IPCMMSGRESULT
 {
-public:
-    ipcmMessageResult(PRUint32 requestIndex, PRInt32 status)
-        : ipcMessage_DWORD_DWORD_DWORD(
-            IPCM_TARGET,
-            IPCM_MSG_ACK_RESULT,
-            requestIndex,
-            (PRUint32) status) {}
+    IPCMMSGHDR          Hdr;
+    int32_t             i32Status;
+} IPCMMSGRESULT;
+AssertCompileSize(IPCMMSGRESULT, 3 * sizeof(uint32_t));
+typedef IPCMMSGRESULT *PIPCMMSGRESULT;
+typedef const IPCMMSGRESULT *PCIPCMMSGRESULT;
 
-    PRInt32 Status() const { return (PRInt32) Third(); }
-};
-
-class ipcmMessageClientID : public ipcMessage_DWORD_DWORD_DWORD
+typedef struct IPCMMSGCLIENTID
 {
-public:
-    ipcmMessageClientID(PRUint32 requestIndex, PRUint32 clientID)
-        : ipcMessage_DWORD_DWORD_DWORD(
-            IPCM_TARGET,
-            IPCM_MSG_ACK_CLIENT_ID,
-            requestIndex,
-            clientID) {}
+    IPCMMSGHDR          Hdr;
+    uint32_t            u32ClientId;
+} IPCMMSGCLIENTID;
+AssertCompileSize(IPCMMSGCLIENTID, 3 * sizeof(uint32_t));
+typedef IPCMMSGCLIENTID *PIPCMMSGCLIENTID;
+typedef const IPCMMSGCLIENTID *PCIPCMMSGCLIENTID;
 
-    PRUint32 ClientID() const { return Third(); }
-};
 
 // PUSH MESSAGES
 
-class ipcmMessageClientState : public ipcMessage_DWORD_DWORD_DWORD_DWORD
+typedef struct IPCMMSGCLIENTSTATE
 {
-public:
-    ipcmMessageClientState(PRUint32 clientID, PRUint32 clientStatus)
-        : ipcMessage_DWORD_DWORD_DWORD_DWORD(
-            IPCM_TARGET,
-            IPCM_MSG_PSH_CLIENT_STATE,
-            0,
-            clientID,
-            clientStatus) {}
+    IPCMMSGHDR          Hdr;
+    uint32_t            u32ClientId;
+    uint32_t            u32ClientStatus;
+} IPCMMSGCLIENTSTATE;
+AssertCompileSize(IPCMMSGCLIENTSTATE, 4 * sizeof(uint32_t));
+typedef IPCMMSGCLIENTSTATE *PIPCMMSGCLIENTSTATE;
+typedef const IPCMMSGCLIENTSTATE *PCIPCMMSGCLIENTSTATE;
 
-    PRUint32 ClientID() const { return Third(); }
-    PRUint32 ClientState() const { return Fourth(); }
-};
+/**
+ * Helper structure for stack based messages.
+ */
+typedef struct IPCMMSGSTACK
+{
+    IPCMSGHDR                       Hdr;
+    union
+    {
+        IPCMMSGHDR                  Hdr;
+        IPCMMSGPING                 Ping;
+        IPCMMSGCLIENTHELLO          ClientHello;
+        IPCMMSGCLIENTADDDELTARGET   AddDelTarget;
+        IPCMMSGRESULT               Result;
+        IPCMMSGCLIENTID             ClientId;
+        IPCMMSGCLIENTSTATE          ClientState;
+    } Ipcm;
+} IPCMMSGSTACK;
 
 #endif // !ipcm_h__

@@ -290,14 +290,6 @@ IPC_METHOD IPC_ResolveClientName(
   PRUint32   *aClientID
 );
 
-/**
- * Tests whether the client is connected to the IPC daemon.
- */
-IPC_METHOD IPC_ClientExists(
-  PRUint32  aClientID,
-  PRBool   *aResult
-);
-
 /*****************************************************************************/
 
 /**
