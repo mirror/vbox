@@ -1737,10 +1737,8 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionHandleMountPointsEnumCallback(const 
     AssertReturn(cch < RTPATH_MAX, VERR_INVALID_PARAMETER); /* Paranoia. */
     if (cch > pCtx->cbAlloc - pCtx->cb - 1 /* Ending terminator */)
     {
-        char *pszNew;
-        int rc2 = RTStrRealloc(&pszNew, pCtx->cbAlloc + RT_MAX(_4K, cch));
+        int rc2 = RTStrRealloc(&pCtx->psz, pCtx->cbAlloc + RT_MAX(_4K, cch));
         AssertRCReturn(rc2, rc2);
-        pCtx->psz = pszNew;
     }
 
     memcpy(&pCtx->psz[pCtx->cb], pszMountpoint, cch);
