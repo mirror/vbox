@@ -2520,8 +2520,9 @@ ifdef VBOX_WITH_PARFAIT
  endif
 	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
+	 $(VBOX_PARFAIT_OPTS) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),) \
-	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
+	 -j $(if-expr $(KMK_OPTS_JOBS) > 0, $(KMK_OPTS_JOBS), 1) \
 	 -o $(PATH_OUT)/report.txt \
 	 -g $(PATH_OUT)/html \
 	 -c $(PATH_ROOT)/tools/parfait-vbox.conf \
@@ -2529,20 +2530,6 @@ ifdef VBOX_WITH_PARFAIT
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
 	 $(PATH_OUT)/obj
- ifdef VBOX_PARFAIT_SERVER_2
-	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
-	 $(if-expr defined(VBOX_PARFAIT_SERVER_2),-s $(VBOX_PARFAIT_SERVER_2),) \
-	 $(VBOX_PARFAIT_OPTS_2) \
-	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE_2),-b $(VBOX_PARFAIT_SERVER_BASELINE_2),) \
-	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
-	 -o $(PATH_OUT)/report_2.txt \
-	 -g $(PATH_OUT)/html_2 \
-	 -c $(PATH_ROOT)/tools/parfait-vbox.conf \
-	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
-	 -z $(PATH_ROOT) \
-	 -r $(VBOX_SVN_REV) \
-	 $(PATH_OUT)/obj
- endif
 else
 	$(ECHO) This target requires VBOX_WITH_PARFAIT to be set.
 	exit 1
