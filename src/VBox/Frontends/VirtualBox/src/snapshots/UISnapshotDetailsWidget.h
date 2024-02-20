@@ -210,9 +210,6 @@ private:
     /** Prepares emhasized report for a given @a strValue, depending on @a fDo flag. */
     static QString empReport(const QString &strValue, bool fIgnore);
 
-    /** Summarizes generic properties. */
-    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
-
     /** Holds the machine object to load data from. */
     CMachine   m_comMachine;
     /** Holds the snapshot object to load data from. */

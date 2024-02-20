@@ -391,9 +391,6 @@ private:
     /** Contains update task body. */
     void run();
 
-    /** Summarizes generic properties. */
-    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
-
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_fOptions;
 };
