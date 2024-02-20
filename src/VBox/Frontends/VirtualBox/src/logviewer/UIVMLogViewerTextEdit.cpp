@@ -82,7 +82,7 @@ class UILogScrollLabel : public QLabel
 public:
 
     UILogScrollLabel(QWidget *pParent);
-    void setOpacity(float fOpacity);
+    void setOpacity(qreal fOpacity);
 
 protected:
 
@@ -90,7 +90,7 @@ protected:
 
 private:
 
-    float m_fOpacity;
+    qreal m_fOpacity;
 };
 
 
@@ -130,7 +130,7 @@ UILogScrollLabel::UILogScrollLabel(QWidget *pParent)
 {
 }
 
-void UILogScrollLabel::setOpacity(float fOpacity)
+void UILogScrollLabel::setOpacity(qreal fOpacity)
 {
     if (m_fOpacity == fOpacity)
         return;
