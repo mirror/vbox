@@ -1392,10 +1392,13 @@ IPC_SpawnDaemon(const char *path)
           vrc = RTPipeClose(hPipeWr); AssertRC(vrc); RT_NOREF(vrc);
           hPipeWr = NIL_RTPIPE;
 
-          uint8_t ch;
-          vrc = RTPipeReadBlocking(hPipeRd, &ch, sizeof(ch), NULL /*pcbRead*/);
+          size_t cbRead = 0;
+          char msg[10];
+          memset(msg, '\0', sizeof(msg));
+          vrc = RTPipeReadBlocking(hPipeRd, &msg[0], sizeof(msg) - 1, &cbRead);
           if (   RT_SUCCESS(vrc)
-              && ch == IPC_STARTUP_PIPE_MAGIC)
+              && cbRead == 5
+              && !strcmp(msg, "READY"))
           {
             RTPipeClose(hPipeRd);
             return NS_OK;

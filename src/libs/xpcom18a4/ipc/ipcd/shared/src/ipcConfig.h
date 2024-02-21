@@ -60,9 +60,4 @@
 
 NS_HIDDEN_(void) IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen);
 
-// common shared configuration values
-
-#define IPC_STARTUP_PIPE_NAME   "ipc:startup-pipe"
-#define IPC_STARTUP_PIPE_MAGIC  0x1C
-
 #endif // !ipcProto_h__
