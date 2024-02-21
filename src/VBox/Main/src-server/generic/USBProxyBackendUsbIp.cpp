@@ -492,7 +492,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
      * service about changes.
      */
     while (   !fDeviceListChangedOrWokenUp
-           && (aMillies == RT_INDEFINITE_WAIT || aMillies > 0)
+           && aMillies > 0
            && RT_SUCCESS(vrc))
     {
         RTMSINTERVAL msWait = aMillies;
