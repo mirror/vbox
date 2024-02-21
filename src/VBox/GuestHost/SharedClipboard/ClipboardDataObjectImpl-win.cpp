@@ -842,7 +842,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("Shared Clipboard: Waiting for IDataObject status status failed, rc=%Rrc\n", rc));
+                    LogRel(("Shared Clipboard: Waiting for IDataObject status failed, rc=%Rrc\n", rc));
                     break;
                 }
 
