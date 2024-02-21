@@ -66,6 +66,16 @@ from common     import utils;
 
 # pylint: disable=unnecessary-semicolon
 
+class tdDebugSettings(object):
+    """
+    Contains local test debug settings.
+    """
+    def __init__(self, sVkatExeHst = None):
+        # Absolute path of VKAT on the host side which gets uploaded from the host.
+        self.sVkatExeHst = sVkatExeHst;
+        # Absolute path of VKAT on the guest side (which got uploaded from the host).
+        self.sVkatExeGst = None;
+
 class tdAudioTest(vbox.TestDriver):
     """
     Runs various audio tests.
@@ -95,6 +105,7 @@ class tdAudioTest(vbox.TestDriver):
             'guest_tone_playback', 'guest_tone_recording'
         ];
         self.asTests          = self.asTestsDef;
+        self.oDebug           = tdDebugSettings();
 
         # Optional arguments passing to VKAT when doing the actual audio tests.
         self.asVkatTestArgs   = [];
@@ -133,6 +144,7 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
         reporter.log('  --audio-controller-type <HDA|AC97|SB16>');
         reporter.log('      Default: recommended controller');
+        reporter.log('  --audio-debug-img <path/to/vkat>');
         reporter.log('  --audio-test-count <number>');
         reporter.log('      Default: 0 (means random)');
         reporter.log('  --audio-test-timeout <ms>');
@@ -177,6 +189,11 @@ class tdAudioTest(vbox.TestDriver):
                 self.sAudioControllerType = asArgs[iArg];
             else:
                 raise base.InvalidOption('The "--audio-controller-type" value "%s" is not valid' % (asArgs[iArg]));
+        elif asArgs[iArg] == '--audio-debug-img':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            self.oDebug.sVkatExeHst = asArgs[iArg];
         elif    asArgs[iArg] == '--audio-test-count' \
              or asArgs[iArg] == '--audio-test-tone-duration' \
              or asArgs[iArg] == '--audio-test-timeout':
@@ -208,6 +225,32 @@ class tdAudioTest(vbox.TestDriver):
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
+
+    def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
+        """
+        Prepares a guest for (manual) debugging.
+
+        This involves copying over and invoking a the locally built VKAT binary.
+        """
+
+        if self.oDebug.sVkatExeHst is None: # If no debugging enabled, bail out.
+            reporter.log('Skipping debugging');
+            return True;
+
+        self.oDebug.sVkatExeGst = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'vkat${EXESUFF}');
+
+        reporter.log('Preparing for debugging ...');
+
+        try:
+            reporter.log('Uploading "%s" to "%s" ...' % (self.oDebug.sVkatExeHst, self.oDebug.sVkatExeGst));
+            oTxsSession.syncUploadFile(self.oDebug.sVkatExeHst, self.oDebug.sVkatExeGst);
+
+            if oTestVm.isLinux():
+                oTxsSession.syncChMod(self.oDebug.sVkatExeGst, 0o755);
+        except:
+            return reporter.errorXcpt('Unable to prepare for debugging');
+
+        return True;
 
     def actionVerify(self):
         """
@@ -524,7 +567,11 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Guest audio test output path is \"%s\"' % (sPathAudioTemp));
         reporter.log('Guest audio test tag is \"%s\"' % (sTag));
 
-        fRc, sVkatExe = self.locateGstBinary(oSession, oTxsSession, self.asGstVkatPaths);
+        if self.oDebug.sVkatExeGst is None:
+            fRc, sVkatExe = self.locateGstBinary(oSession, oTxsSession, self.asGstVkatPaths);
+        else:
+            sVkatExe = self.oDebug.sVkatExeGst;
+            fRc      = True;
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
@@ -824,10 +871,13 @@ class tdAudioTest(vbox.TestDriver):
                                                                   sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
         reporter.testDone();
 
-        reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
-        time.sleep(5);
+        if oSession is not None:
 
-        if  oSession is not None:
+            self.prepareGuestForDebugging(oSession, oTxsSession, oTestVm);
+
+            reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
+            time.sleep(5);
+
             self.addTask(oTxsSession);
 
             fRc = self.doTest(oTestVm, oSession, oTxsSession);
