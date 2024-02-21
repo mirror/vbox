@@ -135,6 +135,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('      Default: recommended controller');
         reporter.log('  --audio-test-count <number>');
         reporter.log('      Default: 0 (means random)');
+        reporter.log('  --audio-test-timeout <ms>');
+        reporter.log('      Default: 5 minutes (300000)');
         reporter.log('  --audio-test-tone-duration <ms>');
         reporter.log('      Default: 0 (means random)');
         reporter.log('  --audio-verify-max-diff-count <number>');
@@ -176,15 +178,22 @@ class tdAudioTest(vbox.TestDriver):
             else:
                 raise base.InvalidOption('The "--audio-controller-type" value "%s" is not valid' % (asArgs[iArg]));
         elif    asArgs[iArg] == '--audio-test-count' \
-             or asArgs[iArg] == '--audio-test-tone-duration':
+             or asArgs[iArg] == '--audio-test-tone-duration' \
+             or asArgs[iArg] == '--audio-test-timeout':
+            fHandleOption = True;
+            if  asArgs[iArg] == '--audio-test-timeout' \
+            and (self.fpApiVer < 7.1 or self.uRevision < 161834):
+                fHandleOption = False; # Older VKAT builds don't know about this option.
             # Strip the "--audio-test-" prefix and keep the options as defined in VKAT,
             # e.g. "--audio-test-count" -> "--count". That way we don't
             # need to do any special argument translation and whatnot.
-            self.asVkatTestArgs.extend(['--' + asArgs[iArg][len('--audio-test-'):]]);
+            if fHandleOption:
+                self.asVkatTestArgs.extend(['--' + asArgs[iArg][len('--audio-test-'):]]);
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            self.asVkatTestArgs.extend([asArgs[iArg]]);
+            if fHandleOption:
+                self.asVkatTestArgs.extend([asArgs[iArg]]);
         elif    asArgs[iArg] == '--audio-verify-max-diff-count' \
              or asArgs[iArg] == '--audio-verify-max-diff-percent' \
              or asArgs[iArg] == '--audio-verify-max-size-percent':
