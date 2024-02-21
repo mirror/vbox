@@ -1300,6 +1300,16 @@ typedef INTNETIFABORTWAITREQ *PINTNETIFABORTWAITREQ;
 
 INTNETR0DECL(int) IntNetR0IfAbortWaitReq(PSUPDRVSESSION pSession, PINTNETIFABORTWAITREQ pReq);
 
+/**
+ * Callback function for use with IntNetR3Open to signalling incoming data.
+ *
+ * @param   hIf     Interface handle.
+ * @param   pvUser  User parameter.
+ */
+typedef DECLCALLBACKTYPE(void, FNINTNETIFRECVAVAIL,(INTNETIFHANDLE hIf, void *pvUser));
+/** Pointer to a FNINTNETIFRECVAVAIL callback. */
+typedef FNINTNETIFRECVAVAIL *PFNINTNETIFRECVAVAIL;
+
 
 #if defined(IN_RING0) || defined(IN_INTNET_TESTCASE)
 /** @name
@@ -1310,7 +1320,8 @@ INTNETR0DECL(int)      IntNetR0Init(void);
 INTNETR0DECL(void)     IntNetR0Term(void);
 INTNETR0DECL(int)      IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
                                     INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
-                                    uint32_t cbSend, uint32_t cbRecv, PINTNETIFHANDLE phIf);
+                                    uint32_t cbSend, uint32_t cbRecv, PFNINTNETIFRECVAVAIL pfnRecvAvail, void *pvUser,
+                                    PINTNETIFHANDLE phIf);
 INTNETR0DECL(uint32_t) IntNetR0GetNetworkCount(void);
 
 INTNETR0DECL(int)       IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
@@ -1321,20 +1332,10 @@ INTNETR0DECL(int)       IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSI
 INTNETR0DECL(int)       IntNetR0IfSetActive(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
 INTNETR0DECL(int)       IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
 INTNETR0DECL(int)       IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
-INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
+INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fNoMoreWaits);
 
 /** @} */
 #endif /* IN_RING0 */
-
-/**
- * Callback function for use with IntNetR3Open to signalling incoming data.
- *
- * @param   hIf     Interface handle.
- * @param   pvUser  User parameter.
- */
-typedef DECLCALLBACKTYPE(void, FNINTNETIFRECVAVAIL,(INTNETIFHANDLE hIf, void *pvUser));
-/** Pointer to a FNINTNETIFRECVAVAIL callback. */
-typedef FNINTNETIFRECVAVAIL *PFNINTNETIFRECVAVAIL;
 
 #if defined(VBOX_WITH_INTNET_SERVICE_IN_R3) && defined(IN_RING3)
 INTNETR3DECL(int)       IntNetR3Open(PSUPDRVSESSION pSession, const char *pszNetwork,
