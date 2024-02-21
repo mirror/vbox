@@ -3761,7 +3761,6 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  #    -wd5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
- #    -wd5039: 'RTStrSpaceDestroy': pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
  #    -wd4464: relative include path contains '..'  (iprt/nocrt/compiler.msc.h)
  #    -wd4623: 'VM': default constructor was implicitly defined as deleted
  #    -wd4625: 'SUPDRVTRACERDATA': copy constructor was implicitly defined as deleted
@@ -3779,6 +3778,10 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142"  # With v16.11.9, not with v16.6.0 4242
  #    -wd4242: asn1-ut-string.cpp(729): warning C4242: 'argument': conversion from 'uint32_t' to 'uint16_t', possibl loss of data
  #    -wd4244: asn1-ut-objid.cpp(124): warning C4244: '=': conversion from 'uint32_t' to 'uint8_t', possible loss of data
  VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+ if1of (RT_RELAXED_CALLBACKS_TYPES,$(DEFS))
+  #   -wd5039: asn1-ut-core.cpp(212): warning C5039: 'RTAsn1EncodeWriteHeader': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
+  VBOX_VCC_WARN_ALL += -wd5039
+ endif
 endif
 #    -wd4548: socket.cpp(1931): warning C4548: expression before comma has no effect; expected expression with side-effect
 VBOX_VCC_WARN_ALL += -wd4548
