@@ -376,6 +376,7 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
             {
                 AssertMsgFailed(("The buffer contains no commands while cInputLines=%d!\n", pDbgc->cInputLines));
                 pDbgc->cInputLines = 0;
+                pDbgc->iRead = pDbgc->iWrite;
                 return 0;
             }
 
