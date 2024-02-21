@@ -1429,7 +1429,7 @@ endif
 # package already fetched using:
 #     kmk VBOX_WITH_PARFAIT=1 -C tools fetch
 #
-if1of ($(KBUILD_TYPE),parfait parfait-dbg)
+if1of ($(KBUILD_TYPE), parfait parfait-dbg)
  VBOX_WITH_PARFAIT := 1
  VBOX_WITHOUT_PRECOMPILED_HEADERS := 1 # @todo Remove when working everywhere
 endif
