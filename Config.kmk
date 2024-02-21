@@ -81,7 +81,7 @@ BLD_TYPE_parfait_EXTENDS_BY = appending
 # Same as debug builds, except that the result is prepared for static code
 # analysis by parfait.
 KBUILD_BLD_TYPES += parfait-dbg
-BLD_TYPE_parfait-dbg_EXTENDS = release
+BLD_TYPE_parfait-dbg_EXTENDS = debug
 BLD_TYPE_parfait-dbg_EXTENDS_BY = appending
 
 # Temporary hack for kBuild ticket #83.
