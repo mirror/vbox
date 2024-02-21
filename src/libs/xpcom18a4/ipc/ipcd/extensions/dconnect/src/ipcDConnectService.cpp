@@ -63,20 +63,12 @@
 # include <VBox/log.h>
 #endif /* VBOX */
 
-#if defined(DCONNECT_MULTITHREADED)
-
-#if !defined(DCONNECT_WITH_IPRT_REQ_POOL)
-#include "nsIRunnable.h"
-#endif
-
 #if defined(DEBUG) && !defined(DCONNECT_STATS)
 #define DCONNECT_STATS
 #endif
 
 #if defined(DCONNECT_STATS)
 #include <stdio.h>
-#endif
-
 #endif
 
 // XXX TODO:
@@ -2880,157 +2872,12 @@ SetupPeerInstance(PRUint32 aPeerID, DConnectSetup *aMsg, PRUint32 aMsgLen,
 
 //-----------------------------------------------------------------------------
 
-#if defined(DCONNECT_MULTITHREADED)  && !defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
-class DConnectWorker : public nsIRunnable
-{
-public:
-  // no reference counting
-  NS_IMETHOD_(nsrefcnt) AddRef() { return 1; }
-  NS_IMETHOD_(nsrefcnt) Release() { return 1; }
-  NS_IMETHOD QueryInterface(const nsIID &aIID, void **aInstancePtr);
-
-  NS_DECL_NSIRUNNABLE
-
-  DConnectWorker(ipcDConnectService *aDConnect) : mDConnect (aDConnect), mIsRunnable (PR_FALSE) {}
-  NS_HIDDEN_(nsresult) Init();
-  NS_HIDDEN_(void) Join()
-  {
-    int rcThread;
-    int vrc = RTThreadWait(mThread, RT_INDEFINITE_WAIT, &rcThread);
-    AssertRC(vrc); RT_NOREF(vrc);
-    AssertRC(rcThread);
-  };
-  NS_HIDDEN_(bool) IsRunning() { return mIsRunnable; };
-
-private:
-
-  static DECLCALLBACK(int) dconnectWorkerRun(RTTHREAD hSelf, void *pvUser);
-
-  RTTHREAD           mThread;
-  ipcDConnectService *mDConnect;
-
-  // Indicate if thread might be quickly joined on shutdown.
-  volatile bool mIsRunnable;
-};
-
-NS_IMPL_QUERY_INTERFACE1(DConnectWorker, nsIRunnable)
-
-/*static*/
-DECLCALLBACK(int) DConnectWorker::dconnectWorkerRun(RTTHREAD hSelf, void *pvUser)
-{
-  DConnectWorker *pThis = (DConnectWorker *)pvUser;
-  pThis->Run();
-  return VINF_SUCCESS;
-}
-
-
-nsresult
-DConnectWorker::Init()
-{
-  int vrc = RTThreadCreate(&mThread, dconnectWorkerRun, this, 0 /*cbStack*/,
-                           RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "DConWrk");
-  if (RT_FAILURE(vrc))
-    return NS_ERROR_FAILURE;
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-DConnectWorker::Run()
-{
-  Log(("DConnect Worker thread started.\n"));
-
-  mIsRunnable = PR_TRUE;
-
-  nsAutoMonitor mon(mDConnect->mPendingMon);
-
-  while (!mDConnect->mDisconnected)
-  {
-    DConnectRequest *request = mDConnect->mPendingQ.First();
-    if (!request)
-    {
-      mDConnect->mWaitingWorkers++;
-      {
-        // Note: we attempt to enter mWaitingWorkersMon from under mPendingMon
-        // here, but it should be safe because it's the only place where it
-        // happens. We could exit mPendingMon first, but we need to wait on it
-        // shorltly afterwards, which in turn will require us to enter it again
-        // just to exit immediately and start waiting. This seems to me a bit
-        // stupid (exit->enter->exit->wait).
-        nsAutoMonitor workersMon(mDConnect->mWaitingWorkersMon);
-        workersMon.NotifyAll();
-      }
-
-      nsresult rv = mon.Wait();
-      mDConnect->mWaitingWorkers--;
-
-      if (NS_FAILED(rv))
-        break;
-    }
-    else
-    {
-      Log(("DConnect Worker thread got request.\n"));
-
-      // remove the request from the queue
-      mDConnect->mPendingQ.RemoveFirst();
-
-      PRBool pendingQEmpty = mDConnect->mPendingQ.IsEmpty();
-      mon.Exit();
-
-      if (pendingQEmpty)
-      {
-        nsAutoMonitor workersMon(mDConnect->mWaitingWorkersMon);
-        workersMon.NotifyAll();
-      }
-
-      // request is processed outside the queue monitor
-      mDConnect->OnIncomingRequest(request->peer, request->op, request->opLen);
-      delete request;
-
-      mon.Enter();
-    }
-  }
-
-  mIsRunnable = PR_FALSE;
-
-  Log(("DConnect Worker thread stopped.\n"));
-  return NS_OK;
-}
-
-// called only on DConnect message thread
-nsresult
-ipcDConnectService::CreateWorker()
-{
-  DConnectWorker *worker = new DConnectWorker(this);
-  if (!worker)
-    return NS_ERROR_OUT_OF_MEMORY;
-  nsresult rv = worker->Init();
-  if (NS_SUCCEEDED(rv))
-  {
-    nsAutoLock lock(mLock);
-    /* tracking an illegal join in Shutdown. */
-    NS_ASSERTION(!mDisconnected, "CreateWorker racing Shutdown");
-    if (!mWorkers.AppendElement(worker))
-      rv = NS_ERROR_OUT_OF_MEMORY;
-  }
-  if (NS_FAILED(rv))
-    delete worker;
-  return rv;
-}
-
-#endif // defined(DCONNECT_MULTITHREADED) && !defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
-//-----------------------------------------------------------------------------
-
 ipcDConnectService::ipcDConnectService()
  : mLock(NIL_RTSEMFASTMUTEX)
  , mStubLock(NIL_RTSEMFASTMUTEX)
  , mDisconnected(PR_TRUE)
  , mStubQILock(NIL_RTSEMFASTMUTEX)
-#if defined(DCONNECT_WITH_IPRT_REQ_POOL)
  , mhReqPool(NIL_RTREQPOOL)
-#endif
 {
 }
 
@@ -3067,10 +2914,8 @@ ipcDConnectService::~ipcDConnectService()
   if (mLock != NIL_RTSEMFASTMUTEX)
     RTSemFastMutexDestroy(mLock);
 
-#if defined(DCONNECT_WITH_IPRT_REQ_POOL)
   RTReqPoolRelease(mhReqPool);
   mhReqPool = NIL_RTREQPOOL;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3114,8 +2959,6 @@ ipcDConnectService::Init()
   if (RT_FAILURE(vrc))
     return NS_ERROR_OUT_OF_MEMORY;
 
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
   vrc = RTReqPoolCreate(1024 /*cMaxThreads*/, 10*RT_MS_1SEC /*cMsMinIdle*/,
                         8 /*cThreadsPushBackThreshold */, RT_MS_1SEC /* cMsMaxPushBack */,
                         "DCon", &mhReqPool);
@@ -3126,39 +2969,6 @@ ipcDConnectService::Init()
   }
 
   mDisconnected = PR_FALSE;
-
-# else
-
-  mPendingMon = nsAutoMonitor::NewMonitor("DConnect pendingQ monitor");
-  if (!mPendingMon)
-    return NS_ERROR_OUT_OF_MEMORY;
-
-  mWaitingWorkers = 0;
-
-  mWaitingWorkersMon = nsAutoMonitor::NewMonitor("DConnect waiting workers monitor");
-  if (!mWaitingWorkersMon)
-    return NS_ERROR_OUT_OF_MEMORY;
-
-  /* The DConnectWorker::Run method checks the ipcDConnectService::mDisconnected.
-   * So mDisconnect must be set here to avoid an immediate exit of the worker thread.
-   */
-  mDisconnected = PR_FALSE;
-
-  // create a single worker thread
-  rv = CreateWorker();
-  if (NS_FAILED(rv))
-  {
-    mDisconnected = PR_TRUE;
-    return rv;
-  }
-
-# endif
-#else
-
-  mDisconnected = PR_FALSE;
-
-#endif
-
   mInstance = this;
 
   Log(("ipcDConnectService::Init NS_OK.\n"));
@@ -3175,10 +2985,7 @@ ipcDConnectService::Shutdown()
     mDisconnected = PR_TRUE;
   }
 
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
-#  if defined(DCONNECT_STATS)
+#if defined(DCONNECT_STATS)
   fprintf(stderr, "ipcDConnectService Stats\n");
   fprintf(stderr,
           " => number of worker threads:  %llu (created %llu)\n"
@@ -3191,73 +2998,10 @@ ipcDConnectService::Shutdown()
           RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_NS_AVERAGE_REQ_PROCESSING),
           RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_NS_AVERAGE_REQ_QUEUED)
           );
-#  endif
+#endif
 
   RTReqPoolRelease(mhReqPool);
   mhReqPool = NIL_RTREQPOOL;
-
-# else
-
-  {
-    // remove all pending messages and wake up all workers.
-    // mDisconnected is true here and they will terminate execution after
-    // processing the last request.
-    nsAutoMonitor mon(mPendingMon);
-    mPendingQ.DeleteAll();
-    mon.NotifyAll();
-  }
-
-#if defined(DCONNECT_STATS)
-  fprintf(stderr, "ipcDConnectService Stats\n");
-  fprintf(stderr, " => number of worker threads: %d\n", mWorkers.Count());
-  Log(("ipcDConnectService Stats\n"));
-  Log((" => number of worker threads: %d\n", mWorkers.Count()));
-#endif
-
-
-  // Iterate over currently running worker threads
-  // during VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS, join() those who
-  // exited a working loop and abandon ones which have not
-  // managed to do that when timeout occurred.
-  Log(("Worker threads: %d\n", mWorkers.Count()));
-  uint64_t tsStart = RTTimeMilliTS();
-  while ((tsStart + VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS ) > RTTimeMilliTS() && mWorkers.Count() > 0)
-  {
-    // Some array elements might be deleted while iterating. Going from the last
-    // to the first array element (intentionally) in order to do not conflict with
-    // array indexing once element is deleted.
-    for (int i = mWorkers.Count() - 1; i >= 0; i--)
-    {
-      DConnectWorker *worker = NS_STATIC_CAST(DConnectWorker *, mWorkers[i]);
-      if (worker->IsRunning() == PR_FALSE)
-      {
-        Log(("Worker %p joined.\n", worker));
-        worker->Join();
-        delete worker;
-        mWorkers.RemoveElementAt(i);
-      }
-    }
-
-    /* Double-ckeck if we already allowed to quit. */
-    if ((tsStart + VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS ) < RTTimeMilliTS() || mWorkers.Count() == 0)
-        break;
-
-    // Relax a bit before the next round.
-    RTThreadSleep(10);
-  }
-
-  Log(("There are %d thread(s) left.\n", mWorkers.Count()));
-
-  // If there are some running threads left, terminate the process.
-  if (mWorkers.Count() > 0)
-    exit(1);
-
-
-  nsAutoMonitor::DestroyMonitor(mWaitingWorkersMon);
-  nsAutoMonitor::DestroyMonitor(mPendingMon);
-
-# endif
-#endif
 
   // make sure we have released all instances
   mInstances.EnumerateRead(EnumerateInstanceMapAndDelete, nsnull);
@@ -3528,9 +3272,6 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
         "senderID=%d, opcode_major=%d, index=%d\n",
         aSenderID, op->opcode_major, op->request_index));
 
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
   void *pvDataDup = RTMemDup(aData, aDataLen);
   if (RT_UNLIKELY(!pvDataDup))
     return NS_ERROR_OUT_OF_MEMORY;
@@ -3538,44 +3279,6 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
                                    this, aSenderID, pvDataDup, aDataLen);
   if (RT_FAILURE(rc))
     return NS_ERROR_FAILURE;
-
-# else
-
-  nsAutoMonitor mon(mPendingMon);
-  mPendingQ.Append(new DConnectRequest(aSenderID, op, aDataLen));
-  // notify a worker
-  mon.Notify();
-  mon.Exit();
-
-  // Yield the cpu so a worker can get a chance to start working without too much fuss.
-  RTThreadYield();
-  mon.Enter();
-  // examine the queue
-  if (mPendingQ.Count() > mWaitingWorkers)
-  {
-    // wait a little while to let the workers empty the queue.
-    mon.Exit();
-    {
-      nsAutoMonitor workersMon(mWaitingWorkersMon);
-      workersMon.Wait(PR_MIN(mWorkers.Count() / 20 + 1, 10));
-    }
-    mon.Enter();
-    // examine the queue again
-    if (mPendingQ.Count() > mWaitingWorkers)
-    {
-      // we need one more worker
-      nsresult rv = CreateWorker();
-      NS_ASSERTION(NS_SUCCEEDED(rv), "failed to create one more worker thread");
-      rv = rv;
-    }
-  }
-
-# endif
-#else
-
-  OnIncomingRequest(aSenderID, op, aDataLen);
-
-#endif
 
   return NS_OK;
 }
@@ -3674,7 +3377,6 @@ ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
 
 //-----------------------------------------------------------------------------
 
-#if defined(DCONNECT_WITH_IPRT_REQ_POOL)
 /**
  * Function called by the request thread pool to process a incoming request in
  * the context of a worker thread.
@@ -3686,7 +3388,6 @@ ipcDConnectService::ProcessMessageOnWorkerThread(ipcDConnectService *aThis, PRUi
     aThis->OnIncomingRequest(aSenderID, (const DConnectOp *)aData, aDataLen);
   RTMemFree(aData);
 }
-#endif
 
 void
 ipcDConnectService::OnIncomingRequest(PRUint32 peer, const DConnectOp *op, PRUint32 opLen)

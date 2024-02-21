@@ -35,15 +35,6 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
-// DConnect service is multithreaded by default...
-#if !defined(DCONNECT_SINGLETHREADED) && !defined(DCONNECT_MULTITHREADED)
-#define DCONNECT_MULTITHREADED
-# ifdef VBOX
-#  define DCONNECT_WITH_IPRT_REQ_POOL
-# endif
-#endif
-
 #include "ipcIDConnectService.h"
 #include "ipcdclient.h"
 
@@ -60,35 +51,7 @@
 #include "xptcall.h"
 #include "xptinfo.h"
 
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
-#  include <iprt/req.h>
-
-# else /* !DCONNECT_WITH_IPRT_REQ_POOL*/
-
-#include "ipcList.h"
-
-struct DConnectOp;
-
-struct DConnectRequest : public ipcListNode<DConnectRequest>
-{
-  DConnectRequest (PRUint32 aPeer, const DConnectOp *aOp, PRUint32 aOpLen)
-    : peer(aPeer)
-    , opLen(aOpLen)
-  {
-    op = (const DConnectOp *) malloc(aOpLen);
-    memcpy ((void *) op, aOp, aOpLen);
-  }
-  ~DConnectRequest() { free((void *) op); }
-
-  const PRUint32 peer;
-  const DConnectOp *op;
-  const PRUint32 opLen;
-};
-
-# endif // !DCONNECT_WITH_IPRT_REQ_POOL
-#endif // DCONNECT_MULTITHREADED
+#include <iprt/req.h>
 
 class nsIException;
 class ipcMessageReader;
@@ -282,13 +245,7 @@ private:
   NS_HIDDEN_(void) OnRelease(PRUint32 peer, const struct DConnectRelease *);
   NS_HIDDEN_(void) OnInvoke(PRUint32 peer, const struct DConnectInvoke *, PRUint32 opLen);
 
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
   static DECLCALLBACK(void) ProcessMessageOnWorkerThread(ipcDConnectService *aThis, PRUint32 aSenderID, void *aData, PRUint32 aDataLen);
-# else
-  NS_HIDDEN_(nsresult) CreateWorker();
-# endif
-#endif
 
 private:
   nsCOMPtr<nsIInterfaceInfoManager> mIIM;
@@ -313,40 +270,12 @@ private:
   // this is true after IPC_Shutdown() has been called
   PRBool mDisconnected;
 
-// member is never initialized or used, no point in wasting memory or making
-// someone believe it contains anything relevant
-#ifndef VBOX
-  // our IPC client ID
-  PRUint32 mSelfID;
-#endif
-
   // global lock to protect access to protect DConnectStub::QueryInterface()
   // (we cannot use mStubLock because it isn't supposed to be held long,
   // like in case of an IPC call and such)
   RTSEMFASTMUTEX mStubQILock;
-
-#if defined(DCONNECT_MULTITHREADED)
-# if defined(DCONNECT_WITH_IPRT_REQ_POOL)
-
   /** Request pool. */
   RTREQPOOL mhReqPool;
-
-# else
-
-  friend class DConnectWorker;
-
-  // pool of worker threads to serve incoming requests
-  nsVoidArray mWorkers;
-  // queue of pending requests
-  ipcList<DConnectRequest> mPendingQ;
-  // monitor to protect mPendingQ
-  PRMonitor *mPendingMon;
-  // number of waiting workers
-  PRUint32 mWaitingWorkers;
-  // monitor used to wait on changes in mWaitingWorkers.
-  PRMonitor *mWaitingWorkersMon;
-# endif
-#endif
 
   // global ipcDConnectService instance for internal usage
   static ipcDConnectService *mInstance;
