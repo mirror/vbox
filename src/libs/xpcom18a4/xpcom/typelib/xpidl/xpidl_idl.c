@@ -468,7 +468,7 @@ input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
             /* Current file is done; revert to including file */
             callback_state->input_stack = data->next;
             free(data->filename);
-            free(data->buf);
+            RTMemFree(data->buf);
             free(data);
             data = callback_state->input_stack;
 
@@ -568,6 +568,7 @@ input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
             free(data);
             data = next;
         }
+        callback_state->input_stack = NULL;
         return 0;
 
       default:
