@@ -33,13 +33,14 @@
 #include "VBoxDbgConsole.h"
 #include "VBoxDbgGui.h"
 
-#include <QLabel>
-#include <QApplication>
-#include <QFont>
-#include <QLineEdit>
-#include <QHBoxLayout>
 #include <QAction>
+#include <QApplication>
 #include <QContextMenuEvent>
+#include <QFont>
+#include <QFontDatabase>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QScrollBar>
 
@@ -73,16 +74,32 @@
 
 VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtualBox *a_pVirtualBox /* = NULL */,
                                            const char *pszName/* = NULL*/)
-    : QTextEdit(pParent), m_uCurLine(0), m_uCurPos(0), m_hGUIThread(RTThreadNativeSelf()), m_pVirtualBox(a_pVirtualBox)
+#ifdef VBOXDBG_WITH_CONSOLE_OUTPUT_AS_QPLAINTEXT
+    : QPlainTextEdit(pParent)
+#else
+    : QTextEdit(pParent)
+#endif
+    , m_uCurLine(0)
+    , m_uCurPos(0)
+    , m_hGUIThread(RTThreadNativeSelf())
+    , m_pVirtualBox(a_pVirtualBox)
 {
     setReadOnly(true);
     setUndoRedoEnabled(false);
     setOverwriteMode(false);
     setPlainText("");
     setTextInteractionFlags(Qt::TextBrowserInteraction);
-    setAutoFormatting(QTextEdit::AutoAll);
     setTabChangesFocus(true);
+#ifndef VBOXDBG_WITH_CONSOLE_OUTPUT_AS_QPLAINTEXT
+    setAutoFormatting(QTextEdit::AutoAll);
     setAcceptRichText(false);
+#endif
+#if 0 /* @bugref{10604}: this doesn't really help with the performance issue. */
+    setWordWrapMode(QTextOption::NoWrap);
+# ifndef VBOXDBG_WITH_CONSOLE_OUTPUT_AS_QPLAINTEXT
+    setLineWrapMode(QPlainTextEdit::NoWrap);
+# endif
+#endif
 
     /*
      * Create actions for color-scheme menu items.
@@ -108,20 +125,24 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtual
     /*
      * Create actions for font menu items.
      */
+    m_pDefaultFontAction = new QAction(tr("Default Fixed Font"), this);
+    m_pDefaultFontAction->setCheckable(true);
+    m_pDefaultFontAction->setData((int)kFontType_SystemDefault);
+    connect(m_pDefaultFontAction, SIGNAL(triggered()), this, SLOT(sltSelectFontType()));
+
     m_pCourierFontAction = new QAction(tr("Courier"), this);
     m_pCourierFontAction->setCheckable(true);
-    m_pCourierFontAction->setShortcut(QString("Ctrl+D"));
     m_pCourierFontAction->setData((int)kFontType_Courier);
     connect(m_pCourierFontAction, SIGNAL(triggered()), this, SLOT(sltSelectFontType()));
 
     m_pMonospaceFontAction = new QAction(tr("Monospace"), this);
     m_pMonospaceFontAction->setCheckable(true);
-    m_pMonospaceFontAction->setShortcut(QString("Ctrl+M"));
     m_pMonospaceFontAction->setData((int)kFontType_Monospace);
     connect(m_pMonospaceFontAction, SIGNAL(triggered()), this, SLOT(sltSelectFontType()));
 
     /* Create action group for grouping of exclusive font menu items. */
     QActionGroup *pActionFontGroup = new QActionGroup(this);
+    pActionFontGroup->addAction(m_pDefaultFontAction);
     pActionFontGroup->addAction(m_pCourierFontAction);
     pActionFontGroup->addAction(m_pMonospaceFontAction);
     pActionFontGroup->setExclusive(true);
@@ -147,22 +168,26 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtual
      * Set the defaults (which syncs with the menu item checked state).
      */
     /* color scheme: */
+    setColorScheme(kGreenOnBlack, false /*fSaveIt*/);
     com::Bstr bstrColor;
     HRESULT hrc = m_pVirtualBox ? m_pVirtualBox->GetExtraData(com::Bstr("DbgConsole/ColorScheme").raw(), bstrColor.asOutParam()) : E_FAIL;
-    if (  SUCCEEDED(hrc)
-        && bstrColor.compareUtf8("blackonwhite", com::Bstr::CaseInsensitive) == 0)
-        setColorScheme(kBlackOnWhite, false /*fSaveIt*/);
-    else
-        setColorScheme(kGreenOnBlack, false /*fSaveIt*/);
+    if (SUCCEEDED(hrc))
+    {
+        if (bstrColor.compareUtf8("blackonwhite", com::Bstr::CaseInsensitive) == 0)
+            setColorScheme(kBlackOnWhite, false /*fSaveIt*/);
+    }
 
     /* font: */
+    setFontType(kFontType_SystemDefault, false /*fSaveIt*/);
     com::Bstr bstrFont;
     hrc = m_pVirtualBox ? m_pVirtualBox->GetExtraData(com::Bstr("DbgConsole/Font").raw(), bstrFont.asOutParam()) : E_FAIL;
-    if (  SUCCEEDED(hrc)
-        && bstrFont.compareUtf8("monospace", com::Bstr::CaseInsensitive) == 0)
-        setFontType(kFontType_Monospace, false /*fSaveIt*/);
-    else
-        setFontType(kFontType_Courier, false /*fSaveIt*/);
+    if (SUCCEEDED(hrc))
+    {
+        if (bstrFont.compareUtf8("monospace", com::Bstr::CaseInsensitive) == 0)
+            setFontType(kFontType_Monospace, false /*fSaveIt*/);
+        else if (bstrFont.compareUtf8("courier", com::Bstr::CaseInsensitive) == 0)
+            setFontType(kFontType_Courier, false /*fSaveIt*/);
+    }
 
     /* font size: */
     com::Bstr bstrFontSize;
@@ -205,6 +230,7 @@ VBoxDbgConsoleOutput::contextMenuEvent(QContextMenuEvent *pEvent)
     pColorMenu->addAction(m_pBlackOnWhiteAction);
 
     QMenu *pFontMenu = pMenu->addMenu(tr("&Font Family"));
+    pFontMenu->addAction(m_pDefaultFontAction);
     pFontMenu->addAction(m_pCourierFontAction);
     pFontMenu->addAction(m_pMonospaceFontAction);
 
@@ -258,20 +284,39 @@ VBoxDbgConsoleOutput::setFontType(VBoxDbgConsoleFontType enmFontType, bool fSave
     const char *pszSetting;
     switch (enmFontType)
     {
+        case kFontType_SystemDefault:
+            Font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+            pszSetting = "Default";
+            pAction = m_pDefaultFontAction;
+            break;
+
         case kFontType_Courier:
+        {
 #ifdef Q_WS_MAC
             Font = QFont("Monaco", Font.pointSize(), QFont::Normal, FALSE);
             Font.setStyleStrategy(QFont::NoAntialias);
 #else
+            Font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
             Font.setStyleHint(QFont::TypeWriter);
-            Font.setFamily("Courier [Monotype]");
+            Font.setStyleStrategy(QFont::PreferAntialias);
+            QStringList Families;
+# ifdef Q_WS_MAC
+            Families << "Monaco";
+# endif
+            /*Families << "Courier New [Monotype]"; - this causes peformance trouble (@bugref{10604}) */
+            Families << "Courier New";
+            /*Families << "Courier [Monotype]"; - this causes peformance trouble (@bugref{10604}) */
+            Families << "Courier";
+            Font.setFamilies(Families);
 #endif
             pszSetting = "Courier";
             pAction = m_pCourierFontAction;
             break;
+        }
 
         case kFontType_Monospace:
-            Font.setStyleHint(QFont::TypeWriter);
+            Font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+            Font.setStyleHint(QFont::Monospace);
             Font.setStyleStrategy(QFont::PreferAntialias);
             Font.setFamily("Monospace [Monotype]");
             pszSetting = "Monospace";
