@@ -551,7 +551,17 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                              idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
         }
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing %RU32 bytes total\n", idxTest, cbToWriteTotal);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing %RU32 bytes total (%RU32ms timeout)\n",
+                     idxTest, cbToWriteTotal, pTstEnv->msTimeout);
+
+        /* Failsafe if invalid timeout is set. */
+        if (   pTstEnv->msTimeout == 0
+            || pTstEnv->msTimeout == UINT32_MAX)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Warning! Invalid timeout set (%RU32ms), setting default\n",
+                         pTstEnv->msTimeout);
+            pTstEnv->msTimeout = AUDIOTEST_TIMEOUT_DEFAULT_MS;
+        }
 
         AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
         AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
@@ -843,7 +853,17 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         uint32_t cbTestToRec = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
         uint32_t cbTestRec   = 0;
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording %RU32 bytes total\n", idxTest, cbTestToRec);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording %RU32 bytes total (%RU32ms timeout)\n",
+                     idxTest, cbTestToRec, pTstEnv->msTimeout);
+
+        /* Failsafe if invalid timeout is set. */
+        if (   pTstEnv->msTimeout == 0
+            || pTstEnv->msTimeout == UINT32_MAX)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Warning! Invalid timeout set (%RU32ms), setting default\n",
+                         pTstEnv->msTimeout);
+            pTstEnv->msTimeout = AUDIOTEST_TIMEOUT_DEFAULT_MS;
+        }
 
         /* We expect a pre + post beacon before + after the actual test tone.
          * We always start with the pre beacon. */
@@ -1473,7 +1493,7 @@ void audioTestEnvInit(PAUDIOTESTENV pTstEnv)
 {
     RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
 
-    pTstEnv->msTimeout = RT_MS_5MIN; /* Timeout defaults to 5 minutes. */
+    pTstEnv->msTimeout = AUDIOTEST_TIMEOUT_DEFAULT_MS;
 
     audioTestIoOptsInitDefaults(&pTstEnv->IoOpts);
     audioTestToneParmsInit(&pTstEnv->ToneParms);
@@ -1498,31 +1518,26 @@ int audioTestEnvCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
      * Set sane defaults if not already set.
      */
     if (!RTStrNLen(pTstEnv->szTag, sizeof(pTstEnv->szTag)))
-    {
         rc = AudioTestGenTag(pTstEnv->szTag, sizeof(pTstEnv->szTag));
-        AssertRCReturn(rc, rc);
-    }
 
     if (!RTStrNLen(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp)))
     {
-        rc = AudioTestPathGetTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp));
-        AssertRCReturn(rc, rc);
+        int rc2 = AudioTestPathGetTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp));
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     if (!RTStrNLen(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut)))
     {
-        rc = RTPathJoin(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), pTstEnv->szPathTemp, "vkat-temp");
-        AssertRCReturn(rc, rc);
+        int rc2 = RTPathJoin(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), pTstEnv->szPathTemp, "vkat-temp");
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing environment for mode '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
-
     char szPathTemp[RTPATH_MAX];
-    if (   !strlen(pTstEnv->szPathTemp)
-        || !strlen(pTstEnv->szPathOut))
+    if (   RT_SUCCESS(rc)
+        && (   !strlen(pTstEnv->szPathTemp)
+            || !strlen(pTstEnv->szPathOut)))
         rc = RTPathTemp(szPathTemp, sizeof(szPathTemp));
 
     if (   RT_SUCCESS(rc)
@@ -1547,8 +1562,16 @@ int audioTestEnvCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
             rc = VINF_SUCCESS;
     }
 
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing environment for mode '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
+
     if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "Initializing test directories failed with %Rrc\n", rc);
         return rc;
+    }
 
     /**
      * For NAT'ed VMs we use (default):
