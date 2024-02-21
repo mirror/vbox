@@ -479,11 +479,11 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         fFailed = true;
     }
 
-    if (   getImageLCHSGeometry(pHeader)
-        && (getImageLCHSGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
+    PVDIDISKGEOMETRY pLCHSGeom = getImageLCHSGeometry(pHeader);
+    if (   pLCHSGeom
+        && pLCHSGeom->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
     {
-        LogRel(("VDI: wrong sector size (%d != %d)\n",
-               (getImageLCHSGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
+        LogRel(("VDI: wrong sector size (%d != %d)\n", pLCHSGeom->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
         fFailed = true;
     }
 
@@ -1512,8 +1512,7 @@ static DECLCALLBACK(int) vdiCreate(const char *pszFilename, uint64_t cbSize,
 
     /* Check size. Maximum 4PB-3M. No tricks with adjusting the 1M block size
      * so far, which would extend the size. */
-    if (   !cbSize
-        || cbSize >= _1P * 4 - _1M * 3
+    if (   cbSize >= _1P * 4 - _1M * 3
         || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE
         || (cbSize % 512))
         return VERR_VD_INVALID_SIZE;
@@ -2562,8 +2561,7 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
 
     /* Check size. Maximum 4PB-3M. No tricks with adjusting the 1M block size
      * so far, which would extend the size. */
-    if (   !cbSize
-        || cbSize >= _1P * 4 - _1M * 3
+    if (   cbSize >= _1P * 4 - _1M * 3
         || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE)
         return VERR_VD_INVALID_SIZE;
 
