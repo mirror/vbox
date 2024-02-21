@@ -690,7 +690,8 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                         if (fIsPio)
                             uNew &= UINT32_C(0xffff);
                         /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                        if (!uNew || (uNew <= UINT32_C(0xffffffff) && uNew + u32Size - 1 >= UINT32_C(0xfec00000)))
+                        if (   !uNew
+                            || uNew + u32Size - 1 >= UINT32_C(0xfec00000))
                         {
                             LogRel(("PCI: no space left for BAR%u of device %u/%u/%u (vendor=%#06x device=%#06x)\n",
                                     i, pBus->iBus, pPciDev->uDevFn >> 3, pPciDev->uDevFn & 7, vendor_id, device_id)); /** @todo make this a VM start failure later. */
