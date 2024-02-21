@@ -82,7 +82,7 @@ bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
 #endif
 
     LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool, curAction=0x%x)\n",
-                 strMIMEType.toStdString().c_str(), fRc, QMimeData::hasFormat(strMIMEType), m_curAction));
+                 strMIMEType.toUtf8().constData(), fRc, QMimeData::hasFormat(strMIMEType), m_curAction));
 
     return fRc;
 }
@@ -102,7 +102,7 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
     const QMetaType::Type vaType = (QMetaType::Type)metaType.id();
 
     LogFlowFunc(("state=%RU32, curAction=0x%x, defAction=0x%x, mimeType=%s, type=%d (%s)\n",
-                 m_enmState, m_curAction, m_defAction, strMIMEType.toStdString().c_str(), vaType, metaType.name()));
+                 m_enmState, m_curAction, m_defAction, strMIMEType.toUtf8().constData(), vaType, metaType.name()));
 
     int rc = VINF_SUCCESS;
 
@@ -146,7 +146,7 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
         /* Do we support the requested MIME type? */
         else if (!m_lstFormats.contains(strMIMEType))
         {
-            LogRel(("DnD: Unsupported MIME type '%s'\n", strMIMEType.toStdString().c_str()));
+            LogRel(("DnD: Unsupported MIME type '%s'\n", strMIMEType.toUtf8().constData()));
             rc = VERR_NOT_SUPPORTED;
         }
 #ifndef RT_OS_DARWIN /* On OS X QMetaType::UnknownType can happen for drag and drop "promises" for "lazy requests".  */
@@ -175,7 +175,7 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
         if (RT_SUCCESS(rc))
         {
             LogRel3(("DnD: Returning data for MIME type=%s, variant type=%s, rc=%Rrc\n",
-                     strMIMEType.toStdString().c_str(), metaType.name(), rc));
+                     strMIMEType.toUtf8().constData(), metaType.name(), rc));
 
             return vaData;
         }
