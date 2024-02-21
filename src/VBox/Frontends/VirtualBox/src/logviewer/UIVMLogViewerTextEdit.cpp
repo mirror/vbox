@@ -681,7 +681,7 @@ void UIVMLogViewerTextEdit::setWrapLines(bool bWrapLines)
     }
     else
     {
-        setWordWrapMode(QTextOption::NoWrap);
+        setLineWrapMode(QPlainTextEdit::NoWrap);
         setWordWrapMode(QTextOption::NoWrap);
     }
     update();
