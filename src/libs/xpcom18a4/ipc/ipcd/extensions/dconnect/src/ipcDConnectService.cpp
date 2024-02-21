@@ -3266,11 +3266,12 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
   if (mDisconnected)
     return NS_ERROR_NOT_INITIALIZED;
 
+#ifdef LOG_ENABLED
   const DConnectOp *op = (const DConnectOp *) aData;
-
   Log (("ipcDConnectService::OnMessageAvailable: "
         "senderID=%d, opcode_major=%d, index=%d\n",
         aSenderID, op->opcode_major, op->request_index));
+#endif
 
   void *pvDataDup = RTMemDup(aData, aDataLen);
   if (RT_UNLIKELY(!pvDataDup))

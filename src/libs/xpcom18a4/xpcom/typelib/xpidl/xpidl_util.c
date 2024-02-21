@@ -407,11 +407,8 @@ static gboolean
 check_param_attribute(IDL_tree method_tree, IDL_tree param,
                       ParamAttrType whattocheck)
 {
-    const char *method_name = IDL_IDENT(IDL_OP_DCL(method_tree).ident).str;
     const char *referred_name = NULL;
-    IDL_tree param_type = IDL_PARAM_DCL(param).param_type_spec;
     IDL_tree simple_decl = IDL_PARAM_DCL(param).simple_declarator;
-    const char *param_name = IDL_IDENT(simple_decl).str;
     const char *attr_name;
     const char *needed_type;
 

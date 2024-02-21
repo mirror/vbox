@@ -240,7 +240,6 @@ XPT_DoHeaderPrologue(XPTArena *arena, XPTCursor *cursor, XPTHeader **headerp, PR
 XPT_PUBLIC_API(PRBool)
 XPT_DoHeader(XPTArena *arena, XPTCursor *cursor, XPTHeader **headerp)
 {
-    const int HEADER_SIZE = 24;
     XPTMode mode = cursor->state->mode;
     XPTHeader * header;
     PRUint32 ide_offset;

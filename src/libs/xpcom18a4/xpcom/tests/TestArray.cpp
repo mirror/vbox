@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <iprt/cdefs.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "nsISupportsArray.h"
@@ -108,7 +110,7 @@ static void DumpArray(nsISupportsArray* aArray, PRInt32 aExpectedCount, PRInt32 
 {
   PRUint32 cnt = 0;
   nsresult rv = aArray->Count(&cnt);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "Count failed");
+  NS_ASSERTION(NS_SUCCEEDED(rv), "Count failed"); RT_NOREF(rv);
   PRInt32 count = cnt;
   PRInt32 index;
 

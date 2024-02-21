@@ -135,7 +135,6 @@ int main(int argc, char *argv[])
             /* Parse for "-t version number" and store it into global boolean
              * and string variables.
              */
-            const gchar* typelib_version_string = NULL;
 
             /* 
              * If -t is the last argument on the command line, we have a problem

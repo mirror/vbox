@@ -1153,7 +1153,6 @@ static gboolean
 typelib_const_dcl(TreeState *state)
 {
     struct _IDL_CONST_DCL *dcl = &IDL_CONST_DCL(state->tree);
-    const char *name = IDL_IDENT(dcl->ident).str;
     gboolean is_long;
     gboolean sign;
     IDL_tree real_type;

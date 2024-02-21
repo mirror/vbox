@@ -55,7 +55,7 @@ void foodep(void)
 {
     nsVoidHashSetSuper *a = new nsVoidHashSetSuper();
     a->Init(123);
-    nsDeque *b = new nsDeque();
+    nsDeque *b = new nsDeque(); RT_NOREF(b);
 
     //nsXPTCStubBase
     nsProxyEventObject *c = new nsProxyEventObject();

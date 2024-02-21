@@ -60,6 +60,8 @@ static PRIntn sign(PRIntn val) {
 // iso-latin-1 strings, so the comparison must be valid.
 static void Check(const char* s1, const char* s2, PRIntn n)
 {
+  /** @todo r=aeichner This test is pretty useless with release builds but do we really care? */
+#ifdef DEBUG
   PRIntn clib = RTStrCmp(s1, s2);
   PRIntn clib_n = RTStrNCmp(s1, s2, n);
 
@@ -71,6 +73,7 @@ static void Check(const char* s1, const char* s2, PRIntn n)
 
   PRIntn u2 = nsCRT::strcmp(us1, us2);
   PRIntn u2_n = nsCRT::strncmp(us1, us2, n);
+#endif
 
   NS_ASSERTION(sign(clib) == sign(u2), "strcmp");
   NS_ASSERTION(sign(clib_n) == sign(u2_n), "strncmp");

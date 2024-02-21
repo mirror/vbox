@@ -183,11 +183,12 @@ nsExceptionService::nsExceptionService()
 #endif
   /* member initializers and constructor code */
   if (tlsIndex == NIL_RTTLS) {
+    /* Parfait_ALLOW unused-var Used for debug builds in the assertion below. */
     int vrc = RTTlsAllocEx( &tlsIndex, ThreadDestruct );
-    NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "ScriptErrorService could not allocate TLS storage.");
+    NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "ScriptErrorService could not allocate TLS storage."); RT_NOREF(vrc);
   }
   int vrc = RTSemFastMutexCreate(&lock);
-  NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "Error allocating ExceptionService lock");
+  NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "Error allocating ExceptionService lock"); RT_NOREF(vrc);
 
   // observe XPCOM shutdown.
   nsCOMPtr<nsIObserverService> observerService = do_GetService("@mozilla.org/observer-service;1");

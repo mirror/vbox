@@ -79,7 +79,9 @@ static void HandleLogError(const char *pszMessageText)
 
 static const char *LOGGER_WARNING = "warning";
 static const char *LOGGER_ERROR = "error";
+#ifdef DEBUG
 static const char *LOGGER_DEBUG = "debug";
+#endif
 
 // Our "normal" error logger - calls back to the logging module.
 static void DoLogMessage(const char *methodName, const char *pszMessageText)

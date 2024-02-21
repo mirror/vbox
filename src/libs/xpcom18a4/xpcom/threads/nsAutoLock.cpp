@@ -57,7 +57,7 @@ void nsAutoMonitor::Enter()
 void nsAutoMonitor::Exit()
 {
     PRStatus status = PR_ExitMonitor(mMonitor);
-    AssertMsg(status == PR_SUCCESS, ("PR_ExitMonitor failed"));
+    AssertMsg(status == PR_SUCCESS, ("PR_ExitMonitor failed")); RT_NOREF(status);
     mLockCount -= 1;
 }
 

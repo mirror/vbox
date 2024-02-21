@@ -2729,7 +2729,6 @@ nsComponentManagerImpl::RegisterComponentCommon(const nsCID &aClass,
 
     // Normalize proid and classname
     const char *contractID = (aContractID && *aContractID) ? aContractID : nsnull;
-    const char *className = (aClassName && *aClassName) ? aClassName : nsnull;
 #ifdef LOG_ENABLED
     char *buf = aClass.ToString();
     Log(("nsComponentManager: RegisterComponentCommon(%s, %s, %s, %s)",

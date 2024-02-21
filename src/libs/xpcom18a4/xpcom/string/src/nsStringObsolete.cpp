@@ -1205,7 +1205,7 @@ nsCString::AppendFloat( double aFloat )
     RTFLOAT64U r64;
     r64.rd = aFloat;
     ssize_t cch = RTStrFormatR64(buf, sizeof(buf), &r64, 0, 6 /*cchPrecision*/, 0 /*fFlags*/);
-    Assert(cch > 0);
+    Assert(cch > 0); RT_NOREF(cch);
     Append(buf);
   }
 
@@ -1216,7 +1216,7 @@ nsString::AppendFloat( double aFloat )
     RTFLOAT64U r64;
     r64.rd = aFloat;
     ssize_t cch = RTStrFormatR64(buf, sizeof(buf), &r64, 0, 6 /*cchPrecision*/, 0 /*fFlags*/);
-    Assert(cch > 0);
+    Assert(cch > 0); RT_NOREF(cch);
     AppendWithConversion(buf);
   }
 

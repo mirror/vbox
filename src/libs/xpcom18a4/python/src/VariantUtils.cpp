@@ -2014,13 +2014,12 @@ PyObject *PyXPCOM_InterfaceVariantHelper::MakeSinglePythonResult(int index)
 		}
 		PRUint8 array_type = (PRUint8)PyInt_AsLong(td.extra);
 		PRUint32 seq_size = GetSizeIs(index, PR_FALSE);
-                nsXPTCVariant &ns_viid = m_var_array[td.argnum];
-                nsIID iid;
-                nsresult res = GetArrayElementIID(m_parent,
-                                                  m_var_array,
-                                                  m_methodindex,
-                                                  index,
-                                                  &iid);
+    nsIID iid;
+    nsresult res = GetArrayElementIID(m_parent,
+                                      m_var_array,
+                                      m_methodindex,
+                                      index,
+                                      &iid);
 		ret = UnpackSingleArray(m_parent, * ((void **)ns_v.ptr),
                                         seq_size, array_type&XPT_TDP_TAGMASK,
                                         NS_SUCCEEDED(res) ? &iid : NULL);

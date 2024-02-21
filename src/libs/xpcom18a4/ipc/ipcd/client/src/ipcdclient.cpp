@@ -1145,7 +1145,7 @@ static nsresult WaitMessageSelector(void *arg, ipcTargetData *td, PCIPCMSG pMsg)
               obs = td->observer;
             NS_ASSERTION(obs, "must at least have a default observer");
 
-            nsresult rv = obs->OnMessageAvailable(pClientState->u32ClientId, nsID(), 0, 1);
+            /*nsresult rv = */obs->OnMessageAvailable(pClientState->u32ClientId, nsID(), 0, 1);
             /* VBoxSVC/VBoxXPCOMIPCD auto-start can cause that a client up
              * message arrives while we're already waiting for a response
              * from this client. Don't declare the connection as dead in
