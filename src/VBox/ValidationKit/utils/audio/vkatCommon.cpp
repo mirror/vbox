@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Validation Kit Audio Test (VKAT) - Self test code.
+ * Validation Kit Audio Test (VKAT) - Common code.
  */
 
 /*
@@ -572,7 +572,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint64_t        nsDonePreBuffering = 0;
 
         uint64_t        offStream          = 0;
-        uint64_t        nsTimeout          = RT_MS_5MIN_64 * RT_NS_1MS;
+        uint64_t        nsTimeout          = pTstEnv->msTimeout * RT_NS_1MS;
         uint64_t        nsLastMsgCantWrite = 0; /* Timestamp (in ns) when the last message of an unwritable stream was shown. */
         uint64_t        nsLastWrite        = 0;
 
@@ -876,7 +876,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
         uint64_t const  nsStarted         = RTTimeNanoTS();
 
-        uint64_t        nsTimeout         = RT_MS_5MIN_64 * RT_NS_1MS;
+        uint64_t        nsTimeout         = pTstEnv->msTimeout * RT_NS_1MS;
         uint64_t        nsLastMsgCantRead = 0; /* Timestamp (in ns) when the last message of an unreadable stream was shown. */
 
         AUDIOTESTSTATE  enmState          = AUDIOTESTSTATE_PRE;
@@ -1472,6 +1472,8 @@ static int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACK
 void audioTestEnvInit(PAUDIOTESTENV pTstEnv)
 {
     RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
+
+    pTstEnv->msTimeout = RT_MS_5MIN; /* Timeout defaults to 5 minutes. */
 
     audioTestIoOptsInitDefaults(&pTstEnv->IoOpts);
     audioTestToneParmsInit(&pTstEnv->ToneParms);

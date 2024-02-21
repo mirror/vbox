@@ -147,6 +147,7 @@ enum
     VKAT_TEST_OPT_PCM_SIGNED,
     VKAT_TEST_OPT_PROBE_BACKENDS,
     VKAT_TEST_OPT_TAG,
+    VKAT_TEST_OPT_TIMEOUT,
     VKAT_TEST_OPT_TEMPDIR,
     VKAT_TEST_OPT_VOL,
     VKAT_TEST_OPT_TCP_BIND_ADDRESS,
@@ -209,6 +210,7 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,           RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,                 RTGETOPT_REQ_STRING  },
     { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,             RTGETOPT_REQ_STRING  },
+    { "--timeout",           VKAT_TEST_OPT_TIMEOUT,             RTGETOPT_REQ_UINT32  },
     { "--vol",               VKAT_TEST_OPT_VOL,                 RTGETOPT_REQ_UINT8   },
     { "--tcp-bind-addr",     VKAT_TEST_OPT_TCP_BIND_ADDRESS,    RTGETOPT_REQ_STRING  },
     { "--tcp-bind-port",     VKAT_TEST_OPT_TCP_BIND_PORT,       RTGETOPT_REQ_UINT16  },
@@ -753,6 +755,8 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case VKAT_TEST_OPT_PROBE_BACKENDS:      return "Probes all (available) backends until a working one is found";
         case VKAT_TEST_OPT_TAG:                 return "Test set tag to use";
         case VKAT_TEST_OPT_TEMPDIR:             return "Temporary directory to use";
+        case VKAT_TEST_OPT_TIMEOUT:             return "Timeout to use (in ms)\";"
+                                                       "    Default: 5 minutes (300000)";
         case VKAT_TEST_OPT_VOL:                 return "Audio volume (percent) to use";
         case VKAT_TEST_OPT_TCP_BIND_ADDRESS:    return "TCP address listening to (server mode)";
         case VKAT_TEST_OPT_TCP_BIND_PORT:       return "TCP port listening to (server mode)";
@@ -910,6 +914,12 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 rc = RTStrCopy(TstEnv.szPathTemp, sizeof(TstEnv.szPathTemp), ValueUnion.psz);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Temp dir invalid, rc=%Rrc", rc);
+                break;
+
+            case VKAT_TEST_OPT_TIMEOUT:
+                if (!ValueUnion.u32)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid timeout value given!");
+                TstEnv.msTimeout = ValueUnion.u32;
                 break;
 
             case VKAT_TEST_OPT_VOL:

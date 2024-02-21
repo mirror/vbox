@@ -254,6 +254,8 @@ typedef struct AUDIOTESTENV
 {
     /** Audio testing mode. */
     AUDIOTESTMODE           enmMode;
+    /** Failsafe timeout (in ms). Default is 5 minutes. */
+    RTMSINTERVAL            msTimeout;
     /** Whether self test mode is active or not. */
     bool                    fSelftest;
     /** Whether skip the actual verification or not. */
