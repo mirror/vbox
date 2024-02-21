@@ -60,7 +60,7 @@ static void tst1(void)
     /* Create */
     RTTestISub("Creation");
     PRTCIRCBUF pBuf;
-    RTTESTI_CHECK_RC(RTCircBufCreate(&pBuf, 10), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_OK_RETV(RTCircBufCreate(&pBuf, 10));
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 10);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 0);
 
