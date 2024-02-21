@@ -3778,7 +3778,7 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142"  # With v16.11.9, not with v16.6.0 4242
  #    -wd4242: asn1-ut-string.cpp(729): warning C4242: 'argument': conversion from 'uint32_t' to 'uint16_t', possibl loss of data
  #    -wd4244: asn1-ut-objid.cpp(124): warning C4244: '=': conversion from 'uint32_t' to 'uint8_t', possible loss of data
  VBOX_VCC_WARN_ALL += -wd4242 -wd4244
- if1of (RT_RELAXED_CALLBACKS_TYPES,$(DEFS))
+ if1of (RT_RELAXED_CALLBACKS_TYPES, $(DEFS))
   #   -wd5039: asn1-ut-core.cpp(212): warning C5039: 'RTAsn1EncodeWriteHeader': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
   VBOX_VCC_WARN_ALL += -wd5039
  endif
