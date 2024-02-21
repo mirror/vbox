@@ -39,12 +39,11 @@
 /*
  * Common IDL-processing code.
  */
+#include <iprt/errcore.h>
+#include <iprt/file.h>
+#include <iprt/mem.h>
 
 #include "xpidl.h"
-
-#ifdef XP_MAC
-#include <stat.h>
-#endif
 
 static gboolean parsed_empty_file;
 
@@ -65,10 +64,6 @@ xpidl_process_node(TreeState *state)
     return TRUE;
 }
 
-#if defined(XP_MAC) && defined(XPIDL_PLUGIN)
-extern void mac_warning(const char* warning_message);
-#endif
-
 static int
 msg_callback(int level, int num, int line, const char *file,
              const char *message)
@@ -88,12 +83,7 @@ msg_callback(int level, int num, int line, const char *file,
         file = "<unknown file>";
     warning_message = g_strdup_printf("%s:%d: %s\n", file, line, message);
 
-#if defined(XP_MAC) && defined(XPIDL_PLUGIN)
-    mac_warning(warning_message);
-#else
     fputs(warning_message, stderr);
-#endif
-
     g_free(warning_message);
     return 1;
 }
@@ -124,15 +114,11 @@ typedef struct input_callback_state {
                                      * xpidl_header backend. */
 } input_callback_state;
 
-static FILE *
-fopen_from_includes(const char *filename, const char *mode,
-                    IncludePathEntry *include_path)
+static void *
+file_read_from_includes(const char *filename, IncludePathEntry *include_path, size_t *pcbFile)
 {
     IncludePathEntry *current_path = include_path;
     char *pathname;
-    FILE *inputfile;
-    if (!strcmp(filename, "-"))
-        return stdin;
 
     if (filename[0] != '/') {
         while (current_path) {
@@ -140,16 +126,18 @@ fopen_from_includes(const char *filename, const char *mode,
                                        current_path->directory, filename);
             if (!pathname)
                 return NULL;
-            inputfile = fopen(pathname, mode);
+            void *pvFile = NULL;
+            int vrc = RTFileReadAll(pathname, &pvFile, pcbFile);
             g_free(pathname);
-            if (inputfile)
-                return inputfile;
+            if (RT_SUCCESS(vrc))
+                return pvFile;
             current_path = current_path->next;
         }
     } else {
-        inputfile = fopen(filename, mode);
-        if (inputfile)
-            return inputfile;
+        void *pvFile = NULL;
+        int vrc = RTFileReadAll(filename, &pvFile, pcbFile);
+        if (RT_SUCCESS(vrc))
+            return pvFile;
     }
     return NULL;
 }
@@ -162,95 +150,42 @@ static input_data *
 new_input_data(const char *filename, IncludePathEntry *include_path)
 {
     input_data *new_data;
-    FILE *inputfile;
-    char *buffer = NULL;
-    size_t offset = 0;
-    size_t buffer_size;
-#ifdef XP_MAC
-    size_t i;
-#endif
 
-#if defined(XP_MAC) && defined(XPIDL_PLUGIN)
-    /* on Mac, fopen knows how to find files. */
-    inputfile = fopen(filename, "r");
-#elif defined(XP_OS2) || defined(XP_WIN32)
-    /*
-     * if filename is fully qualified (starts with driver letter), then
-     * just call fopen();  else, go with fopen_from_includes()
-     */
-    if( filename[1] == ':' )
-      inputfile = fopen(filename, "r");
-    else
-      inputfile = fopen_from_includes(filename, "r", include_path);
-#else
-    inputfile = fopen_from_includes(filename, "r", include_path);
-#endif
-
-    if (!inputfile)
-        return NULL;
-
-#ifdef XP_MAC
-    {
-        struct stat input_stat;
-        if (fstat(fileno(inputfile), &input_stat))
-            return NULL;
-        buffer = malloc(input_stat.st_size + 1);
-        if (!buffer)
-            return NULL;
-        offset = fread(buffer, 1, input_stat.st_size, inputfile);
-        if (ferror(inputfile))
-            return NULL;
-    }
-#else
     /*
      * Rather than try to keep track of many different varieties of state
      * around the boundaries of a circular buffer, we just read in the entire
      * file.
-     *
-     * We iteratively grow the buffer here; an alternative would be to use
-     * stat to find the exact buffer size we need, as xpt_dump does.
      */
-    for (buffer_size = 8191; ; buffer_size *= 2) {
-        size_t just_read;
-        buffer = realloc(buffer, buffer_size + 1); /* +1 for trailing nul */
-        just_read = fread(buffer + offset, 1, buffer_size - offset, inputfile);
-        if (ferror(inputfile))
-        {
-            free(buffer);
-            return NULL;
-        }
+    size_t cbFile = 0;
+    void *pvFile = file_read_from_includes(filename, include_path, &cbFile);
+    if (!pvFile)
+        return NULL;
 
-        if (just_read < buffer_size - offset || just_read == 0) {
-            /* Done reading. */
-            offset += just_read;
-            break;
-        }
-        offset += just_read;
+    /* Need to copy the data over into a new buffer in order to be able to append a zero terminator. */
+    char *pbBuf = (char *)RTMemDupEx(pvFile, cbFile, 1 /* for the zero terminator */);
+    if (!pbBuf)
+    {
+        RTFileReadAllFree(pvFile, cbFile);
+        return NULL;
     }
-#endif
 
-    fclose(inputfile);
-
-#ifdef XP_MAC
-    /*
-     * libIDL doesn't speak '\r' properly - always make sure lines end with
-     * '\n'.
-     */
-    for (i = 0; i < offset; i++) {
-        if (buffer[i] == '\r')
-            buffer[i] = '\n';
-    }
-#endif
+    memcpy(pbBuf, pvFile, cbFile);
+    RTFileReadAllFree(pvFile, cbFile);
 
     new_data = xpidl_malloc(sizeof (struct input_data));
-    new_data->point = new_data->buf = buffer;
-    new_data->max = buffer + offset;
+    if (!new_data)
+    {
+        RTMemFree(pbBuf);
+        return NULL;
+    }
+
+    new_data->point = new_data->buf = pbBuf;
+    new_data->max = pbBuf + cbFile;
     *new_data->max = '\0';
     new_data->filename = xpidl_strdup(filename);
     /* libIDL expects the line number to be that of the *next* line */
     new_data->lineno = 2;
     new_data->next = NULL;
-
     return new_data;
 }
 
@@ -629,7 +564,7 @@ input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
 
             next = data->next;
             free(data->filename);
-            free(data->buf);
+            RTMemFree(data->buf);
             free(data);
             data = next;
         }
@@ -655,11 +590,7 @@ free_gslist_data(gpointer data, gpointer user_data)
 }
 
 /* Pick up unlink. */
-#ifdef XP_UNIX
 #include <unistd.h>
-#elif XP_WIN
-/* We get it from stdio.h. */
-#endif
 
 int
 xpidl_process_idl(char *filename, IncludePathEntry *include_path,
@@ -746,19 +677,13 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
         if (explicit_output_filename) {
             real_outname = g_strdup(outname);
         } else {
-/*
- *This combination seems a little strange, what about OS/2?
- * Assume it's some build issue
- */
-#if defined(XP_UNIX) || defined(XP_WIN)
+
             if (!file_basename) {
                 out_basename = xpidl_basename(outname);
             } else {
                 out_basename = outname;
             }
-#else
-            out_basename = outname;
-#endif
+
             real_outname = g_strdup_printf("%s.%s", out_basename, mode->suffix);
             if (out_basename != outname)
                 g_free(out_basename);
@@ -805,10 +730,9 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
          * Delete partial output file on failure.  (Mac does this in the plugin
          * driver code, if the compiler returns failure.)
          */
-#if defined(XP_UNIX) || defined(XP_WIN)
         if (!ok)
             unlink(real_outname);
-#endif
+
         g_free(real_outname);
     }
 

@@ -38,6 +38,7 @@
 /*
  * Main xpidl program entry point.
  */
+#include <iprt/initterm.h>
 
 #include "xpidl.h"
 
@@ -93,13 +94,10 @@ xpidl_usage(int argc, char *argv[])
     }
 }
 
-#if defined(XP_MAC) && defined(XPIDL_PLUGIN)
-#define main xpidl_main
-int xpidl_main(int argc, char *argv[]);
-#endif
-
 int main(int argc, char *argv[])
 {
+    RTR3InitExeNoArguments(0);
+
     int i;
     IncludePathEntry *inc, *inc_head, **inc_tail;
     char *file_basename = NULL;
@@ -110,11 +108,7 @@ int main(int argc, char *argv[])
 /*    IDL_check_cast_enable(TRUE); */
 
     inc_head = xpidl_malloc(sizeof *inc);
-#ifndef XP_MAC
     inc_head->directory = ".";
-#else
-    inc_head->directory = "";
-#endif
     inc_head->next = NULL;
     inc_tail = &inc_head->next;
 
