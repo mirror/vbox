@@ -427,8 +427,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
                                     pvBuf, cb);
     }
 
-    if (pvBuf)
-        RTMemTmpFree(pvBuf);
+    RTMemTmpFree(pvBuf);
     return rc;
 }
 
@@ -755,6 +754,9 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      */
     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uDynamicDiskHeaderOffset,
                                &vhdDynamicDiskHeader, sizeof(VHDDynamicDiskHeader));
+    if (RT_FAILURE(rc))
+        return rc;
+
     if (memcmp(vhdDynamicDiskHeader.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE))
         return VERR_INVALID_PARAMETER;
 
@@ -858,26 +860,29 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
     }
 
     rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &FileSize);
-    pImage->uCurrentEndOfFile = FileSize - sizeof(VHDFooter);
-
-    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
-                               &vhdFooter, sizeof(VHDFooter));
     if (RT_SUCCESS(rc))
     {
-        if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+        pImage->uCurrentEndOfFile = FileSize - sizeof(VHDFooter);
+
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
+                                   &vhdFooter, sizeof(VHDFooter));
+        if (RT_SUCCESS(rc))
         {
-            /*
-             * There is also a backup header at the beginning in case the image got corrupted.
-             * Such corrupted images are detected here to let the open handler repair it later.
-             */
-            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
-                                       &vhdFooter, sizeof(VHDFooter));
-            if (RT_SUCCESS(rc))
+            if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
             {
-                if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
-                    rc = VERR_VD_VHD_INVALID_HEADER;
-                else
-                    rc = VERR_VD_IMAGE_CORRUPTED;
+                /*
+                 * There is also a backup header at the beginning in case the image got corrupted.
+                 * Such corrupted images are detected here to let the open handler repair it later.
+                 */
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
+                                           &vhdFooter, sizeof(VHDFooter));
+                if (RT_SUCCESS(rc))
+                {
+                    if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+                        rc = VERR_VD_VHD_INVALID_HEADER;
+                    else
+                        rc = VERR_VD_IMAGE_CORRUPTED;
+                }
             }
         }
     }
@@ -2536,7 +2541,9 @@ static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
         }
 
         /* Write the new BAT in any case. */
-        rc = vhdFlushImage(pImage);
+        int rc2 = vhdFlushImage(pImage);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     } while (0);
 
     if (paBlocks)
@@ -2838,7 +2845,6 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
             vdIfErrorMessage(pIfError, "Checksum is invalid (should be %u got %u), repairing\n",
                              u32ChkSum, u32ChkSumOld);
             fRepairFooter = true;
-            break;
         }
 
         switch (RT_BE2H_U32(vhdFooter.DiskType))
@@ -2896,7 +2902,6 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                 vdIfErrorMessage(pIfError, "Checksum of dynamic disk header is invalid (should be %u got %u), repairing\n",
                                  u32ChkSum, u32ChkSumOld);
                 fRepairDynHeader = true;
-                break;
             }
 
             /* Read the block allocation table and fix any inconsistencies. */
