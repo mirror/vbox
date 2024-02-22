@@ -42,12 +42,6 @@
 /** Global namespace. */
 namespace UIDefs
 {
-    /** Additional Qt event types. */
-    enum UIEventType
-    {
-        ActivateActionEventType = QEvent::User + 101,
-    };
-
     /** Default guest additions image name. */
     SHARED_LIBRARY_STUFF extern const char* GUI_GuestAdditionsName;
     /** Default extension pack name. */
