@@ -8562,8 +8562,24 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
             uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
-            if ((bVex2 & 0x80 /* VEX.W */) && IEM_IS_64BIT_CODE(pVCpu))
-                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
+            if (IEM_IS_64BIT_CODE(pVCpu))
+            {
+#if 1
+                AssertCompile(IEM_OP_PRF_SIZE_REX_W == RT_BIT_32(9));
+                pVCpu->iem.s.fPrefixes |= (uint32_t)(bVex2 & 0x80) << (9 - 7);
+                AssertCompile(IEM_OP_PRF_REX_B == RT_BIT_32(25) && IEM_OP_PRF_REX_X == RT_BIT_32(26) && IEM_OP_PRF_REX_R == RT_BIT_32(27));
+                pVCpu->iem.s.fPrefixes |= (uint32_t)(~bRm & 0xe0) << (25 - 5);
+#else
+                if (bVex2 & 0x80 /* VEX.W */)
+                    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
+                if (~bRm & 0x20 /* VEX.~B */)
+                    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_B;
+                if (~bRm & 0x40 /* VEX.~X */)
+                    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_X;
+                if (~bRm & 0x80 /* VEX.~R */)
+                    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_R;
+#endif
+            }
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
             pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
@@ -8633,6 +8649,8 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
                      the instruction is fully decoded.  Even when XCR0=3 and CR4.OSXSAVE=0. */
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+            AssertCompile(IEM_OP_PRF_REX_R == RT_BIT_32(27));
+            pVCpu->iem.s.fPrefixes |= (uint32_t)(~bRm & 0x80) << (27 - 7);
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
             pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
