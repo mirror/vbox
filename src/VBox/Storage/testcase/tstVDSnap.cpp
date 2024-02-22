@@ -259,6 +259,12 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
 
     /* Create the virtual disk test data */
     pbTestPattern = (uint8_t *)RTMemAlloc(pTest->cbTestPattern);
+    if (!pbTestPattern)
+    {
+        RTPrintf("Failed to allocate memory for test pattern\n");
+        g_cErrors++;
+        return VERR_NO_MEMORY;
+    }
 
     RTRandAdvBytes(g_hRand, pbTestPattern, pTest->cbTestPattern);
     cDiskSegments = RTRandAdvU32Ex(g_hRand, pTest->cDiskSegsMin, pTest->cDiskSegsMax);
@@ -408,10 +414,8 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     VDDumpImages(pVD);
 
     VDDestroy(pVD);
-    if (paDiskSeg)
-        RTMemFree(paDiskSeg);
-    if (pbTestPattern)
-        RTMemFree(pbTestPattern);
+    RTMemFree(paDiskSeg);
+    RTMemFree(pbTestPattern);
 
     RTFileDelete(pTest->pcszBaseImage);
     for (unsigned i = 0; i < idDiff; i++)

@@ -825,7 +825,6 @@ static DECLCALLBACK(int) convStdOutWrite(void *pvUser, void *pStorage, uint64_t 
     AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
     PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
     AssertReturn(uOffset >= pFS->off, VERR_INVALID_PARAMETER);
-    int rc;
 
     /* Write the data to the buffer, flushing as required. */
     size_t cbTotalWritten = 0;
@@ -834,8 +833,11 @@ static DECLCALLBACK(int) convStdOutWrite(void *pvUser, void *pStorage, uint64_t 
         /* Flush the buffer if we need a new one. */
         while (uOffset > pFS->offBuffer + sizeof(pFS->abBuffer) - 1)
         {
-            rc = RTFileWrite(pFS->file, &pFS->abBuffer[0],
-                             sizeof(pFS->abBuffer), NULL);
+            int rc = RTFileWrite(pFS->file, &pFS->abBuffer[0],
+                                 sizeof(pFS->abBuffer), NULL);
+            if (RT_FAILURE(rc))
+                return rc;
+
             RT_ZERO(pFS->abBuffer);
             pFS->offBuffer += sizeof(pFS->abBuffer);
             pFS->cbBuffer = 0;
@@ -965,7 +967,7 @@ static DECLCALLBACK(int) convFileOutSetSize(void *pvUser, void *pStorage, uint64
     int rc = RTFileSetSize(pFS->file, cbSize);
     if (RT_SUCCESS(rc))
         pFS->cb = cbSize;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) convFileOutRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
@@ -988,7 +990,6 @@ static DECLCALLBACK(int) convFileOutWrite(void *pvUser, void *pStorage, uint64_t
     AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
     PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
     AssertReturn(uOffset >= pFS->off, VERR_INVALID_PARAMETER);
-    int rc;
 
     /* Write the data to the buffer, flushing as required. */
     size_t cbTotalWritten = 0;
@@ -998,9 +999,13 @@ static DECLCALLBACK(int) convFileOutWrite(void *pvUser, void *pStorage, uint64_t
         while (uOffset > pFS->offBuffer + sizeof(pFS->abBuffer) - 1)
         {
             if (!ASMMemIsZero(pFS->abBuffer, sizeof(pFS->abBuffer)))
-                rc = RTFileWriteAt(pFS->file, pFS->offBuffer,
-                                   &pFS->abBuffer[0],
-                                   sizeof(pFS->abBuffer), NULL);
+            {
+                int rc = RTFileWriteAt(pFS->file, pFS->offBuffer,
+                                       &pFS->abBuffer[0],
+                                       sizeof(pFS->abBuffer), NULL);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
             RT_ZERO(pFS->abBuffer);
             pFS->offBuffer += sizeof(pFS->abBuffer);
             pFS->cbBuffer = 0;

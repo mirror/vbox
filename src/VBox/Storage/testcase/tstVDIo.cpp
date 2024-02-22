@@ -1555,9 +1555,11 @@ static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, v
                                 rc = RTTraceLogRdrQueryLastEvt(hIoLogRdr, &hEvt);
                                 if (RT_SUCCESS(rc))
                                 {
+#ifdef RT_STRICT
                                     pEvtDesc = RTTraceLogRdrEvtGetDesc(hEvt);
                                     AssertMsg(!RTStrCmp(pEvtDesc->pszId, "Complete"),
                                               ("Expected a completion event but got: %s\n", pEvtDesc->pszId));
+#endif
                                 }
                             }
                         }
@@ -1616,7 +1618,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDSCRIPTARG paScriptArgs, v
         }
 
         if (RT_SUCCESS(rc))
-            rc = VDIoRndCreate(&pGlob->pIoRnd, cbPattern, uSeed);
+            rc = VDIoRndCreate(&pGlob->pIoRnd, cbPattern, uSeedToUse);
     }
 
     return rc;
@@ -1770,7 +1772,6 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDSCRIPTARG paScriptArgs, void
     {
         RTPrintf("Dumping memory file %s to %s, this might take some time\n", pcszFile, pcszPathToDump);
         rc = VDIoBackendDumpToFile(pIt->pIoStorage, pcszPathToDump);
-        rc = VERR_NOT_IMPLEMENTED;
     }
     else
         rc = VERR_FILE_NOT_FOUND;
@@ -2482,7 +2483,7 @@ static uint32_t tstVDIoTestReqInitSegments(PVDIOTEST pIoTest, PRTSGSEG paSegs, u
     while (   iSeg < cSegs - 1
            && cSectorsLeft)
     {
-        uint32_t cThisSectors = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, (uint32_t)cSectorsLeft / 2);
+        size_t cThisSectors = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, (uint32_t)cSectorsLeft / 2);
         size_t cbThisBuf = cThisSectors * 512;
 
         paSegs[iSeg].pvSeg = pbBuf;
@@ -2846,7 +2847,12 @@ static void tstVDIoScriptExec(const char *pszName, const char *pszScript)
                     RTPrintf("Loading the script failed rc=%Rrc\n", rc);
                 }
                 else
+                {
                     rc = VDScriptCtxCallFn(hScriptCtx, "main", NULL, 0);
+                    if (RT_FAILURE(rc))
+                        RTPrintf("Executing the script failed rc=%Rrc\n", rc);
+                }
+
                 VDScriptCtxDestroy(hScriptCtx);
             }
 
