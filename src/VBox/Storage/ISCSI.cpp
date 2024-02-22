@@ -1890,7 +1890,6 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
     uint32_t *pDst = NULL;
     size_t cbBufLength;
     uint32_t aStatus[256]; /**< Plenty of buffer for status information. */
-    uint32_t ExpDataSN = 0;
     bool final = false;
 
 
@@ -2060,7 +2059,6 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
                     uint32_t len = RT_N2H_U32(aResBHS[1]) & 0x00ffffff;
                     pDst = (uint32_t *)((char *)pDst + len);
                     cbBufLength -= len;
-                    ExpDataSN++;
                     if (final && (RT_N2H_U32(aResBHS[0]) & ISCSI_STATUS_BIT) != 0)
                     {
                         pRequest->status = RT_N2H_U32(aResBHS[0]) & 0x000000ff;
