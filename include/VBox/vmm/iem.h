@@ -214,6 +214,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM);
 VMMR3DECL(int)      IEMR3Term(PVM pVM);
 VMMR3DECL(void)     IEMR3Relocate(PVM pVM);
 VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict);
+VMMR3DECL(const char *) IEMR3GetExitName(uint32_t uExit);
 /** @} */
 
 /** @} */

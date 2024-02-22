@@ -175,12 +175,15 @@ AssertCompileSize(EMEXITTYPE, 4);
 #define EMEXIT_F_KIND_VMX           UINT32_C(0x00001000)    /**< VT-x exit codes. */
 #define EMEXIT_F_KIND_SVM           UINT32_C(0x00002000)    /**< SVM exit codes. */
 #define EMEXIT_F_KIND_NEM           UINT32_C(0x00003000)    /**< NEMEXITTYPE */
-#define EMEXIT_F_KIND_XCPT          UINT32_C(0x00004000)    /**< Exception numbers (raw-mode). */
+#define EMEXIT_F_KIND_IEM           UINT32_C(0x00004000)    /**< IEM specific stuff. */
+#define EMEXIT_F_KIND_XCPT          UINT32_C(0x00005000)    /**< Exception numbers (IEM,raw-mode). */
 #define EMEXIT_F_KIND_MASK          UINT32_C(0x00007000)
 #define EMEXIT_F_CS_EIP             UINT32_C(0x00010000)    /**< The PC is EIP in the low dword and CS in the high. */
 #define EMEXIT_F_UNFLATTENED_PC     UINT32_C(0x00020000)    /**< The PC hasn't had CS.BASE added to it. */
 /** HM is calling (from ring-0).  Preemption is currently disabled or we're using preemption hooks. */
 #define EMEXIT_F_HM                 UINT32_C(0x00040000)
+#define EMEXIT_F_XCPT_ERRCD         UINT32_C(0x00000800)    /**< Additional record w/ the error code stored as PC. */
+#define EMEXIT_F_XCPT_CR2           UINT32_C(0x00000400)    /**< Additional record w/ the CR3 value stored as PC. */
 /** Combines flags and exit type into EMHistoryAddExit() input. */
 #define EMEXIT_MAKE_FT(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
 /** @} */

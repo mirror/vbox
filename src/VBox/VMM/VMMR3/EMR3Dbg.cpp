@@ -32,6 +32,7 @@
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/nem.h>
 #include <VBox/dbg.h>
 #include "EMInternal.h"
@@ -165,16 +166,20 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
 
 #if !defined(VBOX_VMM_TARGET_ARMV8)
         case EMEXIT_F_KIND_VMX:
-            pszExitName = HMGetVmxExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = HMGetVmxExitName(uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 
         case EMEXIT_F_KIND_SVM:
-            pszExitName = HMGetSvmExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = HMGetSvmExitName(uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 #endif
 
         case EMEXIT_F_KIND_NEM:
-            pszExitName = NEMR3GetExitName(   uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = NEMR3GetExitName(uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            break;
+
+        case EMEXIT_F_KIND_IEM:
+            pszExitName = IEMR3GetExitName(uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 
         case EMEXIT_F_KIND_XCPT:
@@ -204,7 +209,20 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
                 case X86_XCPT_MC:               return "Xcpt #MC";
                 case X86_XCPT_XF:               return "Xcpt #XF";
                 case X86_XCPT_VE:               return "Xcpt #VE";
+                case X86_XCPT_CP:               return "Xcpt #CP";
+                case X86_XCPT_VC:               return "Xcpt #VC";
                 case X86_XCPT_SX:               return "Xcpt #SX";
+
+                case X86_XCPT_DF | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #DF ErrCd as PC";
+                case X86_XCPT_TS | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #TS ErrCd as PC";
+                case X86_XCPT_NP | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #NP ErrCd as PC";
+                case X86_XCPT_SS | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #SS ErrCd as PC";
+                case X86_XCPT_GP | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #GF ErrCd as PC";
+                case X86_XCPT_PF | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #PF ErrCd as PC";
+                case X86_XCPT_AC | EMEXIT_F_XCPT_ERRCD:  return "Xcpt #AC ErrCd as PC";
+
+                case X86_XCPT_PF | EMEXIT_F_XCPT_CR2:    return "Xcpt #PF CR2 as PC";
+
                 default:
                     pszExitName = NULL;
                     break;

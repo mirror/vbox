@@ -595,6 +595,89 @@ VMMR3DECL(void)     IEMR3Relocate(PVM pVM)
 }
 
 
+/**
+ * Gets the name of a generic IEM exit code.
+ *
+ * @returns Pointer to read only string if @a uExit is known, otherwise NULL.
+ * @param   uExit               The IEM exit to name.
+ */
+VMMR3DECL(const char *) IEMR3GetExitName(uint32_t uExit)
+{
+    static const char * const s_apszNames[] =
+    {
+        /* external interrupts */
+        "ExtInt 00h", "ExtInt 01h", "ExtInt 02h", "ExtInt 03h", "ExtInt 04h", "ExtInt 05h", "ExtInt 06h", "ExtInt 07h",
+        "ExtInt 08h", "ExtInt 09h", "ExtInt 0ah", "ExtInt 0bh", "ExtInt 0ch", "ExtInt 0dh", "ExtInt 0eh", "ExtInt 0fh",
+        "ExtInt 10h", "ExtInt 11h", "ExtInt 12h", "ExtInt 13h", "ExtInt 14h", "ExtInt 15h", "ExtInt 16h", "ExtInt 17h",
+        "ExtInt 18h", "ExtInt 19h", "ExtInt 1ah", "ExtInt 1bh", "ExtInt 1ch", "ExtInt 1dh", "ExtInt 1eh", "ExtInt 1fh",
+        "ExtInt 20h", "ExtInt 21h", "ExtInt 22h", "ExtInt 23h", "ExtInt 24h", "ExtInt 25h", "ExtInt 26h", "ExtInt 27h",
+        "ExtInt 28h", "ExtInt 29h", "ExtInt 2ah", "ExtInt 2bh", "ExtInt 2ch", "ExtInt 2dh", "ExtInt 2eh", "ExtInt 2fh",
+        "ExtInt 30h", "ExtInt 31h", "ExtInt 32h", "ExtInt 33h", "ExtInt 34h", "ExtInt 35h", "ExtInt 36h", "ExtInt 37h",
+        "ExtInt 38h", "ExtInt 39h", "ExtInt 3ah", "ExtInt 3bh", "ExtInt 3ch", "ExtInt 3dh", "ExtInt 3eh", "ExtInt 3fh",
+        "ExtInt 40h", "ExtInt 41h", "ExtInt 42h", "ExtInt 43h", "ExtInt 44h", "ExtInt 45h", "ExtInt 46h", "ExtInt 47h",
+        "ExtInt 48h", "ExtInt 49h", "ExtInt 4ah", "ExtInt 4bh", "ExtInt 4ch", "ExtInt 4dh", "ExtInt 4eh", "ExtInt 4fh",
+        "ExtInt 50h", "ExtInt 51h", "ExtInt 52h", "ExtInt 53h", "ExtInt 54h", "ExtInt 55h", "ExtInt 56h", "ExtInt 57h",
+        "ExtInt 58h", "ExtInt 59h", "ExtInt 5ah", "ExtInt 5bh", "ExtInt 5ch", "ExtInt 5dh", "ExtInt 5eh", "ExtInt 5fh",
+        "ExtInt 60h", "ExtInt 61h", "ExtInt 62h", "ExtInt 63h", "ExtInt 64h", "ExtInt 65h", "ExtInt 66h", "ExtInt 67h",
+        "ExtInt 68h", "ExtInt 69h", "ExtInt 6ah", "ExtInt 6bh", "ExtInt 6ch", "ExtInt 6dh", "ExtInt 6eh", "ExtInt 6fh",
+        "ExtInt 70h", "ExtInt 71h", "ExtInt 72h", "ExtInt 73h", "ExtInt 74h", "ExtInt 75h", "ExtInt 76h", "ExtInt 77h",
+        "ExtInt 78h", "ExtInt 79h", "ExtInt 7ah", "ExtInt 7bh", "ExtInt 7ch", "ExtInt 7dh", "ExtInt 7eh", "ExtInt 7fh",
+        "ExtInt 80h", "ExtInt 81h", "ExtInt 82h", "ExtInt 83h", "ExtInt 84h", "ExtInt 85h", "ExtInt 86h", "ExtInt 87h",
+        "ExtInt 88h", "ExtInt 89h", "ExtInt 8ah", "ExtInt 8bh", "ExtInt 8ch", "ExtInt 8dh", "ExtInt 8eh", "ExtInt 8fh",
+        "ExtInt 90h", "ExtInt 91h", "ExtInt 92h", "ExtInt 93h", "ExtInt 94h", "ExtInt 95h", "ExtInt 96h", "ExtInt 97h",
+        "ExtInt 98h", "ExtInt 99h", "ExtInt 9ah", "ExtInt 9bh", "ExtInt 9ch", "ExtInt 9dh", "ExtInt 9eh", "ExtInt 9fh",
+        "ExtInt a0h", "ExtInt a1h", "ExtInt a2h", "ExtInt a3h", "ExtInt a4h", "ExtInt a5h", "ExtInt a6h", "ExtInt a7h",
+        "ExtInt a8h", "ExtInt a9h", "ExtInt aah", "ExtInt abh", "ExtInt ach", "ExtInt adh", "ExtInt aeh", "ExtInt afh",
+        "ExtInt b0h", "ExtInt b1h", "ExtInt b2h", "ExtInt b3h", "ExtInt b4h", "ExtInt b5h", "ExtInt b6h", "ExtInt b7h",
+        "ExtInt b8h", "ExtInt b9h", "ExtInt bah", "ExtInt bbh", "ExtInt bch", "ExtInt bdh", "ExtInt beh", "ExtInt bfh",
+        "ExtInt c0h", "ExtInt c1h", "ExtInt c2h", "ExtInt c3h", "ExtInt c4h", "ExtInt c5h", "ExtInt c6h", "ExtInt c7h",
+        "ExtInt c8h", "ExtInt c9h", "ExtInt cah", "ExtInt cbh", "ExtInt cch", "ExtInt cdh", "ExtInt ceh", "ExtInt cfh",
+        "ExtInt d0h", "ExtInt d1h", "ExtInt d2h", "ExtInt d3h", "ExtInt d4h", "ExtInt d5h", "ExtInt d6h", "ExtInt d7h",
+        "ExtInt d8h", "ExtInt d9h", "ExtInt dah", "ExtInt dbh", "ExtInt dch", "ExtInt ddh", "ExtInt deh", "ExtInt dfh",
+        "ExtInt e0h", "ExtInt e1h", "ExtInt e2h", "ExtInt e3h", "ExtInt e4h", "ExtInt e5h", "ExtInt e6h", "ExtInt e7h",
+        "ExtInt e8h", "ExtInt e9h", "ExtInt eah", "ExtInt ebh", "ExtInt ech", "ExtInt edh", "ExtInt eeh", "ExtInt efh",
+        "ExtInt f0h", "ExtInt f1h", "ExtInt f2h", "ExtInt f3h", "ExtInt f4h", "ExtInt f5h", "ExtInt f6h", "ExtInt f7h",
+        "ExtInt f8h", "ExtInt f9h", "ExtInt fah", "ExtInt fbh", "ExtInt fch", "ExtInt fdh", "ExtInt feh", "ExtInt ffh",
+        /* software interrups */
+        "SoftInt 00h", "SoftInt 01h", "SoftInt 02h", "SoftInt 03h", "SoftInt 04h", "SoftInt 05h", "SoftInt 06h", "SoftInt 07h",
+        "SoftInt 08h", "SoftInt 09h", "SoftInt 0ah", "SoftInt 0bh", "SoftInt 0ch", "SoftInt 0dh", "SoftInt 0eh", "SoftInt 0fh",
+        "SoftInt 10h", "SoftInt 11h", "SoftInt 12h", "SoftInt 13h", "SoftInt 14h", "SoftInt 15h", "SoftInt 16h", "SoftInt 17h",
+        "SoftInt 18h", "SoftInt 19h", "SoftInt 1ah", "SoftInt 1bh", "SoftInt 1ch", "SoftInt 1dh", "SoftInt 1eh", "SoftInt 1fh",
+        "SoftInt 20h", "SoftInt 21h", "SoftInt 22h", "SoftInt 23h", "SoftInt 24h", "SoftInt 25h", "SoftInt 26h", "SoftInt 27h",
+        "SoftInt 28h", "SoftInt 29h", "SoftInt 2ah", "SoftInt 2bh", "SoftInt 2ch", "SoftInt 2dh", "SoftInt 2eh", "SoftInt 2fh",
+        "SoftInt 30h", "SoftInt 31h", "SoftInt 32h", "SoftInt 33h", "SoftInt 34h", "SoftInt 35h", "SoftInt 36h", "SoftInt 37h",
+        "SoftInt 38h", "SoftInt 39h", "SoftInt 3ah", "SoftInt 3bh", "SoftInt 3ch", "SoftInt 3dh", "SoftInt 3eh", "SoftInt 3fh",
+        "SoftInt 40h", "SoftInt 41h", "SoftInt 42h", "SoftInt 43h", "SoftInt 44h", "SoftInt 45h", "SoftInt 46h", "SoftInt 47h",
+        "SoftInt 48h", "SoftInt 49h", "SoftInt 4ah", "SoftInt 4bh", "SoftInt 4ch", "SoftInt 4dh", "SoftInt 4eh", "SoftInt 4fh",
+        "SoftInt 50h", "SoftInt 51h", "SoftInt 52h", "SoftInt 53h", "SoftInt 54h", "SoftInt 55h", "SoftInt 56h", "SoftInt 57h",
+        "SoftInt 58h", "SoftInt 59h", "SoftInt 5ah", "SoftInt 5bh", "SoftInt 5ch", "SoftInt 5dh", "SoftInt 5eh", "SoftInt 5fh",
+        "SoftInt 60h", "SoftInt 61h", "SoftInt 62h", "SoftInt 63h", "SoftInt 64h", "SoftInt 65h", "SoftInt 66h", "SoftInt 67h",
+        "SoftInt 68h", "SoftInt 69h", "SoftInt 6ah", "SoftInt 6bh", "SoftInt 6ch", "SoftInt 6dh", "SoftInt 6eh", "SoftInt 6fh",
+        "SoftInt 70h", "SoftInt 71h", "SoftInt 72h", "SoftInt 73h", "SoftInt 74h", "SoftInt 75h", "SoftInt 76h", "SoftInt 77h",
+        "SoftInt 78h", "SoftInt 79h", "SoftInt 7ah", "SoftInt 7bh", "SoftInt 7ch", "SoftInt 7dh", "SoftInt 7eh", "SoftInt 7fh",
+        "SoftInt 80h", "SoftInt 81h", "SoftInt 82h", "SoftInt 83h", "SoftInt 84h", "SoftInt 85h", "SoftInt 86h", "SoftInt 87h",
+        "SoftInt 88h", "SoftInt 89h", "SoftInt 8ah", "SoftInt 8bh", "SoftInt 8ch", "SoftInt 8dh", "SoftInt 8eh", "SoftInt 8fh",
+        "SoftInt 90h", "SoftInt 91h", "SoftInt 92h", "SoftInt 93h", "SoftInt 94h", "SoftInt 95h", "SoftInt 96h", "SoftInt 97h",
+        "SoftInt 98h", "SoftInt 99h", "SoftInt 9ah", "SoftInt 9bh", "SoftInt 9ch", "SoftInt 9dh", "SoftInt 9eh", "SoftInt 9fh",
+        "SoftInt a0h", "SoftInt a1h", "SoftInt a2h", "SoftInt a3h", "SoftInt a4h", "SoftInt a5h", "SoftInt a6h", "SoftInt a7h",
+        "SoftInt a8h", "SoftInt a9h", "SoftInt aah", "SoftInt abh", "SoftInt ach", "SoftInt adh", "SoftInt aeh", "SoftInt afh",
+        "SoftInt b0h", "SoftInt b1h", "SoftInt b2h", "SoftInt b3h", "SoftInt b4h", "SoftInt b5h", "SoftInt b6h", "SoftInt b7h",
+        "SoftInt b8h", "SoftInt b9h", "SoftInt bah", "SoftInt bbh", "SoftInt bch", "SoftInt bdh", "SoftInt beh", "SoftInt bfh",
+        "SoftInt c0h", "SoftInt c1h", "SoftInt c2h", "SoftInt c3h", "SoftInt c4h", "SoftInt c5h", "SoftInt c6h", "SoftInt c7h",
+        "SoftInt c8h", "SoftInt c9h", "SoftInt cah", "SoftInt cbh", "SoftInt cch", "SoftInt cdh", "SoftInt ceh", "SoftInt cfh",
+        "SoftInt d0h", "SoftInt d1h", "SoftInt d2h", "SoftInt d3h", "SoftInt d4h", "SoftInt d5h", "SoftInt d6h", "SoftInt d7h",
+        "SoftInt d8h", "SoftInt d9h", "SoftInt dah", "SoftInt dbh", "SoftInt dch", "SoftInt ddh", "SoftInt deh", "SoftInt dfh",
+        "SoftInt e0h", "SoftInt e1h", "SoftInt e2h", "SoftInt e3h", "SoftInt e4h", "SoftInt e5h", "SoftInt e6h", "SoftInt e7h",
+        "SoftInt e8h", "SoftInt e9h", "SoftInt eah", "SoftInt ebh", "SoftInt ech", "SoftInt edh", "SoftInt eeh", "SoftInt efh",
+        "SoftInt f0h", "SoftInt f1h", "SoftInt f2h", "SoftInt f3h", "SoftInt f4h", "SoftInt f5h", "SoftInt f6h", "SoftInt f7h",
+        "SoftInt f8h", "SoftInt f9h", "SoftInt fah", "SoftInt fbh", "SoftInt fch", "SoftInt fdh", "SoftInt feh", "SoftInt ffh",
+    };
+    if (uExit < RT_ELEMENTS(s_apszNames))
+        return s_apszNames[uExit];
+    return NULL;
+}
+
+
 /** Worker for iemR3InfoTlbPrintSlots and iemR3InfoTlbPrintAddress. */
 static void iemR3InfoTlbPrintHeader(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const *pTlb, bool *pfHeader)
 {
