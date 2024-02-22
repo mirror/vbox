@@ -379,10 +379,6 @@ HRESULT NvramStore::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageF
 HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarStore)
 {
 #ifndef VBOX_COM_INPROC
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.hrc())) return adep.hrc();
-
     Utf8Str strPath;
     NvramStore::getNonVolatileStorageFile(strPath);
 
@@ -417,9 +413,7 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     if (SUCCEEDED(hrc))
     {
         m->pUefiVarStore.queryInterfaceTo(aUefiVarStore.asOutParam());
-
-        /* Mark the NVRAM store as potentially modified. */
-        m->pParent->i_setModified(Machine::IsModified_NvramStore);
+        /* The "modified" state is handled by i_retainUefiVarStore. */
     }
 
     return hrc;
@@ -1065,8 +1059,8 @@ int NvramStore::i_removeAllPasswords()
 
 HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
 {
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    /* the machine needs to be mutable unless fReadonly is set */
+    AutoMutableStateDependency adep(fReadonly ? NULL : m->pParent);
     if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);

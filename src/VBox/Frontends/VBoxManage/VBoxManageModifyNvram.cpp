@@ -63,7 +63,8 @@ DECLARE_TRANSLATION_CONTEXT(Nvram);
  */
 static RTEXITCODE handleModifyNvramInitUefiVarStore(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
 {
-    RT_NOREF(a);
+    if (a->argc != 2)
+        return errorTooManyParameters(&a->argv[1]);
 
     CHECK_ERROR2I_RET(nvramStore, InitUefiVariableStore(0 /*aSize*/), RTEXITCODE_FAILURE);
     return RTEXITCODE_SUCCESS;
@@ -78,7 +79,8 @@ static RTEXITCODE handleModifyNvramInitUefiVarStore(HandlerArg *a, ComPtr<INvram
  */
 static RTEXITCODE handleModifyNvramEnrollMsSignatures(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
 {
-    RT_NOREF(a);
+    if (a->argc != 2)
+        return errorTooManyParameters(&a->argv[1]);
 
     ComPtr<IUefiVariableStore> uefiVarStore;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
@@ -251,12 +253,68 @@ static RTEXITCODE handleModifyNvramEnrollMok(HandlerArg *a, ComPtr<INvramStore> 
  */
 static RTEXITCODE handleModifyNvramEnrollOraclePlatformKey(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
 {
-    RT_NOREF(a);
+    if (a->argc != 2)
+        return errorTooManyParameters(&a->argv[1]);
 
     ComPtr<IUefiVariableStore> uefiVarStore;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
 
     CHECK_ERROR2I_RET(uefiVarStore, EnrollOraclePlatformKey(), RTEXITCODE_FAILURE);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Handles the 'modifynvram myvm secureboot' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramSecureBoot(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        /* common options */
+        { "--enable",       'e', RTGETOPT_REQ_NOTHING },
+        { "--disable",      'd', RTGETOPT_REQ_NOTHING }
+    };
+
+    int enable = -1;
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc - 2, &a->argv[2], s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'e':   // --enable
+                if (enable >= 0)
+                    return errorSyntax(Nvram::tr("You can specify either --enable or --disable once."));
+                enable = 1;
+                break;
+
+            case 'd':   // --disable
+                if (enable >= 0)
+                    return errorSyntax(Nvram::tr("You can specify either --enable or --disable once."));
+                enable = 0;
+                break;
+
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (enable < 0)
+        return errorSyntax(Nvram::tr("You have to specify either --enable or --disable."));
+
+    ComPtr<IUefiVariableStore> uefiVarStore;
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2I_RET(uefiVarStore, COMSETTER(SecureBootEnabled((BOOL)enable)), RTEXITCODE_FAILURE);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -269,7 +327,8 @@ static RTEXITCODE handleModifyNvramEnrollOraclePlatformKey(HandlerArg *a, ComPtr
  */
 static RTEXITCODE handleModifyNvramListUefiVars(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
 {
-    RT_NOREF(a);
+    if (a->argc != 2)
+        return errorTooManyParameters(&a->argv[1]);
 
     ComPtr<IUefiVariableStore> uefiVarStore;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
@@ -361,7 +420,7 @@ static RTEXITCODE handleModifyNvramQueryUefiVar(HandlerArg *a, ComPtr<INvramStor
             RTFileClose(hFile);
         }
         else
-           rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
+            rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
     }
 
     return rcExit;
@@ -490,7 +549,7 @@ static RTEXITCODE handleModifyNvramChangeUefiVar(HandlerArg *a, ComPtr<INvramSto
         }
     }
     else
-       rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
+        rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
 
     return rcExit;
 }
@@ -547,6 +606,11 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLORCLPK);
         hrc = handleModifyNvramEnrollOraclePlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
+    else if (!strcmp(a->argv[1], "secureboot"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_SECUREBOOT);
+        hrc = handleModifyNvramSecureBoot(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    }
     else if (!strcmp(a->argv[1], "listvars"))
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_LISTVARS);
@@ -568,7 +632,7 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
         hrc = handleModifyNvramChangeUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else
-        return errorUnknownSubcommand(a->argv[0]);
+        return errorUnknownSubcommand(a->argv[1]);
 
     /* commit changes */
     if (SUCCEEDED(hrc))

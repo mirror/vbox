@@ -1413,6 +1413,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
     if (bstrNVRAMFile.isNotEmpty())
         SHOW_BSTR_STRING("BIOS NVRAM File", Info::tr("BIOS NVRAM File:"), bstrNVRAMFile);
+    if (   firmwareType == FirmwareType_EFI || firmwareType == FirmwareType_EFI32
+        || firmwareType == FirmwareType_EFI64 || firmwareType == FirmwareType_EFIDUAL)
+    {
+        ComPtr<IUefiVariableStore> uefiVarStore;
+        CHECK_ERROR_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), hrc);
+        SHOW_BOOLEAN_PROP(uefiVarStore, SecureBootEnabled, "SecureBoot", Info::tr("UEFI Secure Boot:"));
+    }
     SHOW_BOOLEAN_PROP_EX(platform,   RTCUseUTC, "rtcuseutc", Info::tr("RTC:"), "UTC", Info::tr("local time"));
 
 #ifdef VBOX_WITH_IOMMU_AMD /** @todo BUGBUG Do we set / needs this for ARM as well? */
