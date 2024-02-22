@@ -130,6 +130,8 @@ extern const DISOPCODE g_InvalidOpcode[1];
 extern const DISOPCODE g_aOneByteMapX86[256];
 extern const DISOPCODE g_aOneByteMapX64[256];
 extern const DISOPCODE g_aTwoByteMapX86[256];
+extern const DISOPCODE g_OpcodeLES;
+extern const DISOPCODE g_OpcodeLDS;
 
 /** Two byte opcode map with prefix 0x66 */
 extern const DISOPCODE g_aTwoByteMapX86_PF66[256];
@@ -197,6 +199,7 @@ extern const DISOPCODE g_aMapX86_Group10[8];
 extern const DISOPCODE g_aMapX86_Group11[8*2];
 extern const DISOPCODE g_aMapX86_Group12[8*2];
 extern const DISOPCODE g_aMapX86_Group13[8*2];
+extern const DISOPCODE g_aMapX86_VGroup13[8*2];
 extern const DISOPCODE g_aMapX86_Group14[8*2];
 extern const DISOPCODE g_aMapX86_Group15_mem[8];
 extern const DISOPCODE g_aMapX86_Group15_mod11_rm000[8];

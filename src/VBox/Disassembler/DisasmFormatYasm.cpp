@@ -639,7 +639,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     {
                         char *pszFmtDst = szTmpFmt;
                         if (pszSpace == NULL) pszSpace = strchr(pszDelim, 0);
-                        if (   (*pszFmt == '#' && !pDis->x86.bVexWFlag) /** @todo check this*/
+                        if (   (*pszFmt == '#' && !(pDis->x86.bVexByte2 & DISPREFIX_VEX_F_W)) /** @todo check this*/
                             || (*pszFmt == '@' && !VEXREG_IS256B(pDis->x86.bVexDestReg))
                             || (*pszFmt == '&' && (   DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
                                                    || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
@@ -722,7 +722,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         { \
                             case DISCPUMODE_16BIT: if (OP_PARM_VSUBTYPE(pParam->x86.fParam) != OP_PARM_y) PUT_SZ("word "); break; \
                             case DISCPUMODE_32BIT: \
-                                if (pDis->pCurInstr->uOpcode != OP_GATHER || pDis->x86.bVexWFlag) { PUT_SZ("dword "); break; } \
+                                if (pDis->pCurInstr->uOpcode != OP_GATHER || (pDis->x86.bVexByte2 & DISPREFIX_VEX_F_W)) \
+                                { PUT_SZ("dword "); break; } \
                                 RT_FALL_THRU(); \
                             case DISCPUMODE_64BIT: PUT_SZ("qword "); break; \
                             default: break; \

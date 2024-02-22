@@ -320,8 +320,8 @@ const DISOPCODE g_aOneByteMapX86[256] =
     OP("Shift Grp2 %Ev,%Ib", IDX_ParseShiftGrp2, 0,                 0,          OP_SHIFT_GRP2,  OP_PARM_Ev,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("retn %Iw",           IDX_ParseImmUshort, 0,                 0,          OP_RETN,        OP_PARM_Iw,      OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW | DISOPTYPE_X86_FORCED_64_OP_SIZE),
     OP("retn",               0,                  0,                 0,          OP_RETN,        OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW | DISOPTYPE_X86_FORCED_64_OP_SIZE),
-    OP("les %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LES,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64),
-    OP("lds %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LDS,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64 | DISOPTYPE_RRM_DANGEROUS),
+    OP("vex3b/les %Gv,%Mp",  IDX_ParseVex3b,     0,                 0,          OP_VEX3B,       OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("vex2b/lds %Gv,%Mp",  IDX_ParseVex2b,     0,                 0,          OP_VEX2B,       OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     /** @todo these two are actually group11 */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,  0,          OP_MOV,         OP_PARM_Eb,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mov %Ev,%Iz",        IDX_ParseModRM,     IDX_ParseImmZ,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -393,6 +393,10 @@ const DISOPCODE g_aOneByteMapX86[256] =
     OP("Indirect Grp5",      IDX_ParseGrp5,  0,          0,          OP_IND_GRP5, OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
+const DISOPCODE g_OpcodeLES =
+    OP("les %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LES,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64);
+const DISOPCODE g_OpcodeLDS =
+    OP("lds %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LDS,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64 | DISOPTYPE_RRM_DANGEROUS);
 
 const DISOPCODE g_aTwoByteMapX86[256] =
 {
@@ -3189,6 +3193,32 @@ const DISOPCODE g_aMapX86_Group13[8*2] =
     INVALID_OPCODE_MOD_RM(0x),
 };
 
+/* vex map1 0x72 */
+const DISOPCODE g_aMapX86_VGroup13[8*2] =
+{
+    /* 0   format string,                   parse param #1,     parse param #2,     parse param #3,     parse param #4,     opcode,             param #1,     param #2,     param #3,     param #4,     flags */
+    /* No prefix */
+    INVALID_OPCODE_MOD_RM(0x00),
+    INVALID_OPCODE_MOD_RM(0x01),
+    INVALID_OPCODE_MOD_RM(0x02),
+    INVALID_OPCODE_MOD_RM(0x03),
+    INVALID_OPCODE_MOD_RM(0x04),
+    INVALID_OPCODE_MOD_RM(0x05),
+    INVALID_OPCODE_MOD_RM(0x06),
+    INVALID_OPCODE_MOD_RM(0x07),
+
+    /* Group 13 with prefix 0x66 */
+    INVALID_OPCODE_MOD_RM(0x08),
+    INVALID_OPCODE_MOD_RM(0x09),
+    OPVEX("vpsrld %Hx,%Ux,%Ib",             IDX_ParseVexDest,   IDX_ParseModRM,     IDX_ParseImmByte,   0,                  OP_VPSRLD,          OP_PARM_Hx,   OP_PARM_Ux,    OP_PARM_Ib,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x0b),
+    OPVEX("vpsrad %Hx,%Ux,%Ib",             IDX_ParseVexDest,   IDX_ParseModRM,     IDX_ParseImmByte,   0,                  OP_VPSRAD,          OP_PARM_Hx,   OP_PARM_Ux,    OP_PARM_Ib,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x0d),
+    OPVEX("vpslld %Hx,%Ux,%Ib",             IDX_ParseVexDest,   IDX_ParseModRM,     IDX_ParseImmByte,   0,                  OP_VPSLLD,          OP_PARM_Hx,   OP_PARM_Ux,    OP_PARM_Ib,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x0f),
+    /*     format string,                   parse param #1,     parse param #2,     parse param #3,     parse param #4,     opcode,             param #1,     param #2,     param #3,     param #4,     flags */
+};
+
 /* 0xF 0x73 */
 const DISOPCODE g_aMapX86_Group14[8*2] =
 {
@@ -3460,7 +3490,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     /* 7 */
     OPVEX("vpshufd %Vx,%Wx,%Ib",            IDX_ParseModRM,     IDX_UseModRM,    IDX_ParseImmByte,      0,                  OP_VPSHUFD,         OP_PARM_Vx,   OP_PARM_Wx,   OP_PARM_Ib,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
-    INVALID_OPCODE,
+    OP("vgroup13",                          IDX_ParseGrp13,                0,                   0,                          OP_GRP13,           OP_PARM_NONE, OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     OPVEX("vpcmpeqb %Vx,%Hx,%Wx",           IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       0,                  OP_VPCMPEQB,        OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpcmpeqw %Vx,%Hx,%Wx",           IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       0,                  OP_VPCMPEQW,        OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),

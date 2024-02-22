@@ -163,6 +163,8 @@ BEGINPROC   TestProc32
         paddd       mm1, mm3
         paddd       xmm1, xmm3
 
+        lds eax, [ebx]
+        les ebp, [esp]
 %if __YASM_VERSION_ID__ >= 001030000h ; Old yasm doesn't support the instructions below
         adcx        eax, ebx
         adcx        eax, [edi]
@@ -180,6 +182,8 @@ BEGINPROC   TestProc32
         vpmovzxbq  ymm1, [100h]
         vgatherqps xmm0,dword [eax+xmm0*2],xmm0
         vgatherqpd xmm0,qword [eax+xmm0*2],xmm0
+        vpsrld      ymm5, ymm1, 009h
+        vpslld      ymm0, ymm7, 01ah
 %endif
 
         movbe       eax, [edi]
@@ -385,6 +389,10 @@ BEGINPROC TestProc64
         vpunpcklbw ymm1, ymm2, ymm3
         vpmovsxbw  ymm4,[0x100]
         vgatherqpd xmm0,qword [rbx+xmm11*2],xmm2
+
+        vpsrld      ymm5, ymm1, 009h
+        vpsrld      ymm8, ymm12, 011h
+        vpslld      ymm0, ymm7, 01ah
 %endif
 
         popcnt      ax, bx

@@ -38,6 +38,7 @@
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
+#include <iprt/x86.h>
 #include "DisasmInternal-x86-amd64.h"
 
 
@@ -965,7 +966,9 @@ static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
      * This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
      * encoding of the MOD field in the MODR/M byte.
      */
-    if (pOp->fOpType & DISOPTYPE_X86_MOD_FIXED_11)
+    if (!(pOp->fOpType & DISOPTYPE_X86_MOD_FIXED_11))
+    { /* likely */ }
+    else
         pDis->x86.ModRM.Bits.Mod = 3;
 
     if (pDis->x86.fPrefix & DISPREFIX_REX)
@@ -973,17 +976,22 @@ static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
-        pDis->x86.ModRM.Bits.Reg |= ((!!(pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
+        pDis->x86.ModRM.Bits.Reg |= (!!(pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3;
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
+#if 1
+        if (   pDis->x86.ModRM.Bits.Mod == 3 /* The register mode has neither SIB nor disp32. */
+            || (   pDis->x86.ModRM.Bits.Rm != 4      /* SIB */
+                && (   pDis->x86.ModRM.Bits.Mod != 0 /* disp32/PCREL is mod=0 rm=5 */
+                    || pDis->x86.ModRM.Bits.Rm  != 5)))
+#else
         if (!(    pDis->x86.ModRM.Bits.Mod != 3
               &&  pDis->x86.ModRM.Bits.Rm  == 4)
             &&
             !(    pDis->x86.ModRM.Bits.Mod == 0
               &&  pDis->x86.ModRM.Bits.Rm  == 5))
-        {
-            pDis->x86.ModRM.Bits.Rm |= ((!!(pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
-        }
+#endif
+            pDis->x86.ModRM.Bits.Rm |= (!!(pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3;
     }
     offInstr = QueryModRM(offInstr, pOp, pDis, pParam);
 
@@ -1643,7 +1651,7 @@ static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
             break;
 
         case OP_PARM_B: // Always OP_PARM_By. Change if it is not so.
-            if (pDis->x86.bVexWFlag && pDis->uCpuMode == DISCPUMODE_64BIT)
+            if ((pDis->x86.bVexByte2 & DISPREFIX_VEX_F_W) && pDis->uCpuMode == DISCPUMODE_64BIT)
                 pParam->fUse |= DISUSE_REG_GEN64;
             else
                 pParam->fUse |= DISUSE_REG_GEN32;
@@ -2098,10 +2106,14 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
-    if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   /* 2nd table */
-
-    pOp = &g_aMapX86_Group13[reg];
+    if (!(pDis->x86.fPrefix & DISPREFIX_VEX))
+    {
+        if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
+            reg += 8;   /* 2nd table */
+        pOp = &g_aMapX86_Group13[reg];
+    }
+    else
+        pOp = &g_aMapX86_VGroup13[(pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_66 ? reg + 8 : reg];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2171,20 +2183,26 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 {
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
-    uint8_t byte = disReadByte(pDis, offInstr++);
-    pDis->x86.bOpCode = disReadByte(pDis, offInstr++);
-
-    pDis->x86.bVexDestReg = VEX_2B2INT(byte);
-
-    // VEX.R (equivalent to REX.R)
-    if (pDis->uCpuMode == DISCPUMODE_64BIT && !(byte & 0x80))
+    uint8_t const bVexByte = disReadByte(pDis, offInstr++);
+    if (pDis->uCpuMode == DISCPUMODE_64BIT)
     {
-        /* REX prefix byte */
-        pDis->x86.fPrefix   |= DISPREFIX_REX;
-        pDis->x86.fRexPrefix = DISPREFIX_REX_FLAGS_R;
+        // VEX.~R => REX.R
+        if (!(bVexByte & 0x80))
+        {
+            pDis->x86.fPrefix   |= DISPREFIX_REX;
+            pDis->x86.fRexPrefix = DISPREFIX_REX_FLAGS_R;
+        }
     }
+    else if ((bVexByte & X86_MODRM_MOD_MASK) != (X86_MOD_REG << X86_MODRM_MOD_SHIFT))
+        return disParseInstruction(offInstr - 1, &g_OpcodeLDS, pDis); /* LDS r,mem */
 
-    PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte & 3][1];
+    /* VEX2.byte1 is the same as VEX3.byte2 with the exception of the 7th bit (~R vs W). */
+    pDis->x86.bVexByte2   = bVexByte & (DISPREFIX_VEX_F_PP_MASK | DISPREFIX_VEX_F_L | DISPREFIX_VEX_F_VVVV);
+    pDis->x86.bVexDestReg = VEX_2B2INT(bVexByte);
+    pDis->x86.bOpCode     = disReadByte(pDis, offInstr++);
+    pDis->x86.fPrefix    |= DISPREFIX_VEX;
+
+    PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[bVexByte & 3][1];
     unsigned  const      idxOpcode = pDis->x86.bOpCode - pRange->idxFirst;
     PCDISOPCODE          pOpCode;
     if (idxOpcode < pRange->cOpcodes)
@@ -2200,31 +2218,32 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 {
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
-    uint8_t byte1 = disReadByte(pDis, offInstr++);
-    uint8_t byte2 = disReadByte(pDis, offInstr++);
-    pDis->x86.bOpCode = disReadByte(pDis, offInstr++);
-    pDis->x86.bVexDestReg = VEX_2B2INT(byte2); /** @todo r=bird: why on earth ~vvvv + L; this is obfuscation non-sense. Either split the shit up or just store byte2 raw here! */
-
-    // VEX.W
-    pDis->x86.bVexWFlag = !!(byte2 & 0x80); /** @todo r=bird: why a whole byte for this one flag? x86.bVexWFlag and bVexDestReg makes little sense. */
-
-    /* Hack alert! Assume VEX.W rules over any 66h prefix and that no VEX
-       encoded instructions ever uses the regular x86.uOpMode w/o VEX.W. */
-    pDis->x86.uOpMode = (byte2 & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT ? DISCPUMODE_64BIT : DISCPUMODE_32BIT;
-
-    // VEX.~R~X~B => REX.RXB
+    uint8_t const bVexByte1 = disReadByte(pDis, offInstr++);
     if (pDis->uCpuMode == DISCPUMODE_64BIT)
     {
-        pDis->x86.fRexPrefix |= (byte1 >> 5) ^ 7;
+        // VEX.~R~X~B => REX.RXB
+        pDis->x86.fRexPrefix |= (bVexByte1 >> 5) ^ 7;
         if (pDis->x86.fRexPrefix)
             pDis->x86.fPrefix |= DISPREFIX_REX;
     }
+    else if ((bVexByte1 & X86_MODRM_MOD_MASK) != (X86_MOD_REG << X86_MODRM_MOD_SHIFT))
+        return disParseInstruction(offInstr - 1, &g_OpcodeLES, pDis); /* LES r,mem */
+
+    uint8_t const bVexByte2 = disReadByte(pDis, offInstr++);
+    pDis->x86.fPrefix    |= DISPREFIX_VEX;
+    pDis->x86.bVexByte2   = bVexByte2;
+    pDis->x86.bOpCode     = disReadByte(pDis, offInstr++);
+    pDis->x86.bVexDestReg = VEX_2B2INT(bVexByte2); /** @todo r=bird: why on earth ~vvvv + L; this is obfuscation non-sense. Either split the shit up or just store bVexByte2 raw here! */
+
+    /* Hack alert! Assume VEX.W rules over any 66h prefix and that no VEX
+       encoded instructions ever uses the regular x86.uOpMode w/o VEX.W. */
+    pDis->x86.uOpMode = (bVexByte2 & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT ? DISCPUMODE_64BIT : DISCPUMODE_32BIT;
 
     PCDISOPCODE pOpCode;
-    uint8_t const idxVexMap = byte1 & 0x1f;
-    if (idxVexMap < RT_ELEMENTS(g_aapVexOpcodesMapRanges[byte2 & 3]))
+    uint8_t const idxVexMap = bVexByte1 & 0x1f;
+    if (idxVexMap < RT_ELEMENTS(g_aapVexOpcodesMapRanges[bVexByte2 & 3]))
     {
-        PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte2 & 3][idxVexMap];
+        PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[bVexByte2 & 3][idxVexMap];
         unsigned  const      idxOpcode = pDis->x86.bOpCode - pRange->idxFirst;
         if (idxOpcode < pRange->cOpcodes)
             pOpCode = &pRange->papOpcodes[idxOpcode];
@@ -2416,14 +2435,6 @@ DECLHIDDEN(int) disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint
                 AssertFailed();
                 break;
             }
-        }
-
-        /* Check if this is a VEX prefix. Not for 32-bit mode. */
-        if (pDis->uCpuMode != DISCPUMODE_64BIT
-            && (enmOpcode == OP_LES || enmOpcode == OP_LDS)
-            && (disReadByte(pDis, offInstr) & 0xc0) == 0xc0)
-        {
-            paOneByteMap = g_aOneByteMapX64;
         }
 
         /* first opcode byte. */
