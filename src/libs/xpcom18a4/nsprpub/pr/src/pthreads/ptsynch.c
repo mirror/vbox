@@ -365,7 +365,7 @@ static void PR_DestroyCondVar(PRCondVar *cvar)
     }
 }  /* PR_DestroyCondVar */
 
-PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, RTMSINTERVAL msTimeout)
+static PRStatus PR_WaitCondVar(PRCondVar *cvar, RTMSINTERVAL msTimeout)
 {
     PRIntn rv;
 
@@ -476,7 +476,7 @@ PR_IMPLEMENT(void) PR_DestroyMonitor(PRMonitor *mon)
 /* The GC uses this; it is quite arguably a bad interface.  I'm just 
  * duplicating it for now - XXXMB
  */
-PR_IMPLEMENT(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon)
+PR_IMPLEMENT(uint32_t) PR_GetMonitorEntryCount(PRMonitor *mon)
 {
     pthread_t self = pthread_self();
     if (pthread_equal(mon->owner, self))
@@ -532,7 +532,6 @@ PR_IMPLEMENT(PRStatus) PR_ExitMonitor(PRMonitor *mon)
 PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, RTMSINTERVAL msTimeout)
 {
     PRStatus rv;
-    PRInt16 saved_entries;
     pthread_t saved_owner;
 
     Assert(mon != NULL);
@@ -544,7 +543,7 @@ PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, RTMSINTERVAL msTimeout)
     Assert(pthread_equal(mon->owner, pthread_self()));
 
     /* tuck these away 'till later */
-    saved_entries = mon->entryCount; 
+    uint32_t saved_entries = mon->entryCount; 
     mon->entryCount = 0;
     _PT_PTHREAD_COPY_THR_HANDLE(mon->owner, saved_owner);
     _PT_PTHREAD_INVALIDATE_THR_HANDLE(mon->owner);

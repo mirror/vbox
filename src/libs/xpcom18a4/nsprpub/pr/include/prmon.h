@@ -125,7 +125,7 @@ NSPR_API(PRStatus) PR_NotifyAll(PRMonitor *mon);
 ** Return the number of times that the current thread has entered the
 ** mutex. Returns zero if the current thread has not entered the mutex.
 */
-NSPR_API(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon);
+NSPR_API(uint32_t) PR_GetMonitorEntryCount(PRMonitor *mon);
 
 NSPR_API(PRMonitor*) PR_NewNamedMonitor(const char* name);
 
