@@ -2960,7 +2960,7 @@ ipcDConnectService::Init()
     return NS_ERROR_OUT_OF_MEMORY;
 
   vrc = RTReqPoolCreate(1024 /*cMaxThreads*/, 10*RT_MS_1SEC /*cMsMinIdle*/,
-                        8 /*cThreadsPushBackThreshold */, RT_MS_1SEC /* cMsMaxPushBack */,
+                        64 /*cThreadsPushBackThreshold*/, RT_MS_1SEC /* cMsMaxPushBack */,
                         "DCon", &mhReqPool);
   if (RT_FAILURE(vrc))
   {
