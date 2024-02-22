@@ -2135,9 +2135,9 @@ typedef struct IEM
 #define IEM_OP_PRF_REPZ                 RT_BIT_32(18) /**< Repeat-if-zero prefix (0xf3). */
 
 #define IEM_OP_PRF_REX                  RT_BIT_32(24) /**< Any REX prefix (0x40-0x4f). */
-#define IEM_OP_PRF_REX_R                RT_BIT_32(25) /**< REX.R prefix (0x44,0x45,0x46,0x47,0x4c,0x4d,0x4e,0x4f). */
-#define IEM_OP_PRF_REX_B                RT_BIT_32(26) /**< REX.B prefix (0x41,0x43,0x45,0x47,0x49,0x4b,0x4d,0x4f). */
-#define IEM_OP_PRF_REX_X                RT_BIT_32(27) /**< REX.X prefix (0x42,0x43,0x46,0x47,0x4a,0x4b,0x4e,0x4f). */
+#define IEM_OP_PRF_REX_B                RT_BIT_32(25) /**< REX.B prefix (0x41,0x43,0x45,0x47,0x49,0x4b,0x4d,0x4f). */
+#define IEM_OP_PRF_REX_X                RT_BIT_32(26) /**< REX.X prefix (0x42,0x43,0x46,0x47,0x4a,0x4b,0x4e,0x4f). */
+#define IEM_OP_PRF_REX_R                RT_BIT_32(27) /**< REX.R prefix (0x44,0x45,0x46,0x47,0x4c,0x4d,0x4e,0x4f). */
 /** Mask with all the REX prefix flags.
  * This is generally for use when needing to undo the REX prefixes when they
  * are followed legacy prefixes and therefore does not immediately preceed
@@ -4813,9 +4813,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  */
 #define IEM_GET_MODRM_EX(a_pVCpu, a_bRm) \
     (  ((a_bRm) & ~X86_MODRM_REG_MASK) \
-     | (uint8_t)( (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X)) >> (26 - 3) ) )
-AssertCompile(IEM_OP_PRF_REX_B == RT_BIT_32(26));
-AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
+     | (uint8_t)( (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X)) >> (25 - 3) ) )
+AssertCompile(IEM_OP_PRF_REX_B == RT_BIT_32(25));
+AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(26));
 
 /**
  * Gets the effective VEX.VVVV value.
