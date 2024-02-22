@@ -837,7 +837,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
 static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
 {
     uint64_t FileSize;
-    VHDFooter vhdFooter;
+    VHDFooter vhdFooter; RT_ZERO(vhdFooter); /* MSVC thinks this can be used uninitialized. */
 
     pImage->uOpenFlags = uOpenFlags;
 

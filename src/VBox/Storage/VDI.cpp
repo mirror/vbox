@@ -1642,9 +1642,7 @@ static DECLCALLBACK(int) vdiRead(void *pBackendData, uint64_t uOffset, size_t cb
         rc = VERR_VD_BLOCK_FREE;
     else if (pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO)
     {
-        size_t cbSet;
-
-        cbSet = vdIfIoIntIoCtxSet(pImage->pIfIo, pIoCtx, 0, cbToRead);
+        size_t cbSet = vdIfIoIntIoCtxSet(pImage->pIfIo, pIoCtx, 0, cbToRead);
         Assert(cbSet == cbToRead); RT_NOREF(cbSet);
     }
     else
@@ -2820,7 +2818,7 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData, PVDIOCTX pIoCtx,
         if (IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
         {
             unsigned const cbBlock = getImageBlockSize(&pImage->Header);
-            size_t const cbPreAllocated = offDiscard % cbBlock;
+            size_t const cbPreAllocated = offDiscard % RT_MAX(cbBlock, 1); /* MSVC thinks it is clever and says there is a potential mod by 0 here, hence the RT_MAX... */
             size_t const cbPostAllocated = getImageBlockSize(&pImage->Header) - cbDiscard - cbPreAllocated;
             uint8_t *pbBlockData;
 
