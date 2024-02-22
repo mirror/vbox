@@ -582,7 +582,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint64_t        nsDonePreBuffering = 0;
 
         uint64_t        offStream          = 0;
-        uint64_t        nsTimeout          = pTstEnv->msTimeout * RT_NS_1MS;
+        uint64_t        nsTimeout          = uint64_t(pTstEnv->msTimeout) * RT_NS_1MS_64;
         uint64_t        nsLastMsgCantWrite = 0; /* Timestamp (in ns) when the last message of an unwritable stream was shown. */
         uint64_t        nsLastWrite        = 0;
 
@@ -896,7 +896,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
         uint64_t const  nsStarted         = RTTimeNanoTS();
 
-        uint64_t        nsTimeout         = pTstEnv->msTimeout * RT_NS_1MS;
+        uint64_t        nsTimeout         = uint64_t(pTstEnv->msTimeout) * RT_NS_1MS_64;
         uint64_t        nsLastMsgCantRead = 0; /* Timestamp (in ns) when the last message of an unreadable stream was shown. */
 
         AUDIOTESTSTATE  enmState          = AUDIOTESTSTATE_PRE;
