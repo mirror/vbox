@@ -458,12 +458,13 @@ class tdAudioTest(vbox.TestDriver):
                 reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
 
         # Adjust fRc if caller expected a specific exit code.
-        if  iExpectedRc \
-        and iRc is not iExpectedRc:
+        if  iExpectedRc is not None \
+        and (iRc != iExpectedRc):
             reporter.error('Executing \"%s\" on host failed (got exit code %d, expected %d'
                            % (sWhat, iRc, iExpectedRc,));
             fRc = False;
 
+        reporter.log2('Got fRc = %s + exit code %d' % (fRc, iRc,));
         return fRc, iRc;
 
     def getWinFirewallArgsDisable(self, sOsType):
@@ -680,7 +681,7 @@ class tdAudioTest(vbox.TestDriver):
         #
         # Let VKAT on the host run synchronously.
         #
-        fRc, _ = self.executeHst("VKAT Host", asArgs);
+        fRc, _ = self.executeHst("VKAT Host", asArgs, iExpectedRc = 0);
 
         reporter.testDone();
 
