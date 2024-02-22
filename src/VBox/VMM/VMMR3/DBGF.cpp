@@ -719,6 +719,23 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
         return rc;
 
     /*
+     * Stop other CPUs for some messages so we can inspect the state accross
+     * all CPUs as best as possible.
+     */
+    /** @todo This isn't entirely sane as we'd need a wait to back out of this
+     *        if the debugger goes fishing and such. */
+    switch (enmEvent)
+    {
+        default:
+            break;
+        case DBGFEVENT_DEV_STOP:
+            rc = dbgfR3EventHaltAllVCpus(pVM, pVCpu);
+            if (RT_SUCCESS(rc))
+                break;
+            return rc;
+    }
+
+    /*
      * Format the message.
      */
     char   *pszMessage = NULL;
