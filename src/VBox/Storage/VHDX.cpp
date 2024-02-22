@@ -1156,7 +1156,6 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
     int rc = VINF_SUCCESS;
     uint32_t cDataBlocks;
     uint32_t uChunkRatio;
-    uint32_t cSectorBitmapBlocks;
     uint32_t cBatEntries;
     uint32_t cbBatEntries;
     PVhdxBatEntry paBatEntries = NULL;
@@ -1171,10 +1170,6 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
 
     if (pImage->cbSize % pImage->cbBlock)
         cDataBlocks++;
-
-    cSectorBitmapBlocks = cDataBlocks / uChunkRatio;
-    if (cDataBlocks % uChunkRatio)
-        cSectorBitmapBlocks++;
 
     cBatEntries = cDataBlocks + (cDataBlocks - 1)/uChunkRatio;
     cbBatEntries = cBatEntries * sizeof(VhdxBatEntry);
