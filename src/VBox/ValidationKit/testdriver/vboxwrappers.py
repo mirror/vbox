@@ -2398,14 +2398,17 @@ class SessionWrapper(TdTaskBase):
         except: return reporter.errorXcpt('Failed to set the audio controller to %s.' % (eAudioControllerType,));
 
         if eAudioDriverType is None:
-            sHost = utils.getHostOs()
-            if   sHost == 'darwin':    eAudioDriverType = vboxcon.AudioDriverType_CoreAudio;
-            elif sHost == 'win':       eAudioDriverType = vboxcon.AudioDriverType_DirectSound;
-            elif sHost == 'linux':     eAudioDriverType = vboxcon.AudioDriverType_Pulse;
-            elif sHost == 'solaris':   eAudioDriverType = vboxcon.AudioDriverType_OSS;
+            if self.fpApiVer >= 7.1:
+                eAudioDriverType = vboxcon.AudioDriverType_Default;
             else:
-                reporter.error('PORTME: Do not know which audio driver to pick for: %s!' % (sHost,));
-                eAudioDriverType = vboxcon.AudioDriverType_Null;
+                sHost = utils.getHostOs()
+                if   sHost == 'darwin':    eAudioDriverType = vboxcon.AudioDriverType_CoreAudio;
+                elif sHost == 'win':       eAudioDriverType = vboxcon.AudioDriverType_DirectSound;
+                elif sHost == 'linux':     eAudioDriverType = vboxcon.AudioDriverType_Pulse;
+                elif sHost == 'solaris':   eAudioDriverType = vboxcon.AudioDriverType_OSS;
+                else:
+                    reporter.error('PORTME: Do not know which audio driver to pick for: %s!' % (sHost,));
+                    eAudioDriverType = vboxcon.AudioDriverType_Null;
 
         try:    oAdapter.audioDriver = eAudioDriverType;
         except: return reporter.errorXcpt('Failed to set the audio driver to %s.' % (eAudioDriverType,))
@@ -2419,7 +2422,7 @@ class SessionWrapper(TdTaskBase):
         try:    oAdapter.enabledOut = fEnableOut;
         except: return reporter.errorXcpt('Failed to set the "enabledOut" property to %s.' % (fEnable,));
 
-        reporter.log('set audio adapter type to %d, driver to %d, and enabled to %s (input is %s, output is %s)'
+        reporter.log('set audio controller type to %d, driver to %d, and enabled to %s (input is %s, output is %s)'
                      % (eAudioControllerType, eAudioDriverType, fEnable, fEnableIn, fEnableOut,));
         self.oTstDrv.processPendingEvents();
         return True;
