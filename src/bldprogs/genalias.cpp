@@ -443,10 +443,6 @@ int main(int argc, char **argv)
     s_szFile[cchFile++] = '/';
     pszFilename = &s_szFile[cchFile];
 
-    /* anything to do? */
-    if (argc == 5)
-        return 0;
-
     rc = 0;
     if (!strcmp(argv[5], "-r"))
     {
