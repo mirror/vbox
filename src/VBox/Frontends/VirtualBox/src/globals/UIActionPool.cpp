@@ -3696,7 +3696,7 @@ void UIActionPool::updateShortcuts()
 bool UIActionPool::event(QEvent *pEvent)
 {
     /* Depending on event-type: */
-    switch ((UIEventType)pEvent->type())
+    switch ((UIEventTypeActionPool)pEvent->type())
     {
         case UIEventTypeActionPool_ActivateAction:
         {
