@@ -1349,7 +1349,7 @@ bool UICommon::switchToMachine(CMachine &comMachine)
 #else
     const WId id = (WId)comMachine.ShowConsoleWindow();
 #endif
-    AssertWrapperOk(comMachine);
+    Assert(comMachine.isOk());
     if (!comMachine.isOk())
         return false;
 

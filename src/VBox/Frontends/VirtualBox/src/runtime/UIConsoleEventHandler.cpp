@@ -235,7 +235,7 @@ void UIConsoleEventHandlerProxy::prepareListener()
 
     /* Register event listener for console event source: */
     comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
-    AssertWrapperOk(comEventSourceConsole);
+    Assert(comEventSourceConsole.isOk());
 
     /* Register event sources in their listeners as well: */
     m_pQtListener->getWrapped()->registerSource(comEventSourceConsole, m_comEventListener);
@@ -329,7 +329,7 @@ void UIConsoleEventHandlerProxy::cleanupListener()
         return;
     /* Get console event source: */
     CEventSource comEventSourceConsole = comConsole.GetEventSource();
-    AssertWrapperOk(comEventSourceConsole);
+    Assert(comConsole.isOk());
 
     /* Unregister event listener for console event source: */
     comEventSourceConsole.UnregisterListener(m_comEventListener);

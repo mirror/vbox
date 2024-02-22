@@ -441,16 +441,15 @@ void UIGuestProcessControlWidget::prepareListener()
 
     /* Get CProgress event source: */
     CEventSource comEventSource = m_comGuest.GetEventSource();
-    AssertWrapperOk(comEventSource);
+    Assert(m_comGuest.isOk());
 
     /* Enumerate all the required event-types: */
     QVector<KVBoxEventType> eventTypes;
     eventTypes << KVBoxEventType_OnGuestSessionRegistered;
 
-
     /* Register event listener for CProgress event source: */
     comEventSource.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
-    AssertWrapperOk(comEventSource);
+    Assert(comEventSource.isOk());
 
     /* Register event sources in their listeners as well: */
     m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
@@ -552,7 +551,7 @@ void UIGuestProcessControlWidget::sltCleanupListener()
 
     /* Get CProgress event source: */
     CEventSource comEventSource = m_comGuest.GetEventSource();
-    AssertWrapperOk(comEventSource);
+    Assert(m_comGuest.isOk());
 
     /* Unregister event listener for CProgress event source: */
     comEventSource.UnregisterListener(m_comEventListener);
