@@ -63,22 +63,49 @@ RT_C_DECLS_BEGIN
 #define DISPREFIX_SEG                   UINT8_C(0x08)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
 #define DISPREFIX_REP                   UINT8_C(0x10)
-/** rep(e) prefix (not a prefix, but we'll treat is as one). */
+/** repne prefix (not a prefix, but we'll treat is as one). */
 #define DISPREFIX_REPNE                 UINT8_C(0x20)
 /** REX prefix (64 bits) */
 #define DISPREFIX_REX                   UINT8_C(0x40)
+/** VEX or EVEX prefix (64 bits) */
+#define DISPREFIX_VEX                   UINT8_C(0x80)
 /** @} */
 
 /** @name VEX.Lvvvv prefix destination register flag.
- *  @{
+ * @todo r=bird: redo this. See comments elsewhere.
+ * @{
  */
 #define VEX_LEN256                      UINT8_C(0x01)
 #define VEXREG_IS256B(x)                   ((x) & VEX_LEN256)
 /* Convert second byte of VEX prefix to internal format */
 #define VEX_2B2INT(x)                   ((((x) >> 2) & 0x1f))
 #define VEX_HAS_REX_R(x)                  (!((x) & 0x80))
-
 #define DISPREFIX_VEX_FLAG_W            UINT8_C(0x01)
+/** @} */
+
+/** @name DISPREFIX_VEX_F_XXX - The bVexStuff definitions
+ * @note This is the same layout as byte2 in the VEX3 prefix.
+ * @{ */
+/** The VEX prefix mask.   */
+#define DISPREFIX_VEX_F_PP_MASK         UINT8_C(0x03)
+/** No prefix.   */
+#define DISPREFIX_VEX_F_PP_NONE         UINT8_C(0x00)
+/** 66h/opsize prefix.   */
+#define DISPREFIX_VEX_F_PP_66           UINT8_C(0x01)
+/** f3h/repe prefix.   */
+#define DISPREFIX_VEX_F_PP_F3           UINT8_C(0x02)
+/** f2h/repne prefix.   */
+#define DISPREFIX_VEX_F_PP_F2           UINT8_C(0x03)
+/** The VEX.L flag. */
+#define DISPREFIX_VEX_F_L               UINT8_C(0x04)
+/** The VEX.VVVV mask. */
+#define DISPREFIX_VEX_F_VVVV            UINT8_C(0x78)
+/** The VEX.VVVV shift count. */
+#define DISPREFIX_VEX_F_VVVV_SHIFT      3
+/** The VEX.VVVV mask shifted down to bit 0. */
+#define DISPREFIX_VEX_F_VVVV_SMASK      UINT8_C(0x0f)
+/** The VEX.W flag. */
+#define DISPREFIX_VEX_F_W               UINT8_C(0x80)
  /** @} */
 
 /** @name 64 bits prefix byte flags (DISSTATE::fRexPrefix).
@@ -438,10 +465,12 @@ typedef struct
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;
     /** VEX presence flag, destination register and size
-     * @todo r=bird: There is no VEX presence flage here, just ~vvvv and L.  */
+     * @todo r=bird: There is no VEX presence flage here, just ~vvvv and L.
+     * @deprecated DO NOT USE. All info is available in bVexByte2 and
+     *             fPrefix/DISPREFIX_VEX. */
     uint8_t         bVexDestReg;
-    /** VEX.W flag */
-    uint8_t         bVexWFlag;
+    /** DISPREFIX_VEX_F_XXX - This is set for both VEX prefixes. */
+    uint8_t         bVexByte2;
     /** Internal: instruction filter */
     uint32_t        fFilter;
     /** SIB displacment. */
