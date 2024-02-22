@@ -41,6 +41,7 @@
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
+#include "UILoggingDefs.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -59,7 +60,6 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
-#include <VBox/log.h>
 #ifdef VBOX_WS_WIN
 # include <iprt/win/windows.h>
 #endif

@@ -26,11 +26,11 @@
  */
 
 /* Defines: */
-#define LOG_GROUP LOG_GROUP_GUI
 #define VBOX_WITH_KBD_LEDS_SYNC
 //#define VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
 
 /* GUI includes: */
+#include "UILoggingDefs.h"
 #include "DarwinKeyboard.h"
 #ifndef USE_HID_FOR_MODIFIERS
 # include "CocoaEventHelper.h"
@@ -41,7 +41,6 @@
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
-#include <VBox/log.h>
 #ifdef DEBUG_PRINTF
 # include <iprt/stream.h>
 #endif

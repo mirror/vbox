@@ -38,6 +38,7 @@
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
 #include "UIExtraDataManager.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UIMachineLogic.h"

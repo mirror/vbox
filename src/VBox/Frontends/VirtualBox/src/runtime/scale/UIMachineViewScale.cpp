@@ -34,6 +34,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineViewScale.h"
@@ -43,8 +44,7 @@
 #include "CGraphicsAdapter.h"
 
 /* Other VBox includes: */
-#include "VBox/log.h"
-#include <VBox/VBoxOGL.h>
+#include <VBox/VBoxOGL.h> // For VBOX_OGL_SCALE_FACTOR_MULTIPLIER
 
 
 UIMachineViewScale::UIMachineViewScale(UIMachineWindow *pMachineWindow, ulong uScreenId)

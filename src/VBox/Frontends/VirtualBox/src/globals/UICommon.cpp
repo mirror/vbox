@@ -67,6 +67,7 @@
 #include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"
 #include "UIIconPool.h"
+#include "UILoggingDefs.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
 #include "UIMediumSelector.h"

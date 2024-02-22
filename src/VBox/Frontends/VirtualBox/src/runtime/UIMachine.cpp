@@ -42,6 +42,7 @@
 #include "UIMachine.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
+#include "UILoggingDefs.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"

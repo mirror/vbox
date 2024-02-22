@@ -40,6 +40,7 @@
 #include "UIFrameBuffer.h"
 #include "UIIconPool.h"
 #include "UIGuestOSType.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"

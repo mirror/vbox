@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIErrorString.h"
+#include "UILoggingDefs.h"
 #include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
 #include "UITask.h"

@@ -38,6 +38,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UILoggingDefs.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVMLogViewerWidget.h"
 #include "UICommon.h"

@@ -36,6 +36,7 @@
 #include "UIIconPool.h"
 #include "UIGuestControlConsole.h"
 #include "UIGuestProcessControlDialog.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UISession.h"
 

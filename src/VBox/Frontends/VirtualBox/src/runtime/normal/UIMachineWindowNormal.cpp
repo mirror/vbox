@@ -43,6 +43,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIndicatorsPool.h"
 #include "UIKeyboardHandler.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"

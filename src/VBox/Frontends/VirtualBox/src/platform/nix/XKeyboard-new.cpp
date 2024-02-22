@@ -25,18 +25,12 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-/* Define GUI log group.
- * This define should go *before* VBox/log.h include: */
-#define LOG_GROUP LOG_GROUP_GUI
-
 /* Qt includes: */
 #include <QString>
 #include <QStringList>
 
-/* Other VBox includes: */
-#include <VBox/log.h>
-
 /* GUI includes: */
+#include "UILoggingDefs.h"
 #include "XKeyboard.h"
 
 /* Other VBox includes: */

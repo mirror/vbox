@@ -38,6 +38,7 @@
 #include <QGuiApplication>
 
 /* GUI includes: */
+#include "UILoggingDefs.h"
 #include "VBoxUtils-nix.h"
 
 /* Other VBox includes: */
@@ -45,7 +46,6 @@
 #include <iprt/env.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
-#include <VBox/log.h>
 
 /* Other includes: */
 #undef  BOOL            /* Undefine the VBox/com/defs.h variant */

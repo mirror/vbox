@@ -38,6 +38,7 @@
 #include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIIconPool.h"
+#include "UILoggingDefs.h"
 #include "UITools.h"
 #include "UIToolsHandlerMouse.h"
 #include "UIToolsHandlerKeyboard.h"

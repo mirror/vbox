@@ -54,6 +54,7 @@
 #include "UIExtraDataManager.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"

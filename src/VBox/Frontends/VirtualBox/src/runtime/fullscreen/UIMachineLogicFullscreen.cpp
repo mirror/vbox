@@ -33,6 +33,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineView.h"

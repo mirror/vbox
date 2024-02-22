@@ -47,8 +47,9 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIPaneContainer.h"
+#include "UILoggingDefs.h"
 #include "UIModalWindowManager.h"
+#include "UIPaneContainer.h"
 #include "UIVisoCreator.h"
 #include "UIVisoContentBrowser.h"
 #ifdef VBOX_WS_MAC

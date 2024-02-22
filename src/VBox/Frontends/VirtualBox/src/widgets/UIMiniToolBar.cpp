@@ -44,11 +44,12 @@
 #endif
 
 /* GUI includes: */
-#include "UIMiniToolBar.h"
-#include "UIAnimationFramework.h"
-#include "UIIconPool.h"
-#include "UIDesktopWidgetWatchdog.h"
 #include "UICommon.h"
+#include "UIAnimationFramework.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIIconPool.h"
+#include "UILoggingDefs.h"
+#include "UIMiniToolBar.h"
 #ifdef VBOX_WS_NIX
 # include "UIExtraDataManager.h"
 #endif

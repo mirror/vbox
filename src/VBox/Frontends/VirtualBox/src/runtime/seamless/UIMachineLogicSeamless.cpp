@@ -33,6 +33,7 @@
 /* GUI includes: */
 #include "UIActionPoolRuntime.h"
 #include "UICommon.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"

@@ -31,25 +31,23 @@
 #include <QTimer>
 #ifdef VBOX_WS_MAC
 # include <QMenuBar>
-#endif /* VBOX_WS_MAC */
+#endif
 
 /* GUI includes: */
 #include "UIActionPoolRuntime.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineWindow.h"
 
-/* Other VBox includes: */
-#include "VBox/log.h"
-
 /* External includes: */
 #ifdef VBOX_WS_NIX
 # include <limits.h>
-#endif /* VBOX_WS_NIX */
+#endif
 
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(UIMachineWindow *pMachineWindow, ulong uScreenId)

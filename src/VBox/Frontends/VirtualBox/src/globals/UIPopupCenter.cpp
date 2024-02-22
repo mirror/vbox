@@ -31,6 +31,7 @@
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
+#include "UILoggingDefs.h"
 #include "UIPopupCenter.h"
 #include "UIPopupStack.h"
 

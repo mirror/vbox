@@ -25,15 +25,12 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-/* Defines: */
-#define LOG_GROUP LOG_GROUP_GUI
-
 /* GUI includes: */
+#include "UILoggingDefs.h"
 #include "WinKeyboard.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
-#include <VBox/log.h>
 
 /* External includes: */
 #include <stdio.h>

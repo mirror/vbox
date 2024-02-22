@@ -37,13 +37,11 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineViewNormal.h"
 #include "UIMachineWindow.h"
-
-/* Other VBox includes: */
-#include "VBox/log.h"
 
 
 UIMachineViewNormal::UIMachineViewNormal(UIMachineWindow *pMachineWindow, ulong uScreenId)

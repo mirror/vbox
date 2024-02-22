@@ -57,6 +57,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
+#include "UILoggingDefs.h"
 #include "UIMainEventListener.h"
 #include "UIMessageCenter.h"
 #include "UISettingsDefs.h"

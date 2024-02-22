@@ -33,6 +33,7 @@
 #include <QVariant>
 
 /* GUI includes: */
+#include "UILoggingDefs.h"
 #include "UINetworkReply.h"
 #include "UINetworkRequestManager.h"
 #include "UIExtraDataManager.h"
@@ -52,7 +53,6 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/zip.h>
-#include <VBox/log.h>
 
 
 /** QThread extension

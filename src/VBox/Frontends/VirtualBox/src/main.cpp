@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UILoggingDefs.h"
 #include "UIStarter.h"
 #include "UIModalWindowManager.h"
 #ifdef VBOX_WS_MAC

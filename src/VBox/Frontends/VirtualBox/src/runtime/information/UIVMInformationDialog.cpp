@@ -40,6 +40,7 @@
 #include "UIInformationConfiguration.h"
 #include "UIInformationRuntime.h"
 #include "UIGuestProcessControlWidget.h"
+#include "UILoggingDefs.h"
 #include "UIMachineLogic.h"
 #include "UIMachine.h"
 #include "UIMachineView.h"

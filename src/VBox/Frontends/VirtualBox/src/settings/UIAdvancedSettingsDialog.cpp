@@ -57,6 +57,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
+#include "UILoggingDefs.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPopupCenter.h"

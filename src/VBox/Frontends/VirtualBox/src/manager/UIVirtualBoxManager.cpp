@@ -62,6 +62,7 @@
 #include "UIExtraDataManager.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
+#include "UILoggingDefs.h"
 #include "UIMedium.h"
 #include "UIMediumManager.h"
 #include "UIMessageCenter.h"

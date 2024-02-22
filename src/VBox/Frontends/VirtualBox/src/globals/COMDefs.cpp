@@ -30,15 +30,13 @@
 
 /* GUI includes: */
 #include "COMDefs.h"
+#include "UILoggingDefs.h"
 
 /* COM includes: */
 #include "CVirtualBoxErrorInfo.h"
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
-
-/* Other VBox includes: */
-#include <iprt/log.h>
 
 #ifdef VBOX_WITH_XPCOM
 

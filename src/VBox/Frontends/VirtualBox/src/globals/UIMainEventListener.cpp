@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UILoggingDefs.h"
 #include "UIMainEventListener.h"
 #include "UIMousePointerShapeData.h"
 
