@@ -2706,10 +2706,24 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                 uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
 
                 pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
-                if (pTb)
-                    rcStrict = iemTbExec(pVCpu, pTb);
+                if (RT_LIKELY(pVCpu->iem.s.pbInstrBuf != NULL))
+                {
+                    if (pTb)
+                        rcStrict = iemTbExec(pVCpu, pTb);
+                    else
+                        rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
+                }
                 else
-                    rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
+                {
+                    /* This can only happen if the current PC cannot be translated into a
+                       host pointer, which means we're in MMIO or unmapped memory... */
+#if defined(VBOX_STRICT) && defined(IN_RING3)
+                    rcStrict = DBGFSTOP(pVM);
+                    if (rcStrict != VINF_SUCCESS && rcStrict != VERR_DBGF_NOT_ATTACHED)
+                        return rcStrict;
+#endif
+                    rcStrict = IEMExecLots(pVCpu, 2048, cPollRate, NULL);
+                }
                 if (rcStrict == VINF_SUCCESS)
                 {
                     Assert(pVCpu->iem.s.cActiveMappings == 0);
