@@ -50,51 +50,8 @@
 //-----------------------------------------------------------------------------
 NS_GENERIC_FACTORY_CONSTRUCTOR(ipcService)
 
-// enable this code to make the IPC service auto-start.
-#if 0
-NS_METHOD
-ipcServiceRegisterProc(nsIComponentManager *aCompMgr,
-                       nsIFile *aPath,
-                       const char *registryLocation,
-                       const char *componentType,
-                       const nsModuleComponentInfo *info)
-{
-    //
-    // add ipcService to the XPCOM startup category
-    //
-    nsCOMPtr<nsICategoryManager> catman(do_GetService(NS_CATEGORYMANAGER_CONTRACTID));
-    if (catman) {
-        nsXPIDLCString prevEntry;
-        catman->AddCategoryEntry(NS_XPCOM_STARTUP_OBSERVER_ID, "ipcService",
-                                 IPC_SERVICE_CONTRACTID, PR_TRUE, PR_TRUE,
-                                 getter_Copies(prevEntry));
-    }
-    return NS_OK;
-}
-
-NS_METHOD
-ipcServiceUnregisterProc(nsIComponentManager *aCompMgr,
-                         nsIFile *aPath,
-                         const char *registryLocation,
-                         const nsModuleComponentInfo *info)
-{
-    nsCOMPtr<nsICategoryManager> catman(do_GetService(NS_CATEGORYMANAGER_CONTRACTID));
-    if (catman)
-        catman->DeleteCategoryEntry(NS_XPCOM_STARTUP_OBSERVER_ID, 
-                                    IPC_SERVICE_CONTRACTID, PR_TRUE);
-    return NS_OK;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // extensions
-
-#include "ipcLockService.h"
-#include "ipcLockCID.h"
-NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(ipcLockService, Init)
-
-#include "tmTransactionService.h"
-NS_GENERIC_FACTORY_CONSTRUCTOR(tmTransactionService)
 
 #ifdef BUILD_DCONNECT
 
@@ -154,15 +111,6 @@ static const nsModuleComponentInfo components[] = {
   //
   // extensions go here:
   //
-  { IPC_LOCKSERVICE_CLASSNAME,
-    IPC_LOCKSERVICE_CID,
-    IPC_LOCKSERVICE_CONTRACTID,
-    ipcLockServiceConstructor },
-  { IPC_TRANSACTIONSERVICE_CLASSNAME,
-    IPC_TRANSACTIONSERVICE_CID,
-    IPC_TRANSACTIONSERVICE_CONTRACTID,
-    tmTransactionServiceConstructor },
-
 #ifdef BUILD_DCONNECT
   { IPC_DCONNECTSERVICE_CLASSNAME,
     IPC_DCONNECTSERVICE_CID,

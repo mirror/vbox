@@ -291,7 +291,6 @@ IPCD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/ipcd/
 IPCD-HEADERS_IFFLAGS = -m 644
 IPCD-HEADERS_SOURCES = \
 	ipc/ipcd/client/public/ipcCID.h \
-	ipc/ipcd/extensions/lock/public/ipcLockCID.h \
 	ipc/ipcd/util/public/ipcMessageReader.h \
 	ipc/ipcd/util/public/ipcMessageWriter.h \
 	ipc/ipcd/client/public/ipcdclient.h
@@ -818,13 +817,6 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/util/src/ipcMessageReader.cpp \
 	ipc/ipcd/util/src/ipcMessageWriter.cpp \
 	\
-	ipc/ipcd/extensions/lock/src/ipcLockProtocol.cpp \
-	ipc/ipcd/extensions/lock/src/ipcLockService.cpp \
-	\
-	ipc/ipcd/extensions/transmngr/src/tmTransactionService.cpp \
-	\
-	ipc/ipcd/extensions/transmngr/common/tmTransaction.cpp \
-	ipc/ipcd/extensions/transmngr/common/tmVector.cpp \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \

@@ -352,10 +352,7 @@ XPCOM_IDLFILES = \
 	ipc/ipcd/client/public/ipcIService.idl \
 	ipc/ipcd/client/public/ipcIMessageObserver.idl \
 	ipc/ipcd/client/public/ipcIClientObserver.idl \
-	ipc/ipcd/extensions/lock/public/ipcILockService.idl \
-	ipc/ipcd/extensions/transmngr/public/ipcITransactionService.idl \
-	ipc/ipcd/extensions/dconnect/public/ipcIDConnectService.idl \
-	ipc/ipcd/extensions/transmngr/public/ipcITransactionObserver.idl
+	ipc/ipcd/extensions/dconnect/public/ipcIDConnectService.idl
 
 #
 # The include path for the XPCOM IDL files above.
