@@ -1758,32 +1758,6 @@ bool UIMachineView::isFullscreenOrSeamless() const
            || visualStateType() == UIVisualStateType_Seamless;
 }
 
-bool UIMachineView::event(QEvent *pEvent)
-{
-    switch ((UIEventType)pEvent->type())
-    {
-#ifdef VBOX_WS_MAC
-        /* Event posted OnShowWindow: */
-        case ShowWindowEventType:
-        {
-            /* Dunno what Qt3 thinks a window that has minimized to the dock should be - it is not hidden,
-             * neither is it minimized. OTOH it is marked shown and visible, but not activated.
-             * This latter isn't of much help though, since at this point nothing is marked activated.
-             * I might have overlooked something, but I'm buggered what if I know what. So, I'll just always
-             * show & activate the stupid window to make it get out of the dock when the user wishes to show a VM: */
-            window()->show();
-            window()->activateWindow();
-            return true;
-        }
-#endif /* VBOX_WS_MAC */
-
-        default:
-            break;
-    }
-
-    return QAbstractScrollArea::event(pEvent);
-}
-
 bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     if (pWatched == viewport())

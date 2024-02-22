@@ -46,9 +46,6 @@ namespace UIDefs
     enum UIEventType
     {
         ActivateActionEventType = QEvent::User + 101,
-#ifdef VBOX_WS_MAC
-        ShowWindowEventType,
-#endif
     };
 
     /** Default guest additions image name. */

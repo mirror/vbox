@@ -313,7 +313,6 @@ protected:
     bool isFullscreenOrSeamless() const;
 
     /* Cross-platforms event processors: */
-    bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
     void resizeEvent(QResizeEvent *pEvent);
     void moveEvent(QMoveEvent *pEvent);
