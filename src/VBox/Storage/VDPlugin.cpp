@@ -727,7 +727,7 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
                     break;
                 }
 
-                rc = vdPluginLoadFromFilename(pszPluginPath);
+                vdPluginLoadFromFilename(pszPluginPath);
                 RTStrFree(pszPluginPath);
             }
 
@@ -847,7 +847,7 @@ DECLHIDDEN(int) vdPluginUnloadFromPath(const char *pszPath)
                     break;
                 }
 
-                rc = vdPluginUnloadFromFilename(pszPluginPath);
+                vdPluginUnloadFromFilename(pszPluginPath);
                 RTStrFree(pszPluginPath);
             }
 
