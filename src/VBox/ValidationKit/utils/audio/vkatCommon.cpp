@@ -707,7 +707,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                                         offStream += cbWritten;
 
                                         if (cbWritten != cbToWrite)
-                                            RTTestFailed(g_hTest, "Test #%RU32: Only played %RU32/%RU32 bytes",
+                                            RTTestFailed(g_hTest, "Test #%RU32: Only played %RU32/%RU32 bytes\n",
                                                          idxTest, cbWritten, cbToWrite);
 
                                         if (cbWritten)
@@ -1001,7 +1001,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 enmState = AUDIOTESTSTATE_POST;
 
                                 if (g_uVerbosity >= 2)
-                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording tone data done", idxTest);
+                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording tone data done\n", idxTest);
 
                                 if (AudioTestBeaconGetSize(&Beacon))
                                 {
@@ -1010,7 +1010,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                                         &pStream->Cfg.Props);
                                     if (g_uVerbosity >= 2)
                                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                                     "Test #%RU32: Waiting for %s beacon ...",
+                                                     "Test #%RU32: Waiting for %s beacon ...\n",
                                                      idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
                                 }
                             }
