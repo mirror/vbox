@@ -781,8 +781,6 @@ class tdAudioTest(vbox.TestDriver):
         Runs tests using one specific VM config.
         """
 
-        self.logVmInfo(oVM);
-
         reporter.testStart("Audio Testing");
 
         fSkip = False;
@@ -805,12 +803,14 @@ class tdAudioTest(vbox.TestDriver):
 
         sVkatExe = self.getBinTool('vkat');
 
-        # Now probe the backends.
+        #
+        # Probe the backends on the host.
+        #
         reporter.testStart('VKAT Probing');
         asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
         for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
             asArgs.extend([ '-v' ]);
-        fRc, iRc = self.executeHst("VKAT Host Audio Probing", asArgs);
+        _, iRc = self.executeHst("VKAT Host Audio Probing", asArgs);
         if iRc != 0:
             # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
             reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
@@ -818,7 +818,10 @@ class tdAudioTest(vbox.TestDriver):
             fSkip = True;
         reporter.testDone();
 
+        #
         # Reconfigure the VM.
+        #
+        fRc = True;
         oSession = self.openSession(oVM);
         if oSession is not None:
 
@@ -831,9 +834,12 @@ class tdAudioTest(vbox.TestDriver):
                 sKey, sValue = sExtraData.split(':');
                 reporter.log('Set extradata: %s => %s' % (sKey, sValue));
                 fRc = oSession.setExtraData(sKey, sValue) and fRc;
+                if not fRc:
+                    break;
 
             # Make sure that the VM's audio adapter is configured the way we need it to.
-            if self.fpApiVer >= 4.0:
+            if  fRc \
+            and self.fpApiVer >= 4.0:
                 enmAudioControllerType = None;
                 reporter.log('Configuring audio controller type ...');
                 if self.sAudioControllerType is None:
@@ -857,37 +863,47 @@ class tdAudioTest(vbox.TestDriver):
                     enmAudioControllerType = vboxcon.AudioControllerType_HDA;
                     reporter.log('Enforcing audio controller type to HDA');
 
-                reporter.log('Setting user-defined audio controller type to %d' % (enmAudioControllerType));
-                oSession.setupAudio(enmAudioControllerType,
-                                    fEnable = True, fEnableIn = True, fEnableOut = True);
+                fRc = fRc and oSession.setupAudio(enmAudioControllerType,
+                                                  fEnable = True, fEnableIn = True, fEnableOut = True);
 
             # Save the settings.
             fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc;
+            oSession = None;
 
-        reporter.testStart('Waiting for TXS');
-        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
-                                                                  fCdWait = True,
-                                                                  cMsTimeout = 3 * 60 * 1000,
-                                                                  sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
+            self.logVmInfo(oVM);
+
+        else:
+            fRc = False;
+
+        if fRc:
+            reporter.testStart('Waiting for TXS');
+            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
+                                                                      fCdWait = True,
+                                                                      cMsTimeout = 3 * 60 * 1000,
+                                                                      sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
+            reporter.testDone();
+
+            if oSession is not None:
+
+                self.prepareGuestForDebugging(oSession, oTxsSession, oTestVm);
+
+                reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
+                time.sleep(5);
+
+                self.addTask(oTxsSession);
+
+                fRc = self.doTest(oTestVm, oSession, oTxsSession);
+
+                # Cleanup.
+                self.removeTask(oTxsSession);
+                self.terminateVmBySession(oSession);
+
+        # Report an error in case we forgot it.
+        if not fRc:
+            reporter.error('Audio testing failed!');
+
         reporter.testDone();
-
-        if oSession is not None:
-
-            self.prepareGuestForDebugging(oSession, oTxsSession, oTestVm);
-
-            reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
-            time.sleep(5);
-
-            self.addTask(oTxsSession);
-
-            fRc = self.doTest(oTestVm, oSession, oTxsSession);
-
-            # Cleanup.
-            self.removeTask(oTxsSession);
-            self.terminateVmBySession(oSession);
-
-        reporter.testDone(fSkip);
         return fRc;
 
     def onExit(self, iRc):
