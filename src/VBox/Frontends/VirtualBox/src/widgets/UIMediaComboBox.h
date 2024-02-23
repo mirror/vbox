@@ -36,8 +36,9 @@
 #include <QString>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UILibraryDefs.h"
+#include "UIMedium.h"
+#include "UIMediumDefs.h"
 
 /** QComboBox subclass representing a list of registered media. */
 class SHARED_LIBRARY_STUFF UIMediaComboBox : public QComboBox

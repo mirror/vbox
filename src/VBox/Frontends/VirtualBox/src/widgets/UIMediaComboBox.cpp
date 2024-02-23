@@ -31,6 +31,7 @@
 #include <QFileInfo>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 
