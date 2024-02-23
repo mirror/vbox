@@ -1274,6 +1274,129 @@ void iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs)
 *   Threaded Recompiler Core                                                                                                     *
 *********************************************************************************************************************************/
 
+/** @callback_method_impl{FNDISREADBYTES, Dummy.} */
+static DECLCALLBACK(int) iemThreadedDisasReadBytesDummy(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+{
+    RT_BZERO(&pDis->Instr.ab[offInstr], cbMaxRead);
+    pDis->cbCachedInstr += cbMaxRead;
+    RT_NOREF(cbMinRead);
+    return VERR_NO_DATA;
+}
+
+
+DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT
+{
+    AssertReturnVoid((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED);
+
+    char szDisBuf[512];
+
+    /*
+     * Print TB info.
+     */
+    pHlp->pfnPrintf(pHlp,
+                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u\n"
+                    "pTb=%p: cUsed=%u msLastUsed=%u fFlags=%#010x %s\n",
+                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
+                    pTb, pTb->cUsed, pTb->msLastUsed, pTb->fFlags, iemTbFlagsToString(pTb->fFlags, szDisBuf, sizeof(szDisBuf)));
+
+    /*
+     * This disassembly is driven by the debug info which follows the native
+     * code and indicates when it starts with the next guest instructions,
+     * where labels are and such things.
+     */
+    DISSTATE                    Dis;
+    PCIEMTHRDEDCALLENTRY const  paCalls          = pTb->Thrd.paCalls;
+    uint32_t const              cCalls           = pTb->Thrd.cCalls;
+    DISCPUMODE                  enmGstCpuMode    = (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT ? DISCPUMODE_16BIT
+                                                 : (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
+                                                 :                                                            DISCPUMODE_64BIT;
+    uint32_t                    fExec            = pTb->fFlags & UINT32_C(0x00ffffff);
+    uint8_t                     idxRange         = UINT8_MAX;
+    uint8_t const               cRanges          = RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges));
+    uint32_t                    offRange         = 0;
+    uint32_t                    offOpcodes       = 0;
+    uint32_t const              cbOpcodes        = pTb->cbOpcodes;
+    RTGCPHYS                    GCPhysPc         = pTb->GCPhysPc;
+
+    for (uint32_t iCall = 0; iCall < cCalls; iCall++)
+    {
+        /*
+         * New opcode range?
+         */
+        if (   idxRange == UINT8_MAX
+            || idxRange >= cRanges
+            || offRange >= pTb->aRanges[idxRange].cbOpcodes)
+        {
+            idxRange += 1;
+            if (idxRange < cRanges)
+                offRange = !idxRange ? 0 : offRange - pTb->aRanges[idxRange - 1].cbOpcodes;
+            else
+                continue;
+            GCPhysPc = pTb->aRanges[idxRange].offPhysPage
+                     + (pTb->aRanges[idxRange].idxPhysPage == 0
+                        ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                        : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]);
+            pHlp->pfnPrintf(pHlp, "  Range #%u: GCPhysPc=%RGp LB %#x [idxPg=%d]\n",
+                            idxRange, GCPhysPc, pTb->aRanges[idxRange].cbOpcodes,
+                            pTb->aRanges[idxRange].idxPhysPage);
+            GCPhysPc += offRange;
+        }
+
+        /*
+         * Disassemble another guest instruction?
+         */
+        if (   paCalls[iCall].offOpcode != offOpcodes
+            && paCalls[iCall].cbOpcode > 0
+            && (uint32_t)(cbOpcodes - paCalls[iCall].offOpcode) <= cbOpcodes /* paranoia^2 */ )
+        {
+            offOpcodes = paCalls[iCall].offOpcode;
+            uint8_t const cbInstrMax = RT_MIN(cbOpcodes - offOpcodes, 15);
+            uint32_t      cbInstr    = 1;
+            int rc = DISInstrWithPrefetchedBytes(GCPhysPc, enmGstCpuMode, DISOPTYPE_ALL,
+                                                 &pTb->pabOpcodes[offOpcodes], cbInstrMax,
+                                                 iemThreadedDisasReadBytesDummy, NULL, &Dis, &cbInstr);
+            if (RT_SUCCESS(rc))
+            {
+                DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
+                                DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
+                                | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
+                                NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %s\n", GCPhysPc, szDisBuf);
+            }
+            else
+            {
+                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %.*Rhxs - guest disassembly failure %Rrc\n",
+                                GCPhysPc, cbInstrMax, &pTb->pabOpcodes[offOpcodes], rc);
+                cbInstr = paCalls[iCall].cbOpcode;
+            }
+            GCPhysPc   += cbInstr;
+            offRange   += cbInstr;
+        }
+
+        /*
+         * Dump call details.
+         */
+        pHlp->pfnPrintf(pHlp,
+                        "    Call #%u to %s (%u args)\n",
+                        iCall, g_apszIemThreadedFunctions[paCalls[iCall].enmFunction],
+                        g_acIemThreadedFunctionUsedArgs[paCalls[iCall].enmFunction]);
+
+        /*
+         * Snoop fExec.
+         */
+        switch (paCalls[iCall].enmFunction)
+        {
+            default:
+                break;
+            case kIemThreadedFunc_BltIn_CheckMode:
+                fExec = paCalls[iCall].auParams[0];
+                break;
+        }
+    }
+}
+
+
+
 /**
  * Allocate a translation block for threadeded recompilation.
  *

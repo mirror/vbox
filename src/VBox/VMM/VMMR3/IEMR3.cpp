@@ -30,6 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
@@ -50,9 +51,10 @@
 #include <iprt/getopt.h>
 #include <iprt/string.h>
 
-#if defined(VBOX_WITH_STATISTICS) && defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
+#if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 # include "IEMN8veRecompiler.h"
 # include "IEMThreadedFunctions.h"
+# include "IEMInline.h"
 #endif
 
 
@@ -61,6 +63,9 @@
 *********************************************************************************************************************************/
 static FNDBGFINFOARGVINT iemR3InfoITlb;
 static FNDBGFINFOARGVINT iemR3InfoDTlb;
+#if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
+static FNDBGFINFOARGVINT iemR3InfoTb;
+#endif
 #ifdef VBOX_WITH_DEBUGGER
 static void iemR3RegisterDebuggerCommands(void);
 #endif
@@ -574,6 +579,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
     DBGFR3InfoRegisterInternalArgv(pVM, "itlb", "IEM instruction TLB", iemR3InfoITlb, DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalArgv(pVM, "dtlb", "IEM instruction TLB", iemR3InfoDTlb, DBGFINFO_FLAGS_RUN_ON_EMT);
+#if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
+    DBGFR3InfoRegisterInternalArgv(pVM, "tb",   "IEM translation block", iemR3InfoTb, DBGFINFO_FLAGS_RUN_ON_EMT);
+#endif
 #ifdef VBOX_WITH_DEBUGGER
     iemR3RegisterDebuggerCommands();
 #endif
@@ -897,6 +905,179 @@ static DECLCALLBACK(void) iemR3InfoDTlb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
     return iemR3InfoTlbCommon(pVM, pHlp, cArgs, papszArgs, false /*fITlb*/);
 }
 
+#if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, dtlb}
+ */
+static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--cpu",              'c', RTGETOPT_REQ_UINT32                          },
+        { "--vcpu",             'c', RTGETOPT_REQ_UINT32                          },
+        { "--addr",             'a', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--address",          'a', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--phys",             'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--physical",         'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--phys-addr",        'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--phys-address",     'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--physical-address", 'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--flags",            'f', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
+    };
+
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /*iFirst*/, 0 /*fFlags*/);
+    AssertRCReturnVoid(rc);
+
+    PVMCPU const    pVCpuThis   = VMMGetCpu(pVM);
+    PVMCPU          pVCpu       = pVCpuThis ? pVCpuThis : VMMGetCpuById(pVM, 0);
+    RTGCPHYS        GCPhysPc    = NIL_RTGCPHYS;
+    RTGCPHYS        GCVirt      = NIL_RTGCPTR;
+    uint32_t        fFlags      = UINT32_MAX;
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                if (ValueUnion.u32 >= pVM->cCpus)
+                    pHlp->pfnPrintf(pHlp, "error: Invalid CPU ID: %u\n", ValueUnion.u32);
+                else if (!pVCpu || pVCpu->idCpu != ValueUnion.u32)
+                    pVCpu = VMMGetCpuById(pVM, ValueUnion.u32);
+                break;
+
+            case 'a':
+                GCVirt   = ValueUnion.u64;
+                GCPhysPc = NIL_RTGCPHYS;
+                break;
+
+            case 'p':
+                GCVirt   = NIL_RTGCPHYS;
+                GCPhysPc = ValueUnion.u64;
+                break;
+
+            case 'f':
+                fFlags = ValueUnion.u32;
+                break;
+
+            case 'h':
+                pHlp->pfnPrintf(pHlp,
+                                "Usage: info %ctlb [options]\n"
+                                "\n"
+                                "Options:\n"
+                                "  -c<n>, --cpu=<n>, --vcpu=<n>\n"
+                                "    Selects the CPU which TBs we're looking at. Default: Caller / 0\n"
+                                "  -a<virt>, --address=<virt>\n"
+                                "    Shows the TB for the specified guest virtual address.\n"
+                                "  -p<phys>, --phys=<phys>, --phys-addr=<phys>\n"
+                                "    Shows the TB for the specified guest physical address.\n"
+                                "  -f<flags>,--flags=<flags>\n"
+                                "    The TB flags value (hex) to use when looking up the TB.\n"
+                                "\n"
+                                "The default is to use CS:RIP and derive flags from the CPU mode.\n");
+                return;
+
+            default:
+                pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+        }
+    }
+
+    /* Currently, only do work on the same EMT. */
+    if (pVCpu != pVCpuThis)
+    {
+        pHlp->pfnPrintf(pHlp, "TODO: Cross EMT calling not supported yet: targeting %u, caller on %d\n",
+                        pVCpu->idCpu, pVCpuThis ? (int)pVCpuThis->idCpu : -1);
+        return;
+    }
+
+    /*
+     * Defaults.
+     */
+    if (GCPhysPc == NIL_RTGCPHYS)
+    {
+        if (GCVirt == NIL_RTGCPTR)
+            GCVirt = CPUMGetGuestFlatPC(pVCpu);
+        rc = PGMPhysGCPtr2GCPhys(pVCpu, GCVirt, &GCPhysPc);
+        if (RT_FAILURE(rc))
+        {
+            pHlp->pfnPrintf(pHlp, "Failed to convert %%%RGv to an guest physical address: %Rrc\n", GCVirt, rc);
+            return;
+        }
+    }
+    if (fFlags == UINT32_MAX)
+    {
+        /* Note! This is duplicating code in IEMAllThrdRecompiler. */
+        fFlags = iemCalcExecFlags(pVCpu);
+        if (pVM->cCpus == 1)
+            fFlags |= IEM_F_X86_DISREGARD_LOCK;
+        if (CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))
+            fFlags |= IEMTB_F_INHIBIT_SHADOW;
+        if (CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
+            fFlags |= IEMTB_F_INHIBIT_NMI;
+        if ((IEM_F_MODE_CPUMODE_MASK & fFlags) != IEMMODE_64BIT)
+        {
+            int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+            if (offFromLim < X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+                fFlags |= IEMTB_F_CS_LIM_CHECKS;
+        }
+    }
+
+    /*
+     * Do the lookup...
+     *
+     * Note! This is also duplicating code in IEMAllThrdRecompiler.  We don't
+     *       have much choice since we don't want to increase use counters and
+     *       trigger native recompilation.
+     */
+    fFlags &= IEMTB_F_KEY_MASK;
+    IEMTBCACHE const * const pTbCache = pVCpu->iem.s.pTbCacheR3;
+    uint32_t const           idxHash  = IEMTBCACHE_HASH_NO_KEY_MASK(pTbCache, fFlags, GCPhysPc);
+    PCIEMTB                  pTb      = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+    while (pTb)
+    {
+        if (pTb->GCPhysPc == GCPhysPc)
+        {
+            if ((pTb->fFlags & IEMTB_F_KEY_MASK) == fFlags)
+            {
+                /// @todo if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
+                break;
+            }
+        }
+        pTb = pTb->pNext;
+    }
+    if (!pTb)
+        pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x - no TB found on #%u\n", GCPhysPc, fFlags, pVCpu->idCpu);
+    else
+    {
+        /*
+         *
+         */
+        switch (pTb->fFlags & IEMTB_F_TYPE_MASK)
+        {
+            case IEMTB_F_TYPE_NATIVE:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - native\n", GCPhysPc, fFlags, pVCpu->idCpu, pTb);
+                iemNativeDisassembleTb(pTb, pHlp);
+                break;
+
+            case IEMTB_F_TYPE_THREADED:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - threaded\n", GCPhysPc, fFlags, pVCpu->idCpu, pTb);
+                iemThreadedDisassembleTb(pTb, pHlp);
+                break;
+
+            default:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - ??? %#x\n",
+                                GCPhysPc, fFlags, pVCpu->idCpu, pTb, pTb->fFlags);
+                break;
+        }
+    }
+}
+#endif /* VBOX_WITH_IEM_RECOMPILER && !VBOX_VMM_TARGET_ARMV8 */
+
 
 #ifdef VBOX_WITH_DEBUGGER
 
@@ -944,5 +1125,5 @@ static void iemR3RegisterDebuggerCommands(void)
     AssertLogRelRC(rc);
 }
 
-#endif
+#endif /* VBOX_WITH_DEBUGGER */
 
