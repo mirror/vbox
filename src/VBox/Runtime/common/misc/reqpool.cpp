@@ -438,7 +438,10 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         {
             uint64_t cNsIdle = RTTimeNanoTS() - pThread->uIdleNanoTs;
             if (cNsIdle >= pPool->cNsMinIdle)
+            {
+                ASMAtomicDecU32(&pPool->cIdleThreads); /* Was already marked as idle above. */
                 return rtReqPoolThreadExit(pPool, pThread, true /*fLocked*/);
+            }
         }
 
         if (RTListIsEmpty(&pThread->IdleNode))
@@ -579,7 +582,7 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
      * If there is an incoming worker thread already or we've reached the
      * maximum number of worker threads, we're done.
      */
-    if (   pPool->cIdleThreads > 0
+    if (   pPool->cIdleThreads >= pPool->cCurPendingRequests
         || pPool->cCurThreads >= pPool->cMaxThreads)
     {
         RTCritSectLeave(&pPool->CritSect);
