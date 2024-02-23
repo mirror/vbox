@@ -144,13 +144,6 @@ signals:
 
 public:
 
-    /** UI types. */
-    enum UIType
-    {
-        UIType_SelectorUI,
-        UIType_RuntimeUI
-    };
-
     /** VM launch running options. */
     enum LaunchRunning
     {

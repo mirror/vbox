@@ -2189,7 +2189,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     QStringList confirmedMessageList;
     if (!strAutoConfirmId.isEmpty())
     {
-        const QUuid uID = uiCommon().uiType() == UICommon::UIType_RuntimeUI
+        const QUuid uID = uiCommon().uiType() == UIType_RuntimeUI
                         ? uiCommon().managedVMUuid()
                         : UIExtraDataManager::GlobalID;
         confirmedMessageList = gEDataManager->suppressedMessages(uID);

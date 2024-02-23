@@ -1069,9 +1069,9 @@ bool UIDesktopWidgetWatchdog::isSynchTestRestricted() const
 {
     return    m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_Disabled
            || (   m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_ManagerOnly
-               && uiCommon().uiType() == UICommon::UIType_RuntimeUI)
+               && uiCommon().uiType() == UIType_RuntimeUI)
            || (   m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_MachineOnly
-               && uiCommon().uiType() == UICommon::UIType_SelectorUI);
+               && uiCommon().uiType() == UIType_ManagerUI);
 }
 
 void UIDesktopWidgetWatchdog::updateHostScreenConfiguration(int cHostScreenCount /* = -1 */)

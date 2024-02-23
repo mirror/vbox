@@ -632,7 +632,7 @@ void UICommon::prepare()
         i++;
     }
 
-    if (m_enmType == UIType_RuntimeUI && startVM)
+    if (uiType() == UIType_RuntimeUI && startVM)
     {
         /* m_fSeparateProcess makes sense only if a VM is started. */
         m_fSeparateProcess = fSeparateProcess;
@@ -676,7 +676,7 @@ void UICommon::prepare()
     }
 
     /* For Selector UI: */
-    if (uiType() == UIType_SelectorUI)
+    if (uiType() == UIType_ManagerUI)
     {
         /* We should create separate logging file for VM selector: */
         char szLogFile[RTPATH_MAX];
@@ -1403,7 +1403,7 @@ bool UICommon::launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode /*
         switch (uiCommon().uiType())
         {
             /* For Selector UI: */
-            case UIType_SelectorUI:
+            case UIType_ManagerUI:
             {
                 /* Just switch to existing VM window: */
                 return switchToMachine(comMachine);
@@ -1584,7 +1584,7 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
         comMachine = comSession.GetMachine();
     }
     /* Is this a Selector UI call? */
-    else if (uiType() == UIType_SelectorUI)
+    else if (uiType() == UIType_ManagerUI)
     {
         /* Open existing 'shared' session: */
         comSession = openExistingSession(comMachine.GetId());
@@ -3084,7 +3084,7 @@ void UICommon::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
             comWrappersReinit();
 
             /* For Selector UI: */
-            if (uiType() == UIType_SelectorUI)
+            if (uiType() == UIType_ManagerUI)
             {
                 /* Recreate Main event listeners: */
                 UIVirtualBoxEventHandler::destroy();

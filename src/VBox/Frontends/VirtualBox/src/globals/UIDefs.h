@@ -32,7 +32,6 @@
 #endif
 
 /* Qt includes: */
-#include <QEvent>
 #include <QStringList>
 
 /* GUI includes: */
@@ -81,6 +80,14 @@ enum MacOSXRelease
     MacOSXRelease_New,
 };
 #endif /* VBOX_WS_MAC */
+
+
+/** UI types. */
+enum UIType
+{
+    UIType_ManagerUI,
+    UIType_RuntimeUI
+};
 
 
 /** VM launch modes. */

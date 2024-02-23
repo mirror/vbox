@@ -977,7 +977,7 @@ void UIShortcutConfigurationEditor::prepareTabRuntime()
         m_pTabWidget->insertTab(TableIndex_Runtime, pTabMachine, QString());
 
         /* In the VM process we start by displaying the Runtime UI tab: */
-        if (uiCommon().uiType() == UICommon::UIType_RuntimeUI)
+        if (uiCommon().uiType() == UIType_RuntimeUI)
             m_pTabWidget->setCurrentWidget(pTabMachine);
     }
 }

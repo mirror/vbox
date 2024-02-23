@@ -541,10 +541,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 #ifndef VBOX_RUNTIME_UI
         /* Create global app instance for Selector UI: */
-        UICommon::create(UICommon::UIType_SelectorUI);
+        UICommon::create(UIType_ManagerUI);
 #else
         /* Create global app instance for Runtime UI: */
-        UICommon::create(UICommon::UIType_RuntimeUI);
+        UICommon::create(UIType_RuntimeUI);
 #endif
 
         /* Simulate try-catch block: */

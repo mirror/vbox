@@ -996,7 +996,7 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         QString strMachineName = comMachine.GetName();
 
         /* Add a label tab with machine name on it. Used only in manager UI: */
-        if (uiCommon().uiType() == UICommon::UIType_SelectorUI)
+        if (uiCommon().uiType() == UIType_ManagerUI)
             m_pTabWidget->addTab(new UILabelTab(this, uMachineId, strMachineName), strMachineName);
 
         bool fNoLogFileForMachine = true;

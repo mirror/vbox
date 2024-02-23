@@ -271,7 +271,7 @@ UIUpdateManager::UIUpdateManager()
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time, for Selector UI only: */
-    if (gEDataManager->applicationUpdateEnabled() && uiCommon().uiType() == UICommon::UIType_SelectorUI)
+    if (gEDataManager->applicationUpdateEnabled() && uiCommon().uiType() == UIType_ManagerUI)
         QTimer::singleShot(0, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
 }

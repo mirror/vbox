@@ -4891,7 +4891,7 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
     else
     {
         /* Current VM only: */
-        if (   uiCommon().uiType() == UICommon::UIType_RuntimeUI
+        if (   uiCommon().uiType() == UIType_RuntimeUI
             && uMachineID == uiCommon().managedVMUuid())
         {
             /* HID LEDs sync state changed (allowed if not restricted)? */
