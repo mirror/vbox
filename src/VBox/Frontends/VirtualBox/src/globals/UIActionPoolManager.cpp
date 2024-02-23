@@ -97,7 +97,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+I");
     }
@@ -135,7 +135,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+E");
     }
@@ -236,7 +236,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+T");
     }
@@ -275,7 +275,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+D");
     }
@@ -314,7 +314,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+H");
     }
@@ -353,7 +353,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+P");
     }
@@ -421,7 +421,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+X");
     }
@@ -458,7 +458,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Q");
     }
@@ -516,7 +516,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+N");
     }
@@ -555,7 +555,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+A");
     }
@@ -700,7 +700,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+N");
     }
@@ -737,7 +737,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+A");
     }
@@ -802,7 +802,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+S");
     }
@@ -837,7 +837,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+O");
     }
@@ -1396,7 +1396,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+F");
     }
@@ -1869,7 +1869,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+L");
     }
@@ -2001,7 +2001,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
@@ -2042,7 +2042,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+D");
     }
@@ -2083,7 +2083,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
@@ -2125,7 +2125,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -2166,7 +2166,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
@@ -2235,7 +2235,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+I");
     }
@@ -2276,7 +2276,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+U");
     }
@@ -2349,7 +2349,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+A");
     }
@@ -2394,7 +2394,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("");
     }
@@ -2439,7 +2439,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
@@ -2484,7 +2484,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+M");
     }
@@ -2529,7 +2529,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
@@ -2574,7 +2574,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+L");
     }
@@ -2620,7 +2620,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -2666,7 +2666,7 @@ protected:
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Find);
     }
@@ -2707,13 +2707,13 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
@@ -2756,7 +2756,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2824,7 +2824,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
@@ -2865,7 +2865,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
@@ -2907,7 +2907,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -2948,13 +2948,13 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
@@ -3023,7 +3023,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+A");
     }
@@ -3065,7 +3065,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+I");
     }
@@ -3107,7 +3107,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
@@ -3150,7 +3150,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -3192,7 +3192,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
@@ -3234,13 +3234,13 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+H");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::HelpContents);
     }
@@ -3451,7 +3451,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -3572,7 +3572,7 @@ protected:
 *********************************************************************************************************************************/
 
 UIActionPoolManager::UIActionPoolManager(bool fTemporary /* = false */)
-    : UIActionPool(UIActionPoolType_Manager, fTemporary)
+    : UIActionPool(UIType_ManagerUI, fTemporary)
 {
 }
 
@@ -4010,7 +4010,7 @@ void UIActionPoolManager::updateShortcuts()
     UIActionPool::updateShortcuts();
     /* Create temporary Runtime UI pool to do the same: */
     if (!isTemporary())
-        UIActionPool::createTemporary(UIActionPoolType_Runtime);
+        UIActionPool::createTemporary(UIType_RuntimeUI);
 }
 
 void UIActionPoolManager::sltHandleSettingsExpertModeChange()

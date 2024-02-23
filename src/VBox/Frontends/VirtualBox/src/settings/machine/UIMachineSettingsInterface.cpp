@@ -357,7 +357,7 @@ void UIMachineSettingsInterface::polishPage()
 void UIMachineSettingsInterface::prepare()
 {
     /* Prepare action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+    m_pActionPool = UIActionPool::create(UIType_RuntimeUI);
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineInterface;

@@ -242,7 +242,7 @@ public:
 
     /** Constructs model passing @a pParent to the base-class.
       * @param  enmType  Brings the action-pool type this model is related to. */
-    UIShortcutConfigurationModel(QObject *pParent, UIActionPoolType enmType);
+    UIShortcutConfigurationModel(QObject *pParent, UIType enmType);
 
     /** Defines the parent @a pTable reference. */
     void setTable(UIShortcutConfigurationTable *pTable);
@@ -290,7 +290,7 @@ private:
     void applyFilter();
 
     /** Holds the action-pool type this model is related to. */
-    UIActionPoolType  m_enmType;
+    UIType  m_enmType;
 
     /** Holds the parent table reference. */
     UIShortcutConfigurationTable *m_pTable;
@@ -350,7 +350,7 @@ private:
 *   Class UIShortcutConfigurationModel implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIShortcutConfigurationModel::UIShortcutConfigurationModel(QObject *pParent, UIActionPoolType enmType)
+UIShortcutConfigurationModel::UIShortcutConfigurationModel(QObject *pParent, UIType enmType)
     : QAbstractTableModel(pParent)
     , m_enmType(enmType)
     , m_pTable(0)
@@ -382,8 +382,8 @@ void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
     foreach (const UIShortcutConfigurationItem &item, list)
     {
         /* Filter out unnecessary items: */
-        if (   (m_enmType == UIActionPoolType_Manager && item.key().startsWith(GUI_Input_MachineShortcuts))
-            || (m_enmType == UIActionPoolType_Runtime && item.key().startsWith(GUI_Input_SelectorShortcuts)))
+        if (   (m_enmType == UIType_ManagerUI && item.key().startsWith(GUI_Input_MachineShortcuts))
+            || (m_enmType == UIType_RuntimeUI && item.key().startsWith(GUI_Input_SelectorShortcuts)))
             continue;
         /* Add suitable item to the model as a new shortcut: */
         m_shortcuts << UIShortcutTableViewRow(m_pTable, item);
@@ -537,7 +537,7 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
                     /* In other cases we should return hot-combo: */
                     QString strHotCombo = m_filteredShortcuts[iIndex].currentSequence();
                     /* But if that is machine table and hot-combo is not empty: */
-                    if (m_enmType == UIActionPoolType_Runtime && !strHotCombo.isEmpty())
+                    if (m_enmType == UIType_RuntimeUI && !strHotCombo.isEmpty())
                         /* We should prepend it with Host+ prefix: */
                         strHotCombo.prepend(UIHostCombo::hostComboModifierName());
                     /* Return what we've got: */
@@ -556,7 +556,7 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
                 case TableColumnIndex_Sequence:
                     return   m_filteredShortcuts[iIndex].key() == UIHostCombo::hostComboCacheKey()
                            ? QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence()))
-                           : QVariant::fromValue(UIHotKey(  m_enmType == UIActionPoolType_Runtime
+                           : QVariant::fromValue(UIHotKey(  m_enmType == UIType_RuntimeUI
                                                           ? UIHotKeyType_Simple
                                                           : UIHotKeyType_WithModifiers,
                                                           m_filteredShortcuts[iIndex].currentSequence(),
@@ -926,7 +926,7 @@ void UIShortcutConfigurationEditor::prepareTabManager()
                 pLayoutManager->addWidget(m_pEditorFilterManager);
 
             /* Prepare Manager UI model: */
-            m_pModelManager = new UIShortcutConfigurationModel(this, UIActionPoolType_Manager);
+            m_pModelManager = new UIShortcutConfigurationModel(this, UIType_ManagerUI);
 
             /* Prepare Manager UI table: */
             m_pTableManager = new UIShortcutConfigurationTable(pTabManager, m_pModelManager, "m_pTableManager");
@@ -963,7 +963,7 @@ void UIShortcutConfigurationEditor::prepareTabRuntime()
                 pLayoutMachine->addWidget(m_pEditorFilterRuntime);
 
             /* Prepare Runtime UI model: */
-            m_pModelRuntime = new UIShortcutConfigurationModel(this, UIActionPoolType_Runtime);
+            m_pModelRuntime = new UIShortcutConfigurationModel(this, UIType_RuntimeUI);
 
             /* Create Runtime UI table: */
             m_pTableRuntime = new UIShortcutConfigurationTable(pTabMachine, m_pModelRuntime, "m_pTableRuntime");

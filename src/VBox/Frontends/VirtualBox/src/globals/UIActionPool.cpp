@@ -173,7 +173,7 @@ void UIAction::setName(const QString &strName)
 void UIAction::setShortcuts(const QList<QKeySequence> &shortcuts)
 {
     /* Only for manager's action-pool: */
-    if (m_enmActionPoolType == UIActionPoolType_Manager)
+    if (m_enmActionPoolType == UIType_ManagerUI)
     {
         /* If primary shortcut should be visible: */
         if (!m_fShortcutHidden)
@@ -206,9 +206,9 @@ QString UIAction::nameInMenu() const
     switch (m_enmActionPoolType)
     {
         /* Unchanged name for Manager UI: */
-        case UIActionPoolType_Manager: return name();
+        case UIType_ManagerUI: return name();
         /* Filtered name for Runtime UI: */
-        case UIActionPoolType_Runtime: return UITranslator::removeAccelMark(name());
+        case UIType_RuntimeUI: return UITranslator::removeAccelMark(name());
     }
     /* Nothing by default: */
     return QString();
@@ -236,13 +236,13 @@ void UIAction::updateText()
             switch (m_enmActionPoolType)
             {
                 /* The same as menu name for Manager UI: */
-                case UIActionPoolType_Manager:
+                case UIType_ManagerUI:
                 {
                     setText(nameInMenu());
                     break;
                 }
                 /* With shortcut appended for Runtime UI: */
-                case UIActionPoolType_Runtime:
+                case UIType_RuntimeUI:
                 {
                     if (m_fMachineMenuAction)
                         setText(UITranslator::insertKeyToActionText(nameInMenu(),
@@ -518,12 +518,12 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType enmActionPoolType) const RT_OVERRIDE
     {
-        switch (actionPoolType)
+        switch (enmActionPoolType)
         {
-            case UIActionPoolType_Manager: break;
-            case UIActionPoolType_Runtime: return QKeySequence("Q");
+            case UIType_ManagerUI: break;
+            case UIType_RuntimeUI: return QKeySequence("Q");
         }
         return QKeySequence();
     }
@@ -697,12 +697,12 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType enmActionPoolType) const RT_OVERRIDE
     {
-        switch (actionPoolType)
+        switch (enmActionPoolType)
         {
-            case UIActionPoolType_Manager: return QKeySequence(QKeySequence::HelpContents);
-            case UIActionPoolType_Runtime: break;
+            case UIType_ManagerUI: return QKeySequence(QKeySequence::HelpContents);
+            case UIType_RuntimeUI: break;
         }
         return QKeySequence();
     }
@@ -1143,12 +1143,12 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType enmActionPoolType) const RT_OVERRIDE
     {
-        switch (actionPool()->type())
+        switch (enmActionPoolType)
         {
-            case UIActionPoolType_Manager: return QKeySequence("Ctrl+G");
-            case UIActionPoolType_Runtime: break;
+            case UIType_ManagerUI: return QKeySequence("Ctrl+G");
+            case UIType_RuntimeUI: break;
         }
         return QKeySequence();
     }
@@ -1215,7 +1215,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
@@ -1256,7 +1256,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
@@ -1297,7 +1297,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+D");
     }
@@ -1338,7 +1338,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
@@ -1379,13 +1379,13 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
@@ -1426,13 +1426,13 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1473,7 +1473,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+S");
     }
@@ -1590,7 +1590,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1628,7 +1628,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1669,7 +1669,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1710,7 +1710,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1751,7 +1751,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1792,7 +1792,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1831,7 +1831,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1870,7 +1870,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1909,7 +1909,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1948,7 +1948,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -1987,7 +1987,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2026,7 +2026,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2064,7 +2064,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2102,7 +2102,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2140,7 +2140,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2178,7 +2178,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2216,7 +2216,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2254,7 +2254,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2292,7 +2292,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2330,7 +2330,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2400,7 +2400,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2775,7 +2775,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2814,7 +2814,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2853,7 +2853,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -2892,7 +2892,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -3276,13 +3276,13 @@ protected:
 *********************************************************************************************************************************/
 
 /* static */
-UIActionPool *UIActionPool::create(UIActionPoolType enmType)
+UIActionPool *UIActionPool::create(UIType enmType)
 {
     UIActionPool *pActionPool = 0;
     switch (enmType)
     {
-        case UIActionPoolType_Manager: pActionPool = new UIActionPoolManager; break;
-        case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime; break;
+        case UIType_ManagerUI: pActionPool = new UIActionPoolManager; break;
+        case UIType_RuntimeUI: pActionPool = new UIActionPoolRuntime; break;
         default: AssertFailedReturn(0);
     }
     AssertPtrReturn(pActionPool, 0);
@@ -3299,13 +3299,13 @@ void UIActionPool::destroy(UIActionPool *pActionPool)
 }
 
 /* static */
-void UIActionPool::createTemporary(UIActionPoolType enmType)
+void UIActionPool::createTemporary(UIType enmType)
 {
     UIActionPool *pActionPool = 0;
     switch (enmType)
     {
-        case UIActionPoolType_Manager: pActionPool = new UIActionPoolManager(true); break;
-        case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime(true); break;
+        case UIType_ManagerUI: pActionPool = new UIActionPoolManager(true); break;
+        case UIType_RuntimeUI: pActionPool = new UIActionPoolRuntime(true); break;
         default: AssertFailedReturnVoid();
     }
     AssertPtrReturnVoid(pActionPool);
@@ -3464,7 +3464,7 @@ void UIActionPool::sltActionHovered()
 }
 #endif /* VBOX_WS_MAC */
 
-UIActionPool::UIActionPool(UIActionPoolType enmType, bool fTemporary /* = false */)
+UIActionPool::UIActionPool(UIType enmType, bool fTemporary /* = false */)
     : m_enmType(enmType)
     , m_fTemporary(fTemporary)
 {

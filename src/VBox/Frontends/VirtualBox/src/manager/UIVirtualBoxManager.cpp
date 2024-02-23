@@ -2443,7 +2443,7 @@ void UIVirtualBoxManager::prepareMenuBar()
 #endif
 
     /* Create action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
+    m_pActionPool = UIActionPool::create(UIType_ManagerUI);
 
     /* Prepare menu update-handlers: */
     m_menuUpdateHandlers[UIActionIndexMN_M_Group] = &UIVirtualBoxManager::updateMenuGroup;

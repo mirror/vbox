@@ -123,7 +123,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("S");
     }
@@ -173,7 +173,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("T");
     }
@@ -223,7 +223,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("N");
     }
@@ -273,7 +273,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
@@ -326,7 +326,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("P");
     }
@@ -376,7 +376,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("R");
     }
@@ -514,7 +514,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         return QKeySequence("U");
@@ -730,7 +730,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("F");
     }
@@ -783,7 +783,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("L");
     }
@@ -836,7 +836,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("C");
     }
@@ -887,7 +887,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("M");
     }
@@ -938,7 +938,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("A");
     }
@@ -1035,7 +1035,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("E");
     }
@@ -1680,7 +1680,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Del");
     }
@@ -1731,7 +1731,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
         return QKeySequence("Backspace");
     }
@@ -1958,7 +1958,7 @@ protected:
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         return QKeySequence("Insert");
@@ -3174,7 +3174,7 @@ protected:
 *********************************************************************************************************************************/
 
 UIActionPoolRuntime::UIActionPoolRuntime(bool fTemporary /* = false */)
-    : UIActionPool(UIActionPoolType_Runtime, fTemporary)
+    : UIActionPool(UIType_RuntimeUI, fTemporary)
     , m_cHostScreens(0)
     , m_cGuestScreens(0)
     , m_fGuestSupportsGraphics(false)
@@ -3600,7 +3600,7 @@ void UIActionPoolRuntime::updateShortcuts()
     UIActionPool::updateShortcuts();
     /* Create temporary Manager UI pool to do the same: */
     if (!isTemporary())
-        UIActionPool::createTemporary(UIActionPoolType_Manager);
+        UIActionPool::createTemporary(UIType_ManagerUI);
 }
 
 void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &uMachineID)

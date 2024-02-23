@@ -1597,7 +1597,7 @@ bool UIMachine::prepareSession()
 void UIMachine::prepareActions()
 {
     /* Create action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+    m_pActionPool = UIActionPool::create(UIType_RuntimeUI);
     if (actionPool())
     {
         /* Make sure action-pool knows guest-screen count: */

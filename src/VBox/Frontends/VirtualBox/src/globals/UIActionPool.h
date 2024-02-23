@@ -38,6 +38,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIDefs.h"
 #include "UIExtraDataDefs.h"
 #include "UILibraryDefs.h"
 
@@ -48,13 +49,6 @@ class UIActionPool;
 class UIActionPoolRuntime;
 class UIActionPoolManager;
 
-
-/** Action-pool types. */
-enum UIActionPoolType
-{
-    UIActionPoolType_Manager,
-    UIActionPoolType_Runtime
-};
 
 /** Action types. */
 enum UIActionType
@@ -299,9 +293,9 @@ public:
     /** Returns extra-data ID to save keyboard shortcut under. */
     virtual QString shortcutExtraDataID() const { return QString(); }
     /** Returns default keyboard shortcut for this action. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const { return QKeySequence(); }
+    virtual QKeySequence defaultShortcut(UIType) const { return QKeySequence(); }
     /** Returns standard keyboard shortcut for this action. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const { return QKeySequence(); }
+    virtual QKeySequence standardShortcut(UIType) const { return QKeySequence(); }
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
@@ -324,9 +318,9 @@ protected:
     static QString simplifyText(QString strText);
 
     /** Holds the reference to the action-pool this action belongs to. */
-    UIActionPool           *m_pActionPool;
+    UIActionPool *m_pActionPool;
     /** Holds the type of the action-pool this action belongs to. */
-    const UIActionPoolType  m_enmActionPoolType;
+    const UIType  m_enmActionPoolType;
 
     /** Holds the action type. */
     const UIActionType  m_enmType;
@@ -515,13 +509,13 @@ signals:
 public:
 
     /** Creates singleton instance. */
-    static UIActionPool *create(UIActionPoolType enmType);
+    static UIActionPool *create(UIType enmType);
     /** Destroys singleton instance. */
     static void destroy(UIActionPool *pActionPool);
 
     /** Creates temporary singleton instance,
       * used to initialize shortcuts-pool from action-pool of passed @a enmType. */
-    static void createTemporary(UIActionPoolType enmType);
+    static void createTemporary(UIType enmType);
 
     /** Cast action-pool to Manager one. */
     UIActionPoolManager *toManager();
@@ -529,7 +523,7 @@ public:
     UIActionPoolRuntime *toRuntime();
 
     /** Returns action-pool type. */
-    UIActionPoolType type() const { return m_enmType; }
+    UIType type() const { return m_enmType; }
     /** Returns whether this action-pool is temporary. */
     bool isTemporary() const { return m_fTemporary; }
 
@@ -593,7 +587,7 @@ protected slots:
 protected:
 
     /** Constructs probably @a fTemporary action-pool of passed @a enmType. */
-    UIActionPool(UIActionPoolType enmType, bool fTemporary = false);
+    UIActionPool(UIType enmType, bool fTemporary = false);
 
     /** Prepares pool. */
     virtual void preparePool();
@@ -679,9 +673,9 @@ private:
     void cleanup();
 
     /** Holds the action-pool type. */
-    const UIActionPoolType  m_enmType;
+    const UIType  m_enmType;
     /** Holds whether this action-pool is temporary. */
-    const bool              m_fTemporary;
+    const bool    m_fTemporary;
 };
 
 
