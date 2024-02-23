@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
         <file alias="keyboard_settings_16px.png">images/keyboard_settings_16px.png</file>
         <file alias="keyboard_settings_disabled_16px.png">images/keyboard_settings_disabled_16px.png</file>
         <file alias="launch_vm_16px.png">images/launch_vm_16px.png</file>

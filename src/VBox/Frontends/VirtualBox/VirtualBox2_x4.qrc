@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="ide_collapse_16px_x4.png">images/x4/ide_collapse_16px_x4.png</file>
         <file alias="ide_expand_16px_x4.png">images/x4/ide_expand_16px_x4.png</file>
         <file alias="import_16px_x4.png">images/x4/import_16px_x4.png</file>
         <file alias="import_32px_x4.png">images/x4/import_32px_x4.png</file>

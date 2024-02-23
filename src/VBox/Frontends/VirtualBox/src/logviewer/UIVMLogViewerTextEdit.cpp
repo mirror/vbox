@@ -300,10 +300,10 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     m_pScrollToTopLabel->installEventFilter(this);
 
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-    m_pScrollToBottomLabel->setPixmap(UIIconPool::iconSet(":/vm_discard_32px.png").pixmap(iIconMetric, iIconMetric));
+    m_pScrollToBottomLabel->setPixmap(UIIconPool::iconSet(":/arrow_to_bottom_32px.png").pixmap(iIconMetric, iIconMetric));
     m_pScrollToBottomLabel->setOpacity(0.4);
 
-    m_pScrollToTopLabel->setPixmap(UIIconPool::iconSet(":/file_manager_go_up_24px.png").pixmap(iIconMetric, iIconMetric));
+    m_pScrollToTopLabel->setPixmap(UIIconPool::iconSet(":/arrow_to_top_32px.png").pixmap(iIconMetric, iIconMetric));
     m_pScrollToTopLabel->setOpacity(0.4);
 
     connect(this, &UIVMLogViewerTextEdit::blockCountChanged, this, &UIVMLogViewerTextEdit::sltUpdateLineNumberAreaWidth);

@@ -5,6 +5,8 @@
         <file alias="arrow_down_10px.png">images/arrow_down_10px.png</file>
         <file alias="arrow_left_10px.png">images/arrow_left_10px.png</file>
         <file alias="arrow_right_10px.png">images/arrow_right_10px.png</file>
+        <file alias="arrow_to_bottom_32px.png">images/arrow_to_bottom_32px.png</file>
+        <file alias="arrow_to_top_32px.png">images/arrow_to_top_32px.png</file>
         <file alias="arrow_up_10px.png">images/arrow_up_10px.png</file>
         <file alias="assign_public_ip_16px.png">images/assign_public_ip_16px.png</file>
         <file alias="attachment_add_16px.png">images/attachment_add_16px.png</file>
@@ -497,6 +499,5 @@
         <file alias="keep_object_16px.png">images/keep_object_16px.png</file>
         <file alias="keyboard_16px.png">images/keyboard_16px.png</file>
         <file alias="keyboard_24px.png">images/keyboard_24px.png</file>
-        <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
     </qresource>
 </RCC>

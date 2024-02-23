@@ -5,6 +5,8 @@
         <file alias="arrow_down_10px_x2.png">images/x2/arrow_down_10px_x2.png</file>
         <file alias="arrow_left_10px_x2.png">images/x2/arrow_left_10px_x2.png</file>
         <file alias="arrow_right_10px_x2.png">images/x2/arrow_right_10px_x2.png</file>
+        <file alias="arrow_to_bottom_32px_x2.png">images/x2/arrow_to_bottom_32px_x2.png</file>
+        <file alias="arrow_to_top_32px_x2.png">images/x2/arrow_to_top_32px_x2.png</file>
         <file alias="arrow_up_10px_x2.png">images/x2/arrow_up_10px_x2.png</file>
         <file alias="assign_public_ip_16px_x2.png">images/x2/assign_public_ip_16px_x2.png</file>
         <file alias="attachment_add_16px_x2.png">images/x2/attachment_add_16px_x2.png</file>
@@ -484,6 +486,5 @@
         <file alias="ide_16px_x2.png">images/x2/ide_16px_x2.png</file>
         <file alias="ide_add_16px_x2.png">images/x2/ide_add_16px_x2.png</file>
         <file alias="ide_add_disabled_16px_x2.png">images/x2/ide_add_disabled_16px_x2.png</file>
-        <file alias="ide_collapse_16px_x2.png">images/x2/ide_collapse_16px_x2.png</file>
     </qresource>
 </RCC>
