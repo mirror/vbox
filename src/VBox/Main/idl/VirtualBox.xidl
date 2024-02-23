@@ -1464,7 +1464,7 @@
     uuid="bf88ec90-7fbb-4c78-bd71-5f8751d71450"
     >
     <desc>
-      BIOS boot menu mode.
+      Firmware boot menu mode.
     </desc>
 
     <const name="Disabled"        value="0"/>
@@ -7324,7 +7324,7 @@
     reservedMethods="8" reservedAttributes="16">
 
     <desc>
-      The x86 specific platform properties for a virtual machine.
+      The ARM-specific platform properties for a virtual machine.
 
       Accessed via <link to="IMachine::platform"/> and <link to="IPlatform::ARM"/>.
     </desc>
@@ -12255,7 +12255,7 @@
     >
 
     <desc>
-      The x86 specific interface for the physical host machine.
+      The x86-specific interface for the physical host machine.
     </desc>
 
     <method name="getProcessorCPUIDLeaf">

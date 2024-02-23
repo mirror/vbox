@@ -2578,6 +2578,611 @@ es.unregisterListener(listener); </screen></para>
     already running. Your new command will now be available.</para>
   </chapter>
 
+  <chapter id="vboxarm">
+    <title>Main API changes to support the ARM64 architecture</title>
+
+    <para>VirtualBox 7.1 introduces support for running virtual machines on
+    hosts containing an ARM CPU. Since VirtualBox has been designed and
+    developed for virtualizing x86 hardware since its inception adding
+    support for ARM CPUs required a variety of changes to the Main API to
+    accommodate two different CPU architectures.</para>
+
+    <sect1>
+      <title>Overview of the Changes to the Main API</title>
+
+      <para>In order to support two different types of processor architecture
+      in the VirtualBox Main API the key abstraction was the addition of a new
+      interface named <link linkend="IPlatform">IPlatform</link> which contains
+      the details which relate to the operating environment of a VM.  The
+      <link linkend="IPlatform">IPlatform</link> interface is distinct from the
+      VM itself (the <link linkend="IMachine">IMachine</link> interface), the VM
+      management interfaces (<link linkend="IVirtualBox">IVirtualBox</link> and
+      <link linkend="IConsole">IConsole</link>), as well as the global properties of
+      the VM (the <link linkend="ISystemProperties">ISystemProperties</link> interface).
+      The contents of the <link linkend="IPlatform">IPlatform</link> interface can be
+      broken down into three different categories:</para>
+      <itemizedlist>
+        <listitem>
+          <para>properties relating to the VM which are CPU architecture-neutral (<link linkend="IPlatformProperties">IPlatformProperties</link>)</para>
+        </listitem>
+        <listitem>
+          <para>properties which are CPU architecture-specific (<link linkend="IPlatformX86">IPlatformX86</link> or <link linkend="IPlatformARM">IPlatformARM</link>)</para>
+        </listitem>
+        <listitem>
+          <para>attributes of the VM which are CPU architecture-neutral such as:</para>
+          <itemizedlist>
+            <listitem><para>the architecture of the VM (<link linkend="IPlatform__architecture">IPlatform::architecture</link>)</para>
+            </listitem>
+            <listitem><para>the type of chipset used by the VM (<link linkend="IPlatform__chipsetType">IPlatform::chipsetType</link>)</para>
+            </listitem>
+            <listitem><para>the type of IOMMU used by the VM (<link linkend="IPlatform__iommuType">IPlatform::iommuType</link>).</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+
+      <para>The <link linkend="IPlatform">IPlatform</link> interface can be retrieved from
+      the <link linkend="IMachine">IMachine</link> interface via the new
+      <link linkend="IMachine__platform">IMachine::platform</link> attribute.  The
+      <link linkend="IPlatform__architecture">IPlatform::architecture</link> attribute
+      returns the <emphasis>architecture</emphasis> type in a new enumeration named
+      <link linkend="PlatformArchitecture">PlatformArchitecture</link>.  This enumeration value
+      can be used to determine which CPU-specific properties to query, for example:
+      <screen>
+      IPlatform platform;
+      result = machine.getPlatform(platform);
+
+      PlatformArchitecture_T platformArch;
+      result = platform.getArchitecture(platformArch);
+      if (platformArch == x86)
+        IPlatformX86 platformX86;
+        result = platform.getX86(platformX86);
+      else if (platformArch == ARM)
+        IPlatformARM platformARM;
+        result = platform.getARM(platformARM);
+      else
+        error;
+      </screen>
+
+      The value of the <link linkend="PlatformArchitecture">PlatformArchitecture</link> enumeration
+      can also be used when creating a new VM using <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine</link>.
+      </para>
+
+      <para>The CPU architecture-neutral properties in (<link linkend="IPlatformProperties">IPlatformProperties</link>)
+      can be found in several places:</para>
+      <itemizedlist>
+        <listitem>
+          <para>They can be retrieved from the <link linkend="IPlatform__properties">IPlatform::properties</link>
+          attribute.</para>
+        </listitem>
+        <listitem>
+          <para>They can be retrieved from the <link linkend="ISystemProperties__platform">ISystemProperties::platform</link>
+          attribute.</para>
+        </listitem>
+        <listitem>
+          <para>They can retrieved from the <link linkend="IVirtualBox">IVirtualBox</link> interface
+          using the new <link linkend="IVirtualBox__getPlatformProperties">IVirtualBox::getPlatformProperties</link> method.
+          </para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The attributes and methods contained in <link linkend="IPlatformProperties">IPlatformProperties</link>
+      were moved from the <link linkend="ISystemProperties">ISystemProperties</link> interface as they
+      can vary based on the platform of the VM:</para>
+
+      <table>
+        <title>IPlatformProperties Attributes</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Original Attribute</emphasis></entry>
+              <entry><emphasis role="bold">New Attribute</emphasis></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::rawModeSupported</entry>
+              <entry><link linkend="IPlatformProperties__rawModeSupported">IPlatformProperties::rawModeSupported</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::exclusiveHwVirt</entry>
+              <entry><link linkend="IPlatformProperties__exclusiveHwVirt">IPlatformProperties::exclusiveHwVirt</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::serialPortCount</entry>
+              <entry><link linkend="IPlatformProperties__serialPortCount">IPlatformProperties::serialPortCount</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::parallelPortCount</entry>
+              <entry><link linkend="IPlatformProperties__parallelPortCount">IPlatformProperties::parallelPortCount</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::maxBootPosition</entry>
+              <entry><link linkend="IPlatformProperties__maxBootPosition">IPlatformProperties::maxBootPosition</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedParavirtProviders[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedParavirtProviders">IPlatformProperties::supportedParavirtProviders[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedFirmwareTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedFirmwareTypes">IPlatformProperties::supportedFirmwareTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedGuestOSTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedGuestOSTypes">IPlatformProperties::supportedGuestOSTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedGraphicsControllerTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedGraphicsControllerTypes">IPlatformProperties::supportedGraphicsControllerTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedNetAdpPromiscModePols[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedNetAdpPromiscModePols">IPlatformProperties::supportedNetAdpPromiscModePols[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedNetworkAdapterTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedNetworkAdapterTypes">IPlatformProperties::supportedNetworkAdapterTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedUartTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedUartTypes">IPlatformProperties::supportedUartTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedUSBControllerTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedUSBControllerTypes">IPlatformProperties::supportedUSBControllerTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedAudioControllerTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedAudioControllerTypes">IPlatformProperties::supportedAudioControllerTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedBootDevices[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedBootDevices">IPlatformProperties::supportedBootDevices[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedStorageBuses[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedStorageBuses">IPlatformProperties::supportedStorageBuses[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedStorageControllerTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedStorageControllerTypes">IPlatformProperties::supportedStorageControllerTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedChipsetTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedChipsetTypes">IPlatformProperties::supportedChipsetTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedIommuTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedIommuTypes">IPlatformProperties::supportedIommuTypes[]</link></entry>
+            </row>
+
+            <row>
+              <entry>ISystemProperties::supportedTpmTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedTpmTypes">IPlatformProperties::supportedTpmTypes[]</link></entry>
+            </row>
+
+          </tbody>
+        </tgroup>
+      </table>
+
+      <table>
+        <title>IPlatformProperties Attributes</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Original Method</emphasis></entry>
+              <entry><emphasis role="bold">New Method</emphasis></entry>
+            </row>
+
+           <row>
+             <entry>ISystemProperties::getDeviceTypesForStorageBus</entry>
+             <entry><link linkend="IPlatformProperties__getDeviceTypesForStorageBus">IPlatformProperties::getDeviceTypesForStorageBus</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxDevicesPerPortForStorageBus</entry>
+             <entry><link linkend="IPlatformProperties__getMaxDevicesPerPortForStorageBus">IPlatformProperties::getMaxDevicesPerPortForStorageBus</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxInstancesOfStorageBus</entry>
+             <entry><link linkend="IPlatformProperties__getMaxInstancesOfStorageBus">IPlatformProperties::getMaxInstancesOfStorageBus</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxInstancesOfUSBControllerType</entry>
+             <entry><link linkend="IPlatformProperties__getMaxInstancesOfUSBControllerType">IPlatformProperties::getMaxInstancesOfUSBControllerType</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxNetworkAdapters</entry>
+             <entry><link linkend="IPlatformProperties__getMaxNetworkAdapters">IPlatformProperties::getMaxNetworkAdapters</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxNetworkAdaptersOfType</entry>
+             <entry><link linkend="IPlatformProperties__getMaxNetworkAdaptersOfType">IPlatformProperties::getMaxNetworkAdaptersOfType</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMaxPortCountForStorageBus</entry>
+             <entry><link linkend="IPlatformProperties__getMaxPortCountForStorageBus">IPlatformProperties::getMaxPortCountForStorageBus</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getMinPortCountForStorageBus</entry>
+             <entry><link linkend="IPlatformProperties__getMinPortCountForStorageBus">IPlatformProperties::getMinPortCountForStorageBus</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getStorageBusForControllerType</entry>
+             <entry><link linkend="IPlatformProperties__getStorageBusForControllerType">IPlatformProperties::getStorageBusForControllerType</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getStorageControllerHotplugCapable</entry>
+             <entry><link linkend="IPlatformProperties__getStorageControllerHotplugCapable">IPlatformProperties::getStorageControllerHotplugCapable</link></entry>
+           </row>
+
+           <row>
+             <entry>ISystemProperties::getStorageControllerTypesForBus</entry>
+             <entry><link linkend="IPlatformProperties__getStorageControllerTypesForBus">IPlatformProperties::getStorageControllerTypesForBus</link></entry>
+           </row>
+
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>The single attribute and all of the properties contained in the new
+      <link linkend="IPlatformX86">IPlatformX86</link> interface were moved from the
+      <link linkend="IMachine">IMachine</link> interface as they are specific to the x86
+      CPU architecture:</para>
+
+      <table>
+        <title>IPlatformX86 Attribute</title>
+        <tgroup cols="2">
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Original Attribute</emphasis></entry>
+              <entry><emphasis role="bold">New Attribute</emphasis></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::HPETEnabled</entry>
+              <entry><link linkend="IPlatformX86__HPETEnabled">IPlatformX86::HPETEnabled</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <table>
+        <title>IPlatformX86 Methods</title>
+        <tgroup cols="2">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Method</emphasis></entry>
+              <entry><emphasis role="bold">New Method</emphasis></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::getCPUIDLeaf</entry>
+              <entry><link linkend="IPlatformX86__getCPUIDLeaf">IPlatformX86::getCPUIDLeaf</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::getCPUIDLeafByOrdinal</entry>
+              <entry><link linkend="IPlatformX86__getCPUIDLeafByOrdinal">IPlatformX86::getCPUIDLeafByOrdinal</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::getCPUProperty</entry>
+              <entry><link linkend="IPlatformX86__getCPUProperty">IPlatformX86::getCPUProperty</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::getHWVirtExProperty</entry>
+              <entry><link linkend="IPlatformX86__getHWVirtExProperty">IPlatformX86::getHWVirtExProperty</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::removeAllCPUIDLeaves</entry>
+              <entry><link linkend="IPlatformX86__removeAllCPUIDLeaves">IPlatformX86::removeAllCPUIDLeaves</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::removeCPUIDLeaf</entry>
+              <entry><link linkend="IPlatformX86__removeCPUIDLeaf">IPlatformX86::removeCPUIDLeaf</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::setCPUIDLeaf</entry>
+              <entry><link linkend="IPlatformX86__setCPUIDLeaf">IPlatformX86::setCPUIDLeaf</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::setCPUProperty</entry>
+              <entry><link linkend="IPlatformX86__setCPUProperty">IPlatformX86::setCPUProperty</link></entry>
+            </row>
+
+            <row>
+              <entry>IMachine::setHWVirtExProperty</entry>
+              <entry><link linkend="IPlatformX86__setHWVirtExProperty">IPlatformX86::setHWVirtExProperty</link></entry>
+            </row>
+
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>An itemized breakdown of the changes made to the Main API for ARM64 support is described below.</para>
+
+    <sect2>
+      <title>Changes to Classes (Interfaces)</title>
+
+    <sect3>
+      <title>New Classes (Interfaces) Added</title>
+
+      <itemizedlist>
+        <listitem>
+          <para><link linkend="IPlatform">IPlatform</link></para>
+          <para>An umbrella-like interface containing a collection of properties and attributes
+          of the software environment of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IPlatformX86">IPlatformX86</link></para>
+          <para>An interface containing the x86-specific properties of the software
+          environment of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IPlatformARM">IPlatformARM</link></para>
+          <para>An interface containing the ARM-specific properties of the software
+          environment of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IPlatformProperties">IPlatformProperties</link></para>
+          <para>An interface containing the properties specific to the platform of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IHostX86">IHostX86</link></para>
+          <para>An interface which provides further classification of the x86-specific
+          properties of the physical host machine.</para>
+        </listitem>
+      </itemizedlist>
+    </sect3>
+
+    <sect3>
+      <title>Classes (Interfaces) Renamed</title>
+
+      <table>
+        <title>Classes (Interfaces) Renamed</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Class Name</emphasis></entry>
+              <entry><emphasis role="bold">New Class Name</emphasis></entry>
+            </row>
+            <row>
+              <entry>IBIOSSettings</entry>
+              <entry><link linkend="IFirmwareSettings">IFirmwareSettings</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      <para>The IBIOSSettings interface has been renamed to the more platform-neutral IFirmwareSettings.</para>
+
+    </sect3>
+
+    <sect3>
+      <title>New Methods Added to Classes (Interfaces)</title>
+      <itemizedlist>
+        <listitem>
+          <para><link
+          linkend="IPlatformProperties">IPlatformProperties</link> <link linkend="IVirtualBox__getPlatformProperties">IVirtualBox::getPlatformProperties</link></para>
+          <para>The new IVirtualBox::getPlatformProperties method returns
+          an IPlatformProperties object which contains the platform-specific
+          properties of a VM as described above.</para>
+        </listitem>
+      </itemizedlist>
+    </sect3>
+
+    <sect3>
+      <title>New Attributes Added to Classes (Interfaces)</title>
+      <itemizedlist>
+        <listitem>
+          <para><link linkend="IPlatformProperties">IPlatformProperties</link><link linkend="ISystemProperties__platform">
+          ISystemProperties::platform</link></para>
+          <para>The ISystemProperties interface gets a new <emphasis>platform</emphasis>
+          attribute which returns an IPlatformProperties object which contains the
+          platform-specific properties of a VM as described above.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="FirmwareType">FirmwareType</link> <link linkend="IFirmwareSettings__firmwareType">IFirmwareSettings::firmwareType</link></para>
+          <para>The new IFirmwareSettings interface (renamed from IBIOSSettings) gets a new
+          <emphasis>firmwareType</emphasis> attribute which returns a FirmwareType enumeration which
+          contains the VM's firmware type.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="PlatformArchitecture">PlatformArchitecture</link> <link linkend="IHost__architecture">IHost::architecture</link></para>
+          <para>The IHost interface gets a new <emphasis>architecture</emphasis>
+          attribute which returns a PlatformArchitecture enumeration which contains the
+          platform's architecture.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IHostX86">IHostX86</link> <link linkend="IHost__x86">IHost::x86</link></para>
+          <para>The IHost interface gets a new <emphasis>x86</emphasis>
+          attribute which returns an IHostX86 object which contains the
+          x86-specific properties of the physical host machine.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IPlatform">IPlatform</link> <link linkend="IMachine__platform">IMachine::platform</link></para>
+          <para>The IMachine interface gets a new <emphasis>platform</emphasis>
+          attribute which returns an IPlatform object which contains the
+          properties related to the platform of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="IFirmwareSettings">IFirmwareSettings</link> <link linkend="IMachine__firmwareSettings">IMachine::firmwareSettings</link></para>
+          <para>The IMachine interface gets a new <emphasis>firmwareSettings</emphasis>
+          attribute which returns an IFirmWareSettings object which contains the
+          properties related to the platform of the VM.</para>
+        </listitem>
+      </itemizedlist>
+    </sect3>
+
+    <sect3>
+      <title>Class (Interface) Attribute Changes</title>
+
+      <table>
+        <title>Classes Renamed</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Class Name</emphasis></entry>
+              <entry><emphasis role="bold">New Class Name</emphasis></entry>
+            </row>
+            <row>
+              <entry>BIOSBootMenuMode IBIOSSettings::bootMenuMode</entry>
+              <entry><link linkend="FirmwareBootMenuMode">FirmwareBootMenuMode</link><link linkend="IFirmwareSettings__bootMenuMode"> IFirmwareSettings::bootMenuMode</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>The IBIOSSettings::bootMenuMode attribute has been moved to the new
+      IFirmwareSettings interface and now returns the firmware boot menu mode in
+      the new <link linkend="FirmwareBootMenuMode">FirmwareBootMenuMode</link> enumeration.</para>
+
+      <table>
+        <title>Classes Renamed</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Class Name</emphasis></entry>
+              <entry><emphasis role="bold">New Class Name</emphasis></entry>
+            </row>
+            <row>
+              <entry>unsigned long ISerialPort::IOBase</entry>
+              <entry>unsigned long <link linkend="ISerialPort__IOAddress">ISerialPort::IOAddress</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>The ISerialPort::IOBase attribute has been renamed to ISerialPort::IOAddress.</para>
+
+    </sect3>
+
+    </sect2>
+
+    <sect2>
+      <title>Changes to Enumerations</title>
+
+    <sect3>
+      <title>New Enumerations Added</title>
+      <itemizedlist>
+        <listitem>
+          <para><link linkend="PlatformArchitecture">PlatformArchitecture</link></para>
+          <para>The new PlatformArchitecture enumeration contains the CPU
+          architecture type of the VM.</para>
+        </listitem>
+      </itemizedlist>
+    </sect3>
+
+    <sect3>
+      <title>New Enumerations Values</title>
+      <itemizedlist>
+        <listitem>
+          <para><link linkend="CPUArchitecture">CPUArchitecture</link>
+          <itemizedlist>
+            <listitem><para><link linkend="CPUArchitecture__ARMv8_32">ARMv8_32</link></para></listitem>
+            <listitem><para><link linkend="CPUArchitecture__ARMv8_64">ARMv8_64</link></para></listitem>
+          </itemizedlist>
+          </para>
+          <para>The CPUArchitecture enumeration gets two new additions corresponding
+          to 32-bit and 64-bit ARMv8 CPUs respectively.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="AudioControllerType">AudioControllerType</link>
+          <itemizedlist>
+            <listitem><para><link linkend="AudioControllerType__VirtioSound">VirtioSound</link></para></listitem>
+          </itemizedlist>
+          </para>
+          <para>The AudioControllerType enumeration gets a new value named <emphasis>VirtioSound</emphasis>.
+          </para>
+        </listitem>
+        <listitem>
+          <para><link linkend="ChipsetType">ChipsetType</link>
+          <itemizedlist>
+            <listitem><para><link linkend="ChipsetType__ARMv8Virtual">ARMv8Virtual</link></para></listitem>
+          </itemizedlist>
+          </para>
+          <para>The ChipsetType enumeration gets a new value named <emphasis>ARMv8Virtual</emphasis>.
+          </para>
+        </listitem>
+      </itemizedlist>
+    </sect3>
+
+    <sect3>
+      <title>Enumerations Renamed</title>
+
+      <table>
+        <title>Enumerations Renamed</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Enumeration Name</emphasis></entry>
+              <entry><emphasis role="bold">New Enumeration Name</emphasis></entry>
+            </row>
+            <row>
+              <entry>CPUPropertyType</entry>
+              <entry><link linkend="CPUPropertyTypeX86">CPUPropertyTypeX86</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>The CPUPropertyType enumeration has been renamed to CPUPropertyTypeX86.</para>
+
+      <table>
+        <title>Enumerations Renamed</title>
+        <tgroup cols="2" style="verywide">
+          <tbody>
+             <row>
+              <entry><emphasis role="bold">Original Enumeration Name</emphasis></entry>
+              <entry><emphasis role="bold">New Enumeration Name</emphasis></entry>
+            </row>
+            <row>
+              <entry>BIOSBootMenuMode</entry>
+              <entry><link linkend="FirmwareBootMenuMode">FirmwareBootMenuMode</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>The BIOSBootMenuMode enumeration has been renamed to FirmwareBootMenuMode.</para>
+
+    </sect3>
+    </sect2>
+    </sect1>
+
+  </chapter>
+
   <xi:include href="SDKRef_apiref.xml" xpointer="xpointer(/book/*)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
@@ -4223,6 +4828,10 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem><para>The attribute <link linkend="IGuestSession__mountPoints">IGuestSession::mountPoints</link> has been
           added. This requires 7.1 (or newer) Guest Additions to be installed on the guest.</para>
+        </listitem>
+
+        <listitem><para>Review the Main API changes made for the ARM64 CPU architecture <link linkend="vboxarm">here</link>
+        for incompatible changes to interfaces, methods, and attributes.</para>
         </listitem>
 
       </itemizedlist>
