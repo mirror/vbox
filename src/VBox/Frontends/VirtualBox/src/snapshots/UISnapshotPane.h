@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "COMEnums.h"

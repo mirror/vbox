@@ -34,6 +34,7 @@
 
 /* GUI includes */
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UIDetails.h"
 #include "UIErrorPane.h"
 #include "UIFileManager.h"

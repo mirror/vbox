@@ -45,6 +45,7 @@
 #include "QIToolBar.h"
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
