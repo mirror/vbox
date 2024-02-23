@@ -621,17 +621,13 @@ class ThreadedFunctionVariation(object):
         sName = self.oParent.oMcBlock.sFunction;
         if sName.startswith('iemOp_'):
             sName = sName[len('iemOp_'):];
-        if self.oParent.oMcBlock.iInFunction == 0:
-            return 'kIemThreadedFunc_%s%s' % ( sName, self.sVariation, );
-        return 'kIemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+        return 'kIemThreadedFunc_%s%s%s' % ( sName, self.oParent.sSubName, self.sVariation, );
 
     def getThreadedFunctionName(self):
         sName = self.oParent.oMcBlock.sFunction;
         if sName.startswith('iemOp_'):
             sName = sName[len('iemOp_'):];
-        if self.oParent.oMcBlock.iInFunction == 0:
-            return 'iemThreadedFunc_%s%s' % ( sName, self.sVariation, );
-        return 'iemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+        return 'iemThreadedFunc_%s%s%s' % ( sName, self.oParent.sSubName, self.sVariation, );
 
     def getNativeFunctionName(self):
         return 'iemNativeRecompFunc_' + self.getThreadedFunctionName()[len('iemThreadedFunc_'):];
@@ -643,9 +639,7 @@ class ThreadedFunctionVariation(object):
         sName = self.oParent.oMcBlock.sFunction;
         if sName.startswith('iemOp_'):
             sName = sName[len('iemOp_'):];
-        if self.oParent.oMcBlock.iInFunction == 0:
-            return '%s%s' % ( sName, self.sVariation, );
-        return '%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+        return '%s%s%s' % ( sName, self.oParent.sSubName, self.sVariation, );
 
     def getThreadedFunctionStatisticsName(self):
         sName = self.oParent.oMcBlock.sFunction;
@@ -665,9 +659,7 @@ class ThreadedFunctionVariation(object):
         else:
             sVarNm = 'DeferToCImpl';
 
-        if self.oParent.oMcBlock.iInFunction == 0:
-            return '%s/%s' % ( sVarNm, sName );
-        return '%s/%s_%s' % ( sVarNm, sName, self.oParent.oMcBlock.iInFunction, );
+        return '%s/%s%s' % ( sVarNm, sName, self.oParent.sSubName );
 
     def isWithFlagsCheckingAndClearingVariation(self):
         """
@@ -1555,6 +1547,10 @@ class ThreadedFunction(object):
         ## Dictionary with any IEM_CIMPL_F_XXX flags explicitly advertised in the code block
         ## and those determined by analyzeCodeOperation().
         self.dsCImplFlags   = {}            # type: Dict[str, bool]
+        ## The unique sub-name for this threaded function.
+        self.sSubName  = '';
+        #if oMcBlock.iInFunction > 0 or (oMcBlock.oInstruction and len(oMcBlock.oInstruction.aoMcBlocks) > 1):
+        #    self.sSubName  = '_%s' % (oMcBlock.iInFunction);
 
     @staticmethod
     def dummyInstance():
@@ -1587,6 +1583,260 @@ class ThreadedFunction(object):
     def warning(self, sMessage):
         """ Emits a warning. """
         print('%s:%s: warning: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
+
+    ## Used by analyzeAndAnnotateName for memory MC blocks.
+    kdAnnotateNameMemStmts = {
+        'IEM_MC_FETCH_MEM16_U8':                    '__mem8',
+        'IEM_MC_FETCH_MEM32_U8':                    '__mem8',
+        'IEM_MC_FETCH_MEM_D80':                     '__mem80',
+        'IEM_MC_FETCH_MEM_I16':                     '__mem16',
+        'IEM_MC_FETCH_MEM_I32':                     '__mem32',
+        'IEM_MC_FETCH_MEM_I64':                     '__mem64',
+        'IEM_MC_FETCH_MEM_R32':                     '__mem32',
+        'IEM_MC_FETCH_MEM_R64':                     '__mem64',
+        'IEM_MC_FETCH_MEM_R80':                     '__mem80',
+        'IEM_MC_FETCH_MEM_U128':                    '__mem128',
+        'IEM_MC_FETCH_MEM_U128_ALIGN_SSE':          '__mem128',
+        'IEM_MC_FETCH_MEM_U128_NO_AC':              '__mem128',
+        'IEM_MC_FETCH_MEM_U16':                     '__mem16',
+        'IEM_MC_FETCH_MEM_U16_DISP':                '__mem16',
+        'IEM_MC_FETCH_MEM_U16_SX_U32':              '__mem16sx32',
+        'IEM_MC_FETCH_MEM_U16_SX_U64':              '__mem16sx64',
+        'IEM_MC_FETCH_MEM_U16_ZX_U32':              '__mem16zx32',
+        'IEM_MC_FETCH_MEM_U16_ZX_U64':              '__mem16zx64',
+        'IEM_MC_FETCH_MEM_U256':                    '__mem256',
+        'IEM_MC_FETCH_MEM_U256_ALIGN_AVX':          '__mem256',
+        'IEM_MC_FETCH_MEM_U256_NO_AC':              '__mem256',
+        'IEM_MC_FETCH_MEM_U32':                     '__mem32',
+        'IEM_MC_FETCH_MEM_U32_DISP':                '__mem32',
+        'IEM_MC_FETCH_MEM_U32_SX_U64':              '__mem32sx64',
+        'IEM_MC_FETCH_MEM_U32_ZX_U64':              '__mem32zx64',
+        'IEM_MC_FETCH_MEM_U64':                     '__mem64',
+        'IEM_MC_FETCH_MEM_U64_ALIGN_U128':          '__mem64',
+        'IEM_MC_FETCH_MEM_U64_DISP':                '__mem64',
+        'IEM_MC_FETCH_MEM_U8':                      '__mem8',
+        'IEM_MC_FETCH_MEM_U8_DISP':                 '__mem8',
+        'IEM_MC_FETCH_MEM_U8_SX_U16':               '__mem8sx16',
+        'IEM_MC_FETCH_MEM_U8_SX_U32':               '__mem8sx32',
+        'IEM_MC_FETCH_MEM_U8_SX_U64':               '__mem8sx64',
+        'IEM_MC_FETCH_MEM_U8_ZX_U16':               '__mem8zx16',
+        'IEM_MC_FETCH_MEM_U8_ZX_U32':               '__mem8zx32',
+        'IEM_MC_FETCH_MEM_U8_ZX_U64':               '__mem8zx64',
+        'IEM_MC_FETCH_MEM_XMM':                     '__mem128',
+        'IEM_MC_FETCH_MEM_XMM_ALIGN_SSE':           '__mem128',
+        'IEM_MC_FETCH_MEM_XMM_NO_AC':               '__mem128',
+        'IEM_MC_FETCH_MEM_XMM_U32':                 '__mem32',
+        'IEM_MC_FETCH_MEM_XMM_U64':                 '__mem64',
+        'IEM_MC_FETCH_MEM_U128_AND_XREG_U128':      '__mem128',
+        'IEM_MC_FETCH_MEM_XMM_ALIGN_SSE_AND_XREG_XMM': '__mem128',
+        'IEM_MC_FETCH_MEM_XMM_U32_AND_XREG_XMM':    '__mem32',
+        'IEM_MC_FETCH_MEM_XMM_U64_AND_XREG_XMM':    '__mem64',
+        'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_RAX_RDX_U64': '__mem128',
+        'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64': '__mem128',
+
+        'IEM_MC_STORE_MEM_I16_CONST_BY_REF':        '__mem16',
+        'IEM_MC_STORE_MEM_I32_CONST_BY_REF':        '__mem32',
+        'IEM_MC_STORE_MEM_I64_CONST_BY_REF':        '__mem64',
+        'IEM_MC_STORE_MEM_I8_CONST_BY_REF':         '__mem8',
+        'IEM_MC_STORE_MEM_INDEF_D80_BY_REF':        '__mem80',
+        'IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF':     '__mem32',
+        'IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF':     '__mem64',
+        'IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF':     '__mem80',
+        'IEM_MC_STORE_MEM_U128':                    '__mem128',
+        'IEM_MC_STORE_MEM_U128_ALIGN_SSE':          '__mem128',
+        'IEM_MC_STORE_MEM_U128_NO_AC':              '__mem128',
+        'IEM_MC_STORE_MEM_U16':                     '__mem16',
+        'IEM_MC_STORE_MEM_U16_CONST':               '__mem16',
+        'IEM_MC_STORE_MEM_U256':                    '__mem256',
+        'IEM_MC_STORE_MEM_U256_ALIGN_AVX':          '__mem256',
+        'IEM_MC_STORE_MEM_U256_NO_AC':              '__mem256',
+        'IEM_MC_STORE_MEM_U32':                     '__mem32',
+        'IEM_MC_STORE_MEM_U32_CONST':               '__mem32',
+        'IEM_MC_STORE_MEM_U64':                     '__mem64',
+        'IEM_MC_STORE_MEM_U64_CONST':               '__mem64',
+        'IEM_MC_STORE_MEM_U8':                      '__mem8',
+        'IEM_MC_STORE_MEM_U8_CONST':                '__mem8',
+
+        'IEM_MC_MEM_MAP_D80_WO':                    '__mem80',
+        'IEM_MC_MEM_MAP_I16_WO':                    '__mem16',
+        'IEM_MC_MEM_MAP_I32_WO':                    '__mem32',
+        'IEM_MC_MEM_MAP_I64_WO':                    '__mem64',
+        'IEM_MC_MEM_MAP_R32_WO':                    '__mem32',
+        'IEM_MC_MEM_MAP_R64_WO':                    '__mem64',
+        'IEM_MC_MEM_MAP_R80_WO':                    '__mem80',
+        'IEM_MC_MEM_MAP_U128_ATOMIC':               '__mem128a',
+        'IEM_MC_MEM_MAP_U128_RO':                   '__mem128',
+        'IEM_MC_MEM_MAP_U128_RW':                   '__mem128',
+        'IEM_MC_MEM_MAP_U128_WO':                   '__mem128',
+        'IEM_MC_MEM_MAP_U16_ATOMIC':                '__mem16a',
+        'IEM_MC_MEM_MAP_U16_RO':                    '__mem16',
+        'IEM_MC_MEM_MAP_U16_RW':                    '__mem16',
+        'IEM_MC_MEM_MAP_U16_WO':                    '__mem16',
+        'IEM_MC_MEM_MAP_U32_ATOMIC':                '__mem32a',
+        'IEM_MC_MEM_MAP_U32_RO':                    '__mem32',
+        'IEM_MC_MEM_MAP_U32_RW':                    '__mem32',
+        'IEM_MC_MEM_MAP_U32_WO':                    '__mem32',
+        'IEM_MC_MEM_MAP_U64_ATOMIC':                '__mem64a',
+        'IEM_MC_MEM_MAP_U64_RO':                    '__mem64',
+        'IEM_MC_MEM_MAP_U64_RW':                    '__mem64',
+        'IEM_MC_MEM_MAP_U64_WO':                    '__mem64',
+        'IEM_MC_MEM_MAP_U8_ATOMIC':                 '__mem8a',
+        'IEM_MC_MEM_MAP_U8_RO':                     '__mem8',
+        'IEM_MC_MEM_MAP_U8_RW':                     '__mem8',
+        'IEM_MC_MEM_MAP_U8_WO':                     '__mem8',
+    };
+    ## Used by analyzeAndAnnotateName for non-memory MC blocks.
+    kdAnnotateNameRegStmts = {
+        'IEM_MC_FETCH_GREG_U8':                     '__greg8',
+        'IEM_MC_FETCH_GREG_U8_ZX_U16':              '__greg8zx16',
+        'IEM_MC_FETCH_GREG_U8_ZX_U32':              '__greg8zx32',
+        'IEM_MC_FETCH_GREG_U8_ZX_U64':              '__greg8zx64',
+        'IEM_MC_FETCH_GREG_U8_SX_U16':              '__greg8sx16',
+        'IEM_MC_FETCH_GREG_U8_SX_U32':              '__greg8sx32',
+        'IEM_MC_FETCH_GREG_U8_SX_U64':              '__greg8sx64',
+        'IEM_MC_FETCH_GREG_U16':                    '__greg16',
+        'IEM_MC_FETCH_GREG_U16_ZX_U32':             '__greg16zx32',
+        'IEM_MC_FETCH_GREG_U16_ZX_U64':             '__greg16zx64',
+        'IEM_MC_FETCH_GREG_U16_SX_U32':             '__greg16sx32',
+        'IEM_MC_FETCH_GREG_U16_SX_U64':             '__greg16sx64',
+        'IEM_MC_FETCH_GREG_U32':                    '__greg32',
+        'IEM_MC_FETCH_GREG_U32_ZX_U64':             '__greg32zx64',
+        'IEM_MC_FETCH_GREG_U32_SX_U64':             '__greg32sx64',
+        'IEM_MC_FETCH_GREG_U64':                    '__greg64',
+        'IEM_MC_FETCH_GREG_U64_ZX_U64':             '__greg64zx64',
+        'IEM_MC_FETCH_GREG_PAIR_U32':               '__greg32',
+        'IEM_MC_FETCH_GREG_PAIR_U64':               '__greg64',
+
+        'IEM_MC_STORE_GREG_U8':                     '__greg8',
+        'IEM_MC_STORE_GREG_U16':                    '__greg16',
+        'IEM_MC_STORE_GREG_U32':                    '__greg32',
+        'IEM_MC_STORE_GREG_U64':                    '__greg64',
+        'IEM_MC_STORE_GREG_I64':                    '__greg64',
+        'IEM_MC_STORE_GREG_U8_CONST':               '__greg8',
+        'IEM_MC_STORE_GREG_U16_CONST':              '__greg16',
+        'IEM_MC_STORE_GREG_U32_CONST':              '__greg32',
+        'IEM_MC_STORE_GREG_U64_CONST':              '__greg64',
+        'IEM_MC_STORE_GREG_PAIR_U32':               '__greg32',
+        'IEM_MC_STORE_GREG_PAIR_U64':               '__greg64',
+
+        'IEM_MC_FETCH_SREG_U16':                    '__sreg16',
+        'IEM_MC_FETCH_SREG_ZX_U32':                 '__sreg32',
+        'IEM_MC_FETCH_SREG_ZX_U64':                 '__sreg64',
+        'IEM_MC_FETCH_SREG_BASE_U64':               '__sbase64',
+        'IEM_MC_FETCH_SREG_BASE_U32':               '__sbase32',
+        'IEM_MC_STORE_SREG_BASE_U64':               '__sbase64',
+        'IEM_MC_STORE_SREG_BASE_U32':               '__sbase32',
+
+        'IEM_MC_REF_GREG_U8':                       '__greg8',
+        'IEM_MC_REF_GREG_U16':                      '__greg16',
+        'IEM_MC_REF_GREG_U32':                      '__greg32',
+        'IEM_MC_REF_GREG_U64':                      '__greg64',
+        'IEM_MC_REF_GREG_U8_CONST':                 '__greg8',
+        'IEM_MC_REF_GREG_U16_CONST':                '__greg16',
+        'IEM_MC_REF_GREG_U32_CONST':                '__greg32',
+        'IEM_MC_REF_GREG_U64_CONST':                '__greg64',
+        'IEM_MC_REF_GREG_I32':                      '__greg32',
+        'IEM_MC_REF_GREG_I64':                      '__greg64',
+        'IEM_MC_REF_GREG_I32_CONST':                '__greg32',
+        'IEM_MC_REF_GREG_I64_CONST':                '__greg64',
+
+        'IEM_MC_STORE_FPUREG_R80_SRC_REF':          '__fpu',
+        'IEM_MC_REF_FPUREG':                        '__fpu',
+
+        'IEM_MC_FETCH_MREG_U64':                    '__mreg64',
+        'IEM_MC_FETCH_MREG_U32':                    '__mreg32',
+        'IEM_MC_STORE_MREG_U64':                    '__mreg64',
+        'IEM_MC_STORE_MREG_U32_ZX_U64':             '__mreg32zx64',
+        'IEM_MC_REF_MREG_U64':                      '__mreg64',
+        'IEM_MC_REF_MREG_U64_CONST':                '__mreg64',
+        'IEM_MC_REF_MREG_U32_CONST':                '__mreg32',
+
+        'IEM_MC_CLEAR_XREG_U32_MASK':               '__xreg32x4',
+        'IEM_MC_FETCH_XREG_U128':                   '__xreg128',
+        'IEM_MC_FETCH_XREG_XMM':                    '__xreg128',
+        'IEM_MC_FETCH_XREG_U64':                    '__xreg64',
+        'IEM_MC_FETCH_XREG_U32':                    '__xreg32',
+        'IEM_MC_FETCH_XREG_U16':                    '__xreg16',
+        'IEM_MC_FETCH_XREG_U8':                     '__xreg8',
+        'IEM_MC_FETCH_XREG_PAIR_U128':              '__xreg128p',
+        'IEM_MC_FETCH_XREG_PAIR_XMM':               '__xreg128p',
+        'IEM_MC_FETCH_XREG_PAIR_U128_AND_RAX_RDX_U64': '__xreg128p',
+        'IEM_MC_FETCH_XREG_PAIR_U128_AND_EAX_EDX_U32_SX_U64': '__xreg128p',
+
+        'IEM_MC_STORE_XREG_U32_U128':               '__xreg32',
+        'IEM_MC_STORE_XREG_U128':                   '__xreg128',
+        'IEM_MC_STORE_XREG_XMM':                    '__xreg128',
+        'IEM_MC_STORE_XREG_XMM_U32':                '__xreg32',
+        'IEM_MC_STORE_XREG_XMM_U64':                '__xreg64',
+        'IEM_MC_STORE_XREG_U64':                    '__xreg64',
+        'IEM_MC_STORE_XREG_U64_ZX_U128':            '__xreg64zx128',
+        'IEM_MC_STORE_XREG_U32':                    '__xreg32',
+        'IEM_MC_STORE_XREG_U16':                    '__xreg16',
+        'IEM_MC_STORE_XREG_U8':                     '__xreg8',
+        'IEM_MC_STORE_XREG_U32_ZX_U128':            '__xreg32zx128',
+        'IEM_MC_STORE_XREG_HI_U64':                 '__xreg64hi',
+        'IEM_MC_STORE_XREG_R32':                    '__xreg32',
+        'IEM_MC_STORE_XREG_R64':                    '__xreg64',
+        'IEM_MC_BROADCAST_XREG_U8_ZX_VLMAX':        '__xreg8zx',
+        'IEM_MC_BROADCAST_XREG_U16_ZX_VLMAX':       '__xreg16zx',
+        'IEM_MC_BROADCAST_XREG_U32_ZX_VLMAX':       '__xreg32zx',
+        'IEM_MC_BROADCAST_XREG_U64_ZX_VLMAX':       '__xreg64zx',
+        'IEM_MC_BROADCAST_XREG_U128_ZX_VLMAX':      '__xreg128zx',
+        'IEM_MC_REF_XREG_U128':                     '__xreg128',
+        'IEM_MC_REF_XREG_U128_CONST':               '__xreg128',
+        'IEM_MC_REF_XREG_U32_CONST':                '__xreg32',
+        'IEM_MC_REF_XREG_U64_CONST':                '__xreg64',
+        'IEM_MC_REF_XREG_R32_CONST':                '__xreg32',
+        'IEM_MC_REF_XREG_R64_CONST':                '__xreg64',
+        'IEM_MC_REF_XREG_XMM_CONST':                '__xreg128',
+        'IEM_MC_COPY_XREG_U128':                    '__xreg128',
+
+        'IEM_MC_FETCH_YREG_U256':                   '__yreg256',
+        'IEM_MC_FETCH_YREG_U128':                   '__yreg128',
+        'IEM_MC_FETCH_YREG_U64':                    '__yreg64',
+        'IEM_MC_FETCH_YREG_2ND_U64':                '__yreg64',
+        'IEM_MC_FETCH_YREG_U32':                    '__yreg32',
+        'IEM_MC_STORE_YREG_U128':                   '__yreg128',
+        'IEM_MC_STORE_YREG_U32_ZX_VLMAX':           '__yreg32zx',
+        'IEM_MC_STORE_YREG_U64_ZX_VLMAX':           '__yreg64zx',
+        'IEM_MC_STORE_YREG_U128_ZX_VLMAX':          '__yreg128zx',
+        'IEM_MC_STORE_YREG_U256_ZX_VLMAX':          '__yreg256zx',
+        'IEM_MC_BROADCAST_YREG_U8_ZX_VLMAX':        '__yreg8',
+        'IEM_MC_BROADCAST_YREG_U16_ZX_VLMAX':       '__yreg16',
+        'IEM_MC_BROADCAST_YREG_U32_ZX_VLMAX':       '__yreg32',
+        'IEM_MC_BROADCAST_YREG_U64_ZX_VLMAX':       '__yreg64',
+        'IEM_MC_BROADCAST_YREG_U128_ZX_VLMAX':      '__yreg128',
+        'IEM_MC_REF_YREG_U128':                     '__yreg128',
+        'IEM_MC_REF_YREG_U128_CONST':               '__yreg128',
+        'IEM_MC_REF_YREG_U64_CONST':                '__yreg64',
+        'IEM_MC_COPY_YREG_U256_ZX_VLMAX':           '__yreg256zx',
+        'IEM_MC_COPY_YREG_U128_ZX_VLMAX':           '__yreg128zx',
+        'IEM_MC_COPY_YREG_U64_ZX_VLMAX':            '__yreg64zx',
+        'IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX':       '__yreg3296',
+        'IEM_MC_MERGE_YREG_U64_U64_ZX_VLMAX':       '__yreg6464',
+        'IEM_MC_MERGE_YREG_U64HI_U64HI_ZX_VLMAX':   '__yreg64hi64hi',
+        'IEM_MC_MERGE_YREG_U64LO_U64LO_ZX_VLMAX':   '__yreg64lo64lo',
+        'IEM_MC_MERGE_YREG_U64LO_U64LOCAL_ZX_VLMAX':'__yreg64',
+        'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':'__yreg64',
+    };
+    def analyzeAndAnnotateName(self, aoStmts: List[iai.McStmt]):
+        """
+        Scans the statements and variation lists for clues about the threaded function,
+        and sets self.sSubName if successfull.
+        """
+        dHits = {};
+        cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameMemStmts, dHits);
+        if cHits > 0:
+            sStmtNm = sorted(dHits.keys())[-1]; # priority: STORE, MEM_MAP, FETCH.
+            sName = self.kdAnnotateNameMemStmts[sStmtNm];
+        else:
+            cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameRegStmts, dHits);
+            if not cHits:
+                return;
+            sStmtNm = sorted(dHits.keys())[-1]; # priority: STORE, MEM_MAP, FETCH.
+            sName = self.kdAnnotateNameRegStmts[sStmtNm];
+        self.sSubName = sName;
+        return;
 
     def analyzeFindVariablesAndCallArgs(self, aoStmts: List[iai.McStmt]) -> bool:
         """ Scans the statements for MC variables and call arguments. """
@@ -1686,19 +1936,27 @@ class ThreadedFunction(object):
         Returns dummy True - raises exception on trouble.
         """
 
+        #
+        # Decode the block into a list/tree of McStmt objects.
+        #
+        aoStmts = self.oMcBlock.decode();
+
+        #
         # Check the block for errors before we proceed (will decode it).
+        #
         asErrors = self.oMcBlock.check();
         if asErrors:
             raise Exception('\n'.join(['%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sError, )
                                        for sError in asErrors]));
 
-        # Decode the block into a list/tree of McStmt objects.
-        aoStmts = self.oMcBlock.decode();
-
+        #
         # Scan the statements for local variables and call arguments (self.dVariables).
+        #
         self.analyzeFindVariablesAndCallArgs(aoStmts);
 
+        #
         # Scan the code for IEM_CIMPL_F_ and other clues.
+        #
         self.dsCImplFlags = self.oMcBlock.dsCImplFlags.copy();
         dEflStmts         = {};
         self.analyzeCodeOperation(aoStmts, dEflStmts);
@@ -1707,7 +1965,9 @@ class ThreadedFunction(object):
              + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE' in self.dsCImplFlags) > 1):
             self.error('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE calls', oGenerator);
 
+        #
         # Analyse EFLAGS related MCs and @opflmodify and friends.
+        #
         if dEflStmts:
             oInstruction = self.oMcBlock.oInstruction; # iai.Instruction
             if (   oInstruction is None
@@ -1743,7 +2003,9 @@ class ThreadedFunction(object):
                         self.error('"%s" in  @opflclear but missing from @opflmodify (%s)!'
                                    % (sFlag, ', '.join(oInstruction.asFlModify)), oGenerator);
 
+        #
         # Create variations as needed.
+        #
         if iai.McStmt.findStmtByNames(aoStmts,
                                       { 'IEM_MC_DEFER_TO_CIMPL_0_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_1_RET': True,
@@ -1813,7 +2075,14 @@ class ThreadedFunction(object):
         # Dictionary variant of the list.
         self.dVariations = { oVar.sVariation: oVar for oVar in self.aoVariations };
 
+        #
+        # Try annotate the threaded function name.
+        #
+        self.analyzeAndAnnotateName(aoStmts);
+
+        #
         # Continue the analysis on each variation.
+        #
         for oVariation in self.aoVariations:
             oVariation.analyzeVariation(aoStmts);
 
@@ -2262,6 +2531,24 @@ class IEMThreadedGenerator(object):
             print('debug:     %s params: %4s raw, %4s min'
                   % (cCount, dRawParamCounts.get(cCount, 0), dMinParamCounts.get(cCount, 0)),
                   file = sys.stderr);
+
+        # Do another pass over the threaded functions to settle the name suffix.
+        iThreadedFn = 0;
+        while iThreadedFn < len(self.aoThreadedFuncs):
+            oFunction = self.aoThreadedFuncs[iThreadedFn].oMcBlock.oFunction;
+            assert oFunction;
+            iThreadedFnNext = iThreadedFn + 1;
+            dSubNames = { self.aoThreadedFuncs[iThreadedFn].sSubName: 1 };
+            while (    iThreadedFnNext < len(self.aoThreadedFuncs)
+                   and self.aoThreadedFuncs[iThreadedFnNext].oMcBlock.oFunction == oFunction):
+                dSubNames[self.aoThreadedFuncs[iThreadedFnNext].sSubName] = 1;
+                iThreadedFnNext += 1;
+            if iThreadedFnNext - iThreadedFn > len(dSubNames):
+                iSubName = 0;
+                while iThreadedFn + iSubName < iThreadedFnNext:
+                    self.aoThreadedFuncs[iThreadedFn + iSubName].sSubName += '_%s' % (iSubName,);
+                    iSubName += 1;
+            iThreadedFn = iThreadedFnNext;
 
         # Populate aidxFirstFunctions.  This is ASSUMING that
         # g_aoMcBlocks/self.aoThreadedFuncs are in self.aoParsers order.
