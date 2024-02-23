@@ -124,10 +124,9 @@ class StorageConfigOsSolaris(StorageConfigOs):
             lstPools = [];
             asPools = sOutput.splitlines();
             for sPool in asPools:
-                if sPool.startswith(sPoolIdStart):
-                    # Extract the whole name and add it to the list.
-                    asItems = sPool.split('\t');
-                    lstPools.append(asItems[0]);
+                oMatchResult = re.match("%s[0-9]?[0-9]?" % sPoolIdStart, sPool)  # either re.Match obj or None
+                if oMatchResult:
+                    lstPools.append(oMatchResult.group(0));
         return lstPools;
 
     def _getActiveVolumesInPoolStartingWith(self, oExec, sPool, sVolumeIdStart):
@@ -141,10 +140,9 @@ class StorageConfigOsSolaris(StorageConfigOs):
             lstVolumes = [];
             asVolumes = sOutput.splitlines();
             for sVolume in asVolumes:
-                if sVolume.startswith(sPool + '/' + sVolumeIdStart):
-                    # Extract the whole name and add it to the list.
-                    asItems = sVolume.split('\t');
-                    lstVolumes.append(asItems[0]);
+                oMatchResult = re.match("%s/%s" % (sPool, sVolumeIdStart), sVolume)  # either re.Match obj or None
+                if oMatchResult:
+                    lstVolumes.append(oMatchResult.group(0));
         return lstVolumes;
 
     def getDisksMatchingRegExp(self, sRegExp):
@@ -494,7 +492,7 @@ class StorageCfg(object):
             if oDiskCfg.isCfgRegExp():
                 self.lstDisks = oStorOs.getDisksMatchingRegExp(oDiskCfg.getDisks());
             elif oDiskCfg.isCfgList():
-                # Assume a list of of disks and add.
+                # Assume a list of disks and add.
                 for sDisk in oDiskCfg.getDisks():
                     self.lstDisks.append(StorageDisk(sDisk));
             elif oDiskCfg.isCfgStaticDir():
@@ -678,15 +676,17 @@ class StorageCfg(object):
 
     def cleanupLeftovers(self):
         """
-        Tries to cleanup any leftover pools and volumes from a failed previous run.
+        Tries to clean up any leftover pools and volumes from a failed previous run.
         """
         reporter.log('cleanupLeftovers starts');
         if not self.oDiskCfg.isCfgStaticDir():
             return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
 
         fRc = True;
-        if os.path.exists(self.oDiskCfg.getDisks()):
-            for sEntry in os.listdir(self.oDiskCfg.getDisks()):
+        asDisks = self.oDiskCfg.getDisks();
+        reporter.log("oDiskCfg.getDisks: %s" % asDisks);
+        if os.path.exists(asDisks):
+            for sEntry in os.listdir(asDisks):
                 fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
         reporter.log('cleanupLeftovers ends');
         return fRc;

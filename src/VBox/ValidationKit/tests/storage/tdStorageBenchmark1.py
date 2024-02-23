@@ -493,7 +493,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         # Testbox configs (Flag whether to test raw mode on the testbox, disk configuration)
         'testboxstor1.de.oracle.com': (True, storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z')),
         # Windows testbox doesn't return testboxstor2.de.oracle.com from socket.getfqdn()
-        'testboxstor2':               (False, storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest')),
+        'testboxstor2':               (False, storagecfg.DiskCfg('win', storagecfg.g_ksDiskCfgStatic, 'D:/StorageTest')),
 
         # Local test configs for the testcase developer
         'adaris':                     (True, storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgStatic, \
