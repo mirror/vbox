@@ -34,6 +34,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QITreeView.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIGuestOSType.h"
 #include "UIMessageCenter.h"

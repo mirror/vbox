@@ -32,6 +32,7 @@
 #include <QTouchEvent>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UICursor.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"

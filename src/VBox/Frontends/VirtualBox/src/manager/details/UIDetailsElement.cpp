@@ -45,6 +45,7 @@
 #include "UIBootOrderEditor.h"
 #include "UICloudMachineSettingsDialogPage.h"
 #include "UICloudNetworkingStuff.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UICursor.h"
 #include "UIDetailsElement.h"

@@ -30,6 +30,7 @@
 #include <QFileInfo>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"

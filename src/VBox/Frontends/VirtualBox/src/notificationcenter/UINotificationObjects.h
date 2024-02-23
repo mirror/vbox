@@ -35,7 +35,8 @@
 #include <QUuid>
 
 /* GUI includes: */
-#include "UICommon.h"
+#include "UIDefs.h"
+#include "UIMediumDefs.h"
 #include "UINotificationObject.h"
 
 /* COM includes: */

@@ -41,7 +41,7 @@
 #include "QIWithRetranslateUI.h"
 #include "UIAdvancedSettingsDialog.h"
 #include "UICloudMachineSettingsDialog.h"
-#include "UICommon.h"
+#include "UIDefs.h"
 #include "UIExtraDataDefs.h"
 #include "UIAdvancedSettingsDialog.h"
 

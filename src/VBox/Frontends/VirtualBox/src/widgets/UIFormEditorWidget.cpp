@@ -44,6 +44,7 @@
 #include "QIStyledItemDelegate.h"
 #include "QITableView.h"
 #include "QIWithRetranslateUI.h"
+#include "UICommon.h"
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"

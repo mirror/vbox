@@ -38,6 +38,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIFileDialog.h"
+#include "UICommon.h"
 #include "UINotificationCenter.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageExpert.h"

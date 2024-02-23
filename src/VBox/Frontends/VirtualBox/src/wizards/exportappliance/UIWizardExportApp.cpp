@@ -32,6 +32,7 @@
 
 /* GUI includes: */
 #include "UIAddDiskEncryptionPasswordDialog.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"

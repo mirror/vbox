@@ -54,6 +54,7 @@
 #include "UICloudConsoleManager.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
+#include "UICommon.h"
 #include "UIDesktopServices.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
