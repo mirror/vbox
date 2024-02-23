@@ -395,6 +395,7 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         if (pReq)
         {
             Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
+            ASMAtomicDecU32(&pPool->cIdleThreads); /* Was already marked as idle above. */
             RTCritSectLeave(&pPool->CritSect);
 
             rtReqPoolThreadProcessRequest(pPool, pThread, pReq);
