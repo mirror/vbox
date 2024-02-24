@@ -17110,6 +17110,103 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_u256_fallback,(PRTUINT256U puDst, PCR
 }
 
 
+/**
+ * VPERMILPD
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc.au64[bEvil & 0x1];
+    puDst->au64[1] = uSrc.au64[(bEvil >> 1) & 0x1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    RTUINT256U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc.au64[bEvil & 0x1];
+    puDst->au64[1] = uSrc.au64[(bEvil >> 1) & 0x1];
+
+    puDst->au64[2] = uSrc.au64[2 + ((bEvil >> 2) & 0x1)];
+    puDst->au64[3] = uSrc.au64[2 + ((bEvil >> 3) & 0x1)];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc1.au64[(uSrc2.au8[0] & 0x2) >> 1];
+    puDst->au64[1] = uSrc1.au64[(uSrc2.au8[8] & 0x2) >> 1];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc1.au64[(uSrc2.au8[0] & 0x2) >> 1];
+    puDst->au64[1] = uSrc1.au64[(uSrc2.au8[8] & 0x2) >> 1];
+
+    puDst->au64[2] = uSrc1.au64[2 + ((uSrc2.au8[16] & 0x2) >> 1)];
+    puDst->au64[3] = uSrc1.au64[2 + ((uSrc2.au8[24] & 0x2) >> 1)];
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc.au64[bEvil & 0x1];
+    puDst->au64[1] = uSrc.au64[(bEvil >> 1) & 0x1];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    RTUINT256U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc.au64[bEvil & 0x1];
+    puDst->au64[1] = uSrc.au64[(bEvil >> 1) & 0x1];
+
+    puDst->au64[2] = uSrc.au64[2 + ((bEvil >> 2) & 0x1)];
+    puDst->au64[3] = uSrc.au64[2 + ((bEvil >> 3) & 0x1)];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc1.au64[(uSrc2.au8[0] & 0x2) >> 1];
+    puDst->au64[1] = uSrc1.au64[(uSrc2.au8[8] & 0x2) >> 1];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilpd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au64[0] = uSrc1.au64[(uSrc2.au8[0] & 0x2) >> 1];
+    puDst->au64[1] = uSrc1.au64[(uSrc2.au8[8] & 0x2) >> 1];
+
+    puDst->au64[2] = uSrc1.au64[2 + ((uSrc2.au8[16] & 0x2) >> 1)];
+    puDst->au64[3] = uSrc1.au64[2 + ((uSrc2.au8[24] & 0x2) >> 1)];
+}
+
+
 /*
  * [V]PBLENDVB
  */

@@ -4426,6 +4426,7 @@ IEMIMPL_MEDIA_OPT_F3 vpaddusw
 IEMIMPL_MEDIA_OPT_F3 vpaddsb
 IEMIMPL_MEDIA_OPT_F3 vpaddsw
 IEMIMPL_MEDIA_OPT_F3 vpermilps
+IEMIMPL_MEDIA_OPT_F3 vpermilpd
 
 ;;
 ; Media instruction working on one full sized source register, one full sized destination
@@ -5587,6 +5588,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _imm_u256
 %endmacro
 
 IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 vpermilps,  1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 vpermilpd,  1, 1
 
 
 ;;

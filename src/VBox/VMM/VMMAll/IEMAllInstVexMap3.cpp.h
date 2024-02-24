@@ -394,8 +394,14 @@ FNIEMOP_DEF(iemOp_vpermilps_Vx_Wx_Ib)
 }
 
 
-/** Opcode VEX.66.0F3A 0x05. */
-FNIEMOP_STUB(iemOp_vpermilpd_Vx_Wx_Ib);
+/** Opcode VEX.66.0F3A 0x05.
+ * AVX,AVX  */
+FNIEMOP_DEF(iemOp_vpermilpd_Vx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RMI, VPERMILPD, vpermilpd, Vx, Wx, Ib, DISOPTYPE_HARMLESS, 0); /* @todo */
+    IEMOPMEDIAOPTF2IMM8_INIT_VARS(vpermilpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx_Ib_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
 
 
 /** Opcode VEX.66.0F3A 0x06 (vex only) */
