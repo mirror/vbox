@@ -4425,6 +4425,7 @@ IEMIMPL_MEDIA_OPT_F3 vpaddusb
 IEMIMPL_MEDIA_OPT_F3 vpaddusw
 IEMIMPL_MEDIA_OPT_F3 vpaddsb
 IEMIMPL_MEDIA_OPT_F3 vpaddsw
+IEMIMPL_MEDIA_OPT_F3 vpermilps
 
 ;;
 ; Media instruction working on one full sized source register, one full sized destination
@@ -5502,6 +5503,90 @@ IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpclmulqdq, 1, 0
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vperm2i128, 0, 1
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vperm2f128, 0, 1
 IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vmpsadbw,   1, 1
+
+
+;;
+; AVX instructions with 8-bit immediates of the form
+;    xxx {x,y}mm1, {x,y}mm2, imm8.
+; where the instruction encoding takes up 6 bytes.
+;
+; @param    1       The instruction name.
+; @param    2       Whether the instruction has a 128-bit variant (1) or not (0).
+; @param    3       Whether the instruction has a 256-bit variant (1) or not (0).
+;
+; @param    A0      Pointer to the destination media register size operand (output).
+; @param    A1      Pointer to the first source media register size operand (input).
+; @param    A2      The 8-bit immediate
+;
+%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 3
+ %if %2 == 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movzx   A2, A2_8                ; must clear top bits
+        movdqu  xmm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+ %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
+        lea     T0, [A2 + A2*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A2 * 12 = (A2 * 3) * 4
+        lea     T1, [T1 + T0*4]
+ %else
+        lea     T1, [T1 + A2*8]         ; sizeof(insnX+ret+int3)         ==  8: A2 * 8
+ %endif
+        IBT_NOTRACK
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        %1      xmm0, xmm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+ENDPROC iemAImpl_ %+ %1 %+ _imm_u128
+ %endif
+
+ %if %3 == 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movzx   A2, A2_8                ; must clear top bits
+        vmovdqu ymm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+ %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
+        lea     T0, [A2 + A2*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A2 * 12 = (A2 * 3) * 4
+        lea     T1, [T1 + T0*4]
+ %else
+        lea     T1, [T1 + A2*8]         ; sizeof(insnX+ret+int3)         ==  8: A2 *  8
+ %endif
+        IBT_NOTRACK
+        call    T1
+        vmovdqu [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        %1      ymm0, ymm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+ENDPROC iemAImpl_ %+ %1 %+ _imm_u256
+ %endif
+%endmacro
+
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 vpermilps,  1, 1
 
 
 ;;

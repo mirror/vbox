@@ -3536,6 +3536,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovmskpd_u256_fallback,(uint8_t *pu8Dst, PCRTU
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF2U128IMM8,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil));
 typedef FNIEMAIMPLMEDIAOPTF2U128IMM8 *PFNIEMAIMPLMEDIAOPTF2U128IMM8;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF2U256IMM8,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAOPTF2U256IMM8 *PFNIEMAIMPLMEDIAOPTF2U256IMM8;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U128IMM8,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil));
 typedef FNIEMAIMPLMEDIAOPTF3U128IMM8 *PFNIEMAIMPLMEDIAOPTF3U128IMM8;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAOPTF3U256IMM8,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bEvil));
@@ -3641,6 +3643,11 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrld_imm_u128, iemAImpl_vpsrld_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrld_imm_u256, iemAImpl_vpsrld_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrlq_imm_u128, iemAImpl_vpsrlq_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrlq_imm_u256, iemAImpl_vpsrlq_imm_u256_fallback;
+
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpermilps_u128,     iemAImpl_vpermilps_u128_fallback;
+FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_vpermilps_imm_u128, iemAImpl_vpermilps_imm_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpermilps_u256,     iemAImpl_vpermilps_u256_fallback;
+FNIEMAIMPLMEDIAOPTF2U256IMM8 iemAImpl_vpermilps_imm_u256, iemAImpl_vpermilps_imm_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends
@@ -3941,6 +3948,43 @@ typedef IEMOPMEDIAOPTF2 const *PCIEMOPMEDIAOPTF2;
 #define IEMOPMEDIAOPTF2_INIT_VARS(a_InstrNm) \
     IEMOPMEDIAOPTF2_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
                                  RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
+
+/**
+ * Function table for media instruction taking one full sized media source
+ * register and one full sized destination register and an 8-bit immediate, but no additional state
+ * (AVX).
+ */
+typedef struct IEMOPMEDIAOPTF2IMM8
+{
+    PFNIEMAIMPLMEDIAOPTF2U128IMM8 pfnU128;
+    PFNIEMAIMPLMEDIAOPTF2U256IMM8 pfnU256;
+} IEMOPMEDIAOPTF2IMM8;
+/** Pointer to a media operation function table for 2 full sized ops (AVX). */
+typedef IEMOPMEDIAOPTF2IMM8 const *PCIEMOPMEDIAOPTF2IMM8;
+
+/** @def IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF2IMM8 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPMEDIAOPTF2IMM8 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAOPTF2IMM8 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
+/** @def IEMOPMEDIAOPTF2IMM8_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX */
+#define IEMOPMEDIAOPTF2IMM8_INIT_VARS(a_InstrNm) \
+    IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u256),\
+                                     RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u256_fallback))
+/** @} */
 
 /**
  * Function table for media instruction taking two full sized media source

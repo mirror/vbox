@@ -16989,6 +16989,127 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphminposuw_u128_fallback,(PRTUINT128U puDst, P
 }
 
 
+/**
+ * VPERMILPS
+ */
+#ifdef IEM_WITHOUT_ASSEMBLY
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc.au32[(bEvil >> 6) & 0x3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    RTUINT256U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc.au32[(bEvil >> 6) & 0x3];
+
+    puDst->au32[4] = uSrc.au32[4 + (bEvil & 0x3)];
+    puDst->au32[5] = uSrc.au32[4 + ((bEvil >> 2) & 0x3)];
+    puDst->au32[6] = uSrc.au32[4 + ((bEvil >> 4) & 0x3)];
+    puDst->au32[7] = uSrc.au32[4 + ((bEvil >> 6) & 0x3)];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc1.au32[uSrc2.au8[0] & 0x3];
+    puDst->au32[1] = uSrc1.au32[uSrc2.au8[4] & 0x3];
+    puDst->au32[2] = uSrc1.au32[uSrc2.au8[8] & 0x3];
+    puDst->au32[3] = uSrc1.au32[uSrc2.au8[12] & 0x3];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc1.au32[uSrc2.au8[0] & 0x3];
+    puDst->au32[1] = uSrc1.au32[uSrc2.au8[4] & 0x3];
+    puDst->au32[2] = uSrc1.au32[uSrc2.au8[8] & 0x3];
+    puDst->au32[3] = uSrc1.au32[uSrc2.au8[12] & 0x3];
+
+    puDst->au32[4] = uSrc1.au32[4 + (uSrc2.au8[16] & 0x3)];
+    puDst->au32[5] = uSrc1.au32[4 + (uSrc2.au8[20] & 0x3)];
+    puDst->au32[6] = uSrc1.au32[4 + (uSrc2.au8[24] & 0x3)];
+    puDst->au32[7] = uSrc1.au32[4 + (uSrc2.au8[28] & 0x3)];
+}
+#endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    RTUINT128U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc.au32[(bEvil >> 6) & 0x3];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t bEvil))
+{
+    RTUINT256U const uSrc = *puSrc;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc.au32[bEvil & 0x3];
+    puDst->au32[1] = uSrc.au32[(bEvil >> 2) & 0x3];
+    puDst->au32[2] = uSrc.au32[(bEvil >> 4) & 0x3];
+    puDst->au32[3] = uSrc.au32[(bEvil >> 6) & 0x3];
+
+    puDst->au32[4] = uSrc.au32[4 + (bEvil & 0x3)];
+    puDst->au32[5] = uSrc.au32[4 + ((bEvil >> 2) & 0x3)];
+    puDst->au32[6] = uSrc.au32[4 + ((bEvil >> 4) & 0x3)];
+    puDst->au32[7] = uSrc.au32[4 + ((bEvil >> 6) & 0x3)];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U const uSrc1 = *puSrc1;
+    RTUINT128U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc1.au32[uSrc2.au8[0] & 0x3];
+    puDst->au32[1] = uSrc1.au32[uSrc2.au8[4] & 0x3];
+    puDst->au32[2] = uSrc1.au32[uSrc2.au8[8] & 0x3];
+    puDst->au32[3] = uSrc1.au32[uSrc2.au8[12] & 0x3];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermilps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    RTUINT256U const uSrc1 = *puSrc1;
+    RTUINT256U const uSrc2 = *puSrc2;
+    ASMCompilerBarrier();
+
+    puDst->au32[0] = uSrc1.au32[uSrc2.au8[0] & 0x3];
+    puDst->au32[1] = uSrc1.au32[uSrc2.au8[4] & 0x3];
+    puDst->au32[2] = uSrc1.au32[uSrc2.au8[8] & 0x3];
+    puDst->au32[3] = uSrc1.au32[uSrc2.au8[12] & 0x3];
+
+    puDst->au32[4] = uSrc1.au32[4 + (uSrc2.au8[16] & 0x3)];
+    puDst->au32[5] = uSrc1.au32[4 + (uSrc2.au8[20] & 0x3)];
+    puDst->au32[6] = uSrc1.au32[4 + (uSrc2.au8[24] & 0x3)];
+    puDst->au32[7] = uSrc1.au32[4 + (uSrc2.au8[28] & 0x3)];
+}
+
+
 /*
  * [V]PBLENDVB
  */
