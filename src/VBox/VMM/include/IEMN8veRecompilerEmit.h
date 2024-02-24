@@ -4410,6 +4410,151 @@ iemNativeEmitOrGpr32ByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 }
 
 
+/**
+ * Emits code for OR'ing a 64-bit GPRs with a constant.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrGprByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint64_t uImm)
+{
+#if defined(RT_ARCH_AMD64)
+    if ((int64_t)uImm == (int8_t)uImm)
+    {
+        /* or Ev, imm8 */
+        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, iGprDst & 7);
+        pbCodeBuf[off++] = (uint8_t)uImm;
+    }
+    else if ((int64_t)uImm == (int32_t)uImm)
+    {
+        /* or Ev, imm32 */
+        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, iGprDst & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uImm);
+        pbCodeBuf[off++] = RT_BYTE2(uImm);
+        pbCodeBuf[off++] = RT_BYTE3(uImm);
+        pbCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+    else
+    {
+        /* Use temporary register for the 64-bit immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        off = iemNativeEmitOrGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 3), off, iGprDst, iTmpReg);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uImmR     = 0;
+    uint32_t uImmNandS = 0;
+    if (Armv8A64ConvertMask64ToImmRImmS(uImm, &uImmNandS, &uImmR))
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrOrrImm(iGprDst, iGprDst, uImmNandS, uImmR);
+    }
+    else
+    {
+        /* Use temporary register for the 64-bit immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        off = iemNativeEmitOrGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iTmpReg);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for OR'ing an 32-bit GPRs with a constant.
+ * @note Bits 32 thru 63 in the destination will be zero after the operation.
+ * @note For ARM64 this only supports @a uImm values that can be expressed using
+ *       the two 6-bit immediates of the OR instructions.  The caller must make
+ *       sure this is possible!
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitOrGpr32ByImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint32_t uImm)
+{
+#if defined(RT_ARCH_AMD64)
+    /* or Ev, imm */
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    if ((int32_t)uImm == (int8_t)uImm)
+    {
+        pCodeBuf[off++] = 0x83;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, iGprDst & 7);
+        pCodeBuf[off++] = (uint8_t)uImm;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0x81;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, iGprDst & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm);
+        pCodeBuf[off++] = RT_BYTE2(uImm);
+        pCodeBuf[off++] = RT_BYTE3(uImm);
+        pCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uImmR     = 0;
+    uint32_t uImmNandS = 0;
+    if (Armv8A64ConvertMask32ToImmRImmS(uImm, &uImmNandS, &uImmR))
+        pCodeBuf[off++] = Armv8A64MkInstrOrrImm(iGprDst, iGprDst, uImmNandS, uImmR, false /*f64Bit*/);
+    else
+# ifdef IEM_WITH_THROW_CATCH
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+        AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for OR'ing an 32-bit GPRs with a constant.
+ *
+ * @note Bits 32 thru 63 in the destination will be zero after the operation.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint32_t uImm)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitOrGpr32ByImmEx(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, uImm);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uImmR     = 0;
+    uint32_t uImmNandS = 0;
+    if (Armv8A64ConvertMask32ToImmRImmS(uImm, &uImmNandS, &uImmR))
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrOrrImm(iGprDst, iGprDst, uImmNandS, uImmR, false /*f64Bit*/);
+    }
+    else
+    {
+        /* Use temporary register for the 64-bit immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        off = iemNativeEmitOrGpr32ByGpr(pReNative, off, iGprDst, iTmpReg);
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 
 /**
  * Emits code for XOR'ing two 64-bit GPRs.

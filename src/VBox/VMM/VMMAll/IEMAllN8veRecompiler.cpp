@@ -9810,6 +9810,87 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 }
 
 
+/*********************************************************************************************************************************
+*   Local variable manipulation (add, sub, and, or).                                                                             *
+*********************************************************************************************************************************/
+
+#define IEM_MC_AND_LOCAL_U8(a_u8Local, a_u8Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u8Local, a_u8Mask, sizeof(uint8_t))
+
+#define IEM_MC_AND_LOCAL_U16(a_u16Local, a_u16Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u16Local, a_u16Mask, sizeof(uint16_t))
+
+#define IEM_MC_AND_LOCAL_U32(a_u32Local, a_u32Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u32Local, a_u32Mask, sizeof(uint32_t))
+
+#define IEM_MC_AND_LOCAL_U64(a_u64Local, a_u64Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u64Local, a_u64Mask, sizeof(uint64_t))
+
+/** Emits code for AND'ing a local and a constant value.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAndLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint64_t uMask, uint8_t cbMask)
+{
+    Assert(pReNative->Core.aVars[idxVar].cbVar == cbMask);
+#ifdef VBOX_STRICT
+    switch (cbMask)
+    {
+        case sizeof(uint8_t):  Assert((uint8_t)uMask  == uMask); break;
+        case sizeof(uint16_t): Assert((uint16_t)uMask == uMask); break;
+        case sizeof(uint32_t): Assert((uint32_t)uMask == uMask); break;
+        case sizeof(uint64_t): break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+    if (cbMask <= sizeof(uint32_t))
+        off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxVarReg, uMask);
+    else
+        off = iemNativeEmitAndGprByImm(pReNative, off, idxVarReg, uMask);
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
+
+#define IEM_MC_OR_LOCAL_U8(a_u8Local, a_u8Mask) \
+    off = iemNativeEmitOrLocal(pReNative, off, a_u8Local, a_u8Mask, sizeof(uint8_t))
+
+#define IEM_MC_OR_LOCAL_U16(a_u16Local, a_u16Mask) \
+    off = iemNativeEmitOrLocal(pReNative, off, a_u16Local, a_u16Mask, sizeof(uint16_t))
+
+#define IEM_MC_OR_LOCAL_U32(a_u32Local, a_u32Mask) \
+    off = iemNativeEmitOrLocal(pReNative, off, a_u32Local, a_u32Mask, sizeof(uint32_t))
+
+#define IEM_MC_OR_LOCAL_U64(a_u64Local, a_u64Mask) \
+    off = iemNativeEmitOrLocal(pReNative, off, a_u64Local, a_u64Mask, sizeof(uint64_t))
+
+/** Emits code for OR'ing a local and a constant value.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint64_t uMask, uint8_t cbMask)
+{
+    Assert(pReNative->Core.aVars[idxVar].cbVar == cbMask);
+#ifdef VBOX_STRICT
+    switch (cbMask)
+    {
+        case sizeof(uint8_t):  Assert((uint8_t)uMask  == uMask); break;
+        case sizeof(uint16_t): Assert((uint16_t)uMask == uMask); break;
+        case sizeof(uint32_t): Assert((uint32_t)uMask == uMask); break;
+        case sizeof(uint64_t): break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+    if (cbMask <= sizeof(uint32_t))
+        off = iemNativeEmitOrGpr32ByImm(pReNative, off, idxVarReg, uMask);
+    else
+        off = iemNativeEmitOrGprByImm(pReNative, off, idxVarReg, uMask);
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
+
+
 
 /*********************************************************************************************************************************
 *   EFLAGS                                                                                                                       *
@@ -13096,6 +13177,135 @@ static DECLCALLBACK(int) iemNativeDisasReadBytesDummy(PDISSTATE pDis, uint8_t of
 }
 
 
+DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
+{
+    static struct { uint32_t off; const char *pszName; } const s_aMembers[] =
+    {
+#define ENTRY(a_Member) { RT_UOFFSETOF(VMCPUCC, a_Member), #a_Member }
+        ENTRY(fLocalForcedActions),
+        ENTRY(iem.s.rcPassUp),
+        ENTRY(iem.s.fExec),
+        ENTRY(iem.s.pbInstrBuf),
+        ENTRY(iem.s.uInstrBufPc),
+        ENTRY(iem.s.GCPhysInstrBuf),
+        ENTRY(iem.s.cbInstrBufTotal),
+        ENTRY(iem.s.idxTbCurInstr),
+#ifdef VBOX_WITH_STATISTICS
+        ENTRY(iem.s.StatNativeTlbHitsForFetch),
+        ENTRY(iem.s.StatNativeTlbHitsForStore),
+        ENTRY(iem.s.StatNativeTlbHitsForStack),
+        ENTRY(iem.s.StatNativeTlbHitsForMapped),
+        ENTRY(iem.s.StatNativeCodeTlbMissesNewPage),
+        ENTRY(iem.s.StatNativeCodeTlbHitsForNewPage),
+        ENTRY(iem.s.StatNativeCodeTlbMissesNewPageWithOffset),
+        ENTRY(iem.s.StatNativeCodeTlbHitsForNewPageWithOffset),
+#endif
+        ENTRY(iem.s.DataTlb.aEntries),
+        ENTRY(iem.s.DataTlb.uTlbRevision),
+        ENTRY(iem.s.DataTlb.uTlbPhysRev),
+        ENTRY(iem.s.DataTlb.cTlbHits),
+        ENTRY(iem.s.CodeTlb.aEntries),
+        ENTRY(iem.s.CodeTlb.uTlbRevision),
+        ENTRY(iem.s.CodeTlb.uTlbPhysRev),
+        ENTRY(iem.s.CodeTlb.cTlbHits),
+        ENTRY(pVMR3),
+        ENTRY(cpum.GstCtx.rax),
+        ENTRY(cpum.GstCtx.ah),
+        ENTRY(cpum.GstCtx.rcx),
+        ENTRY(cpum.GstCtx.ch),
+        ENTRY(cpum.GstCtx.rdx),
+        ENTRY(cpum.GstCtx.dh),
+        ENTRY(cpum.GstCtx.rbx),
+        ENTRY(cpum.GstCtx.bh),
+        ENTRY(cpum.GstCtx.rsp),
+        ENTRY(cpum.GstCtx.rbp),
+        ENTRY(cpum.GstCtx.rsi),
+        ENTRY(cpum.GstCtx.rdi),
+        ENTRY(cpum.GstCtx.r8),
+        ENTRY(cpum.GstCtx.r9),
+        ENTRY(cpum.GstCtx.r10),
+        ENTRY(cpum.GstCtx.r11),
+        ENTRY(cpum.GstCtx.r12),
+        ENTRY(cpum.GstCtx.r13),
+        ENTRY(cpum.GstCtx.r14),
+        ENTRY(cpum.GstCtx.r15),
+        ENTRY(cpum.GstCtx.es.Sel),
+        ENTRY(cpum.GstCtx.es.u64Base),
+        ENTRY(cpum.GstCtx.es.u32Limit),
+        ENTRY(cpum.GstCtx.es.Attr),
+        ENTRY(cpum.GstCtx.cs.Sel),
+        ENTRY(cpum.GstCtx.cs.u64Base),
+        ENTRY(cpum.GstCtx.cs.u32Limit),
+        ENTRY(cpum.GstCtx.cs.Attr),
+        ENTRY(cpum.GstCtx.ss.Sel),
+        ENTRY(cpum.GstCtx.ss.u64Base),
+        ENTRY(cpum.GstCtx.ss.u32Limit),
+        ENTRY(cpum.GstCtx.ss.Attr),
+        ENTRY(cpum.GstCtx.ds.Sel),
+        ENTRY(cpum.GstCtx.ds.u64Base),
+        ENTRY(cpum.GstCtx.ds.u32Limit),
+        ENTRY(cpum.GstCtx.ds.Attr),
+        ENTRY(cpum.GstCtx.fs.Sel),
+        ENTRY(cpum.GstCtx.fs.u64Base),
+        ENTRY(cpum.GstCtx.fs.u32Limit),
+        ENTRY(cpum.GstCtx.fs.Attr),
+        ENTRY(cpum.GstCtx.gs.Sel),
+        ENTRY(cpum.GstCtx.gs.u64Base),
+        ENTRY(cpum.GstCtx.gs.u32Limit),
+        ENTRY(cpum.GstCtx.gs.Attr),
+        ENTRY(cpum.GstCtx.rip),
+        ENTRY(cpum.GstCtx.eflags),
+        ENTRY(cpum.GstCtx.uRipInhibitInt),
+#undef ENTRY
+    };
+#ifdef VBOX_STRICT
+    static bool s_fOrderChecked = false;
+    if (!s_fOrderChecked)
+    {
+        s_fOrderChecked = true;
+        uint32_t offPrev = s_aMembers[0].off;
+        for (unsigned i = 1; i < RT_ELEMENTS(s_aMembers); i++)
+        {
+            Assert(s_aMembers[i].off > offPrev);
+            offPrev = s_aMembers[i].off;
+        }
+    }
+#endif
+
+    /*
+     * Binary lookup.
+     */
+    unsigned iStart = 0;
+    unsigned iEnd   = RT_ELEMENTS(s_aMembers);
+    for (;;)
+    {
+        unsigned const iCur   = iStart + (iEnd - iStart) / 2;
+        uint32_t const offCur = s_aMembers[iCur].off;
+        if (off < offCur)
+        {
+            if (iCur != iStart)
+                iEnd = iCur;
+            else
+                break;
+        }
+        else if (off > offCur)
+        {
+            if (iCur + 1 < iEnd)
+                iStart = iCur + 1;
+            else
+                break;
+        }
+        else
+            return s_aMembers[iCur].pszName;
+    }
+#ifdef VBOX_WITH_STATISTICS
+    if (off - RT_UOFFSETOF(VMCPUCC, iem.s.acThreadedFuncStats) < RT_SIZEOFMEMB(VMCPUCC, iem.s.acThreadedFuncStats))
+        return "iem.s.acThreadedFuncStats[iFn]";
+#endif
+    return NULL;
+}
+
+
 /**
  * Formats TB flags (IEM_F_XXX and IEMTB_F_XXX) to string.
  * @returns pszBuf.
@@ -13487,18 +13697,52 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                 else
 #  endif
                 {
+                    const char *pszAnnotation = NULL;
 #  ifdef RT_ARCH_AMD64
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
                                     DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-#  elif defined(RT_ARCH_ARM64)
+                    PCDISOPPARAM pMemOp;
+                    if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param1.fUse))
+                        pMemOp = &Dis.Param1;
+                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param2.fUse))
+                        pMemOp = &Dis.Param2;
+                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param3.fUse))
+                        pMemOp = &Dis.Param3;
+                    else
+                        pMemOp = NULL;
+                    if (   pMemOp
+                        && pMemOp->x86.Base.idxGenReg == IEMNATIVE_REG_FIXED_PVMCPU
+                        && (pMemOp->fUse & (DISUSE_BASE | DISUSE_REG_GEN64)) == (DISUSE_BASE | DISUSE_REG_GEN64))
+                        pszAnnotation = iemNativeDbgVCpuOffsetToName(pMemOp->fUse & DISUSE_DISPLACEMENT32
+                                                                     ? pMemOp->x86.uDisp.u32 : pMemOp->x86.uDisp.u8);
+
+#elif defined(RT_ARCH_ARM64)
                     DISFormatArmV8Ex(&Dis, szDisBuf, sizeof(szDisBuf),
                                      DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                      NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
 #  else
 #   error "Port me"
 #  endif
+                    if (pszAnnotation)
+                    {
+                        static unsigned const s_offAnnotation = 55;
+                        size_t const          cchAnnotation   = strlen(pszAnnotation);
+                        size_t                cchDis          = strlen(szDisBuf);
+                        if (RT_MAX(cchDis, s_offAnnotation) + sizeof(" ; ") + cchAnnotation <= sizeof(szDisBuf))
+                        {
+                            if (cchDis < s_offAnnotation)
+                            {
+                                memset(&szDisBuf[cchDis], ' ', s_offAnnotation - cchDis);
+                                cchDis = s_offAnnotation;
+                            }
+                            szDisBuf[cchDis++] = ' ';
+                            szDisBuf[cchDis++] = ';';
+                            szDisBuf[cchDis++] = ' ';
+                            memcpy(&szDisBuf[cchDis], pszAnnotation, cchAnnotation + 1);
+                        }
+                    }
                     pHlp->pfnPrintf(pHlp, "    %p: %s\n", pNativeCur, szDisBuf);
                 }
             }
