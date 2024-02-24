@@ -775,8 +775,9 @@ class ThreadedFunctionVariation(object):
             if sBaseType == 'PCIEMOPSHIFTDBLSIZES':     return 'PFNIEMAIMPLSHIFTDBLU'   + sMember[offBits:];
             if sBaseType == 'PCIEMOPMULDIVSIZES':       return 'PFNIEMAIMPLMULDIVU'     + sMember[offBits:];
             if sBaseType == 'PCIEMOPMEDIAF3':           return 'PFNIEMAIMPLMEDIAF3U'    + sMember[offBits:];
-            if sBaseType == 'PCIEMOPMEDIAOPTF3':        return 'PFNIEMAIMPLMEDIAOPTF3U' + sMember[offBits:];
             if sBaseType == 'PCIEMOPMEDIAOPTF2':        return 'PFNIEMAIMPLMEDIAOPTF2U' + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMEDIAOPTF2IMM8':    return 'PFNIEMAIMPLMEDIAOPTF2U' + sMember[offBits:] + 'IMM8';
+            if sBaseType == 'PCIEMOPMEDIAOPTF3':        return 'PFNIEMAIMPLMEDIAOPTF3U' + sMember[offBits:];
             if sBaseType == 'PCIEMOPMEDIAOPTF3IMM8':    return 'PFNIEMAIMPLMEDIAOPTF3U' + sMember[offBits:] + 'IMM8';
             if sBaseType == 'PCIEMOPBLENDOP':           return 'PFNIEMAIMPLAVXBLENDU'   + sMember[offBits:];
 
