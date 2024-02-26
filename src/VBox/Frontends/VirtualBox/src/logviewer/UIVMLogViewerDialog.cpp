@@ -39,6 +39,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
+#include "UIShortcutPool.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVMLogViewerWidget.h"
 #include "UICommon.h"
@@ -109,7 +110,7 @@ void UIVMLogViewerDialog::retranslateUi()
     button(ButtonType_Help)->setStatusTip(UIVMLogViewerWidget::tr("Show dialog help"));
     button(ButtonType_Embed)->setStatusTip(UIVMLogViewerWidget::tr("Embed to manager window"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-    button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+    button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
     button(ButtonType_Close)->setToolTip(UIVMLogViewerWidget::tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
     button(ButtonType_Help)->setToolTip(UIVMLogViewerWidget::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
     button(ButtonType_Embed)->setToolTip(UIVMLogViewerWidget::tr("Embed to Manager Window"));

@@ -45,6 +45,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIShortcutPool.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -965,7 +966,7 @@ void UICloudProfileManager::retranslateUi()
     button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
     button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-    button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+    button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
     button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
     button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
     button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));

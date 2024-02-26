@@ -37,6 +37,7 @@
 #include "UIFileManager.h"
 #include "UIFileManagerDialog.h"
 #include "UILoggingDefs.h"
+#include "UIShortcutPool.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -108,7 +109,7 @@ void UIFileManagerDialog::retranslateUi()
     {
         button(ButtonType_Help)->setText(UIFileManager::tr("Help"));
         button(ButtonType_Help)->setStatusTip(UIFileManager::tr("Show dialog help"));
-        button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+        button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
         button(ButtonType_Help)->setToolTip(UIFileManager::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
     }
 }

@@ -226,6 +226,30 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
     }
 }
 
+/* static */
+QKeySequence UIShortcutPool::standardSequence(QKeySequence::StandardKey enmKey)
+{
+    /* We have some overrides: */
+    switch (enmKey)
+    {
+#ifdef VBOX_WS_MAC
+        /* So called Apple default sequence for HelpContents action (CMD+?)
+         * is no more the default one on macOS for many years.
+         * Instead they have redesigned this shortcut to open
+         * system-wide Help menu with native search field.
+         * But the Contents action has no shortcut anymore.
+         * We could leave it empty or make it CMD+/ instead. */
+        case QKeySequence::HelpContents:
+            return QKeySequence("Ctrl+/");
+#endif
+        default:
+            break;
+    }
+
+    /* Use QKeySequence constructor by default: */
+    return QKeySequence(enmKey);
+}
+
 void UIShortcutPool::retranslateUi()
 {
     /* Translate own defaults: */

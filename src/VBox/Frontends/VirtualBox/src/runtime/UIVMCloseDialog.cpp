@@ -46,6 +46,7 @@
 #include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
+#include "UIShortcutPool.h"
 #include "UIVMCloseDialog.h"
 
 
@@ -527,7 +528,7 @@ void UIVMCloseDialog::prepareButtonBox()
         uiCommon().setHelpKeyword(pButtonBox->button(QIDialogButtonBox::Help), "intro-save-machine-state");
         connect(pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
                 pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
-        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
 
         /* Add into layout: */
         m_pMainLayout->addWidget(pButtonBox);

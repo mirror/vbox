@@ -701,7 +701,7 @@ protected:
     {
         switch (enmActionPoolType)
         {
-            case UIType_ManagerUI: return QKeySequence(QKeySequence::HelpContents);
+            case UIType_ManagerUI: return UIShortcutPool::standardSequence(QKeySequence::HelpContents);
             case UIType_RuntimeUI: break;
         }
         return QKeySequence();

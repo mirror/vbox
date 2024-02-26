@@ -40,6 +40,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIHelpBrowserDialog.h"
+#include "UIShortcutPool.h"
 #include "UITakeSnapshotDialog.h"
 
 
@@ -117,7 +118,7 @@ void UITakeSnapshotDialog::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Close dialog without taking a snapshot"));
         m_pButtonBox->button(QDialogButtonBox::Help)->setStatusTip(tr("Show dialog help"));
 
-        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
 
         if (m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString().isEmpty())
             m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Accept"));
@@ -303,7 +304,7 @@ void UITakeSnapshotDialog::prepareContents()
                     this, &UITakeSnapshotDialog::reject);
             connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
                     m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
-            m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+            m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
             uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "snapshots");
 
             /* Add into layout: */

@@ -38,6 +38,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIMessageCenter.h"
+#include "UIShortcutPool.h"
 #ifdef VBOX_WS_MAC
 # include "QIToolBar.h"
 # include "UIWindowMenuManager.h"
@@ -194,7 +195,7 @@ void QIManagerDialog::prepareButtonBox()
 
         /* Assign shortcuts: */
         button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-        button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+        button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
 
         /* Hide some of buttons initially: */
         button(ButtonType_Reset)->hide();

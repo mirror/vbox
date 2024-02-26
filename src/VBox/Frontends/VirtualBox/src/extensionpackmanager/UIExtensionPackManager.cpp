@@ -44,6 +44,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIShortcutPool.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -614,7 +615,7 @@ void UIExtensionPackManager::retranslateUi()
     button(ButtonType_Close)->setStatusTip(tr("Close dialog"));
     button(ButtonType_Help)->setStatusTip(tr("Show dialog help"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-    button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+    button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
     button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
     button(ButtonType_Help)->setToolTip(tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }

@@ -3242,7 +3242,9 @@ protected:
     /** Returns standard shortcut. */
     virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
     {
-        return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::HelpContents);
+        return   actionPool()->isTemporary()
+               ? QKeySequence()
+               : UIShortcutPool::standardSequence(QKeySequence::HelpContents);
     }
 
     /** Handles translation event. */

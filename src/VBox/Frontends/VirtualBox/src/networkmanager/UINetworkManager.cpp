@@ -36,7 +36,9 @@
 #include "QIDialogButtonBox.h"
 #include "QITabWidget.h"
 #include "QITreeWidget.h"
+#include "QIToolBar.h"
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsWidgetCloudNetwork.h"
 #include "UIDetailsWidgetHostNetwork.h"
@@ -47,11 +49,10 @@
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
-#include "QIToolBar.h"
+#include "UIShortcutPool.h"
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
 #endif
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CCloudNetwork.h"
@@ -2576,7 +2577,7 @@ void UINetworkManager::retranslateUi()
     button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
     button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-    button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+    button(ButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
     button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
     button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
     button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));

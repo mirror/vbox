@@ -45,6 +45,7 @@
 #include "UINativeWizard.h"
 #include "UINativeWizardPage.h"
 #include "UINotificationCenter.h"
+#include "UIShortcutPool.h"
 
 
 #ifdef VBOX_WS_MAC
@@ -577,7 +578,7 @@ void UINativeWizard::prepare()
                 {
                     connect(wizardButton(WizardButtonType_Help), &QPushButton::clicked,
                             this, &UINativeWizard::sltHandleHelpRequest);
-                    wizardButton(WizardButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+                    wizardButton(WizardButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
                     uiCommon().setHelpKeyword(this, m_strHelpKeyword);
                 }
                 connect(wizardButton(WizardButtonType_Expert), &QPushButton::clicked,

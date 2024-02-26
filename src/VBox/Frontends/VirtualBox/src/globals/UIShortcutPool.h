@@ -154,6 +154,9 @@ public:
     /** Applies shortcuts for specified @a pActionPool. */
     void applyShortcuts(UIActionPool *pActionPool);
 
+    /** Returns standard QKeySequence for passed QKeySequence::StandardKey. */
+    static QKeySequence standardSequence(QKeySequence::StandardKey enmKey);
+
 protected:
 
     /** Handles translation event. */
