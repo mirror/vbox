@@ -853,9 +853,9 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
     rc = AudioTestMixStreamEnable(pMix);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbToReadTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
+        size_t cbToReadTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
         AssertStmt(cbToReadTotal, rc = VERR_INVALID_PARAMETER);
-        uint32_t cbReadTotal   = 0; /* Counts the read test tone data (w/o any beacons). */
+        size_t cbReadTotal   = 0; /* Counts the read test tone data (w/o any beacons). */
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording %RU32 bytes total (%RU32ms timeout)\n",
                      idxTest, cbToReadTotal, pTstEnv->msTimeout);
@@ -924,7 +924,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                 uint32_t cbCaptured = 0;
                 if (cbBlock)
                 {
-                    rc = AudioTestMixStreamCapture(pMix, pvBlock, cbBlock, &cbCaptured);
+                    rc = AudioTestMixStreamCapture(pMix, pvBlock, (uint32_t)cbBlock, &cbCaptured);
                     if (RT_FAILURE(rc))
                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Reading from stream failed with %Rrc\n", idxTest, rc);
 
@@ -963,12 +963,12 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             size_t cbBlockToAcq;
             if (pTstEnv->fSelftest) /* For self-test mode we want to have a bit more randomness. */
             {
-                size_t const u = RTCircBufUsed(pCircBuf);
-                size_t const r = RTRandU32Ex(1, RTCircBufSize(pCircBuf));
-                cbBlockToAcq   = PDMAudioPropsFloorBytesToFrame(pMix->pProps, RT_MIN(u, r));
+                size_t const u = (uint32_t)RTCircBufUsed(pCircBuf);
+                size_t const r = RTRandU32Ex(1, (uint32_t)RTCircBufSize(pCircBuf));
+                cbBlockToAcq   = PDMAudioPropsFloorBytesToFrame(pMix->pProps, RT_MIN((uint32_t)u, (uint32_t)r));
             }
             else
-                cbBlockToAcq = PDMAudioPropsFloorBytesToFrame(pMix->pProps, RTCircBufUsed(pCircBuf));
+                cbBlockToAcq = PDMAudioPropsFloorBytesToFrame(pMix->pProps, (uint32_t)RTCircBufUsed(pCircBuf));
 
             RTCircBufAcquireReadBlock(pCircBuf, cbBlockToAcq, &pvBlock, &cbBlock);
             if (!cbBlock)
@@ -976,7 +976,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
             /* Flag indicating whether the whole block we've captured is silence or not. */
             bool const fIsAllSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBlock, cbBlock);
-            uint32_t   cbRead = 0;
+            size_t     cbRead = 0;
 
             switch (enmState)
             {
@@ -1001,9 +1001,9 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             && g_uVerbosity >= 2)
                         {
                             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                         "Test #%RU32: Detection of %s beacon started (%RU32ms recorded so far)\n",
+                                         "Test #%RU32: Detection of %s beacon started (%RU64ms recorded so far)\n",
                                          idxTest, AudioTestBeaconTypeGetName(Beacon.enmType),
-                                         PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbReadTotal));
+                                         PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, (uint32_t)cbReadTotal));
                         }
 
                         if (AudioTestBeaconIsComplete(&Beacon))
@@ -1085,7 +1085,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             if (cbRead)
             {
                 if (g_uVerbosity >= 3)
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Read data (%RU32 bytes):\n"
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Read data (%zu bytes):\n"
                                                             "%.*Rhxd\n",
                                  idxTest, cbRead, cbRead, pvBlock);
 
@@ -1096,7 +1096,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             }
 
             if (g_uVerbosity >= 2)
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Processed %RU64ms (%RU32 bytes)\n",
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Processed %RU64ms (%zu bytes)\n",
                              idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbRead), cbRead);
 
             RTCircBufReleaseReadBlock(pCircBuf, cbRead);
@@ -1118,10 +1118,10 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         } /* while */
 
         if (g_uVerbosity >= 2)
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recorded %RU32 bytes total\n", idxTest, cbReadTotal);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recorded %zu bytes total\n", idxTest, cbReadTotal);
         if (cbReadTotal != cbToReadTotal)
         {
-            RTTestFailed(g_hTest, "Test #%RU32: Recording ended unexpectedly (%RU32 read, expected %RU32)\n",
+            RTTestFailed(g_hTest, "Test #%RU32: Recording ended unexpectedly (%zu read, expected %zu)\n",
                          idxTest, cbReadTotal, cbToReadTotal);
             int rc2 = cbReadTotal > cbToReadTotal ? VERR_BUFFER_OVERFLOW : VERR_BUFFER_UNDERFLOW;
             if (RT_SUCCESS(rc))
