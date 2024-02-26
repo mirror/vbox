@@ -8355,7 +8355,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXClearDepthStencilView(PVGASTATECC pThisCC
     int rc = dxEnsureDepthStencilView(pThisCC, pDXContext, depthStencilViewId, &pDXView);
     AssertRCReturn(rc, rc);
 
-    pDevice->pImmediateContext->ClearDepthStencilView(pDXView->u.pDepthStencilView, flags, depth, stencil);
+    UINT ClearFlags = 0;
+    if (flags & SVGA3D_CLEAR_DEPTH)
+        ClearFlags |= D3D11_CLEAR_DEPTH;
+    if (flags & SVGA3D_CLEAR_STENCIL)
+        ClearFlags |= D3D11_CLEAR_STENCIL;
+
+    pDevice->pImmediateContext->ClearDepthStencilView(pDXView->u.pDepthStencilView, ClearFlags, depth, stencil);
     return VINF_SUCCESS;
 }
 
