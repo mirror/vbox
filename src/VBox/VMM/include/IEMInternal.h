@@ -3989,7 +3989,6 @@ typedef IEMOPMEDIAOPTF2IMM8 const *PCIEMOPMEDIAOPTF2IMM8;
 #define IEMOPMEDIAOPTF2IMM8_INIT_VARS(a_InstrNm) \
     IEMOPMEDIAOPTF2IMM8_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u256),\
                                      RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_imm_u256_fallback))
-/** @} */
 
 /**
  * Function table for media instruction taking two full sized media source
