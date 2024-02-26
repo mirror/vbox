@@ -110,14 +110,14 @@ UIShortcutPool *UIShortcutPool::s_pInstance = 0;
 const QString UIShortcutPool::s_strShortcutKeyTemplate = QString("%1/%2");
 const QString UIShortcutPool::s_strShortcutKeyTemplateRuntime = s_strShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts);
 
-void UIShortcutPool::create()
+void UIShortcutPool::create(UIType enmType)
 {
     /* Check that instance do NOT exists: */
     if (s_pInstance)
         return;
 
     /* Create instance: */
-    new UIShortcutPool;
+    new UIShortcutPool(enmType);
 
     /* Prepare instance: */
     s_pInstance->prepare();
@@ -203,8 +203,11 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             pAction->setShortcuts(existingShortcut.sequences());
             pAction->retranslateUi();
             /* Copy default and standard sequences from the action to the shortcut: */
-            existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
-            existingShortcut.setStandardSequence(pAction->standardShortcut(pActionPool->type()));
+            if (pActionPool->type() == m_enmType)
+            {
+                existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
+                existingShortcut.setStandardSequence(pAction->standardShortcut(pActionPool->type()));
+            }
         }
         /* If shortcut key is NOT known yet: */
         else
@@ -291,7 +294,8 @@ void UIShortcutPool::sltReloadMachineShortcuts()
     emit sigRuntimeShortcutsReloaded();
 }
 
-UIShortcutPool::UIShortcutPool()
+UIShortcutPool::UIShortcutPool(UIType enmType)
+    : m_enmType(enmType)
 {
     /* Prepare instance: */
     if (!s_pInstance)

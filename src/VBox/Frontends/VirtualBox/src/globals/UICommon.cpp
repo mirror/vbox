@@ -747,7 +747,7 @@ void UICommon::prepare()
     }
 
     /* Create shortcut pool: */
-    UIShortcutPool::create();
+    UIShortcutPool::create(uiType());
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Create network manager: */

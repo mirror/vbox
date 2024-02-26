@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIDefs.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -138,7 +139,7 @@ public:
     /** Returns singleton instance. */
     static UIShortcutPool *instance() { return s_pInstance; }
     /** Creates singleton instance. */
-    static void create();
+    static void create(UIType enmType);
     /** Destroys singleton instance. */
     static void destroy();
 
@@ -172,9 +173,9 @@ private slots:
 private:
 
     /** Constructs shortcut pool. */
-    UIShortcutPool();
+    UIShortcutPool(UIType enmType);
     /** Destructs shortcut pool. */
-    ~UIShortcutPool();
+    virtual ~UIShortcutPool() RT_OVERRIDE;
 
     /** Prepares all. */
     void prepare();
@@ -207,8 +208,10 @@ private:
     /** Shortcut key template for Runtime UI. */
     static const QString   s_strShortcutKeyTemplateRuntime;
 
+    /** Holds the pool type. */
+    UIType                     m_enmType;
     /** Holds the pool shortcuts. */
-    QMap<QString, UIShortcut> m_shortcuts;
+    QMap<QString, UIShortcut>  m_shortcuts;
 };
 
 /** Singleton Shortcut Pool 'official' name. */
