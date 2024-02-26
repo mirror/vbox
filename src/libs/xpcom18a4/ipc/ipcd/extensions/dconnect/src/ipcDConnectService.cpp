@@ -37,8 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 #define LOG_GROUP LOG_GROUP_IPC
 #include "ipcDConnectService.h"
-#include "ipcMessageWriter.h"
-#include "ipcMsgReader.h"
 
 #include "nsIServiceManagerUtils.h"
 #include "nsIInterfaceInfo.h"
@@ -320,54 +318,54 @@ ipcDConnectService::ReleaseWrappers(nsVoidArray &wrappers, PRUint32 peer)
 //-----------------------------------------------------------------------------
 
 static nsresult
-SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVariant &v)
+SerializeParam(PIPCMSGWRITER pMsgWriter, const nsXPTType &t, const nsXPTCMiniVariant &v)
 {
   switch (t.TagPart())
   {
     case nsXPTType::T_I8:
     case nsXPTType::T_U8:
-      writer.PutInt8(v.val.u8);
+      IPCMsgWriterPutU8(pMsgWriter, v.val.u8);
       break;
 
     case nsXPTType::T_I16:
     case nsXPTType::T_U16:
-      writer.PutInt16(v.val.u16);
+      IPCMsgWriterPutU16(pMsgWriter, v.val.u16);
       break;
 
     case nsXPTType::T_I32:
     case nsXPTType::T_U32:
-      writer.PutInt32(v.val.u32);
+      IPCMsgWriterPutU32(pMsgWriter, v.val.u32);
       break;
 
     case nsXPTType::T_I64:
     case nsXPTType::T_U64:
-      writer.PutBytes(&v.val.u64, sizeof(PRUint64));
+      IPCMsgWriterPutU64(pMsgWriter, v.val.u64);
       break;
 
     case nsXPTType::T_FLOAT:
-      writer.PutBytes(&v.val.f, sizeof(float));
+      IPCMsgWriterPutBytes(pMsgWriter, &v.val.f, sizeof(float));
       break;
 
     case nsXPTType::T_DOUBLE:
-      writer.PutBytes(&v.val.d, sizeof(double));
+      IPCMsgWriterPutBytes(pMsgWriter, &v.val.d, sizeof(double));
       break;
 
     case nsXPTType::T_BOOL:
-      writer.PutBytes(&v.val.b, sizeof(PRBool));
+      IPCMsgWriterPutBytes(pMsgWriter, &v.val.b, sizeof(PRBool));
       break;
 
     case nsXPTType::T_CHAR:
-      writer.PutBytes(&v.val.c, sizeof(char));
+      IPCMsgWriterPutBytes(pMsgWriter, &v.val.c, sizeof(char));
       break;
 
     case nsXPTType::T_WCHAR:
-      writer.PutBytes(&v.val.wc, sizeof(PRUnichar));
+      IPCMsgWriterPutBytes(pMsgWriter, &v.val.wc, sizeof(PRUnichar));
       break;
 
     case nsXPTType::T_IID:
       {
         AssertReturn(v.val.p, NS_ERROR_INVALID_POINTER);
-        writer.PutBytes(v.val.p, sizeof(nsID));
+        IPCMsgWriterPutBytes(pMsgWriter, v.val.p, sizeof(nsID));
       }
       break;
 
@@ -376,13 +374,13 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
         if (v.val.p)
         {
           int len = strlen((const char *) v.val.p);
-          writer.PutInt32(len);
-          writer.PutBytes(v.val.p, len);
+          IPCMsgWriterPutU32(pMsgWriter, len);
+          IPCMsgWriterPutBytes(pMsgWriter, v.val.p, len);
         }
         else
         {
           // put -1 to indicate null string
-          writer.PutInt32((PRUint32) -1);
+          IPCMsgWriterPutU32(pMsgWriter, (PRUint32) -1);
         }
       }
       break;
@@ -392,13 +390,13 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
         if (v.val.p)
         {
           int len = 2 * nsCRT::strlen((const PRUnichar *) v.val.p);
-          writer.PutInt32(len);
-          writer.PutBytes(v.val.p, len);
+          IPCMsgWriterPutU32(pMsgWriter, len);
+          IPCMsgWriterPutBytes(pMsgWriter, v.val.p, len);
         }
         else
         {
           // put -1 to indicate null string
-          writer.PutInt32((PRUint32) -1);
+          IPCMsgWriterPutU32(pMsgWriter, (PRUint32) -1);
         }
       }
       break;
@@ -417,8 +415,8 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
         nsAString::const_iterator begin;
         const PRUnichar *data = str->BeginReading(begin).get();
 
-        writer.PutInt32(len);
-        writer.PutBytes(data, len);
+        IPCMsgWriterPutU32(pMsgWriter, len);
+        IPCMsgWriterPutBytes(pMsgWriter, data, len);
       }
       break;
 
@@ -431,8 +429,8 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
         nsACString::const_iterator begin;
         const char *data = str->BeginReading(begin).get();
 
-        writer.PutInt32(len);
-        writer.PutBytes(data, len);
+        IPCMsgWriterPutU32(pMsgWriter, len);
+        IPCMsgWriterPutBytes(pMsgWriter, data, len);
       }
       break;
 
@@ -995,7 +993,7 @@ GetTypeSize(const nsXPTType &type, PRUint32 &size, PRBool &isSimple)
 
 static nsresult
 SerializeArrayParam(ipcDConnectService *dConnect,
-                    ipcMessageWriter &writer, PRUint32 peerID,
+                    PIPCMSGWRITER pMsgWriter, PRUint32 peerID,
                     nsIInterfaceInfo *iinfo, uint16 methodIndex,
                     const nsXPTMethodInfo &methodInfo,
                     nsXPTCMiniVariant *params, PRBool isXPTCVariantArray,
@@ -1005,12 +1003,12 @@ SerializeArrayParam(ipcDConnectService *dConnect,
   if (!array)
   {
     // put 0 to indicate null array
-    writer.PutInt8(0);
+    IPCMsgWriterPutU8(pMsgWriter, 0);
     return NS_OK;
   }
 
   // put 1 to indicate non-null array
-  writer.PutInt8(1);
+  IPCMsgWriterPutU8(pMsgWriter, 1);
 
   PRUint32 size = 0;
   PRUint32 length = 0;
@@ -1031,7 +1029,7 @@ SerializeArrayParam(ipcDConnectService *dConnect,
   if (isSimple)
   {
     // this is a simple arithmetic type, write the whole array at once
-    writer.PutBytes(array, length * elemSize);
+    IPCMsgWriterPutBytes(pMsgWriter, array, length * elemSize);
     return NS_OK;
   }
 
@@ -1049,12 +1047,12 @@ SerializeArrayParam(ipcDConnectService *dConnect,
                                           methodIndex, params, isXPTCVariantArray,
                                           iid);
       if (NS_SUCCEEDED(rv))
-        rv = dConnect->SerializeInterfaceParam(writer, peerID, iid,
+        rv = dConnect->SerializeInterfaceParam(pMsgWriter, peerID, iid,
                                                (nsISupports *) v.val.p,
                                                wrappers);
     }
     else
-      rv = SerializeParam(writer, elemType, v);
+      rv = SerializeParam(pMsgWriter, elemType, v);
 
     if (NS_FAILED(rv))
         return rv;
@@ -1630,7 +1628,7 @@ ipcDConnectService::CreateStub(const nsID &iid, PRUint32 peer, DConAddr instance
 }
 
 nsresult
-ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
+ipcDConnectService::SerializeInterfaceParam(PIPCMSGWRITER pMsgWriter,
                                             PRUint32 peer, const nsID &iid,
                                             nsISupports *obj,
                                             nsVoidArray &wrappers)
@@ -1660,7 +1658,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
   {
     // write null address
     DConAddr nullobj = 0;
-    writer.PutBytes(&nullobj, sizeof(nullobj));
+    IPCMsgWriterPutBytes(pMsgWriter, &nullobj, sizeof(nullobj));
   }
   else
   {
@@ -1669,7 +1667,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
     if (NS_SUCCEEDED(rv) && (stub->PeerID() == peer))
     {
       DConAddr p = stub->Instance();
-      writer.PutBytes(&p, sizeof(p));
+      IPCMsgWriterPutBytes(pMsgWriter, &p, sizeof(p));
     }
     else
     {
@@ -1720,7 +1718,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
       PtrBits bits = ((PtrBits)(uintptr_t) wrapper);
       NS_ASSERTION((bits & PTRBITS_REMOTE_BIT) == 0, "remote bit wrong)");
       bits |= PTRBITS_REMOTE_BIT;
-      writer.PutBytes(&bits, sizeof(bits));
+      IPCMsgWriterPutBytes(pMsgWriter, &bits, sizeof(bits));
     }
     NS_IF_RELEASE(stub);
   }
@@ -1951,7 +1949,7 @@ NS_IMETHODIMP ExceptionStub::ToString(char **_retval)
 }
 
 nsresult
-ipcDConnectService::SerializeException(ipcMessageWriter &writer,
+ipcDConnectService::SerializeException(PIPCMSGWRITER pMsgWriter,
                                        PRUint32 peer, nsIException *xcpt,
                                        nsVoidArray &wrappers)
 {
@@ -1975,9 +1973,9 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
 #ifdef VBOX
       // see ipcDConnectService::DeserializeException()!
       PtrBits bits = 0;
-      writer.PutBytes(&bits, sizeof(bits));
+      IPCMsgWriterPutBytes(pMsgWriter, &bits, sizeof(bits));
 #else
-      writer.PutBytes(&xcpt, sizeof(xcpt));
+      IPCMsgWriterPutBytes(pMsgWriter, &xcpt, sizeof(xcpt));
 #endif
     }
     else
@@ -1988,7 +1986,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
       {
         // send the wrapper instance back to the peer
         DConAddr p = stub->Stub()->Instance();
-        writer.PutBytes(&p, sizeof(p));
+        IPCMsgWriterPutBytes(pMsgWriter, &p, sizeof(p));
       }
       else
       {
@@ -2038,7 +2036,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
         // send address of the instance wrapper, and set the low bit to indicate
         // to the remote party that this is a remote instance wrapper.
         PtrBits bits = ((PtrBits)(uintptr_t) wrapper) | PTRBITS_REMOTE_BIT;
-        writer.PutBytes(&bits, sizeof(bits));
+        IPCMsgWriterPutBytes(pMsgWriter, &bits, sizeof(bits));
 
         // we want to cache fields to minimize the number of IPC calls when
         // accessing exception data on the peer side
@@ -2062,16 +2060,16 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
     PRUint32 len = str.Length();
     nsACString::const_iterator begin;
     const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
+    IPCMsgWriterPutU32(pMsgWriter, len);
+    IPCMsgWriterPutBytes(pMsgWriter, data, len);
   }
   else
-    writer.PutInt32(0);
+    IPCMsgWriterPutU32(pMsgWriter, 0);
 
   // result
   nsresult res = 0;
   xcpt->GetResult(&res);
-  writer.PutInt32(res);
+  IPCMsgWriterPutU32(pMsgWriter, res);
 
   // name
   rv = xcpt->GetName(getter_Copies(str));
@@ -2080,11 +2078,11 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
     PRUint32 len = str.Length();
     nsACString::const_iterator begin;
     const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
+    IPCMsgWriterPutU32(pMsgWriter, len);
+    IPCMsgWriterPutBytes(pMsgWriter, data, len);
   }
   else
-    writer.PutInt32(0);
+    IPCMsgWriterPutU32(pMsgWriter, 0);
 
   // filename
   rv = xcpt->GetFilename(getter_Copies(str));
@@ -2093,23 +2091,23 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
     PRUint32 len = str.Length();
     nsACString::const_iterator begin;
     const char *data = str.BeginReading(begin).get();
-    writer.PutInt32(len);
-    writer.PutBytes(data, len);
+    IPCMsgWriterPutU32(pMsgWriter, len);
+    IPCMsgWriterPutBytes(pMsgWriter, data, len);
   }
   else
-    writer.PutInt32(0);
+    IPCMsgWriterPutU32(pMsgWriter, 0);
 
   // lineNumber
   num = 0;
   xcpt->GetLineNumber(&num);
-  writer.PutInt32(num);
+  IPCMsgWriterPutU32(pMsgWriter, num);
 
   // columnNumber
   num = 0;
   xcpt->GetColumnNumber(&num);
-  writer.PutInt32(num);
+  IPCMsgWriterPutU32(pMsgWriter, num);
 
-  return writer.HasError() ? NS_ERROR_OUT_OF_MEMORY : NS_OK;
+  return IPCMsgWriterHasError(pMsgWriter) ? NS_ERROR_OUT_OF_MEMORY : NS_OK;
 }
 
 nsresult
@@ -2525,8 +2523,8 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   }
 #endif
 
-
-  ipcMessageWriter writer(16 * paramCount);
+  IPCMSGWRITER MsgWriter;
+  IPCMsgWriterInit(&MsgWriter, 16 * paramCount);
 
   // INVOKE message header
   DConnectInvoke invoke;
@@ -2539,7 +2537,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 
   Log(("  request-index=%d\n", (PRUint32) invoke.request_index));
 
-  writer.PutBytes(&invoke, sizeof(invoke));
+  IPCMsgWriterPutBytes(&MsgWriter, &invoke, sizeof(invoke));
 
   // list of wrappers that get created during parameter serialization.  if we
   // are unable to send the INVOKE message, then we'll clean these up.
@@ -2559,12 +2557,12 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
         rv = dConnect->GetIIDForMethodParam(mIInfo, aInfo, paramInfo, type,
                                              aMethodIndex, aParams, PR_FALSE, iid);
         if (NS_SUCCEEDED(rv))
-          rv = dConnect->SerializeInterfaceParam(writer, mPeerID, iid,
+          rv = dConnect->SerializeInterfaceParam(&MsgWriter, mPeerID, iid,
                                                  (nsISupports *) aParams[i].val.p,
                                                  wrappers);
       }
       else
-        rv = SerializeParam(writer, type, aParams[i]);
+        rv = SerializeParam(&MsgWriter, type, aParams[i]);
 
       AssertMsgBreak(NS_SUCCEEDED(rv), ("i=%d rv=%#x\n", i, rv));
     }
@@ -2581,6 +2579,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   {
     // INVOKE message wasn't sent; clean up wrappers
     dConnect->ReleaseWrappers(wrappers, mPeerID);
+    IPCMsgWriterCleanup(&MsgWriter);
     return rv;
   }
 
@@ -2594,13 +2593,14 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     if (paramInfo.GetType().IsArray() &&
         paramInfo.IsIn() && !paramInfo.IsDipper())
     {
-      rv = SerializeArrayParam(dConnect, writer, mPeerID, mIInfo, aMethodIndex,
+      rv = SerializeArrayParam(dConnect, &MsgWriter, mPeerID, mIInfo, aMethodIndex,
                                *aInfo, aParams, PR_FALSE, paramInfo,
                                aParams[i].val.p, wrappers);
       if (NS_FAILED(rv))
       {
         // INVOKE message wasn't sent; clean up wrappers
         dConnect->ReleaseWrappers(wrappers, mPeerID);
+        IPCMsgWriterCleanup(&MsgWriter);
         return rv;
       }
     }
@@ -2611,8 +2611,10 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   IPC_DISABLE_MESSAGE_OBSERVER_FOR_SCOPE(kDConnectTargetID);
 
   rv = IPC_SendMessage(mPeerID, kDConnectTargetID,
-                       writer.GetBuffer(),
-                       writer.GetSize());
+                       IPCMsgWriterGetBuf(&MsgWriter),
+                       IPCMsgWriterGetSize(&MsgWriter));
+  IPCMsgWriterCleanup(&MsgWriter);
+
   Log(("DConnectStub::CallMethod: IPC_SendMessage()=%08X\n", rv));
   if (NS_FAILED(rv))
   {
@@ -3583,7 +3585,8 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       rv = rv2;
   }
 
-  ipcMessageWriter writer(64);
+  IPCMSGWRITER MsgWriter;
+  IPCMsgWriterInit(&MsgWriter, 64 /*cbInitial*/);
 
   DConnectSetupReply msg;
   msg.opcode_major = DCON_OP_SETUP_REPLY;
@@ -3596,11 +3599,11 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
   if (got_exception)
     msg.flags |= DCON_OP_FLAGS_REPLY_EXCEPTION;
 
-  writer.PutBytes(&msg, sizeof(msg));
+  IPCMsgWriterPutBytes(&MsgWriter, &msg, sizeof(msg));
 
   if (got_exception)
   {
-    rv = SerializeException(writer, peer, exception, wrappers);
+    rv = SerializeException(&MsgWriter, peer, exception, wrappers);
     NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialize exception");
   }
 
@@ -3610,13 +3613,15 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
                          (const PRUint8 *) &msg, sizeof(msg));
   else
     rv = IPC_SendMessage(peer, kDConnectTargetID,
-                         writer.GetBuffer(), writer.GetSize());
+                         IPCMsgWriterGetBuf(&MsgWriter), IPCMsgWriterGetSize(&MsgWriter));
 
   if (NS_FAILED(rv))
   {
     Log(("unable to send SETUP_REPLY: rv=%x\n", rv));
     ReleaseWrappers(wrappers, peer);
   }
+
+  IPCMsgWriterCleanup(&MsgWriter);
 }
 
 void
@@ -3812,7 +3817,8 @@ end:
   if (wrapper)
     wrapper->Release();
 
-  ipcMessageWriter writer(64);
+  IPCMSGWRITER MsgWriter;
+  IPCMsgWriterInit(&MsgWriter, 64 /*cbInitial*/);
 
   DConnectInvokeReply reply;
   reply.opcode_major = DCON_OP_INVOKE_REPLY;
@@ -3824,7 +3830,7 @@ end:
   if (got_exception)
     reply.flags |= DCON_OP_FLAGS_REPLY_EXCEPTION;
 
-  writer.PutBytes(&reply, sizeof(reply));
+  IPCMsgWriterPutBytes(&MsgWriter, &reply, sizeof(reply));
 
   nsVoidArray wrappers;
 
@@ -3845,11 +3851,11 @@ end:
           rv = GetIIDForMethodParam(iinfo, methodInfo, paramInfo, type,
                                     invoke->method_index, params, PR_TRUE, iid);
           if (NS_SUCCEEDED(rv))
-            rv = SerializeInterfaceParam(writer, peer, iid,
+            rv = SerializeInterfaceParam(&MsgWriter, peer, iid,
                                          (nsISupports *) params[i].val.p, wrappers);
         }
         else
-          rv = SerializeParam(writer, type, params[i]);
+          rv = SerializeParam(&MsgWriter, type, params[i]);
 
         if (NS_FAILED(rv))
         {
@@ -3871,7 +3877,7 @@ end:
         if (paramInfo.GetType().IsArray() &&
             (paramInfo.IsRetval() || paramInfo.IsOut()))
         {
-          rv = SerializeArrayParam(this, writer, peer, iinfo, invoke->method_index,
+          rv = SerializeArrayParam(this, &MsgWriter, peer, iinfo, invoke->method_index,
                                    *methodInfo, params, PR_TRUE, paramInfo,
                                    params[i].val.p, wrappers);
           if (NS_FAILED(rv))
@@ -3886,14 +3892,14 @@ end:
 
   if (got_exception)
   {
-    rv = SerializeException(writer, peer, exception, wrappers);
+    rv = SerializeException(&MsgWriter, peer, exception, wrappers);
     NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialize exception");
   }
 
   if (NS_FAILED(rv))
     rv = IPC_SendMessage(peer, kDConnectTargetID, (const PRUint8 *) &reply, sizeof(reply));
   else
-    rv = IPC_SendMessage(peer, kDConnectTargetID, writer.GetBuffer(), writer.GetSize());
+    rv = IPC_SendMessage(peer, kDConnectTargetID, IPCMsgWriterGetBuf(&MsgWriter), IPCMsgWriterGetSize(&MsgWriter));
   if (NS_FAILED(rv))
   {
     Log(("unable to send INVOKE_REPLY: rv=%x\n", rv));
@@ -3916,4 +3922,6 @@ end:
       FinishParam(params[i]);
     RTMemFree(params);
   }
+
+  IPCMsgWriterCleanup(&MsgWriter);
 }

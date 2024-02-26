@@ -39,6 +39,7 @@
 #include "ipcdclient.h"
 
 #include "ipcMsgReader.h"
+#include "ipcMsgWriter.h"
 
 #include "nsIInterfaceInfo.h"
 #include "nsIInterfaceInfoManager.h"
@@ -56,7 +57,6 @@
 #include <iprt/req.h>
 
 class nsIException;
-class ipcMessageWriter;
 
 // a key class used to identify DConnectInstance objects stored in a hash table
 // by a composite of peer ID, XPCOM object pointer and IID this pointer represents
@@ -193,7 +193,7 @@ public:
                                             PRBool isXPTCVariantArray,
                                             nsID &result);
 
-  NS_HIDDEN_(nsresult) SerializeInterfaceParam(ipcMessageWriter &writer,
+  NS_HIDDEN_(nsresult) SerializeInterfaceParam(PIPCMSGWRITER pMsgWriter,
                                                PRUint32 peer, const nsID &iid,
                                                nsISupports *obj,
                                                nsVoidArray &wrappers);
@@ -201,7 +201,7 @@ public:
                                                      const nsID &iid,
                                                      nsISupports *&obj);
 
-  NS_HIDDEN_(nsresult) SerializeException(ipcMessageWriter &writer,
+  NS_HIDDEN_(nsresult) SerializeException(PIPCMSGWRITER pMsgWriter,
                                           PRUint32 peer, nsIException *xcpt,
                                           nsVoidArray &wrappers);
   NS_HIDDEN_(nsresult) DeserializeException(PIPCMSGREADER pMsgReader,
