@@ -157,10 +157,6 @@ TEMPLATE_XPComDll_INCS                = $(VBOX_PATH_XPCOM_SRC)/xpcom/build \
 	$(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptcall/src \
 	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/client/src \
 	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/shared/src \
-	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/lock/src \
-	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/src \
-	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/dconnect/src \
-	$(VBOX_PATH_XPCOM_SRC)/ipc/ipcd/extensions/transmngr/common \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
@@ -352,7 +348,7 @@ XPCOM_IDLFILES = \
 	ipc/ipcd/client/public/ipcIService.idl \
 	ipc/ipcd/client/public/ipcIMessageObserver.idl \
 	ipc/ipcd/client/public/ipcIClientObserver.idl \
-	ipc/ipcd/extensions/dconnect/public/ipcIDConnectService.idl
+	ipc/ipcd/client/public/ipcIDConnectService.idl
 
 #
 # The include path for the XPCOM IDL files above.

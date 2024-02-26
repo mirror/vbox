@@ -810,7 +810,7 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
-	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp \
+	ipc/ipcd/client/src/ipcDConnectService.cpp \
 	\
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
