@@ -696,8 +696,8 @@ protected:
         return QString("Help");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType enmActionPoolType) const RT_OVERRIDE
+    /** Returns standard shortcut. */
+    virtual QKeySequence standardShortcut(UIType enmActionPoolType) const RT_OVERRIDE
     {
         switch (enmActionPoolType)
         {
