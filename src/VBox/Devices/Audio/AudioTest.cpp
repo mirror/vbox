@@ -2576,19 +2576,24 @@ int AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *p
             && pauBuf[i + 2] == byBeacon
             && pauBuf[i + 3] == byBeacon)
         {
+            offBeacon = i + cbStep; /* Point to data right *after* the beacon. */
+
             /* Make sure to handle overflows and let beacon start from scratch. */
             pBeacon->cbUsed = (pBeacon->cbUsed + cbStep) % pBeacon->cbSize;
             if (pBeacon->cbUsed == 0) /* Beacon complete (see module line above)? */
             {
                 pBeacon->cbUsed = pBeacon->cbSize;
-                offBeacon       = i + cbStep; /* Point to data right *after* the beacon. */
+                break;
             }
         }
         else
         {
-            /* If beacon is not complete yet, we detected a gap here. Start all over then. */
-            if (RT_LIKELY(pBeacon->cbUsed != pBeacon->cbSize))
-                pBeacon->cbUsed = 0;
+            /* If beacon is complete, just skip, otherwise we detected a gap here. Start all over then. */
+            if (RT_UNLIKELY(pBeacon->cbUsed == pBeacon->cbSize))
+                break;
+
+            pBeacon->cbUsed = 0;
+            offBeacon       = UINT64_MAX;
         }
     }
 
