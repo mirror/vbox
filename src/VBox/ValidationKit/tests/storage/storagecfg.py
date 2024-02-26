@@ -123,8 +123,10 @@ class StorageConfigOsSolaris(StorageConfigOs):
         if fRc:
             lstPools = [];
             asPools = sOutput.splitlines();
+            reporter.log('asPools: %s' % asPools);
             for sPool in asPools:
                 oMatchResult = re.match("%s[0-9]?[0-9]?" % sPoolIdStart, sPool)  # either re.Match obj or None
+                reporter.log('sPoolIdStart: %s, sPool: %s, oMatchResult: %s' % (sPoolIdStart, sPool, oMatchResult))
                 if oMatchResult:
                     lstPools.append(oMatchResult.group(0));
         return lstPools;
@@ -139,8 +141,11 @@ class StorageConfigOsSolaris(StorageConfigOs):
         if fRc:
             lstVolumes = [];
             asVolumes = sOutput.splitlines();
+            reporter.log('asVolumes: %s' % asVolumes);
             for sVolume in asVolumes:
                 oMatchResult = re.match("%s/%s" % (sPool, sVolumeIdStart), sVolume)  # either re.Match obj or None
+                reporter.log('sPool: %s, sVolumeIdStart: %s, sVolume: %s, OMatchResult: %s' % (sPool, sVolumeIdStart,
+                                                                                               sVolume, oMatchResult))
                 if oMatchResult:
                     lstVolumes.append(oMatchResult.group(0));
         return lstVolumes;
@@ -686,7 +691,10 @@ class StorageCfg(object):
         asDisks = self.oDiskCfg.getDisks();
         reporter.log("oDiskCfg.getDisks: %s" % asDisks);
         if os.path.exists(asDisks):
+            reporter.log('os.listdir(asDisks): %s' % asDisks)
             for sEntry in os.listdir(asDisks):
-                fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
+                sPath = os.path.join(self.oDiskCfg.getDisks(), sEntry);
+                reporter.log('path to sEntry: %s' % sPath)
+                fRc = fRc and self.oExec.rmTree(sPath);
         reporter.log('cleanupLeftovers ends');
         return fRc;
