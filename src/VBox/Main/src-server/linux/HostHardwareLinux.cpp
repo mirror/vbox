@@ -417,6 +417,11 @@ static void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel
         else
             pszUdi[0] = '\0';
     }
+
+    if (pszVendor)
+        RTStrFree(pszVendor);
+    if (pszModel)
+        RTStrFree(pszModel);
 }
 
 
