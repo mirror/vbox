@@ -502,7 +502,7 @@ DeserializeParam(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCVariant &v)
 
     case nsXPTType::T_IID:
       {
-        nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
+        nsID *buf = (nsID *)RTMemAlloc(sizeof(nsID));
         IPCMsgReaderReadBytes(pMsgReader, buf, sizeof(nsID));
         v.val.p = buf;
         v.SetValIsAllocated();
@@ -519,7 +519,7 @@ DeserializeParam(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCVariant &v)
         }
         else
         {
-          char *buf = (char *) nsMemory::Alloc(len + 1);
+          char *buf = (char *)RTMemAlloc(len + 1);
           IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len] = char(0);
 
@@ -539,7 +539,7 @@ DeserializeParam(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCVariant &v)
         }
         else
         {
-          PRUnichar *buf = (PRUnichar *) nsMemory::Alloc(len + 2);
+          PRUnichar *buf = (PRUnichar *)RTMemAlloc(len + 2);
           IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len / 2] = PRUnichar(0);
 
@@ -685,7 +685,7 @@ FinishParam(nsXPTCVariant &v)
     return;
 
   if (v.IsValAllocated())
-    nsMemory::Free(v.val.p);
+    RTMemFree(v.val.p);
   else if (v.IsValInterface())
     ((nsISupports *) v.val.p)->Release();
   else if (v.IsValDOMString())
@@ -744,7 +744,7 @@ DeserializeResult(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCMiniVarian
 
     case nsXPTType::T_IID:
       {
-        nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
+        nsID *buf = (nsID *)RTMemAlloc(sizeof(nsID));
         IPCMsgReaderReadBytes(pMsgReader, buf, sizeof(nsID));
         *((nsID **) v.val.p) = buf;
       }
@@ -764,7 +764,7 @@ DeserializeResult(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCMiniVarian
         }
         else
         {
-          char *buf = (char *) nsMemory::Alloc(len + 1);
+          char *buf = (char *)RTMemAlloc(len + 1);
           IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len] = char(0);
 
@@ -787,7 +787,7 @@ DeserializeResult(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCMiniVarian
         }
         else
         {
-          PRUnichar *buf = (PRUnichar *) nsMemory::Alloc(len + 2);
+          PRUnichar *buf = (PRUnichar *)RTMemAlloc(len + 2);
           IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len / 2] = PRUnichar(0);
 
@@ -802,7 +802,7 @@ DeserializeResult(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCMiniVarian
         // stub creation will be handled outside this routine.  we only
         // deserialize the DConAddr and the original value of v.val.p
         // into v.val.p temporarily.  needs temporary memory alloc.
-        DConAddrPlusPtr *buf = (DConAddrPlusPtr *) nsMemory::Alloc(sizeof(DConAddrPlusPtr));
+        DConAddrPlusPtr *buf = (DConAddrPlusPtr *)RTMemAlloc(sizeof(DConAddrPlusPtr));
         IPCMsgReaderReadBytes(pMsgReader, &buf->addr, sizeof(DConAddr));
         buf->p = v.val.p;
         v.val.p = buf;
@@ -1106,7 +1106,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   // Note: for zero-sized arrays, we use the size of 1 because whether
   // malloc(0) returns a null pointer or not (which is used in isNull())
   // is implementation-dependent according to the C standard
-  void *arr = nsMemory::Alloc((size ? size : 1) * elemSize);
+  void *arr = RTMemAlloc((size ? size : 1) * elemSize);
   if (arr == nsnull)
     return NS_ERROR_OUT_OF_MEMORY;
 
@@ -1160,7 +1160,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   }
 
   if (NS_FAILED(rv))
-    nsMemory::Free(arr);
+    RTMemFree(arr);
   else
     array = arr;
 
@@ -2407,7 +2407,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
       if (NS_SUCCEEDED(rv) && iid &&
           iid->Equals(NS_GET_IID(nsISupports)))
       {
-        nsMemory::Free((void*)iid);
+        RTMemFree((void*)iid);
 
         // nsISupports is queried on nsISupports, return ourselves
         *aInstancePtr = this;
@@ -2419,7 +2419,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
         return NS_OK;
       }
       if (iid)
-        nsMemory::Free((void*)iid);
+        RTMemFree((void*)iid);
     }
 
     // stub lock remains held until we've queried the peer
@@ -2677,7 +2677,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
           DConAddrPlusPtr *dptr = (DConAddrPlusPtr *)aParams[i].val.p;
           PtrBits bits = dptr->addr;
           aParams[i].val.p = dptr->p;
-          nsMemory::Free((void *)dptr);
+          RTMemFree((void *)dptr);
 
           // DeserializeInterfaceParamBits needs IID only if it's a remote object
           nsID iid;
@@ -3696,7 +3696,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   Log(("  param-count=%u\n", (PRUint32) paramCount));
   Log(("  request-index=%d\n", (PRUint32) invoke->request_index));
 
-  params = new nsXPTCVariant[paramCount];
+  params = (nsXPTCVariant *)RTMemAllocZ(sizeof(nsXPTCVariant) * paramCount);
   if (!params)
   {
     rv = NS_ERROR_OUT_OF_MEMORY;
@@ -3914,6 +3914,6 @@ end:
 
     for (i=0; i<paramUsed; ++i)
       FinishParam(params[i]);
-    delete[] params;
+    RTMemFree(params);
   }
 }
