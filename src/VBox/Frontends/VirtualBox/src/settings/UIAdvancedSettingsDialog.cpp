@@ -66,6 +66,7 @@
 #include "UISettingsSelector.h"
 #include "UISettingsSerializer.h"
 #include "UISettingsWarningPane.h"
+#include "UIShortcutPool.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 #endif
