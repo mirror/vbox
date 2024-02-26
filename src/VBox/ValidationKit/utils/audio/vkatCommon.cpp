@@ -1097,7 +1097,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
             if (g_uVerbosity >= 2)
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Processed %RU64ms (%zu bytes)\n",
-                             idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbRead), cbRead);
+                             idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, (uint32_t)cbRead), cbRead);
 
             RTCircBufReleaseReadBlock(pCircBuf, cbRead);
 
