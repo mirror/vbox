@@ -2524,7 +2524,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 #endif
 
   IPCMSGWRITER MsgWriter;
-  IPCMsgWriterInit(&MsgWriter, 16 * paramCount);
+  IPCMsgWriterInit(&MsgWriter, 64 + 16 * paramCount);
 
   // INVOKE message header
   DConnectInvoke invoke;
@@ -3701,11 +3701,14 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   Log(("  param-count=%u\n", (PRUint32) paramCount));
   Log(("  request-index=%d\n", (PRUint32) invoke->request_index));
 
-  params = (nsXPTCVariant *)RTMemAllocZ(sizeof(nsXPTCVariant) * paramCount);
-  if (!params)
+  if (paramCount)
   {
-    rv = NS_ERROR_OUT_OF_MEMORY;
-    goto end;
+    params = (nsXPTCVariant *)RTMemAllocZ(sizeof(nsXPTCVariant) * paramCount);
+    if (!params)
+    {
+      rv = NS_ERROR_OUT_OF_MEMORY;
+      goto end;
+    }
   }
 
   // setup |params| for xptcall
