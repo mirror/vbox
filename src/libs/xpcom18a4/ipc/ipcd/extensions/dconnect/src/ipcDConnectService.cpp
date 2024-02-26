@@ -38,7 +38,7 @@
 #define LOG_GROUP LOG_GROUP_IPC
 #include "ipcDConnectService.h"
 #include "ipcMessageWriter.h"
-#include "ipcMessageReader.h"
+#include "ipcMsgReader.h"
 
 #include "nsIServiceManagerUtils.h"
 #include "nsIInterfaceInfo.h"
@@ -451,7 +451,7 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
 }
 
 static nsresult
-DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
+DeserializeParam(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCVariant &v)
 {
   // defaults
   v.ptr = nsnull;
@@ -462,48 +462,48 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
   {
     case nsXPTType::T_I8:
     case nsXPTType::T_U8:
-      v.val.u8 = reader.GetInt8();
+      v.val.u8 = IPCMsgReaderGetU8(pMsgReader);
       break;
 
     case nsXPTType::T_I16:
     case nsXPTType::T_U16:
-      v.val.u16 = reader.GetInt16();
+      v.val.u16 = IPCMsgReaderGetU16(pMsgReader);
       break;
 
     case nsXPTType::T_I32:
     case nsXPTType::T_U32:
-      v.val.u32 = reader.GetInt32();
+      v.val.u32 = IPCMsgReaderGetU32(pMsgReader);
       break;
 
     case nsXPTType::T_I64:
     case nsXPTType::T_U64:
-      reader.GetBytes(&v.val.u64, sizeof(v.val.u64));
+      v.val.u64 = IPCMsgReaderGetU64(pMsgReader);
       break;
 
     case nsXPTType::T_FLOAT:
-      reader.GetBytes(&v.val.f, sizeof(v.val.f));
+      IPCMsgReaderReadBytes(pMsgReader, &v.val.f, sizeof(v.val.f));
       break;
 
     case nsXPTType::T_DOUBLE:
-      reader.GetBytes(&v.val.d, sizeof(v.val.d));
+      IPCMsgReaderReadBytes(pMsgReader, &v.val.d, sizeof(v.val.d));
       break;
 
     case nsXPTType::T_BOOL:
-      reader.GetBytes(&v.val.b, sizeof(v.val.b));
+      IPCMsgReaderReadBytes(pMsgReader, &v.val.b, sizeof(v.val.b));
       break;
 
     case nsXPTType::T_CHAR:
-      reader.GetBytes(&v.val.c, sizeof(v.val.c));
+      IPCMsgReaderReadBytes(pMsgReader, &v.val.c, sizeof(v.val.c));
       break;
 
     case nsXPTType::T_WCHAR:
-      reader.GetBytes(&v.val.wc, sizeof(v.val.wc));
+      IPCMsgReaderReadBytes(pMsgReader, &v.val.wc, sizeof(v.val.wc));
       break;
 
     case nsXPTType::T_IID:
       {
         nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
-        reader.GetBytes(buf, sizeof(nsID));
+        IPCMsgReaderReadBytes(pMsgReader, buf, sizeof(nsID));
         v.val.p = buf;
         v.SetValIsAllocated();
       }
@@ -511,7 +511,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
 
     case nsXPTType::T_CHAR_STR:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
         if (len == (PRUint32) -1)
         {
           // it's a null string
@@ -520,7 +520,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         else
         {
           char *buf = (char *) nsMemory::Alloc(len + 1);
-          reader.GetBytes(buf, len);
+          IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len] = char(0);
 
           v.val.p = buf;
@@ -531,7 +531,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
 
     case nsXPTType::T_WCHAR_STR:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
         if (len == (PRUint32) -1)
         {
           // it's a null string
@@ -540,7 +540,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         else
         {
           PRUnichar *buf = (PRUnichar *) nsMemory::Alloc(len + 2);
-          reader.GetBytes(buf, len);
+          IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len / 2] = PRUnichar(0);
 
           v.val.p = buf;
@@ -552,7 +552,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_INTERFACE:
     case nsXPTType::T_INTERFACE_IS:
       {
-        reader.GetBytes(&v.val.u64, sizeof(DConAddr));
+        IPCMsgReaderReadBytes(pMsgReader, &v.val.u64, sizeof(DConAddr));
         // stub creation will be handled outside this routine.  we only
         // deserialize the DConAddr into v.val.u64 temporarily.
       }
@@ -561,12 +561,12 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_ASTRING:
     case nsXPTType::T_DOMSTRING:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
 
         nsString *str = new nsString();
         str->SetLength(len / 2);
         PRUnichar *buf = str->BeginWriting();
-        reader.GetBytes(buf, len);
+        IPCMsgReaderReadBytes(pMsgReader, buf, len);
 
         v.val.p = str;
         v.SetValIsDOMString();
@@ -576,12 +576,12 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_UTF8STRING:
     case nsXPTType::T_CSTRING:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
 
         nsCString *str = new nsCString();
         str->SetLength(len);
         char *buf = str->BeginWriting();
-        reader.GetBytes(buf, len);
+        IPCMsgReaderReadBytes(pMsgReader, buf, len);
 
         v.val.p = str;
 
@@ -695,7 +695,7 @@ FinishParam(nsXPTCVariant &v)
 }
 
 static nsresult
-DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVariant &v)
+DeserializeResult(PIPCMSGREADER pMsgReader, const nsXPTType &t, nsXPTCMiniVariant &v)
 {
   if (v.val.p == nsnull)
     return NS_OK;
@@ -704,55 +704,55 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
   {
     case nsXPTType::T_I8:
     case nsXPTType::T_U8:
-      *((PRUint8 *) v.val.p) = reader.GetInt8();
+      *((PRUint8 *) v.val.p) = IPCMsgReaderGetU8(pMsgReader);
       break;
 
     case nsXPTType::T_I16:
     case nsXPTType::T_U16:
-      *((PRUint16 *) v.val.p) = reader.GetInt16();
+      *((PRUint16 *) v.val.p) = IPCMsgReaderGetU16(pMsgReader);
       break;
 
     case nsXPTType::T_I32:
     case nsXPTType::T_U32:
-      *((PRUint32 *) v.val.p) = reader.GetInt32();
+      *((PRUint32 *) v.val.p) = IPCMsgReaderGetU32(pMsgReader);
       break;
 
     case nsXPTType::T_I64:
     case nsXPTType::T_U64:
-      reader.GetBytes(v.val.p, sizeof(PRUint64));
+      *((PRUint64 *) v.val.p) = IPCMsgReaderGetU64(pMsgReader);
       break;
 
     case nsXPTType::T_FLOAT:
-      reader.GetBytes(v.val.p, sizeof(float));
+      IPCMsgReaderReadBytes(pMsgReader, v.val.p, sizeof(float));
       break;
 
     case nsXPTType::T_DOUBLE:
-      reader.GetBytes(v.val.p, sizeof(double));
+      IPCMsgReaderReadBytes(pMsgReader, v.val.p, sizeof(double));
       break;
 
     case nsXPTType::T_BOOL:
-      reader.GetBytes(v.val.p, sizeof(PRBool));
+      IPCMsgReaderReadBytes(pMsgReader, v.val.p, sizeof(PRBool));
       break;
 
     case nsXPTType::T_CHAR:
-      reader.GetBytes(v.val.p, sizeof(char));
+      IPCMsgReaderReadBytes(pMsgReader, v.val.p, sizeof(char));
       break;
 
     case nsXPTType::T_WCHAR:
-      reader.GetBytes(v.val.p, sizeof(PRUnichar));
+      IPCMsgReaderReadBytes(pMsgReader, v.val.p, sizeof(PRUnichar));
       break;
 
     case nsXPTType::T_IID:
       {
         nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
-        reader.GetBytes(buf, sizeof(nsID));
+        IPCMsgReaderReadBytes(pMsgReader, buf, sizeof(nsID));
         *((nsID **) v.val.p) = buf;
       }
       break;
 
     case nsXPTType::T_CHAR_STR:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
         if (len == (PRUint32) -1)
         {
           // it's a null string
@@ -765,7 +765,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         else
         {
           char *buf = (char *) nsMemory::Alloc(len + 1);
-          reader.GetBytes(buf, len);
+          IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len] = char(0);
 
           *((char **) v.val.p) = buf;
@@ -775,7 +775,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
 
     case nsXPTType::T_WCHAR_STR:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
         if (len == (PRUint32) -1)
         {
           // it's a null string
@@ -788,7 +788,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         else
         {
           PRUnichar *buf = (PRUnichar *) nsMemory::Alloc(len + 2);
-          reader.GetBytes(buf, len);
+          IPCMsgReaderReadBytes(pMsgReader, buf, len);
           buf[len / 2] = PRUnichar(0);
 
           *((PRUnichar **) v.val.p) = buf;
@@ -803,7 +803,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         // deserialize the DConAddr and the original value of v.val.p
         // into v.val.p temporarily.  needs temporary memory alloc.
         DConAddrPlusPtr *buf = (DConAddrPlusPtr *) nsMemory::Alloc(sizeof(DConAddrPlusPtr));
-        reader.GetBytes(&buf->addr, sizeof(DConAddr));
+        IPCMsgReaderReadBytes(pMsgReader, &buf->addr, sizeof(DConAddr));
         buf->p = v.val.p;
         v.val.p = buf;
       }
@@ -812,7 +812,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
     case nsXPTType::T_ASTRING:
     case nsXPTType::T_DOMSTRING:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
 
         nsAString *str = (nsAString *) v.val.p;
 
@@ -820,14 +820,14 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         str->SetLength(len / 2);
         str->BeginWriting(begin);
 
-        reader.GetBytes(begin.get(), len);
+        IPCMsgReaderReadBytes(pMsgReader, begin.get(), len);
       }
       break;
 
     case nsXPTType::T_UTF8STRING:
     case nsXPTType::T_CSTRING:
       {
-        PRUint32 len = reader.GetInt32();
+        PRUint32 len = IPCMsgReaderGetU32(pMsgReader);
 
         nsACString *str = (nsACString *) v.val.p;
 
@@ -835,7 +835,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         str->SetLength(len);
         str->BeginWriting(begin);
 
-        reader.GetBytes(begin.get(), len);
+        IPCMsgReaderReadBytes(pMsgReader, begin.get(), len);
       }
       break;
 
@@ -1066,7 +1066,7 @@ SerializeArrayParam(ipcDConnectService *dConnect,
 // isResult is PR_TRUE if the array param is out or retval
 static nsresult
 DeserializeArrayParam(ipcDConnectService *dConnect,
-                      ipcMessageReader &reader, PRUint32 peerID,
+                      PIPCMSGREADER pMsgReader, PRUint32 peerID,
                       nsIInterfaceInfo *iinfo, uint16 methodIndex,
                       const nsXPTMethodInfo &methodInfo,
                       nsXPTCMiniVariant *params, PRBool isXPTCVariantArray,
@@ -1083,7 +1083,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   if (NS_FAILED(rv))
     return rv;
 
-  PRUint8 prefix = reader.GetInt8();
+  PRUint8 prefix = IPCMsgReaderGetU8(pMsgReader);
   if (prefix == 0)
   {
     // it's a null array
@@ -1118,7 +1118,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   if (isSimple)
   {
     // this is a simple arithmetic type, read the whole array at once
-    reader.GetBytes(arr, length * elemSize);
+    IPCMsgReaderReadBytes(pMsgReader, arr, length * elemSize);
 
     array = arr;
     return NS_OK;
@@ -1129,7 +1129,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   nsXPTCVariant v;
   for (PRUint32 i = 0; i < length; ++i)
   {
-    rv = DeserializeParam(reader, elemType, v);
+    rv = DeserializeParam(pMsgReader, elemType, v);
 
     if (NS_SUCCEEDED(rv) && elemType.IsInterfacePointer())
     {
@@ -2113,7 +2113,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
 }
 
 nsresult
-ipcDConnectService::DeserializeException(ipcMessageReader &reader,
+ipcDConnectService::DeserializeException(PIPCMSGREADER pMsgReader,
                                          PRUint32 peer,
                                          nsIException **xcpt)
 {
@@ -2125,8 +2125,8 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
   PRUint32 len;
 
   PtrBits bits = 0;
-  reader.GetBytes(&bits, sizeof(DConAddr));
-  if (reader.HasError())
+  IPCMsgReaderReadBytes(pMsgReader, &bits, sizeof(DConAddr));
+  if (IPCMsgReaderHasError(pMsgReader))
     return NS_ERROR_INVALID_ARG;
 
   if (bits & PTRBITS_REMOTE_BIT)
@@ -2135,38 +2135,38 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
     // read cahced exception data and create a stub for it.
 
     nsCAutoString message;
-    len = reader.GetInt32();
+    len = IPCMsgReaderGetU32(pMsgReader);
     if (len)
     {
       message.SetLength(len);
       char *buf = message.BeginWriting();
-      reader.GetBytes(buf, len);
+      IPCMsgReaderReadBytes(pMsgReader, buf, len);
     }
 
-    nsresult result = reader.GetInt32();
+    nsresult result = IPCMsgReaderGetU32(pMsgReader);
 
     nsCAutoString name;
-    len = reader.GetInt32();
+    len = IPCMsgReaderGetU32(pMsgReader);
     if (len)
     {
       name.SetLength(len);
       char *buf = name.BeginWriting();
-      reader.GetBytes(buf, len);
+      IPCMsgReaderReadBytes(pMsgReader, buf, len);
     }
 
     nsCAutoString filename;
-    len = reader.GetInt32();
+    len = IPCMsgReaderGetU32(pMsgReader);
     if (len)
     {
       filename.SetLength(len);
       char *buf = filename.BeginWriting();
-      reader.GetBytes(buf, len);
+      IPCMsgReaderReadBytes(pMsgReader, buf, len);
     }
 
-    PRUint32 lineNumber = reader.GetInt32();
-    PRUint32 columnNumber = reader.GetInt32();
+    PRUint32 lineNumber = IPCMsgReaderGetU32(pMsgReader);
+    PRUint32 columnNumber = IPCMsgReaderGetU32(pMsgReader);
 
-    if (reader.HasError())
+    if (IPCMsgReaderHasError(pMsgReader))
       rv = NS_ERROR_INVALID_ARG;
     else
     {
@@ -2644,7 +2644,8 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   }
   while (completion.IsPending());
 
-  ipcMessageReader reader(completion.Params(), completion.ParamsLen());
+  IPCMSGREADER MsgReader;
+  IPCMsgReaderInit(&MsgReader, completion.Params(), completion.ParamsLen());
 
   rv = completion.GetResult();
   if (NS_SUCCEEDED(rv))
@@ -2657,7 +2658,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
       const nsXPTParamInfo &paramInfo = aInfo->GetParam(i);
 
       if (paramInfo.IsOut() || paramInfo.IsRetval())
-        DeserializeResult(reader, paramInfo.GetType(), aParams[i]);
+        DeserializeResult(&MsgReader, paramInfo.GetType(), aParams[i]);
     }
 
     // fixup any interface pointers using a second pass so we can properly
@@ -2695,7 +2696,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
         else if (type.IsArray())
         {
           void *array = nsnull;
-          rv = DeserializeArrayParam(dConnect, reader, mPeerID, mIInfo,
+          rv = DeserializeArrayParam(dConnect, &MsgReader, mPeerID, mIInfo,
                                      aMethodIndex, *aInfo, aParams, PR_FALSE,
                                      paramInfo, PR_TRUE, array);
           if (NS_SUCCEEDED(rv))
@@ -2710,7 +2711,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     Log(("got nsIException instance, will create a stub\n"));
 
     nsIException *xcpt = nsnull;
-    rv = dConnect->DeserializeException (reader, mPeerID, &xcpt);
+    rv = dConnect->DeserializeException (&MsgReader, mPeerID, &xcpt);
     if (NS_SUCCEEDED(rv))
     {
       rv = em->SetCurrentException(xcpt);
@@ -2774,7 +2775,8 @@ public:
       const PRUint8 *params = ((const PRUint8 *) op) + sizeof (DConnectSetupReply);
       const PRUint32 paramsLen = opLen - sizeof (DConnectSetupReply);
 
-      ipcMessageReader reader(params, paramsLen);
+      IPCMSGREADER MsgReader;
+      IPCMsgReaderInit(&MsgReader, params, paramsLen);
 
       Log(("got nsIException instance, will create a stub\n"));
 
@@ -2792,7 +2794,7 @@ public:
           if (dConnect)
           {
             nsIException *xcpt = nsnull;
-            rv = dConnect->DeserializeException (reader, sender, &xcpt);
+            rv = dConnect->DeserializeException (&MsgReader, sender, &xcpt);
             if (NS_SUCCEEDED(rv))
             {
               rv = em->SetCurrentException(xcpt);
@@ -3660,7 +3662,8 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
 
   DConnectInstance *wrapper = (DConnectInstance *)invoke->instance;
 
-  ipcMessageReader reader((const PRUint8 *) (invoke + 1), opLen - sizeof(*invoke));
+  IPCMSGREADER MsgReader;
+  IPCMsgReaderInit(&MsgReader, (const PRUint8 *) (invoke + 1), opLen - sizeof(*invoke));
 
   const nsXPTMethodInfo *methodInfo;
   nsXPTCVariant *params = nsnull;
@@ -3711,7 +3714,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
     // currently do that) to let the callee correctly pick it up and change.
 
     if (paramInfo.IsIn() && !paramInfo.IsDipper())
-      rv = DeserializeParam(reader, paramInfo.GetType(), params[i]);
+      rv = DeserializeParam(&MsgReader, paramInfo.GetType(), params[i]);
     else
       rv = SetupParam(paramInfo, params[i]);
 
@@ -3759,7 +3762,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
       else if (type.IsArray())
       {
         void *array = nsnull;
-        rv = DeserializeArrayParam(this, reader, peer, iinfo,
+        rv = DeserializeArrayParam(this, &MsgReader, peer, iinfo,
                                    invoke->method_index, *methodInfo, params,
                                    PR_TRUE, paramInfo, PR_FALSE, array);
         if (NS_FAILED(rv))

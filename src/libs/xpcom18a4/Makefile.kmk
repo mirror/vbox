@@ -291,7 +291,6 @@ IPCD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/ipcd/
 IPCD-HEADERS_IFFLAGS = -m 644
 IPCD-HEADERS_SOURCES = \
 	ipc/ipcd/client/public/ipcCID.h \
-	ipc/ipcd/util/public/ipcMessageReader.h \
 	ipc/ipcd/util/public/ipcMessageWriter.h \
 	ipc/ipcd/client/public/ipcdclient.h
 
@@ -814,7 +813,6 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp \
 	\
-	ipc/ipcd/util/src/ipcMessageReader.cpp \
 	ipc/ipcd/util/src/ipcMessageWriter.cpp \
 	\
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp

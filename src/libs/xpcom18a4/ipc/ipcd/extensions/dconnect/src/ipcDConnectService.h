@@ -38,6 +38,8 @@
 #include "ipcIDConnectService.h"
 #include "ipcdclient.h"
 
+#include "ipcMsgReader.h"
+
 #include "nsIInterfaceInfo.h"
 #include "nsIInterfaceInfoManager.h"
 
@@ -54,7 +56,6 @@
 #include <iprt/req.h>
 
 class nsIException;
-class ipcMessageReader;
 class ipcMessageWriter;
 
 // a key class used to identify DConnectInstance objects stored in a hash table
@@ -203,7 +204,7 @@ public:
   NS_HIDDEN_(nsresult) SerializeException(ipcMessageWriter &writer,
                                           PRUint32 peer, nsIException *xcpt,
                                           nsVoidArray &wrappers);
-  NS_HIDDEN_(nsresult) DeserializeException(ipcMessageReader &reader,
+  NS_HIDDEN_(nsresult) DeserializeException(PIPCMSGREADER pMsgReader,
                                             PRUint32 peer, nsIException **xcpt);
 
   NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers,  PRUint32 peer);
