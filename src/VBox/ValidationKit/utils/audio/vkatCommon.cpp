@@ -65,6 +65,7 @@
 # include <Mmdeviceapi.h>
 #endif
 
+#include <iprt/circbuf.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/errcore.h>
@@ -793,8 +794,11 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         } /* for */
 
         if (cbWrittenTotal != cbToWriteTotal)
-            RTTestFailed(g_hTest, "Test #%RU32: Playback ended unexpectedly (%RU32/%RU32 played)\n",
+        {
+            RTTestFailed(g_hTest, "Test #%RU32: Playback ended unexpectedly (%RU32 played, expected %RU32)\n",
                          idxTest, cbWrittenTotal, cbToWriteTotal);
+            rc = cbWrittenTotal > cbToWriteTotal ? VERR_BUFFER_OVERFLOW : VERR_BUFFER_UNDERFLOW;
+        }
 
         if (RT_SUCCESS(rc))
         {
@@ -849,12 +853,12 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
     rc = AudioTestMixStreamEnable(pMix);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbRecTotal  = 0; /* Counts everything, including silence / whatever. */
-        uint32_t cbTestToRec = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
-        uint32_t cbTestRec   = 0;
+        uint32_t cbToReadTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
+        AssertStmt(cbToReadTotal, rc = VERR_INVALID_PARAMETER);
+        uint32_t cbReadTotal   = 0; /* Counts the read test tone data (w/o any beacons). */
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording %RU32 bytes total (%RU32ms timeout)\n",
-                     idxTest, cbTestToRec, pTstEnv->msTimeout);
+                     idxTest, cbToReadTotal, pTstEnv->msTimeout);
 
         /* Failsafe if invalid timeout is set. */
         if (   pTstEnv->msTimeout == 0
@@ -884,15 +888,16 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
         AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
         AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
-        AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbTestToRec);
+        AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbToReadTotal);
         AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_ms=%RU32\n", pIoOpts->cMsBufferSize);
         AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_ms=%RU32\n", pIoOpts->cMsPreBuffer);
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
         AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pIoOpts->cMsSchedulingHint);
 
-        uint8_t         abSamples[16384];
-        uint32_t const  cbSamplesAligned  = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
+        PRTCIRCBUF pCircBuf;
+        rc = RTCircBufCreate(&pCircBuf, _64K);
+        AssertRCReturn(rc, rc);
 
         uint64_t const  nsStarted         = RTTimeNanoTS();
 
@@ -903,142 +908,38 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
         while (!g_fTerminate)
         {
-            uint64_t const nsNow = RTTimeNanoTS();
+            uint64_t const nsNow  = RTTimeNanoTS();
+
+            void  *pvBlock;
+            size_t cbBlock;
 
             /*
-             * Anything we can read?
+             * Anything we can capture from the stream?
              */
             uint32_t const cbCanRead = AudioTestMixStreamGetReadable(pMix);
             if (cbCanRead)
             {
-                if (g_uVerbosity >= 3)
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Stream is readable with %RU64ms (%RU32 bytes)\n",
-                                 idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead);
+                RTCircBufAcquireWriteBlock(pCircBuf, cbCanRead, &pvBlock, &cbBlock);
 
-                uint32_t const cbToRead   = RT_MIN(cbCanRead, cbSamplesAligned);
-                uint32_t       cbRecorded = 0;
-                rc = AudioTestMixStreamCapture(pMix, abSamples, cbToRead, &cbRecorded);
-                if (RT_SUCCESS(rc))
+                uint32_t cbCaptured = 0;
+                if (cbBlock)
                 {
-                    /* Flag indicating whether the whole block we're going to play is silence or not. */
-                    bool const fIsAllSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, abSamples, cbRecorded);
+                    rc = AudioTestMixStreamCapture(pMix, pvBlock, cbBlock, &cbCaptured);
+                    if (RT_FAILURE(rc))
+                       RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Reading from stream failed with %Rrc\n", idxTest, rc);
 
-                    cbRecTotal += cbRecorded; /* Do a bit of accounting. */
+                    if (g_uVerbosity >= 2)
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Stream is readable with %RU64ms (%RU32 bytes), captured %RU64ms (%RU32 bytes)\n",
+                                     idxTest,
+                                     PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead,
+                                     PDMAudioPropsBytesToMilli(pMix->pProps, cbCaptured), cbCaptured);
 
-                    switch (enmState)
-                    {
-                        case AUDIOTESTSTATE_PRE:
-                            RT_FALL_THROUGH();
-                        case AUDIOTESTSTATE_POST:
-                        {
-                            bool fGoToNextStage = false;
-
-                            if (    AudioTestBeaconGetSize(&Beacon)
-                                && !AudioTestBeaconIsComplete(&Beacon))
-                            {
-                                bool const fStarted = AudioTestBeaconGetRemaining(&Beacon) == AudioTestBeaconGetSize(&Beacon);
-
-                                size_t uOff;
-                                rc = AudioTestBeaconAddConsecutive(&Beacon, abSamples, cbRecorded, &uOff);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * When being in the AUDIOTESTSTATE_PRE state, we might get more audio data
-                                     * than we need for the pre-beacon to complete. In other words, that "more data"
-                                     * needs to be counted to the actual recorded test tone data then.
-                                     */
-                                    if (enmState == AUDIOTESTSTATE_PRE)
-                                        cbTestRec += cbRecorded - (uint32_t)uOff;
-                                }
-
-                                if (   fStarted
-                                    && g_uVerbosity >= 3)
-                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                                 "Test #%RU32: Detection of %s beacon started (%RU32ms recorded so far)\n",
-                                                 idxTest, AudioTestBeaconTypeGetName(Beacon.enmType),
-                                                 PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbRecTotal));
-
-                                if (AudioTestBeaconIsComplete(&Beacon))
-                                {
-                                    if (g_uVerbosity >= 2)
-                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Detected %s beacon\n",
-                                                     idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
-                                    fGoToNextStage = true;
-                                }
-                            }
-                            else
-                                fGoToNextStage = true;
-
-                            if (fGoToNextStage)
-                            {
-                                if (enmState == AUDIOTESTSTATE_PRE)
-                                    enmState = AUDIOTESTSTATE_RUN;
-                                else if (enmState == AUDIOTESTSTATE_POST)
-                                    enmState = AUDIOTESTSTATE_DONE;
-                            }
-                            break;
-                        }
-
-                        case AUDIOTESTSTATE_RUN:
-                        {
-                            /* Whether we count all silence as recorded data or not.
-                             * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
-                            if (!fIsAllSilence)
-                            {
-                                uint32_t const cbToAddMax = cbTestToRec - cbTestRec;
-
-                                /* Don't read more than we're told to.
-                                 * After the actual test tone data there might come a post beacon which also
-                                 * needs to be handled in the AUDIOTESTSTATE_POST state then. */
-                                if (cbRecorded > cbToAddMax)
-                                    cbRecorded = cbToAddMax;
-
-                                cbTestRec += cbRecorded;
-                            }
-
-                            if (cbTestToRec - cbTestRec == 0) /* Done recording the test tone? */
-                            {
-                                enmState = AUDIOTESTSTATE_POST;
-
-                                if (g_uVerbosity >= 2)
-                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording tone data done\n", idxTest);
-
-                                if (AudioTestBeaconGetSize(&Beacon))
-                                {
-                                    /* Re-use the beacon object, but this time it's the post beacon. */
-                                    AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
-                                                        &pStream->Cfg.Props);
-                                    if (g_uVerbosity >= 2)
-                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                                     "Test #%RU32: Waiting for %s beacon ...\n",
-                                                     idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
-                                }
-                            }
-                            break;
-                        }
-
-                        case AUDIOTESTSTATE_DONE:
-                        {
-                            /* Nothing to do here. */
-                            break;
-                        }
-
-                        default:
-                            AssertFailed();
-                            break;
-                    }
+                    if (RT_FAILURE(rc))
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Capturing failed with %Rrc\n",
+                                     idxTest, rc);
                 }
 
-                if (cbRecorded)
-                {
-                    /* Always write (record) everything, no matter if the current audio contains complete silence or not.
-                     * Might be also become handy later if we want to have a look at start/stop timings and so on. */
-                    rc = AudioTestObjWrite(Obj, abSamples, cbRecorded);
-                    AssertRCBreak(rc);
-                }
-
-                if (enmState == AUDIOTESTSTATE_DONE) /* Bail out when in state "done". */
-                    break;
+                RTCircBufReleaseWriteBlock(pCircBuf, cbCaptured);
             }
             else if (AudioTestMixStreamIsOkay(pMix))
             {
@@ -1056,6 +957,153 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                 RTThreadSleep(msSleep);
             }
 
+            /*
+             * Process our buffer.
+             */
+            size_t cbBlockToAcq;
+            if (pTstEnv->fSelftest) /* For self-test mode we want to have a bit more randomness. */
+            {
+                size_t const u = RTCircBufUsed(pCircBuf);
+                size_t const r = RTRandU32Ex(1, RTCircBufSize(pCircBuf));
+                cbBlockToAcq   = PDMAudioPropsFloorBytesToFrame(pMix->pProps, RT_MIN(u, r));
+            }
+            else
+                cbBlockToAcq = PDMAudioPropsFloorBytesToFrame(pMix->pProps, RTCircBufUsed(pCircBuf));
+
+            RTCircBufAcquireReadBlock(pCircBuf, cbBlockToAcq, &pvBlock, &cbBlock);
+            if (!cbBlock)
+                continue;
+
+            /* Flag indicating whether the whole block we've captured is silence or not. */
+            bool const fIsAllSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBlock, cbBlock);
+            uint32_t   cbRead = 0;
+
+            switch (enmState)
+            {
+                case AUDIOTESTSTATE_PRE:
+                    RT_FALL_THROUGH();
+                case AUDIOTESTSTATE_POST:
+                {
+                    bool fGoToNextStage = false;
+
+                    if (    AudioTestBeaconGetSize(&Beacon)
+                        && !AudioTestBeaconIsComplete(&Beacon))
+                    {
+                        bool const fStarted = AudioTestBeaconGetRemaining(&Beacon) == AudioTestBeaconGetSize(&Beacon);
+
+                        size_t uOff;
+                        int rc2 = AudioTestBeaconAddConsecutive(&Beacon, (uint8_t *)pvBlock, cbBlock, &uOff);
+                        if (   RT_SUCCESS(rc2)
+                            && uOff)
+                            cbRead = uOff;
+
+                        if (   fStarted
+                            && g_uVerbosity >= 2)
+                        {
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                                         "Test #%RU32: Detection of %s beacon started (%RU32ms recorded so far)\n",
+                                         idxTest, AudioTestBeaconTypeGetName(Beacon.enmType),
+                                         PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbReadTotal));
+                        }
+
+                        if (AudioTestBeaconIsComplete(&Beacon))
+                        {
+                            if (g_uVerbosity >= 2)
+                                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Detection of %s beacon complete\n",
+                                             idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
+                            fGoToNextStage = true;
+                        }
+                    }
+                    else
+                        fGoToNextStage = true;
+
+                    if (fGoToNextStage)
+                    {
+                        if (enmState == AUDIOTESTSTATE_PRE)
+                            enmState = AUDIOTESTSTATE_RUN;
+                        else if (enmState == AUDIOTESTSTATE_POST)
+                            enmState = AUDIOTESTSTATE_DONE;
+                    }
+                    break;
+                }
+
+                case AUDIOTESTSTATE_RUN:
+                {
+                    /* Whether we count all silence as recorded data or not.
+                     * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
+                    bool const fRecord = !fIsAllSilence;
+                    if (fRecord)
+                    {
+                        /* Don't read more than we're told to.
+                         * After the actual test tone data there might come a post beacon which also
+                         * needs to be handled in the AUDIOTESTSTATE_POST state then. */
+                        if (cbReadTotal + cbBlock > cbToReadTotal)
+                        {
+                            AssertBreakStmt(cbToReadTotal >= cbReadTotal, rc = VERR_INTERNAL_ERROR);
+                            cbRead = cbToReadTotal - cbReadTotal;
+                        }
+                        else
+                            cbRead = cbBlock;
+
+                        cbReadTotal += cbRead;
+                        AssertBreakStmt(cbReadTotal <= cbToReadTotal, rc = VERR_INTERNAL_ERROR);
+                    }
+
+                    /* Done recording the test tone? */
+                    if (cbReadTotal + cbRead == cbToReadTotal)
+                    {
+                        enmState = AUDIOTESTSTATE_POST;
+
+                        if (g_uVerbosity >= 2)
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording tone data done\n", idxTest);
+
+                        if (AudioTestBeaconGetSize(&Beacon))
+                        {
+                            /* Re-use the beacon object, but this time it's the post beacon. */
+                            AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                &pStream->Cfg.Props);
+                            if (g_uVerbosity >= 2)
+                                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                                             "Test #%RU32: Waiting for %s beacon ...\n",
+                                             idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
+                        }
+                    }
+                    break;
+                }
+
+                case AUDIOTESTSTATE_DONE:
+                {
+                    /* Nothing to do here. */
+                    break;
+                }
+
+                default:
+                    AssertFailed();
+                    break;
+            }
+
+            if (cbRead)
+            {
+                if (g_uVerbosity >= 3)
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Read data (%RU32 bytes):\n"
+                                                            "%.*Rhxd\n",
+                                 idxTest, cbRead, cbRead, pvBlock);
+
+                /* Always write (record) everything, no matter if the current audio contains complete silence or not.
+                 * Might be also become handy later if we want to have a look at start/stop timings and so on. */
+                rc = AudioTestObjWrite(Obj, pvBlock, cbRead);
+                AssertRCBreak(rc);
+            }
+
+            if (g_uVerbosity >= 2)
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Processed %RU64ms (%RU32 bytes)\n",
+                             idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbRead), cbRead);
+
+            RTCircBufReleaseReadBlock(pCircBuf, cbRead);
+
+            if (enmState == AUDIOTESTSTATE_DONE) /* Bail out when in state "done". */
+                break;
+
             /* Fail-safe in case something screwed up while playing back. */
             uint64_t const cNsElapsed = nsNow - nsStarted;
             if (cNsElapsed > nsTimeout)
@@ -1067,15 +1115,17 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
             if (RT_FAILURE(rc))
                 break;
-        }
+        } /* while */
 
         if (g_uVerbosity >= 2)
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recorded %RU32 bytes total\n", idxTest, cbRecTotal);
-        if (cbTestRec != cbTestToRec)
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recorded %RU32 bytes total\n", idxTest, cbReadTotal);
+        if (cbReadTotal != cbToReadTotal)
         {
-            RTTestFailed(g_hTest, "Test #%RU32: Recording ended unexpectedly (%RU32/%RU32 recorded)\n",
-                         idxTest, cbTestRec, cbTestToRec);
-            rc = VERR_WRONG_ORDER; /** @todo Find a better rc. */
+            RTTestFailed(g_hTest, "Test #%RU32: Recording ended unexpectedly (%RU32 read, expected %RU32)\n",
+                         idxTest, cbReadTotal, cbToReadTotal);
+            int rc2 = cbReadTotal > cbToReadTotal ? VERR_BUFFER_OVERFLOW : VERR_BUFFER_UNDERFLOW;
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
 
         if (RT_FAILURE(rc))
@@ -1084,6 +1134,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         int rc2 = AudioTestMixStreamDisable(pMix);
         if (RT_SUCCESS(rc))
             rc = rc2;
+
+        RTCircBufDestroy(pCircBuf);
     }
 
     int rc2 = AudioTestObjClose(Obj);
