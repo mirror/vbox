@@ -326,6 +326,30 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
                                    | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_3_FIRST_VER, IPRT_LIBPAM_FILE_3_END_VER),
                                    &hModPam);
 # endif
+# ifdef RT_OS_DARWIN
+        /* Try absolute paths on Darwin (if SIP is enabled). */
+        if (RT_FAILURE(rc))
+        {
+#  define MAKE_ABSOLUTE(a_Lib) "/usr/lib" # a_Lib
+            rc = RTLdrLoadEx(pszLast = MAKE_ABSOLUTE(IPRT_LIBPAM_FILE_1), &hModPam, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                             | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_1_FIRST_VER, IPRT_LIBPAM_FILE_1_END_VER),
+                             NULL);
+#  ifdef IPRT_LIBPAM_FILE_2
+            if (RT_FAILURE(rc))
+                rc = RTLdrLoadEx(pszLast = MAKE_ABSOLUTE(IPRT_LIBPAM_FILE_2), &hModPam, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                                 | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_2_FIRST_VER, IPRT_LIBPAM_FILE_2_END_VER),
+                                 NULL);
+#  endif
+#  ifdef IPRT_LIBPAM_FILE_3
+            if (RT_FAILURE(rc))
+                rc = RTLdrLoadEx(pszLast = MAKE_ABSOLUTE(IPRT_LIBPAM_FILE_3), &hModPam, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                                 | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_3_FIRST_VER, IPRT_LIBPAM_FILE_3_END_VER),
+                                 NULL);
+#  endif
+#  undef MAKE_ABSOLUTE
+        }
+# endif /* RT_OS_DARWIN */
+
         if (RT_FAILURE(rc))
         {
             LogRelMax(10, ("failed to load %s: %Rrc\n", pszLast, rc));
