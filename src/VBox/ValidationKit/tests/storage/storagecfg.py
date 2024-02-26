@@ -122,8 +122,8 @@ class StorageConfigOsSolaris(StorageConfigOs):
         fRc, sOutput, _ = oExec.execBinary('zpool', ('list', '-H'));
         if fRc:
             lstPools = [];
-            asPools = sOutput.splitlines();
-            reporter.log('asPools: %s' % asPools);
+            asPools = re.sub("b'|'", "", sOutput).rstrip("\\n").split("\\n")  # as sOutput could look like "b'blabla'"
+            reporter.log('asPools: %s' % asPools)                             # plus delete excessive end-of-line
             for sPool in asPools:
                 oMatchResult = re.match("%s[0-9]?[0-9]?" % sPoolIdStart, sPool)  # either re.Match obj or None
                 reporter.log('sPoolIdStart: %s, sPool: %s, oMatchResult: %s' % (sPoolIdStart, sPool, oMatchResult))
@@ -140,8 +140,8 @@ class StorageConfigOsSolaris(StorageConfigOs):
         fRc, sOutput, _ = oExec.execBinary('zfs', ('list', '-H'));
         if fRc:
             lstVolumes = [];
-            asVolumes = sOutput.splitlines();
-            reporter.log('asVolumes: %s' % asVolumes);
+            asVolumes = re.sub("b'|'", "", sOutput).rstrip("\\n").split("\\n")  # as sOutput could look like "b'blabla'"
+            reporter.log('asVolumes: %s' % asVolumes)                           # plus delete excessive end-of-line
             for sVolume in asVolumes:
                 oMatchResult = re.match("%s/%s" % (sPool, sVolumeIdStart), sVolume)  # either re.Match obj or None
                 reporter.log('sPool: %s, sVolumeIdStart: %s, sVolume: %s, OMatchResult: %s' % (sPool, sVolumeIdStart,

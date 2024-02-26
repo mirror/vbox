@@ -11,3 +11,5 @@ REGEDIT4
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
 "NTConfiguration"="c:\\Apps\\vboxtxs.cmd"
 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"EnableLUA"="0"
