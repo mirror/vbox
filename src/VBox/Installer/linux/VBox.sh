@@ -96,15 +96,33 @@ WARNING: The compilation of the vboxdrv.ko kernel module failed during the
 EOF
 fi
 
-SERVER_PID=`ps -U \`whoami\` | grep VBoxSVC | awk '{ print $1 }'`
+# Get effective user name to use it in order to compose XPCOM IPC socket path.
+VBOX_EFFECTIVE_USER="$(whoami)"
+if [ -z "$VBOX_EFFECTIVE_USER" ]; then
+    cat << EOF
+WARNING: Unable to detect effective user name. VirtualBox might run incorrectly.
+EOF
+fi
+
+# Variables LOGNAME and USER are used by XPCOM code in order to
+# compose IPC socket path. If they set to something which is different
+# from the effective user name, it might result in misbehavior.
+# Setting VBOX_IPC_SOCKETID will tell XPCOM code which path it should use explicitly.
+[ -n "$LOGNAME" ] && [ "$LOGNAME" = "$VBOX_EFFECTIVE_USER" ] || vbox_override_env="1"
+[ -n "$USER"    ] && [ "$USER"    = "$VBOX_EFFECTIVE_USER" ] || vbox_override_env="1"
+
+if [ -n "$vbox_override_env" ]; then
+cat << EOF
+WARNING: Environment variable LOGNAME or USER does not correspond to effective user id.
+EOF
+    export VBOX_IPC_SOCKETID="$VBOX_EFFECTIVE_USER"
+fi
+
+SERVER_PID=`ps -U "$VBOX_EFFECTIVE_USER" | grep VBoxSVC | awk '{ print $1 }'`
 if [ -z "$SERVER_PID" ]; then
     # Server not running yet/anymore, cleanup socket path.
     # See IPC_GetDefaultSocketPath()!
-    if [ -n "$LOGNAME" ]; then
-        rm -rf /tmp/.vbox-$LOGNAME-ipc > /dev/null 2>&1
-    else
-        rm -rf /tmp/.vbox-$USER-ipc > /dev/null 2>&1
-    fi
+    rm -rf "/tmp/.vbox-$VBOX_EFFECTIVE_USER-ipc" > /dev/null 2>&1
 fi
 
 if [ "$SHUTDOWN" = "true" ]; then
