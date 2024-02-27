@@ -1718,7 +1718,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
         IEM_MC_ARG(uint16_t, u16Tmp,                         0);
         IEM_MC_ARG_CONST(RTGCPTR,  GCPtrEffDst, NIL_RTGCPTR, 1);
         IEM_MC_FETCH_GREG_U16(u16Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, 0, iemCImpl_lmsw, u16Tmp, GCPtrEffDst);
+        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0),
+                            iemCImpl_lmsw, u16Tmp, GCPtrEffDst);
         IEM_MC_END();
     }
     else
@@ -1729,7 +1730,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_FETCH_MEM_U16(u16Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, 0, iemCImpl_lmsw, u16Tmp, GCPtrEffDst);
+        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0),
+                            iemCImpl_lmsw, u16Tmp, GCPtrEffDst);
         IEM_MC_END();
     }
 }
@@ -1977,9 +1979,10 @@ FNIEMOP_DEF(iemOp_syscall)
 {
     IEMOP_MNEMONIC(syscall, "syscall"); /** @todo 286 LOADALL   */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    /** @todo r=aeichner Clobbers cr0 only if this is a 286 LOADALL instruction. */
     IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0,
-                                iemCImpl_syscall);
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB,
+                                RT_BIT_64(kIemNativeGstReg_Cr0), iemCImpl_syscall);
 }
 
 
@@ -1988,7 +1991,7 @@ FNIEMOP_DEF(iemOp_clts)
 {
     IEMOP_MNEMONIC(clts, "clts");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_clts);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0), iemCImpl_clts);
 }
 
 
@@ -3380,11 +3383,12 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     }
     IEMOP_HLP_DONE_DECODING();
 
+    /** @todo r=aeichner Split this up as flushing the cr0 is excessive for crX != 0? */
     if (iCrReg & (2 | 8))
         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
     else
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, 0,
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0),
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 

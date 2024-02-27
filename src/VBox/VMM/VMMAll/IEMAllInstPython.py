@@ -3104,7 +3104,7 @@ g_dMcStmtParsers = {
     'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, False, True,  ),
     'IEM_MC_NOREF':                                              (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MAYBE_RAISE_FPU_XCPT':                               (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT':                          (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  True,  False, ),

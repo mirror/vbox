@@ -4224,6 +4224,15 @@ VBOXSTRICTRC iemRaiseDeviceNotAvailable(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
+#ifdef IEM_WITH_SETJMP
+/** \#NM - 07.  */
+DECL_NO_RETURN(void) iemRaiseDeviceNotAvailableJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemRaiseXcptOrIntJmp(pVCpu, 0, X86_XCPT_NM, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+#endif
+
+
 /** \#TS(err) - 0a.  */
 VBOXSTRICTRC iemRaiseTaskSwitchFaultWithErr(PVMCPUCC pVCpu, uint16_t uErr) RT_NOEXCEPT
 {
