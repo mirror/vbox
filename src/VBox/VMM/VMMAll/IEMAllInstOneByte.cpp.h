@@ -10354,7 +10354,8 @@ FNIEMOP_DEF_1(iemOp_fldenv, uint8_t, bRm)
 
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
     IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
-    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, 0, iemCImpl_fldenv, enmEffOpSize, iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_FpuFcw),
+                        iemCImpl_fldenv, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
 }
 
@@ -10374,7 +10375,8 @@ FNIEMOP_DEF_1(iemOp_fldcw, uint8_t, bRm)
     IEM_MC_ARG(uint16_t,                u16Fsw,                                         0);
     IEM_MC_FETCH_MEM_U16(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
-    IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_FPU, 0, iemCImpl_fldcw, u16Fsw);
+    IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_FpuFcw),
+                        iemCImpl_fldcw, u16Fsw);
     IEM_MC_END();
 }
 
@@ -11722,7 +11724,8 @@ FNIEMOP_DEF(iemOp_fninit)
 {
     IEMOP_MNEMONIC(fninit, "fninit");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_FPU, 0, iemCImpl_finit, false /*fCheckXcpts*/);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_FpuFcw),
+                                iemCImpl_finit, false /*fCheckXcpts*/);
 }
 
 
@@ -12263,7 +12266,8 @@ FNIEMOP_DEF_1(iemOp_frstor,      uint8_t, bRm)
 
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
     IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
-    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, 0, iemCImpl_frstor, enmEffOpSize, iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_FpuFcw),
+                        iemCImpl_frstor, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
 }
 
@@ -12282,7 +12286,8 @@ FNIEMOP_DEF_1(iemOp_fnsave,      uint8_t, bRm)
 
     IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
     IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
-    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, 0, iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
+    IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_FpuFcw),
+                        iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
 }
 

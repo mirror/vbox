@@ -2961,7 +2961,7 @@ g_dMcStmtParsers = {
     'IEM_MC_END':                                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_FETCH_EFLAGS':                                       (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_FETCH_EFLAGS_U8':                                    (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_FETCH_FCW':                                          (McBlock.parseMcGeneric,           False, False, False, ),
+    'IEM_MC_FETCH_FCW':                                          (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_FETCH_FSW':                                          (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_GREG_U16':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_FETCH_GREG_U16_SX_U32':                              (McBlock.parseMcGeneric,           False, False, True,  ),

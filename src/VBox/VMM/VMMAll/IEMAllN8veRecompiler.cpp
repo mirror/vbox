@@ -3498,7 +3498,7 @@ static struct
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
     /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
     /* [kIemNativeGstReg_Cr0] = */                      { CPUMCTX_OFF_AND_SIZE(cr0),                "cr0", },
-    /* [kIemNativeGstReg_LivenessPadding18] = */        { UINT32_MAX / 4, 0,                        "pad18", },
+    /* [kIemNativeGstReg_FpuFcw] = */                   { CPUMCTX_OFF_AND_SIZE(XState.x87.FCW),     "fcw", },
     /* [kIemNativeGstReg_LivenessPadding19] = */        { UINT32_MAX / 4, 0,                        "pad19", },
     /* [kIemNativeGstReg_SegBaseFirst + 0] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u64Base),  "es_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 1] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u64Base),  "cs_base", },
@@ -13258,6 +13258,34 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pR
     RT_NOREF(pReNative, fForChange);
     return off;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Emitters for FPU related operations.                                                                                         *
+*********************************************************************************************************************************/
+
+#define IEM_MC_FETCH_FCW(a_u16Fcw) \
+    off = iemNativeEmitFetchFpuFcw(pReNative, off, a_u16Fcw)
+
+/** Emits code for IEM_MC_FETCH_FCW. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchFpuFcw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint16_t));
+
+    /* Allocate a temporary FCW register. */
+    uint8_t const idxFcwReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFcw, kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxDstVar, idxFcwReg);
+
+    /* Free but don't flush the FCW register. */
+    iemNativeRegFreeTmp(pReNative, idxFcwReg);
+
+    return off;
+}
+
 
 
 /*********************************************************************************************************************************

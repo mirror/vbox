@@ -687,7 +687,7 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_GprLast       = kIemNativeGstReg_GprFirst + 15,
     kIemNativeGstReg_Pc,
     kIemNativeGstReg_Cr0,
-    kIemNativeGstReg_LivenessPadding18,
+    kIemNativeGstReg_FpuFcw,
     kIemNativeGstReg_LivenessPadding19,
     kIemNativeGstReg_SegBaseFirst,
     kIemNativeGstReg_SegBaseLast   = kIemNativeGstReg_SegBaseFirst + 5,
