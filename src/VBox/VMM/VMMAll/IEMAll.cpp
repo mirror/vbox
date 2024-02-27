@@ -4217,6 +4217,15 @@ VBOXSTRICTRC iemRaiseUndefinedOpcode(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
+#ifdef IEM_WITH_SETJMP
+/** \#UD - 06.  */
+DECL_NO_RETURN(void) iemRaiseUndefinedOpcodeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemRaiseXcptOrIntJmp(pVCpu, 0, X86_XCPT_UD, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+#endif
+
+
 /** \#NM - 07.  */
 VBOXSTRICTRC iemRaiseDeviceNotAvailable(PVMCPUCC pVCpu) RT_NOEXCEPT
 {

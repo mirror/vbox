@@ -5146,6 +5146,9 @@ VBOXSTRICTRC            iemRaiseDivideError(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC            iemRaiseDebugException(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC            iemRaiseBoundRangeExceeded(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC            iemRaiseUndefinedOpcode(PVMCPUCC pVCpu) RT_NOEXCEPT;
+#ifdef IEM_WITH_SETJMP
+DECL_NO_RETURN(void)    iemRaiseUndefinedOpcodeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+#endif
 VBOXSTRICTRC            iemRaiseDeviceNotAvailable(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #ifdef IEM_WITH_SETJMP
 DECL_NO_RETURN(void)    iemRaiseDeviceNotAvailableJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;

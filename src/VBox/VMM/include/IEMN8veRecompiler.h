@@ -319,6 +319,7 @@ typedef enum
     kIemNativeLabelType_NonZeroRetOrPassUp,
     kIemNativeLabelType_RaiseGp0,
     kIemNativeLabelType_RaiseNm,
+    kIemNativeLabelType_RaiseUd,
     kIemNativeLabelType_ObsoleteTb,
     kIemNativeLabelType_NeedCsLimChecking,
     kIemNativeLabelType_CheckBranchMiss,
@@ -697,6 +698,7 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_SegLimitLast  = kIemNativeGstReg_SegLimitFirst + 5,
     kIemNativeGstReg_SegSelFirst,
     kIemNativeGstReg_SegSelLast    = kIemNativeGstReg_SegSelFirst + 5,
+    kIemNativeGstReg_Cr4,
     kIemNativeGstReg_EFlags,            /**< 32-bit, includes internal flags - last! */
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;

@@ -1609,6 +1609,18 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu))
 
 
 /**
+ * Used by TB code when it wants to raise a \#UD.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
+{
+    iemRaiseUndefinedOpcodeJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
  * Used by TB code when detecting opcode changes.
  * @see iemThreadeFuncWorkerObsoleteTb
  */
@@ -2917,7 +2929,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 10);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 11);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2928,6 +2940,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[7]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[8]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[9]         = UINT32_MAX;
+    pReNative->aidxUniqueLabels[10]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -3524,6 +3537,7 @@ static struct
     /* [kIemNativeGstReg_SegSelFirst + 3] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Sel),      "ds", },
     /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
     /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
+    /* [kIemNativeGstReg_Cr4] = */                      { CPUMCTX_OFF_AND_SIZE(cr4),                "cr4", },
     /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
 #undef CPUMCTX_OFF_AND_SIZE
 };
@@ -5801,6 +5815,27 @@ static uint32_t iemNativeEmitRaiseNm(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /**
+ * Emits the code at the RaiseUd label.
+ */
+static uint32_t iemNativeEmitRaiseUd(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseNm);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        /* iemNativeHlpExecRaiseUd(PVMCPUCC pVCpu) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseUd);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
+
+
+/**
  * Emits the code at the ReturnWithFlags label (returns
  * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
@@ -6662,6 +6697,67 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
 
     /* Free but don't flush the CR0 register. */
     iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+
+    return off;
+}
+
+
+#define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() \
+    off = iemNativeEmitMaybeRaiseSseRelatedXcpt(pReNative, off, pCallEntry->idxInstr)
+
+/**
+ * Emits code to check if a SSE exception (either \#UD or \#NM) should be raised.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
+     *
+     * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* Allocate a temporary CR0 and CR4 register. */
+    uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
+    uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
+
+    /** @todo r=aeichner Optimize this more later to have less compares and branches,
+     *                   (see IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() in IEMMc.h but check that it has some
+     *                   actual performance benefit first). */
+    /*
+     * if (cr0 & X86_CR0_EM)
+     *     return raisexcpt();
+     */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM, idxLabelRaiseUd);
+    /*
+     * if (!(cr4 & X86_CR4_OSFXSR))
+     *     return raisexcpt();
+     */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR, idxLabelRaiseUd);
+    /*
+     * if (cr0 & X86_CR0_TS)
+     *     return raisexcpt();
+     */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_TS, idxLabelRaiseNm);
+
+    /* Free but don't flush the CR0 and CR4 register. */
+    iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+    iemNativeRegFreeTmp(pReNative, idxCr4Reg);
 
     return off;
 }
@@ -13776,6 +13872,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_RaiseNm:
                                     pszName = "RaiseNm";
                                     break;
+                                case kIemNativeLabelType_RaiseUd:
+                                    pszName = "RaiseUd";
+                                    break;
                                 case kIemNativeLabelType_ObsoleteTb:
                                     pszName = "ObsoleteTb";
                                     break;
@@ -14325,6 +14424,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseNm))
             off = iemNativeEmitRaiseNm(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseUd))
+            off = iemNativeEmitRaiseUd(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ObsoleteTb))
             off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))

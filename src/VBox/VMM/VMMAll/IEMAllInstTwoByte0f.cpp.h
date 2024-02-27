@@ -3388,7 +3388,7 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
     else
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0),
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_Cr0) | RT_BIT_64(kIemNativeGstReg_Cr4),
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 
