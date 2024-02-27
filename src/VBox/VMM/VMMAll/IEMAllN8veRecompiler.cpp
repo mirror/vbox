@@ -9890,6 +9890,35 @@ iemNativeEmitOrLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar
 }
 
 
+#define IEM_MC_BSWAP_LOCAL_U16(a_u16Local) \
+    off = iemNativeEmitBswapLocal(pReNative, off, a_u16Local, sizeof(uint16_t))
+
+#define IEM_MC_BSWAP_LOCAL_U32(a_u32Local) \
+    off = iemNativeEmitBswapLocal(pReNative, off, a_u32Local, sizeof(uint32_t))
+
+#define IEM_MC_BSWAP_LOCAL_U64(a_u64Local) \
+    off = iemNativeEmitBswapLocal(pReNative, off, a_u64Local, sizeof(uint64_t))
+
+/** Emits code for reversing the byte order in a local value.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitBswapLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint8_t cbLocal)
+{
+    Assert(pReNative->Core.aVars[idxVar].cbVar == cbLocal);
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+
+    switch (cbLocal)
+    {
+        case sizeof(uint16_t): off = iemNativeEmitBswapGpr16(pReNative, off, idxVarReg); break;
+        case sizeof(uint32_t): off = iemNativeEmitBswapGpr32(pReNative, off, idxVarReg); break;
+        case sizeof(uint64_t): off = iemNativeEmitBswapGpr(pReNative, off, idxVarReg);   break;
+        default: AssertFailedBreak();
+    }
+
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
 
 
 /*********************************************************************************************************************************

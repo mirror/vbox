@@ -3646,6 +3646,46 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmnImm(uint32_t iRegSrc, uint32_t uI
     return Armv8A64MkInstrCCmpCmnImm(iRegSrc, uImm5, fNzcv, enmCond, false /*fCCmp*/, f64Bit);
 }
 
+
+/**
+ * A64: Encodes REV instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The destination register. SP is NOT valid.
+ * @param   iRegSrc     The source register. SP is NOT valid, but ZR is
+ * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRev(uint32_t iRegDst, uint32_t iRegSrc, bool f64Bit = true)
+{
+    Assert(iRegDst < 32); Assert(iRegSrc < 32);
+
+    return ((uint32_t)f64Bit       << 31)
+         | (UINT32_C(0x5ac00800))
+         | ((uint32_t)f64Bit       << 10)
+         | (iRegSrc                <<  5)
+         | iRegDst;
+}
+
+
+/**
+ * A64: Encodes REV16 instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The destination register. SP is NOT valid.
+ * @param   iRegSrc     The source register. SP is NOT valid, but ZR is
+ * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRev16(uint32_t iRegDst, uint32_t iRegSrc, bool f64Bit = true)
+{
+    Assert(iRegDst < 32); Assert(iRegSrc < 32);
+
+    return ((uint32_t)f64Bit       << 31)
+         | (UINT32_C(0x5ac00400))
+         | (iRegSrc                <<  5)
+         | iRegDst;
+}
+
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */

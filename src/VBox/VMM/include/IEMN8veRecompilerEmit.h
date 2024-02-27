@@ -4923,6 +4923,96 @@ iemNativeEmitRotateGprLeftEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGp
 }
 
 
+/**
+ * Emits code for reversing the byte order for a 16-bit value in a 32-bit GPR.
+ * @note Bits 63:32 of the destination GPR will be cleared.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBswapGpr16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
+{
+#if defined(RT_ARCH_AMD64)
+    /*
+     * There is no bswap r16 on x86 (the encoding exists but does not work).
+     * So just use a rol (gcc -O2 is doing that).
+     *
+     *    rol r16, 0x8
+     */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0xc1;
+    pbCodeBuf[off++] = 0xc0 | (iGpr & 7);
+    pbCodeBuf[off++] = 0x08;
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrRev16(iGpr, iGpr, false /*f64Bit*/);
+#else
+# error "Port me"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for reversing the byte order in a 32-bit GPR.
+ * @note Bits 63:32 of the destination GPR will be cleared.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBswapGpr32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
+{
+#if defined(RT_ARCH_AMD64)
+    /* bswap r32 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xc8 | (iGpr & 7);
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrRev(iGpr, iGpr, false /*f64Bit*/);
+#else
+# error "Port me"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for reversing the byte order in a 64-bit GPR.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBswapGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
+{
+#if defined(RT_ARCH_AMD64)
+    /* bswap r64 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xc8 | (iGpr & 7);
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrRev(iGpr, iGpr, true /*f64Bit*/);
+#else
+# error "Port me"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 
 /*********************************************************************************************************************************
 *   Compare and Testing                                                                                                          *
