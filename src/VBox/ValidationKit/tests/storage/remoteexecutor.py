@@ -300,14 +300,16 @@ class RemoteExecutor(object):
 
     def rmTree(self, sDir, cMsTimeout = 30000):
         """
-        Recursively removes all files and sub directories including the given directory.
+        Recursively removes all files and subdirectories including the given directory.
         """
         fRc = True;
         if self.oTxsSession is not None:
+            reporter.log("rmTree (%s) using txs" % sDir);
             fRc = self.oTxsSession.syncRmTree(sDir, cMsTimeout);
         else:
             try:
-                shutil.rmtree(sDir, ignore_errors=True);
+                reporter.log("rmTree (%s) using shutil.rmtree function" % sDir);
+                shutil.rmtree(sDir);
             except:
                 fRc = False;
 
