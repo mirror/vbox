@@ -1412,7 +1412,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     Bstr bstrNVRAMFile;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
     if (bstrNVRAMFile.isNotEmpty())
-        SHOW_BSTR_STRING("BIOS NVRAM File", Info::tr("BIOS NVRAM File:"), bstrNVRAMFile);
+        SHOW_BSTR_STRING("NvramFile", Info::tr("BIOS NVRAM File:"), bstrNVRAMFile);
     if (   firmwareType == FirmwareType_EFI || firmwareType == FirmwareType_EFI32
         || firmwareType == FirmwareType_EFI64 || firmwareType == FirmwareType_EFIDUAL)
     {
