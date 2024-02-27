@@ -2246,6 +2246,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     pVM->cpum.s.HostFeatures.fSse41      = true;
     pVM->cpum.s.HostFeatures.fSse42      = true;
     pVM->cpum.s.HostFeatures.fLahfSahf   = true;
+    pVM->cpum.s.HostFeatures.fMovBe      = true;
 #endif
 
     /*

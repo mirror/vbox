@@ -1402,7 +1402,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | PASSTHRU_FEATURE(pConfig->enmSse41, pHstFeat->fSse41, X86_CPUID_FEATURE_ECX_SSE4_1)
                            | PASSTHRU_FEATURE(pConfig->enmSse42, pHstFeat->fSse42, X86_CPUID_FEATURE_ECX_SSE4_2)
                            //| X86_CPUID_FEATURE_ECX_X2APIC - turned on later by the device if enabled.
-                           | PASSTHRU_FEATURE_TODO(pConfig->enmMovBe, X86_CPUID_FEATURE_ECX_MOVBE)
+                           | PASSTHRU_FEATURE(pConfig->enmMovBe, pHstFeat->fMovBe, X86_CPUID_FEATURE_ECX_MOVBE)
                            | PASSTHRU_FEATURE(pConfig->enmPopCnt, pHstFeat->fPopCnt, X86_CPUID_FEATURE_ECX_POPCNT)
                            //| X86_CPUID_FEATURE_ECX_TSCDEADL - not implemented yet.
                            | PASSTHRU_FEATURE_TODO(pConfig->enmAesNi, X86_CPUID_FEATURE_ECX_AES)
@@ -2949,7 +2949,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      * being the default is to only do this for VMs with nested paging and AMD-V or
      * unrestricted guest mode.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "MOVBE", &pConfig->enmMovBe, fNestedPagingAndFullGuestExec);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "MOVBE", &pConfig->enmMovBe, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/IsaExts/RDRAND, isaextcfg, depends}
