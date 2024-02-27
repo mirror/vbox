@@ -35,16 +35,25 @@
  * @returns @c true if valid, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uEntry  The EPT page table entry to check.
+ *
+ * @remarks Current this ASSUMES @c uEntry is present (debug asserted)!
  */
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_t uEntry)
 {
     if (!(uEntry & EPT_E_READ))
     {
-        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
-        Assert(!RT_BF_GET(pVCpu->pgm.s.uEptVpidCapMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY));
-        NOREF(pVCpu);
-        if (uEntry & (EPT_E_WRITE | EPT_E_EXECUTE))
+        if (uEntry & EPT_E_WRITE)
             return false;
+
+        /*
+         * Currently all callers of this function check for the present mask prior
+         * to calling this function. Hence, the execute bit must be set now.
+         */
+        Assert(uEntry & EPT_E_EXECUTE);
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
+        if (pVCpu->pgm.s.uEptVpidCapMsr & VMX_BF_EPT_VPID_CAP_EXEC_ONLY_MASK)
+            return true;
+        return false;
     }
     return true;
 }
