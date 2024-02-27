@@ -3499,7 +3499,7 @@ static struct
     /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
     /* [kIemNativeGstReg_Cr0] = */                      { CPUMCTX_OFF_AND_SIZE(cr0),                "cr0", },
     /* [kIemNativeGstReg_FpuFcw] = */                   { CPUMCTX_OFF_AND_SIZE(XState.x87.FCW),     "fcw", },
-    /* [kIemNativeGstReg_LivenessPadding19] = */        { UINT32_MAX / 4, 0,                        "pad19", },
+    /* [kIemNativeGstReg_FpuFsw] = */                   { CPUMCTX_OFF_AND_SIZE(XState.x87.FSW),     "fsw", },
     /* [kIemNativeGstReg_SegBaseFirst + 0] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u64Base),  "es_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 1] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u64Base),  "cs_base", },
     /* [kIemNativeGstReg_SegBaseFirst + 2] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u64Base),  "ss_base", },
@@ -13282,6 +13282,28 @@ iemNativeEmitFetchFpuFcw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 
     /* Free but don't flush the FCW register. */
     iemNativeRegFreeTmp(pReNative, idxFcwReg);
+
+    return off;
+}
+
+
+#define IEM_MC_FETCH_FSW(a_u16Fsw) \
+    off = iemNativeEmitFetchFpuFsw(pReNative, off, a_u16Fsw)
+
+/** Emits code for IEM_MC_FETCH_FSW. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint16_t));
+
+    /* Allocate a temporary FSW register. */
+    uint8_t const idxFswReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw, kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxDstVar, idxFswReg);
+
+    /* Free but don't flush the FSW register. */
+    iemNativeRegFreeTmp(pReNative, idxFswReg);
 
     return off;
 }
