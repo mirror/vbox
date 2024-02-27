@@ -2,55 +2,67 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="solaris-zones">
-               <title>Configuring a Zone for Running <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
-               
+               <title>Configuring a Non-Global Zone for Running <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
+
                <body>
                   <p>
-        Assuming that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has already been installed into
-        your zone, you need to give the zone access to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s
-        device node. This is done by performing the following steps.
-        Start a root terminal and run the following command:
+        After installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in the global zone
+        (see <xref href="install-solaris-host.dita#install-solaris-host"/> for the installation instructions)
+        the first step required to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in a 
+        non-global zone is to modify the zone's configuration to be able to access the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> device nodes located in the global zone.
+        This is done by performing the following steps as a zone administrator in the global zone.  
       </p>
-                  <pre xml:space="preserve">zonecfg -z <varname>vboxzone</varname>
+                  <pre xml:space="preserve">global$ zonecfg -z <varname>vboxzone</varname>
                   </pre>
                   <p>
         Replace <varname>vboxzone</varname> with the name of the
-        zone where you intend to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
+        non-gloabl zone where you plan to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
                   <p>
-        Use <userinput>zonecfg</userinput> to add the
-        <codeph>device</codeph> resource and <codeph>match</codeph>
-        properties to the zone, as follows:
+        Use <userinput>zonecfg(8)</userinput> to add the <codeph>device</codeph> resource
+        and the <codeph>match</codeph> property for each
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> device node in the global
+        zone to the non-global zone as follows:
       </p>
-                  <pre xml:space="preserve">zonecfg:vboxzone&gt;add device
-zonecfg:vboxzone:device&gt;set match=/dev/vboxdrv
-zonecfg:vboxzone:device&gt;end
-zonecfg:vboxzone&gt;add device
-zonecfg:vboxzone:device&gt;set match=/dev/vboxdrvu
-zonecfg:vboxzone:device&gt;end
-zonecfg:vboxzone&gt;exit</pre>
+                  <pre xml:space="preserve">zonecfg:vboxzone&gt; add device
+zonecfg:vboxzone:device&gt; set match=/dev/vboxdrv
+zonecfg:vboxzone:device&gt; end
+zonecfg:vboxzone&gt; add device
+zonecfg:vboxzone:device&gt; set match=/dev/vboxdrvu
+zonecfg:vboxzone:device&gt; end
+zonecfg:vboxzone&gt; exit</pre>
                   <p>
-        On Oracle Solaris 11 or later, you may also add a device for
-        <filepath>/dev/vboxusbmon</filepath>, similar to that shown
-        above.
+        On Oracle Solaris 11 if you plan to use VMs configured to use a USB device, e.g. a USB
+        pointing device or a USB pass-through device, you should also pass through the 
+        <filepath>/dev/vboxusbmon</filepath> device using the steps above.
       </p>
                   <p>
-        If you are not using sparse root zones, you will need to
+        Oracle Solaris 11 doesn't support sparse root zones so you will need to
         loopback mount <filepath>/opt/VirtualBox</filepath> from the
-        global zone into the non-global zone at the same path. This is
-        specified below using the <codeph>dir</codeph> attribute and
-        the <codeph>special</codeph> attribute. For example:
+        global zone into the non-global zone at the same path.  This is
+        done using <userinput>zonecfg(8)</userinput> to set the <codeph>dir</codeph>
+        attribute and the <codeph>special</codeph> attribute for this directory.
+        For example:
       </p>
-                  <pre xml:space="preserve">zonecfg:vboxzone&gt;add fs
-zonecfg:vboxzone:device&gt;set dir=/opt/VirtualBox
-zonecfg:vboxzone:device&gt;set special=/opt/VirtualBox
-zonecfg:vboxzone:device&gt;set type=lofs
-zonecfg:vboxzone:device&gt;end
-zonecfg:vboxzone&gt;exit</pre>
+                  <pre xml:space="preserve">zonecfg:vboxzone&gt; add fs
+zonecfg:vboxzone:fs&gt; set dir=/opt/VirtualBox
+zonecfg:vboxzone:fs&gt; set special=/opt/VirtualBox
+zonecfg:vboxzone:fs&gt; set type=lofs
+zonecfg:vboxzone:fs&gt; add options [readonly]
+zonecfg:vboxzone:fs&gt; end
+zonecfg:vboxzone&gt; exit</pre>
                   <p>
-        Reboot the zone using <userinput>zoneadm</userinput> and you should
-        be able to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from within the configured zone.
+        After making the above changes using <userinput>zonecfg(8)</userinput>, reboot the zone
+        using <userinput>zoneadm(8)</userinput> as follows:
+        </p>
+                  <pre xml:space="preserve">global$ zoneadm -z <varname>vboxzone</varname> reboot
+                  </pre>
+                  <p>
+        for the changes to take effect.  You will then be able to run
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from /opt/VirtualBox within the
+        configured non-global zone.
       </p>
                </body>
-               
+
             </topic>
