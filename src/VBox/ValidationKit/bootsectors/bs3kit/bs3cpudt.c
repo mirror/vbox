@@ -41,7 +41,6 @@
 
 #include "bs3kit.h"
 #include <stdio.h>
-#include <stdint.h>
 
 
 unsigned StoreMsw(void);
