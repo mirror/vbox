@@ -485,6 +485,10 @@ BEGINPROC TestProc64
         sha256msg2 xmm0, xmm1
         sha256rnds2 xmm0, xmm1
 
+        vpsrldq xmm1, xmm2, 3
+        db 066h
+        vpsrldq xmm1, xmm2, 3
+
         ret
 ENDPROC   TestProc64
 %endif ; !OS2
