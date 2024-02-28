@@ -759,6 +759,26 @@ static const char *platformArchitectureToStr(PlatformArchitecture_T enmArch)
     return "<Unknown>";
 }
 
+/**
+ * Returns the platform architecture for a given string.
+ *
+ * @return Platform architecture, or PlatformArchitecture_None if not found.
+ * @param  pszPlatform           Platform architecture to convert.
+ */
+static PlatformArchitecture_T platformArchitectureToStr(const char *pszPlatform)
+{
+    if (   !RTStrICmp(pszPlatform, "x86")
+        || !RTStrICmp(pszPlatform, "x86_64")
+        || !RTStrICmp(pszPlatform, "ia32")
+        || !RTStrICmp(pszPlatform, "amd64")
+        || !RTStrICmp(pszPlatform, "intel"))
+        return PlatformArchitecture_x86;
+    else if (   !RTStrICmp(pszPlatform, "arm")
+             || !RTStrICmp(pszPlatform, "armv8"))
+        return PlatformArchitecture_ARM;
+    return PlatformArchitecture_None;
+}
+
 /** @todo r=andy Make use of SHOW_ULONG_PROP and friends like in VBoxManageInfo to have a more uniform / prettier output.
  *               Use nesting (as padding / tabs). */
 
@@ -796,44 +816,110 @@ static HRESULT listPlatformChipsetProperties(const ComPtr<IPlatformProperties> &
 }
 
 /**
+ * Shows a single guest OS type.
+ *
+ * @returns HRESULT
+ * @param   ptrGuestOS          Guest OS type to show.
+ * @param   fLong               Set to @true to show the guest OS type information in a not-so-compact mode.
+ */
+static HRESULT showGuestOSType(ComPtr<IGuestOSType> ptrGuestOS, bool fLong)
+{
+    PlatformArchitecture_T enmPlatformArch = (PlatformArchitecture_T)PlatformArchitecture_None;
+    ptrGuestOS->COMGETTER(PlatformArchitecture)(&enmPlatformArch);
+    Bstr guestId;
+    Bstr guestDescription;
+    ptrGuestOS->COMGETTER(Description)(guestDescription.asOutParam());
+    ptrGuestOS->COMGETTER(Id)(guestId.asOutParam());
+    Bstr familyId;
+    Bstr familyDescription;
+    ptrGuestOS->COMGETTER(FamilyId)(familyId.asOutParam());
+    ptrGuestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
+    Bstr guestOSSubtype;
+    ptrGuestOS->COMGETTER(Subtype)(guestOSSubtype.asOutParam());
+    BOOL fIs64Bit;
+    ptrGuestOS->COMGETTER(Is64Bit)(&fIs64Bit);
+
+    if (fLong)
+    {
+        RTPrintf(         "ID:               %ls\n", guestId.raw());
+        RTPrintf(List::tr("Description:      %ls\n"), guestDescription.raw());
+        RTPrintf(List::tr("Family ID:        %ls\n"), familyId.raw());
+        RTPrintf(List::tr("Family Desc:      %ls\n"), familyDescription.raw());
+        if (guestOSSubtype.isNotEmpty())
+            RTPrintf(List::tr("OS Subtype:       %ls\n"), guestOSSubtype.raw());
+        RTPrintf(List::tr("Architecture:     %s\n"), platformArchitectureToStr(enmPlatformArch));
+        RTPrintf(List::tr("64 bit:           %RTbool\n"), fIs64Bit);
+    }
+    else
+    {
+        RTPrintf(         "ID / Description: %ls -- %ls\n", guestId.raw(), guestDescription.raw());
+        if (guestOSSubtype.isNotEmpty())
+            RTPrintf(List::tr("Family:           %ls / %ls (%ls)\n"),
+                     familyId.raw(), guestOSSubtype.raw(), familyDescription.raw());
+        else
+            RTPrintf(List::tr("Family:           %ls (%ls)\n"), familyId.raw(), familyDescription.raw());
+        RTPrintf(List::tr("Architecture:     %s%s\n"), platformArchitectureToStr(enmPlatformArch),
+                                                      fIs64Bit ? " (64-bit)" : "");
+    }
+    RTPrintf("\n");
+
+    return S_OK;
+}
+
+/**
  * Lists guest OS types.
  *
  * @returns HRESULT
- * @param   aGuestOSTypes       Reference to guest OS types to list.
+ * @param   aGuestOSTypes           Reference to guest OS types to list.
+ * @param   fLong                   Set to @true to list the OS types in a not-so-compact mode.
+ * @param   fSorted                 Set to @true to list the OS types in a sorted manner (by guest OS type ID).
+ * @param   enmFilterByPlatformArch Filters the output by the given platform architecture, or shows all supported guest OS types
+ *                                  if PlatformArchitecture_None is specified.
  */
-static HRESULT listGuestOSTypes(const com::SafeIfaceArray<IGuestOSType> &aGuestOSTypes)
+static HRESULT listGuestOSTypes(const com::SafeIfaceArray<IGuestOSType> &aGuestOSTypes, bool fLong, bool fSorted,
+                                PlatformArchitecture_T enmFilterByPlatformArch)
 {
-    /*
-     * Iterate through the collection.
-     */
-    for (size_t i = 0; i < aGuestOSTypes.size(); ++i)
+    RTPrintf(List::tr("Supported guest OS types%s:\n\n"),
+                      enmFilterByPlatformArch != PlatformArchitecture_None ? " (filtered)" : "");
+
+/** Filters the guest OS type output by skipping the current iteration. */
+#define FILTER_OUTPUT(a_GuestOSType) \
+    PlatformArchitecture_T enmPlatformArch = (PlatformArchitecture_T)PlatformArchitecture_None; \
+    ptrGuestOS->COMGETTER(PlatformArchitecture)(&enmPlatformArch); \
+    if (   enmFilterByPlatformArch != PlatformArchitecture_None \
+        && enmFilterByPlatformArch != enmPlatformArch) \
+        continue;
+
+    if (fSorted)
     {
-        ComPtr<IGuestOSType> guestOS;
-        guestOS = aGuestOSTypes[i];
-        Bstr guestId;
-        guestOS->COMGETTER(Id)(guestId.asOutParam());
-        RTPrintf(         "ID:              %ls\n", guestId.raw());
-        Bstr guestDescription;
-        guestOS->COMGETTER(Description)(guestDescription.asOutParam());
-        RTPrintf(List::tr("Description:     %ls\n"), guestDescription.raw());
-        Bstr familyId;
-        guestOS->COMGETTER(FamilyId)(familyId.asOutParam());
-        RTPrintf(List::tr("Family ID:       %ls\n"), familyId.raw());
-        Bstr familyDescription;
-        guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
-        RTPrintf(List::tr("Family Desc:     %ls\n"), familyDescription.raw());
-        Bstr guestOSSubtype;
-        guestOS->COMGETTER(Subtype)(guestOSSubtype.asOutParam());
-        if (guestOSSubtype.isNotEmpty())
-            RTPrintf(List::tr("OS Subtype:      %ls\n"), guestOSSubtype.raw());
-        PlatformArchitecture_T enmPlatformArch = (PlatformArchitecture_T)PlatformArchitecture_None;
-        guestOS->COMGETTER(PlatformArchitecture)(&enmPlatformArch);
-        RTPrintf(List::tr("Platform Arch.:  %s\n"), platformArchitectureToStr(enmPlatformArch));
-        BOOL is64Bit;
-        guestOS->COMGETTER(Is64Bit)(&is64Bit);
-        RTPrintf(List::tr("64 bit:          %RTbool\n"), is64Bit);
-        RTPrintf("\n");
+        std::vector<std::pair<com::Bstr, IGuestOSType *> > sortedGuestOSTypes;
+        for (size_t i = 0; i < aGuestOSTypes.size(); ++i)
+        {
+            ComPtr<IGuestOSType> ptrGuestOS = aGuestOSTypes[i];
+            FILTER_OUTPUT(ptrGuestOS);
+
+            /* We sort by guest type ID. */
+            Bstr guestId;
+            ptrGuestOS->COMGETTER(Id)(guestId.asOutParam());
+            sortedGuestOSTypes.push_back(std::pair<com::Bstr, IGuestOSType *>(guestId, ptrGuestOS));
+        }
+
+        std::sort(sortedGuestOSTypes.begin(), sortedGuestOSTypes.end());
+        for (size_t i = 0; i < sortedGuestOSTypes.size(); ++i)
+            showGuestOSType(sortedGuestOSTypes[i].second, fLong);
     }
+    else
+    {
+        for (size_t i = 0; i < aGuestOSTypes.size(); ++i)
+        {
+            ComPtr<IGuestOSType> ptrGuestOS = aGuestOSTypes[i];
+            FILTER_OUTPUT(ptrGuestOS);
+
+            showGuestOSType(ptrGuestOS, fLong);
+        }
+    }
+
+#undef FILTER_OUTPUT
 
     return S_OK;
 }
@@ -895,14 +981,6 @@ static HRESULT listPlatformProperties(const ComPtr<IPlatformProperties> &platfor
         RTPrintf(List::tr("%s chipset properties:\n"), chipsetTypeToStr(saChipset[i]));
         listPlatformChipsetProperties(platformProperties, saChipset[i]);
     }
-
-    RTPrintf("\n");
-
-    RTPrintf(List::tr("Supported guest OS types:\n\n"));
-
-    com::SafeIfaceArray<IGuestOSType> coll;
-    platformProperties->COMGETTER(SupportedGuestOSTypes(ComSafeArrayAsOutParam(coll)));
-        listGuestOSTypes(coll);
 
     return S_OK;
 }
@@ -2109,9 +2187,13 @@ enum ListType_T
  * @returns S_OK or some COM error code that has been reported in full.
  * @param   enmList             The list to produce.
  * @param   fOptLong            Long (@c true) or short list format.
+ * @param   fOptSorted          Whether the output shall be sorted or not (depends on the actual command).
+ * @param   enmPlatformArch     Filters the list by the given platform architecture,
+ *                              or processes all platforms if PlatformArchitecture_None is specified.
  * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
  */
-static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptSorted, const ComPtr<IVirtualBox> &pVirtualBox)
+static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptSorted, PlatformArchitecture_T enmPlatformArch,
+                           const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT hrc = S_OK;
     switch (enmCommand)
@@ -2206,7 +2288,7 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             com::SafeIfaceArray<IGuestOSType> coll;
             hrc = pVirtualBox->COMGETTER(GuestOSTypes)(ComSafeArrayAsOutParam(coll));
             if (SUCCEEDED(hrc))
-                listGuestOSTypes(coll);
+                listGuestOSTypes(coll, fOptLong, fOptSorted, enmPlatformArch);
             break;
         }
 
@@ -2465,17 +2547,20 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
  */
 RTEXITCODE handleList(HandlerArg *a)
 {
-    bool                fOptLong      = false;
-    bool                fOptMultiple  = false;
-    bool                fOptSorted    = false;
-    bool                fFirst        = true;
-    enum ListType_T     enmOptCommand = kListNotSpecified;
-    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
+    bool                   fOptLong        = false;
+    bool                   fOptMultiple    = false;
+    bool                   fOptSorted      = false;
+    PlatformArchitecture_T enmPlatformArch = PlatformArchitecture_None;
+    bool                   fFirst          = true;
+    enum ListType_T        enmOptCommand   = kListNotSpecified;
+    RTEXITCODE             rcExit          = RTEXITCODE_SUCCESS;
 
     static const RTGETOPTDEF s_aListOptions[] =
     {
         { "--long",             'l',                     RTGETOPT_REQ_NOTHING },
         { "--multiple",         'm',                     RTGETOPT_REQ_NOTHING }, /* not offical yet */
+        { "--platform-arch",    'p',                     RTGETOPT_REQ_STRING  },
+        { "--platform",         'p',                     RTGETOPT_REQ_STRING  }, /* shortcut for '--platform-arch' */
         { "--sorted",           's',                     RTGETOPT_REQ_NOTHING },
         { "vms",                kListVMs,                RTGETOPT_REQ_NOTHING },
         { "runningvms",         kListRunningVMs,         RTGETOPT_REQ_NOTHING },
@@ -2533,16 +2618,22 @@ RTEXITCODE handleList(HandlerArg *a)
                 fOptLong = true;
                 break;
 
-            case 's':
-                fOptSorted = true;
-                break;
-
             case 'm':
                 fOptMultiple = true;
                 if (enmOptCommand == kListNotSpecified)
                     break;
                 ch = enmOptCommand;
                 RT_FALL_THRU();
+
+            case 'p':  /* --platform[-arch] */
+                enmPlatformArch = platformArchitectureToStr(ValueUnion.psz);
+                if (enmPlatformArch == PlatformArchitecture_None)
+                    return errorSyntax(List::tr("Invalid platform architecture specified"));
+                break;
+
+            case 's':
+                fOptSorted = true;
+                break;
 
             case kListVMs:
             case kListRunningVMs:
@@ -2591,7 +2682,7 @@ RTEXITCODE handleList(HandlerArg *a)
                     else
                         RTPrintf("\n");
                     RTPrintf("[%s]\n", ValueUnion.pDef->pszLong);
-                    HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, a->virtualBox);
+                    HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, enmPlatformArch, a->virtualBox);
                     if (FAILED(hrc))
                         rcExit = RTEXITCODE_FAILURE;
                 }
@@ -2612,7 +2703,7 @@ RTEXITCODE handleList(HandlerArg *a)
         return errorSyntax(List::tr("Missing subcommand for \"list\" command.\n"));
     if (!fOptMultiple)
     {
-        HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, a->virtualBox);
+        HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, enmPlatformArch, a->virtualBox);
         if (FAILED(hrc))
             rcExit = RTEXITCODE_FAILURE;
     }

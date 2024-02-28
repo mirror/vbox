@@ -50,6 +50,10 @@
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage list</command>
       <arg>--long</arg>
+      <arg>--platform-arch=<group choice="plain">
+        <arg choice="plain">x86</arg>
+        <arg choice="plain">arm</arg>
+      </group></arg>
       <arg>--sorted</arg>
       <group>
         <arg choice="plain">bridgedifs</arg>
@@ -99,16 +103,24 @@
         <varlistentry>
           <term><option>--long</option></term>
           <listitem><para>
-              Shows detailed information about each information entry
-              if available. The short form of this option is
-              <option>-l</option>.
-            </para></listitem>
+            Shows detailed information about each information entry
+            if available. The short form of this option is
+            <option>-l</option>.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--platform-arch</option></term>
+          <listitem><para>
+            Filters the output by the given platform architecture
+            (if available, otherwise ignored). The short form of this option
+            is <option>-p</option>.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--sorted</option></term>
           <listitem><para>
               Sorts the list of information entries alphabetically. The
-               short form of this option is <option>-s</option>.
+              short form of this option is <option>-s</option>.
             </para></listitem>
         </varlistentry>
       </variablelist>
