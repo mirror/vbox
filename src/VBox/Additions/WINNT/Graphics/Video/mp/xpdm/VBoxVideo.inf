@@ -76,7 +76,7 @@ AddReg = vboxvideo_EventLog_AddReg
 HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\VBoxVideo.sys"
 HKR,,TypesSupported,0x00010001,7
 
-[VBoxVideo.SoftwareSettings]
+[VBoxVideo_Install.SoftwareSettings]
 AddReg = vboxvideo_SoftwareDeviceSettings
 
 [vboxvideo_SoftwareDeviceSettings]
@@ -85,7 +85,7 @@ HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDisp
 HKR,, Acceleration.Level, %REG_DWORD%, 0
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
-[VBoxVideo.OpenGLSoftwareSettings]
+[VBoxVideo_Install.OpenGLSoftwareSettings]
 
 ;x86   [SourceDisksNames]
 ;amd64 [SourceDisksNames.amd64]
