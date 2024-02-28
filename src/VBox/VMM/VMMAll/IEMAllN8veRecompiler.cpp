@@ -13373,9 +13373,10 @@ iemNativeEmitFetchFpuFcw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint16_t));
 
     /* Allocate a temporary FCW register. */
+    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, false /*fInitialized*/);
     uint8_t const idxFcwReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFcw, kIemNativeGstRegUse_ReadOnly);
 
-    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxDstVar, idxFcwReg);
+    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxReg, idxFcwReg);
 
     /* Free but don't flush the FCW register. */
     iemNativeRegFreeTmp(pReNative, idxFcwReg);
@@ -13395,9 +13396,10 @@ iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint16_t));
 
     /* Allocate a temporary FSW register. */
+    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, false /*fInitialized*/);
     uint8_t const idxFswReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw, kIemNativeGstRegUse_ReadOnly);
 
-    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxDstVar, idxFswReg);
+    off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxReg, idxFswReg);
 
     /* Free but don't flush the FSW register. */
     iemNativeRegFreeTmp(pReNative, idxFswReg);
