@@ -2825,12 +2825,11 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
             for (uint32_t iIterations = 0; ; iIterations++)
             {
                 /* Translate PC to physical address, we'll need this for both lookup and compilation. */
-                RTGCPHYS const GCPhysPc    = iemGetPcWithPhysAndCode(pVCpu);
-                uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
-
-                pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
+                RTGCPHYS const GCPhysPc = iemGetPcWithPhysAndCode(pVCpu);
                 if (RT_LIKELY(pVCpu->iem.s.pbInstrBuf != NULL))
                 {
+                    uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
+                    pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
                     if (pTb)
                         rcStrict = iemTbExec(pVCpu, pTb);
                     else
