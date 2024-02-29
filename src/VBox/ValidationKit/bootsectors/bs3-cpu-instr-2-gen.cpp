@@ -315,7 +315,7 @@ int main(int argc, char **argv)
                         a_ValueType       uResult = 0; \
                         uint32_t          fEflOut = s_aInstr[iInstr].a_pfnMember(uSrc1, uSrc2, 0 /*fCarry*/, &uResult) \
                                                   & X86_EFL_STATUS_BITS; \
-                        if (iTry < _1M && (fEflOut & fMustBeClear) || (~fEflOut & fMustBeSet)) \
+                        if (iTry < _1M && ((fEflOut & fMustBeClear) || (~fEflOut & fMustBeSet))) \
                             continue; \
                         fSet   |= fEflOut; \
                         fClear |= ~fEflOut; \
