@@ -218,10 +218,10 @@ void SharedClipboardWinDataObject::uninitInternal(void)
             ShClTransferStop(m_pTransfer);
 
         lock();
-
-        /* Make sure to release the transfer. */
-        setTransferLocked(NULL);
     }
+
+    /* Make sure to release the transfer in any state. */
+    setTransferLocked(NULL);
 
     unlock();
 }
@@ -279,9 +279,6 @@ void SharedClipboardWinDataObject::Destroy(void)
         delete[] m_pStgMedium;
         m_pStgMedium = NULL;
     }
-
-    if (m_pTransfer)
-        ShClTransferRelease(m_pTransfer);
 
     FsObjEntryList::const_iterator itRoot = m_lstEntries.cbegin();
     while (itRoot != m_lstEntries.end())
@@ -565,8 +562,6 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
             rc = RTSemEventSignal(pThis->m_EventListComplete);
             if (RT_SUCCESS(rc))
             {
-                pThis->lock();
-
                 AssertReleaseMsg(pThis->m_lstEntries.size(),
                                  ("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
 
@@ -577,13 +572,8 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                     if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
                         break;
 
-                    pThis->unlock();
-
                     /* Transferring stuff can take a while, so don't use any timeout here. */
                     rc = RTSemEventWait(pThis->m_EventStatusChanged, RT_INDEFINITE_WAIT);
-
-                    pThis->lock();
-
                     if (RT_FAILURE(rc))
                         break;
 
@@ -620,8 +610,6 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                             break;
                     }
 
-                    pThis->unlock();
-
                     if (pThis->m_Callbacks.pfnTransferEnd)
                     {
                         int rc2 = pThis->m_Callbacks.pfnTransferEnd(&pThis->m_CallbackCtx, pTransfer, pThis->m_rcStatus);
@@ -629,12 +617,8 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                             rc = rc2;
                     }
 
-                    pThis->lock();
-
                     break;
-                }
-
-                pThis->unlock();
+                } /* for */
             }
         }
     }
@@ -805,10 +789,6 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
     int rc = VINF_SUCCESS;
 
-    /* Pre-check -- see if the data object still is alive. */
-    if (m_enmStatus == Uninitialized)
-        rc = VERR_OBJECT_DESTROYED;
-
     if (    RT_SUCCESS(rc)
         && (   pFormatEtc->cfFormat == m_cfFileDescriptorA
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
@@ -840,6 +820,8 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 /* Re-acquire lock. */
                 lock();
 
+                LogFunc(("Wait resulted in %Rrc and status %#x\n", rc, m_enmStatus));
+
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("Shared Clipboard: Waiting for IDataObject status failed, rc=%Rrc\n", rc));
@@ -863,14 +845,16 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
             {
                 const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
+                /* Leave lock while waiting. */
+                unlock();
+
                 SHCLTRANSFERSTATUS const enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
-                RT_NOREF(enmTransferStatus);
 
                 LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s\n",
                              fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus)));
 
                 /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-                if (ShClTransferGetStatus(m_pTransfer) != SHCLTRANSFERSTATUS_STARTED)
+                if (enmTransferStatus != SHCLTRANSFERSTATUS_STARTED)
                 {
                     /* Start the transfer + run it asynchronously in a separate thread. */
                     rc = ShClTransferStart(m_pTransfer);
@@ -879,9 +863,6 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                         rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
                         if (RT_SUCCESS(rc))
                         {
-                            /* Leave lock while waiting. */
-                            unlock();
-
                             /* Don't block for too long here, as this also will screw other apps running on the OS. */
                             LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
                             rc = RTSemEventWait(m_EventListComplete, RT_MS_10SEC);
@@ -892,12 +873,16 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                             if (   m_pTransfer == NULL
                                 || m_enmStatus != Running) /* Still in running state? */
                             {
-                                rc = VERR_OBJECT_DESTROYED;
+                                rc = VERR_SHCLPB_NO_DATA;
                                 break;
                             }
+
+                            unlock();
                         }
                     }
                 }
+
+                lock();
 
                 if (RT_SUCCESS(rc))
                 {
@@ -1146,14 +1131,13 @@ STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to assign.
- *                              Must be in INITIALIZED state.
  *                              When set to NULL, the transfer will be released from the object.
  */
 int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
 {
     AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);
 
-    LogFlowFunc(("pTransfer=%p\n", pTransfer));
+    LogFunc(("pTransfer=%p\n", pTransfer));
 
     int rc = VINF_SUCCESS;
 
@@ -1163,20 +1147,14 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
 
         if (m_enmStatus == Initialized)
         {
-            SHCLTRANSFERSTATUS const enmSts = ShClTransferGetStatus(pTransfer);
-            AssertMsgStmt(enmSts == SHCLTRANSFERSTATUS_INITIALIZED, /* Transfer must not be started yet. */
-                          ("Transfer has wrong status (%#x)\n", enmSts), rc = VERR_WRONG_ORDER);
-            if (RT_SUCCESS(rc))
-            {
-                m_pTransfer = pTransfer;
+            m_pTransfer = pTransfer;
 
-                SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
-                AssertPtr(pWinURITransferCtx);
+            SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
+            AssertPtr(pWinURITransferCtx);
 
-                pWinURITransferCtx->pDataObj = this; /* Save a backref to this object. */
+            pWinURITransferCtx->pDataObj = this; /* Save a backref to this object. */
 
-                ShClTransferAcquire(pTransfer);
-            }
+            ShClTransferAcquire(pTransfer);
         }
         else
             AssertFailedStmt(rc = VERR_WRONG_ORDER);
@@ -1207,7 +1185,6 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to assign.
- *                              Must be in INITIALIZED state.
  *                              When set to NULL, the transfer will be released from the object.
  */
 int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)

@@ -311,7 +311,7 @@ static DECLCALLBACK(int) shClSvcWinTransferOnInitializeCallback(PSHCLTRANSFERCAL
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
-            rc = SharedClipboardWinTransferHandOffToDataObject(&pCtx->Win, pTransfer);
+            rc = SharedClipboardWinTransferInitialize(&pCtx->Win, pTransfer);
             break;
         }
 
@@ -328,6 +328,45 @@ static DECLCALLBACK(int) shClSvcWinTransferOnInitializeCallback(PSHCLTRANSFERCAL
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ *
+ * Called by ShClTransferInit via VbglR3.
+ * For H->G: Called on transfer intialization to start the data transfer for the "in-flight" IDataObject.
+ * For G->H: Nothing to do here.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) shClSvcWinTransferOnInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    switch(ShClTransferGetDir(pTransfer))
+    {
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        {
+            rc = SharedClipboardWinTransferStart(&pCtx->Win, pTransfer);
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
+            break;
+
+        default:
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
 }
 
 /**
@@ -839,9 +878,10 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
         pClient->Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
         pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-        pClient->Transfers.Callbacks.pfnOnCreated    = shClSvcWinTransferOnCreatedCallback;
-        pClient->Transfers.Callbacks.pfnOnInitialize = shClSvcWinTransferOnInitializeCallback;
-        pClient->Transfers.Callbacks.pfnOnDestroy    = shClSvcWinTransferOnDestroyCallback;
+        pClient->Transfers.Callbacks.pfnOnCreated     = shClSvcWinTransferOnCreatedCallback;
+        pClient->Transfers.Callbacks.pfnOnInitialize  = shClSvcWinTransferOnInitializeCallback;
+        pClient->Transfers.Callbacks.pfnOnInitialized = shClSvcWinTransferOnInitializedCallback;
+        pClient->Transfers.Callbacks.pfnOnDestroy     = shClSvcWinTransferOnDestroyCallback;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     }
     else

@@ -1191,16 +1191,30 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
 }
 
 /**
- * Hands off a transfer to the current data object in-flight.
+ * Initializes a Windows transfer for a given data object.
  *
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
- * @param   pTransfer           Transfer to hand off to the data object.
- *
- * @note    The data object will be put into running state on success and handed over to Windows.
- *          Our data object pointer will be invalid afterwards.
+ * @param   pTransfer           Transfer to initialize for the data object.
+ * @param   pObj                Data object to initialize transfer for.
  */
-int SharedClipboardWinTransferHandOffToDataObject(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+static int sharedClipboardWinTransferInitializeInternal(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer,
+                                                        SharedClipboardWinDataObject *pObj)
+{
+    RT_NOREF(pWinCtx);
+
+    return pObj->SetTransfer(pTransfer);
+}
+
+/**
+ * Initializes a Windows transfer for the current data object in-flight.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_WRONG_ORDER if no current in-flight data object is available.
+ * @param   pWinCtx             Windows context to use.
+ * @param   pTransfer           Transfer to initialize for the data object.
+ */
+int SharedClipboardWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     int rc = RTCritSectEnter(&pWinCtx->CritSect);
     if (RT_SUCCESS(rc))
@@ -1208,17 +1222,58 @@ int SharedClipboardWinTransferHandOffToDataObject(PSHCLWINCTX pWinCtx, PSHCLTRAN
         SharedClipboardWinDataObject *pObj = pWinCtx->pDataObjInFlight;
         if (pObj)
         {
-            rc = pObj->SetTransfer(pTransfer);
-            if (RT_SUCCESS(rc))
-                rc = pObj->SetStatus(SharedClipboardWinDataObject::Running);
-
-            pWinCtx->pDataObjInFlight = NULL; /* Hand off to Windows. */
+            rc = sharedClipboardWinTransferInitializeInternal(pWinCtx, pTransfer, pObj);
         }
-        else
-        {
-            AssertMsgFailed(("No data object in flight (yet)!\n"));
+        else /* No current in-flight data object. */
             rc = VERR_WRONG_ORDER;
+
+        int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+        AssertRC(rc2);
+    }
+
+    return rc;
+}
+
+/**
+ * Starts a Windows transfer for a given data object.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ * @param   pObj                Data object to start transfer for.
+ */
+static int sharedClipboardWinTransferStartInternal(PSHCLWINCTX pWinCtx, SharedClipboardWinDataObject *pObj)
+{
+    RT_NOREF(pWinCtx);
+
+    return pObj->SetStatus(SharedClipboardWinDataObject::Running);
+}
+
+/**
+ * Starts a Windows transfer for the current data object in-flight.
+ *
+ * This hands off the data object in-flight to Windows on success.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_WRONG_ORDER if no current in-flight data object is available.
+ * @param   pWinCtx             Windows context to use.
+ * @param   pTransfer           Transfer to initialize for the data object.
+ */
+int SharedClipboardWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+{
+    RT_NOREF(pTransfer);
+
+    int rc = RTCritSectEnter(&pWinCtx->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        SharedClipboardWinDataObject *pObj = pWinCtx->pDataObjInFlight;
+        if (pObj)
+        {
+            rc = sharedClipboardWinTransferStartInternal(pWinCtx, pObj);
+            if (RT_SUCCESS(rc))
+                pWinCtx->pDataObjInFlight = NULL; /* Hand off to Windows on success. */
         }
+        else /* No current in-flight data object. */
+            rc = VERR_WRONG_ORDER;
 
         int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
         AssertRC(rc2);

@@ -164,8 +164,8 @@ static DECLCALLBACK(void) vbtrShClTransferDestroyCallback(PSHCLTRANSFERCALLBACKC
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialize
  *
  * Called by ShClTransferInit via VbglR3.
- * For G->H: Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
- * For H->G: Called on transfer intialization to populate the transfer's root list.
+ * For H->G: Called on transfer intialization to initialize the "in-flight" IDataObject for a data transfer.
+ * For G->H: Called on transfer intialization to populate the transfer's root list.
  *
  * @thread  Clipboard main thread.
  */
@@ -183,13 +183,13 @@ static DECLCALLBACK(int) vbtrShClTransferInitializeCallback(PSHCLTRANSFERCALLBAC
 
     switch(ShClTransferGetDir(pTransfer))
     {
-        case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
         {
-            rc = SharedClipboardWinTransferHandOffToDataObject(&pCtx->Win, pTransfer);
+            rc = SharedClipboardWinTransferInitialize(&pCtx->Win, pTransfer);
             break;
         }
 
-        case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
         {
             rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
             break;
@@ -201,6 +201,45 @@ static DECLCALLBACK(int) vbtrShClTransferInitializeCallback(PSHCLTRANSFERCALLBAC
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ *
+ * Called by ShClTransferInit via VbglR3.
+ * For H->G: Called on transfer intialization to start the data transfer for the "in-flight" IDataObject.
+ * For G->H: Nothing to do here.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    switch(ShClTransferGetDir(pTransfer))
+    {
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        {
+            rc = SharedClipboardWinTransferStart(&pCtx->Win, pTransfer);
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
+            break;
+
+        default:
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
 }
 
 /**
@@ -972,6 +1011,7 @@ DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnCreated     = vbtrShClTransferCreatedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnDestroy     = vbtrShClTransferDestroyCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize  = vbtrShClTransferInitializeCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized = vbtrShClTransferInitializedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnStarted     = vbtrShClTransferStartedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted   = vbtrShClTransferCompletedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnError       = vbtrShClTransferErrorCallback;
