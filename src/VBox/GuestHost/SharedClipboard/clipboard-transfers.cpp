@@ -2063,7 +2063,7 @@ int ShClTransferRootsInitFromFile(PSHCLTRANSFER pTransfer, const char *pszFile)
 
     int rc = RTStrAAppend(&pszRoots, pszFile);
     AssertRCReturn(rc, rc);
-    rc = RTStrAAppend(&pszRoots, "\r\n");
+    rc = RTStrAAppend(&pszRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
     AssertRCReturn(rc, rc);
     rc =  ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1 /* Include terminator */);
     RTStrFree(pszRoots);
