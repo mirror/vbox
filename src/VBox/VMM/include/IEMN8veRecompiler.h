@@ -398,19 +398,22 @@ typedef union IEMLIVENESSBIT
     {                                     /*   bit no */
         uint64_t    bmGprs      : 16;   /**< 0x00 /  0: The 16 general purpose registers. */
         uint64_t    fUnusedPc   :  1;   /**< 0x10 / 16: (PC in ) */
-        uint64_t    uPadding1   :  3;   /**< 0x11 / 17: */
+        uint64_t    fCr0        :  1;   /**< 0x11 / 17: */
+        uint64_t    fFcw        :  1;   /**< 0x12 / 18: */
+        uint64_t    fFsw        :  1;   /**< 0x13 / 19: */
         uint64_t    bmSegBase   :  6;   /**< 0x14 / 20: */
         uint64_t    bmSegAttrib :  6;   /**< 0x1a / 26: */
         uint64_t    bmSegLimit  :  6;   /**< 0x20 / 32: */
         uint64_t    bmSegSel    :  6;   /**< 0x26 / 38: */
-        uint64_t    fEflOther   :  1;   /**< 0x2c / 44: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). First! */
-        uint64_t    fEflCf      :  1;   /**< 0x2d / 45: Carry flag          (X86_EFL_CF / 0). */
-        uint64_t    fEflPf      :  1;   /**< 0x2e / 46: Parity flag         (X86_EFL_PF / 2). */
-        uint64_t    fEflAf      :  1;   /**< 0x2f / 47: Auxilary carry flag (X86_EFL_AF / 4). */
-        uint64_t    fEflZf      :  1;   /**< 0x30 / 48: Zero flag           (X86_EFL_ZF / 6). */
-        uint64_t    fEflSf      :  1;   /**< 0x31 / 49: Signed flag         (X86_EFL_SF / 7). */
-        uint64_t    fEflOf      :  1;   /**< 0x32 / 50: Overflow flag       (X86_EFL_OF / 12). */
-        uint64_t    uUnused     : 13;     /* 0x33 / 51 -> 0x40/64 */
+        uint64_t    fCr4        :  1;   /**< 0x2c / 44: */
+        uint64_t    fEflOther   :  1;   /**< 0x2d / 45: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). First! */
+        uint64_t    fEflCf      :  1;   /**< 0x2e / 46: Carry flag          (X86_EFL_CF / 0). */
+        uint64_t    fEflPf      :  1;   /**< 0x2f / 47: Parity flag         (X86_EFL_PF / 2). */
+        uint64_t    fEflAf      :  1;   /**< 0x20 / 48: Auxilary carry flag (X86_EFL_AF / 4). */
+        uint64_t    fEflZf      :  1;   /**< 0x31 / 49: Zero flag           (X86_EFL_ZF / 6). */
+        uint64_t    fEflSf      :  1;   /**< 0x32 / 50: Signed flag         (X86_EFL_SF / 7). */
+        uint64_t    fEflOf      :  1;   /**< 0x33 / 51: Overflow flag       (X86_EFL_OF / 12). */
+        uint64_t    uUnused     : 12;     /* 0x34 / 52 -> 0x40/64 */
     };
 } IEMLIVENESSBIT;
 AssertCompileSize(IEMLIVENESSBIT, 8);
@@ -472,7 +475,7 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 
 /** @name 64-bit value masks for IEMLIVENESSENTRY.
  * @{ */                                      /*         0xzzzzyyyyxxxxwwww */
-#define IEMLIVENESSBIT_MASK                     UINT64_C(0x0007fffffff0ffff)
+#define IEMLIVENESSBIT_MASK                     UINT64_C(0x000ffffffffeffff)
 
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
 # define IEMLIVENESSBIT0_XCPT_OR_CALL           UINT64_C(0x0000000000000000)
@@ -482,7 +485,7 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 # define IEMLIVENESSBIT1_ALL_UNUSED             UINT64_C(0x0000000000000000)
 #endif
 
-#define IEMLIVENESSBIT_ALL_EFL_MASK             UINT64_C(0x0007f00000000000)
+#define IEMLIVENESSBIT_ALL_EFL_MASK             UINT64_C(0x000fe00000000000)
 
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
 # define IEMLIVENESSBIT0_ALL_EFL_INPUT          IEMLIVENESSBIT_ALL_EFL_MASK
@@ -677,10 +680,12 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 /**
  * Guest registers that can be shadowed in GPRs.
  *
- * This runs parallel to the first 128-bits of liveness state.  To avoid having
- * the SegLimitXxxx range cross from the 1st 64-bit word to the 2nd,
- * we've inserted some padding.  The EFlags must be placed last, as the liveness
- * state tracks it as 7 subcomponents and we don't want to waste space here.
+ * This runs parallel to the liveness state (IEMLIVENESSBIT, ++). The EFlags
+ * must be placed last, as the liveness state tracks it as 7 subcomponents and
+ * we don't want to waste space here.
+ *
+ * @note Make sure to update IEMLIVENESSBIT, IEMLIVENESSBIT_ALL_EFL_MASK and
+ *       friends as well as IEMAllN8veLiveness.cpp.
  */
 typedef enum IEMNATIVEGSTREG : uint8_t
 {
@@ -703,6 +708,7 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;
 AssertCompile((int)kIemNativeGstReg_SegLimitFirst == 32);
+AssertCompile((UINT64_C(0x7f) << kIemNativeGstReg_EFlags) == IEMLIVENESSBIT_ALL_EFL_MASK);
 
 /** @name Helpers for converting register numbers to IEMNATIVEGSTREG values.
  * @{  */
