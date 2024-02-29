@@ -44,6 +44,11 @@ class SHARED_LIBRARY_STUFF UIDefaultMachineFolderEditor : public UIEditor
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notify listeners about @a strPath changed. */
+    void sigPathChanged(const QString &strPath);
+
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */

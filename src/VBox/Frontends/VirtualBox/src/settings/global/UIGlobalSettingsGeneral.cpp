@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QDir>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -122,6 +123,9 @@ void UIGlobalSettingsGeneral::getFromCache()
         m_pEditorDefaultMachineFolder->setValue(oldData.m_strDefaultMachineFolder);
     if (m_pEditorVRDEAuthLibrary)
         m_pEditorVRDEAuthLibrary->setValue(oldData.m_strVRDEAuthLibrary);
+
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIGlobalSettingsGeneral::putToCache()
@@ -151,6 +155,30 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
+}
+
+bool UIGlobalSettingsGeneral::validate(QList<UIValidationMessage> &messages)
+{
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+
+    /* Check for the folder presence: */
+    if (   m_pEditorDefaultMachineFolder
+        && !QDir(m_pEditorDefaultMachineFolder->value()).exists())
+    {
+        message.second << tr("Default machine folder is missing.");
+        fPass = false;
+    }
+
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* Return result: */
+    return fPass;
 }
 
 void UIGlobalSettingsGeneral::retranslateUi()
@@ -188,6 +216,8 @@ void UIGlobalSettingsGeneral::prepareWidgets()
         {
             addEditor(m_pEditorDefaultMachineFolder);
             pLayout->addWidget(m_pEditorDefaultMachineFolder);
+            connect(m_pEditorDefaultMachineFolder, &UIDefaultMachineFolderEditor::sigPathChanged,
+                    this, &UIGlobalSettingsGeneral::revalidate);
         }
 
         /* Prepare 'VRDE auth library' editor: */

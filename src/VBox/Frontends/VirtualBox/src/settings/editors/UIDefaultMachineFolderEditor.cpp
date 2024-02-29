@@ -106,6 +106,8 @@ void UIDefaultMachineFolderEditor::prepare()
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
             m_pSelector->setInitialPath(uiCommon().homeFolder());
+            connect(m_pSelector, &UIFilePathSelector::pathChanged,
+                    this, &UIDefaultMachineFolderEditor::sigPathChanged);
 
             m_pLayout->addWidget(m_pSelector, 0, 1);
         }
