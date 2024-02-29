@@ -469,7 +469,7 @@ typedef SHCLLISTENTRY *PSHCLLISTENTRY;
 typedef SHCLLISTENTRY *PCSHCLLISTENTRY;
 
 /** Maximum length (in UTF-8 characters) of a list entry name. Includes terminator. */
-#define SHCLLISTENTRY_MAX_NAME     1024
+#define SHCLLISTENTRY_MAX_NAME     4096
 
 /**
  * Structure for a generic Shared Clipboard list.
