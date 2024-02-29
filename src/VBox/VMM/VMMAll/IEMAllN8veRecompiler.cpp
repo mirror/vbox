@@ -6149,6 +6149,162 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 
 
 /*********************************************************************************************************************************
+*   Native Emitter Support.                                                                                                      *
+*********************************************************************************************************************************/
+
+
+#define IEM_MC_NATIVE_IF(a_fSupportedHosts)     if (RT_ARCH_VAL & (a_fSupportedHosts)) {
+
+#define IEM_MC_NATIVE_ELSE()                    } else {
+
+#define IEM_MC_NATIVE_ENDIF()                   } ((void)0)
+
+
+#define IEM_MC_NATIVE_EMIT_0(a_fnEmitter) \
+    off = a_fnEmitter(pReNative, off)
+
+#define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0) \
+    off = a_fnEmitter(pReNative, off, (a0))
+
+#define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1))
+
+#define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2))
+
+#define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3))
+
+#define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3), (a4))
+
+#define IEM_MC_NATIVE_EMIT_6(a_fnEmitter, a0, a1, a2, a3, a4, a5) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3), (a4), (a5))
+
+#define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3), (a4), (a5), (a6))
+
+#define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7) \
+    off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3), (a4), (a5), (a6), (a7))
+
+
+/**
+ * This is an implementation of IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL
+ * and friends.
+ *
+ * It takes liveness stuff into account.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEfl,
+                              uint8_t cOpBits, uint8_t idxRegResult)
+{
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+    if (1) /** @todo check if all bits are clobbered. */
+#endif
+    {
+#ifdef RT_ARCH_AMD64
+        /*
+         * Collect flags and merge them with eflags.
+         */
+        /** @todo we could alternatively use SAHF here when host rax is free since,
+         *        OF is cleared. */
+        PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        /* pushf - do this before any reg allocations as they may emit instructions too. */
+        pCodeBuf[off++] = 0x9c;
+
+        uint8_t const idxRegEfl = iemNativeVarRegisterAcquire(pReNative, idxVarEfl, &off, true /*fInitialized*/);
+        uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+        pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2 + 6 + 6 + 3);
+        /* pop   tmp */
+        if (idxTmpReg >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0x58 + (idxTmpReg & 7);
+        /* and  tmp, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF */
+        off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxTmpReg, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF);
+        /* Clear the status bits in EFLs. */
+        off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegEfl, ~X86_EFL_STATUS_BITS);
+        /* OR in the flags we collected. */
+        off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off, idxRegEfl, idxTmpReg);
+        iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+        iemNativeRegFreeTmp(pReNative, idxTmpReg);
+        RT_NOREF(cOpBits, idxRegResult);
+
+#elif defined(RT_ARCH_ARM64)
+        /*
+         * Calculate flags.
+         */
+        uint8_t const         idxRegEfl = iemNativeVarRegisterAcquire(pReNative, idxVarEfl, &off, true /*fInitialized*/);
+        uint8_t const         idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+        PIEMNATIVEINSTR const pCodeBuf  = iemNativeInstrBufEnsure(pReNative, off, 15);
+
+        /* Clear the status bits. ~0x8D5 (or ~0x8FD) can't be AND immediate, so use idxTmpReg for constant. */
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, idxTmpReg, ~X86_EFL_STATUS_BITS);
+        off = iemNativeEmitAndGpr32ByGpr32Ex(pCodeBuf, off, idxRegEfl, idxTmpReg);
+
+        /* Calculate zero: mov tmp, zf; cmp result,zero; csel.eq tmp,tmp,wxr */
+        if (cOpBits > 32)
+            off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, idxRegResult, ARMV8_A64_REG_XZR);
+        else
+            off = iemNativeEmitCmpGpr32WithGprEx(pCodeBuf, off, idxRegResult, ARMV8_A64_REG_XZR);
+# if 0
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, idxTmpReg, X86_EFL_ZF);
+        pCodeBuf[off++] = Armv8A64MkInstrCSel(idxTmpReg, idxTmpReg, ARMV8_A64_REG_XZR, kArmv8InstrCond_Eq, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/);
+# else
+        pCodeBuf[off++] = Armv8A64MkInstrCSet(idxTmpReg, kArmv8InstrCond_Eq, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/, X86_EFL_ZF_BIT);
+# endif
+
+        /* Calculate signed: We could use the native SF flag, but it's just as simple to calculate it by shifting. */
+        pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxRegResult, cOpBits - 1, cOpBits > 32 /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/, X86_EFL_SF_BIT);
+
+        /* Calculate 8-bit parity of the result. */
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxRegResult, idxRegResult, false /*f64Bit*/,
+                                             4 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg,    idxTmpReg,    false /*f64Bit*/,
+                                             2 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg,    idxTmpReg,    false /*f64Bit*/,
+                                             1 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        Assert(Armv8A64ConvertImmRImmS2Mask32(0, 0) == 1);
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxTmpReg, X86_EFL_PF_BIT, 1,  false /*f64Bit*/);
+
+        iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+        iemNativeRegFreeTmp(pReNative, idxTmpReg);
+#else
+# error "port me"
+#endif
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+    return off;
+}
+
+/** @todo move this somewhere else ... */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    /*
+     * The XOR instruction will clear OF, CF and AF (latter is off undefined),
+     * so we don't need the initial destination value.
+     */
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+    uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+    //off = iemNativeEmitBrk(pReNative, off, 0x2222);
+    if (cOpBits > 32)
+        off = iemNativeEmitXorGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
+    else
+        off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+    return off;
+}
+
+
+/*********************************************************************************************************************************
 *   Emitters for standalone C-implementation deferals (IEM_MC_DEFER_TO_CIMPL_XXXX)                                               *
 *********************************************************************************************************************************/
 

@@ -206,6 +206,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
+#define IEM_MC_LOCAL_EFLAGS(a_Name)                     uint32_t a_Name = pVCpu->cpum.GstCtx.eflags.u
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
    do { pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); } while (0)
 #define IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) do { \
@@ -2560,6 +2561,23 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) \
     ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmp(pVCpu, (a_bRm), (a_cbImmAndRspOffset)))
 #endif
+
+
+/** The @a a_fSpportedHosts mask are ORed together RT_ARCH_VAL_XXX values. */
+#define IEM_MC_NATIVE_IF(a_fSupportedHosts)                               if (false) {
+#define IEM_MC_NATIVE_ELSE()                                              } else {
+#define IEM_MC_NATIVE_ENDIF()                                             } ((void)0)
+
+#define IEM_MC_NATIVE_EMIT_0(a_fnEmitter)
+#define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0)                             (void)(a0)
+#define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1)                         (void)(a0), (void)(a1)
+#define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2)                     (void)(a0), (void)(a1), (void)(a2)
+#define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3)                 (void)(a0), (void)(a1), (void)(a2), (void)(a3)
+#define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4)             (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4)
+#define IEM_MC_NATIVE_EMIT_6(a_fnEmitter, a0, a1, a2, a3, a4, a5)         (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5)
+#define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6)     (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6)
+#define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7) (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6), (void)(a7)
+
 
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                   (a_pfn)()
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)               (a_pfn)((a0))

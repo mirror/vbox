@@ -573,6 +573,27 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEM_MC_END() \
     }
+
+#define IEM_MC_NATIVE_IF(a_fSupportedHosts) \
+    (void)fMcBegin; \
+    AssertCompile(   (a_fSupportedHosts) == 0 \
+                  || (a_fSupportedHosts) == RT_ARCH_VAL_AMD64 \
+                  || (a_fSupportedHosts) == RT_ARCH_VAL_ARM64 \
+                  || (a_fSupportedHosts) == (RT_ARCH_VAL_ARM64 | RT_ARCH_VAL_AMD64) ); \
+    if (g_fRandom) {
+#define IEM_MC_NATIVE_ELSE()                                            } else {
+#define IEM_MC_NATIVE_ENDIF()                                           } do { (void)fMcBegin; } while (0)
+
+#define IEM_MC_NATIVE_EMIT_0(a_fnEmitter)                                 do { (void)fMcBegin; } while (0)
+#define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0)                             do { (void)fMcBegin; (void)(a0); } while (0)
+#define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1)                         do { (void)fMcBegin; (void)(a0), (void)(a1); } while (0)
+#define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2)                     do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2); } while (0)
+#define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3)                 do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2), (void)(a3); } while (0)
+#define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4)             do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4); } while (0)
+#define IEM_MC_NATIVE_EMIT_6(a_fnEmitter, a0, a1, a2, a3, a4, a5)         do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5); } while (0)
+#define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6)     do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6); } while (0)
+#define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7) do { (void)fMcBegin; (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6), (void)(a7); } while (0)
+
 #define IEM_MC_NO_NATIVE_RECOMPILE()                    ((void)0)
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH()                 do { (void)fMcBegin; return VINF_SUCCESS; } while (0)

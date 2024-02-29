@@ -980,6 +980,19 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_bMapInfo, a_u16FSW)                      NOP()
 #define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_bMapInfo)                                            NOP()
 
+#define IEM_MC_NATIVE_IF(a_fSupportedHosts)                                                     {
+#define IEM_MC_NATIVE_ELSE()                                                                    } {
+#define IEM_MC_NATIVE_ENDIF()                                                                   } ((void)0)
+
+#define IEM_MC_NATIVE_EMIT_0(a_fnEmitter)
+#define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0)                                                   NOP()
+#define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1)                                               NOP()
+#define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2)                                           NOP()
+#define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3)                                       NOP()
+#define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4)                                   NOP()
+#define IEM_MC_NATIVE_EMIT_6(a_fnEmitter, a0, a1, a2, a3, a4, a5)                               NOP()
+#define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6)                           NOP()
+#define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7)                       NOP()
 
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                                         NOP()
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                                                     NOP()

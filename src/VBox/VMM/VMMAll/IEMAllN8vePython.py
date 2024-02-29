@@ -305,7 +305,7 @@ class NativeRecompFunctionVariation(object):
                 assert not oVarInfo.oReferences;
             else:
                 aoStmts.insert(iStmt + 1, iai.McStmt('IEM_MC_FREE_ARG', [sVarName,]));
-                if fIncludeReferences and oVarInfo.sReference:
+                if fIncludeReferences and oVarInfo.oReferences:
                     sRefVarName = oVarInfo.oReferences.oStmt.sVarName;
                     if sRefVarName in dVars:
                         dFreedVars[sRefVarName] = dVars[sRefVarName];
@@ -440,6 +440,8 @@ class NativeRecompFunctionVariation(object):
             for sVarName in asVarsInScope:
                 if sVarName in dVars:
                     freeVariable(aoStmts, len(aoStmts) - 1, dVars[sVarName], dFreedVars, dVars);
+                if sVarName in dFreedVars:
+                    del dFreedVars[sVarName];  ## @todo Try eliminate this one...
         return dFreedVars;
 
     def __morphStatements(self, aoStmts, fForLiveness):

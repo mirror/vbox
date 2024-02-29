@@ -955,7 +955,7 @@ class ThreadedFunctionVariation(object):
         ksVariation_64f_Addr32:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32',
     };
 
-    def analyzeMorphStmtForThreaded(self, aoStmts, dState, iParamRef = 0):
+    def analyzeMorphStmtForThreaded(self, aoStmts, dState, iParamRef = 0, iLevel = 0):
         """
         Transforms (copy) the statements into those for the threaded function.
 
@@ -1066,6 +1066,7 @@ class ThreadedFunctionVariation(object):
                     if 'IEM_MC_ASSERT_EFLAGS' in dState:
                         aoThreadedStmts.insert(len(aoThreadedStmts) - 1,
                                                iai.McStmtAssertEFlags(self.oParent.oMcBlock.oInstruction));
+                        del dState['IEM_MC_ASSERT_EFLAGS'];
 
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
@@ -1110,14 +1111,21 @@ class ThreadedFunctionVariation(object):
 
                     # For IEM_MC_REF_EFLAGS we to emit an MC before the ..._FINISH
                     if oNewStmt.sName == 'IEM_MC_REF_EFLAGS_EX':
-                        dState['IEM_MC_ASSERT_EFLAGS'] = True;
+                        dState['IEM_MC_ASSERT_EFLAGS'] = iLevel;
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
-                    (oNewStmt.aoIfBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoIfBranch, dState, iParamRef);
+                    (oNewStmt.aoIfBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoIfBranch, dState,
+                                                                                        iParamRef, iLevel + 1);
                     if oStmt.aoElseBranch:
                         (oNewStmt.aoElseBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoElseBranch,
-                                                                                              dState, iParamRef);
+                                                                                              dState, iParamRef, iLevel + 1);
+
+        # Insert an MC so we can assert the correctioness of modified flags annotations
+        # on IEM_MC_REF_EFLAGS if it goes out of scope.
+        if dState.get('IEM_MC_ASSERT_EFLAGS', -1) == iLevel:
+            aoThreadedStmts.append(iai.McStmtAssertEFlags(self.oParent.oMcBlock.oInstruction));
+            del dState['IEM_MC_ASSERT_EFLAGS'];
 
         return (aoThreadedStmts, iParamRef);
 
@@ -1289,6 +1297,10 @@ class ThreadedFunctionVariation(object):
                     assert oStmt.idxFn == 2;
                     aiSkipParams[0] = True;
 
+            # Skip the function parameter (first) for IEM_MC_NATIVE_EMIT_X.
+            if oStmt.sName.startswith('IEM_MC_NATIVE_EMIT_'):
+                aiSkipParams[0] = True;
+
 
             # Check all the parameters for bogus references.
             for iParam, sParam in enumerate(oStmt.asParams):
@@ -1381,6 +1393,7 @@ class ThreadedFunctionVariation(object):
                                   or sRef.startswith('g_')
                                   or sRef.startswith('iemAImpl_')
                                   or sRef.startswith('kIemNativeGstReg_')
+                                  or sRef.startswith('RT_ARCH_VAL_')
                                   or sRef in ( 'int8_t',    'int16_t',    'int32_t',    'int64_t',
                                                'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
                                                'uint8_t',   'uint16_t',   'uint32_t',   'uint64_t',

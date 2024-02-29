@@ -1894,7 +1894,7 @@ class McStmt(object):
 
 class McStmtCond(McStmt):
     """
-    Base class for conditional statements (IEM_MC_IF_XXX).
+    Base class for conditional statements (IEM_MC_IF_XXX, IEM_MC_NATIVE_IF).
     """
     def __init__(self, sName, asParams, aoIfBranch = None, aoElseBranch = None):
         McStmt.__init__(self, sName, asParams);
@@ -1902,14 +1902,15 @@ class McStmtCond(McStmt):
         self.aoElseBranch          = [] if aoElseBranch is None else list(aoElseBranch);
         self.oIfBranchAnnotation   = None;      ##< User specific IF-branch annotation.
         self.oElseBranchAnnotation = None;      ##< User specific IF-branch annotation.
+        self.sNativeInfix          = '' if sName != 'IEM_MC_NATIVE_IF' else '_NATIVE';
 
     def renderCode(self, cchIndent = 0):
         sRet  = ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ') {\n';
         sRet += self.renderCodeForList(self.aoIfBranch, cchIndent + 4);
         if self.aoElseBranch:
-            sRet += ' ' * cchIndent + '} IEM_MC_ELSE() {\n';
+            sRet += ' ' * cchIndent + '} IEM_MC%s_ELSE() {\n' % (self.sNativeInfix,);
             sRet += self.renderCodeForList(self.aoElseBranch, cchIndent + 4);
-        sRet += ' ' * cchIndent + '} IEM_MC_ENDIF();\n';
+        sRet += ' ' * cchIndent + '} IEM_MC%s_ENDIF();\n' % (self.sNativeInfix,);
         return sRet;
 
 class McStmtVar(McStmt):
@@ -2254,6 +2255,14 @@ class McBlock(object):
         return oStmt;
 
     @staticmethod
+    def parseMcLocalEFlags(oSelf, sName, asParams):
+        """ IEM_MC_LOCAL_EFLAGS"""
+        oSelf.checkStmtParamCount(sName, asParams, 1);
+        oStmt = McStmtVar(sName, asParams, 'uint32_t', asParams[0]);
+        oSelf.aoLocals.append(oStmt);
+        return oStmt;
+
+    @staticmethod
     def parseMcCallAImpl(oSelf, sName, asParams):
         """ IEM_MC_CALL_AIMPL_3|4 """
         cArgs = int(sName[-1]);
@@ -2459,6 +2468,10 @@ class McBlock(object):
                                     + r'|uVex3rdReg|uVexLength|fEvxStuff|uFpuOpcode|abOpcode'
                                     + r')');
 
+    kaasConditions = (
+        ( 'IEM_MC_IF_',       'IEM_MC_ELSE',        'IEM_MC_ENDIF' ),
+        ( 'IEM_MC_NATIVE_IF', 'IEM_MC_NATIVE_ELSE', 'IEM_MC_NATIVE_ENDIF' ),
+    );
     def decodeCode(self, sRawCode, off = 0, offStop = -1, iLevel = 0): # pylint: disable=too-many-statements,too-many-branches
         """
         Decodes sRawCode[off : offStop].
@@ -2499,15 +2512,18 @@ class McBlock(object):
             elif ch == 'I' and sRawCode[off : off + len('IEM_MC_')] == 'IEM_MC_':
                 # All MC statements ends with a semicolon, except for conditionals which ends with a '{'.
                 # Extract it and strip comments from it.
-                if not self.isSubstrAt(sRawCode, off, 'IEM_MC_IF_'):
+                if   self.isSubstrAt(sRawCode, off, self.kaasConditions[0][0]): iCond = 0;
+                elif self.isSubstrAt(sRawCode, off, self.kaasConditions[1][0]): iCond = 1;
+                else:                                                           iCond = -1;
+                if iCond < 0:
                     offEnd = sRawCode.find(';', off + len('IEM_MC_'));
                     if offEnd <= off:
                         self.raiseDecodeError(sRawCode, off, 'MC statement without a ";"');
                 else:
-                    offEnd = sRawCode.find('{', off + len('IEM_MC_IF_'));
+                    offEnd = sRawCode.find('{', off + len(self.kaasConditions[iCond][0]));
                     if offEnd <= off:
                         self.raiseDecodeError(sRawCode, off, 'MC conditional statement without a "{"');
-                    if sRawCode.find(';', off + len('IEM_MC_IF_'), offEnd) > off:
+                    if sRawCode.find(';', off + len(self.kaasConditions[iCond][0]), offEnd) > off:
                         self.raiseDecodeError(sRawCode, off, 'MC conditional statement without an immediate "{"');
                     offEnd -= 1;
                     while offEnd > off and sRawCode[offEnd - 1].isspace():
@@ -2551,8 +2567,8 @@ class McBlock(object):
                 #        IEM_MC_WHATEVER();
                 #   } IEM_MC_ENDIF();
                 #
-                if sName.startswith('IEM_MC_IF_'):
-                    if iLevel > 1:
+                if iCond >= 0:
+                    if iLevel > 1: ## @todo discount IEM_MC_NATIVE_IF.
                         self.raiseDecodeError(sRawCode, off, 'Too deep nesting of conditionals.');
 
                     # Find start of the IF block:
@@ -2569,18 +2585,19 @@ class McBlock(object):
 
                     # Is there an else section?
                     off = self.skipSpacesAt(sRawCode, offBlock1End + 1, offStop);
-                    if self.isSubstrAt(sRawCode, off, 'IEM_MC_ELSE'):
-                        off = self.skipSpacesAt(sRawCode, off + len('IEM_MC_ELSE'), offStop);
+                    sElseNm = self.kaasConditions[iCond][1];
+                    if self.isSubstrAt(sRawCode, off, sElseNm):
+                        off = self.skipSpacesAt(sRawCode, off + len(sElseNm), offStop);
                         if sRawCode[off] != '(':
-                            self.raiseDecodeError(sRawCode, off, 'Expected "(" following IEM_MC_ELSE"');
+                            self.raiseDecodeError(sRawCode, off, 'Expected "(" following %s"' % (sElseNm,));
                         off = self.skipSpacesAt(sRawCode, off + 1, offStop);
                         if sRawCode[off] != ')':
-                            self.raiseDecodeError(sRawCode, off, 'Expected ")" following IEM_MC_ELSE("');
+                            self.raiseDecodeError(sRawCode, off, 'Expected ")" following %s("' % (sElseNm,));
 
                         # Find start of the ELSE block.
                         offBlock2 = self.skipSpacesAt(sRawCode, off + 1, offStop);
                         if sRawCode[offBlock2] != '{':
-                            self.raiseDecodeError(sRawCode, offBlock2, 'Expected "{" following IEM_MC_ELSE()"');
+                            self.raiseDecodeError(sRawCode, offBlock2, 'Expected "{" following %s()"' % (sElseNm,));
 
                         # Find the end of it.
                         offBlock2End = self.findClosingBraces(sRawCode, offBlock2, offStop);
@@ -2591,17 +2608,18 @@ class McBlock(object):
                         off = self.skipSpacesAt(sRawCode, offBlock2End + 1, offStop);
 
                     # Parse past the endif statement.
-                    if not self.isSubstrAt(sRawCode, off, 'IEM_MC_ENDIF'):
-                        self.raiseDecodeError(sRawCode, off, 'Expected IEM_MC_ENDIF for closing %s' % (sName,));
-                    off = self.skipSpacesAt(sRawCode, off + len('IEM_MC_ENDIF'), offStop);
+                    sEndIfNm = self.kaasConditions[iCond][2];
+                    if not self.isSubstrAt(sRawCode, off, sEndIfNm):
+                        self.raiseDecodeError(sRawCode, off, 'Expected %s for closing %s' % (sEndIfNm, sName,));
+                    off = self.skipSpacesAt(sRawCode, off + len(sEndIfNm), offStop);
                     if sRawCode[off] != '(':
-                        self.raiseDecodeError(sRawCode, off, 'Expected "(" following IEM_MC_ENDIF"');
+                        self.raiseDecodeError(sRawCode, off, 'Expected "(" following %s"' % (sEndIfNm,));
                     off = self.skipSpacesAt(sRawCode, off + 1, offStop);
                     if sRawCode[off] != ')':
-                        self.raiseDecodeError(sRawCode, off, 'Expected ")" following IEM_MC_ENDIF("');
+                        self.raiseDecodeError(sRawCode, off, 'Expected ")" following %s("' % (sEndIfNm,));
                     off = self.skipSpacesAt(sRawCode, off + 1, offStop);
                     if sRawCode[off] != ';':
-                        self.raiseDecodeError(sRawCode, off, 'Expected ";" following IEM_MC_ENDIF()"');
+                        self.raiseDecodeError(sRawCode, off, 'Expected ";" following %s()"' % (sEndIfNm,));
                     off += 1;
 
                 else:
@@ -3102,6 +3120,7 @@ g_dMcStmtParsers = {
     'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, False, True,  ),
     'IEM_MC_LOCAL_ASSIGN':                                       (McBlock.parseMcLocalAssign,       False, False, True,  ),
     'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, False, True,  ),
+    'IEM_MC_LOCAL_EFLAGS':                                       (McBlock.parseMcLocalEFlags,       True,  True,  True,  ),
     'IEM_MC_NOREF':                                              (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   (McBlock.parseMcGeneric,           True,  True,  True,  ),
@@ -3153,6 +3172,17 @@ g_dMcStmtParsers = {
     'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':                 (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MODIFIED_MREG':                                      (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MODIFIED_MREG_BY_REF':                               (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_NATIVE_EMIT_0':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_1':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_2':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_3':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_4':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_5':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_6':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_7':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_IF':                                          (McBlock.parseMcGenericCond,       False, False, True,  ),
+    'IEM_MC_NATIVE_ELSE':                                        (McBlock.parseMcGenericCond,       False, False, True,  ),
+    'IEM_MC_NATIVE_ENDIF':                                       (McBlock.parseMcGenericCond,       False, False, True,  ),
     'IEM_MC_OR_2LOCS_U32':                                       (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_OR_GREG_U16':                                        (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_OR_GREG_U32':                                        (McBlock.parseMcGeneric,           True,  True,  False, ),
