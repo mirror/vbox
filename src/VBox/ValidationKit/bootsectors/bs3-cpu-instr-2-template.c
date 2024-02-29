@@ -481,7 +481,7 @@ RT_CONCAT(bs3CpuInstr2_CommonBinaryU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNBI
             \
             /* \
              * Do input the eight EFLAGS variations three times, so we're sure to trigger \
-             * native recompilation of the test worker code. \                            \
+             * native recompilation of the test worker code. \
              */ \
             for (iRecompiler = 0; iRecompiler < 2; iRecompiler++) \
             { \
