@@ -198,43 +198,6 @@
 # error "Exactly one RT_ARCH_XXX macro shall be defined"
 #endif
 
-/** @name RT_ARCH_VAL_XXX - Architectures.
- *
- * These are values used by RT_ARCH_VAL among others as an alternative to
- * RT_ARCH_X86, RT_ARCH_AMD64 and friends for identifying the compiler target
- * architecture.  Each value is a power of two (single bit), so they can be
- * combined together to form an architecture mask if desirable.
- *
- * @{ */
-/**  */
-#define RT_ARCH_VAL_X86_16        0x00000001
-#define RT_ARCH_VAL_X86           0x00000002
-#define RT_ARCH_VAL_AMD64         0x00000004
-#define RT_ARCH_VAL_ARM32         0x00000010
-#define RT_ARCH_VAL_ARM64         0x00000020
-#define RT_ARCH_VAL_SPAR32        0x00000100
-#define RT_ARCH_VAL_SPAR64        0x00000200
-/** @} */
-
-
-/** @def RT_ARCH_VAL
- * The RT_ARCH_VAL_XXX for the compiler target architecture. */
-#if defined(RT_ARCH_AMD64)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_AMD64
-#elif defined(RT_ARCH_ARM64)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_ARM64
-#elif defined(RT_ARCH_X86)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_X86
-#elif defined(RT_ARCH_ARM32)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_ARM32
-#elif defined(RT_ARCH_SPARC)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_SPARC32
-#elif defined(RT_ARCH_SPARC64)
-# define RT_ARCH_VAL                    RT_ARCH_VAL_SPARC64
-#else
-# error "RT_ARCH_VAL: port me"
-#endif
-
 /** @def RT_CPLUSPLUS_PREREQ
  * Require a minimum __cplusplus value, simplifying dealing with non-C++ code.
  *

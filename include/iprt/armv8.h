@@ -3506,7 +3506,7 @@ typedef enum ARMV8INSTRCOND
     kArmv8InstrCond_Ge,                         /**< a - Signed greater or equal. */
     kArmv8InstrCond_Lt,                         /**< b - Signed less than. */
 
-    kArmv8InstrCond_Gt,                         /**< c - Signed greater than. */
+    kArmv8InstrCond_Gt,                         /**< c - Signed less or equal. */
     kArmv8InstrCond_Le,                         /**< d - Signed less or equal. */
 
     kArmv8InstrCond_Al,                         /**< e - Condition is always true. */
@@ -3644,89 +3644,6 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCCmnImm(uint32_t iRegSrc, uint32_t uI
                                                    ARMV8INSTRCOND enmCond, bool f64Bit = true)
 {
     return Armv8A64MkInstrCCmpCmnImm(iRegSrc, uImm5, fNzcv, enmCond, false /*fCCmp*/, f64Bit);
-}
-
-
-/**
- * A64: Encodes CSEL, CSINC, CSINV and CSNEG (three registers)
- *
- * @returns The encoded instruction.
- * @param   uOp         Opcode bit 30.
- * @param   uOp2        Opcode bits 11:10.
- * @param   iRegResult  The result register. SP is NOT valid, but ZR is.
- * @param   iRegSrc1    The 1st source register. SP is NOT valid, but ZR is.
- * @param   iRegSrc2    The 2nd source register. SP is NOT valid, but ZR is.
- * @param   enmCond     The condition guarding the compare.
- * @param   f64Bit      true for 64-bit GRPs (default), false for 32-bit GPRs.
- */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCondSelect(uint32_t uOp, uint32_t uOp2, uint32_t iRegResult, uint32_t iRegSrc1,
-                                                      uint32_t iRegSrc2, ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    Assert(uOp <= 1); Assert(uOp2 <= 1); Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
-
-    return ((uint32_t)f64Bit       << 31)
-         | (uOp                    << 30)
-         | UINT32_C(0x1a800000)
-         | (iRegSrc2               << 16)
-         | ((uint32_t)enmCond      << 12)
-         | (uOp2                   << 10)
-         | (iRegSrc1               <<  5)
-         | iRegResult;
-}
-
-
-/** A64: Encodes CSEL.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSel(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
-                                                ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    return Armv8A64MkInstrCondSelect(0, 0, iRegResult, iRegSrc1, iRegSrc2, enmCond, f64Bit);
-}
-
-
-/** A64: Encodes CSINC.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSInc(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
-                                                 ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    return Armv8A64MkInstrCondSelect(0, 1, iRegResult, iRegSrc1, iRegSrc2, enmCond, f64Bit);
-}
-
-
-/** A64: Encodes CSET.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSet(uint32_t iRegResult, ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    Assert(enmCond != kArmv8InstrCond_Al && enmCond != kArmv8InstrCond_Al1);
-    enmCond = (ARMV8INSTRCOND)((uint32_t)enmCond ^ 1);
-    return Armv8A64MkInstrCSInc(iRegResult, ARMV8_A64_REG_XZR, ARMV8_A64_REG_XZR, enmCond, f64Bit);
-}
-
-
-/** A64: Encodes CSINV.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSInv(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
-                                                 ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    return Armv8A64MkInstrCondSelect(1, 0, iRegResult, iRegSrc1, iRegSrc2, enmCond, f64Bit);
-}
-
-/** A64: Encodes CSETM.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSetM(uint32_t iRegResult, ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    Assert(enmCond != kArmv8InstrCond_Al && enmCond != kArmv8InstrCond_Al1);
-    enmCond = (ARMV8INSTRCOND)((uint32_t)enmCond ^ 1);
-    return Armv8A64MkInstrCSInv(iRegResult, ARMV8_A64_REG_XZR, ARMV8_A64_REG_XZR, enmCond, f64Bit);
-}
-
-
-/** A64: Encodes CSNEG.
- * @see Armv8A64MkInstrCondSelect for details. */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCSNeg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
-                                                 ARMV8INSTRCOND enmCond, bool f64Bit = true)
-{
-    return Armv8A64MkInstrCondSelect(1, 1, iRegResult, iRegSrc1, iRegSrc2, enmCond, f64Bit);
 }
 
 
