@@ -2642,6 +2642,8 @@ typedef union BS3REG
     uint16_t    au16[4];
     /** 32-bit view. */
     uint32_t    au32[2];
+    /** 64-bit view. */
+    uint64_t    au64[1];
     /** Unsigned integer, depending on compiler context.
      * This generally follows ARCH_BITS. */
     RTCCUINTREG  uCcReg;

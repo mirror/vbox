@@ -44,6 +44,19 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_and);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_or);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_xor);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_test);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_add);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_adc);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_sub);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_sbb);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_cmp);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_bt);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_btc);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_btr);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_bts);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_mul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_imul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_div);
@@ -80,6 +93,25 @@ BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_rdgsbase);
 *********************************************************************************************************************************/
 static const BS3TESTMODEENTRY g_aModeTests[] =
 {
+#if 1
+    BS3TESTMODEENTRY_CMN("and", bs3CpuInstr2_and),
+    BS3TESTMODEENTRY_CMN("or", bs3CpuInstr2_or),
+    BS3TESTMODEENTRY_CMN("xor", bs3CpuInstr2_xor),
+    BS3TESTMODEENTRY_CMN("test", bs3CpuInstr2_test),
+#endif
+#if 1
+    BS3TESTMODEENTRY_CMN("add", bs3CpuInstr2_add),
+    BS3TESTMODEENTRY_CMN("adc", bs3CpuInstr2_adc),
+    BS3TESTMODEENTRY_CMN("sub", bs3CpuInstr2_sub),
+    BS3TESTMODEENTRY_CMN("sbb", bs3CpuInstr2_sbb),
+    BS3TESTMODEENTRY_CMN("cmp", bs3CpuInstr2_cmp),
+#endif
+#if 1
+    BS3TESTMODEENTRY_CMN("bt", bs3CpuInstr2_bt),
+    BS3TESTMODEENTRY_CMN("btc", bs3CpuInstr2_btc),
+    BS3TESTMODEENTRY_CMN("btr", bs3CpuInstr2_btr),
+    BS3TESTMODEENTRY_CMN("bts", bs3CpuInstr2_bts),
+#endif
 #if 1
     BS3TESTMODEENTRY_CMN("mul", bs3CpuInstr2_mul),
     BS3TESTMODEENTRY_CMN("imul", bs3CpuInstr2_imul),
