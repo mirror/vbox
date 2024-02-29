@@ -74,41 +74,70 @@ BS3_PROC_END_CMN            %1
  %endmacro
 %endif
 
+;;
+; @param 1      The instruction menmonic.
+; @param 2      Whether there is an 8-bit form of the instruction (1) or not 0.
+; @param 3      Whether there are alternative forms of the instruction.
 %ifndef  BS3CPUINSTR2_BINARY_OP_DEFINED
  %define BS3CPUINSTR2_BINARY_OP_DEFINED
- %macro  BS3CPUINSTR2_BINARY_OP 2
+ %macro  BS3CPUINSTR2_BINARY_OP 3
   %if %2 != 0
         ; 8-bit
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al  %+ _dl,     %1 al, dl
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ch  %+ _bh,     %1 ch, bh
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dl  %+ _ah,     %1 dl, ah
+   %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _dh %+ _cl, ALT_INSTRUCTION8_ %+ %1 dh, cl
+   %endif
    %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _sil  %+ _dil,   %1 sil, dil
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9b  %+ _r8b,   %1 r9b, r8b
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al   %+ _r13b,  %1 al, r13b
+    %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _dl %+ _r14b, ALT_INSTRUCTION8_ %+ %1 dl, r14b
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r8b %+ _bl,  ALT_INSTRUCTION8_ %+ %1 r8b, bl
+    %endif
    %endif
   %endif
         ; 16-bit
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _di  %+ _si,     %1 di, si
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _cx  %+ _bp,     %1 cx, bp
+  %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _bp %+ _bx, ALT_INSTRUCTION16_ %+ %1 bp, bx
+  %endif
   %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8w  %+ _cx,    %1 r8w, cx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r15w %+ _r10w,  %1 r15w, r10w
+   %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r13w %+ _ax, ALT_INSTRUCTION16_ %+ %1 r13w, ax
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _si %+ _r9w,  ALT_INSTRUCTION16_ %+ %1 si, r9w
+   %endif
   %endif
         ; 32-bit
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _eax %+ _ebx,    %1 eax, ebx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ecx %+ _ebp,    %1 ecx, ebp
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _edx %+ _edi,    %1 edx, edi
+  %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _edi %+ _esi, ALT_INSTRUCTION32_ %+ %1 edi, esi
+  %endif
   %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _eax %+ _r8d,    %1 eax, r8d
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9d %+ _ecx,    %1 r9d, ecx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13d %+ _r14d,  %1 r13d, r14d
+   %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r15d %+ _esi, ALT_INSTRUCTION32_ %+ %1 r15d, esi
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _eax %+ _r10d, ALT_INSTRUCTION32_ %+ %1 eax, r10d
+   %endif
   %endif
         ; 64-bit
   %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rax %+ _rbx,    %1 rax, rbx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8  %+ _rax,    %1 r8, rax
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rdx %+ _r10,    %1 rdx, r10
+    %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r15 %+ _rsi, ALT_INSTRUCTION64_ %+ %1 r15, rsi
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _rbx %+ _r14, ALT_INSTRUCTION64_ %+ %1 rbx, r14
+    %endif
   %endif
  %endmacro
 %endif
@@ -126,21 +155,167 @@ TMPL_BEGIN_TEXT
 ;
 %ifdef BS3_INSTANTIATING_CMN
 
-BS3CPUINSTR2_BINARY_OP and,  1
-BS3CPUINSTR2_BINARY_OP or,   1
-BS3CPUINSTR2_BINARY_OP xor,  1
-BS3CPUINSTR2_BINARY_OP test, 1
+%ifndef ALT_INSTRUCTION_MACROS_DEFINED
+ %define ALT_INSTRUCTION_MACROS_DEFINED
+ %macro ALT_INSTRUCTION8_REG_RM 3+
+        X86_MKOP_REX8 %1, %2
+        db      %3
+        X86_MKOP_MODRM8 X86_MOD_REG, %1, %2
+ %endmacro
 
-BS3CPUINSTR2_BINARY_OP add,  1
-BS3CPUINSTR2_BINARY_OP adc,  1
-BS3CPUINSTR2_BINARY_OP sub,  1
-BS3CPUINSTR2_BINARY_OP sbb,  1
-BS3CPUINSTR2_BINARY_OP cmp,  1
+ %macro ALT_INSTRUCTION16_REG_RM 3+
+  %if TMPL_BITS != 16
+        db      X86_OP_PRF_SIZE_OP
+  %endif
+        X86_MKOP_REX16 %1, %2
+        db      %3
+        X86_MKOP_MODRM16 X86_MOD_REG, %1, %2
+ %endmacro
 
-BS3CPUINSTR2_BINARY_OP bt,   0
-BS3CPUINSTR2_BINARY_OP btc,  0
-BS3CPUINSTR2_BINARY_OP btr,  0
-BS3CPUINSTR2_BINARY_OP bts,  0
+ %macro ALT_INSTRUCTION32_REG_RM 3+
+  %if TMPL_BITS == 16
+        db      X86_OP_PRF_SIZE_OP
+  %endif
+        X86_MKOP_REX32 %1, %2
+        db      %3
+        X86_MKOP_MODRM32 X86_MOD_REG, %1, %2
+ %endmacro
+
+ %macro ALT_INSTRUCTION64_REG_RM 3+
+        X86_MKOP_REX64 %1, %2
+        db      %3
+        X86_MKOP_MODRM64 X86_MOD_REG, %1, %2
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 20h and 21h variants (AND rm,reg)
+ %macro ALT_INSTRUCTION8_and 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 22h
+ %endmacro
+ %macro ALT_INSTRUCTION16_and 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 23h
+ %endmacro
+ %macro ALT_INSTRUCTION32_and 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 23h
+ %endmacro
+ %macro ALT_INSTRUCTION64_and 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 23h
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 08h and 09h variants (OR rm,reg)
+ %macro ALT_INSTRUCTION8_or 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 0ah
+ %endmacro
+ %macro ALT_INSTRUCTION16_or 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 0bh
+ %endmacro
+ %macro ALT_INSTRUCTION32_or 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 0bh
+ %endmacro
+ %macro ALT_INSTRUCTION64_or 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 0bh
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 30h and 31h variants (XOR rm,reg)
+ %macro ALT_INSTRUCTION8_xor 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 32h
+ %endmacro
+ %macro ALT_INSTRUCTION16_xor 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 33h
+ %endmacro
+ %macro ALT_INSTRUCTION32_xor 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 33h
+ %endmacro
+ %macro ALT_INSTRUCTION64_xor 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 33h
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 00h and 01h variants (ADD rm,reg)
+ %macro ALT_INSTRUCTION8_add 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 02h
+ %endmacro
+ %macro ALT_INSTRUCTION16_add 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 03h
+ %endmacro
+ %macro ALT_INSTRUCTION32_add 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 03h
+ %endmacro
+ %macro ALT_INSTRUCTION64_add 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 03h
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 10h and 11h variants (ADC rm,reg)
+ %macro ALT_INSTRUCTION8_adc 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 12h
+ %endmacro
+ %macro ALT_INSTRUCTION16_adc 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 13h
+ %endmacro
+ %macro ALT_INSTRUCTION32_adc 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 13h
+ %endmacro
+ %macro ALT_INSTRUCTION64_adc 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 13h
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 28h and 29h variants (SUB rm,reg)
+ %macro ALT_INSTRUCTION8_sub 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 2ah
+ %endmacro
+ %macro ALT_INSTRUCTION16_sub 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 2bh
+ %endmacro
+ %macro ALT_INSTRUCTION32_sub 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 2bh
+ %endmacro
+ %macro ALT_INSTRUCTION64_sub 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 2bh
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 18h and 19h variants (SBB rm,reg)
+ %macro ALT_INSTRUCTION8_sbb 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 1ah
+ %endmacro
+ %macro ALT_INSTRUCTION16_sbb 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 1bh
+ %endmacro
+ %macro ALT_INSTRUCTION32_sbb 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 1bh
+ %endmacro
+ %macro ALT_INSTRUCTION64_sbb 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 1bh
+ %endmacro
+
+ ; nasm v2.16.02rc1 encodes the 38h and 39h variants (CMP rm,reg)
+ %macro ALT_INSTRUCTION8_cmp 2
+       ALT_INSTRUCTION8_REG_RM %1, %2, 3ah
+ %endmacro
+ %macro ALT_INSTRUCTION16_cmp 2
+       ALT_INSTRUCTION16_REG_RM %1, %2, 3bh
+ %endmacro
+ %macro ALT_INSTRUCTION32_cmp 2
+       ALT_INSTRUCTION32_REG_RM %1, %2, 3bh
+ %endmacro
+ %macro ALT_INSTRUCTION64_cmp 2
+       ALT_INSTRUCTION64_REG_RM %1, %2, 3bh
+ %endmacro
+
+%endif ; !ALT_INSTRUCTION_MACROS_DEFINED
+
+BS3CPUINSTR2_BINARY_OP and,  1, 1
+BS3CPUINSTR2_BINARY_OP or,   1, 1
+BS3CPUINSTR2_BINARY_OP xor,  1, 1
+BS3CPUINSTR2_BINARY_OP test, 1, 0
+
+BS3CPUINSTR2_BINARY_OP add,  1, 1
+BS3CPUINSTR2_BINARY_OP adc,  1, 1
+BS3CPUINSTR2_BINARY_OP sub,  1, 1
+BS3CPUINSTR2_BINARY_OP sbb,  1, 1
+BS3CPUINSTR2_BINARY_OP cmp,  1, 1
+
+BS3CPUINSTR2_BINARY_OP bt,   0, 0
+BS3CPUINSTR2_BINARY_OP btc,  0, 0
+BS3CPUINSTR2_BINARY_OP btr,  0, 0
+BS3CPUINSTR2_BINARY_OP bts,  0, 0
 
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_mul_xBX_ud2, BS3_PBC_NEAR

@@ -221,5 +221,194 @@ endstruc
 AssertCompileSize(X86TSS64, 104)
 
 
+;; @name Helper values for the X86_MKOP_XXX macros.
+;; @{
+%define X86_MKOP_GREG8_al     0
+%define X86_MKOP_GREG8_cl     1
+%define X86_MKOP_GREG8_dl     2
+%define X86_MKOP_GREG8_bl     3
+%define X86_MKOP_GREG8_ah     4
+%define X86_MKOP_GREG8_ch     5
+%define X86_MKOP_GREG8_dh     6
+%define X86_MKOP_GREG8_bh     7
+%define X86_MKOP_GREG8_spl   20
+%define X86_MKOP_GREG8_bpl   21
+%define X86_MKOP_GREG8_sil   22
+%define X86_MKOP_GREG8_dil   23
+%define X86_MKOP_GREG8_r8b    8
+%define X86_MKOP_GREG8_r9b    9
+%define X86_MKOP_GREG8_r10b  10
+%define X86_MKOP_GREG8_r11b  11
+%define X86_MKOP_GREG8_r12b  12
+%define X86_MKOP_GREG8_r13b  13
+%define X86_MKOP_GREG8_r14b  14
+%define X86_MKOP_GREG8_r15b  15
+
+%define X86_MKOP_GREG16_ax    0
+%define X86_MKOP_GREG16_cx    1
+%define X86_MKOP_GREG16_dx    2
+%define X86_MKOP_GREG16_bx    3
+%define X86_MKOP_GREG16_sp    4
+%define X86_MKOP_GREG16_bp    5
+%define X86_MKOP_GREG16_si    6
+%define X86_MKOP_GREG16_di    7
+%define X86_MKOP_GREG16_r8w   8
+%define X86_MKOP_GREG16_r9w   9
+%define X86_MKOP_GREG16_r10w 10
+%define X86_MKOP_GREG16_r11w 11
+%define X86_MKOP_GREG16_r12w 12
+%define X86_MKOP_GREG16_r13w 13
+%define X86_MKOP_GREG16_r14w 14
+%define X86_MKOP_GREG16_r15w 15
+
+%define X86_MKOP_GREG32_eax   0
+%define X86_MKOP_GREG32_ecx   1
+%define X86_MKOP_GREG32_edx   2
+%define X86_MKOP_GREG32_ebx   3
+%define X86_MKOP_GREG32_esp   4
+%define X86_MKOP_GREG32_ebp   5
+%define X86_MKOP_GREG32_esi   6
+%define X86_MKOP_GREG32_edi   7
+%define X86_MKOP_GREG32_r8d   8
+%define X86_MKOP_GREG32_r9d   9
+%define X86_MKOP_GREG32_r10d 10
+%define X86_MKOP_GREG32_r11d 11
+%define X86_MKOP_GREG32_r12d 12
+%define X86_MKOP_GREG32_r13d 13
+%define X86_MKOP_GREG32_r14d 14
+%define X86_MKOP_GREG32_r15d 15
+
+%define X86_MKOP_GREG64_rax   0
+%define X86_MKOP_GREG64_rcx   1
+%define X86_MKOP_GREG64_rdx   2
+%define X86_MKOP_GREG64_rbx   3
+%define X86_MKOP_GREG64_rsp   4
+%define X86_MKOP_GREG64_rbp   5
+%define X86_MKOP_GREG64_rsi   6
+%define X86_MKOP_GREG64_rdi   7
+%define X86_MKOP_GREG64_r8    8
+%define X86_MKOP_GREG64_r9    9
+%define X86_MKOP_GREG64_r10  10
+%define X86_MKOP_GREG64_r11  11
+%define X86_MKOP_GREG64_r12  12
+%define X86_MKOP_GREG64_r13  13
+%define X86_MKOP_GREG64_r14  14
+%define X86_MKOP_GREG64_r15  15
+;; @}
+
+;;
+; Encodes the MODRM byte for an instruction with 8-bit operand size.
+; @param 1     The MODRM.MOD value (X86_MOD_REG, X86_MOD_MEM0, X86_MOD_MEM1, X86_MOD_MEM4).
+; @param 2     The MODRM.REG register mnemonic.
+; @param 3     The MODRM.RM register mnemonic.
+%macro X86_MKOP_MODRM8 3
+ %assign x86_mkop_modrm8_iReg  X86_MKOP_GREG8_ %+ %2
+ %assign x86_mkop_modrm8_iRm   X86_MKOP_GREG8_ %+ %3
+        db      X86_MODRM_MAKE(%1, x86_mkop_modrm8_iReg & 7, x86_mkop_modrm8_iRm & 7)
+%endmacro
+
+;;
+; Encodes the optional REX prefix for an instruction with 8-bit operand size.
+; @param 1     The MODRM.REG register mnemonic.
+; @param 2     The MODRM.RM register mnemonic.
+%macro X86_MKOP_REX8 2
+ %assign x86_mkop_rex8_iReg     X86_MKOP_GREG8_ %+ %1
+ %assign x86_mkop_rex8_iRm      X86_MKOP_GREG8_ %+ %2
+ %if x86_mkop_rex8_iReg >= 8 || x86_mkop_rex8_iRm >= 8
+  %if __BITS__ == 64
+   %if (x86_mkop_rex8_iReg < 4 || x86_mkop_rex8_iReg >= 8) && (x86_mkop_rex8_iRm < 4 || x86_mkop_rex8_iRm >= 8)
+        db      X86_OP_REX | (((x86_mkop_rex8_iReg >> 3) & 1) * X86_OP_REX_R) | (((x86_mkop_rex8_iRm >> 3) & 1) * X86_OP_REX_B)
+   %else
+    %error X86_MKOP_REX8: Invalid operand mix: %1, %2
+   %endif
+  %else
+   %error X86_MKOP_REX8: not in 64-bit code: %1, %2
+  %endif
+ %endif
+%endmacro
+
+
+;;
+; Encodes the MODRM byte for an instruction with 16-bit operand size.
+; @param 1     The MODRM.MOD value (X86_MOD_REG, X86_MOD_MEM0, X86_MOD_MEM1, X86_MOD_MEM4).
+; @param 2     The MODRM.REG register mnemonic.
+; @param 3     The MODRM.RM register mnemonic.
+%macro X86_MKOP_MODRM16 3
+ %assign x86_mkop_modrm16_iReg  X86_MKOP_GREG16_ %+ %2
+ %assign x86_mkop_modrm16_iRm   X86_MKOP_GREG16_ %+ %3
+        db      X86_MODRM_MAKE(%1, x86_mkop_modrm16_iReg & 7, x86_mkop_modrm16_iRm & 7)
+%endmacro
+
+;;
+; Encodes the optional REX prefix for an instruction with 16-bit operand size.
+; @param 1     The MODRM.REG register mnemonic.
+; @param 2     The MODRM.RM register mnemonic.
+%macro X86_MKOP_REX16 2
+ %assign x86_mkop_rex16_iReg    X86_MKOP_GREG16_ %+ %1
+ %assign x86_mkop_rex16_iRm     X86_MKOP_GREG16_ %+ %2
+ %if x86_mkop_rex16_iReg >= 8 || x86_mkop_rex16_iRm >= 8
+  %if __BITS__ == 64
+        db      X86_OP_REX | ((x86_mkop_rex16_iReg >> 3) * X86_OP_REX_R) | ((x86_mkop_rex16_iRm >> 3) * X86_OP_REX_B)
+  %else
+   %error X86_MKOP_REX16: not in 64-bit code: %1, %2
+  %endif
+ %endif
+%endmacro
+
+
+;;
+; Encodes the MODRM byte for an instruction with 32-bit operand size.
+; @param 1     The MODRM.MOD value (X86_MOD_REG, X86_MOD_MEM0, X86_MOD_MEM1, X86_MOD_MEM4).
+; @param 2     The MODRM.REG register mnemonic.
+; @param 3     The MODRM.RM register mnemonic.
+%macro X86_MKOP_MODRM32 3
+ %assign x86_mkop_modrm32_iReg  X86_MKOP_GREG32_ %+ %2
+ %assign x86_mkop_modrm32_iRm   X86_MKOP_GREG32_ %+ %3
+        db      X86_MODRM_MAKE(%1, x86_mkop_modrm32_iReg & 7, x86_mkop_modrm32_iRm & 7)
+%endmacro
+
+;;
+; Encodes the optional REX prefix for an instruction with 32-bit operand size.
+; @param 1     The MODRM.REG register mnemonic.
+; @param 2     The MODRM.RM register mnemonic.
+%macro X86_MKOP_REX32 2
+ %assign x86_mkop_rex32_iReg    X86_MKOP_GREG32_ %+ %1
+ %assign x86_mkop_rex32_iRm     X86_MKOP_GREG32_ %+ %2
+ %if x86_mkop_rex32_iReg >= 8 || x86_mkop_rex32_iRm >= 8
+  %if __BITS__ == 64
+        db      X86_OP_REX | ((x86_mkop_rex32_iReg >> 3) * X86_OP_REX_R) | ((x86_mkop_rex32_iRm >> 3) * X86_OP_REX_B)
+  %else
+   %error X86_MKOP_REX32: not in 64-bit code: %1, %2
+  %endif
+ %endif
+%endmacro
+
+
+;;
+; Encodes the MODRM byte for an instruction with 64-bit operand size.
+; @param 1     The MODRM.MOD value (X86_MOD_REG, X86_MOD_MEM0, X86_MOD_MEM1, X86_MOD_MEM4).
+; @param 2     The MODRM.REG register mnemonic.
+; @param 3     The MODRM.RM register mnemonic.
+%macro X86_MKOP_MODRM64 3
+ %assign x86_mkop_modrm64_iReg  X86_MKOP_GREG64_ %+ %2
+ %assign x86_mkop_modrm64_iRm   X86_MKOP_GREG64_ %+ %3
+        db      X86_MODRM_MAKE(%1, x86_mkop_modrm64_iReg & 7, x86_mkop_modrm64_iRm & 7)
+%endmacro
+
+;;
+; Encodes the REX prefix for an instruction with 64-bit operand size.
+; @param 1     The MODRM.REG register mnemonic.
+; @param 2     The MODRM.RM register mnemonic.
+%macro X86_MKOP_REX64 2
+ %assign x86_mkop_rex64_iReg    X86_MKOP_GREG64_ %+ %1
+ %assign x86_mkop_rex64_iRm     X86_MKOP_GREG64_ %+ %2
+ %if __BITS__ == 64
+        db      X86_OP_REX_W | ((x86_mkop_rex64_iReg >> 3) * X86_OP_REX_R) | ((x86_mkop_rex64_iRm >> 3) * X86_OP_REX_B)
+ %else
+  %error X86_MKOP_REX64: not in 64-bit code: %1, %2
+ %endif
+%endmacro
+
+
 %endif
 

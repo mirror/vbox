@@ -72,38 +72,62 @@ typedef struct BS3CI2FSGSBASE
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _sil_dil); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9b_r8b); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_r13b); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dl_r14b); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r8b_bl); \
         /* 16-bit */ \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8w_cx); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r15w_r10w); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r13w_ax); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _si_r9w); \
         /* 32-bit */ \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_r8d); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9d_ecx); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r13d_r14d); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15d_esi); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _eax_r10d); \
         /* 64-bit */ \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_rbx); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_rax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rdx_r10);
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rdx_r10); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15_rsi); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _rbx_r14);
 
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _sil_dil), X86_GREG_xSI, X86_GREG_xDI   }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9b_r8b), X86_GREG_x9,  X86_GREG_x8    }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_r13b), X86_GREG_xAX, X86_GREG_x13   },
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _sil_dil),      X86_GREG_xSI, X86_GREG_xDI }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9b_r8b),      X86_GREG_x9,  X86_GREG_x8  }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_r13b),      X86_GREG_xAX, X86_GREG_x13 },
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8_64BIT(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dl_r14b),  X86_GREG_xDX, X86_GREG_x14 }, \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r8b_bl),   X86_GREG_x8,  X86_GREG_xBX },
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_16_64BIT(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8w_cx),    X86_GREG_x8,  X86_GREG_xCX }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r15w_r10w), X86_GREG_x15, X86_GREG_x10 },
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8w_cx),       X86_GREG_x8,  X86_GREG_xCX }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r15w_r10w),    X86_GREG_x15, X86_GREG_x10 },
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16_64BIT(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r13w_ax),  X86_GREG_x13, X86_GREG_xAX }, \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _si_r9w),   X86_GREG_xSI, X86_GREG_x9  },
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_r8d),   X86_GREG_xAX, X86_GREG_x8  }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9d_ecx),   X86_GREG_x9,  X86_GREG_xCX }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r13d_r14d), X86_GREG_x13, X86_GREG_x14 },
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_r8d),      X86_GREG_xAX, X86_GREG_x8  }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9d_ecx),      X86_GREG_x9,  X86_GREG_xCX }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r13d_r14d),    X86_GREG_x13, X86_GREG_x14 },
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32_64BIT(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15d_esi), X86_GREG_x15, X86_GREG_xSI }, \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _eax_r10d), X86_GREG_xAX, X86_GREG_x10 },
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_64(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_rbx), X86_GREG_xAX, X86_GREG_xBX   }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_rax),  X86_GREG_x8,  X86_GREG_xAX   }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rdx_r10), X86_GREG_xDX, X86_GREG_x10   },
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_rbx),      X86_GREG_xAX, X86_GREG_xBX }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_rax),       X86_GREG_x8,  X86_GREG_xAX }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rdx_r10),      X86_GREG_xDX, X86_GREG_x10 },
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(a_Ins) \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_64(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15_rsi),  X86_GREG_x15, X86_GREG_xSI }, \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _rbx_r14),  X86_GREG_xBX, X86_GREG_x14 },
 # else
 #  define BS3CPUINSTR2_BINARY_OP_PROTO64(a_Ins)
-# define BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(aIns)
-# define BS3CPUINSTR2CMNBINTEST_ENTRIES_16_64BIT(aIns)
-# define BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_16_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16_64BIT(aIns)
+#  define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32_64BIT(aIns)
 # endif
 # define BS3CPUINSTR2_BINARY_OP_PROTO(a_Ins) \
         BS3CPUINSTR2_BINARY_OP_PROTO64(a_Ins) \
@@ -111,27 +135,44 @@ typedef struct BS3CI2FSGSBASE
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_dl); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ch_bh); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _dl_ah); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dh_cl); \
         /* 16-bit */ \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _di_si); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _cx_bp); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _bp_bx); \
         /* 32-bit */ \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_ebx); \
         extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ecx_ebp); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _edx_edi)
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _edx_edi); \
+        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _edi_esi)
 
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_8(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_dl), X86_GREG_xAX,    X86_GREG_xDX    }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ch_bh), X86_GREG_xCX+16, X86_GREG_xBX+16 }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _dl_ah), X86_GREG_xDX,    X86_GREG_xAX+16 }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_dl),       X86_GREG_xAX,    X86_GREG_xDX    }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ch_bh),       X86_GREG_xCX+16, X86_GREG_xBX+16 }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _dl_ah),       X86_GREG_xDX,    X86_GREG_xAX+16 }, \
         BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(a_Ins)
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(a_Ins) \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_8(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dh_cl),   X86_GREG_xDX+16, X86_GREG_xCX    }, \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8_64BIT(a_Ins)
+
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_16(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _di_si), X86_GREG_xDI, X86_GREG_xSI       }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _cx_bp), X86_GREG_xCX, X86_GREG_xBP       }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _di_si),       X86_GREG_xDI, X86_GREG_xSI       }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _cx_bp),       X86_GREG_xCX, X86_GREG_xBP       }, \
         BS3CPUINSTR2CMNBINTEST_ENTRIES_16_64BIT(a_Ins)
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(a_Ins) \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_16(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _bp_bx),   X86_GREG_xBP, X86_GREG_xBX       }, \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16_64BIT(a_Ins)
+
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_32(a_Ins) \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_ebx), X86_GREG_xAX, X86_GREG_xBX     }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ecx_ebp), X86_GREG_xCX, X86_GREG_xBP     }, \
-        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _edx_edi), X86_GREG_xDX, X86_GREG_xDI     }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_ebx),     X86_GREG_xAX, X86_GREG_xBX       }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ecx_ebp),     X86_GREG_xCX, X86_GREG_xBP       }, \
+        { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _edx_edi),     X86_GREG_xDX, X86_GREG_xDI       }, \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(a_Ins)
+# define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(a_Ins) \
+        BS3CPUINSTR2CMNBINTEST_ENTRIES_32(a_Ins) \
+        { BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _edi_esi), X86_GREG_xDI, X86_GREG_xSI       }, \
         BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(a_Ins)
 
 
@@ -535,11 +576,11 @@ BS3CPUINSTR2_COMMON_BINARY_U(64, uint64_t, "RX64")
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_and)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(and) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(and) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(and) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(and) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(and) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(and) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(and) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(and) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_and_TestDataU8, g_cBs3CpuInstr2_and_TestDataU8, false /*fCarryIn*/);
@@ -557,11 +598,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_and)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_or)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(or) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(or) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(or) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(or) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(or) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(or) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(or) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(or) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_or_TestDataU8, g_cBs3CpuInstr2_or_TestDataU8, false /*fCarryIn*/);
@@ -579,11 +620,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_or)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_xor)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(xor) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(xor) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(xor) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(xor) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(xor) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(xor) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(xor) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(xor) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_xor_TestDataU8, g_cBs3CpuInstr2_xor_TestDataU8, false /*fCarryIn*/);
@@ -623,11 +664,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_test)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_add)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(add) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(add) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(add) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(add) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(add) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(add) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(add) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(add) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_add_TestDataU8, g_cBs3CpuInstr2_add_TestDataU8, false /*fCarryIn*/);
@@ -645,11 +686,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_add)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adc)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(adc) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(adc) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(adc) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(adc) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(adc) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(adc) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(adc) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(adc) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_adc_TestDataU8, g_cBs3CpuInstr2_adc_TestDataU8, true /*fCarryIn*/);
@@ -667,11 +708,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adc)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sub)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(sub) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(sub) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(sub) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(sub) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(sub) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(sub) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(sub) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(sub) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_sub_TestDataU8, g_cBs3CpuInstr2_sub_TestDataU8, false /*fCarryIn*/);
@@ -689,11 +730,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sub)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sbb)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(sbb) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(sbb) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(sbb) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(sbb) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(sbb) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(sbb) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(sbb) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(sbb) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_sbb_TestDataU8, g_cBs3CpuInstr2_sbb_TestDataU8, true /*fCarryIn*/);
@@ -711,11 +752,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sbb)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmp)(uint8_t bMode)
 {
-    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_8(cmp) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_16(cmp) };
-    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_32(cmp) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests8[]  = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_8(cmp) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests16[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16(cmp) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests32[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32(cmp) };
 #if ARCH_BITS == 64
-    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(cmp) };
+    static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(cmp) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
                                 g_aBs3CpuInstr2_cmp_TestDataU8, g_cBs3CpuInstr2_cmp_TestDataU8, false /*fCarryIn*/);
