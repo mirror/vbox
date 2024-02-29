@@ -395,7 +395,8 @@ ifdef VBOX_WITH_VBOXMANAGE_NLS
  $(foreach lang, $(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES) \
  , $(foreach file,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
    , $(evalcall2 def_vbox_refentry_preprocess_for_manpage,$(VBoxManage_0_OUTDIR)/$(lang),$(file) \
-       ,$(VBOX_PATH_MANUAL_SRC)/$(lang)/$(file),replace-xrefs,$(lang))))
+       ,$(VBOX_PATH_MANUAL_SRC)/$(lang)/$(file),replace-xrefs \
+       ,$(if $(filter $(lang),$(VBOX_MANUAL_LANGUAGES)),$(lang),en_US))))
 
  # Generate the .cpp file.
  $(foreach lang, $(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES) \
