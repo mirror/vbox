@@ -1853,6 +1853,7 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
 
     PSHCLLIST pLstRoots      = &pTransfer->lstRoots;
     char     *pszPathRootAbs = NULL;
+    size_t    cchPathRootAbs = 0;
 
     RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots).split(pszSep);
     if (!lstRootEntries.size())
@@ -1901,7 +1902,8 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
                 /* We don't want to have a relative directory here. */
                 if (RTPathStartsWithRoot(pszPathRootAbs))
                 {
-                    rc = ShClTransferValidatePath(pszPathRootAbs, true /* Path must exist */);
+                    cchPathRootAbs = RTStrNLen(pszPathRootAbs, RTPATH_MAX);
+                    LogRel2(("Shared Clipboard: Transfer uses root '%s'\n", pszPathRootAbs));
                 }
                 else
                     rc = VERR_PATH_IS_RELATIVE;
@@ -1924,11 +1926,12 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
                     if (RT_SUCCESS(rc))
                     {
                         /* Calculate the relative path within the root path. */
-                        const char *pszPathRelToRoot = &pszPathCur[strlen(pszPathRootAbs) + 1 /* Skip terminator or (back)slash. */];
+                        Assert(RTStrNLen(pszPathCur, RTPATH_MAX) >= cchPathRootAbs); /* Sanity. */
+                        const char *pszPathRelToRoot = pszPathCur + cchPathRootAbs;
                         if (    pszPathRelToRoot
                             && *pszPathRelToRoot != '\0')
                         {
-                            LogFlowFunc(("pszPathRelToRoot=%s\n", pszPathRelToRoot));
+                            LogRel2(("Shared Clipboard: Adding list entry '%s'\n", pszPathRelToRoot));
 
                             rc = ShClTransferListEntryInitEx(pEntry, VBOX_SHCL_INFO_F_FSOBJINFO, pszPathRelToRoot,
                                                              pFsObjInfo, sizeof(SHCLFSOBJINFO));
@@ -1936,14 +1939,15 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
                             {
                                 rc = ShClTransferListAddEntry(pLstRoots, pEntry, true /* fAppend */);
                                 if (RT_SUCCESS(rc))
-                                {
                                     pFsObjInfo = NULL; /* pEntry has ownership now. */
-                                }
                             }
                         }
                         else
+                        {
                             LogRel(("Shared Clipboard: Unable to construct relative path for '%s' (root is '%s')\n",
                                     pszPathCur, pszPathRootAbs));
+                            rc = VERR_PATH_DOES_NOT_START_WITH_ROOT;
+                        }
                     }
 
                     if (pFsObjInfo)
@@ -1964,15 +1968,14 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
     }
 
     /* No (valid) root directory found? Bail out early. */
-    if (!pszPathRootAbs)
+    if (   RT_SUCCESS(rc)
+        && !pszPathRootAbs)
         rc = VERR_PATH_DOES_NOT_START_WITH_ROOT;
 
     if (RT_SUCCESS(rc))
     {
         pTransfer->pszPathRootAbs = pszPathRootAbs;
         LogFlowFunc(("pszPathRootAbs=%s, cRoots=%zu\n", pTransfer->pszPathRootAbs, pTransfer->lstRoots.Hdr.cEntries));
-
-        LogRel2(("Shared Clipboard: Transfer uses root '%s'\n", pTransfer->pszPathRootAbs));
     }
     else
     {
