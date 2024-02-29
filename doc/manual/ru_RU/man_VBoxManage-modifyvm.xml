@@ -646,7 +646,7 @@ it unless this changes. -->
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage modifyvm</command> позволяет изменить
@@ -2712,7 +2712,7 @@ it unless this changes. -->
 
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -2727,7 +2727,7 @@ it unless this changes. -->
 <screen>$ VBoxManage modifyvm ol7 --vrde on</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-showvminfo" />,

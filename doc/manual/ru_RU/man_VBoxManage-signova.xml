@@ -69,7 +69,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-signova-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage signova</command> добавляет цифровую

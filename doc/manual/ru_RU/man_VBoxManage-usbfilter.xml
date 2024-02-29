@@ -102,7 +102,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbfilter-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage usbfilter</command> позволяет управлять
@@ -124,7 +124,7 @@
       имеющей соответствующий фильтр, но остальные устройства Kingston
       доступны не будут.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-usbfilter-common">
       <title>Общие операнды и опции</title>
       <variablelist>
         <varlistentry>
@@ -299,7 +299,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbfilter-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

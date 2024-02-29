@@ -59,7 +59,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage createvm</command> создает новый
@@ -82,7 +82,7 @@
     </para>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-common-options">
     <title>Опции команды</title>
     <para>
       В дополнение к требуемому указанию имени или UUID ВМ, можно
@@ -150,7 +150,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -165,7 +165,7 @@
 <screen>$ VBoxManage createvm --name "vm3" --register</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />,

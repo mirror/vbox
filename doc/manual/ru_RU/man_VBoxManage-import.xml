@@ -99,7 +99,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-import-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage import</command> импортирует виртуальную
@@ -131,7 +131,7 @@
       загрузочный образ и некоторые метаданные, описывающие детали
       экземпляра ВМ. Временный файл удаляется после успешного импорта.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-import-common-options">
       <title>Общие параметры</title>
       <variablelist>
         <varlistentry>
@@ -363,7 +363,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-import-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

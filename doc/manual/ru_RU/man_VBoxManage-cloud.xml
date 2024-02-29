@@ -49,7 +49,7 @@
   <refsynopsisdiv>
     <!-- Cloud list -->
     <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-instances">
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-list-instances">
       <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
         <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -59,7 +59,7 @@
         <arg>--state=<replaceable>строка</replaceable></arg>
         <arg>--compartment-id=<replaceable>строка</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-images">
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-list-images">
       <command>VBoxManage cloud</command>
       <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
       <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -71,7 +71,7 @@
     </cmdsynopsis>
 
     <!-- Cloud instance commands -->
-      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-create" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-create" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
        <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -93,7 +93,7 @@
        <arg>--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
        <arg>--cloud-init-script-path=<replaceable>путь к скрипту</replaceable></arg>
      </cmdsynopsis>
-     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-info" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
        <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -102,7 +102,7 @@
        <arg choice="plain">info</arg>
        <arg choice="req">--id=<replaceable>уникальный id</replaceable></arg>
      </cmdsynopsis>
-     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-terminate" sepchar=" ">
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-terminate" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
        <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -111,7 +111,7 @@
        <arg choice="plain">terminate</arg>
        <arg choice="req">--id=<replaceable>уникальный id</replaceable></arg>
      </cmdsynopsis>
-     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-start" sepchar=" ">
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-start" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
        <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -120,7 +120,7 @@
        <arg choice="plain">start</arg>
        <arg choice="req">--id=<replaceable>уникальный id</replaceable></arg>
      </cmdsynopsis>
-     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-pause" sepchar=" ">
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-pause" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
        <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -131,7 +131,7 @@
      </cmdsynopsis>
 
      <!-- Cloud image commands -->
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-image-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
         <command>VBoxManage cloud</command>
           <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
           <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -143,7 +143,7 @@
           <arg>--object-name=<replaceable>имя</replaceable></arg>
           <arg>--instance-id=<replaceable>уникальный id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-info" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-image-info" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
         <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -152,7 +152,7 @@
         <arg choice="plain">info</arg>
         <arg choice="req">--id=<replaceable>уникальный id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-delete" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-image-delete" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
         <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -161,7 +161,7 @@
         <arg choice="plain">delete</arg>
         <arg choice="req">--id=<replaceable>уникальный id</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-import" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-image-import" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
         <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -172,7 +172,7 @@
         <arg>--bucket-name=<replaceable>имя</replaceable></arg>
         <arg>--object-name=<replaceable>имя</replaceable></arg>
       </cmdsynopsis>
-      <cmdsynopsis id="synopsis-vboxmanage-cloudimage-export" sepchar=" ">
+      <cmdsynopsis id="synopsis-vboxmanage-cloud-image-export" sepchar=" ">
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>имя</replaceable></arg>
         <arg choice="req">--profile=<replaceable>имя</replaceable></arg>
@@ -236,7 +236,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-cloud-image-description">
     <title>Описание</title>
 
     <!-- Cloud commands common options  -->
@@ -258,7 +258,7 @@
     </refsect2>
 
     <!-- Cloud list commands -->
-    <refsect2 id="vboxmanage-cloudlist-instances">
+    <refsect2 id="vboxmanage-cloud-list-instances">
       <title>cloud list instances</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -285,7 +285,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudlist-images">
+    <refsect2 id="vboxmanage-cloud-list-images">
       <title>cloud list images</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -313,7 +313,7 @@
     </refsect2>
 
     <!-- Cloud instance commands -->
-    <refsect2 id="vboxmanage-cloudinstance-create">
+    <refsect2 id="vboxmanage-cloud-instance-create">
       <title>cloud instance create</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -373,7 +373,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudinstance-info">
+    <refsect2 id="vboxmanage-cloud-instance-info">
       <title>cloud instance info</title>
       <para>
         Отображает информацию об облачном экземпляре с указанным id.
@@ -385,7 +385,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudinstance-terminate">
+    <refsect2 id="vboxmanage-cloud-instance-terminate">
       <title>cloud instance termination</title>
       <para>
         Удаляет облачный экземпляр с указанным id.
@@ -397,7 +397,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudinstance-start">
+    <refsect2 id="vboxmanage-cloud-instance-start">
       <title>cloud instance start</title>
       <para>
         Запускает облачный экземпляр с указанным id.
@@ -409,7 +409,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudinstance-pause">
+    <refsect2 id="vboxmanage-cloud-instance-pause">
       <title>cloud instance pause</title>
       <para>
         Приостанавливает облачный экземпляр с указанным id.
@@ -423,7 +423,7 @@
 
 
     <!-- Cloud image commands -->
-    <refsect2 id="vboxmanage-cloudimage-create">
+    <refsect2 id="vboxmanage-cloud-image-create">
       <title>cloud image create</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -455,7 +455,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-info">
+    <refsect2 id="vboxmanage-cloud-image-info">
       <title>cloud image info</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -468,7 +468,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-delete">
+    <refsect2 id="vboxmanage-cloud-image-delete">
       <title>cloud image delete</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -481,7 +481,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-import">
+    <refsect2 id="vboxmanage-cloud-image-import">
       <title>cloud image import</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -513,7 +513,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-cloudimage-export">
+    <refsect2 id="vboxmanage-cloud-image-export">
       <title>cloud image export</title>
       <remark role="help-copy-synopsis"/>
       <para>

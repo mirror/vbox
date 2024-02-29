@@ -142,7 +142,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifynvram-description">
     <title>Описание</title>
 
     <para>Команды "modifynvram" предназначены для экспертов, которые хотят изучить и изменить

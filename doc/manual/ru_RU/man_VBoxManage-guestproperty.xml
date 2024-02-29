@@ -97,7 +97,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-guestproperty-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage guestproperty</command> позволяет
@@ -111,7 +111,7 @@
       Гостевой ОС автоматически устанавливают и поддерживают значения
       ключей, начинающихся с <literal>/VirtualBox/</literal>.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-guestproperty-common">
       <title>Общие командные операнды</title>
       <variablelist>
         <varlistentry>
@@ -316,7 +316,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-guestproperty-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

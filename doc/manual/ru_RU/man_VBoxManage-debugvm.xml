@@ -146,7 +146,7 @@
       <arg>--sample-time-us=<replaceable>время</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
-  <refsect1>
+  <refsect1 id="vboxmanage-debugvm-description">
     <title>Описание</title>
 
     <para>

@@ -85,7 +85,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-list-description">
     <title>Описание</title>
     <para>
       Подкоманды <command>VBoxManage list</command> позволяют получить
@@ -502,7 +502,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-list-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

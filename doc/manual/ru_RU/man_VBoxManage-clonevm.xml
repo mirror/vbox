@@ -73,7 +73,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonevm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage clonevm</command> создает клон существующей
@@ -86,7 +86,7 @@
     </para>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonevm-common-args">
     <title>Командные операнды и опции</title>
     <para>
       Следующий список описывает операнды и опции, которые можно использовать
@@ -234,7 +234,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonevm-examples">
     <title>Примеры</title>
     <para>
       Следующая команда создает и регистрирует точный клон ВМ
@@ -261,7 +261,7 @@ $ VBoxManage clonevm ol7 --name="ol7-dev-002" --register --snapshot="Снимо�
 </screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonevm-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-registervm" />

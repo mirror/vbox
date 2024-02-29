@@ -62,7 +62,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-closemedium-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage closemedium</command> удаляет образ
@@ -103,7 +103,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-closemedium-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

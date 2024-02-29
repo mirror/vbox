@@ -345,14 +345,14 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-guestcontrol-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage guestcontrol</command> позволяет
       управлять гостевой виртуальной машиной (ВМ) из хост-системы.
       Смотрите <xref linkend="guestadd-guestcontrol" />.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-guestcontrol-common">
       <title>Общие опции и операнды</title>
       <para>
         Следующие опции могут быть использованы с любой подкомандой
@@ -440,7 +440,7 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2>
+    <refsect2 id="vboxmanage-guestcontrol-process-restrictions">
       <title>Ограничения на гостевой процесс</title>
       <para>
         По умолчанию, можно запустить до пяти гостевых процессов
@@ -1209,7 +1209,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-guestcontrol-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

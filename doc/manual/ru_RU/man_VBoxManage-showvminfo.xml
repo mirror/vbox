@@ -67,7 +67,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage showvminfo</command> выводит
@@ -128,7 +128,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -177,7 +177,7 @@ UUID="1bf3464d-57c6-4d49-92a9-a5cc3816b7e7"
 ...</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />

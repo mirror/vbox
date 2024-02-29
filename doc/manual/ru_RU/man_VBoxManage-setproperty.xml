@@ -54,7 +54,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setproperty-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage setproperty</command> позволяет
@@ -212,7 +212,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setproperty-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -223,7 +223,7 @@
 $ VBoxManage setproperty proxyurl "http://myproxy.com:8080"</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setproperty-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-startvm" />

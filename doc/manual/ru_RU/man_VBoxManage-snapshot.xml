@@ -127,7 +127,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-snapshot-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage snapshot</command> управляет снимками.
@@ -153,7 +153,7 @@
       необходимо указать имя или универсальный уникальный идентификатор
       (UUID) ВМ для которого нужно сделать снимок.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-snapshot-common-args">
       <title>Общие операнды команды</title>
       <variablelist>
         <varlistentry>
@@ -343,7 +343,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-snapshot-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

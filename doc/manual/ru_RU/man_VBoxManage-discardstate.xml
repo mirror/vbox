@@ -56,7 +56,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-discardstate-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage discardstate</command> удаляет
@@ -81,7 +81,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-discardstate-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -92,7 +92,7 @@
 <screen>$ VBoxManage discardstate vm2</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-discardstate-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-adoptstate"/>

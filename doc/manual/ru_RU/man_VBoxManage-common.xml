@@ -65,7 +65,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage</command> - это интерфейс командной
@@ -209,7 +209,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -263,7 +263,7 @@ UUID: <replaceable>строка UUID</replaceable>
 <screen>$ VBoxManage controlvm ol6u9 audioin on</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-controlvm" />,

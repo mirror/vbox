@@ -58,7 +58,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-movevm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage movevm</command> перемещает
@@ -99,7 +99,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-movevm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

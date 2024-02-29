@@ -57,7 +57,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage adoptstate</command> позволяет изменить
@@ -91,7 +91,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -101,7 +101,7 @@
 <screen>$ VBoxManage adoptstate vm2 /home/user/mystate.sav</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-see-also">
     <title>Смотрите Также</title>
     <para>
       <xref linkend="vboxmanage-discardstate"/>

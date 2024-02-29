@@ -57,7 +57,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage checkmediumpwd</command> проверяет
@@ -87,7 +87,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -102,7 +102,7 @@
   Указанный пароль корректен</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-encryptmedium" />

@@ -67,7 +67,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-hostonlyif-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage hostonlyif</command> позволяет
@@ -181,7 +181,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-hostonlyif-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

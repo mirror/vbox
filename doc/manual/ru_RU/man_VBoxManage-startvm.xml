@@ -63,7 +63,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-startvm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage startvm</command> запускает
@@ -148,7 +148,7 @@
     </note>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-startvm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -162,7 +162,7 @@
 <screen>$ VBoxManage startvm ol7u6-mininstall --type headless</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-startvm-see-also">
     <title>Смотрите также</title>
     <para>
 <!--<xref linkend="vboxmanage-vboxheadless" />-->

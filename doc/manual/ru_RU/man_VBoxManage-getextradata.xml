@@ -61,7 +61,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage getextradata</command> позволяет получить
@@ -99,7 +99,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -141,7 +141,7 @@ Copyright (C) 2005-2023 Oracle and/or its affiliates
 Ключ: GUI/VirtualMediaManager/Details/Expanded, Значение: true</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-setextradata" />

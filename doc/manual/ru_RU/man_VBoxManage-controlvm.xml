@@ -719,7 +719,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage controlvm</command> позволяет изменить
@@ -2146,7 +2146,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -2163,7 +2163,7 @@
 <screen>$ VBoxManage controlvm ol7 clipboard mode bidirectional</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />,

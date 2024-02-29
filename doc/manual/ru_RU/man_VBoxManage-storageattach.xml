@@ -122,7 +122,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storageattach-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage storageattach</command> позволяет
@@ -521,7 +521,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storageattach-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -538,7 +538,7 @@
 --type dvddrive --medium ol7-r6-dvd.iso</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storageattach-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />,

@@ -84,7 +84,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-unattended-description">
     <title>Описание</title>
 
     <refsect2 id="vboxmanage-unattended-detect">

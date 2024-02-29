@@ -110,7 +110,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-metrics-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage metrics</command> позволяет наблюдать
@@ -140,7 +140,7 @@
       Собранные данные и настройки сбора данных для ВМ удаляются при
       выключении ВМ.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-metrics-description-metrics">
       <title>Метрики</title>
       <para>
         У хоста и ВМ есть разные наборы соответствующих метрик,
@@ -396,7 +396,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-metrics-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

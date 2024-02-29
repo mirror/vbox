@@ -59,7 +59,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbdevsource-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage usbdevsource</command> добавляет
@@ -117,7 +117,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbdevsource-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

@@ -63,7 +63,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-extpack-description">
     <title>Описание</title>
 
     <refsect2 id="vboxmanage-extpack-install">
@@ -133,7 +133,7 @@
 
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-extpack-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="EXTPACK_UNINSTALL,EXTPACK"/>
     <para>

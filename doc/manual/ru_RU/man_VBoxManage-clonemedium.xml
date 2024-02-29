@@ -74,7 +74,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage clonemedium</command> позволяет клонировать
@@ -188,7 +188,7 @@
     </note>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -205,7 +205,7 @@
 <screen>$ VBoxManage clonemedium disk01.vdi disk02.vmdk --format VMDK</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />
