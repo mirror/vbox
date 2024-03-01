@@ -6245,18 +6245,16 @@ iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
             off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, idxRegResult, ARMV8_A64_REG_XZR);
         else
             off = iemNativeEmitCmpGpr32WithGprEx(pCodeBuf, off, idxRegResult, ARMV8_A64_REG_XZR);
-# if 0
-        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, idxTmpReg, X86_EFL_ZF);
-        pCodeBuf[off++] = Armv8A64MkInstrCSel(idxTmpReg, idxTmpReg, ARMV8_A64_REG_XZR, kArmv8InstrCond_Eq, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/);
-# else
         pCodeBuf[off++] = Armv8A64MkInstrCSet(idxTmpReg, kArmv8InstrCond_Eq, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/, X86_EFL_ZF_BIT);
-# endif
 
         /* Calculate signed: We could use the native SF flag, but it's just as simple to calculate it by shifting. */
         pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxRegResult, cOpBits - 1, cOpBits > 32 /*f64Bit*/);
+# if 0 /* BFI and ORR hsould have the same performance characteristics, so use BFI like we'll have to do for SUB/ADD/++. */
         pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegEfl, idxRegEfl, idxTmpReg, false /*f64Bit*/, X86_EFL_SF_BIT);
+# else
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxTmpReg, X86_EFL_SF_BIT, 1, false /*f64Bit*/);
+# endif
 
         /* Calculate 8-bit parity of the result. */
         pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxRegResult, idxRegResult, false /*f64Bit*/,
@@ -6287,14 +6285,52 @@ iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /*
      * The XOR instruction will clear OF, CF and AF (latter is off undefined),
      * so we don't need the initial destination value.
+     *
+     * On AMD64 we must use the correctly sizeed XOR instructions to get the
+     * right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
+     * in the 32-bit ones.
      */
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
     //off = iemNativeEmitBrk(pReNative, off, 0x2222);
-    if (cOpBits > 32)
-        off = iemNativeEmitXorGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
-    else
-        off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
+    switch (cOpBits)
+    {
+        case 32:
+#ifndef RT_ARCH_AMD64
+        case 16:
+        case 8:
+#endif
+            off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+
+        default: AssertFailed(); RT_FALL_THRU();
+        case 64:
+            off = iemNativeEmitXorGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+
+#ifdef RT_ARCH_AMD64
+        case 16:
+        {
+            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+            off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+        }
+
+        case 8:
+        {
+            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+            if (idxRegDst >= 8 || idxRegSrc >= 8)
+                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_R : 0) | (idxRegSrc >= 8 ? X86_OP_REX_B : 0);
+            else if (idxRegDst >= 4 || idxRegSrc >= 4)
+                pCodeBuf[off++] = X86_OP_REX;
+            pCodeBuf[off++] = 0x32;
+            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxRegSrc & 7);
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+            break;
+        }
+#endif
+    }
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
