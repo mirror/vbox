@@ -6213,7 +6213,7 @@ iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
         uint8_t const idxRegEfl = iemNativeVarRegisterAcquire(pReNative, idxVarEfl, &off, true /*fInitialized*/);
         uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-        pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2 + 6 + 6 + 3);
+        pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2 + 7 + 7 + 3);
         /* pop   tmp */
         if (idxTmpReg >= 8)
             pCodeBuf[off++] = X86_OP_REX_B;
