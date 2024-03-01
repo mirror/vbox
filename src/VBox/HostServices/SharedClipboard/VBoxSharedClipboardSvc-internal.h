@@ -464,41 +464,21 @@ int ShClBackendTransferHandleStatusReply(PSHCLBACKEND pBackend, PSHCLCLIENT pCli
 /** @name Internal Shared Clipboard transfer host service functions.
  * @{
  */
-int shClSvcTransferHandler(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t u32Function,
-                           uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
-int shClSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+int ShClSvcTransferMsgClientHandler(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
+int ShClSvcTransferMsgHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 /** @} */
 
 /** @name Shared Clipboard transfer interface implementations for guest -> host transfers.
  * @{
  */
-DECLCALLBACK(int) shClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx);
-DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-DECLCALLBACK(int) shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj);
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-/** @} */
-
-/** @name Shared Clipboard transfer interface implementations for host -> guest transfers.
- * @{
- */
-DECLCALLBACK(int) shClSvcTransferIfaceHGListHdrWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-DECLCALLBACK(int) shClSvcTransferIfaceHGListEntryWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-DECLCALLBACK(int) shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
-/** @} */
-
-/** @name Shared Clipboard transfer callbacks for the host service.
- * @{
- */
-DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTXPROVIDERCTX pCtx);
-DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTXPROVIDERCTX pCtx);
-DECLCALLBACK(void) VBoxSvcClipboardDataCompleteCallback(PSHCLTXPROVIDERCTX pCtx);
-DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
-DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTXPROVIDERCTX pCtx);
-DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
 /** @} */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

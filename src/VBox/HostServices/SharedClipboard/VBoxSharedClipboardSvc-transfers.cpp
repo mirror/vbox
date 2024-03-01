@@ -278,7 +278,7 @@ int ShClSvcTransferGHRootListReadEntry(PSHCLCLIENT pClient, PSHCLTRANSFER pTrans
 *********************************************************************************************************************************/
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnRootListRead */
-DECLCALLBACK(int) shClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx)
+DECLCALLBACK(int) ShClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
@@ -306,7 +306,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx)
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListOpen */
-DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
                                                  PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList)
 {
     LogFlowFuncEnter();
@@ -380,7 +380,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListClose */
-DECLCALLBACK(int) shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -440,7 +440,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLL
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrRead */
-DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
                                                     SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
@@ -502,19 +502,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-/** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrWrite */
-DECLCALLBACK(int) shClSvcTransferIfaceHGListHdrWrite(PSHCLTXPROVIDERCTX pCtx,
-                                                     SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
-{
-    RT_NOREF(pCtx, hList, pListHdr);
-
-    LogFlowFuncEnter();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
-DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
+DECLCALLBACK(int) ShClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                       SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     LogFlowFuncEnter();
@@ -576,19 +565,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-/** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryWrite */
-DECLCALLBACK(int) shClSvcTransferIfaceHGListEntryWrite(PSHCLTXPROVIDERCTX pCtx,
-                                                       SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
-{
-    RT_NOREF(pCtx, hList, pListEntry);
-
-    LogFlowFuncEnter();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjOpen */
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
 
@@ -666,7 +644,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOB
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjClose */
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -732,7 +710,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOB
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjRead */
-DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+DECLCALLBACK(int) ShClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
 {
     LogFlowFuncEnter();
@@ -781,73 +759,6 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJ
 
                     if (pcbRead)
                         *pcbRead = cbRead;
-
-                    ShClPayloadFree(pPayload);
-                }
-                else
-                    rc = rcEvent;
-            }
-
-            ShClEventRelease(pEvent);
-        }
-        else
-        {
-            shClSvcMsgFree(pClient, pMsg);
-            rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
-        }
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/** @copydoc SHCLTXPROVIDERIFACE::pfnObjWrite */
-DECLCALLBACK(int) shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
-                                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
-{
-    LogFlowFuncEnter();
-
-    PSHCLCLIENT pClient = (PSHCLCLIENT)pCtx->pvUser;
-    AssertPtr(pClient);
-
-    int rc;
-
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE,
-                                          VBOX_SHCL_CPARMS_OBJ_WRITE);
-    if (pMsg)
-    {
-        PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
-        if (RT_SUCCESS(rc))
-        {
-            HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                     pCtx->pTransfer->State.uID, pEvent->idEvent));
-            HGCMSvcSetU64(&pMsg->aParms[1], hObj);
-            HGCMSvcSetU64(&pMsg->aParms[2], cbData);
-            HGCMSvcSetU64(&pMsg->aParms[3], fFlags);
-
-            shClSvcClientLock(pClient);
-
-            shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
-            rc = shClSvcClientWakeup(pClient);
-
-            shClSvcClientUnlock(pClient);
-
-            if (RT_SUCCESS(rc))
-            {
-                int               rcEvent;
-                PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
-                if (RT_SUCCESS(rc))
-                {
-                    const uint32_t cbRead = RT_MIN(cbData, pPayload->cbData);
-
-                    memcpy(pvData, pPayload->pvData, cbRead);
-
-                    if (pcbWritten)
-                        *pcbWritten = cbRead;
 
                     ShClPayloadFree(pPayload);
                 }
@@ -1661,7 +1572,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
 }
 
 /**
- * Transfer client (guest) handler for the Shared Clipboard host service.
+ * Transfer message client (guest) handler for the Shared Clipboard host service.
  *
  * @returns VBox status code, or VINF_HGCM_ASYNC_EXECUTE if returning to the client will be deferred.
  * @param   pClient             Pointer to associated client.
@@ -1671,12 +1582,12 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
  * @param   aParms              Array function parameters supplied.
  * @param   tsArrival           Timestamp of arrival.
  */
-int shClSvcTransferHandler(PSHCLCLIENT pClient,
-                           VBOXHGCMCALLHANDLE callHandle,
-                           uint32_t u32Function,
-                           uint32_t cParms,
-                           VBOXHGCMSVCPARM aParms[],
-                           uint64_t tsArrival)
+int ShClSvcTransferMsgClientHandler(PSHCLCLIENT pClient,
+                                    VBOXHGCMCALLHANDLE callHandle,
+                                    uint32_t u32Function,
+                                    uint32_t cParms,
+                                    VBOXHGCMSVCPARM aParms[],
+                                    uint64_t tsArrival)
 {
     RT_NOREF(callHandle, aParms, tsArrival);
 
@@ -2115,16 +2026,16 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
 }
 
 /**
- * Transfer host handler for the Shared Clipboard host service.
+ * Transfer message host handler for the Shared Clipboard host service.
  *
  * @returns VBox status code.
  * @param   u32Function         Function number being called.
  * @param   cParms              Number of function parameters supplied.
  * @param   aParms              Array function parameters supplied.
  */
-int shClSvcTransferHostHandler(uint32_t u32Function,
-                               uint32_t cParms,
-                               VBOXHGCMSVCPARM aParms[])
+int ShClSvcTransferMsgHostHandler(uint32_t u32Function,
+                                  uint32_t cParms,
+                                  VBOXHGCMSVCPARM aParms[])
 {
     RT_NOREF(cParms, aParms);
 

@@ -815,7 +815,7 @@ static int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE h
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-static int shClSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -1594,9 +1594,14 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 
 
 /**
- * Handles the VBOX_SHCL_GUEST_FN_REPORT_FORMATS message from the guest.
+ * Implements VBOX_SHCL_GUEST_FN_REPORT_FORMATS.
+ *
+ * @returns VBox status code.
+ * @param   pClient      The client state.
+ * @param   cParms       Number of parameters.
+ * @param   paParms      Array of parameters.
  */
-static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Check if the service mode allows this operation and whether the guest is
@@ -1690,8 +1695,9 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
 }
 
 /**
+ * Implements VBOX_SHCL_GUEST_FN_DATA_READ.
+ *
  * Called when the guest wants to read host clipboard data.
- * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message.
  *
  * @returns VBox status code.
  * @retval  VINF_BUFFER_OVERFLOW if the guest supplied a smaller buffer than needed in order to read the host clipboard data.
@@ -1699,7 +1705,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
  */
-static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
@@ -1859,15 +1865,16 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
 }
 
 /**
+ * Implements VBOX_SHCL_GUEST_FN_DATA_WRITE.
+ *
  * Called when the guest writes clipboard data to the host.
- * Handles the VBOX_SHCL_GUEST_FN_DATA_WRITE message.
  *
  * @returns VBox status code.
  * @param   pClient             Client that wants to read host clipboard data.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
  */
-static int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
@@ -2028,14 +2035,14 @@ static int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCM
 }
 
 /**
- * Gets an error from HGCM service parameters.
+ * Implements the VBOX_SHCL_GUEST_FN_ERROR.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
  * @param   pRc                 Where to store the received error code.
  */
-static int shClSvcClientError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
+static int shClSvcClientMsgError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
 {
     AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
@@ -2226,7 +2233,7 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_QUERY_FEATURES:
-            rc = shClSvcClientQueryFeatures(callHandle, cParms, paParms);
+            rc = shClSvcClientMsgQueryFeatures(callHandle, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
@@ -2254,21 +2261,21 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_REPORT_FORMATS:
-            rc = shClSvcClientReportFormats(pClient, cParms, paParms);
+            rc = shClSvcClientMsgReportFormats(pClient, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_DATA_READ:
-            rc = shClSvcClientReadData(pClient, cParms, paParms);
+            rc = shClSvcClientMsgDataRead(pClient, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_DATA_WRITE:
-            rc = shClSvcClientWriteData(pClient, cParms, paParms);
+            rc = shClSvcClientMsgDataWrite(pClient, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_ERROR:
         {
             int rcGuest;
-            rc = shClSvcClientError(cParms,paParms, &rcGuest);
+            rc = shClSvcClientMsgError(cParms,paParms, &rcGuest);
             if (RT_SUCCESS(rc))
             {
                 LogRel(("Shared Clipboard: Error reported from guest side: %Rrc\n", rcGuest));
@@ -2294,7 +2301,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 && (pClient->State.fGuestFeatures0 &  VBOX_SHCL_GF_0_CONTEXT_ID) )
             {
                 if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED)
-                    rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+                    rc = ShClSvcTransferMsgClientHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
                 else
                 {
                     LogRel2(("Shared Clipboard: File transfers are disabled for this VM\n"));
@@ -2449,7 +2456,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = shClSvcTransferHostHandler(u32Function, cParms, paParms);
+            rc = ShClSvcTransferMsgHostHandler(u32Function, cParms, paParms);
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif

@@ -381,16 +381,16 @@ static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLB
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* Guest -> Host. */
         {
-            pIface->pfnRootListRead  = shClSvcTransferIfaceGHRootListRead;
+            pIface->pfnRootListRead  = ShClSvcTransferIfaceGHRootListRead;
 
-            pIface->pfnListOpen      = shClSvcTransferIfaceGHListOpen;
-            pIface->pfnListClose     = shClSvcTransferIfaceGHListClose;
-            pIface->pfnListHdrRead   = shClSvcTransferIfaceGHListHdrRead;
-            pIface->pfnListEntryRead = shClSvcTransferIfaceGHListEntryRead;
+            pIface->pfnListOpen      = ShClSvcTransferIfaceGHListOpen;
+            pIface->pfnListClose     = ShClSvcTransferIfaceGHListClose;
+            pIface->pfnListHdrRead   = ShClSvcTransferIfaceGHListHdrRead;
+            pIface->pfnListEntryRead = ShClSvcTransferIfaceGHListEntryRead;
 
-            pIface->pfnObjOpen       = shClSvcTransferIfaceGHObjOpen;
-            pIface->pfnObjClose      = shClSvcTransferIfaceGHObjClose;
-            pIface->pfnObjRead       = shClSvcTransferIfaceGHObjRead;
+            pIface->pfnObjOpen       = ShClSvcTransferIfaceGHObjOpen;
+            pIface->pfnObjClose      = ShClSvcTransferIfaceGHObjClose;
+            pIface->pfnObjRead       = ShClSvcTransferIfaceGHObjRead;
             break;
         }
 
