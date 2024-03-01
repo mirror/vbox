@@ -13550,14 +13550,18 @@ iemNativeEmitFetchFpuFcw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint16_t));
 
+    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+
     /* Allocate a temporary FCW register. */
-    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, false /*fInitialized*/);
-    uint8_t const idxFcwReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFcw, kIemNativeGstRegUse_ReadOnly);
+    /** @todo eliminate extra register   */
+    uint8_t const idxFcwReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFcw,
+                                                              kIemNativeGstRegUse_ReadOnly);
 
     off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxReg, idxFcwReg);
 
     /* Free but don't flush the FCW register. */
     iemNativeRegFreeTmp(pReNative, idxFcwReg);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
 
     return off;
 }
@@ -13573,14 +13577,17 @@ iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint16_t));
 
-    /* Allocate a temporary FSW register. */
     uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, false /*fInitialized*/);
-    uint8_t const idxFswReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw, kIemNativeGstRegUse_ReadOnly);
+    /* Allocate a temporary FSW register. */
+    /** @todo eliminate extra register   */
+    uint8_t const idxFswReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw,
+                                                              kIemNativeGstRegUse_ReadOnly);
 
     off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxReg, idxFswReg);
 
     /* Free but don't flush the FSW register. */
     iemNativeRegFreeTmp(pReNative, idxFswReg);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
 
     return off;
 }
