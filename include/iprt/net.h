@@ -153,6 +153,122 @@ RTDECL(int) RTNetMaskToPrefixIPv4(PCRTNETADDRIPV4 pMask, int *piPrefix);
  */
 RTDECL(int) RTNetPrefixToMaskIPv4(int iPrefix, PRTNETADDRIPV4 pMask);
 
+/**
+ * Initializes an IPv4 address from four octets.
+ *
+ * @returns The address (network endian).
+ * @param   b3          The 4th and the most significant address octet.
+ * @param   b2          The 3rd address octet.
+ * @param   b1          The 2nd address octet.
+ * @param   b0          The 1st and least significant address octet.
+ */
+DECLINLINE(RTNETADDRIPV4) RTNetIPv4AddrFromU8(uint8_t b3, uint8_t b2, uint8_t b1, uint8_t b0)
+{
+    RTNETADDRIPV4 Ret;
+#ifdef RT_LITTLE_ENDIAN
+    Ret.u = RT_MAKE_U32_FROM_U8(    b3, b2, b1, b0);
+#else
+    Ret.u = RT_MAKE_U32_FROM_MSB_U8(b3, b2, b1, b0);
+#endif
+    return Ret;
+}
+
+/**
+ * Initializes an IPv4 address from four octets, host endian version.
+ *
+ * @returns The address (host endian).
+ * @param   b3          The 4th and the most significant address octet.
+ * @param   b2          The 3rd address octet.
+ * @param   b1          The 2nd address octet.
+ * @param   b0          The 1st and least significant address octet.
+ */
+DECLINLINE(RTNETADDRIPV4) RTNetIPv4AddrHEFromU8(uint8_t b3, uint8_t b2, uint8_t b1, uint8_t b0)
+{
+    RTNETADDRIPV4 Ret;
+    Ret.u = RT_MAKE_U32_FROM_MSB_U8(b3, b2, b1, b0);
+    return Ret;
+}
+
+#ifdef RTNET_INCL_IN_ADDR
+
+/**
+ * Initializes an struct in_addr from four octets
+ *
+ * @returns The in_addr (network endian).
+ * @param   b3          The 4th and the most significant address octet.
+ * @param   b2          The 3rd address octet.
+ * @param   b1          The 2nd address octet.
+ * @param   b0          The 1st and least significant address octet.
+ */
+DECLINLINE(struct in_addr) RTNetInAddrFromU8(uint8_t b3, uint8_t b2, uint8_t b1, uint8_t b0)
+{
+    struct in_addr Ret;
+# ifdef RT_LITTLE_ENDIAN
+    Ret.s_addr = RT_MAKE_U32_FROM_U8(    b3, b2, b1, b0);
+# else
+    Ret.s_addr = RT_MAKE_U32_FROM_MSB_U8(b3, b2, b1, b0);
+# endif
+    return Ret;
+}
+
+/**
+ * Converts an IPv4 address to the struct in_addr format.
+ *
+ * @returns Converted address (network endian).
+ * @param   pAddr           The IPv4 address to convert (network endian).
+ */
+DECLINLINE(struct in_addr) RTNetIPv4AddrToInAddr(PCRTNETADDRIPV4 pAddr)
+{
+    struct in_addr Ret;
+    Ret.s_addr = pAddr->u;
+    return Ret;
+}
+
+# ifdef IPRT_INCLUDED_asm_h /* for ASMByteSwapU32 */
+/**
+ * Converts an IPv4 address to the struct in_addr format, host endian version.
+ *
+ * @returns Converted address (network endian).
+ * @param   pAddr           The IPv4 address to convert - host endian.
+ */
+DECLINLINE(struct in_addr) RTNetIPv4AddrHEToInAddr(PCRTNETADDRIPV4 pAddr)
+{
+    struct in_addr Ret;
+    Ret.s_addr = RT_H2N_U32(pAddr->u);
+    return Ret;
+}
+# endif
+
+/**
+ * Converts an IPv4 address to the struct in_addr format.
+ *
+ * @returns Converted address (network endian).
+ * @param   pInAddr         The in_addr to convert (network endian).
+ */
+DECLINLINE(RTNETADDRIPV4) RTNetIPv4AddrFromInAddr(struct in_addr const *pInAddr)
+{
+    RTNETADDRIPV4 Ret;
+    Ret.u = pInAddr->s_addr;
+    return Ret;
+}
+
+# ifdef IPRT_INCLUDED_asm_h /* for ASMByteSwapU32 */
+/**
+ * Converts an IPv4 address to the struct in_addr format, host endian version.
+ *
+ * @returns Converted address (host endian).
+ * @param   pInAddr         The in_addr to convert (network endian).
+ */
+DECLINLINE(RTNETADDRIPV4) RTNetIPv4AddrHEFromInAddr(struct in_addr const *pInAddr)
+{
+    RTNETADDRIPV4 Ret;
+    Ret.u = RT_N2H_U32(pInAddr->s_addr);
+    return Ret;
+}
+# endif
+
+#endif /* RTNET_INCL_IN_ADDR */
+
 
 /**
  * IPv6 address.
