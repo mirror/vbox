@@ -1653,6 +1653,35 @@ RT_C_DECLS_END
 # define AssertRelease(expr)  do { } while (0)
 #endif
 
+/** @def AssertReleaseStmt
+ * Assert that an expression is true. If false, hit breakpoint and execute the
+ * statement.
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute on failure.
+ */
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseStmt(expr, stmt)  \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+        { \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+            RTAssertReleasePanic(); \
+            stmt; \
+        } \
+    } while (0)
+#else
+# define AssertReleaseStmt(expr, stmt)  \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+        { \
+            stmt; \
+        } \
+    } while (0)
+#endif
 
 /** @def AssertReleaseReturn
  * Assert that an expression is true, hit a breakpoint and return if it isn't.
@@ -1919,6 +1948,20 @@ RT_C_DECLS_END
     } while (0)
 #else
 # define AssertReleaseFailed() do { } while (0)
+#endif
+
+/** @def AssertReleaseFailedStmt
+ * An assertion failed, hit breakpoint and execute statement.
+ */
+#if defined(RT_STRICT) || !defined(RTASSERT_NO_RELEASE_ASSERTIONS)
+# define AssertReleaseFailedStmt(stmt) \
+    do { \
+        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+        RTAssertReleasePanic(); \
+        stmt; \
+    } while (0)
+#else
+# define AssertReleaseFailedStmt(stmt)     do { stmt; } while (0)
 #endif
 
 /** @def AssertReleaseFailedReturn
