@@ -86,23 +86,28 @@ typedef struct IEMNATIVEEMITTLBSTATE
                           uint8_t a_iSegReg, uint8_t a_cbMem, uint8_t a_offDisp = 0)
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
         /* 32-bit and 64-bit wraparound will require special handling, so skip these for absolute addresses. */
-        :           fSkip(   a_pReNative->Core.aVars[a_idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate
+        :           fSkip(      a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].enmKind
+                             == kIemNativeVarKind_Immediate
                           &&   (  (a_pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) != IEMMODE_64BIT
                                 ? (uint64_t)(UINT32_MAX - a_cbMem - a_offDisp)
                                 : (uint64_t)(UINT64_MAX - a_cbMem - a_offDisp))
-                             < a_pReNative->Core.aVars[a_idxVarGCPtrMem].u.uValue)
+                             < a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].u.uValue)
 #else
         :           fSkip(true)
 #endif
 #if defined(RT_ARCH_AMD64) /* got good immediate encoding, otherwise we just load the address in a reg immediately. */
         ,    idxRegPtrHlp(UINT8_MAX)
 #else
-        ,    idxRegPtrHlp(   a_pReNative->Core.aVars[a_idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate
+        ,    idxRegPtrHlp(      a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].enmKind
+                             != kIemNativeVarKind_Immediate
                           || fSkip
                           ? UINT8_MAX
-                          : iemNativeRegAllocTmpImm(a_pReNative, a_poff, a_pReNative->Core.aVars[a_idxVarGCPtrMem].u.uValue) )
+                          : iemNativeRegAllocTmpImm(a_pReNative, a_poff,
+                                                    a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].u.uValue))
 #endif
-        ,       idxRegPtr(a_pReNative->Core.aVars[a_idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate && !fSkip
+        ,       idxRegPtr(      a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].enmKind
+                             != kIemNativeVarKind_Immediate
+                          && !fSkip
                           ? iemNativeVarRegisterAcquire(a_pReNative, a_idxVarGCPtrMem, a_poff,
                                                         true /*fInitialized*/, IEMNATIVE_CALL_ARG2_GREG)
                           : idxRegPtrHlp)
@@ -120,9 +125,11 @@ typedef struct IEMNATIVEEMITTLBSTATE
 #if defined(RT_ARCH_ARM64)
         ,         idxReg3(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
 #endif
-        ,         uAbsPtr(  a_pReNative->Core.aVars[a_idxVarGCPtrMem].enmKind != kIemNativeVarKind_Immediate || fSkip
+        ,         uAbsPtr(      a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].enmKind
+                             != kIemNativeVarKind_Immediate
+                          || fSkip
                           ? UINT64_MAX
-                          : a_pReNative->Core.aVars[a_idxVarGCPtrMem].u.uValue)
+                          : a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].u.uValue)
 
     {
         RT_NOREF(a_cbMem, a_offDisp);

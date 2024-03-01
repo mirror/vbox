@@ -6719,10 +6719,10 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
                                      bool fSpilledVarsInVolatileRegs = false)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
-    AssertStmt(pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack,
-               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    AssertStmt(pVar->enmKind == kIemNativeVarKind_Stack, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
 
-    uint8_t const idxRegVar = pReNative->Core.aVars[idxVar].idxReg;
+    uint8_t const idxRegVar = pVar->idxReg;
     if (   idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs)
         && (   (RT_BIT_32(idxRegVar) & (~IEMNATIVE_CALL_VOLATILE_GREG_MASK | fHstVolatileRegsAllowed))
             || !fSpilledVarsInVolatileRegs ))
@@ -6740,7 +6740,7 @@ iemNativeEmitLoadArgGregFromStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off
     }
     else
     {
-        uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+        uint8_t const idxStackSlot = pVar->idxStackSlot;
         AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
         off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArg, iemNativeStackCalcBpDisp(idxStackSlot));
         if (offAddend)
@@ -6761,8 +6761,9 @@ iemNativeEmitLoadArgGregFromImmOrStackVar(PIEMRECOMPILERSTATE pReNative, uint32_
                                           bool fSpilledVarsInVolatileRegs = false)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
-    if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Immediate)
-        off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArg, pReNative->Core.aVars[idxVar].u.uValue + offAddend);
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    if (pVar->enmKind == kIemNativeVarKind_Immediate)
+        off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArg, pVar->u.uValue + offAddend);
     else
         off = iemNativeEmitLoadArgGregFromStackVar(pReNative, off, idxRegArg, idxVar, offAddend,
                                                    fHstVolatileRegsAllowed, fSpilledVarsInVolatileRegs);
@@ -6780,22 +6781,23 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                     bool fFlushShadows)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
-    AssertStmt(   pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Invalid
-               || pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack,
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    AssertStmt(   pVar->enmKind == kIemNativeVarKind_Invalid
+               || pVar->enmKind == kIemNativeVarKind_Stack,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
 
     uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxVar);
     int32_t const offBpDisp      = iemNativeStackCalcBpDisp(idxStackSlot);
 
-    uint8_t const idxRegVar      = pReNative->Core.aVars[idxVar].idxReg;
+    uint8_t const idxRegVar      = pVar->idxReg;
     if (idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
         off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, idxRegVar);
         iemNativeRegFreeVar(pReNative, idxRegVar, fFlushShadows);
-        Assert(pReNative->Core.aVars[idxVar].idxReg == UINT8_MAX);
+        Assert(pVar->idxReg == UINT8_MAX);
     }
-    Assert(   pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX
-           && pReNative->Core.aVars[idxVar].idxReg       == UINT8_MAX);
+    Assert(   pVar->idxStackSlot != UINT8_MAX
+           && pVar->idxReg       == UINT8_MAX);
 
     return iemNativeEmitLeaGprByBp(pReNative, off, idxRegArg, offBpDisp);
 }

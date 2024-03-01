@@ -793,9 +793,9 @@ typedef struct IEMNATIVEVAR
     uint8_t             idxReg;
     /** The argument number if argument, UINT8_MAX if regular variable. */
     uint8_t             uArgNo;
-    /** If referenced, the index of the variable referencing this one, otherwise
-     *  UINT8_MAX.  A referenced variable must only be placed on the stack and
-     *  must be either kIemNativeVarKind_Stack or kIemNativeVarKind_Immediate. */
+    /** If referenced, the index (unpacked) of the variable referencing this one,
+     * otherwise UINT8_MAX.  A referenced variable must only be placed on the stack
+     * and must be either kIemNativeVarKind_Stack or kIemNativeVarKind_Immediate. */
     uint8_t             idxReferrerVar;
     /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not.
      * @todo not sure what this really is for...   */
@@ -808,7 +808,7 @@ typedef struct IEMNATIVEVAR
     {
         /** kIemNativeVarKind_Immediate: The immediate value. */
         uint64_t            uValue;
-        /** kIemNativeVarKind_VarRef: The index of the variable being referenced. */
+        /** kIemNativeVarKind_VarRef: The index (unpacked) of the variable being referenced. */
         uint8_t             idxRefVar;
         /** kIemNativeVarKind_GstRegRef: The guest register being referrenced. */
         struct
@@ -820,6 +820,10 @@ typedef struct IEMNATIVEVAR
         } GstRegRef;
     } u;
 } IEMNATIVEVAR;
+/** Pointer to a variable or argument. */
+typedef IEMNATIVEVAR *PIEMNATIVEVAR;
+/** Pointer to a const variable or argument. */
+typedef IEMNATIVEVAR const *PCIEMNATIVEVAR;
 
 /** What is being kept in a host register. */
 typedef enum IEMNATIVEWHAT : uint8_t
@@ -877,7 +881,7 @@ typedef struct IEMNATIVEHSTREG
     uint64_t        fGstRegShadows;
     /** What is being kept in this register. */
     IEMNATIVEWHAT   enmWhat;
-    /** Variable index if holding a variable, otherwise UINT8_MAX. */
+    /** Variable index (packed) if holding a variable, otherwise UINT8_MAX. */
     uint8_t         idxVar;
     /** Stack slot assigned by iemNativeVarSaveVolatileRegsPreHlpCall and freed
      * by iemNativeVarRestoreVolatileRegsPostHlpCall.  This is not valid outside
@@ -905,7 +909,7 @@ typedef struct IEMNATIVECORESTATE
 
     union
     {
-        /** Index of variable arguments, UINT8_MAX if not valid. */
+        /** Index of variable (unpacked) arguments, UINT8_MAX if not valid. */
         uint8_t                 aidxArgVars[8];
         /** For more efficient resetting. */
         uint64_t                u64ArgVars;
@@ -932,6 +936,25 @@ typedef struct IEMNATIVECORESTATE
 typedef IEMNATIVECORESTATE *PIEMNATIVECORESTATE;
 /** Pointer to const core state. */
 typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
+
+/** @def IEMNATIVE_VAR_IDX_UNPACK
+ * @returns Index into IEMNATIVECORESTATE::aVars.
+ * @param   a_idxVar    Variable index w/ magic (in strict builds).
+ */
+/** @def IEMNATIVE_VAR_IDX_PACK
+ * @returns Variable index w/ magic (in strict builds).
+ * @param   a_idxVar    Index into IEMNATIVECORESTATE::aVars.
+ */
+#ifdef VBOX_STRICT
+# define IEMNATIVE_VAR_IDX_UNPACK(a_idxVar) ((a_idxVar) & IEMNATIVE_VAR_IDX_MASK)
+# define IEMNATIVE_VAR_IDX_PACK(a_idxVar)   ((a_idxVar) | IEMNATIVE_VAR_IDX_MAGIC)
+# define IEMNATIVE_VAR_IDX_MAGIC            UINT8_C(0xd0)
+# define IEMNATIVE_VAR_IDX_MAGIC_MASK       UINT8_C(0xf0)
+# define IEMNATIVE_VAR_IDX_MASK             UINT8_C(0x0f)
+#else
+# define IEMNATIVE_VAR_IDX_UNPACK(a_idxVar) (a_idxVar)
+# define IEMNATIVE_VAR_IDX_PACK(a_idxVar)   (a_idxVar)
+#endif
 
 
 /**
@@ -1180,7 +1203,6 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE 
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                                                             IEMNATIVEGSTREG enmGstReg);
 
-DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocVar(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t idxVar);
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg);
 DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
@@ -1259,23 +1281,55 @@ iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cI
 /**
  * Checks that a variable index is valid.
  */
-#define IEMNATIVE_ASSERT_VAR_IDX(a_pReNative, a_idxVar) \
+#ifdef IEMNATIVE_VAR_IDX_MAGIC
+# define IEMNATIVE_ASSERT_VAR_IDX(a_pReNative, a_idxVar) \
+    AssertMsg(   ((a_idxVar) & IEMNATIVE_VAR_IDX_MAGIC_MASK) == IEMNATIVE_VAR_IDX_MAGIC \
+              && (unsigned)IEMNATIVE_VAR_IDX_UNPACK(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
+              && ((a_pReNative)->Core.bmVars & RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(a_idxVar))), \
+              ("%s=%#x\n", #a_idxVar, a_idxVar))
+#else
+# define IEMNATIVE_ASSERT_VAR_IDX(a_pReNative, a_idxVar) \
     AssertMsg(   (unsigned)(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
               && ((a_pReNative)->Core.bmVars & RT_BIT_32(a_idxVar)), ("%s=%d\n", #a_idxVar, a_idxVar))
+#endif
 
 /**
  * Checks that a variable index is valid and that the variable is assigned the
  * correct argument number.
  * This also adds a RT_NOREF of a_idxVar.
  */
-#define IEMNATIVE_ASSERT_ARG_VAR_IDX(a_pReNative, a_idxVar, a_uArgNo) do { \
+#ifdef IEMNATIVE_VAR_IDX_MAGIC
+# define IEMNATIVE_ASSERT_ARG_VAR_IDX(a_pReNative, a_idxVar, a_uArgNo) do { \
+        RT_NOREF_PV(a_idxVar); \
+        AssertMsg(   ((a_idxVar) & IEMNATIVE_VAR_IDX_MAGIC_MASK) == IEMNATIVE_VAR_IDX_MAGIC \
+                  && (unsigned)IEMNATIVE_VAR_IDX_UNPACK(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
+                  && ((a_pReNative)->Core.bmVars & RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(a_idxVar))) \
+                  && (a_pReNative)->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVar)].uArgNo == (a_uArgNo), \
+                  ("%s=%d; uArgNo=%d, expected %u\n", #a_idxVar, a_idxVar, \
+                   (a_pReNative)->Core.aVars[RT_MIN(IEMNATIVE_VAR_IDX_UNPACK(a_idxVar), \
+                                                    RT_ELEMENTS((a_pReNative)->Core.aVars)) - 1].uArgNo, \
+                   a_uArgNo)); \
+    } while (0)
+#else
+# define IEMNATIVE_ASSERT_ARG_VAR_IDX(a_pReNative, a_idxVar, a_uArgNo) do { \
         RT_NOREF_PV(a_idxVar); \
         AssertMsg(   (unsigned)(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
                   && ((a_pReNative)->Core.bmVars & RT_BIT_32(a_idxVar))\
                   && (a_pReNative)->Core.aVars[a_idxVar].uArgNo == (a_uArgNo) \
                   , ("%s=%d; uArgNo=%d, expected %u\n", #a_idxVar, a_idxVar, \
-                     (a_pReNative)->Core.aVars[RT_MAX(a_idxVar, RT_ELEMENTS((a_pReNative)->Core.aVars)) - 1].uArgNo, a_uArgNo)); \
+                     (a_pReNative)->Core.aVars[RT_MIN(a_idxVar, RT_ELEMENTS((a_pReNative)->Core.aVars)) - 1].uArgNo, a_uArgNo)); \
     } while (0)
+#endif
+
+
+/**
+ * Checks that a variable has the expected size.
+ */
+#define IEMNATIVE_ASSERT_VAR_SIZE(a_pReNative, a_idxVar, a_cbVar) \
+    AssertMsg((a_pReNative)->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVar)].cbVar == (a_cbVar), \
+              ("%s=%#x: cbVar=%#x, expected %#x!\n", #a_idxVar, a_idxVar, \
+              (a_pReNative)->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVar)].cbVar == (a_cbVar)))
+
 
 /**
  * Calculates the stack address of a variable as a [r]BP displacement value.
@@ -1298,8 +1352,8 @@ iemNativeStackCalcBpDisp(uint8_t idxStackSlot)
 DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
-    Assert(pReNative->Core.aVars[idxVar].fRegAcquired);
-    pReNative->Core.aVars[idxVar].fRegAcquired = false;
+    Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired);
+    pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired = false;
 }
 
 /** @} */
