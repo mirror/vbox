@@ -122,7 +122,37 @@ iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
     return off;
 }
 
-/** @todo move this somewhere else ... */
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_and_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                         uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
@@ -182,5 +212,96 @@ iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
     return off;
 }
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_add_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_adc_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_sbb_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_imul_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_popcnt_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                             uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_tzcnt_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                            uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_lzcnt_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                            uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
 
 #endif /* !VMM_INCLUDED_SRC_VMMAll_target_x86_IEMAllN8veEmit_x86_h */

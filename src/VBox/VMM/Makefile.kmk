@@ -624,6 +624,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstPython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllN8vePython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstCommon.cpp.h \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstCommonBodyMacros.h \
  		$(if-expr !defined(IEM_WITHOUT_3DNOW)      ,$(PATH_SUB_CURRENT)/VMMAll/IEMAllInst3DNow.cpp.h,) \
  		$(if-expr !defined(IEM_WITHOUT_THREE_0F_38),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f38.cpp.h,) \
  		$(if-expr !defined(IEM_WITHOUT_THREE_0F_3A),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f3a.cpp.h,) \
