@@ -50,8 +50,8 @@ DECL_FORCE_INLINE(void) rtCrtAssertPanic(void)
    wrappers in the expansion, so we partially cook our own assert here but
    using the standard iprt/assert.h building blocks. */
 #define assert(a_Expr) (RT_LIKELY(!!(a_Expr)) ? (void)0 \
-                        : RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__), \
-                          rtCrtAssertPanic(), (void)0 )
+                        : (RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__), \
+                           rtCrtAssertPanic(), (void)0) )
 
 #endif /* !IPRT_INCLUDED_nocrt_assert_h */
 
