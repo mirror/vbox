@@ -1438,8 +1438,8 @@ static int shClSvcTransferMsgHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
                                 RT_FALL_THROUGH();
                             case SHCLTRANSFERSTATUS_KILLED:
                             {
-                                LogRel(("Shared Clipboard: Guest has %s transfer %RU16\n",
-                                        pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_CANCELED ? "canceled" : "killed", idTransfer));
+                                LogRel2(("Shared Clipboard: Guest has %s transfer %RU16\n",
+                                         pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_CANCELED ? "canceled" : "killed", idTransfer));
 
                                 switch (pReply->u.TransferStatus.uStatus)
                                 {
@@ -1461,7 +1461,7 @@ static int shClSvcTransferMsgHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
 
                             case SHCLTRANSFERSTATUS_COMPLETED:
                             {
-                                LogRel(("Shared Clipboard: Guest has completed transfer %RU16\n", idTransfer));
+                                LogRel2(("Shared Clipboard: Guest has completed transfer %RU16\n", idTransfer));
 
                                 rc = ShClTransferComplete(pTransfer);
                                 break;
@@ -1469,8 +1469,8 @@ static int shClSvcTransferMsgHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
 
                             case SHCLTRANSFERSTATUS_ERROR:
                             {
-                                LogRel(("Shared Clipboard: Guest reported error %Rrc for transfer %RU16\n",
-                                        pReply->rc, pTransfer->State.uID));
+                                LogRelMax(64, ("Shared Clipboard: Guest reported error %Rrc for transfer %RU16\n",
+                                               pReply->rc, pTransfer->State.uID));
 
                                 if (g_ExtState.pfnExtension)
                                 {
@@ -1494,8 +1494,8 @@ static int shClSvcTransferMsgHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
 
                             default:
                             {
-                                LogRel(("Shared Clipboard: Unknown transfer status %#x from guest received\n",
-                                        pReply->u.TransferStatus.uStatus));
+                                LogRelMax(64, ("Shared Clipboard: Unknown transfer status %#x from guest received\n",
+                                               pReply->u.TransferStatus.uStatus));
                                 rc = VERR_INVALID_PARAMETER;
                                 break;
                             }
@@ -1535,7 +1535,7 @@ static int shClSvcTransferMsgHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
                     }
 
                     default:
-                        LogRel(("Shared Clipboard: Unknown reply type %#x from guest received\n", pReply->uType));
+                        LogRelMax(64, ("Shared Clipboard: Unknown reply type %#x from guest received\n", pReply->uType));
                         ShClTransferCancel(pTransfer); /* Avoid clogging up the transfer list. */
                         rc = VERR_INVALID_PARAMETER;
                         break;
@@ -2136,8 +2136,8 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
         rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Reporting status %s (%Rrc) for transfer %RU16 to guest failed with %Rrc\n",
-                ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer, rc));
+        LogRel(64, ("Shared Clipboard: Reporting status %s (%Rrc) for transfer %RU16 to guest failed with %Rrc\n",
+                    ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2411,8 +2411,8 @@ int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Unable to stop transfer %RU16 on guest, rc=%Rrc\n",
-                pTransfer->State.uID, rc));
+        LogRel(64, ("Shared Clipboard: Unable to stop transfer %RU16 on guest, rc=%Rrc\n",
+                    pTransfer->State.uID, rc));
 
     shClSvcClientUnlock(pClient);
 
