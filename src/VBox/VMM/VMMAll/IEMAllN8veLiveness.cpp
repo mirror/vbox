@@ -524,8 +524,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
         IEM_LIVENESS_ONE_EFLAGS_INPUT(u2Sf); \
     } while (0)
 
-#define IEM_MC_FETCH_FSW(a_u16Fsw)                                  NOP()
-#define IEM_MC_FETCH_FCW(a_u16Fcw)                                  NOP()
+#define IEM_MC_FETCH_FSW(a_u16Fsw)                                  IEM_LIVENESS_FSW_INPUT()
+#define IEM_MC_FETCH_FCW(a_u16Fcw)                                  IEM_LIVENESS_FCW_INPUT()
 
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)                  IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
@@ -647,9 +647,9 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
         else { AssertFailed();           IEM_LIVENESS_ALL_EFLAG_MODIFY(); } \
     } while (0)
 
-#define IEM_MC_CLEAR_FSW_EX()                                       NOP()
-#define IEM_MC_FPU_TO_MMX_MODE()                                    NOP()
-#define IEM_MC_FPU_FROM_MMX_MODE()                                  NOP()
+#define IEM_MC_CLEAR_FSW_EX()                                       IEM_LIVENESS_FCW_MODIFY()
+#define IEM_MC_FPU_TO_MMX_MODE()                                    IEM_LIVENESS_FCW_MODIFY()
+#define IEM_MC_FPU_FROM_MMX_MODE()                                  IEM_LIVENESS_FCW_MODIFY()
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg)                  NOP()
 #define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg)                  NOP()
