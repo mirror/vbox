@@ -112,7 +112,7 @@ typedef struct _SHCLWINAPIOLD
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Forward declaration for the Windows data object. */
-class SharedClipboardWinDataObject;
+class ShClWinDataObject;
 #endif
 
 /**
@@ -142,45 +142,44 @@ typedef struct _SHCLWINCTX
      *  That way Windows knows that a potential file transfer is available, but the actual transfer
      *  hasn't been started yet.
      *  Can be NULL if currently not being used / no current "in-flight" transfer present. */
-    SharedClipboardWinDataObject
-                      *pDataObjInFlight;
+    ShClWinDataObject *pDataObjInFlight;
 #endif
     /** Request queue.
      *  Needed for processing HGCM requests within the HGCM (main) thread from the Windows event thread. */
     RTREQQUEUE         hReqQ;
 } SHCLWINCTX, *PSHCLWINCTX;
 
-int SharedClipboardWinOpen(HWND hWnd);
-int SharedClipboardWinClose(void);
-int SharedClipboardWinClear(void);
+int ShClWinOpen(HWND hWnd);
+int ShClWinClose(void);
+int ShClWinClear(void);
 
-int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx);
-void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx);
+int ShClWinCtxInit(PSHCLWINCTX pWinCtx);
+void ShClWinCtxDestroy(PSHCLWINCTX pWinCtx);
 
-int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
-bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
+int ShClWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
+bool ShClWinIsNewAPI(PSHCLWINAPINEW pAPI);
 
-int SharedClipboardWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData);
+int ShClWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData);
 
-int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx);
-int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx);
-VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF;
-LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
+int ShClWinChainAdd(PSHCLWINCTX pCtx);
+int ShClWinChainRemove(PSHCLWINCTX pCtx);
+VOID CALLBACK ShClWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF;
+LRESULT ShClWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
-SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
-int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats);
+SHCLFORMAT ShClWinClipboardFormatToVBox(UINT uFormat);
+int ShClWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats);
 
-int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
-bool SharedClipboardWinIsCFHTML(const char *pszSource);
-int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
-int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
+int ShClWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
+bool ShClWinIsCFHTML(const char *pszSource);
+int ShClWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
+int ShClWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
-LRESULT SharedClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-int SharedClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
-int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
-int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
+LRESULT ShClWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+int ShClWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
+int ShClWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
+int ShClWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
-int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd);
+int ShClWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 class SharedClipboardTransferList;
@@ -189,9 +188,9 @@ class FILEGROUPDESCRIPTOR;
 #  endif
 
 /**
- * Generic Windows class implementing IDataObject for Shared Clipboard data transfers.
+ * Shared CLipboard Windows class implementing IDataObject for Shared Clipboard data transfers.
  */
-class SharedClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
+class ShClWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
 {
 public:
 
@@ -201,7 +200,7 @@ public:
     struct CALLBACKCTX
     {
         /** Pointer to the data object of this callback. */
-        SharedClipboardWinDataObject *pThis;
+        ShClWinDataObject *pThis;
         /** User-supplied pointer to more context data. */
         void                         *pvUser;
     };
@@ -252,12 +251,12 @@ public:
 
 public:
 
-    SharedClipboardWinDataObject(void);
-    virtual ~SharedClipboardWinDataObject(void);
+    ShClWinDataObject(void);
+    virtual ~ShClWinDataObject(void);
 
 public:
 
-    int Init(PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    int Init(PSHCLCONTEXT pCtx, ShClWinDataObject::PCALLBACKS pCallbacks, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     void Uninit(void);
     void Destroy(void);
 
@@ -381,12 +380,12 @@ protected:
 /**
  * Generic Windows class implementing IEnumFORMATETC for Shared Clipboard data transfers.
  */
-class SharedClipboardWinEnumFormatEtc : public IEnumFORMATETC
+class ShClWinEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-    SharedClipboardWinEnumFormatEtc(void);
-    virtual ~SharedClipboardWinEnumFormatEtc(void);
+    ShClWinEnumFormatEtc(void);
+    virtual ~ShClWinEnumFormatEtc(void);
 
 public:
 
@@ -422,13 +421,13 @@ private:
 /**
  * Generic Windows class implementing IStream for Shared Clipboard data transfers.
  */
-class SharedClipboardWinStreamImpl : public IStream
+class ShClWinStreamImpl : public IStream
 {
 public:
 
-    SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer,
-                                 const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
-    virtual ~SharedClipboardWinStreamImpl(void);
+    ShClWinStreamImpl(ShClWinDataObject *pParent, PSHCLTRANSFER pTransfer,
+                      const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
+    virtual ~ShClWinStreamImpl(void);
 
 public: /* IUnknown methods. */
 
@@ -452,12 +451,12 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer, const Utf8Str &strPath,
+    static HRESULT Create(ShClWinDataObject *pParent, PSHCLTRANSFER pTransfer, const Utf8Str &strPath,
                           PSHCLFSOBJINFO pObjInfo, IStream **ppStream);
 private:
 
     /** Pointer to the parent data object. */
-    SharedClipboardWinDataObject  *m_pParent;
+    ShClWinDataObject             *m_pParent;
     /** The stream object's current reference count. */
     LONG                           m_lRefCount;
     /** Pointer to the associated Shared Clipboard transfer. */
@@ -478,29 +477,29 @@ private:
  * Class for Windows-specifics for maintaining a single Shared Clipboard transfer.
  * Set as pvUser / cbUser for SHCLTRANSFER on Windows hosts / guests.
  */
-class SharedClipboardWinTransferCtx
+class ShClWinTransferCtx
 {
 public:
-    SharedClipboardWinTransferCtx()
+    ShClWinTransferCtx()
         : pDataObj(NULL) { }
 
-    virtual ~SharedClipboardWinTransferCtx() { }
+    virtual ~ShClWinTransferCtx() { }
 
     /** Pointer to data object to use for this transfer. Not owned.
      *  Can be NULL if not being used. */
-    SharedClipboardWinDataObject *pDataObj;
+    ShClWinDataObject *pDataObj;
 };
 
-int SharedClipboardWinTransferGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
-int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int ShClWinTransferGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int ShClWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
+int ShClWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 
-int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int ShClWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+void ShClWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 
-int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks);
-int SharedClipboardWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-int SharedClipboardWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int ShClWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, ShClWinDataObject::PCALLBACKS pCallbacks);
+int ShClWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int ShClWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
 

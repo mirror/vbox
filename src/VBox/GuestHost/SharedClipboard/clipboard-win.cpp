@@ -53,7 +53,7 @@
 
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **ppszList, uint32_t *pcbList);
+int ShClWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **ppszList, uint32_t *pcbList);
 #endif
 
 
@@ -63,7 +63,7 @@ int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char 
  * @returns VBox status code.
  * @param   hWnd                Handle of window to open clipboard for.
  */
-int SharedClipboardWinOpen(HWND hWnd)
+int ShClWinOpen(HWND hWnd)
 {
     /* "OpenClipboard fails if another window has the clipboard open."
      * So try a few times and wait up to 1 second.
@@ -111,7 +111,7 @@ int SharedClipboardWinOpen(HWND hWnd)
  *
  * @returns VBox status code.
  */
-int SharedClipboardWinClose(void)
+int ShClWinClose(void)
 {
     int rc;
 
@@ -141,7 +141,7 @@ int SharedClipboardWinClose(void)
  *
  * @returns VBox status code.
  */
-int SharedClipboardWinClear(void)
+int ShClWinClear(void)
 {
     LogFlowFuncEnter();
     if (EmptyClipboard())
@@ -163,13 +163,13 @@ int SharedClipboardWinClear(void)
  * @returns VBox status code.
  * @param   pWinCtx             Shared Clipboard Windows context to initialize.
  */
-int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx)
+int ShClWinCtxInit(PSHCLWINCTX pWinCtx)
 {
     int rc = RTCritSectInit(&pWinCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
         /* Check that new Clipboard API is available. */
-        SharedClipboardWinCheckAndInitNewAPI(&pWinCtx->newAPI);
+        ShClWinCheckAndInitNewAPI(&pWinCtx->newAPI);
         /* Do *not* check the rc, as the call might return VERR_SYMBOL_NOT_FOUND is the new API isn't available. */
 
         pWinCtx->hWnd                 = NULL;
@@ -190,7 +190,7 @@ int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx)
  *
  * @param   pWinCtx             Shared Clipboard Windows context to destroy.
  */
-void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx)
+void ShClWinCtxDestroy(PSHCLWINCTX pWinCtx)
 {
     if (!pWinCtx)
         return;
@@ -212,7 +212,7 @@ void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx)
  * @param   pAPI                Where to store the retrieved function pointers.
  *                              Will be set to NULL if the new API is not available.
  */
-int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI)
+int ShClWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI)
 {
     RTLDRMOD hUser32 = NIL_RTLDRMOD;
     int rc = RTLdrLoadSystem("User32.dll", /* fNoUnload = */ true, &hUser32);
@@ -247,7 +247,7 @@ int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI)
  * @returns @c true if the new API is available, or @c false if not.
  * @param   pAPI                Structure used for checking if the new clipboard API is available or not.
  */
-bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI)
+bool ShClWinIsNewAPI(PSHCLWINAPINEW pAPI)
 {
     if (!pAPI)
         return false;
@@ -260,12 +260,12 @@ bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI)
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to use to add ourselves.
  */
-int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx)
+int ShClWinChainAdd(PSHCLWINCTX pCtx)
 {
     const PSHCLWINAPINEW pAPI = &pCtx->newAPI;
 
     BOOL fRc;
-    if (SharedClipboardWinIsNewAPI(pAPI))
+    if (ShClWinIsNewAPI(pAPI))
         fRc = pAPI->pfnAddClipboardFormatListener(pCtx->hWnd);
     else
     {
@@ -292,7 +292,7 @@ int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx)
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to use to remove ourselves.
  */
-int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx)
+int ShClWinChainRemove(PSHCLWINCTX pCtx)
 {
     if (!pCtx->hWnd)
         return VINF_SUCCESS;
@@ -300,7 +300,7 @@ int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx)
     const PSHCLWINAPINEW pAPI = &pCtx->newAPI;
 
     BOOL fRc;
-    if (SharedClipboardWinIsNewAPI(pAPI))
+    if (ShClWinIsNewAPI(pAPI))
     {
         fRc = pAPI->pfnRemoveClipboardFormatListener(pCtx->hWnd);
     }
@@ -334,7 +334,7 @@ int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx)
  * @param   dwData              Pointer to user-provided data. Contains our Windows clipboard context.
  * @param   lResult             Additional data to pass. Not used currently.
  */
-VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF
+VOID CALLBACK ShClWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF
 {
     RT_NOREF(hWnd);
     RT_NOREF(uMsg);
@@ -356,7 +356,7 @@ VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dw
  * @param   wParam              WPARAM to pass.
  * @param   lParam              LPARAM to pass.
  */
-LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx,
+LRESULT ShClWinChainPassToNext(PSHCLWINCTX pWinCtx,
                                           UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LogFlowFuncEnter();
@@ -385,7 +385,7 @@ LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx,
  * @returns Converted VBox clipboard format, or VBOX_SHCL_FMT_NONE if not found.
  * @param   uFormat             Windows clipboard format to convert.
  */
-SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
+SHCLFORMAT ShClWinClipboardFormatToVBox(UINT uFormat)
 {
     /* Insert the requested clipboard format data into the clipboard. */
     SHCLFORMAT vboxFormat = VBOX_SHCL_FMT_NONE;
@@ -444,7 +444,7 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
  * @param   pCtx                Windows clipboard context to retrieve formats for.
  * @param   pfFormats           Where to store the retrieved formats.
  */
-int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats)
+int ShClWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pfFormats, VERR_INVALID_POINTER);
@@ -452,14 +452,14 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats)
     SHCLFORMATS fFormats = VBOX_SHCL_FMT_NONE;
 
     /* Query list of available formats and report to host. */
-    int rc = SharedClipboardWinOpen(pCtx->hWnd);
+    int rc = ShClWinOpen(pCtx->hWnd);
     if (RT_SUCCESS(rc))
     {
         UINT uCurFormat = 0; /* Must be set to zero for EnumClipboardFormats(). */
         while ((uCurFormat = EnumClipboardFormats(uCurFormat)) != 0)
-            fFormats |= SharedClipboardWinClipboardFormatToVBox(uCurFormat);
+            fFormats |= ShClWinClipboardFormatToVBox(uCurFormat);
 
-        int rc2 = SharedClipboardWinClose();
+        int rc2 = ShClWinClose();
         AssertRC(rc2);
         LogFlowFunc(("fFormats=%#x\n", fFormats));
     }
@@ -478,7 +478,7 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats)
  * @param   pszOption   Name of CF_HTML field.
  * @param   puValue     Where to return extracted value of CF_HTML field.
  */
-int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue)
+int ShClWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue)
 {
     AssertPtrReturn(pszSrc, VERR_INVALID_POINTER);
     AssertPtrReturn(pszOption, VERR_INVALID_POINTER);
@@ -502,7 +502,7 @@ int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOp
  * @returns @c true if the @a pszSource string is in CF_HTML format.
  * @param   pszSource   Source string to check.
  */
-bool SharedClipboardWinIsCFHTML(const char *pszSource)
+bool ShClWinIsCFHTML(const char *pszSource)
 {
     return    RTStrStr(pszSource, "Version:") != NULL
            && RTStrStr(pszSource, "StartHTML:") != NULL;
@@ -519,7 +519,7 @@ bool SharedClipboardWinIsCFHTML(const char *pszSource)
  * @param   ppszOutput  Where to return the result.  Free using RTMemFree.
  * @param   pcbOutput   Where to the return length of the result (bytes/chars).
  */
-int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput)
+int ShClWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput)
 {
     Assert(pszSource);
     Assert(cch);
@@ -527,11 +527,11 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
     Assert(pcbOutput);
 
     uint32_t offStart;
-    int rc = SharedClipboardWinGetCFHTMLHeaderValue(pszSource, "StartFragment:", &offStart);
+    int rc = ShClWinGetCFHTMLHeaderValue(pszSource, "StartFragment:", &offStart);
     if (RT_SUCCESS(rc))
     {
         uint32_t offEnd;
-        rc = SharedClipboardWinGetCFHTMLHeaderValue(pszSource, "EndFragment:", &offEnd);
+        rc = ShClWinGetCFHTMLHeaderValue(pszSource, "EndFragment:", &offEnd);
         if (RT_SUCCESS(rc))
         {
             if (   offStart > 0
@@ -611,7 +611,7 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
  * @note    output buffer should be free using RTMemFree()
  * @note    Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
  */
-int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput)
+int ShClWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput)
 {
     Assert(ppszOutput);
     Assert(pcbOutput);
@@ -708,14 +708,14 @@ int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char
  * @param   wParam              wParam to pass on
  * @param   lParam              lParam to pass on.
  */
-LRESULT SharedClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx,
+LRESULT ShClWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx,
                                               HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lresultRc = 0;
 
     LogFlowFuncEnter();
 
-    if (SharedClipboardWinIsNewAPI(&pWinCtx->newAPI))
+    if (ShClWinIsNewAPI(&pWinCtx->newAPI))
     {
         lresultRc = DefWindowProc(hWnd, msg, wParam, lParam);
     }
@@ -756,14 +756,14 @@ LRESULT SharedClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx,
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
  */
-int SharedClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx)
+int ShClWinHandleWMDestroy(PSHCLWINCTX pWinCtx)
 {
     LogFlowFuncEnter();
 
     int rc = VINF_SUCCESS;
 
     /* MS recommends to remove from Clipboard chain in this callback. */
-    SharedClipboardWinChainRemove(pWinCtx);
+    ShClWinChainRemove(pWinCtx);
 
     if (pWinCtx->oldAPI.timerRefresh)
     {
@@ -782,7 +782,7 @@ int SharedClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx)
  * @param   pWinCtx             Windows context to use.
  * @param   hWnd                Window handle to use.
  */
-int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd)
+int ShClWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd)
 {
     RT_NOREF(pWinCtx);
 
@@ -791,11 +791,11 @@ int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd)
     /* Do nothing. The clipboard formats will be unavailable now, because the
      * windows is to be destroyed and therefore the guest side becomes inactive.
      */
-    int rc = SharedClipboardWinOpen(hWnd);
+    int rc = ShClWinOpen(hWnd);
     if (RT_SUCCESS(rc))
     {
-        SharedClipboardWinClear();
-        SharedClipboardWinClose();
+        ShClWinClear();
+        ShClWinClose();
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -809,11 +809,11 @@ int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd)
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
  */
-int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
+int ShClWinHandleWMTimer(PSHCLWINCTX pWinCtx)
 {
     int rc = VINF_SUCCESS;
 
-    if (!SharedClipboardWinIsNewAPI(&pWinCtx->newAPI)) /* Only run when using the "old" Windows API. */
+    if (!ShClWinIsNewAPI(&pWinCtx->newAPI)) /* Only run when using the "old" Windows API. */
     {
         LogFlowFuncEnter();
 
@@ -823,8 +823,8 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
          * timed out or there seems to be no valid chain. */
         if (!hViewer || pWinCtx->oldAPI.fCBChainPingInProcess)
         {
-            SharedClipboardWinChainRemove(pWinCtx);
-            SharedClipboardWinChainAdd(pWinCtx);
+            ShClWinChainRemove(pWinCtx);
+            ShClWinChainAdd(pWinCtx);
        }
 
        /* Start a new ping by passing a dummy WM_CHANGECBCHAIN to be
@@ -834,7 +834,7 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
        hViewer = GetClipboardViewer();
        if (hViewer)
            SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pWinCtx->hWndNextInChain, (LPARAM)pWinCtx->hWndNextInChain,
-                               SharedClipboardWinChainPingProc, (ULONG_PTR)pWinCtx);
+                               ShClWinChainPingProc, (ULONG_PTR)pWinCtx);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -852,7 +852,7 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
  * @param   pWinCtx             Windows context to use.
  * @param   fFormats            Clipboard format(s) to announce.
  */
-static int sharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
+static int shClWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
 {
     LogFunc(("fFormats=0x%x\n", fFormats));
 
@@ -959,17 +959,17 @@ static int sharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fF
  * @param   fFormats    Clipboard format(s) to announce.
  * @param   hWnd        The window handle to use as owner.
  */
-int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd)
+int ShClWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd)
 {
-    int rc = SharedClipboardWinOpen(hWnd);
+    int rc = ShClWinOpen(hWnd);
     if (RT_SUCCESS(rc))
     {
-        SharedClipboardWinClear();
+        ShClWinClear();
 
-        rc = sharedClipboardWinAnnounceFormats(pWinCtx, fFormats);
+        rc = shClWinAnnounceFormats(pWinCtx, fFormats);
         Assert(pWinCtx->hWndClipboardOwnerUs == hWnd || pWinCtx->hWndClipboardOwnerUs == NULL);
 
-        SharedClipboardWinClose();
+        ShClWinClose();
     }
     return rc;
 }
@@ -984,7 +984,7 @@ int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS f
  *
  * @note    ASSUMES that the clipboard has already been opened.
  */
-int SharedClipboardWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData)
+int ShClWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn   (cbData, VERR_INVALID_PARAMETER);
@@ -1052,8 +1052,8 @@ int SharedClipboardWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData)
  *                              Needed for the data object to communicate with the main window thread.
  * @param   pCallbacks          Callbacks table to use.
  */
-int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
-                                                     PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks)
+int ShClWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
+                                                     PSHCLCONTEXT pCtx, ShClWinDataObject::PCALLBACKS pCallbacks)
 {
     AssertPtrReturn(pWinCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1071,7 +1071,7 @@ int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
          *
          * The data object will be deleted automatically once its refcount reaches 0.
          */
-        SharedClipboardWinDataObject *pObj = new SharedClipboardWinDataObject();
+        ShClWinDataObject *pObj = new ShClWinDataObject();
         if (pObj)
         {
             rc = pObj->Init(pCtx, pCallbacks);
@@ -1086,10 +1086,10 @@ int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
 
         if (RT_SUCCESS(rc))
         {
-            SharedClipboardWinClose();
+            ShClWinClose();
             /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
 
-            /** @todo There is a potential race between SharedClipboardWinClose() and OleSetClipboard(),
+            /** @todo There is a potential race between ShClWinClose() and OleSetClipboard(),
              *        where another application could own the clipboard (open), and thus the call to
              *        OleSetClipboard() will fail. Needs (better) fixing. */
             HRESULT hr = S_OK;
@@ -1138,16 +1138,16 @@ int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
  * @param   pWinCtx             Windows context to use.
  * @param   pTransfer           Shared Clipboard transfer to create implementation-specific data for.
  */
-int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+int ShClWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pWinCtx);
 
     AssertMsgReturn(   pTransfer->pvUser == NULL
                     && pTransfer->cbUser == 0, ("Already initialized Windows-specific data\n"), VERR_WRONG_ORDER);
 
-    pTransfer->pvUser = new SharedClipboardWinTransferCtx();  /** @todo Can this throw? */
+    pTransfer->pvUser = new ShClWinTransferCtx();  /** @todo Can this throw? */
     AssertPtrReturn(pTransfer->pvUser, VERR_INVALID_POINTER);
-    pTransfer->cbUser = sizeof(SharedClipboardWinTransferCtx);
+    pTransfer->cbUser = sizeof(ShClWinTransferCtx);
 
     return VINF_SUCCESS;
 }
@@ -1159,7 +1159,7 @@ int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfe
  * @param   pWinCtx             Windows context to use.
  * @param   pTransfer           Shared Clipboard transfer to destroy implementation-specific data for.
  */
-void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+void ShClWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pWinCtx);
 
@@ -1170,8 +1170,8 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
 
     if (pTransfer->pvUser)
     {
-        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinTransferCtx));
-        SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
+        Assert(pTransfer->cbUser == sizeof(ShClWinTransferCtx));
+        ShClWinTransferCtx *pWinURITransferCtx = (ShClWinTransferCtx *)pTransfer->pvUser;
         AssertPtr(pWinURITransferCtx);
 
         /* If the transfer has a data object assigned, uninitialize it here.
@@ -1198,8 +1198,8 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
  * @param   pTransfer           Transfer to initialize for the data object.
  * @param   pObj                Data object to initialize transfer for.
  */
-static int sharedClipboardWinTransferInitializeInternal(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer,
-                                                        SharedClipboardWinDataObject *pObj)
+static int shClWinTransferInitializeInternal(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer,
+                                             ShClWinDataObject *pObj)
 {
     RT_NOREF(pWinCtx);
 
@@ -1214,15 +1214,15 @@ static int sharedClipboardWinTransferInitializeInternal(PSHCLWINCTX pWinCtx, PSH
  * @param   pWinCtx             Windows context to use.
  * @param   pTransfer           Transfer to initialize for the data object.
  */
-int SharedClipboardWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+int ShClWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     int rc = RTCritSectEnter(&pWinCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
-        SharedClipboardWinDataObject *pObj = pWinCtx->pDataObjInFlight;
+        ShClWinDataObject *pObj = pWinCtx->pDataObjInFlight;
         if (pObj)
         {
-            rc = sharedClipboardWinTransferInitializeInternal(pWinCtx, pTransfer, pObj);
+            rc = shClWinTransferInitializeInternal(pWinCtx, pTransfer, pObj);
         }
         else /* No current in-flight data object. */
             rc = VERR_WRONG_ORDER;
@@ -1241,11 +1241,11 @@ int SharedClipboardWinTransferInitialize(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTra
  * @param   pWinCtx             Windows context to use.
  * @param   pObj                Data object to start transfer for.
  */
-static int sharedClipboardWinTransferStartInternal(PSHCLWINCTX pWinCtx, SharedClipboardWinDataObject *pObj)
+static int shClWinTransferStartInternal(PSHCLWINCTX pWinCtx, ShClWinDataObject *pObj)
 {
     RT_NOREF(pWinCtx);
 
-    return pObj->SetStatus(SharedClipboardWinDataObject::Running);
+    return pObj->SetStatus(ShClWinDataObject::Running);
 }
 
 /**
@@ -1258,17 +1258,17 @@ static int sharedClipboardWinTransferStartInternal(PSHCLWINCTX pWinCtx, SharedCl
  * @param   pWinCtx             Windows context to use.
  * @param   pTransfer           Transfer to initialize for the data object.
  */
-int SharedClipboardWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+int ShClWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pTransfer);
 
     int rc = RTCritSectEnter(&pWinCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
-        SharedClipboardWinDataObject *pObj = pWinCtx->pDataObjInFlight;
+        ShClWinDataObject *pObj = pWinCtx->pDataObjInFlight;
         if (pObj)
         {
-            rc = sharedClipboardWinTransferStartInternal(pWinCtx, pObj);
+            rc = shClWinTransferStartInternal(pWinCtx, pObj);
             if (RT_SUCCESS(rc))
                 pWinCtx->pDataObjInFlight = NULL; /* Hand off to Windows on success. */
         }
@@ -1290,14 +1290,14 @@ int SharedClipboardWinTransferStart(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer
  * @param   pWinCtx             Windows context to use.
  * @param   pTransfer           Transfer to get roots for.
  */
-int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+int ShClWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pWinCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
     Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL); /* Sanity. */
 
-    int rc = SharedClipboardWinOpen(pWinCtx->hWnd);
+    int rc = ShClWinOpen(pWinCtx->hWnd);
     if (RT_SUCCESS(rc))
     {
         /* The data data in CF_HDROP format, as the files are locally present and don't need to be
@@ -1310,7 +1310,7 @@ int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTR
             {
                 char    *pszList = NULL;
                 uint32_t cbList;
-                rc = SharedClipboardWinTransferDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
+                rc = ShClWinTransferDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
 
                 GlobalUnlock(hClip);
 
@@ -1327,7 +1327,7 @@ int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTR
             LogRel(("Shared Clipboard: Unable to retrieve clipboard data from clipboard (CF_HDROP), last error: %ld\n",
                     GetLastError()));
 
-        SharedClipboardWinClose();
+        ShClWinClose();
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1345,7 +1345,7 @@ int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTR
  * @param   pcbList             Where to store the size (in bytes) of the allocated string list.
  *                              Includes zero terminator.
  */
-int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **ppszList, uint32_t *pcbList)
+int ShClWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **ppszList, uint32_t *pcbList)
 {
     AssertPtrReturn(pDropFiles, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszList,   VERR_INVALID_POINTER);

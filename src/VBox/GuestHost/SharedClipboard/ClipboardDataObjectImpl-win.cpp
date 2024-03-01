@@ -61,7 +61,7 @@
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
 //#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
 
-SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
+ShClWinDataObject::ShClWinDataObject(void)
     : m_pCtx(NULL)
     , m_enmStatus(Uninitialized)
     , m_rcStatus(VERR_IPE_UNINITIALIZED_STATUS)
@@ -79,7 +79,7 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
 #endif
 }
 
-SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
+ShClWinDataObject::~ShClWinDataObject(void)
 {
     Destroy();
 
@@ -101,9 +101,9 @@ SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
  * @param   pStgMed             Storage medium to use. Optional.
  * @param   cFormats            Number of formats in \a pFormatEtc and \a pStgMed. Optional.
  */
-int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks,
-                                       LPFORMATETC pFormatEtc /* = NULL */, LPSTGMEDIUM pStgMed /* = NULL */,
-                                       ULONG cFormats /* = 0 */)
+int ShClWinDataObject::Init(PSHCLCONTEXT pCtx, ShClWinDataObject::PCALLBACKS pCallbacks,
+                            LPFORMATETC pFormatEtc /* = NULL */, LPSTGMEDIUM pStgMed /* = NULL */,
+                            ULONG cFormats /* = 0 */)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
@@ -116,7 +116,7 @@ int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx, SharedClipboardWinData
     /*
      * Set up callback context + table.
      */
-    memcpy(&m_Callbacks, pCallbacks, sizeof(SharedClipboardWinDataObject::CALLBACKS));
+    memcpy(&m_Callbacks, pCallbacks, sizeof(ShClWinDataObject::CALLBACKS));
     m_CallbackCtx.pvUser = pCtx;
     m_CallbackCtx.pThis  = this;
 
@@ -198,7 +198,7 @@ int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx, SharedClipboardWinData
 /**
  * Uninitialized a data object instance, internal version.
  */
-void SharedClipboardWinDataObject::uninitInternal(void)
+void ShClWinDataObject::uninitInternal(void)
 {
     LogFlowFuncEnter();
 
@@ -229,7 +229,7 @@ void SharedClipboardWinDataObject::uninitInternal(void)
 /**
  * Uninitialized a data object instance.
  */
-void SharedClipboardWinDataObject::Uninit(void)
+void ShClWinDataObject::Uninit(void)
 {
     LogFlowFuncEnter();
 
@@ -239,7 +239,7 @@ void SharedClipboardWinDataObject::Uninit(void)
 /**
  * Destroys a data object instance.
  */
-void SharedClipboardWinDataObject::Destroy(void)
+void ShClWinDataObject::Destroy(void)
 {
     LogFlowFuncEnter();
 
@@ -294,14 +294,14 @@ void SharedClipboardWinDataObject::Destroy(void)
  * IUnknown methods.
  ********************************************************************************************************************************/
 
-STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::AddRef(void)
+STDMETHODIMP_(ULONG) ShClWinDataObject::AddRef(void)
 {
     ULONG ulCount = InterlockedIncrement(&m_lRefCount);
     LogFlowFunc(("lCount=%RU32\n", ulCount));
     return ulCount;
 }
 
-STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::Release(void)
+STDMETHODIMP_(ULONG) ShClWinDataObject::Release(void)
 {
     ULONG ulCount = InterlockedDecrement(&m_lRefCount);
     LogFlowFunc(("lCount=%RU32\n", ulCount));
@@ -314,7 +314,7 @@ STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::Release(void)
     return ulCount;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::QueryInterface(REFIID iid, void **ppvObject)
+STDMETHODIMP ShClWinDataObject::QueryInterface(REFIID iid, void **ppvObject)
 {
     AssertPtrReturn(ppvObject, E_INVALIDARG);
 
@@ -339,7 +339,7 @@ STDMETHODIMP SharedClipboardWinDataObject::QueryInterface(REFIID iid, void **ppv
  * @param   fFlags              GlobalAlloc flags, used for allocating the HGLOBAL block.
  * @param   phGlobal            Where to store the allocated HGLOBAL object.
  */
-int SharedClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal)
+int ShClWinDataObject::copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
 
@@ -362,7 +362,7 @@ int SharedClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbDat
     return VERR_ACCESS_DENIED;
 }
 
-inline int SharedClipboardWinDataObject::lock(void)
+inline int ShClWinDataObject::lock(void)
 {
     int rc = RTCritSectEnter(&m_CritSect);
     AssertRCReturn(rc, rc);
@@ -370,7 +370,7 @@ inline int SharedClipboardWinDataObject::lock(void)
     return rc;
 }
 
-inline int SharedClipboardWinDataObject::unlock(void)
+inline int ShClWinDataObject::unlock(void)
 {
     int rc = RTCritSectLeave(&m_CritSect);
     AssertRCReturn(rc, rc);
@@ -386,7 +386,7 @@ inline int SharedClipboardWinDataObject::unlock(void)
  * @param   pTransfer           Shared Clipboard transfer object to handle.
  * @param   strDir              Directory path to handle.
  */
-int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str &strDir)
+int ShClWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str &strDir)
 {
     LogFlowFunc(("strDir=%s\n", strDir.c_str()));
 
@@ -481,14 +481,14 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
  *
  * @returns VBox status code.
  * @param   pTransfer           Pointer to transfer.
- * @param   pvUser              Pointer to user-provided data. Of type SharedClipboardWinDataObject.
+ * @param   pvUser              Pointer to user-provided data. Of type ShClWinDataObject.
  */
 /* static */
-DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransfer, void *pvUser)
+DECLCALLBACK(int) ShClWinDataObject::readThread(PSHCLTRANSFER pTransfer, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    SharedClipboardWinDataObject *pThis = (SharedClipboardWinDataObject *)pvUser;
+    ShClWinDataObject *pThis = (ShClWinDataObject *)pvUser;
 
     LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
@@ -638,7 +638,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
  * @param   fUnicode            Whether the FILEGROUPDESCRIPTOR object shall contain Unicode data or not.
  * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
  */
-int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRANSFER pTransfer,
+int ShClWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRANSFER pTransfer,
                                                                         bool fUnicode, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -763,7 +763,7 @@ int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRA
  *
  * @thread  Windows event thread.
  */
-STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
+STDMETHODIMP ShClWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
@@ -860,7 +860,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                     rc = ShClTransferStart(m_pTransfer);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
+                        rc = ShClTransferRun(m_pTransfer, &ShClWinDataObject::readThread, this /* pvUser */);
                         if (RT_SUCCESS(rc))
                         {
                             /* Don't block for too long here, as this also will screw other apps running on the OS. */
@@ -931,7 +931,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 LogRel2(("Shared Clipboard: Receiving object '%s' ...\n", fsObjEntry.pszPath));
 
                 /* Hand-in the provider so that our IStream implementation can continue working with it. */
-                hr = SharedClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer,
+                hr = ShClWinStreamImpl::Create(this /* pParent */, m_pTransfer,
                                                           fsObjEntry.pszPath /* File name */, &fsObjEntry.objInfo /* PSHCLFSOBJINFO */,
                                                           &m_pStream);
                 if (SUCCEEDED(hr))
@@ -977,7 +977,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
  * @param   pFormatEtc
  * @param   pMedium
  */
-STDMETHODIMP SharedClipboardWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
+STDMETHODIMP ShClWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     RT_NOREF(pFormatEtc, pMedium);
     LogFlowFunc(("\n"));
@@ -991,13 +991,13 @@ STDMETHODIMP SharedClipboardWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, L
  * @return  HRESULT
  * @param   pFormatEtc
  */
-STDMETHODIMP SharedClipboardWinDataObject::QueryGetData(LPFORMATETC pFormatEtc)
+STDMETHODIMP ShClWinDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
     LogFlowFunc(("\n"));
     return lookupFormatEtc(pFormatEtc, NULL /* puIndex */) ? S_OK : DV_E_FORMATETC;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
+STDMETHODIMP ShClWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
 {
     RT_NOREF(pFormatEtc);
     LogFlowFunc(("\n"));
@@ -1007,7 +1007,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFo
     return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
+STDMETHODIMP ShClWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
 {
     if (   pFormatEtc == NULL
         || pMedium    == NULL)
@@ -1054,13 +1054,13 @@ STDMETHODIMP SharedClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTG
     return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
+STDMETHODIMP ShClWinDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
 {
     LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, m_cFormats, m_pFormatEtc));
 
     HRESULT hr;
     if (dwDirection == DATADIR_GET)
-        hr = SharedClipboardWinEnumFormatEtc::CreateEnumFormatEtc(m_cFormats, m_pFormatEtc, ppEnumFormatEtc);
+        hr = ShClWinEnumFormatEtc::CreateEnumFormatEtc(m_cFormats, m_pFormatEtc, ppEnumFormatEtc);
     else
         hr = E_NOTIMPL;
 
@@ -1068,19 +1068,19 @@ STDMETHODIMP SharedClipboardWinDataObject::EnumFormatEtc(DWORD dwDirection, IEnu
     return hr;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD fAdvise, IAdviseSink *pAdvSink, DWORD *pdwConnection)
+STDMETHODIMP ShClWinDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD fAdvise, IAdviseSink *pAdvSink, DWORD *pdwConnection)
 {
     RT_NOREF(pFormatEtc, fAdvise, pAdvSink, pdwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::DUnadvise(DWORD dwConnection)
+STDMETHODIMP ShClWinDataObject::DUnadvise(DWORD dwConnection)
 {
     RT_NOREF(dwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
+STDMETHODIMP ShClWinDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 {
     RT_NOREF(ppEnumAdvise);
     return OLE_E_ADVISENOTSUPPORTED;
@@ -1091,31 +1091,31 @@ STDMETHODIMP SharedClipboardWinDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdv
  * IDataObjectAsyncCapability methods.
  */
 
-STDMETHODIMP SharedClipboardWinDataObject::EndOperation(HRESULT hResult, IBindCtx *pbcReserved, DWORD dwEffects)
+STDMETHODIMP ShClWinDataObject::EndOperation(HRESULT hResult, IBindCtx *pbcReserved, DWORD dwEffects)
 {
      RT_NOREF(hResult, pbcReserved, dwEffects);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::GetAsyncMode(BOOL *pfIsOpAsync)
+STDMETHODIMP ShClWinDataObject::GetAsyncMode(BOOL *pfIsOpAsync)
 {
      RT_NOREF(pfIsOpAsync);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::InOperation(BOOL *pfInAsyncOp)
+STDMETHODIMP ShClWinDataObject::InOperation(BOOL *pfInAsyncOp)
 {
      RT_NOREF(pfInAsyncOp);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::SetAsyncMode(BOOL fDoOpAsync)
+STDMETHODIMP ShClWinDataObject::SetAsyncMode(BOOL fDoOpAsync)
 {
      RT_NOREF(fDoOpAsync);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
+STDMETHODIMP ShClWinDataObject::StartOperation(IBindCtx *pbcReserved)
 {
      RT_NOREF(pbcReserved);
      return E_NOTIMPL;
@@ -1133,7 +1133,7 @@ STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
  * @param   pTransfer           Transfer to assign.
  *                              When set to NULL, the transfer will be released from the object.
  */
-int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
+int ShClWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
 {
     AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);
 
@@ -1149,7 +1149,7 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
         {
             m_pTransfer = pTransfer;
 
-            SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
+            ShClWinTransferCtx *pWinURITransferCtx = (ShClWinTransferCtx *)pTransfer->pvUser;
             AssertPtr(pWinURITransferCtx);
 
             pWinURITransferCtx->pDataObj = this; /* Save a backref to this object. */
@@ -1163,7 +1163,7 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
     {
         if (m_pTransfer)
         {
-            SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)m_pTransfer->pvUser;
+            ShClWinTransferCtx *pWinURITransferCtx = (ShClWinTransferCtx *)m_pTransfer->pvUser;
             AssertPtr(pWinURITransferCtx);
 
             pWinURITransferCtx->pDataObj = NULL; /* Release backref to this object. */
@@ -1187,7 +1187,7 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Transfer to assign.
  *                              When set to NULL, the transfer will be released from the object.
  */
-int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
+int ShClWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
 {
     lock();
 
@@ -1205,9 +1205,9 @@ int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
  * @param   enmStatus           New status to signal.
  * @param   rcSts               Result code. Optional.
  *
- * @note    Called by the main clipboard thread + SharedClipboardWinStreamImpl.
+ * @note    Called by the main clipboard thread + ShClWinStreamImpl.
  */
-int SharedClipboardWinDataObject::SetStatus(Status enmStatus, int rcSts /* = VINF_SUCCESS */)
+int ShClWinDataObject::SetStatus(Status enmStatus, int rcSts /* = VINF_SUCCESS */)
 {
     lock();
 
@@ -1218,7 +1218,7 @@ int SharedClipboardWinDataObject::SetStatus(Status enmStatus, int rcSts /* = VIN
 }
 
 /* static */
-void SharedClipboardWinDataObject::logFormat(CLIPFORMAT fmt)
+void ShClWinDataObject::logFormat(CLIPFORMAT fmt)
 {
     char szFormat[128];
     if (GetClipboardFormatName(fmt, szFormat, sizeof(szFormat)))
@@ -1229,7 +1229,7 @@ void SharedClipboardWinDataObject::logFormat(CLIPFORMAT fmt)
         LogFlowFunc(("clipFormat=%RI16 is unknown\n", fmt));
 }
 
-bool SharedClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
+bool ShClWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
 {
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
@@ -1257,7 +1257,7 @@ bool SharedClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG
     return false;
 }
 
-void SharedClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
+void ShClWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
                                                   TYMED tyMed, LONG lIndex, DWORD dwAspect,
                                                   DVTARGETDEVICE *pTargetDevice)
 {
@@ -1284,7 +1284,7 @@ void SharedClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFO
  *
  * @note    Caller must have taken the critical section.
  */
-int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = VINF_SUCCESS */)
+int ShClWinDataObject::setStatusLocked(Status enmStatus, int rc /* = VINF_SUCCESS */)
 {
     AssertReturn(enmStatus == Error || RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
     AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);

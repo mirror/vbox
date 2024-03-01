@@ -105,12 +105,12 @@ static void testHtmlCf(void)
     char    *pszOutput = NULL;
     uint32_t cbOutput  = UINT32_MAX/2;
     RTTestIDisableAssertions();
-    RTTESTI_CHECK_RC(SharedClipboardWinConvertCFHTMLToMIME("", 0, &pszOutput, &cbOutput), VERR_INVALID_PARAMETER);
+    RTTESTI_CHECK_RC(ShClWinConvertCFHTMLToMIME("", 0, &pszOutput, &cbOutput), VERR_INVALID_PARAMETER);
     RTTestIRestoreAssertions();
 
     pszOutput = NULL;
     cbOutput  = UINT32_MAX/2;
-    RTTESTI_CHECK_RC(SharedClipboardWinConvertCFHTMLToMIME((char *)&g_abVBoxOrgCfHtml1[0], g_cbVBoxOrgCfHtml1,
+    RTTESTI_CHECK_RC(ShClWinConvertCFHTMLToMIME((char *)&g_abVBoxOrgCfHtml1[0], g_cbVBoxOrgCfHtml1,
                                                            &pszOutput, &cbOutput), VINF_SUCCESS);
     RTTESTI_CHECK(cbOutput == g_cbVBoxOrgMimeHtml1);
     RTTESTI_CHECK(memcmp(pszOutput, g_abVBoxOrgMimeHtml1, cbOutput) == 0);
@@ -140,20 +140,20 @@ static void testHtmlCf(void)
         int      rc;
         char    *pszCfHtml = NULL;
         uint32_t cbCfHtml  = UINT32_MAX/2;
-        rc = SharedClipboardWinConvertMIMEToCFHTML(s_aRoundTrips[i].psz, s_aRoundTrips[i].cch + 1, &pszCfHtml, &cbCfHtml);
+        rc = ShClWinConvertMIMEToCFHTML(s_aRoundTrips[i].psz, s_aRoundTrips[i].cch + 1, &pszCfHtml, &cbCfHtml);
         if (rc == VINF_SUCCESS)
         {
             if (strlen(pszCfHtml) + 1 != cbCfHtml)
-                RTTestIFailed("#%u: SharedClipboardWinConvertMIMEToCFHTML(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
+                RTTestIFailed("#%u: ShClWinConvertMIMEToCFHTML(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
                               i, s_aRoundTrips[i].psz, s_aRoundTrips[i].cch, cbCfHtml, strlen(pszCfHtml) + 1);
 
             char     *pszHtml = NULL;
             uint32_t  cbHtml  = UINT32_MAX/4;
-            rc = SharedClipboardWinConvertCFHTMLToMIME(pszCfHtml, (uint32_t)strlen(pszCfHtml), &pszHtml, &cbHtml);
+            rc = ShClWinConvertCFHTMLToMIME(pszCfHtml, (uint32_t)strlen(pszCfHtml), &pszHtml, &cbHtml);
             if (rc == VINF_SUCCESS)
             {
                 if (strlen(pszHtml) + 1 != cbHtml)
-                    RTTestIFailed("#%u: SharedClipboardWinConvertCFHTMLToMIME(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
+                    RTTestIFailed("#%u: ShClWinConvertCFHTMLToMIME(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
                                   i, pszHtml, strlen(pszHtml), cbHtml, strlen(pszHtml) + 1);
                 if (strcmp(pszHtml, s_aRoundTrips[i].psz) != 0)
                     RTTestIFailed("#%u: roundtrip for '%s' LB %#zx failed, ended up with '%s'",
@@ -161,12 +161,12 @@ static void testHtmlCf(void)
                 RTMemFree(pszHtml);
             }
             else
-                RTTestIFailed("#%u: SharedClipboardWinConvertCFHTMLToMIME(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
+                RTTestIFailed("#%u: ShClWinConvertCFHTMLToMIME(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
                               i, pszCfHtml, strlen(pszCfHtml), rc);
             RTMemFree(pszCfHtml);
         }
         else
-            RTTestIFailed("#%u: SharedClipboardWinConvertMIMEToCFHTML(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
+            RTTestIFailed("#%u: ShClWinConvertMIMEToCFHTML(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
                           i, s_aRoundTrips[i].psz, s_aRoundTrips[i].cch, rc);
     }
 }
