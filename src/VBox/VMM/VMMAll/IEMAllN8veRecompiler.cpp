@@ -13405,7 +13405,9 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
      * Assert sanity.
      */
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarUnmapInfo);
+#if defined(VBOX_STRICT) || defined(RT_ARCH_AMD64)
     PIEMNATIVEVAR const pVarUnmapInfo = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVarUnmapInfo)];
+#endif
     Assert(pVarUnmapInfo->enmKind == kIemNativeVarKind_Stack);
     Assert(   pVarUnmapInfo->idxReg       < RT_ELEMENTS(pReNative->Core.aHstRegs)
            || pVarUnmapInfo->idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS); /* must be initialized */
