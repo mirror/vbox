@@ -61,7 +61,7 @@
 /*********************************************************************************************************************************
 *   TB Helper Functions                                                                                                          *
 *********************************************************************************************************************************/
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
 DECLASM(void) iemNativeHlpAsmSafeWrapLogCpuState(void);
 #endif
 
@@ -154,13 +154,12 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_LogCpuState)
     pbCodeBuf[off++] = 0x58 + X86_GREG_xAX;
     /* pop rax */
     pbCodeBuf[off++] = 0x58 + X86_GREG_xAX;
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-
 #else
-    /** @todo Implement this  */
-    AssertFailed();
-    RT_NOREF(pReNative, pCallEntry);
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpAsmSafeWrapLogCpuState);
+    RT_NOREF(pCallEntry);
 #endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 

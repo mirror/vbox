@@ -34,6 +34,9 @@
 
 
 BEGINCODE
+
+.extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
+
 /**
  * This does the epilogue of a TB, given the RBP for the frame and eax value to return.
  *
@@ -74,3 +77,69 @@ NAME(iemNativeTbLongJmp):
 #endif
         brk #1
 
+
+
+#define IEMNATIVE_HLP_FRAME_SIZE (11 * 16)
+
+;;
+; This is wrapper function that saves and restores all volatile registers
+; so the impact of inserting LogCpuState is minimal to the other TB code.
+;
+        .p2align        2
+        .private_extern NAME(iemNativeHlpAsmSafeWrapLogCpuState)
+        .globl          NAME(iemNativeHlpAsmSafeWrapLogCpuState)
+NAME(iemNativeHlpAsmSafeWrapLogCpuState):
+#ifdef RT_OS_DARWIN
+        pacibsp
+#endif
+
+        ;
+        ; Save all volatile registers.
+        ;
+        stp     x29, x30, [sp, #-IEMNATIVE_HLP_FRAME_SIZE]!
+        stp      x0,  x1, [sp, #( 1 * 16)]
+        stp      x2,  x3, [sp, #( 2 * 16)]
+        stp      x4,  x5, [sp, #( 3 * 16)]
+        stp      x5,  x6, [sp, #( 4 * 16)]
+        stp      x7,  x8, [sp, #( 5 * 16)]
+        stp      x9, x10, [sp, #( 6 * 16)]
+        stp     x11, x12, [sp, #( 7 * 16)]
+        stp     x13, x14, [sp, #( 8 * 16)]
+        stp     x15, x16, [sp, #( 9 * 16)]
+        stp     x17, x18, [sp, #(10 * 16)]
+
+        ;
+        ; Move the pVCpu pointer from the fixed register to the first argument.
+        ; @todo This needs syncing with what we use in IEMN8veRecompiler.h
+        ;       but we can't include that header right now, would need some #ifndef IN_ASM_CODE...
+        ;       in the header or splitting up the header into a asm safe one and a one included from C/C++.
+        ;
+        mov      x0, x28
+
+        ;
+        ; Call C function to do the actual work.
+        ;
+        bl      NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
+
+        ;
+        ; Restore volatile registers and return to the TB code.
+        ;
+        ldp    x29, x30, [sp, #( 0 * 16)]
+        ldp     x0,  x1, [sp, #( 1 * 16)]
+        ldp     x2,  x3, [sp, #( 2 * 16)]
+        ldp     x4,  x5, [sp, #( 3 * 16)]
+        ldp     x5,  x6, [sp, #( 4 * 16)]
+        ldp     x7,  x8, [sp, #( 5 * 16)]
+        ldp     x9, x10, [sp, #( 6 * 16)]
+        ldp    x11, x12, [sp, #( 7 * 16)]
+        ldp    x13, x14, [sp, #( 8 * 16)]
+        ldp    x15, x16, [sp, #( 9 * 16)]
+        ldp    x17, x18, [sp, #(10 * 16)]
+        add      sp, sp, #IEMNATIVE_HLP_FRAME_SIZE
+
+#ifdef RT_OS_DARWIN
+        retab
+#else
+        ret
+#endif
+        brk #1
