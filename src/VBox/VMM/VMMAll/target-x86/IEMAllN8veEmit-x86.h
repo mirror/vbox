@@ -200,9 +200,60 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
-    AssertFailed();
-    return iemNativeEmitBrk(pReNative, off, 0x666);
+    /*
+     * The OR instruction will clear OF, CF and AF (latter is off undefined),
+     * so we don't need the initial destination value.
+     *
+     * On AMD64 we must use the correctly sized OR instructions to get the
+     * right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
+     * in the 32-bit ones.
+     */
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+    uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+    //off = iemNativeEmitBrk(pReNative, off, 0x2222);
+    switch (cOpBits)
+    {
+        case 32:
+#ifndef RT_ARCH_AMD64
+        case 16:
+        case 8:
+#endif
+            off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+
+        default: AssertFailed(); RT_FALL_THRU();
+        case 64:
+            off = iemNativeEmitOrGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+
+#ifdef RT_ARCH_AMD64
+        case 16:
+        {
+            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+            off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegDst, idxRegSrc);
+            break;
+        }
+
+        case 8:
+        {
+            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+            if (idxRegDst >= 8 || idxRegSrc >= 8)
+                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_R : 0) | (idxRegSrc >= 8 ? X86_OP_REX_B : 0);
+            else if (idxRegDst >= 4 || idxRegSrc >= 4)
+                pCodeBuf[off++] = X86_OP_REX;
+            pCodeBuf[off++] = 0x0a;
+            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxRegSrc & 7);
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+            break;
+        }
+#endif
+    }
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+    return off;
 }
 
 

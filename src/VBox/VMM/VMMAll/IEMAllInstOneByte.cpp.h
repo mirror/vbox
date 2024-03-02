@@ -938,7 +938,7 @@ FNIEMOP_DEF(iemOp_or_Eb_Gb)
 {
     IEMOP_MNEMONIC2(MR, OR, or, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_LOCK_ALLOWED);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
-    IEMOP_BODY_BINARY_rm_r8_RW(iemAImpl_or_u8, iemAImpl_or_u8_locked, or, 0, 0);
+    IEMOP_BODY_BINARY_rm_r8_RW(iemAImpl_or_u8, iemAImpl_or_u8_locked, or, RT_ARCH_VAL_AMD64, 0);
 }
 
 
@@ -958,7 +958,7 @@ FNIEMOP_DEF(iemOp_or_Ev_Gv)
 {
     IEMOP_MNEMONIC2(MR, OR, or, Ev, Gv, DISOPTYPE_HARMLESS, IEMOPHINT_LOCK_ALLOWED);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
-    IEMOP_BODY_BINARY_rm_rv_RW(    iemAImpl_or_u16,        iemAImpl_or_u32,        iemAImpl_or_u64,       or, 0, 0);
+    IEMOP_BODY_BINARY_rm_rv_RW(    iemAImpl_or_u16,        iemAImpl_or_u32,        iemAImpl_or_u64,       or, RT_ARCH_VAL_AMD64, 0);
     IEMOP_BODY_BINARY_rm_rv_LOCKED(iemAImpl_or_u16_locked, iemAImpl_or_u32_locked, iemAImpl_or_u64_locked);
 }
 
@@ -973,7 +973,7 @@ FNIEMOP_DEF(iemOp_or_Gb_Eb)
 {
     IEMOP_MNEMONIC2(RM, OR, or, Gb, Eb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_LOCK_ALLOWED);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
-    IEMOP_BODY_BINARY_r8_rm(iemAImpl_or_u8, or, 0);
+    IEMOP_BODY_BINARY_r8_rm(iemAImpl_or_u8, or, RT_ARCH_VAL_AMD64);
 }
 
 
@@ -988,7 +988,7 @@ FNIEMOP_DEF(iemOp_or_Gv_Ev)
     IEMOP_MNEMONIC2(RM, OR, or, Gv, Ev, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_BODY_BINARY_rv_rm(bRm, iemAImpl_or_u16, iemAImpl_or_u32, iemAImpl_or_u64, 1, 0, or, 0);
+    IEMOP_BODY_BINARY_rv_rm(bRm, iemAImpl_or_u16, iemAImpl_or_u32, iemAImpl_or_u64, 1, 0, or, RT_ARCH_VAL_AMD64);
 }
 
 

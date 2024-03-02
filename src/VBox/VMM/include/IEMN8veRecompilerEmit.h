@@ -4368,6 +4368,24 @@ iemNativeEmitOrGprByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDs
 
 
 /**
+ * Emits code for OR'ing two 64-bit GPRs.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrGprByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitOrGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 3), off, iGprDst, iGprSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitOrGprByGprEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iGprSrc);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits code for OR'ing two 32-bit GPRs.
  * @note Bits 63:32 of the destination GPR will be cleared.
  */
