@@ -86,14 +86,20 @@ BS3_PROC_END_CMN            %1
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al  %+ _dl,     %1 al, dl
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ch  %+ _bh,     %1 ch, bh
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dl  %+ _ah,     %1 dl, ah
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxBX %+ _ah,   %1 [xBX], ah
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxDI %+ _bl,   %1 [xDI], bl
    %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dl  %+ _DSxBX,  %1 dl, [xBX]
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ch  %+ _DSxBX,  %1 ch, [xBX]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _dh %+ _cl, ALT_INSTRUCTION8_ %+ %1 dh, cl
    %endif
    %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _sil  %+ _dil,   %1 sil, dil
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9b  %+ _r8b,   %1 r9b, r8b
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al   %+ _r13b,  %1 al, r13b
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSx14 %+ _r11b, %1 [r14], r11b
     %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r11b %+ _DSx12, %1 r11b, [r12]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _dl %+ _r14b, ALT_INSTRUCTION8_ %+ %1 dl, r14b
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r8b %+ _bl,  ALT_INSTRUCTION8_ %+ %1 r8b, bl
     %endif
@@ -102,13 +108,19 @@ BS3_PROC_END_CMN            %1
         ; 16-bit
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _di  %+ _si,     %1 di, si
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _cx  %+ _bp,     %1 cx, bp
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxDI %+ _si,   %1 [xDI], si
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxBX %+ _ax,   %1 [xBX], ax
   %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _si %+ _DSxDI,   %1 si, [xDI]
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ax %+ _DSxBX,   %1 ax, [xBX]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _bp %+ _bx, ALT_INSTRUCTION16_ %+ %1 bp, bx
   %endif
   %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8w  %+ _cx,    %1 r8w, cx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r15w %+ _r10w,  %1 r15w, r10w
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSx15 %+ _r12w, %1 [r15], r12w
    %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9w %+ _DSx8,   %1 r9w, [r8]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r13w %+ _ax, ALT_INSTRUCTION16_ %+ %1 r13w, ax
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _si %+ _r9w,  ALT_INSTRUCTION16_ %+ %1 si, r9w
    %endif
@@ -117,14 +129,20 @@ BS3_PROC_END_CMN            %1
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _eax %+ _ebx,    %1 eax, ebx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ecx %+ _ebp,    %1 ecx, ebp
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _edx %+ _edi,    %1 edx, edi
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxDI %+ _esi,  %1 [xDI], esi
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxBX %+ _eax,  %1 [xBX], eax
   %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _eax %+ _DSxBX,  %1 eax, [xBX]
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ebp %+ _DSxDI,  %1 ebp, [xDI]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _edi %+ _esi, ALT_INSTRUCTION32_ %+ %1 edi, esi
   %endif
   %ifdef TMPL_64BIT
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _eax %+ _r8d,    %1 eax, r8d
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9d %+ _ecx,    %1 r9d, ecx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13d %+ _r14d,  %1 r13d, r14d
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSx10 %+ _r11d, %1 [r10], r11d
    %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r14d %+ _DSx12, %1 r14d, [r12]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r15d %+ _esi, ALT_INSTRUCTION32_ %+ %1 r15d, esi
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _eax %+ _r10d, ALT_INSTRUCTION32_ %+ %1 eax, r10d
    %endif
@@ -134,7 +152,11 @@ BS3_PROC_END_CMN            %1
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rax %+ _rbx,    %1 rax, rbx
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8  %+ _rax,    %1 r8, rax
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rdx %+ _r10,    %1 rdx, r10
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSxBX %+ _rax,  %1 [rbx], rax
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _DSx12 %+ _r8,   %1 [r12], r8
     %if %3 != 0
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rax %+ _DSxBX,  %1 rax, [rbx]
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8  %+ _DSx12,  %1 r8,  [r12]
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _r15 %+ _rsi, ALT_INSTRUCTION64_ %+ %1 r15, rsi
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _rbx %+ _r14, ALT_INSTRUCTION64_ %+ %1 rbx, r14
     %endif
