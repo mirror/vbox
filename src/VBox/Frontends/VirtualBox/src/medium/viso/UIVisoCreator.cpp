@@ -577,8 +577,8 @@ void UIVisoCreatorWidget::prepareConnections()
 {
     if (m_pHostFileBrowser)
     {
-    //     connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
-    //             this, &UIVisoCreatorWidget::sltAddObjectsToViso);
+        connect(m_pHostFileBrowser, &UIVisoHostBrowser::sigAltDoubleClick,
+                this, &UIVisoCreatorWidget::sltAddObjectsToViso);
         connect(m_pHostFileBrowser, &UIVisoHostBrowser::sigSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged);
     }
