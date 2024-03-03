@@ -84,7 +84,7 @@ public:
 
 protected:
 
-    virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) /*override */;
+    virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) override;
     virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
     virtual void mousePressEvent(QMouseEvent *event) override;
 
