@@ -464,8 +464,7 @@ void UIWizardNewVMSummaryPage::initializePage()
     retranslateUi();
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard && m_pModel);
-    if (m_pModel)
-        m_pModel->populateData(pWizard);
+    m_pModel->populateData(pWizard);
     if (m_pTree)
     {
         m_pTree->expandToDepth(4);

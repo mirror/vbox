@@ -857,6 +857,7 @@ UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &ui
 UIActivityOverviewItem::UIActivityOverviewItem()
     : QObject()
     , m_uTotalRAM(0)
+    , m_uFreeRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
     , m_VMuid(QUuid())
@@ -1087,6 +1088,7 @@ void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> 
 *********************************************************************************************************************************/
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : UIActivityOverviewItem(pParent, uid, strVMName)
+    , m_enmMachineState(KMachineState_Null)
     , m_uVMExitTotal(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
@@ -1098,7 +1100,8 @@ UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const
 }
 
 UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
-    : m_uVMExitTotal(0)
+    : m_enmMachineState(KMachineState_Null)
+    , m_uVMExitTotal(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
     , m_uNetworkDownTotal(0)

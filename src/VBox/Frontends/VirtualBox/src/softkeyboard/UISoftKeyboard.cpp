@@ -157,7 +157,7 @@ struct UIKeyCaptions
 };
 
 /** Returns a QPointF which lies on the line [p0, p1] and with a distance @p fDistance to p0. */
-QPointF pointInBetween(qreal fDistance, const QPointF &p0, const QPointF &p1)
+static QPointF pointInBetween(qreal fDistance, const QPointF &p0, const QPointF &p1)
 {
     QPointF vectorP0P1 = p1 - p0;
     qreal length = sqrt(vectorP0P1.x() * vectorP0P1.x() + vectorP0P1.y() * vectorP0P1.y());
@@ -1595,6 +1595,8 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iCutoutCorner(-1)
     , m_iPosition(0)
     , m_pParentWidget(0)
+    , m_iUsageId(0)
+    , m_iUsagePage(0)
     , m_enmKeyboardRegion(KeyboardRegion_Main)
     , m_fIsOSMenuKey(false)
     , m_fCornerRadius(5.)

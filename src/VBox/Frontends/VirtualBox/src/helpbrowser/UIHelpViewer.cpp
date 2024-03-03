@@ -678,8 +678,7 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
         QMimeType type = base.mimeTypeForFile(fInfo);
         if (type.isValid() && type.inherits("image/png"))
         {
-            if (!fOverlayMode)
-                loadImage(source().resolved(strAnchor));
+            loadImage(source().resolved(strAnchor));
             return;
         }
         if (source().resolved(strAnchor).scheme() != "qthelp" && pEvent->button() == Qt::LeftButton)
