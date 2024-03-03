@@ -168,13 +168,22 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
 # define IEMNATIVE_REG_FIXED_PCPUMCTX       ARMV8_A64_REG_X27
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
+# if defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING) && 0 /* debug the updating with a shadow RIP. */
+#   define IEMNATIVE_REG_FIXED_TMP1         ARMV8_A64_REG_X16
+#   define IEMNATIVE_REG_FIXED_PC_DBG       ARMV8_A64_REG_X26
+#   define IEMNATIVE_REG_FIXED_MASK_ADD     (  RT_BIT_32(IEMNATIVE_REG_FIXED_TMP1) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_PC_DBG))
+# else
+#   define IEMNATIVE_REG_FIXED_MASK_ADD     0
+# endif
 # define IEMNATIVE_REG_FIXED_MASK           (  RT_BIT_32(ARMV8_A64_REG_SP) \
                                              | RT_BIT_32(ARMV8_A64_REG_LR) \
                                              | RT_BIT_32(ARMV8_A64_REG_BP) \
                                              | RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
                                              | RT_BIT_32(IEMNATIVE_REG_FIXED_PCPUMCTX) \
                                              | RT_BIT_32(ARMV8_A64_REG_X18) \
-                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) )
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
+                                             | IEMNATIVE_REG_FIXED_MASK_ADD)
 
 #else
 # error "port me"
@@ -850,6 +859,10 @@ typedef enum IEMNATIVEWHAT : uint8_t
     kIemNativeWhat_pCtxFixed,
     /** Fixed temporary register. */
     kIemNativeWhat_FixedTmp,
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    /** Shadow RIP for the delayed RIP updating debugging. */
+    kIemNativeWhat_PcShadow,
+#endif
     /** Register reserved by the CPU or OS architecture. */
     kIemNativeWhat_FixedReserved,
     /** End of valid values. */
@@ -898,6 +911,14 @@ typedef struct IEMNATIVEHSTREG
  */
 typedef struct IEMNATIVECORESTATE
 {
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    /** The current instruction offset in bytes from when the guest program counter
+     * was updated last. Used for delaying the write to the guest context program counter
+     * as long as possible. */
+    uint32_t                    offPc;
+    /** Number of instructions where we could skip the updating. */
+    uint32_t                    cInstrPcUpdateSkipped;
+#endif
     /** Allocation bitmap for aHstRegs. */
     uint32_t                    bmHstRegs;
 

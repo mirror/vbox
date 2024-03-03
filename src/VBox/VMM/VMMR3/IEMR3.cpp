@@ -531,6 +531,16 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         szPat[offFlagChar] = szVal[offFlagChar] = 'S'; STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT, szVal, true, szPat, "Skippable EFLAGS.SF updating percentage", "/IEM/CPU%u/re/NativeLivenessEFlagsSfSkippablePct", idCpu);
         szPat[offFlagChar] = szVal[offFlagChar] = 'O'; STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT, szVal, true, szPat, "Skippable EFLAGS.OF updating percentage", "/IEM/CPU%u/re/NativeLivenessEFlagsOfSkippablePct", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativePcUpdateTotal,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Total RIP updates",   "/IEM/CPU%u/re/NativePcUpdateTotal", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativePcUpdateDelayed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Delayed RIP updates", "/IEM/CPU%u/re/NativePcUpdateDelayed", idCpu);
+
+        /* Ratio of the status bit skippables. */
+        RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/re/NativePcUpdateTotal", idCpu);
+        RTStrPrintf(szVal, sizeof(szVal), "/IEM/CPU%u/re/NativePcUpdateDelayed", idCpu);
+        STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT, szVal, false, szPat,
+                               "Delayed RIP updating percentage",
+                               "/IEM/CPU%u/re/NativePcUpdateDelayed_StatusDelayedPct", idCpu);
+
 #  endif /* VBOX_WITH_STATISTICS */
 # endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
 

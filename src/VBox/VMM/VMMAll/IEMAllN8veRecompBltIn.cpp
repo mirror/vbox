@@ -189,6 +189,13 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_DeferToCImpl0)
 
 
 /**
+ * Flushes pending writes in preparation of raising an exception or aborting the TB.
+ */
+#define BODY_FLUSH_PENDING_WRITES() \
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+
+/**
  * Built-in function that checks for pending interrupts that can be delivered or
  * forced action flags.
  *
@@ -199,6 +206,8 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_DeferToCImpl0)
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
 {
     RT_NOREF(pCallEntry);
+
+    BODY_FLUSH_PENDING_WRITES();
 
     /* It's too convenient to use iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet below
        and I'm too lazy to create a 'Fixed' version of that one. */
@@ -323,12 +332,6 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckMode)
 # define BODY_SET_CUR_INSTR() ((void)0)
 #endif
 
-/**
- * Flushes pending writes in preparation of raising an exception or aborting the TB.
- */
-#define BODY_FLUSH_PENDING_WRITES() \
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
 
 /**
  * Macro that emits the 16/32-bit CS.LIM check.
@@ -346,6 +349,10 @@ iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     Assert(cbInstr < 16);
 #ifdef VBOX_STRICT
     off = iemNativeEmitMarker(pReNative, off, 0x80000001);
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
 #endif
 
     /*
@@ -452,6 +459,10 @@ iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t of
 {
 #ifdef VBOX_STRICT
     off = iemNativeEmitMarker(pReNative, off, 0x80000002);
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
 #endif
 
     /*
@@ -1057,6 +1068,10 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitMarker(pReNative, off, 0x80000004);
 #endif
 
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
+#endif
+
     /*
      * The GCPhysRangePageWithOffset value in the threaded function is a fixed
      * constant for us here.
@@ -1350,6 +1365,8 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 #ifdef VBOX_STRICT
     off = iemNativeEmitMarker(pReNative, off, 0x80000006);
 #endif
+
+    BODY_FLUSH_PENDING_WRITES();
 
     /*
      * Define labels and allocate the register for holding the GCPhys of the new page.

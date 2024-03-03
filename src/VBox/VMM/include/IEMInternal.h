@@ -85,6 +85,13 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_THROW_CATCH
 #endif
 
+/** @def IEMNATIVE_WITH_DELAYED_PC_UPDATING
+ * Enables the delayed PC updating optimization (see @bugref{10373}).
+ */
+#if defined(DOXYGEN_RUNNING) || 1
+# define IEMNATIVE_WITH_DELAYED_PC_UPDATING
+#endif
+
 /** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
  * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
  * executing native translation blocks.
@@ -956,6 +963,10 @@ typedef enum IEMTBDBGENTRYTYPE
     kIemTbDbgEntryType_Label,
     /** Info about a host register shadowing a guest register. */
     kIemTbDbgEntryType_GuestRegShadowing,
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    /** Info about a delayed RIP update. */
+    kIemTbDbgEntryType_DelayedPcUpdate,
+#endif
     kIemTbDbgEntryType_End
 } IEMTBDBGENTRYTYPE;
 
@@ -1027,6 +1038,19 @@ typedef union IEMTBDBGENTRY
         /** The previous host register number, UINT8_MAX if new.   */
         uint32_t    idxHstRegPrev : 8;
     } GuestRegShadowing;
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    struct
+    {
+        /* kIemTbDbgEntryType_DelayedPcUpdate. */
+        uint32_t    uType         : 4;
+        /* The instruction offset added to the program counter. */
+        uint32_t    offPc         : 14;
+        /** Number of instructions skipped. */
+        uint32_t    cInstrSkipped : 14;
+    } DelayedPcUpdate;
+#endif
+
 } IEMTBDBGENTRY;
 AssertCompileSize(IEMTBDBGENTRY, sizeof(uint32_t));
 /** Pointer to a debug info entry. */
@@ -1842,7 +1866,13 @@ typedef struct IEMCPU
     /** Native recompiler: Number of potentially delayable EFLAGS.OF updates. */
     STAMCOUNTER             StatNativeLivenessEflOfDelayable;
 
-    uint64_t                au64Padding[3];
+    /** Native recompiler: Number of potential PC updates in total. */
+    STAMCOUNTER             StatNativePcUpdateTotal;
+    /** Native recompiler: Number of PC updates which could be delayed. */
+    STAMCOUNTER             StatNativePcUpdateDelayed;
+
+
+    uint64_t                u64Padding;
     /** @} */
 
     /** Data TLB.
@@ -3643,6 +3673,8 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrld_imm_u128, iemAImpl_vpsrld_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrld_imm_u256, iemAImpl_vpsrld_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrlq_imm_u128, iemAImpl_vpsrlq_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrlq_imm_u256, iemAImpl_vpsrlq_imm_u256_fallback;
+FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrldq_imm_u128, iemAImpl_vpsrldq_imm_u128_fallback;
+FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrldq_imm_u256, iemAImpl_vpsrldq_imm_u256_fallback;
 
 FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpermilps_u128,     iemAImpl_vpermilps_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_vpermilps_imm_u128, iemAImpl_vpermilps_imm_u128_fallback;
