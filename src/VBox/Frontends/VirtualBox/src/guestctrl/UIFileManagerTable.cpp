@@ -250,6 +250,7 @@ void UIGuestControlFileView::mouseDoubleClickEvent(QMouseEvent *event)
     QTableView::mouseDoubleClickEvent(event);
 }
 
+
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
 *********************************************************************************************************************************/
