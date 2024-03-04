@@ -10785,6 +10785,45 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 #define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput) ((void)0)
 
 
+#define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg) \
+    off = iemNativeEmitRefXregXxx(pReNative, off, a_pu128Dst, a_iXReg, false /*fConst*/)
+
+#define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
+    off = iemNativeEmitRefXregXxx(pReNative, off, a_pu128Dst, a_iXReg, true /*fConst*/)
+
+#define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg) \
+    off = iemNativeEmitRefXregXxx(pReNative, off, a_pXmmDst, a_iXReg, true /*fConst*/)
+
+/** Handles IEM_MC_REF_XREG_xxx[_CONST]. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRefXregXxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef, uint8_t iXReg, bool fConst)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarRef);
+    Assert(pReNative->Core.aVars[idxVarRef].cbVar == sizeof(void *));
+    Assert(iXReg < 16);
+
+    iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_XReg, iXReg);
+
+    /* If we've delayed writing back the register value, flush it now. */
+    off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_XReg, iXReg);
+
+    /** @todo r=aeichner This needs to be done as soon as we shadow SSE registers in host registers, needs
+     *                   figuring out the semantics on how this is tracked.
+     *                   For now this is safe though as the reference will directly operate on the CPUMCTX
+     *                   structure so the value can't get out of sync.
+     */
+#if 0
+    /* If it's not a const reference we need to flush the shadow copy of the register now. */
+    if (!fConst)
+        iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_XREG(iXReg)));
+#else
+    RT_NOREF(fConst);
+#endif
+
+    return off;
+}
+
+
 
 /*********************************************************************************************************************************
 *   Effective Address Calculation                                                                                                *
