@@ -86,6 +86,14 @@ VBoxBs2Linker_SOURCES = VBoxBs2Linker.cpp
 
 
 #
+# Tool for converting an assembly object file into a header.
+#
+BLDPROGS += VBoxBs3Obj2Hdr
+VBoxBs3Obj2Hdr_TEMPLATE = VBoxBldProg
+VBoxBs3Obj2Hdr_SOURCES = VBoxBs3Obj2Hdr.cpp
+
+
+#
 # Makes a boot sector test image.
 #
 TEMPLATE_VBoxBsTestImg = kBuild tool config for building boot sector stuff.
