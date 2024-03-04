@@ -5929,7 +5929,7 @@ static uint32_t iemNativeEmitRaiseNm(PIEMRECOMPILERSTATE pReNative, uint32_t off
  */
 static uint32_t iemNativeEmitRaiseUd(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
 {
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseNm);
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseUd);
     if (idxLabel != UINT32_MAX)
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
