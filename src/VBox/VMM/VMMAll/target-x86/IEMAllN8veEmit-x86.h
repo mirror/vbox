@@ -203,7 +203,8 @@ iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /** @todo we could use ANDS on ARM64 and get the ZF for free for all
      *        variants, and SF for 32-bit and 64-bit.  */
     uint8_t const         idxRegDst    = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
-    uint8_t const         idxRegSrc    = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+    uint8_t const         idxRegSrc    = idxVarSrc == idxVarDst ? idxRegDst /* special case of 'test samereg,samereg' */
+                                       : iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 #ifndef RT_ARCH_AMD64
     uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
 #endif
@@ -243,7 +244,8 @@ iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 # error "port me"
 #endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    if (idxVarSrc != idxVarDst)
+        iemNativeVarRegisterRelease(pReNative, idxVarSrc);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
 
 #ifdef RT_ARCH_AMD64
