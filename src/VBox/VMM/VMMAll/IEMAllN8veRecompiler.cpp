@@ -1621,6 +1621,18 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
 
 
 /**
+ * Used by TB code when it wants to raise a \#MF.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu))
+{
+    iemRaiseMathFaultJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
  * Used by TB code when detecting opcode changes.
  * @see iemThreadeFuncWorkerObsoleteTb
  */
@@ -2933,7 +2945,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 11);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 12);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2945,6 +2957,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[8]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[9]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[10]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[11]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -5946,6 +5959,27 @@ static uint32_t iemNativeEmitRaiseUd(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /**
+ * Emits the code at the RaiseMf label.
+ */
+static uint32_t iemNativeEmitRaiseMf(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseMf);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        /* iemNativeHlpExecRaiseMf(PVMCPUCC pVCpu) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseMf);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
+
+
+/**
  * Emits the code at the ReturnWithFlags label (returns
  * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
@@ -6945,6 +6979,52 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
 
     /* Free but don't flush the CR0 register. */
     iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+
+    return off;
+}
+
+
+#define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
+    off = iemNativeEmitMaybeFpuException(pReNative, off, pCallEntry->idxInstr)
+
+/**
+ * Emits code to check if a \#MF exception should be raised.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an #MF and all guest register must be up to date in CPUMCTX.
+     *
+     * @todo r=aeichner Can we postpone this to the RaiseMf path?
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* Allocate a temporary FSW register. */
+    uint8_t const idxFpuFswReg    = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxLabelRaiseMf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseMf);
+
+    /*
+     * if (FSW & X86_FSW_ES != 0)
+     *     return raisexcpt();
+     */
+    /* Test and jump. */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxFpuFswReg, X86_FSW_ES, idxLabelRaiseMf);
+
+    /* Free but don't flush the FSW register. */
+    iemNativeRegFreeTmp(pReNative, idxFpuFswReg);
 
     return off;
 }
@@ -14348,6 +14428,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_RaiseUd:
                                     pszName = "RaiseUd";
                                     break;
+                                case kIemNativeLabelType_RaiseMf:
+                                    pszName = "RaiseUd";
+                                    break;
                                 case kIemNativeLabelType_ObsoleteTb:
                                     pszName = "ObsoleteTb";
                                     break;
@@ -14948,6 +15031,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitRaiseNm(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseUd))
             off = iemNativeEmitRaiseUd(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseMf))
+            off = iemNativeEmitRaiseMf(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ObsoleteTb))
             off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))

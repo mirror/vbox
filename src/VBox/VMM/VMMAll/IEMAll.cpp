@@ -4498,6 +4498,14 @@ VBOXSTRICTRC iemRaiseMathFault(PVMCPUCC pVCpu) RT_NOEXCEPT
     return iemRegUpdateRipAndFinishClearingRF(pVCpu);
 }
 
+#ifdef IEM_WITH_SETJMP
+/** \#MF(0) - 10, longjmp.  */
+DECL_NO_RETURN(void) iemRaiseMathFaultJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(iemRaiseMathFault(pVCpu)));
+}
+#endif
+
 
 /** \#AC(0) - 11.  */
 VBOXSTRICTRC iemRaiseAlignmentCheckException(PVMCPUCC pVCpu) RT_NOEXCEPT

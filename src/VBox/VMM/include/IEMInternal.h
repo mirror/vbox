@@ -5218,6 +5218,9 @@ VBOXSTRICTRC            iemRaisePageFault(PVMCPUCC pVCpu, RTGCPTR GCPtrWhere, ui
 DECL_NO_RETURN(void)    iemRaisePageFaultJmp(PVMCPUCC pVCpu, RTGCPTR GCPtrWhere, uint32_t cbAccess, uint32_t fAccess, int rc) IEM_NOEXCEPT_MAY_LONGJMP;
 #endif
 VBOXSTRICTRC            iemRaiseMathFault(PVMCPUCC pVCpu) RT_NOEXCEPT;
+#ifdef IEM_WITH_SETJMP
+DECL_NO_RETURN(void)    iemRaiseMathFaultJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+#endif
 VBOXSTRICTRC            iemRaiseAlignmentCheckException(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #ifdef IEM_WITH_SETJMP
 DECL_NO_RETURN(void)    iemRaiseAlignmentCheckExceptionJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
