@@ -329,7 +329,7 @@ int main(int argc, char **argv)
         else
         {
             /* Make sure we've got an output file. */
-            if (!pOutput || strcmp(pszOutput, "-") == 0)
+            if (!pszOutput || strcmp(pszOutput, "-") == 0)
                 pOutput = stdout;
             else
             {
