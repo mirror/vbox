@@ -624,8 +624,9 @@ void UINameAndSystemEditor::populateFamilyCombo()
     /* Populate family combo: */
     for (int i = 0; i < families.size(); ++i)
     {
-        m_pComboFamily->addItem(families[i].second);
-        m_pComboFamily->setItemData(i, families[i].first);
+        const UIFamilyInfo fi = families.at(i);
+        m_pComboFamily->addItem(fi.m_strDescription);
+        m_pComboFamily->setItemData(i, fi.m_strId);
     }
 
     /* Unblock signals finally: */

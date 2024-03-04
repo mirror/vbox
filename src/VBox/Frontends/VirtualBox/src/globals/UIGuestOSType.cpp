@@ -78,9 +78,9 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
     const QString strFamilyId = m_guestOSTypes.last().getFamilyId();
     const QString strFamilyDesc = m_guestOSTypes.last().getFamilyDescription();
     const QString strSubtype = m_guestOSTypes.last().getSubtype();
-    QPair<QString, QString> family = QPair<QString, QString>(strFamilyId, strFamilyDesc);
-    if (!m_guestOSFamilies.contains(family))
-        m_guestOSFamilies << family;
+    UIFamilyInfo fi(strFamilyId, strFamilyDesc);
+    if (!m_guestOSFamilies.contains(fi))
+        m_guestOSFamilies << fi;
 
     /* Acquire arch type: */
     const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
@@ -105,12 +105,12 @@ UIGuestOSTypeManager::getFamilies(KPlatformArchitecture enmArch /* = KPlatformAr
 
     /* Otherwise we'll have to prepare list by arch type: */
     UIGuestOSTypeManager::UIGuestOSFamilyInfo families;
-    foreach (const UIGuestInfoPair &family, m_guestOSFamilies)
+    foreach (const UIFamilyInfo &fi, m_guestOSFamilies)
     {
-        const KPlatformArchitecture enmCurrentArch = m_guestOSFamilyArch.value(family.first, KPlatformArchitecture_Max);
+        const KPlatformArchitecture enmCurrentArch = m_guestOSFamilyArch.value(fi.m_strId, KPlatformArchitecture_Max);
         if (   enmCurrentArch == enmArch
             || enmCurrentArch == KPlatformArchitecture_None)
-            families << family;
+            families << fi;
     }
     return families;
 }

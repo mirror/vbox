@@ -40,6 +40,31 @@
 #include "COMEnums.h"
 #include "CGuestOSType.h"
 
+/** Represents guest OS family info. */
+struct UIFamilyInfo
+{
+    /** Constructs empty family info. */
+    UIFamilyInfo()
+    {}
+
+    /** Constructs family info with predefined @a strId and @a strDescription. */
+    UIFamilyInfo(const QString &strId, const QString &strDescription)
+        : m_strId(strId)
+        , m_strDescription(strDescription)
+    {}
+
+    /** Returns whether this family info has the same id as @a other. */
+    bool operator==(const UIFamilyInfo &other) const
+    {
+        return m_strId == other.m_strId;
+    }
+
+    /** Holds family id. */
+    QString  m_strId;
+    /** Holds family description. */
+    QString  m_strDescription;
+};
+
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
 class SHARED_LIBRARY_STUFF UIGuestOSType
 {
@@ -86,7 +111,6 @@ private:
     CGuestOSType m_comGuestOSType;
 };
 
-
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
   *  e.g. Window, Linux etc. Some families have so-called subtypes which for Linux corresponds to distros, while some
   *  families have no subtype. Under subtypes (and when no subtype exists direcly under family) we have guest os
@@ -98,7 +122,7 @@ public:
     /** OS info pair. 'first' is id and 'second' is description. */
     typedef QPair<QString, QString> UIGuestInfoPair;
     /** A list of all OS family pairs. */
-    typedef QVector<UIGuestInfoPair> UIGuestOSFamilyInfo;
+    typedef QVector<UIFamilyInfo> UIGuestOSFamilyInfo;
     /** A list of all OS type pairs. */
     typedef QVector<UIGuestInfoPair> UIGuestOSTypeInfo;
 
