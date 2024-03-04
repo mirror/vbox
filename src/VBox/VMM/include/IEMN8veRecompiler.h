@@ -417,14 +417,15 @@ typedef union IEMLIVENESSBIT
         uint64_t    bmSegSel    :  6;   /**< 0x26 / 38: */
         uint64_t    fCr4        :  1;   /**< 0x2c / 44: */
         uint64_t    fXcr0       :  1;   /**< 0x2d / 45: */
-        uint64_t    fEflOther   :  1;   /**< 0x2e / 46: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). First! */
-        uint64_t    fEflCf      :  1;   /**< 0x2f / 47: Carry flag          (X86_EFL_CF / 0). */
-        uint64_t    fEflPf      :  1;   /**< 0x30 / 48: Parity flag         (X86_EFL_PF / 2). */
-        uint64_t    fEflAf      :  1;   /**< 0x31 / 49: Auxilary carry flag (X86_EFL_AF / 4). */
-        uint64_t    fEflZf      :  1;   /**< 0x32 / 50: Zero flag           (X86_EFL_ZF / 6). */
-        uint64_t    fEflSf      :  1;   /**< 0x33 / 51: Signed flag         (X86_EFL_SF / 7). */
-        uint64_t    fEflOf      :  1;   /**< 0x34 / 52: Overflow flag       (X86_EFL_OF / 12). */
-        uint64_t    uUnused     : 11;     /* 0x35 / 53 -> 0x40/64 */
+        uint64_t    fMxCsr      :  1;   /**< 0x2e / 46: */
+        uint64_t    fEflOther   :  1;   /**< 0x2f / 47: Other EFLAGS bits   (~X86_EFL_STATUS_BITS & X86_EFL_LIVE_MASK). First! */
+        uint64_t    fEflCf      :  1;   /**< 0x30 / 48: Carry flag          (X86_EFL_CF / 0). */
+        uint64_t    fEflPf      :  1;   /**< 0x31 / 49: Parity flag         (X86_EFL_PF / 2). */
+        uint64_t    fEflAf      :  1;   /**< 0x32 / 50: Auxilary carry flag (X86_EFL_AF / 4). */
+        uint64_t    fEflZf      :  1;   /**< 0x33 / 51: Zero flag           (X86_EFL_ZF / 6). */
+        uint64_t    fEflSf      :  1;   /**< 0x34 / 52: Signed flag         (X86_EFL_SF / 7). */
+        uint64_t    fEflOf      :  1;   /**< 0x35 / 53: Overflow flag       (X86_EFL_OF / 12). */
+        uint64_t    uUnused     : 10;     /* 0x36 / 54 -> 0x40/64 */
     };
 } IEMLIVENESSBIT;
 AssertCompileSize(IEMLIVENESSBIT, 8);
@@ -486,7 +487,7 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 
 /** @name 64-bit value masks for IEMLIVENESSENTRY.
  * @{ */                                      /*         0xzzzzyyyyxxxxwwww */
-#define IEMLIVENESSBIT_MASK                     UINT64_C(0x001ffffffffeffff)
+#define IEMLIVENESSBIT_MASK                     UINT64_C(0x003ffffffffeffff)
 
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
 # define IEMLIVENESSBIT0_XCPT_OR_CALL           UINT64_C(0x0000000000000000)
@@ -496,7 +497,7 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 # define IEMLIVENESSBIT1_ALL_UNUSED             UINT64_C(0x0000000000000000)
 #endif
 
-#define IEMLIVENESSBIT_ALL_EFL_MASK             UINT64_C(0x001fc00000000000)
+#define IEMLIVENESSBIT_ALL_EFL_MASK             UINT64_C(0x003f800000000000)
 
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
 # define IEMLIVENESSBIT0_ALL_EFL_INPUT          IEMLIVENESSBIT_ALL_EFL_MASK
@@ -716,6 +717,7 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_SegSelLast    = kIemNativeGstReg_SegSelFirst + 5,
     kIemNativeGstReg_Cr4,
     kIemNativeGstReg_Xcr0,
+    kIemNativeGstReg_MxCsr,
     kIemNativeGstReg_EFlags,            /**< 32-bit, includes internal flags - last! */
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;

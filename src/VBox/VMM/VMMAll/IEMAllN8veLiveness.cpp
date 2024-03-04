@@ -177,9 +177,9 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #endif
 
 
-#define IEM_LIVENESS_CR0_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fCr0,  0)
-#define IEM_LIVENESS_CR4_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fCr4,  0)
-#define IEM_LIVENESS_XCR0_INPUT()                   IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fXcr0, 0)
+#define IEM_LIVENESS_CR0_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fCr0,   0)
+#define IEM_LIVENESS_CR4_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fCr4,   0)
+#define IEM_LIVENESS_XCR0_INPUT()                   IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fXcr0,  0)
 
 
 #define IEM_LIVENESS_FCW_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fFcw, 0)
@@ -190,6 +190,11 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_LIVENESS_FSW_INPUT()                    IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fFsw, 0)
 #define IEM_LIVENESS_FSW_CLOBBER()                  IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(fFsw, 0)
 #define IEM_LIVENESS_FSW_MODIFY()                   IEM_LIVENESS_BITMAP_MEMBER_MODIFY( fFsw, 0)
+
+
+#define IEM_LIVENESS_MXCSR_INPUT()                  IEM_LIVENESS_BITMAP_MEMBER_INPUT(  fMxCsr, 0)
+#define IEM_LIVENESS_MXCSR_CLOBBER()                IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(fMxCsr, 0)
+#define IEM_LIVENESS_MXCSR_MODIFY()                 IEM_LIVENESS_BITMAP_MEMBER_MODIFY( fMxCsr, 0)
 
 
 #define IEM_LIVENESS_GPR_CLOBBER(a_idxGpr)          IEM_LIVENESS_BITMAP_MEMBER_CLOBBER(bmGprs, a_idxGpr)
@@ -575,7 +580,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
                  & ~(uint32_t)(X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_VM | X86_EFL_VIF | X86_EFL_IOPL))); \
     } while (0)
 #define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput)             NOP()
-#define IEM_MC_REF_MXCSR(a_pfMxcsr)                                 NOP()
+#define IEM_MC_REF_MXCSR(a_pfMxcsr)                                 IEM_LIVENESS_MXCSR_MODIFY()
 
 
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)
@@ -1062,8 +1067,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()                                                   NOP()
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE()                                                 NOP()
 
-#define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg)                                           NOP()
-#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr)                                                       NOP()
+#define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg)                                           IEM_LIVENESS_MXCSR_MODIFY() //; IEM_LIVENESS_XREG_CLOBBER(a_iXmmReg)
+#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr)                                                       IEM_LIVENESS_MXCSR_MODIFY()
 
 #define IEM_MC_PREPARE_SSE_USAGE()                                                              NOP()
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()                                                   NOP()

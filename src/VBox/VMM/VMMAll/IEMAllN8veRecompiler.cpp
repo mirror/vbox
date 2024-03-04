@@ -3582,6 +3582,7 @@ static struct
     /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
     /* [kIemNativeGstReg_Cr4] = */                      { CPUMCTX_OFF_AND_SIZE(cr4),                "cr4", },
     /* [kIemNativeGstReg_Xcr0] = */                     { CPUMCTX_OFF_AND_SIZE(aXcr[0]),            "xcr0", },
+    /* [kIemNativeGstReg_MxCsr] = */                    { CPUMCTX_OFF_AND_SIZE(XState.x87.MXCSR),   "mxcsr", },
     /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
 #undef CPUMCTX_OFF_AND_SIZE
 };
@@ -10899,6 +10900,26 @@ iemNativeEmitRefXregXxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 #else
     RT_NOREF(fConst);
 #endif
+
+    return off;
+}
+
+
+#define IEM_MC_REF_MXCSR(a_pfMxcsr) \
+    off = iemNativeEmitRefMxcsr(pReNative, off, a_pfMxcsr)
+
+/** Handles IEM_MC_REF_MXCSR. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRefMxcsr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef)
+{
+    iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_MxCsr, 0);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarRef, sizeof(void *));
+
+    /* If we've delayed writing back the register value, flush it now. */
+    off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_MxCsr, 0);
+
+    /* If there is a shadow copy of guest MXCSR, flush it now. */
+    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(kIemNativeGstReg_MxCsr));
 
     return off;
 }
