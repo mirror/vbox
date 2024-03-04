@@ -485,7 +485,7 @@ typedef IEMLIVENESSENTRY const *PCIEMLIVENESSENTRY;
 
 /** @name 64-bit value masks for IEMLIVENESSENTRY.
  * @{ */                                      /*         0xzzzzyyyyxxxxwwww */
-#define IEMLIVENESSBIT_MASK                     UINT64_C(0x000ffffffffeffff)
+#define IEMLIVENESSBIT_MASK                     UINT64_C(0x001ffffffffeffff)
 
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
 # define IEMLIVENESSBIT0_XCPT_OR_CALL           UINT64_C(0x0000000000000000)
