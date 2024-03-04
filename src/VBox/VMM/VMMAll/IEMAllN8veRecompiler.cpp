@@ -14128,6 +14128,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 #  error "Port me"
 # endif
     AssertMsgReturnVoid(rcCs == CS_ERR_OK, ("%d (%#x)\n", rcCs, rcCs));
+
+    //rcCs = cs_option(hDisasm, CS_OPT_DETAIL, CS_OPT_ON);  - not needed as pInstr->detail doesn't provide full memory detail.
+    //Assert(rcCs == CS_ERR_OK);
 #endif
 
     /*
@@ -14473,12 +14476,52 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
             if (cInstrs > 0)
             {
                 Assert(cInstrs == 1);
+                const char *pszAnnotation = NULL;
+#  if defined(RT_ARCH_ARM64)
+                if (   (pInstr->id >= ARM64_INS_LD1 && pInstr->id < ARM64_INS_LSL)
+                    || (pInstr->id >= ARM64_INS_ST1 && pInstr->id < ARM64_INS_SUB))
+                {
+                    /* This is bit crappy, but the disassembler provides incomplete addressing details. */
+                    AssertCompile(IEMNATIVE_REG_FIXED_PVMCPU == 28 && IEMNATIVE_REG_FIXED_PCPUMCTX == 27);
+                    char *psz = strchr(pInstr->op_str, '[');
+                    if (psz && psz[1] == 'x' && psz[2] == '2' && (psz[3] == '7' || psz[3] == '8'))
+                    {
+                        uint32_t const offVCpu = psz[3] == '8'? 0 : RT_UOFFSETOF(VMCPU, cpum.GstCtx);
+                        int32_t        off     = -1;
+                        psz += 4;
+                        if (*psz == ']')
+                            off = 0;
+                        else if (*psz == ',')
+                        {
+                            psz = RTStrStripL(psz + 1);
+                            if (*psz == '#')
+                                off = RTStrToInt32(&psz[1]);
+                            /** @todo deal with index registers and LSL as well... */
+                        }
+                        if (off >= 0)
+                            pszAnnotation = iemNativeDbgVCpuOffsetToName(offVCpu + (uint32_t)off);
+                    }
+                }
+#  endif
+
+                size_t const cchOp = strlen(pInstr->op_str);
 #  if defined(RT_ARCH_AMD64)
-                pHlp->pfnPrintf(pHlp, "    %p: %.*Rhxs %-7s %s\n",
-                                pNativeCur, pInstr->size, pNativeCur, pInstr->mnemonic, pInstr->op_str);
+                if (pszAnnotation)
+                    pHlp->pfnPrintf(pHlp, "    %p: %.*Rhxs %-7s %s%*s ; %s\n",
+                                    pNativeCur, pInstr->size, pNativeCur, pInstr->mnemonic, pInstr->op_str,
+                                    cchOp < 55 ? 55 - cchOp : 0, "", pszAnnotation);
+                else
+                    pHlp->pfnPrintf(pHlp, "    %p: %.*Rhxs %-7s %s\n",
+                                    pNativeCur, pInstr->size, pNativeCur, pInstr->mnemonic, pInstr->op_str);
+
 #  else
-                pHlp->pfnPrintf(pHlp, "    %p: %#010RX32 %-7s %s\n",
-                                pNativeCur, *pNativeCur, pInstr->mnemonic, pInstr->op_str);
+                if (pszAnnotation)
+                    pHlp->pfnPrintf(pHlp, "    %p: %#010RX32 %-7s %s%*s ; %s\n",
+                                    pNativeCur, *pNativeCur, pInstr->mnemonic, pInstr->op_str,
+                                    cchOp < 55 ? 55 - cchOp : 0, "", pszAnnotation);
+                else
+                    pHlp->pfnPrintf(pHlp, "    %p: %#010RX32 %-7s %s\n",
+                                    pNativeCur, *pNativeCur, pInstr->mnemonic, pInstr->op_str);
 #  endif
                 offNative += pInstr->size / sizeof(*pNativeCur);
                 cs_free(pInstr, cInstrs);
