@@ -5134,12 +5134,13 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILER
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
  */
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept /*= 0*/)
 {
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    off = iemNativeEmitPcWriteback(pReNative, off);
+    if (!(fGstShwExcept & kIemNativeGstReg_Pc))
+        off = iemNativeEmitPcWriteback(pReNative, off);
 #else
-    RT_NOREF(pReNative);
+    RT_NOREF(pReNative, fGstShwExcept);
 #endif
 
     return off;
@@ -11702,7 +11703,12 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     /** @todo we could postpone this till we make the call and reload the
      * registers after returning from the call. Not sure if that's sensible or
      * not, though. */
+#ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeRegFlushPendingWrites(pReNative, off);
+#else
+    /* The program counter is treated differently for now. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off, RT_BIT_64(kIemNativeGstReg_Pc));
+#endif
 
 #ifdef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
     /*
@@ -11751,6 +11757,27 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (pReNative->Core.offPc)
+    {
+        /*
+         * Update the program counter but restore it at the end of the TlbMiss branch.
+         * This should allow delaying more program counter updates for the TlbLookup and hit paths
+         * which are hopefully much more frequent, reducing the amount of memory accesses.
+         */
+        /* Allocate a temporary PC register. */
+        uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+
+        /* Perform the addition and store the result. */
+        off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, pReNative->Core.offPc);
+        off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+        /* Free and flush the PC register. */
+        iemNativeRegFreeTmp(pReNative, idxPcReg);
+        iemNativeRegFlushGuestShadowsByHostMask(pReNative, RT_BIT_32(idxPcReg));
+    }
 #endif
 
 #ifndef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
@@ -11810,6 +11837,25 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     /* Restore variables and guest shadow registers to volatile registers. */
     off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
     off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows());
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (pReNative->Core.offPc)
+    {
+        /*
+         * Time to restore the program counter to its original value.
+         */
+        /* Allocate a temporary PC register. */
+        uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+
+        /* Restore the original value. */
+        off = iemNativeEmitSubGprImm(pReNative, off, idxPcReg, pReNative->Core.offPc);
+        off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+        /* Free and flush the PC register. */
+        iemNativeRegFreeTmp(pReNative, idxPcReg);
+        iemNativeRegFlushGuestShadowsByHostMask(pReNative, RT_BIT_32(idxPcReg));
+    }
 #endif
 
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP
