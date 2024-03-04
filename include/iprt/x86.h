@@ -975,33 +975,43 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 0 - PE - Protection Enabled */
 #define X86_CR0_PE                          RT_BIT_32(0)
 #define X86_CR0_PROTECTION_ENABLE           RT_BIT_32(0)
+#define X86_CR0_PE_BIT                      0
 /** Bit 1 - MP - Monitor Coprocessor */
 #define X86_CR0_MP                          RT_BIT_32(1)
 #define X86_CR0_MONITOR_COPROCESSOR         RT_BIT_32(1)
+#define X86_CR0_MP_BIT                      1
 /** Bit 2 - EM - Emulation. */
 #define X86_CR0_EM                          RT_BIT_32(2)
 #define X86_CR0_EMULATE_FPU                 RT_BIT_32(2)
+#define X86_CR0_EM_BIT                      2
 /** Bit 3 - TS - Task Switch. */
 #define X86_CR0_TS                          RT_BIT_32(3)
 #define X86_CR0_TASK_SWITCH                 RT_BIT_32(3)
+#define X86_CR0_TS_BIT                      3
 /** Bit 4 - ET - Extension flag. (386, 'hardcoded' to 1 on 486+) */
 #define X86_CR0_ET                          RT_BIT_32(4)
 #define X86_CR0_EXTENSION_TYPE              RT_BIT_32(4)
+#define X86_CR0_ET_BIT                      4
 /** Bit 5 - NE - Numeric error (486+). */
 #define X86_CR0_NE                          RT_BIT_32(5)
 #define X86_CR0_NUMERIC_ERROR               RT_BIT_32(5)
+#define X86_CR0_NE_BIT                      5
 /** Bit 16 - WP - Write Protect (486+). */
 #define X86_CR0_WP                          RT_BIT_32(16)
 #define X86_CR0_WRITE_PROTECT               RT_BIT_32(16)
+#define X86_CR0_WP_BIT                      16
 /** Bit 18 - AM - Alignment Mask (486+). */
 #define X86_CR0_AM                          RT_BIT_32(18)
 #define X86_CR0_ALIGMENT_MASK               RT_BIT_32(18)
+#define X86_CR0_AM_BIT                      18
 /** Bit 29 - NW - Not Write-though (486+). */
 #define X86_CR0_NW                          RT_BIT_32(29)
 #define X86_CR0_NOT_WRITE_THROUGH           RT_BIT_32(29)
+#define X86_CR0_NW_BIT                      29
 /** Bit 30 - WP - Cache Disable (486+). */
 #define X86_CR0_CD                          RT_BIT_32(30)
 #define X86_CR0_CACHE_DISABLE               RT_BIT_32(30)
+#define X86_CR0_CD_BIT                      30
 /** Bit 31 - PG - Paging. */
 #define X86_CR0_PG                          RT_BIT_32(31)
 #define X86_CR0_PAGING                      RT_BIT_32(31)
@@ -1013,8 +1023,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @{ */
 /** Bit 3 - PWT - Page-level Writes Transparent. */
 #define X86_CR3_PWT                         RT_BIT_32(3)
+#define X86_CR3_PWT_BIT                     3
 /** Bit 4 - PCD - Page-level Cache Disable. */
 #define X86_CR3_PCD                         RT_BIT_32(4)
+#define X86_CR3_PCD_BIT                     4
 /** Bits 12-31 - - Page directory page number. */
 #define X86_CR3_PAGE_MASK                   (0xfffff000)
 /** Bits  5-31 - - PAE Page directory page number. */
@@ -1034,47 +1046,68 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @{ */
 /** Bit 0 - VME - Virtual-8086 Mode Extensions. */
 #define X86_CR4_VME                         RT_BIT_32(0)
+#define X86_CR4_VME_BIT                     0
 /** Bit 1 - PVI - Protected-Mode Virtual Interrupts. */
 #define X86_CR4_PVI                         RT_BIT_32(1)
+#define X86_CR4_PVI_BIT                     1
 /** Bit 2 - TSD - Time Stamp Disable. */
 #define X86_CR4_TSD                         RT_BIT_32(2)
+#define X86_CR4_TSD_BIT                     2
 /** Bit 3 - DE - Debugging Extensions. */
 #define X86_CR4_DE                          RT_BIT_32(3)
+#define X86_CR4_DE_BIT                      3
 /** Bit 4 - PSE - Page Size Extension. */
 #define X86_CR4_PSE                         RT_BIT_32(4)
+#define X86_CR4_PSE_BIT                     4
 /** Bit 5 - PAE - Physical Address Extension. */
 #define X86_CR4_PAE                         RT_BIT_32(5)
+#define X86_CR4_PAE_BIT                     5
 /** Bit 6 - MCE - Machine-Check Enable. */
 #define X86_CR4_MCE                         RT_BIT_32(6)
+#define X86_CR4_MCE_BIT                     6
 /** Bit 7 - PGE - Page Global Enable. */
 #define X86_CR4_PGE                         RT_BIT_32(7)
+#define X86_CR4_PGE_BIT                     7
 /** Bit 8 - PCE - Performance-Monitoring Counter Enable. */
 #define X86_CR4_PCE                         RT_BIT_32(8)
+#define X86_CR4_PCE_BIT                     8
 /** Bit 9 - OSFXSR - Operating System Support for FXSAVE and FXRSTORE instructions. */
 #define X86_CR4_OSFXSR                      RT_BIT_32(9)
+#define X86_CR4_OSFXSR_BIT                  9
 /** Bit 10 - OSXMMEEXCPT - Operating System Support for Unmasked SIMD Floating-Point Exceptions. */
 #define X86_CR4_OSXMMEEXCPT                 RT_BIT_32(10)
+#define X86_CR4_OSXMMEEXCPT_BIT             10
 /** Bit 11 - UMIP - User-Mode Instruction Prevention. */
 #define X86_CR4_UMIP                        RT_BIT_32(11)
+#define X86_CR4_UMIP_BIT                    11
 /** Bit 13 - VMXE - VMX mode is enabled. */
 #define X86_CR4_VMXE                        RT_BIT_32(13)
+#define X86_CR4_VMXE_BIT                    13
 /** Bit 14 - SMXE - Safer Mode Extensions Enabled. */
 #define X86_CR4_SMXE                        RT_BIT_32(14)
+#define X86_CR4_SMXE_BIT                    14
 /** Bit 16 - FSGSBASE - Read/write FSGSBASE instructions Enable. */
 #define X86_CR4_FSGSBASE                    RT_BIT_32(16)
+#define X86_CR4_FSGSBASE_BIT                16
 /** Bit 17 - PCIDE - Process-Context Identifiers Enabled. */
 #define X86_CR4_PCIDE                       RT_BIT_32(17)
+#define X86_CR4_PCIDE_BIT                   17
 /** Bit 18 - OSXSAVE - Operating System Support for XSAVE and processor
  * extended states. */
 #define X86_CR4_OSXSAVE                     RT_BIT_32(18)
+#define X86_CR4_OSXSAVE_BIT                 18
 /** Bit 20 - SMEP - Supervisor-mode Execution Prevention enabled. */
 #define X86_CR4_SMEP                        RT_BIT_32(20)
+#define X86_CR4_SMEP_BIt                    20
 /** Bit 21 - SMAP - Supervisor-mode Access Prevention enabled. */
 #define X86_CR4_SMAP                        RT_BIT_32(21)
+#define X86_CR4_SMAP_BIT                    21
 /** Bit 22 - PKE - Protection Key Enable. */
 #define X86_CR4_PKE                         RT_BIT_32(22)
+#define X86_CR4_PKE_BIT                     22
 /** Bit 23 - CET - Control-flow Enhancement Technology enabled. */
 #define X86_CR4_CET                         RT_BIT_32(23)
+#define X86_CR4_CET_BIT                     23
 /** @} */
 
 
