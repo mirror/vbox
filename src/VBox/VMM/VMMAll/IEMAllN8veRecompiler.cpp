@@ -7072,17 +7072,17 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
      * if (cr0 & X86_CR0_EM)
      *     return raisexcpt();
      */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM, idxLabelRaiseUd);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_EM_BIT, idxLabelRaiseUd);
     /*
      * if (!(cr4 & X86_CR4_OSFXSR))
      *     return raisexcpt();
      */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR, idxLabelRaiseUd);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR_BIT, idxLabelRaiseUd);
     /*
      * if (cr0 & X86_CR0_TS)
      *     return raisexcpt();
      */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_TS, idxLabelRaiseNm);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
 
     /* Free but don't flush the CR0 and CR4 register. */
     iemNativeRegFreeTmp(pReNative, idxCr0Reg);
@@ -7147,12 +7147,12 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
      * if (!(cr4 & X86_CR4_OSXSAVE))
      *     return raisexcpt();
      */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE, idxLabelRaiseUd);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE_BIT, idxLabelRaiseUd);
     /*
      * if (cr0 & X86_CR0_TS)
      *     return raisexcpt();
      */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_TS, idxLabelRaiseNm);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
 
     /* Free but don't flush the CR0, CR4 and XCR0 register. */
     iemNativeRegFreeTmp(pReNative, idxCr0Reg);
