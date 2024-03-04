@@ -3568,6 +3568,7 @@ static struct
     /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
     /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
     /* [kIemNativeGstReg_Cr4] = */                      { CPUMCTX_OFF_AND_SIZE(cr4),                "cr4", },
+    /* [kIemNativeGstReg_Xcr0] = */                     { CPUMCTX_OFF_AND_SIZE(aXcr[0]),            "xcr0", },
     /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
 #undef CPUMCTX_OFF_AND_SIZE
 };
@@ -7005,6 +7006,77 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
     /* Free but don't flush the CR0 and CR4 register. */
     iemNativeRegFreeTmp(pReNative, idxCr0Reg);
     iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+
+    return off;
+}
+
+
+#define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
+    off = iemNativeEmitMaybeRaiseAvxRelatedXcpt(pReNative, off, pCallEntry->idxInstr)
+
+/**
+ * Emits code to check if a AVX exception (either \#UD or \#NM) should be raised.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
+     *
+     * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* Allocate a temporary CR0, CR4 and XCR0 register. */
+    uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxXcr0Reg      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
+    uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
+
+#if 1
+    off = iemNativeEmitBrk(pReNative, off, 0x4223); /** @todo Test this when AVX gets actually available. */
+#endif
+
+    /** @todo r=aeichner Optimize this more later to have less compares and branches,
+     *                   (see IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() in IEMMc.h but check that it has some
+     *                   actual performance benefit first). */
+    /*
+     * if ((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE))
+     *     return raisexcpt();
+     */
+    const uint8_t idxRegTmp = iemNativeRegAllocTmpImm(pReNative, &off, XSAVE_C_YMM | XSAVE_C_SSE);
+    off = iemNativeEmitOrGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
+    off = iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, idxRegTmp, XSAVE_C_YMM | XSAVE_C_SSE, idxLabelRaiseUd);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+
+    /*
+     * if (!(cr4 & X86_CR4_OSXSAVE))
+     *     return raisexcpt();
+     */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE, idxLabelRaiseUd);
+    /*
+     * if (cr0 & X86_CR0_TS)
+     *     return raisexcpt();
+     */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_TS, idxLabelRaiseNm);
+
+    /* Free but don't flush the CR0, CR4 and XCR0 register. */
+    iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+    iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+    iemNativeRegFreeTmp(pReNative, idxXcr0Reg);
 
     return off;
 }
