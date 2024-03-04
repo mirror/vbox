@@ -4529,6 +4529,15 @@ VBOXSTRICTRC iemRaiseSimdFpException(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
+#ifdef IEM_WITH_SETJMP
+/** \#XF(0)/\#XM(0) - 19s, longjmp.  */
+DECL_NO_RETURN(void) iemRaiseSimdFpExceptionJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(iemRaiseSimdFpException(pVCpu)));
+}
+#endif
+
+
 /** Accessed via IEMOP_RAISE_DIVIDE_ERROR.   */
 IEM_CIMPL_DEF_0(iemCImplRaiseDivideError)
 {

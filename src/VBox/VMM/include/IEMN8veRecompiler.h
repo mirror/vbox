@@ -330,6 +330,7 @@ typedef enum
     kIemNativeLabelType_RaiseNm,
     kIemNativeLabelType_RaiseUd,
     kIemNativeLabelType_RaiseMf,
+    kIemNativeLabelType_RaiseXf,
     kIemNativeLabelType_ObsoleteTb,
     kIemNativeLabelType_NeedCsLimChecking,
     kIemNativeLabelType_CheckBranchMiss,
