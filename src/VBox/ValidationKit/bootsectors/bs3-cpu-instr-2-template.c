@@ -42,6 +42,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include "bs3-cpu-instr-2.h"
 #include "bs3-cpu-instr-2-data.h"
+#include "bs3-cpu-instr-2-asm-auto.h"
 
 
 /*********************************************************************************************************************************
@@ -67,41 +68,6 @@ typedef struct BS3CI2FSGSBASE
 *********************************************************************************************************************************/
 #ifdef BS3_INSTANTIATING_CMN
 # if ARCH_BITS == 64
-#  define BS3CPUINSTR2_BINARY_OP_PROTO64(a_Ins) \
-        /* 8-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _sil_dil); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9b_r8b); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_r13b); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSx14_r11b); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r11b_DSx12); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dl_r14b); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r8b_bl); \
-        /* 16-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8w_cx); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r15w_r10w); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSx15_r12w); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9w_DSx8); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r13w_ax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _si_r9w); \
-        /* 32-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_r8d); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9d_ecx); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r13d_r14d); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSx10_r11d); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r14d_DSx12); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15d_esi); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _eax_r10d); \
-        /* 64-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_rbx); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_rax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rdx_r10); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxBX_rax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSx12_r8); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_DSxBX); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_DSx12); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _r15_rsi); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _rbx_r14);
-
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(a_Ins) \
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _sil_dil),      X86_GREG_xSI, X86_GREG_xDI, false, false }, \
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r9b_r8b),      X86_GREG_x9,  X86_GREG_x8,  false, false }, \
@@ -141,7 +107,6 @@ typedef struct BS3CI2FSGSBASE
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _rax_DSxBX),    X86_GREG_xAX, X86_GREG_xBX, false, true  }, \
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _r8_DSx12),     X86_GREG_x8,  X86_GREG_x12, false, true  },
 # else
-#  define BS3CPUINSTR2_BINARY_OP_PROTO64(a_Ins)
 #  define BS3CPUINSTR2CMNBINTEST_ENTRIES_8_64BIT(aIns)
 #  define BS3CPUINSTR2CMNBINTEST_ENTRIES_16_64BIT(aIns)
 #  define BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(aIns)
@@ -149,34 +114,6 @@ typedef struct BS3CI2FSGSBASE
 #  define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_16_64BIT(aIns)
 #  define BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_32_64BIT(aIns)
 # endif
-# define BS3CPUINSTR2_BINARY_OP_PROTO(a_Ins) \
-        BS3CPUINSTR2_BINARY_OP_PROTO64(a_Ins) \
-        /* 8-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_dl); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ch_bh); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _dl_ah); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxBX_ah); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxDI_bl); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _dl_DSxBX); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ch_DSxBX); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _dh_cl); \
-        /* 16-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _di_si); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _cx_bp); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxDI_si); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxBX_ax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _si_DSxDI); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ax_DSxBX); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _bp_bx); \
-        /* 32-bit */ \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_ebx); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ecx_ebp); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _edx_edi); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxDI_esi); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _DSxBX_eax); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _eax_DSxBX); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ebp_DSxDI); \
-        extern FNBS3FAR BS3_CMN_NM(bs3CpuInstr2_alt_ ## a_Ins ## _edi_esi)
 
 # define BS3CPUINSTR2CMNBINTEST_ENTRIES_8(a_Ins) \
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _al_dl),       X86_GREG_xAX,     X86_GREG_xDX,    false, false }, \
@@ -219,226 +156,6 @@ typedef struct BS3CI2FSGSBASE
         { BS3_CMN_NM(bs3CpuInstr2_ ## a_Ins ## _ebp_DSxDI),   X86_GREG_xBP,     X86_GREG_xDI,    false, true  }, \
         BS3CPUINSTR2CMNBINTEST_ENTRIES_32_64BIT(a_Ins)
 
-
-BS3CPUINSTR2_BINARY_OP_PROTO(and);
-BS3CPUINSTR2_BINARY_OP_PROTO(or);
-BS3CPUINSTR2_BINARY_OP_PROTO(xor);
-BS3CPUINSTR2_BINARY_OP_PROTO(test);
-
-BS3CPUINSTR2_BINARY_OP_PROTO(add);
-BS3CPUINSTR2_BINARY_OP_PROTO(adc);
-BS3CPUINSTR2_BINARY_OP_PROTO(sub);
-BS3CPUINSTR2_BINARY_OP_PROTO(sbb);
-BS3CPUINSTR2_BINARY_OP_PROTO(cmp);
-
-BS3CPUINSTR2_BINARY_OP_PROTO(bt);  /* ignore 8-bit protos */
-BS3CPUINSTR2_BINARY_OP_PROTO(btc);
-BS3CPUINSTR2_BINARY_OP_PROTO(btr);
-BS3CPUINSTR2_BINARY_OP_PROTO(bts);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mul_xBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xCX_xBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_div_xBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_idiv_xBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsf_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsf_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_tzcnt_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_tzcnt_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bsr_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_bsr_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lzcnt_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_BX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_EBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_RBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_AX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_EAX_FSxBX_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_f2_lzcnt_RAX_FSxBX_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_RBX_RDX_2_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp_L1);
-# if ARCH_BITS == 64
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp_X1);
-# endif
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V1);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_EDX_2_icebp_V15);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_RBX_DSxDI_68_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rorx_EBX_DSxDI_36_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_andn_RAX_RCX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_andn_RAX_RCX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_andn_EAX_ECX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_andn_EAX_ECX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_RAX_RBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_RAX_FSxBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_EAX_EBX_ECX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bextr_EAX_FSxBX_ECX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_RBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_RAX_FSxBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_EBX_ECX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_bzhi_EAX_FSxBX_ECX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_RAX_RCX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pdep_EAX_ECX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_RAX_RCX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_pext_EAX_ECX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_RAX_RBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_RAX_FSxBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_EAX_EBX_ECX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shlx_EAX_FSxBX_ECX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_sarx_RAX_RBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_sarx_RAX_FSxBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_sarx_EAX_EBX_ECX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_sarx_EAX_FSxBX_ECX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shrx_RAX_RBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shrx_RAX_FSxBX_RCX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shrx_EAX_EBX_ECX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_shrx_EAX_FSxBX_ECX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsr_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsr_RAX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsr_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsr_EAX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsmsk_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsmsk_RAX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsmsk_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsmsk_EAX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsi_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsi_RAX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsi_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_blsi_EAX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_RAX_RCX_RBX_RDX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_RCX_RCX_RBX_RDX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_RAX_RCX_FSxBX_RDX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_EAX_ECX_EBX_EDX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_ECX_ECX_EBX_EDX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mulx_EAX_ECX_FSxBX_EDX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_AX_BX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_AX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_EAX_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_popcnt_RAX_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BL_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_byte_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_BX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_word_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_dword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_crc32_EAX_qword_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adcx_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adcx_EAX_dword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adcx_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adcx_RAX_qword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_EAX_EBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_EAX_dword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_RAX_RBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_adox_RAX_qword_FSxBX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_AX_word_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_EAX_dword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_RAX_qword_FSxBX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_word_FSxBX_AX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_dword_FSxBX_EAX_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_movbe_qword_FSxBX_RAX_icebp);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg8b_FSxDI_icebp);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg8b_FSxDI_icebp);
-
-# if ARCH_BITS == 64
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg16b_rdi_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg16b_rdi_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrfsbase_rbx_rdfsbase_rcx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrfsbase_ebx_rdfsbase_ecx_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrgsbase_rbx_rdgsbase_rcx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_wrgsbase_ebx_rdgsbase_ecx_ud2);
-
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rdfsbase_rbx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rdfsbase_ebx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rdgsbase_rbx_ud2);
-extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_rdgsbase_ebx_ud2);
-# endif
 #endif
 
 
