@@ -45,12 +45,19 @@ struct UIFamilyInfo
 {
     /** Constructs empty family info. */
     UIFamilyInfo()
+        : m_enmArch(KPlatformArchitecture_None)
     {}
 
-    /** Constructs family info with predefined @a strId and @a strDescription. */
-    UIFamilyInfo(const QString &strId, const QString &strDescription)
+    /** Constructs family info.
+      * @param  strId           Brings the family ID.
+      * @param  strDescription  Brings the family description.
+      * @param  enmArch         Brings the family architecture. */
+    UIFamilyInfo(const QString &strId,
+                 const QString &strDescription,
+                 KPlatformArchitecture enmArch)
         : m_strId(strId)
         , m_strDescription(strDescription)
+        , m_enmArch(enmArch)
     {}
 
     /** Returns whether this family info has the same id as @a other. */
@@ -60,9 +67,11 @@ struct UIFamilyInfo
     }
 
     /** Holds family id. */
-    QString  m_strId;
+    QString                m_strId;
     /** Holds family description. */
-    QString  m_strDescription;
+    QString                m_strDescription;
+    /** Holds family architecture. */
+    KPlatformArchitecture  m_enmArch;
 };
 
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
@@ -183,8 +192,6 @@ private:
     /** First item of the pair is family id and the 2nd is family description. */
     UIGuestOSFamilyInfo m_guestOSFamilies;
 
-    /** Caches arch types on per-family basis. */
-    QMap<QString, KPlatformArchitecture>  m_guestOSFamilyArch;
     /** Caches arch types on per-subtype basis. */
     QMap<QString, KPlatformArchitecture>  m_guestOSSubtypeArch;
 };

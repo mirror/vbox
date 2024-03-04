@@ -50,7 +50,6 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes()
     m_typeIdIndexMap.clear();
     m_guestOSTypes.clear();
     m_guestOSFamilies.clear();
-    m_guestOSFamilyArch.clear();
     m_guestOSSubtypeArch.clear();
 
     /* Enumerate guest OS types: */
@@ -73,22 +72,28 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes()
 
 void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
+    /* Append guest OS type to a list of cached wrappers: */
     m_guestOSTypes.append(UIGuestOSType(comType));
     m_typeIdIndexMap[m_guestOSTypes.last().getId()] = m_guestOSTypes.size() - 1;
+
+    /* Acquire a bit of attributes: */
     const QString strFamilyId = m_guestOSTypes.last().getFamilyId();
     const QString strFamilyDesc = m_guestOSTypes.last().getFamilyDescription();
     const QString strSubtype = m_guestOSTypes.last().getSubtype();
-    UIFamilyInfo fi(strFamilyId, strFamilyDesc);
+    const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
+
+    /* Cache or update family info: */
+    UIFamilyInfo fi(strFamilyId, strFamilyDesc, enmArch);
     if (!m_guestOSFamilies.contains(fi))
         m_guestOSFamilies << fi;
+    else
+    {
+        const int iIndex = m_guestOSFamilies.indexOf(fi);
+        AssertReturnVoid(iIndex >= 0);
+        if (m_guestOSFamilies.at(iIndex).m_enmArch != enmArch)
+            m_guestOSFamilies[iIndex].m_enmArch = KPlatformArchitecture_None; // means any
+    }
 
-    /* Acquire arch type: */
-    const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
-    /* Cache family arch type; That will be x86, ARM or None (for *any*): */
-    if (!m_guestOSFamilyArch.contains(strFamilyId))
-        m_guestOSFamilyArch[strFamilyId] = enmArch;
-    else if (m_guestOSFamilyArch.value(strFamilyId) != enmArch)
-        m_guestOSFamilyArch[strFamilyId] = KPlatformArchitecture_None;
     /* Cache subtype arch type; That will be x86, ARM or None (for *any*): */
     if (!m_guestOSSubtypeArch.contains(strSubtype))
         m_guestOSSubtypeArch[strSubtype] = enmArch;
@@ -107,7 +112,7 @@ UIGuestOSTypeManager::getFamilies(KPlatformArchitecture enmArch /* = KPlatformAr
     UIGuestOSTypeManager::UIGuestOSFamilyInfo families;
     foreach (const UIFamilyInfo &fi, m_guestOSFamilies)
     {
-        const KPlatformArchitecture enmCurrentArch = m_guestOSFamilyArch.value(fi.m_strId, KPlatformArchitecture_Max);
+        const KPlatformArchitecture enmCurrentArch = fi.m_enmArch;
         if (   enmCurrentArch == enmArch
             || enmCurrentArch == KPlatformArchitecture_None)
             families << fi;
