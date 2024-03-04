@@ -5372,7 +5372,7 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint8_t,         u8Src,   1);
         IEM_MC_FETCH_GREG_U8(u8Src, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64) {
+        IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
             /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
             IEM_MC_LOCAL(uint32_t,  uEFlags);
             IEM_MC_FETCH_EFLAGS(uEFlags);
@@ -5389,7 +5389,7 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
         IEM_MC_END();
     }
 
-    IEMOP_BODY_BINARY_rm_r8_RO(bRm, iemAImpl_test_u8, test, RT_ARCH_VAL_AMD64);
+    IEMOP_BODY_BINARY_rm_r8_RO(bRm, iemAImpl_test_u8, test, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5418,7 +5418,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t,   u16Src,  1);
                 IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_REG(pVCpu, bRm));
-                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64) {
+                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
                     /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
                     IEM_MC_LOCAL(uint32_t,  uEFlags);
                     IEM_MC_FETCH_EFLAGS(uEFlags);
@@ -5440,7 +5440,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t,   u32Src,  1);
                 IEM_MC_FETCH_GREG_U32(u32Src, IEM_GET_MODRM_REG(pVCpu, bRm));
-                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64) {
+                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
                     /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
                     IEM_MC_LOCAL(uint32_t,  uEFlags);
                     IEM_MC_FETCH_EFLAGS(uEFlags);
@@ -5462,7 +5462,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t,        u64Src,  1);
                 IEM_MC_FETCH_GREG_U64(u64Src, IEM_GET_MODRM_REG(pVCpu, bRm));
-                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64) {
+                IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
                     /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
                     IEM_MC_LOCAL(uint32_t,  uEFlags);
                     IEM_MC_FETCH_EFLAGS(uEFlags);
@@ -5483,7 +5483,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
         }
     }
 
-    IEMOP_BODY_BINARY_rm_rv_RO(bRm, iemAImpl_test_u16, iemAImpl_test_u32, iemAImpl_test_u64, test, RT_ARCH_VAL_AMD64);
+    IEMOP_BODY_BINARY_rm_rv_RO(bRm, iemAImpl_test_u16, iemAImpl_test_u32, iemAImpl_test_u64, test, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
