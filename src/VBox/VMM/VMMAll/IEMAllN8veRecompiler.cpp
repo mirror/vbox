@@ -14429,7 +14429,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                     pszName = "RaiseUd";
                                     break;
                                 case kIemNativeLabelType_RaiseMf:
-                                    pszName = "RaiseUd";
+                                    pszName = "RaiseMf";
                                     break;
                                 case kIemNativeLabelType_ObsoleteTb:
                                     pszName = "ObsoleteTb";
