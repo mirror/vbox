@@ -615,7 +615,7 @@ void UINameAndSystemEditor::populateFamilyCombo()
                                         : KPlatformArchitecture_None;
 
     /* Acquire family IDs: */
-    const UIGuestOSTypeManager::UIGuestOSFamilyInfo families = uiCommon().guestOSTypeManager().getFamilies(enmArch);
+    const UIGuestOSTypeManager::UIGuestOSFamilyInfo families = uiCommon().guestOSTypeManager().getFamilies(false, enmArch);
 
     /* Block signals initially and clear the combo: */
     m_pComboFamily->blockSignals(true);

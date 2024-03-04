@@ -46,18 +46,22 @@ struct UIFamilyInfo
     /** Constructs empty family info. */
     UIFamilyInfo()
         : m_enmArch(KPlatformArchitecture_None)
+        , m_fSupported(false)
     {}
 
     /** Constructs family info.
       * @param  strId           Brings the family ID.
       * @param  strDescription  Brings the family description.
-      * @param  enmArch         Brings the family architecture. */
+      * @param  enmArch         Brings the family architecture.
+      * @param  fSupported      Brings whether family is supported. */
     UIFamilyInfo(const QString &strId,
                  const QString &strDescription,
-                 KPlatformArchitecture enmArch)
+                 KPlatformArchitecture enmArch,
+                 bool fSupported)
         : m_strId(strId)
         , m_strDescription(strDescription)
         , m_enmArch(enmArch)
+        , m_fSupported(fSupported)
     {}
 
     /** Returns whether this family info has the same id as @a other. */
@@ -72,6 +76,8 @@ struct UIFamilyInfo
     QString                m_strDescription;
     /** Holds family architecture. */
     KPlatformArchitecture  m_enmArch;
+    /** Holds whether family is supported. */
+    bool                   m_fSupported;
 };
 
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
@@ -144,7 +150,7 @@ public:
     void reCacheGuestOSTypes();
 
     /** Returns a list of all families (id and description). */
-    UIGuestOSFamilyInfo getFamilies(KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
+    UIGuestOSFamilyInfo getFamilies(bool fListAll, KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
     QStringList         getSubtypeListForFamilyId(const QString &strFamilyId,
                                                   KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
@@ -183,6 +189,9 @@ private:
 
     /** Adds certain @a comType to internal cache. */
     void addGuestOSType(const CGuestOSType &comType);
+
+    /** Holds the list of supported guest OS type IDs. */
+    QStringList  m_supportedGuestOSTypeIDs;
 
     /** The type list. Here it is a pointer to QVector to delay definition of UIGuestOSType. */
     QVector<UIGuestOSType> m_guestOSTypes;

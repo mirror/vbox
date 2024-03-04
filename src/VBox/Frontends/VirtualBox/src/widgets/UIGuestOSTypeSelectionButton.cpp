@@ -107,7 +107,7 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     /* Clear initially: */
     m_pMainMenu->clear();
 
-    UIGuestOSTypeManager::UIGuestOSFamilyInfo familyList = uiCommon().guestOSTypeManager().getFamilies();
+    UIGuestOSTypeManager::UIGuestOSFamilyInfo familyList = uiCommon().guestOSTypeManager().getFamilies(true);
 
     for (int i = 0; i < familyList.size(); ++i)
     {

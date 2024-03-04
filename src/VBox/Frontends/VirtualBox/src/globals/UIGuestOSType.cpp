@@ -37,13 +37,20 @@
 
 void UIGuestOSTypeManager::reCacheGuestOSTypes()
 {
+    /* Acquire CVirtualBox: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Acquire a total list of guest OS types, supported or not: */
+    CGuestOSTypeVector guestOSTypes = comVBox.GetGuestOSTypes();
+
     /* Acquire a list of guest OS types supported by this host: */
-    CGuestOSTypeVector guestOSTypes;
-    CSystemProperties comSysProps = uiCommon().virtualBox().GetSystemProperties();
-    foreach (const KPlatformArchitecture &enmArch, comSysProps.GetSupportedPlatformArchitectures())
+    m_supportedGuestOSTypeIDs.clear();
+    CSystemProperties comSystemProps = comVBox.GetSystemProperties();
+    foreach (const KPlatformArchitecture &enmArch, comSystemProps.GetSupportedPlatformArchitectures())
     {
-        CPlatformProperties comPlatProps = uiCommon().virtualBox().GetPlatformProperties(enmArch);
-        guestOSTypes += comPlatProps.GetSupportedGuestOSTypes();
+        CPlatformProperties comPlatformProps = comVBox.GetPlatformProperties(enmArch);
+        foreach (const CGuestOSType &comType, comPlatformProps.GetSupportedGuestOSTypes())
+            m_supportedGuestOSTypeIDs << comType.GetId();
     }
 
     /* Wipe out cache: */
@@ -74,16 +81,20 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
     /* Append guest OS type to a list of cached wrappers: */
     m_guestOSTypes.append(UIGuestOSType(comType));
-    m_typeIdIndexMap[m_guestOSTypes.last().getId()] = m_guestOSTypes.size() - 1;
 
     /* Acquire a bit of attributes: */
+    const QString strId = m_guestOSTypes.last().getId();
     const QString strFamilyId = m_guestOSTypes.last().getFamilyId();
     const QString strFamilyDesc = m_guestOSTypes.last().getFamilyDescription();
     const QString strSubtype = m_guestOSTypes.last().getSubtype();
     const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
+    const bool fSupported = m_supportedGuestOSTypeIDs.contains(strId);
+
+    /* Remember guest OS type index as well: */
+    m_typeIdIndexMap[strId] = m_guestOSTypes.size() - 1;
 
     /* Cache or update family info: */
-    UIFamilyInfo fi(strFamilyId, strFamilyDesc, enmArch);
+    UIFamilyInfo fi(strFamilyId, strFamilyDesc, enmArch, fSupported);
     if (!m_guestOSFamilies.contains(fi))
         m_guestOSFamilies << fi;
     else
@@ -92,6 +103,8 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
         AssertReturnVoid(iIndex >= 0);
         if (m_guestOSFamilies.at(iIndex).m_enmArch != enmArch)
             m_guestOSFamilies[iIndex].m_enmArch = KPlatformArchitecture_None; // means any
+        if (m_guestOSFamilies.at(iIndex).m_fSupported != fSupported)
+            m_guestOSFamilies[iIndex].m_fSupported = true; // cause at least one is supported
     }
 
     /* Cache subtype arch type; That will be x86, ARM or None (for *any*): */
@@ -102,7 +115,7 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 }
 
 UIGuestOSTypeManager::UIGuestOSFamilyInfo
-UIGuestOSTypeManager::getFamilies(KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
+UIGuestOSTypeManager::getFamilies(bool fListAll, KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Return all families by default: */
     if (enmArch == KPlatformArchitecture_None)
@@ -113,8 +126,8 @@ UIGuestOSTypeManager::getFamilies(KPlatformArchitecture enmArch /* = KPlatformAr
     foreach (const UIFamilyInfo &fi, m_guestOSFamilies)
     {
         const KPlatformArchitecture enmCurrentArch = fi.m_enmArch;
-        if (   enmCurrentArch == enmArch
-            || enmCurrentArch == KPlatformArchitecture_None)
+        if (   (enmCurrentArch == enmArch || enmCurrentArch == KPlatformArchitecture_None)
+            && (fListAll || fi.m_fSupported))
             families << fi;
     }
     return families;
