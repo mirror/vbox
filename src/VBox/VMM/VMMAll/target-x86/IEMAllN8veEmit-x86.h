@@ -543,10 +543,10 @@ iemNativeEmit_adc_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #ifdef RT_ARCH_AMD64
     /* On AMD64 we use BT to set EFLAGS.CF and then issue an ADC instruction
        with matching size to get the correct flags. */
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9)
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9);
 
     /* Use the BT instruction to set CF according to idxRegEfl. */
-    pCodeBuf[off++] = iemNativeEmitAmd64TwoByteModRmInstrRREx(pCodeBuf, off, 0x0f, 0x0b, 0xba, 32 /*cOpBits*/, 4, idxRegEfl);
+    off = iemNativeEmitAmd64TwoByteModRmInstrRREx(pCodeBuf, off, 0x0f, 0x0b, 0xba, 32 /*cOpBits*/, 4, idxRegEfl);
     pCodeBuf[off++] = X86_EFL_CF_BIT;
 
     off = iemNativeEmitAmd64OneByteModRmInstrRREx(pCodeBuf, off, 0x12, 0x13, cOpBits, idxRegDst, idxRegSrc);
