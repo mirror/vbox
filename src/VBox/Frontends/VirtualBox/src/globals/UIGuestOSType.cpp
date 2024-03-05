@@ -115,7 +115,8 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 }
 
 UIGuestOSTypeManager::UIGuestOSFamilyInfo
-UIGuestOSTypeManager::getFamilies(bool fListAll, KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
+UIGuestOSTypeManager::getFamilies(bool fListAll,
+                                  KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Return all families by default: */
     if (enmArch == KPlatformArchitecture_None)
@@ -134,8 +135,8 @@ UIGuestOSTypeManager::getFamilies(bool fListAll, KPlatformArchitecture enmArch /
 }
 
 QStringList
-UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFamilyId,
-                                                KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
+UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
+                                             KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Prepare list by arch type: */
     QStringList subtypes;
@@ -156,10 +157,12 @@ UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFamilyId,
 }
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
-UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId,
-                                             KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
+UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
+                                          KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
+    if (strFamilyId.isEmpty())
+        return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getFamilyId() != strFamilyId)
@@ -175,8 +178,8 @@ UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId,
 }
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
-UIGuestOSTypeManager::getTypeListForSubtype(const QString &strSubtype,
-                                            KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
+UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
+                                         KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
     if (strSubtype.isEmpty())
