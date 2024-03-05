@@ -286,11 +286,14 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
             pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxRegEfl, idxRegResult, cOpBits, 1, false /*f64Bit*/);
 
             /* The overflow flag is more work. See IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC. */
-            pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg,  idxRegDstIn, idxRegSrc,    false); /* ~((a_uDst) ^ (a_uSrcOf)) */
-            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg2, idxRegDstIn, idxRegResult, false); /*  (a_uDst) ^ (a_uResult) */
-            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpReg,  idxTmpReg,   idxTmpReg2,   false /*f64Bit*/);
-            pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxTmpReg, cOpBits - 1,  false /*f64Bit*/);
-            pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl,  idxTmpReg, X86_EFL_OF_BIT, 1);
+            if (fInvertCarry) /* sbb:  ~((a_uDst) ^ ~(a_uSrcOf)) ->  (a_uDst) ^  (a_uSrcOf); HACK ALERT: fInvertCarry == sbb */
+                pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
+            else              /* adc:  ~((a_uDst) ^ (a_uSrcOf))  ->  (a_uDst) ^ ~(a_uSrcOf) */
+                pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg2,   idxRegDstIn, idxRegResult, false); /*  (a_uDst) ^ (a_uResult) */
+            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpReg,    idxTmpReg,   idxTmpReg2,   false /*f64Bit*/);
+            pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxTmpReg,   cOpBits - 1,  false /*f64Bit*/);
+            pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl,    idxTmpReg,   X86_EFL_OF_BIT, 1);
             iemNativeRegFreeTmp(pReNative, idxTmpReg2);
         }
 
@@ -514,7 +517,6 @@ iemNativeEmit_add_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     }
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
-    /** @todo Explain why the carry flag shouldn't be inverted for ADDS. */
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX, cOpBits, idxRegDst,
                                            idxRegDstIn, idxRegSrc, false /*fInvertCarry*/);
 
@@ -708,13 +710,70 @@ iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+/**
+ * The SBB instruction takes CF as input and will set all status flags.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_sbb_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
-    AssertFailed();
-    return iemNativeEmitBrk(pReNative, off, 0x666);
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+    uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+    uint8_t const idxRegEfl = iemNativeVarRegisterAcquire(pReNative, idxVarEfl, &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we use BT to set EFLAGS.CF and then issue an SBB instruction
+       with matching size to get the correct flags. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9);
+
+    /* Use the BT instruction to set CF according to idxRegEfl. */
+    off = iemNativeEmitAmd64TwoByteModRmInstrRREx(pCodeBuf, off, 0x0f, 0x0b, 0xba, 32 /*cOpBits*/, 4, idxRegEfl);
+    pCodeBuf[off++] = X86_EFL_CF_BIT;
+
+    off = iemNativeEmitAmd64OneByteModRmInstrRREx(pCodeBuf, off, 0x1a, 0x1b, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, UINT8_MAX, idxRegEfl);
+
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use the RMIF+CFINV instructions to load PSTATE.CF from
+       idxRegEfl and then SBCS for the calculation.  We need all inputs and
+       result for the two flags (AF,PF) that can't be directly derived from
+       PSTATE.NZCV. */
+    uint8_t const         idxRegDstIn = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 5);
+
+    pCodeBuf[off++] = Armv8A64MkInstrRmif(idxRegEfl, (X86_EFL_CF_BIT - 1) & 63, RT_BIT_32(1) /*fMask=C*/);
+    pCodeBuf[off++] = ARMV8_A64_INSTR_CFINV;
+    off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, idxRegDstIn, idxRegDst);
+    if (cOpBits >= 32)
+        pCodeBuf[off++] = Armv8A64MkInstrSbcs(idxRegDst, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
+    else
+    {
+        /* Since we're also adding in the carry flag here, shifting operands up
+           doesn't work. So, we have to calculate carry & overflow manually. */
+        pCodeBuf[off++] = Armv8A64MkInstrSbc(idxRegDst, idxRegDst, idxRegSrc, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrSetF8SetF16(idxRegDst, cOpBits > 8); /* NZ are okay, CV aren't.*/
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, UINT8_MAX, idxRegEfl, cOpBits, idxRegDst,
+                                           idxRegDstIn, idxRegSrc, true /*fInvertCarry*/);
+
+    iemNativeRegFreeTmp(pReNative, idxRegDstIn);
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    if (cOpBits < 32)
+        off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegDst, RT_BIT_32(cOpBits) - 1U);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+#else
+# error "port me"
+#endif
+    iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+    return off;
 }
 
 
