@@ -100,7 +100,7 @@ RT_C_DECLS_END
  * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
  * @param   a_uResult       Unsigned result value.
  * @param   a_uSrc          The source value (for AF calc).
- * @param   a_uDst          The original destination value (for AF calc).
+ * @param   a_uDst          The original destination value (for AF+OF calc).
  * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
  * @param   a_CfExpr        Bool expression for the carry flag (CF).
  * @param   a_uSrcOf        The a_uSrc value to use for overflow calculation.

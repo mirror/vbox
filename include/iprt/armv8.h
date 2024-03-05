@@ -3102,6 +3102,17 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRe
 }
 
 
+/** A64: Encodes a BFXIL instruction (insert low).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfxil(uint32_t iRegResult, uint32_t iRegSrc,
+                                                 uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
+{
+    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U));
+    Assert(offFirstBit + cBitsWidth <= (f64Bit ? 64U : 32U));
+    return Armv8A64MkInstrBfm(iRegResult, iRegSrc, (uint32_t)offFirstBit, offFirstBit + cBitsWidth - 1, f64Bit);
+}
+
+
 /** A64: Encodes an UBFM instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
@@ -3401,6 +3412,70 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubRegExtend(bool fSub, uint32_t i
          | (cShift                 << 10)
          | (iRegSrc1               <<  5)
          | iRegResult;
+}
+
+
+/**
+ * A64: Encodes either adc, adcs, sbc or sbcs with two source registers.
+ *
+ * @returns The encoded instruction.
+ * @param   fSub                    true for sbc and sbcs, false for adc and
+ *                                  adcs.
+ * @param   iRegResult              The register to store the result in. SP is
+ *                                  NOT valid, but ZR is.
+ * @param   iRegSrc1                The register containing the augend (@a fSub
+ *                                  = false) or minuend (@a fSub = true).
+ *                                  SP is NOT valid, but ZR is.
+ * @param   iRegSrc2                The register containing the addened (@a fSub
+ *                                  = false) or subtrahend (@a fSub = true).
+ *                                  SP is NOT valid, but ZR is.
+ * @param   f64Bit                  true for 64-bit GRPs (default), false for
+ *                                  32-bit GPRs.
+ * @param   fSetFlags               Whether to set flags (adds / subs) or not
+ *                                  (add / sub - default).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAdcSbc(bool fSub, uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                                  bool f64Bit = true, bool fSetFlags = false)
+{
+    Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
+
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fSub         << 30)
+         | ((uint32_t)fSetFlags    << 29)
+         | UINT32_C(0x1a000000)
+         | (iRegSrc2               << 16)
+         | (iRegSrc1               <<  5)
+         | iRegResult;
+}
+
+
+/** ADC dst, reg1, reg2 */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAdc(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                               bool f64Bit = true, bool fSetFlags = false)
+{
+    return Armv8A64MkInstrAdcSbc(false /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, fSetFlags);
+}
+
+
+/** ADCS dst, reg1, reg2 */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAdcs(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+{
+    return Armv8A64MkInstrAdcSbc(false /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, true /*fSetFlags*/);
+}
+
+
+/** SBC dst, reg1, reg2 */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbc(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                               bool f64Bit = true, bool fSetFlags = false)
+{
+    return Armv8A64MkInstrAdcSbc(true /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, fSetFlags);
+}
+
+
+/** SBCS dst, reg1, reg2 */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbcs(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+{
+    return Armv8A64MkInstrAdcSbc(true /*fSub*/, iRegResult, iRegSrc1, iRegSrc2, f64Bit, true /*fSetFlags*/);
 }
 
 
@@ -3798,6 +3873,29 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSetF8SetF16(uint32_t iRegResult, bool
     return UINT32_C(0x3a00080d)
          | ((uint32_t)f16Bit       << 14)
          | (iRegResult             <<  5);
+}
+
+
+/**
+ * A64: Encodes RMIF.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegSrc         The source register to get flags from.
+ * @param   cRotateRight    The right rotate count (LSB bit offset).
+ * @param   fMask           Mask of which flag bits to set:
+ *                              - bit 0: V
+ *                              - bit 1: C
+ *                              - bit 2: Z
+ *                              - bit 3: N
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRmif(uint32_t iRegSrc, uint32_t cRotateRight, uint32_t fMask)
+{
+    Assert(iRegSrc < 32); Assert(cRotateRight < 64); Assert(fMask <= 0xf);
+
+    return UINT32_C(0xba000400)
+         | (cRotateRight << 15)
+         | (iRegSrc      <<  5)
+         | fMask;
 }
 
 
