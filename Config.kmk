@@ -4314,10 +4314,8 @@ ifdef VBOX_SIGNING_MODE
   # @param 6  non-zero for alternative command separator.  This is used for generating repacking scripts.
   ifndef VBOX_SIGN_FILE_FN
    if $(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-    VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo $(if-expr "$5" == "",SHA1,SHA2)) \
-    	$(if-expr "$5" == "", \
-    		$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6) \
-    	$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-dual_sign -digest_algo SHA2))
+    # CCS has lost the ability to do dual signing a while ago, can do SHA256 only
+    VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2)
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     ifdef VBOX_CERTIFICATE_SUBJECT_NAME
      VBOX_SIGN_FILE_FN     = $(if-expr "$5" == "",$(VBOX_SIGNTOOL_SHA1) \
