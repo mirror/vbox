@@ -564,11 +564,8 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
        to calculate the right flags, even if we use SUBS and translates NZCV into
        OF, CF, ZF and SF. */
 
-    /* Copy idxRegDst. */
-    uint8_t const idxRegDstIn = iemNativeRegAllocTmp(pReNative, &off);
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
-
-    /* Do the SUB setting flags. */
+    uint8_t const         idxRegDstIn = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 4);
     if (cOpBits >= 32)
     {
         off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, idxRegDstIn, idxRegDst);
@@ -583,11 +580,11 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                 true /*fSetFlags*/, cShift);
         pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegDstIn, idxRegDstIn, cShift, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegDst, idxRegDst, cShift, false /*f64Bit*/);
+        cOpBits = 32;
     }
-
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
-    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, RT_MAX(cOpBits, 32), idxRegDst,
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, cOpBits, idxRegDst,
                                            idxRegDstIn, idxRegSrc, true /*fNativeFlags*/);
 
     iemNativeRegFreeTmp(pReNative, idxRegDstIn);
@@ -595,9 +592,7 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
 
 #elif defined(RT_ARCH_AMD64)
-    /* On AMD64 we must use the correctly sized AND instructions to get the
-       right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
-       in the 32-bit ones. */
+    /* On AMD64 we just use the correctly sized SUB instruction to get the right EFLAGS.SF value. */
     off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
                                            0x2a, 0x2b, cOpBits, idxRegDst, idxRegSrc);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -618,9 +613,55 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
-    AssertFailed();
-    return iemNativeEmitBrk(pReNative, off, 0x666);
+    /*
+     * The SUB instruction will set all flags.
+     */
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+    uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_ARM64
+    /* On ARM64 we'll need the actual result as well as both input operands in order
+       to calculate the right flags, even if we use SUBS and translates NZCV into
+       OF, CF, ZF and SF. */
+
+    uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf     = iemNativeInstrBufEnsure(pReNative, off, 3);
+    if (cOpBits >= 32)
+        pCodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegResult, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/, true /*fSetFlags*/);
+    else
+    {
+        /* Shift the operands up so we can perform a 32-bit operation and get all four flags. */
+        uint32_t const cShift = 32 - cOpBits;
+        pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegResult, ARMV8_A64_REG_XZR, idxRegDst, false /*f64Bit*/, cShift);
+        pCodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegResult, idxRegResult, idxRegSrc, cOpBits > 32 /*f64Bit*/,
+                                                true /*fSetFlags*/, cShift);
+        pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegResult, idxRegResult, cShift, false /*f64Bit*/);
+        cOpBits = 32;
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, cOpBits, idxRegResult,
+                                           idxRegDst, idxRegSrc, true /*fNativeFlags*/);
+
+    iemNativeRegFreeTmp(pReNative, idxRegResult);
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+#elif defined(RT_ARCH_AMD64)
+    /* On AMD64 we just use the correctly sized CMP instruction to get the right EFLAGS.SF value. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x3a, 0x3b, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl);
+
+#else
+# error "port me"
+#endif
+    return off;
 }
 
 
