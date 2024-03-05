@@ -85,12 +85,16 @@ struct UISubtypeInfo
 {
     /** Constructs empty subtype info. */
     UISubtypeInfo()
+        : m_enmArch(KPlatformArchitecture_None)
     {}
 
     /** Constructs subtype info.
-      * @param  strName  Brings the name. */
-    UISubtypeInfo(const QString &strName)
+      * @param  strName  Brings the name.
+      * @param  enmArch  Brings the architecture type. */
+    UISubtypeInfo(const QString &strName,
+                  KPlatformArchitecture enmArch)
         : m_strName(strName)
+        , m_enmArch(enmArch)
     {}
 
     /** Returns whether this subtype info has the same name as @a other. */
@@ -100,7 +104,9 @@ struct UISubtypeInfo
     }
 
     /** Holds the name. */
-    QString  m_strName;
+    QString                m_strName;
+    /** Holds the architecture. */
+    KPlatformArchitecture  m_enmArch;
 };
 
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
@@ -229,9 +235,6 @@ private:
     UIGuestOSFamilyInfo m_guestOSFamilies;
     /** Hold the list of guest OS subtype info. */
     QMap<QString, UIGuestOSSubtypeInfo> m_guestOSSubtypes;
-
-    /** Caches arch types on per-subtype basis. */
-    QMap<QString, KPlatformArchitecture>  m_guestOSSubtypeArch;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIGuestOSType_h */

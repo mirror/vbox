@@ -58,7 +58,6 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes()
     m_guestOSTypes.clear();
     m_guestOSFamilies.clear();
     m_guestOSSubtypes.clear();
-    m_guestOSSubtypeArch.clear();
 
     /* Enumerate guest OS types: */
     QVector<CGuestOSType> otherOSTypes;
@@ -109,7 +108,7 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
     }
 
     /* Cache or update subtype info: */
-    UISubtypeInfo si(strSubtype);
+    UISubtypeInfo si(strSubtype, enmArch);
     if (!m_guestOSSubtypes.contains(strFamilyId))
         m_guestOSSubtypes[strFamilyId] << si;
     else
@@ -117,13 +116,14 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
         UIGuestOSSubtypeInfo &subtypes = m_guestOSSubtypes[strFamilyId];
         if (!subtypes.contains(si))
             subtypes << si;
+        else
+        {
+            const int iIndex = subtypes.indexOf(si);
+            AssertReturnVoid(iIndex >= 0);
+            if (subtypes.at(iIndex).m_enmArch != enmArch)
+                subtypes[iIndex].m_enmArch = KPlatformArchitecture_None; // means any
+        }
     }
-
-    /* Cache subtype arch type; That will be x86, ARM or None (for *any*): */
-    if (!m_guestOSSubtypeArch.contains(strSubtype))
-        m_guestOSSubtypeArch[strSubtype] = enmArch;
-    else if (m_guestOSSubtypeArch.value(strSubtype) != enmArch)
-        m_guestOSSubtypeArch[strSubtype] = KPlatformArchitecture_None;
 }
 
 UIGuestOSTypeManager::UIGuestOSFamilyInfo
@@ -156,11 +156,11 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
 
     /* Otherwise we'll have to prepare list by arch type: */
     UIGuestOSSubtypeInfo subtypes;
-    foreach (const UISubtypeInfo &subtype, m_guestOSSubtypes.value(strFamilyId))
+    foreach (const UISubtypeInfo &si, m_guestOSSubtypes.value(strFamilyId))
     {
-        const KPlatformArchitecture enmCurrentArch = m_guestOSSubtypeArch.value(subtype.m_strName, KPlatformArchitecture_Max);
+        const KPlatformArchitecture enmCurrentArch = si.m_enmArch;
         if (enmCurrentArch == enmArch || enmCurrentArch == KPlatformArchitecture_None)
-            subtypes << subtype;
+            subtypes << si;
     }
     return subtypes;
 }
