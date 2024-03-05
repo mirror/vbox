@@ -272,61 +272,33 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
 }
 
 
+/**
+ * The AND instruction will clear OF, CF and AF (latter is undefined) and
+ * set the other flags according to the result.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_and_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    /*
-     * The AND instruction will clear OF, CF and AF (latter is undefined),
-     * so we don't need the initial destination value.
-     *
-     * On AMD64 we must use the correctly sized AND instructions to get the
-     * right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
-     * in the 32-bit ones.
-     */
-    /** @todo we could use ANDS on ARM64 and get the ZF for free for all
-     *        variants, and SF for 32-bit and 64-bit.  */
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-    //off = iemNativeEmitBrk(pReNative, off, 0x2222);
-    switch (cOpBits)
-    {
-        case 32:
-#ifndef RT_ARCH_AMD64
-        case 16:
-        case 8:
-#endif
-            off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
-        default: AssertFailed(); RT_FALL_THRU();
-        case 64:
-            off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
 #ifdef RT_ARCH_AMD64
-        case 16:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-            off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-        }
+    /* On AMD64 we just use the correctly size AND instruction harvest the EFLAGS. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x22, 0x23, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
-        case 8:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-            if (idxRegDst >= 8 || idxRegSrc >= 8)
-                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_R : 0) | (idxRegSrc >= 8 ? X86_OP_REX_B : 0);
-            else if (idxRegDst >= 4 || idxRegSrc >= 4)
-                pCodeBuf[off++] = X86_OP_REX;
-            pCodeBuf[off++] = 0x22;
-            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxRegSrc & 7);
-            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-            break;
-        }
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit AND for the 8-bit and 16-bit bit ones. */
+    /** @todo we should use ANDS on ARM64 and get the ZF for free for all
+     *        variants, and SF for 32-bit and 64-bit.  */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkInstrAnd(idxRegDst, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me"
 #endif
-    }
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
@@ -335,64 +307,36 @@ iemNativeEmit_and_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+/**
+ * The TEST instruction will clear OF, CF and AF (latter is undefined) and
+ * set the other flags according to the result.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                            uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    /*
-     * The TESTS instruction will clear OF, CF and AF (latter is undefined),
-     * so we don't need the initial destination value.
-     *
-     * On AMD64 we use the matching native instruction.
-     *
-     * On ARM64 we need a real register for the AND result so we can calculate
-     * PF correctly for it.  This means that we have to use a three operand
-     * AND variant, which makes the code widely different from AMD64.
-     */
-    /** @todo we could use ANDS on ARM64 and get the ZF for free for all
-     *        variants, and SF for 32-bit and 64-bit.  */
     uint8_t const         idxRegDst    = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const         idxRegSrc    = idxVarSrc == idxVarDst ? idxRegDst /* special case of 'test samereg,samereg' */
                                        : iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-#ifndef RT_ARCH_AMD64
-    uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
-#endif
-//    off = iemNativeEmitBrk(pReNative, off, 0x2222);
-    PIEMNATIVEINSTR const pCodeBuf     = iemNativeInstrBufEnsure(pReNative, off, RT_ARCH_VAL == RT_ARCH_VAL_AMD64 ? 4 : 1);
-#ifdef RT_ARCH_ARM64
-    pCodeBuf[off++] = Armv8A64MkInstrAnd(idxRegResult, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
-
-#elif defined(RT_ARCH_AMD64)
-    switch (cOpBits)
-    {
-        case 16:
-            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-            RT_FALL_THRU();
-        case 32:
-            if (idxRegDst >= 8 || idxRegSrc >= 8)
-                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_B : 0) | (idxRegSrc >= 8 ? X86_OP_REX_R : 0);
-            pCodeBuf[off++] = 0x85;
-            break;
-
-        default: AssertFailed(); RT_FALL_THRU();
-        case 64:
-            pCodeBuf[off++] = X86_OP_REX_W | (idxRegDst >= 8 ? X86_OP_REX_B : 0) | (idxRegSrc >= 8 ? X86_OP_REX_R : 0);
-            pCodeBuf[off++] = 0x85;
-            break;
-
-        case 8:
-            if (idxRegDst >= 8 || idxRegSrc >= 8)
-                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_B : 0) | (idxRegSrc >= 8 ? X86_OP_REX_R : 0);
-            else if (idxRegDst >= 4 || idxRegSrc >= 4)
-                pCodeBuf[off++] = X86_OP_REX;
-            pCodeBuf[off++] = 0x84;
-            break;
-    }
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegSrc & 7, idxRegDst & 7);
-#else
-# error "port me"
-#endif
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly size TEST instruction harvest the EFLAGS. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x84, 0x85, cOpBits, idxRegSrc, idxRegDst);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit AND for the 8-bit and 16-bit bit ones.  We also
+       need to keep the result in order to calculate the flags. */
+    /** @todo we should use ANDS on ARM64 and get the ZF for free for all
+     *        variants, and SF for 32-bit and 64-bit.  */
+    uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf     = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkInstrAnd(idxRegResult, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me"
+#endif
     if (idxVarSrc != idxVarDst)
         iemNativeVarRegisterRelease(pReNative, idxVarSrc);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
@@ -407,59 +351,31 @@ iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+/**
+ * The OR instruction will clear OF, CF and AF (latter is undefined) and
+ * set the other flags according to the result.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                          uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    /*
-     * The OR instruction will clear OF, CF and AF (latter is undefined),
-     * so we don't need the initial destination value.
-     *
-     * On AMD64 we must use the correctly sized OR instructions to get the
-     * right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
-     * in the 32-bit ones.
-     */
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-    //off = iemNativeEmitBrk(pReNative, off, 0x2222);
-    switch (cOpBits)
-    {
-        case 32:
-#ifndef RT_ARCH_AMD64
-        case 16:
-        case 8:
-#endif
-            off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
-        default: AssertFailed(); RT_FALL_THRU();
-        case 64:
-            off = iemNativeEmitOrGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
 #ifdef RT_ARCH_AMD64
-        case 16:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-            off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-        }
+    /* On AMD64 we just use the correctly size OR instruction harvest the EFLAGS. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x0a, 0x0b, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
-        case 8:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-            if (idxRegDst >= 8 || idxRegSrc >= 8)
-                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_R : 0) | (idxRegSrc >= 8 ? X86_OP_REX_B : 0);
-            else if (idxRegDst >= 4 || idxRegSrc >= 4)
-                pCodeBuf[off++] = X86_OP_REX;
-            pCodeBuf[off++] = 0x0a;
-            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxRegSrc & 7);
-            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-            break;
-        }
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit OR for the 8-bit and 16-bit bit ones. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegDst, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me"
 #endif
-    }
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
@@ -468,59 +384,31 @@ iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+/**
+ * The XOR instruction will clear OF, CF and AF (latter is undefined) and
+ * set the other flags according to the result.
+ */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
-    /*
-     * The XOR instruction will clear OF, CF and AF (latter is undefined),
-     * so we don't need the initial destination value.
-     *
-     * On AMD64 we must use the correctly sizeed XOR instructions to get the
-     * right EFLAGS.SF value, while the rest will just lump 16-bit and 8-bit
-     * in the 32-bit ones.
-     */
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-    //off = iemNativeEmitBrk(pReNative, off, 0x2222);
-    switch (cOpBits)
-    {
-        case 32:
-#ifndef RT_ARCH_AMD64
-        case 16:
-        case 8:
-#endif
-            off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
-        default: AssertFailed(); RT_FALL_THRU();
-        case 64:
-            off = iemNativeEmitXorGprByGpr(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-
 #ifdef RT_ARCH_AMD64
-        case 16:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-            off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxRegDst, idxRegSrc);
-            break;
-        }
+    /* On AMD64 we just use the correctly size OR instruction harvest the EFLAGS. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x32, 0x33, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
-        case 8:
-        {
-            PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-            if (idxRegDst >= 8 || idxRegSrc >= 8)
-                pCodeBuf[off++] = (idxRegDst >= 8 ? X86_OP_REX_R : 0) | (idxRegSrc >= 8 ? X86_OP_REX_B : 0);
-            else if (idxRegDst >= 4 || idxRegSrc >= 4)
-                pCodeBuf[off++] = X86_OP_REX;
-            pCodeBuf[off++] = 0x32;
-            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxRegSrc & 7);
-            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-            break;
-        }
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit OR for the 8-bit and 16-bit bit ones. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegDst, idxRegDst, idxRegSrc, cOpBits > 32 /*f64Bit*/);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me"
 #endif
-    }
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
@@ -559,11 +447,21 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 
-#ifdef RT_ARCH_ARM64
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly sized SUB instruction to get the right EFLAGS.SF value. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x2a, 0x2b, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl);
+
+#elif defined(RT_ARCH_ARM64)
     /* On ARM64 we'll need the two input operands as well as the result in order
        to calculate the right flags, even if we use SUBS and translates NZCV into
        OF, CF, ZF and SF. */
-
     uint8_t const         idxRegDstIn = iemNativeRegAllocTmp(pReNative, &off);
     PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 4);
     if (cOpBits >= 32)
@@ -591,17 +489,6 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
 
-#elif defined(RT_ARCH_AMD64)
-    /* On AMD64 we just use the correctly sized SUB instruction to get the right EFLAGS.SF value. */
-    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
-                                           0x2a, 0x2b, cOpBits, idxRegDst, idxRegSrc);
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-
-    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
-    iemNativeVarRegisterRelease(pReNative, idxVarDst);
-
-    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl);
-
 #else
 # error "port me"
 #endif
@@ -619,11 +506,21 @@ iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 
-#ifdef RT_ARCH_ARM64
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly sized CMP instruction to get the right EFLAGS.SF value. */
+    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
+                                           0x3a, 0x3b, cOpBits, idxRegDst, idxRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl);
+
+#elif defined(RT_ARCH_ARM64)
     /* On ARM64 we'll need the actual result as well as both input operands in order
        to calculate the right flags, even if we use SUBS and translates NZCV into
        OF, CF, ZF and SF. */
-
     uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
     PIEMNATIVEINSTR const pCodeBuf     = iemNativeInstrBufEnsure(pReNative, off, 3);
     if (cOpBits >= 32)
@@ -646,17 +543,6 @@ iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeRegFreeTmp(pReNative, idxRegResult);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
-
-#elif defined(RT_ARCH_AMD64)
-    /* On AMD64 we just use the correctly sized CMP instruction to get the right EFLAGS.SF value. */
-    off = iemNativeEmitAmd64ModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
-                                           0x3a, 0x3b, cOpBits, idxRegDst, idxRegSrc);
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-
-    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
-    iemNativeVarRegisterRelease(pReNative, idxVarDst);
-
-    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl);
 
 #else
 # error "port me"
