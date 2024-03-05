@@ -561,7 +561,8 @@ typedef struct SUPGLOBALINFOPAGE
      * is SUPGIPMODE_ASYNC_TSC. If @c u32Mode is SUPGIPMODE_SYNC_TSC only the first
      * entry is updated. If @c u32Mode is SUPGIPMODE_SYNC_TSC the TSC frequency in
      * @c u64CpuHz is copied to all CPUs. */
-    SUPGIPCPU           aCPUs[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    SUPGIPCPU           aCPUs[RT_FLEXIBLE_ARRAY];
 } SUPGLOBALINFOPAGE;
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, u64NanoTSLastUpdateHz, 8);
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, OnlineCpuSet, 64);

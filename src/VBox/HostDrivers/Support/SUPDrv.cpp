@@ -1847,6 +1847,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
         {
             /* validate */
             PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
+            uint8_t const * const pbSrcImage = pReq->u.In.abImage;
             REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= SUP_IOCTL_LDR_LOAD_SIZE_IN(32));
             REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithEverything), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
@@ -1875,14 +1876,14 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             if (pReq->u.In.cSymbols)
             {
                 uint32_t i;
-                PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.abImage[pReq->u.In.offSymbols];
+                PSUPLDRSYM paSyms = (PSUPLDRSYM)(&pbSrcImage[pReq->u.In.offSymbols]);
                 for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
                     REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithEverything,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithEverything));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
-                    REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName],
+                    REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)(&pbSrcImage[pReq->u.In.offStrTab + paSyms[i].offName]),
                                                 pReq->u.In.cbStrTab - paSyms[i].offName),
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
                 }
@@ -1890,7 +1891,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             {
                 uint32_t i;
                 uint32_t offPrevEnd = 0;
-                PSUPLDRSEG paSegs = (PSUPLDRSEG)&pReq->u.In.abImage[pReq->u.In.offSegments];
+                PSUPLDRSEG paSegs = (PSUPLDRSEG)(&pbSrcImage[pReq->u.In.offSegments]);
                 for (i = 0; i < pReq->u.In.cSegments; i++)
                 {
                     REQ_CHECK_EXPR_FMT(paSegs[i].off < pReq->u.In.cbImageBits && !(paSegs[i].off & PAGE_OFFSET_MASK),
@@ -5549,7 +5550,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->cSegments = pReq->u.In.cSegments;
     {
         size_t  cbSegments = pImage->cSegments * sizeof(SUPLDRSEG);
-        pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSegments], cbSegments);
+        uint8_t const * const pbSrcImage = pReq->u.In.abImage;
+        pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pbSrcImage[pReq->u.In.offSegments], cbSegments);
         if (pImage->paSegments) /* Align the last segment size to avoid upsetting RTR0MemObjProtect. */ /** @todo relax RTR0MemObjProtect */
             pImage->paSegments[pImage->cSegments - 1].cb = RT_ALIGN_32(pImage->paSegments[pImage->cSegments - 1].cb, PAGE_SIZE);
         else
@@ -5618,10 +5620,11 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     if (!pImage->fNative)
     {
+        uint8_t const * const pbSrcImage = pReq->u.In.abImage;
         pImage->cbStrTab = pReq->u.In.cbStrTab;
         if (pImage->cbStrTab)
         {
-            pImage->pachStrTab = (char *)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+            pImage->pachStrTab = (char *)RTMemDup(&pbSrcImage[pReq->u.In.offStrTab], pImage->cbStrTab);
             if (!pImage->pachStrTab)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5631,7 +5634,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (RT_SUCCESS(rc) && pImage->cSymbols)
         {
             size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
-            pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
+            pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pbSrcImage[pReq->u.In.offSymbols], cbSymbols);
             if (!pImage->paSymbols)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);

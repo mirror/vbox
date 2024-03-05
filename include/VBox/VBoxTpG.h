@@ -228,7 +228,8 @@ typedef struct VTGDESCARGLIST
     uint8_t         cArgs;
     uint8_t         fHaveLargeArgs;
     uint8_t         abReserved[2];
-    VTGDESCARG      aArgs[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    VTGDESCARG      aArgs[RT_FLEXIBLE_ARRAY];
 } VTGDESCARGLIST;
 /** Pointer to a VTG argument list descriptor. */
 typedef VTGDESCARGLIST     *PVTGDESCARGLIST;
