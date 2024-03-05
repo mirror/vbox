@@ -33,6 +33,62 @@
 
 
 /**
+ * Special case body for word/dword/qword instruction like SUB and XOR that can
+ * be used to zero a register.
+ *
+ * This can be used both for the rv_rm and rm_rv forms since it's working on the
+ * same register.
+ */
+#define IEMOP_BODY_BINARY_rv_SAME_REG_ZERO(a_bRm) \
+    if (   (a_bRm >> X86_MODRM_REG_SHIFT) == ((a_bRm & X86_MODRM_RM_MASK) | (X86_MOD_REG << X86_MODRM_REG_SHIFT)) \
+        && pVCpu->iem.s.uRexReg == pVCpu->iem.s.uRexB) \
+    { \
+        switch (pVCpu->iem.s.enmEffOpSize) \
+        { \
+            case IEMMODE_16BIT: \
+                IEM_MC_BEGIN(1, 0, 0, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                IEM_MC_STORE_GREG_U16_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
+                IEM_MC_LOCAL(uint32_t, fEFlags); \
+                IEM_MC_FETCH_EFLAGS(fEFlags); \
+                IEM_MC_AND_LOCAL_U32(fEFlags, ~(uint32_t)X86_EFL_STATUS_BITS); \
+                IEM_MC_OR_LOCAL_U32(fEFlags, X86_EFL_PF | X86_EFL_ZF); \
+                IEM_MC_COMMIT_EFLAGS(fEFlags); \
+                IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+                IEM_MC_END(); \
+                break; \
+                \
+            case IEMMODE_32BIT: \
+                IEM_MC_BEGIN(1, 0, IEM_MC_F_MIN_386, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                IEM_MC_STORE_GREG_U32_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
+                IEM_MC_LOCAL(uint32_t, fEFlags); \
+                IEM_MC_FETCH_EFLAGS(fEFlags); \
+                IEM_MC_AND_LOCAL_U32(fEFlags, ~(uint32_t)X86_EFL_STATUS_BITS); \
+                IEM_MC_OR_LOCAL_U32(fEFlags, X86_EFL_PF | X86_EFL_ZF); \
+                IEM_MC_COMMIT_EFLAGS(fEFlags); \
+                IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+                IEM_MC_END(); \
+                break; \
+                \
+            case IEMMODE_64BIT: \
+                IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                IEM_MC_STORE_GREG_U64_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
+                IEM_MC_LOCAL(uint32_t, fEFlags); \
+                IEM_MC_FETCH_EFLAGS(fEFlags); \
+                IEM_MC_AND_LOCAL_U32(fEFlags, ~(uint32_t)X86_EFL_STATUS_BITS); \
+                IEM_MC_OR_LOCAL_U32(fEFlags, X86_EFL_PF | X86_EFL_ZF); \
+                IEM_MC_COMMIT_EFLAGS(fEFlags); \
+                IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+                IEM_MC_END(); \
+                break; \
+                \
+            IEM_NOT_REACHED_DEFAULT_CASE_RET(); \
+        } \
+    } ((void)0)
+
+/**
  * Body for word/dword/qword instructions like ADD, AND, OR, ++ with a register
  * as the destination.
  *

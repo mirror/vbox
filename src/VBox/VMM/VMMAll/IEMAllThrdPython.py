@@ -1287,6 +1287,7 @@ class ThreadedFunctionVariation(object):
                 if oStmt.sFn[0] == 'p':
                     self.aoParamRefs.append(ThreadedParamRef(oStmt.sFn, self.analyzeCallToType(oStmt.sFn), oStmt, oStmt.idxFn));
                 elif (    oStmt.sFn[0] != 'i'
+                      and not oStmt.sFn.startswith('RT_CONCAT3')
                       and not oStmt.sFn.startswith('IEMTARGETCPU_EFL_BEHAVIOR_SELECT')
                       and not oStmt.sFn.startswith('IEM_SELECT_HOST_OR_FALLBACK') ):
                     self.raiseProblem('Bogus function name in %s: %s' % (oStmt.sName, oStmt.sFn,));
