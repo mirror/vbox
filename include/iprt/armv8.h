@@ -435,6 +435,19 @@
 /** ICC_IGRPEN1_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_ICC_IGRPEN1_EL1        ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 12, 7)
 
+/** NZCV - Status Flags - ??. */
+#define ARMV8_AARCH64_SYSREG_NZCV                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 0)
+/** DAIF - Interrupt Mask Bits - ??. */
+#define ARMV8_AARCH64_SYSREG_DAIF                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 1)
+/** SVCR - Streaming Vector Control Register - ??. */
+#define ARMV8_AARCH64_SYSREG_SVCR                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 2)
+/** DIT - Data Independent Timing - ??. */
+#define ARMV8_AARCH64_SYSREG_DIT                    ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 5)
+/** SSBS - Speculative Store Bypass Safe - ??. */
+#define ARMV8_AARCH64_SYSREG_SSBS                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 6)
+/** TCO - Tag Check Override - ??. */
+#define ARMV8_AARCH64_SYSREG_TCO                    ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 7)
+
 /** CNTV_CTL_EL0 register - RW. */
 #define ARMV8_AARCH64_SYSREG_CNTV_CTL_EL0           ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 14,  3, 1)
 /** @} */
@@ -2225,6 +2238,8 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_A64_INSTR_PACIBSP     UINT32_C(0xd503237f)
 /** A64: Insert pointer authentication code into LR using XZR and key B. */
 #define ARMV8_A64_INSTR_PACIBZ      UINT32_C(0xd503235f)
+/** A64: Invert the carry flag (PSTATE.C). */
+#define ARMV8_A64_INSTR_CFINV       UINT32_C(0xd500401f)
 
 
 typedef enum
@@ -3743,7 +3758,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRev(uint32_t iRegDst, uint32_t iRegSr
     Assert(iRegDst < 32); Assert(iRegSrc < 32);
 
     return ((uint32_t)f64Bit       << 31)
-         | (UINT32_C(0x5ac00800))
+         | UINT32_C(0x5ac00800)
          | ((uint32_t)f64Bit       << 10)
          | (iRegSrc                <<  5)
          | iRegDst;
@@ -3763,9 +3778,68 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRev16(uint32_t iRegDst, uint32_t iReg
     Assert(iRegDst < 32); Assert(iRegSrc < 32);
 
     return ((uint32_t)f64Bit       << 31)
-         | (UINT32_C(0x5ac00400))
+         | UINT32_C(0x5ac00400)
          | (iRegSrc                <<  5)
          | iRegDst;
+}
+
+
+/**
+ * A64: Encodes SETF8 & SETF16.
+ *
+ * @returns The encoded instruction.
+ * @param   iRegResult  The register holding the result. SP is NOT valid.
+ * @param   f16Bit      Set for SETF16, clear for SETF8.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSetF8SetF16(uint32_t iRegResult, bool f16Bit)
+{
+    Assert(iRegResult < 32);
+
+    return UINT32_C(0x3a00080d)
+         | ((uint32_t)f16Bit       << 14)
+         | (iRegResult             <<  5);
+}
+
+
+/**
+ * A64: Encodes MRS (for reading a system register into a GPR).
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The register to put the result into. SP is NOT valid.
+ * @param   idSysReg    The system register ID (ARMV8_AARCH64_SYSREG_XXX),
+ *                      IPRT specific format, of the register to read.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMrs(uint32_t iRegDst, uint32_t idSysReg)
+{
+    Assert(iRegDst < 32);
+    Assert(idSysReg < RT_BIT_32(16) && (idSysReg & RT_BIT_32(15)));
+
+    /* Note. The top bit of idSysReg must always be set and is also set in
+             0xd5300000, otherwise we'll be encoding a different instruction. */
+    return UINT32_C(0xd5300000)
+         | (idSysReg << 5)
+         | iRegDst;
+}
+
+
+/**
+ * A64: Encodes MSR (for writing a GPR to a system register).
+ *
+ * @returns The encoded instruction.
+ * @param   iRegSrc     The register which value to write. SP is NOT valid.
+ * @param   idSysReg    The system register ID (ARMV8_AARCH64_SYSREG_XXX),
+ *                      IPRT specific format, of the register to write.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMsr(uint32_t iRegSrc, uint32_t idSysReg)
+{
+    Assert(iRegSrc < 32);
+    Assert(idSysReg < RT_BIT_32(16) && (idSysReg & RT_BIT_32(15)));
+
+    /* Note. The top bit of idSysReg must always be set and is also set in
+             0xd5100000, otherwise we'll be encoding a different instruction. */
+    return UINT32_C(0xd5100000)
+         | (idSysReg << 5)
+         | iRegSrc;
 }
 
 
