@@ -109,13 +109,14 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
     }
 
     /* Cache or update subtype info: */
+    UISubtypeInfo si(strSubtype);
     if (!m_guestOSSubtypes.contains(strFamilyId))
-        m_guestOSSubtypes[strFamilyId] << strSubtype;
+        m_guestOSSubtypes[strFamilyId] << si;
     else
     {
-        QStringList &subtypes = m_guestOSSubtypes[strFamilyId];
-        if (!subtypes.contains(strSubtype))
-            subtypes << strSubtype;
+        UIGuestOSSubtypeInfo &subtypes = m_guestOSSubtypes[strFamilyId];
+        if (!subtypes.contains(si))
+            subtypes << si;
     }
 
     /* Cache subtype arch type; That will be x86, ARM or None (for *any*): */
@@ -145,7 +146,7 @@ UIGuestOSTypeManager::getFamilies(bool fListAll,
     return families;
 }
 
-QStringList
+UIGuestOSTypeManager::UIGuestOSSubtypeInfo
 UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
                                              KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
@@ -154,12 +155,12 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
         return m_guestOSSubtypes.value(strFamilyId);
 
     /* Otherwise we'll have to prepare list by arch type: */
-    QStringList subtypes;
-    foreach (const QString &strSubtype, m_guestOSSubtypes.value(strFamilyId))
+    UIGuestOSSubtypeInfo subtypes;
+    foreach (const UISubtypeInfo &subtype, m_guestOSSubtypes.value(strFamilyId))
     {
-        const KPlatformArchitecture enmCurrentArch = m_guestOSSubtypeArch.value(strSubtype, KPlatformArchitecture_Max);
+        const KPlatformArchitecture enmCurrentArch = m_guestOSSubtypeArch.value(subtype.m_strName, KPlatformArchitecture_Max);
         if (enmCurrentArch == enmArch || enmCurrentArch == KPlatformArchitecture_None)
-            subtypes << strSubtype;
+            subtypes << subtype;
     }
     return subtypes;
 }

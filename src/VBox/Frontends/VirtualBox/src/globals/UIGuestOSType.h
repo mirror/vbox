@@ -80,6 +80,29 @@ struct UIFamilyInfo
     bool                   m_fSupported;
 };
 
+/** Represents guest OS subtype info. */
+struct UISubtypeInfo
+{
+    /** Constructs empty subtype info. */
+    UISubtypeInfo()
+    {}
+
+    /** Constructs subtype info.
+      * @param  strName  Brings the name. */
+    UISubtypeInfo(const QString &strName)
+        : m_strName(strName)
+    {}
+
+    /** Returns whether this subtype info has the same name as @a other. */
+    bool operator==(const UISubtypeInfo &other) const
+    {
+        return m_strName == other.m_strName;
+    }
+
+    /** Holds the name. */
+    QString  m_strName;
+};
+
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
 class SHARED_LIBRARY_STUFF UIGuestOSType
 {
@@ -138,6 +161,8 @@ public:
     typedef QPair<QString, QString> UIGuestInfoPair;
     /** A list of all OS families. */
     typedef QVector<UIFamilyInfo> UIGuestOSFamilyInfo;
+    /** A list of all OS subtypes. */
+    typedef QVector<UISubtypeInfo> UIGuestOSSubtypeInfo;
     /** A list of all OS type pairs. */
     typedef QVector<UIGuestInfoPair> UIGuestOSTypeInfo;
 
@@ -153,8 +178,8 @@ public:
     UIGuestOSFamilyInfo getFamilies(bool fListAll,
                                     KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
-    QStringList getSubtypesForFamilyId(const QString &strFamilyId,
-                                       KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
+    UIGuestOSSubtypeInfo getSubtypesForFamilyId(const QString &strFamilyId,
+                                                KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strFamilyId. */
     UIGuestOSTypeInfo getTypesForFamilyId(const QString &strFamilyId,
                                           KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
@@ -203,7 +228,7 @@ private:
     /** Hold the list of guest OS family info. */
     UIGuestOSFamilyInfo m_guestOSFamilies;
     /** Hold the list of guest OS subtype info. */
-    QMap<QString, QStringList> m_guestOSSubtypes;
+    QMap<QString, UIGuestOSSubtypeInfo> m_guestOSSubtypes;
 
     /** Caches arch types on per-subtype basis. */
     QMap<QString, KPlatformArchitecture>  m_guestOSSubtypeArch;

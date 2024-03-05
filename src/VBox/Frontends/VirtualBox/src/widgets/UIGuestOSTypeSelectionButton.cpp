@@ -113,15 +113,15 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     {
         const UIFamilyInfo &fi = familyies.at(i);
         QMenu *pSubMenu = m_pMainMenu->addMenu(fi.m_strDescription);
-        const QStringList distributions = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(fi.m_strId);
+        const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(fi.m_strId);
 
         if (distributions.isEmpty())
             createOSTypeMenu(uiCommon().guestOSTypeManager().getTypesForFamilyId(fi.m_strId), pSubMenu);
         else
         {
-            foreach (const QString &strDistribution, distributions)
-                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypesForSubtype(strDistribution),
-                                 pSubMenu->addMenu(strDistribution));
+            foreach (const UISubtypeInfo &distribution, distributions)
+                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypesForSubtype(distribution.m_strName),
+                                 pSubMenu->addMenu(distribution.m_strName));
         }
     }
 }
