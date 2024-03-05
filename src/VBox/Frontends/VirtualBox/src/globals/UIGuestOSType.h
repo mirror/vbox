@@ -136,7 +136,7 @@ public:
 
     /** OS info pair. 'first' is id and 'second' is description. */
     typedef QPair<QString, QString> UIGuestInfoPair;
-    /** A list of all OS family pairs. */
+    /** A list of all OS families. */
     typedef QVector<UIFamilyInfo> UIGuestOSFamilyInfo;
     /** A list of all OS type pairs. */
     typedef QVector<UIGuestInfoPair> UIGuestOSTypeInfo;
@@ -153,14 +153,14 @@ public:
     UIGuestOSFamilyInfo getFamilies(bool fListAll,
                                     KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
-    QStringList         getSubtypesForFamilyId(const QString &strFamilyId,
-                                               KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
+    QStringList getSubtypesForFamilyId(const QString &strFamilyId,
+                                       KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strFamilyId. */
-    UIGuestOSTypeInfo   getTypesForFamilyId(const QString &strFamilyId,
-                                            KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
+    UIGuestOSTypeInfo getTypesForFamilyId(const QString &strFamilyId,
+                                          KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strSubtype. */
-    UIGuestOSTypeInfo   getTypesForSubtype(const QString &strSubtype,
-                                           KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
+    UIGuestOSTypeInfo getTypesForSubtype(const QString &strSubtype,
+                                         KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
 
     /** Returns whether specified @a strOSTypeId is of DOS type. */
     static bool isDOSType(const QString &strOSTypeId);
