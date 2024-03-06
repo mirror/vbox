@@ -34,6 +34,9 @@
 /* Qt includes: */
 #include <QMainWindow>
 
+/* COM includes: */
+#include "COMDefs.h"
+
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
@@ -78,9 +81,9 @@ protected:
 private slots:
 
     void sltKeyboardLedsChange();
-    void sltPutKeyboardSequence(QVector<qint32> sequence);
-    void sltPutUsageCodesPress(QVector<QPair<qint32, qint32> > sequence);
-    void sltPutUsageCodesRelease(QVector<QPair<qint32, qint32> > sequence);
+    void sltPutKeyboardSequence(QVector<LONG> sequence);
+    void sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence);
+    void sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence);
 
     /** Handles the signal we get from the layout selector widget.
       * Selection changed is forwarded to the keyboard widget. */

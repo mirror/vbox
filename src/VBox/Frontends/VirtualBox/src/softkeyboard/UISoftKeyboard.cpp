@@ -419,14 +419,14 @@ public:
     void setHeight(int iHeight);
     int height() const;
 
-    void setScanCode(qint32 scanCode);
-    qint32 scanCode() const;
+    void setScanCode(LONG scanCode);
+    LONG scanCode() const;
 
-    void addScanCodePrefix(qint32 scanCode);
+    void addScanCodePrefix(LONG scanCode);
 
-    void setUsageId(qint32 usageId);
-    void setUsagePage(qint32 usagePage);
-    QPair<qint32, qint32> usagePageIdPair() const;
+    void setUsageId(LONG usageId);
+    void setUsagePage(LONG usagePage);
+    QPair<LONG, LONG> usagePageIdPair() const;
 
     void setSpaceWidthAfter(int iSpace);
     int spaceWidthAfter() const;
@@ -452,7 +452,7 @@ public:
     QPixmap image() const;
 
     void setParentWidget(UISoftKeyboardWidget* pParent);
-    QVector<qint32> scanCodeWithPrefix() const;
+    QVector<LONG> scanCodeWithPrefix() const;
 
     void setIsOSMenuKey(bool fFlag);
     bool isOSMenuKey() const;
@@ -494,8 +494,8 @@ private:
     /** Key height as it is read from the xml file. */
     int      m_iHeight;
     int      m_iSpaceWidthAfter;
-    qint32     m_scanCode;
-    QVector<qint32> m_scanCodePrefix;
+    LONG     m_scanCode;
+    QVector<LONG> m_scanCodePrefix;
 
     /** @name Cutouts are used to create non-rectangle keys polygons.
       * @{ */
@@ -508,8 +508,8 @@ private:
     /** Key's position in the layout. */
     int  m_iPosition;
     UISoftKeyboardWidget  *m_pParentWidget;
-    qint32 m_iUsageId;
-    qint32 m_iUsagePage;
+    LONG m_iUsageId;
+    LONG m_iUsagePage;
     KeyboardRegion m_enmKeyboardRegion;
     /** This is used for multimedia keys, OS key etc where we want to have a non-modifiable
       * caption (usually a single char). This caption is defined in the physical layout file
@@ -647,9 +647,9 @@ class UISoftKeyboardWidget : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigStatusBarMessage(const QString &strMessage);
-    void sigPutKeyboardSequence(QVector<qint32> sequence);
-    void sigPutUsageCodesPress(QVector<QPair<qint32, qint32> > sequence);
-    void sigPutUsageCodesRelease(QVector<QPair<qint32, qint32> > sequence);
+    void sigPutKeyboardSequence(QVector<LONG> sequence);
+    void sigPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence);
+    void sigPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence);
     void sigCurrentLayoutChange();
     void sigKeyToEdit(UISoftKeyboardKey* pKey);
     void sigCurrentColorThemeChanged();
@@ -1634,17 +1634,17 @@ int UISoftKeyboardKey::height() const
     return m_iHeight;
 }
 
-void UISoftKeyboardKey::setScanCode(qint32 scanCode)
+void UISoftKeyboardKey::setScanCode(LONG scanCode)
 {
     m_scanCode = scanCode;
 }
 
-qint32 UISoftKeyboardKey::scanCode() const
+LONG UISoftKeyboardKey::scanCode() const
 {
     return m_scanCode;
 }
 
-void UISoftKeyboardKey::addScanCodePrefix(qint32 scanCodePrefix)
+void UISoftKeyboardKey::addScanCodePrefix(LONG scanCodePrefix)
 {
     m_scanCodePrefix << scanCodePrefix;
 }
@@ -1659,19 +1659,19 @@ int UISoftKeyboardKey::spaceWidthAfter() const
     return m_iSpaceWidthAfter;
 }
 
-void UISoftKeyboardKey::setUsageId(qint32 usageId)
+void UISoftKeyboardKey::setUsageId(LONG usageId)
 {
     m_iUsageId = usageId;
 }
 
-void UISoftKeyboardKey::setUsagePage(qint32 usagePage)
+void UISoftKeyboardKey::setUsagePage(LONG usagePage)
 {
     m_iUsagePage = usagePage;
 }
 
-QPair<qint32, qint32> UISoftKeyboardKey::usagePageIdPair() const
+QPair<LONG, LONG> UISoftKeyboardKey::usagePageIdPair() const
 {
-    return QPair<qint32, qint32>(m_iUsageId, m_iUsagePage);
+    return QPair<LONG, LONG>(m_iUsageId, m_iUsagePage);
 }
 
 void UISoftKeyboardKey::setPosition(int iPosition)
@@ -2903,7 +2903,7 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
 
 #if 0
 
-    QVector<qint32> sequence;
+    QVector<LONG> sequence;
     if (!pKey->scanCodePrefix().isEmpty())
         sequence <<  pKey->scanCodePrefix();
     sequence << (pKey->scanCode() | 0x80);
@@ -2922,8 +2922,8 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
 
 #else
 
-    QVector<QPair<qint32, qint32> > sequence;
-    sequence << QPair<qint32, qint32>(pKey->usagePageIdPair());
+    QVector<QPair<LONG, LONG> > sequence;
+    sequence << QPair<LONG, LONG>(pKey->usagePageIdPair());
     /* Add the pressed modifiers in the reverse order: */
     for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
     {
@@ -2947,7 +2947,7 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
         return;
 
 #if 0
-    QVector<qint32> sequence;
+    QVector<LONG> sequence;
      /* Add the pressed modifiers first: */
     for (int i = 0; i < m_pressedModifiers.size(); ++i)
     {
@@ -2964,7 +2964,7 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
 
 #else
 
-    QVector<QPair<qint32, qint32> > sequence;
+    QVector<QPair<LONG, LONG> > sequence;
 
      /* Add the pressed modifiers first: */
     for (int i = 0; i < m_pressedModifiers.size(); ++i)
@@ -2986,7 +2986,7 @@ void UISoftKeyboardWidget::modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool
 
     pKey->setState(KeyState_NotPressed);
 
-    QVector<QPair<qint32, qint32> > sequence;
+    QVector<QPair<LONG, LONG> > sequence;
     sequence << pKey->usagePageIdPair();
     if (fRelease)
         emit sigPutUsageCodesRelease(sequence);
@@ -3442,7 +3442,7 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
             foreach (const QString &strPrefix, strList)
             {
                 bool fOk = false;
-                qint32 iCode = strPrefix.toInt(&fOk, 16);
+                LONG iCode = strPrefix.toInt(&fOk, 16);
                 if (fOk)
                     key.addScanCodePrefix(iCode);
             }
@@ -4050,18 +4050,18 @@ void UISoftKeyboard::sltKeyboardLedsChange()
         m_pKeyboardWidget->updateLockKeyStates(fCapsLockLed, fNumLockLed, fScrollLockLed);
 }
 
-void UISoftKeyboard::sltPutKeyboardSequence(QVector<qint32> sequence)
+void UISoftKeyboard::sltPutKeyboardSequence(QVector<LONG> sequence)
 {
     m_pMachine->putScancodes(sequence);
 }
 
-void UISoftKeyboard::sltPutUsageCodesPress(QVector<QPair<qint32, qint32> > sequence)
+void UISoftKeyboard::sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence)
 {
     for (int i = 0; i < sequence.size(); ++i)
         m_pMachine->putUsageCode(sequence[i].first, sequence[i].second, false);
 }
 
-void UISoftKeyboard::sltPutUsageCodesRelease(QVector<QPair<qint32, qint32> > sequence)
+void UISoftKeyboard::sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence)
 {
     for (int i = 0; i < sequence.size(); ++i)
         m_pMachine->putUsageCode(sequence[i].first, sequence[i].second, true);
