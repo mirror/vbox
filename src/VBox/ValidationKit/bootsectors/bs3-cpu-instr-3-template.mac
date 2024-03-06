@@ -67,7 +67,7 @@ TMPL_BEGIN_TEXT
         db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
   %endmacro
- %endif
+ %endif ; !BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
 
 ;;
 ; The EMIT_INSTR_PLUS_ICEBP macros is for creating a common function for and
@@ -123,7 +123,31 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4
 BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
   %endmacro
 
- %endif
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 2
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 3
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 4
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3, %4
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 5
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3, %4, %5
+   %endif
+  %endmacro
+
+ %endif ; !EMIT_INSTR_PLUS_ICEBP_DEFINED
 
 ;;
 ; Companion to EMIT_INSTR_PLUS_ICEBP for dealing stuff that the assmbler does
@@ -151,279 +175,125 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _icebp
         jmp     .again
 BS3_PROC_END_CMN            bs3CpuInstr3_ %+ %1 %+ _icebp
   %endmacro
- %endif
+ %endif ; !EMIT_INSTR_PLUS_ICEBP_BYTES_DEFINED
 
 
 
 %ifndef EMIT_TYPE1_INSTR_DEFINED
  %define EMIT_TYPE1_INSTR_DEFINED
+
+ %macro EMIT_INSTR_PLUS_ICEBP_xBX 3
+EMIT_INSTR_PLUS_ICEBP   %1, %2, %3
+EMIT_INSTR_PLUS_ICEBP   %1, %2, FSxBX
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_xBX
+
+ %macro EMIT_INSTR_PLUS_ICEBP_xBX 4
+EMIT_INSTR_PLUS_ICEBP   %1, %2, %3, %4
+EMIT_INSTR_PLUS_ICEBP   %1, %2, %3, FSxBX
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_xBX
+
+ %macro EMIT_INSTR_PLUS_ICEBP_MMX 1
+EMIT_INSTR_PLUS_ICEBP_xBX %1, MM1, MM2
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_MMX
+
+ %macro EMIT_INSTR_PLUS_ICEBP_XMM 1
+EMIT_INSTR_PLUS_ICEBP_xBX %1, XMM1, XMM2
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_XMM
+
+ %macro EMIT_INSTR_PLUS_ICEBP_XMM_123 1
+EMIT_INSTR_PLUS_ICEBP_xBX %1, XMM1, XMM2, XMM3
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_XMM_123
+
+ %macro EMIT_INSTR_PLUS_ICEBP_XMM_89 1
+  %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP_xBX %1, XMM8, XMM9
+  %endif
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_XMM_89
+
+ %macro EMIT_INSTR_PLUS_ICEBP_XMM_98 1
+  %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP_xBX %1, XMM9, XMM8
+  %endif
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_XMM_98
+
+ %macro EMIT_INSTR_PLUS_ICEBP_XMM_890 1
+  %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP_xBX %1, XMM8, XMM9, XMM10
+  %endif
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_XMM_890
+
+ %macro EMIT_INSTR_PLUS_ICEBP_YMM 1
+EMIT_INSTR_PLUS_ICEBP_xBX %1, YMM1, YMM2
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_YMM
+
+ %macro EMIT_INSTR_PLUS_ICEBP_YMM_123 1
+EMIT_INSTR_PLUS_ICEBP_xBX %1, YMM1, YMM2, YMM3
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_YMM_123
+
+ %macro EMIT_INSTR_PLUS_ICEBP_YMM_890 1
+  %if TMPL_BITS == 64
+EMIT_INSTR_PLUS_ICEBP_xBX %1, YMM8, YMM9, YMM10
+  %endif
+ %endmacro ; EMIT_INSTR_PLUS_ICEBP_YMM_890
+
  ;; @param 7 Indicates whether the 2nd and 3rd pair has MMX variants.
  %macro EMIT_TYPE1_INSTR 7
 ;
 ; PXOR (SSE2) & VPXOR (AVX2)
 ;
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
-        %1      mm1, mm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
+EMIT_INSTR_PLUS_ICEBP_MMX   %1
+EMIT_INSTR_PLUS_ICEBP_XMM   %1
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
-        %1      mm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
-        %1      xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
-        %1      xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_XMM2_icebp
-        %2      xmm1, xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_FSxBX_icebp
-        %2      xmm1, xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM1_XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_YMM3_icebp
-        %2      ymm7, ymm2, ymm3
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_YMM3_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_FSxBX_icebp
-        %2      ymm7, ymm2, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM7_YMM2_FSxBX_icebp
+EMIT_INSTR_PLUS_ICEBP   %2, XMM1, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP   %2, XMM1, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP   %2, YMM7, YMM2, YMM3
+EMIT_INSTR_PLUS_ICEBP   %2, YMM7, YMM2, FSxBX
 
 
 ;
 ; XORPS (SSE2) & VXORPS (AVX)
 ;
  %if %7 != 0
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _MM1_MM2_icebp
-        %3      mm1, mm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _MM1_MM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _MM1_FSxBX_icebp
-        %3      mm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _MM1_FSxBX_icebp
+EMIT_INSTR_PLUS_ICEBP_MMX   %3
  %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   %3
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _XMM1_XMM2_icebp
-        %3      xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %3 %+ _XMM1_FSxBX_icebp
-        %3      xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %3 %+ _XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_XMM2_icebp
-        %4        xmm1, xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_FSxBX_icebp
-        %4        xmm1, xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _XMM1_XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_YMM2_icebp
-        %4        ymm1, ymm1, ymm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_YMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_FSxBX_icebp
-        %4        ymm1, ymm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %4 %+ _YMM1_YMM1_FSxBX_icebp
-
+EMIT_INSTR_PLUS_ICEBP   %4, XMM1, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP   %4, XMM1, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP   %4, YMM1, YMM1, YMM2
+EMIT_INSTR_PLUS_ICEBP   %4, YMM1, YMM1, FSxBX
 
 
 ;
 ; XORPD (SSE2) & VXORPD (AVX)
 ;
  %if %7 != 0
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _MM1_MM2_icebp
-        %5      mm1, mm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _MM1_MM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _MM1_FSxBX_icebp
-        %5      mm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _MM1_FSxBX_icebp
+EMIT_INSTR_PLUS_ICEBP_MMX   %5
  %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   %5
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _XMM1_XMM2_icebp
-        %5      xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %5 %+ _XMM1_FSxBX_icebp
-        %5      xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %5 %+ _XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_XMM0_icebp
-        %6        xmm2, xmm1, xmm0
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_XMM0_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_FSxBX_icebp
-        %6        xmm2, xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _XMM2_XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_YMM0_icebp
-        %6        ymm2, ymm1, ymm0
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_YMM0_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_FSxBX_icebp
-        %6        ymm2, ymm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM2_YMM1_FSxBX_icebp
-
-  %if TMPL_BITS == 64
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %6 %+ _YMM10_YMM8_YMM15_icebp
-        %6        ymm10, ymm8, ymm15
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %6 %+ _YMM10_YMM8_YMM15_icebp
-  %endif
+EMIT_INSTR_PLUS_ICEBP   %6, XMM2, XMM1, XMM0
+EMIT_INSTR_PLUS_ICEBP   %6, XMM2, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP   %6, YMM2, YMM1, YMM0
+EMIT_INSTR_PLUS_ICEBP   %6, YMM2, YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   %6, YMM10, YMM8, YMM15
 
  %endmacro  ; EMIT_TYPE1_INSTR
 
  %macro EMIT_TYPE1_ONE_INSTR 3
   %if %3 != 0
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
-        %1      mm1, mm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_MM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
-        %1      mm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _MM1_FSxBX_icebp
+EMIT_INSTR_PLUS_ICEBP_MMX   %1
   %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   %1
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
-        %1      xmm1, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_XMM2_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
-        %1      xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_XMM0_icebp
-        %2        xmm2, xmm1, xmm0
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_XMM0_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_FSxBX_icebp
-        %2        xmm2, xmm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _XMM2_XMM1_FSxBX_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_YMM0_icebp
-        %2        ymm2, ymm1, ymm0
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_YMM0_icebp
-
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_FSxBX_icebp
-        %2        ymm2, ymm1, [fs:xBX]
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM2_YMM1_FSxBX_icebp
-
-  %if TMPL_BITS == 64
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _YMM10_YMM8_YMM15_icebp
-        %2        ymm10, ymm8, ymm15
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _YMM10_YMM8_YMM15_icebp
-  %endif
+EMIT_INSTR_PLUS_ICEBP   %2, XMM2, XMM1, XMM0
+EMIT_INSTR_PLUS_ICEBP   %2, XMM2, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP   %2, YMM2, YMM1, YMM0
+EMIT_INSTR_PLUS_ICEBP   %2, YMM2, YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   %2, YMM10, YMM8, YMM15
  %endmacro ; EMIT_TYPE1_ONE_INSTR
 
-%endif
+%endif ; !EMIT_TYPE1_INSTR_DEFINED
 
 EMIT_TYPE1_INSTR pand,  vpand,  andps,  vandps,  andpd,  vandpd,  0
 EMIT_TYPE1_INSTR pandn, vpandn, andnps, vandnps, andnpd, vandnpd, 0
@@ -453,12 +323,7 @@ EMIT_TYPE1_ONE_INSTR psubq, vpsubq, 1
  ;; @param 4    The opcode byte. (assuming two byte / vex map 1)
  %macro EMIT_TYPE2_ONE_INSTR 4
   %if %3 != 0
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_MM2_icebp
-        %1      eax, mm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_MM2_icebp
+EMIT_INSTR_PLUS_ICEBP   %1, EAX, MM2
 
 BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_qword_FSxBX_icebp
   %if TMPL_BITS == 16
@@ -490,12 +355,7 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %1 %+ _EAX_dqword_FSxBX_icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %1 %+ _EAX_dqword_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_XMM2_icebp
-        %2      eax, xmm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_XMM2_icebp
+EMIT_INSTR_PLUS_ICEBP   %2, EAX, XMM2
 
 BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_dqword_FSxBX_icebp
   %if TMPL_BITS == 16
@@ -508,12 +368,7 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_dqword_FSxBX_icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_dqword_FSxBX_icebp
 
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_YMM2_icebp
-        %2        eax, ymm2
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_YMM2_icebp
+EMIT_INSTR_PLUS_ICEBP   %2, EAX, YMM2
 
 BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_qqword_FSxBX_icebp
   %if TMPL_BITS == 16
@@ -526,150 +381,88 @@ BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _EAX_qqword_FSxBX_icebp
         jmp     .again
 BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _EAX_qqword_FSxBX_icebp
 
-  %if TMPL_BITS == 64
-BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_ %+ %2 %+ _RAX_YMM9_icebp
-        %2        rax, ymm9
-.again:
-        icebp
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuInstr3_ %+ %2 %+ _RAX_YMM9_icebp
-  %endif
+EMIT_INSTR_PLUS_ICEBP_C64   %2, RAX, YMM9
  %endmacro ; EMIT_TYPE2_ONE_INSTR
-%endif
+%endif ; !EMIT_TYPE2_ONE_INSTR_DEFINED
 
 EMIT_TYPE2_ONE_INSTR pmovmskb, vpmovmskb, 1, 0d7h
 
 ;
 ; [V]PMULLW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmullw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmullw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pmullw
 
-EMIT_INSTR_PLUS_ICEBP   pmullw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmullw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmullw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmullw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmullw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmullw
 
 EMIT_INSTR_PLUS_ICEBP   vpmullw, XMM1, XMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP   vpmullw, XMM1, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmullw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmullw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmullw
 
 EMIT_INSTR_PLUS_ICEBP   vpmullw, YMM1, YMM1, YMM2
 EMIT_INSTR_PLUS_ICEBP   vpmullw, YMM1, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmullw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmullw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmullw
 
 ;
 ; [V]PMULLD
 ;
-EMIT_INSTR_PLUS_ICEBP   pmulld, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmulld, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmulld, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmulld, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmulld
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmulld
 
 EMIT_INSTR_PLUS_ICEBP   vpmulld, XMM2, XMM1, XMM0
 EMIT_INSTR_PLUS_ICEBP   vpmulld, XMM2, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulld, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulld, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmulld
 
 EMIT_INSTR_PLUS_ICEBP   vpmulld, YMM2, YMM1, YMM0
 EMIT_INSTR_PLUS_ICEBP   vpmulld, YMM2, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulld, YMM10, YMM8, YMM15
-EMIT_INSTR_PLUS_ICEBP   vpmulld, YMM10, YMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpmulld, YMM10, YMM8, YMM15
+EMIT_INSTR_PLUS_ICEBP_C64   vpmulld, YMM10, YMM8, FSxBX
 
 ;
 ; [V]PMULHW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmulhw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmulhw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pmulhw
 
-EMIT_INSTR_PLUS_ICEBP   pmulhw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmulhw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmulhw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmulhw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmulhw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmulhw
 
 EMIT_INSTR_PLUS_ICEBP   vpmulhw, XMM1, XMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP   vpmulhw, XMM1, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulhw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmulhw
 
 EMIT_INSTR_PLUS_ICEBP   vpmulhw, YMM1, YMM1, YMM2
 EMIT_INSTR_PLUS_ICEBP   vpmulhw, YMM1, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulhw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmulhw
 
 ;
 ; [V]PMULHUW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pmulhuw
 
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmulhuw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmulhuw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmulhuw
 
 EMIT_INSTR_PLUS_ICEBP   vpmulhuw, XMM1, XMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP   vpmulhuw, XMM1, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulhuw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhuw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmulhuw
 
 EMIT_INSTR_PLUS_ICEBP   vpmulhuw, YMM1, YMM1, YMM2
 EMIT_INSTR_PLUS_ICEBP   vpmulhuw, YMM1, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmulhuw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhuw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmulhuw
 
 ;
 ; [V]PSHUFB
 ;
-EMIT_INSTR_PLUS_ICEBP   pshufb, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pshufb, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pshufb
 
-EMIT_INSTR_PLUS_ICEBP   pshufb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pshufb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pshufb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pshufb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pshufb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pshufb
 
-EMIT_INSTR_PLUS_ICEBP   vpshufb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpshufb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpshufb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpshufb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpshufb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpshufb
 
-EMIT_INSTR_PLUS_ICEBP   vpshufb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpshufb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpshufb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpshufb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpshufb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpshufb
 
 ;
 ; PSHUFW
@@ -697,10 +490,8 @@ EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, YMM2,  01Bh
 EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM1, FSxBX, 01Bh
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM12, YMM7, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpshufhw, YMM9, YMM12, 01Bh
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpshufhw, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpshufhw, YMM9, YMM12, 01Bh
 
 ;
 ; [V]PSHUFLW
@@ -720,10 +511,8 @@ EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, YMM2,  01Bh
 EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM1, FSxBX, 01Bh
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM12, YMM7, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpshuflw, YMM9, YMM12, 01Bh
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpshuflw, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpshuflw, YMM9, YMM12, 01Bh
 
 ;
 ; [V]PSHUFD
@@ -743,625 +532,322 @@ EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, YMM2,  01Bh
 EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM1, FSxBX, 01Bh
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM12, YMM7, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpshufd, YMM9, YMM12, 01Bh
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpshufd, YMM12, YMM7, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpshufd, YMM9, YMM12, 01Bh
 
 ;
 ; [V]PUNPCKHBW
 ;
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpckhbw
 
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpckhbw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpckhbw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpckhbw
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpckhbw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpckhbw
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhbw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpckhbw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpckhbw
 
 ;
 ; [V]PUNPCKHWD
 ;
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpckhwd
 
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpckhwd, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpckhwd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpckhwd
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpckhwd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpckhwd
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhwd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpckhwd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpckhwd
 
 ;
 ; [V]PUNPCKHDQ
 ;
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpckhdq
 
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpckhdq, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpckhdq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpckhdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpckhdq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpckhdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhdq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpckhdq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpckhdq
 
 ;
 ; [V]PUNPCKHQDQ (no MMX)
 ;
-EMIT_INSTR_PLUS_ICEBP   punpckhqdq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpckhqdq, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpckhqdq, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpckhqdq, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpckhqdq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpckhqdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpckhqdq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpckhqdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckhqdq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpckhqdq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpckhqdq
 
 ;
 ; [V]PUNPCKLBW
 ;
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpcklbw
 
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpcklbw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpcklbw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpcklbw
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpcklbw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpcklbw
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklbw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpcklbw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpcklbw
 
 ;
 ; [V]PUNPCKLWD
 ;
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpcklwd
 
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpcklwd, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpcklwd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpcklwd
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpcklwd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpcklwd
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklwd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpcklwd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpcklwd
 
 ;
 ; [V]PUNPCKLDQ
 ;
-EMIT_INSTR_PLUS_ICEBP   punpckldq, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   punpckldq, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   punpckldq
 
-EMIT_INSTR_PLUS_ICEBP   punpckldq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpckldq, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpckldq, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpckldq, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpckldq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpckldq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpckldq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpckldq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpckldq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpckldq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpckldq
 
 ;
 ; [V]PUNPCKLQDQ (no MMX)
 ;
-EMIT_INSTR_PLUS_ICEBP   punpcklqdq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   punpcklqdq, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   punpcklqdq, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   punpcklqdq, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   punpcklqdq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   punpcklqdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpunpcklqdq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpunpcklqdq
 
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpunpcklqdq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpunpcklqdq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpunpcklqdq
 
 ;
 ; [V]PACKSSWB
 ;
-EMIT_INSTR_PLUS_ICEBP   packsswb, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   packsswb, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   packsswb
 
-EMIT_INSTR_PLUS_ICEBP   packsswb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   packsswb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   packsswb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   packsswb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   packsswb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   packsswb
 
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpacksswb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpacksswb
 
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpacksswb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpacksswb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpacksswb
 
 ;
 ; [V]PACKSSWD
 ;
-EMIT_INSTR_PLUS_ICEBP   packssdw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   packssdw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   packssdw
 
-EMIT_INSTR_PLUS_ICEBP   packssdw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   packssdw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   packssdw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   packssdw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   packssdw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   packssdw
 
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpackssdw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpackssdw
 
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpackssdw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpackssdw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpackssdw
 
 ;
 ; [V]PACKUSWB
 ;
-EMIT_INSTR_PLUS_ICEBP   packuswb, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   packuswb, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   packuswb
 
-EMIT_INSTR_PLUS_ICEBP   packuswb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   packuswb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   packuswb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   packuswb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   packuswb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   packuswb
 
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpackuswb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpackuswb
 
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpackuswb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpackuswb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpackuswb
 
 ;
 ; [V]PACKUSWD (no MMX)
 ;
-EMIT_INSTR_PLUS_ICEBP   packusdw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   packusdw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   packusdw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   packusdw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   packusdw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   packusdw
 
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpackusdw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpackusdw
 
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpackusdw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpackusdw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpackusdw
 
 ;
 ; [V]PMAXUB
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxub, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmaxub, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pmaxub
 
-EMIT_INSTR_PLUS_ICEBP   pmaxub, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxub, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxub, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxub, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxub
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxub
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxub
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxub
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxub, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxub
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxub
 
 ;
 ; [V]PMAXUW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxuw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxuw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxuw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxuw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxuw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxuw
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxuw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxuw
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxuw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxuw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxuw
 
 ;
 ; [V]PMAXUD
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxud, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxud, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxud, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxud, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxud
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxud
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxud
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxud
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxud, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxud
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxud
 
 ;
 ; [V]PMAXSB
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxsb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxsb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxsb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxsb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxsb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxsb
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxsb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxsb
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxsb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxsb
 
 ;
 ; [V]PMAXSW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pmaxsw
 
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxsw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxsw
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxsw
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxsw
 
 ;
 ; [V]PMAXSD
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaxsd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaxsd, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaxsd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaxsd, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaxsd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaxsd
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaxsd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaxsd
 
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaxsd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaxsd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaxsd
 
 ;
 ; [V]PMINUB
 ;
-EMIT_INSTR_PLUS_ICEBP   pminub, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pminub, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pminub
 
-EMIT_INSTR_PLUS_ICEBP   pminub, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminub, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminub, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminub, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminub
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminub
 
-EMIT_INSTR_PLUS_ICEBP   vpminub, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminub, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminub, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminub, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminub
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminub
 
-EMIT_INSTR_PLUS_ICEBP   vpminub, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminub, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminub, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminub, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminub
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminub
 
 ;
 ; [V]PMINUW
 ;
-EMIT_INSTR_PLUS_ICEBP   pminuw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminuw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminuw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminuw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminuw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminuw
 
-EMIT_INSTR_PLUS_ICEBP   vpminuw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminuw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminuw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminuw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminuw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminuw
 
-EMIT_INSTR_PLUS_ICEBP   vpminuw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminuw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminuw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminuw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminuw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminuw
 
 ;
 ; [V]PMINUD
 ;
-EMIT_INSTR_PLUS_ICEBP   pminud, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminud, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminud, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminud, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminud
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminud
 
-EMIT_INSTR_PLUS_ICEBP   vpminud, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminud, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminud, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminud, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminud
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminud
 
-EMIT_INSTR_PLUS_ICEBP   vpminud, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminud, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminud, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminud, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminud
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminud
 
 ;
 ; [V]PMINSB
 ;
-EMIT_INSTR_PLUS_ICEBP   pminsb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminsb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminsb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminsb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminsb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminsb
 
-EMIT_INSTR_PLUS_ICEBP   vpminsb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminsb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminsb
 
-EMIT_INSTR_PLUS_ICEBP   vpminsb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminsb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminsb
 
 ;
 ; [V]PMINSW
 ;
-EMIT_INSTR_PLUS_ICEBP   pminsw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pminsw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pminsw
 
-EMIT_INSTR_PLUS_ICEBP   pminsw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminsw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminsw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminsw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminsw
 
-EMIT_INSTR_PLUS_ICEBP   vpminsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminsw
 
-EMIT_INSTR_PLUS_ICEBP   vpminsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminsw
 
 ;
 ; [V]PMINSD
 ;
-EMIT_INSTR_PLUS_ICEBP   pminsd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pminsd, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pminsd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pminsd, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pminsd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pminsd
 
-EMIT_INSTR_PLUS_ICEBP   vpminsd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsd, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsd, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpminsd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpminsd
 
-EMIT_INSTR_PLUS_ICEBP   vpminsd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpminsd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpminsd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpminsd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpminsd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpminsd
 
 ;
 ; [V]MOVNTDQA
@@ -1369,11 +855,9 @@ EMIT_INSTR_PLUS_ICEBP   vpminsd, YMM8, YMM9, FSxBX
 EMIT_INSTR_PLUS_ICEBP movntdqa,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovntdqa, XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovntdqa, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movntdqa,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovntdqa, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovntdqa, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movntdqa,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntdqa, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntdqa, YMM12, FSxBX
 
 ;
 ; [V]MOVNTDQ
@@ -1381,11 +865,9 @@ EMIT_INSTR_PLUS_ICEBP vmovntdqa, YMM12, FSxBX
 EMIT_INSTR_PLUS_ICEBP movntdq,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntdq, FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntdq, FSxBX, YMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movntdq,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovntdq, FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovntdq, FSxBX, YMM10
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movntdq,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntdq, FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntdq, FSxBX, YMM10
 
 
 ;
@@ -1394,11 +876,9 @@ EMIT_INSTR_PLUS_ICEBP vmovntdq, FSxBX, YMM10
 EMIT_INSTR_PLUS_ICEBP movntps,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntps, FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntps, FSxBX, YMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movntps,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovntps, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovntps, FSxBX, YMM12
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movntps,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntps, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntps, FSxBX, YMM12
 
 ;
 ; [V]MOVNTPD
@@ -1406,95 +886,75 @@ EMIT_INSTR_PLUS_ICEBP vmovntps, FSxBX, YMM12
 EMIT_INSTR_PLUS_ICEBP movntpd,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntpd, FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovntpd, FSxBX, YMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movntpd,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovntpd, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovntpd, FSxBX, YMM12
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movntpd,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntpd, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovntpd, FSxBX, YMM12
 
 ;
 ; [V]MOVUPS - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movups,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movups,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM movups
 EMIT_INSTR_PLUS_ICEBP movups,  FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovups, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovups, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vmovups
 EMIT_INSTR_PLUS_ICEBP vmovups, FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovups, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovups, YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_YMM vmovups
 EMIT_INSTR_PLUS_ICEBP vmovups, FSxBX, YMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movups,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movups,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP movups,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovups, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovups, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovups, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovups, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovups, YMM12, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovups, FSxBX, YMM12
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movups,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movups,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movups,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, YMM12, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovups, FSxBX, YMM12
 
 ;
 ; [V]MOVUPD - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movupd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movupd,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM movupd
 EMIT_INSTR_PLUS_ICEBP movupd,  FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovupd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovupd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vmovupd
 EMIT_INSTR_PLUS_ICEBP vmovupd, FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovupd, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovupd, YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_YMM vmovupd
 EMIT_INSTR_PLUS_ICEBP vmovupd, FSxBX, YMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movupd,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movupd,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP movupd,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovupd, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovupd, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovupd, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovupd, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovupd, YMM12, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovupd, FSxBX, YMM12
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movupd,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movupd,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movupd,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, YMM12, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovupd, FSxBX, YMM12
 
 ;
 ; [V]MOVSS - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movss,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movss,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM movss
 EMIT_INSTR_PLUS_ICEBP movss,  FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovss, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovss, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vmovss
 EMIT_INSTR_PLUS_ICEBP vmovss, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movss,  XMM11, XMM8
-EMIT_INSTR_PLUS_ICEBP movss,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movss,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovss, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovss, XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovss, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movss,  XMM11, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 movss,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movss,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovss, XMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovss, XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovss, FSxBX, XMM9
 
 ;
 ; [V]MOVSD - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movsd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movsd,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM movsd
 EMIT_INSTR_PLUS_ICEBP movsd,  FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovsd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovsd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vmovsd
 EMIT_INSTR_PLUS_ICEBP vmovsd, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movsd,  XMM11, XMM8
-EMIT_INSTR_PLUS_ICEBP movsd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movsd,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovsd, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovsd, XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovsd, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movsd,  XMM11, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 movsd,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movsd,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsd, XMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsd, XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsd, FSxBX, XMM9
 
 ;
 ; [V]MOVLPS
@@ -1503,12 +963,10 @@ EMIT_INSTR_PLUS_ICEBP movlps,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movlps,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovlps, XMM1, XMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovlps, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movlps,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movlps,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovlps, XMM10, XMM14, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovlps, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movlps,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movlps,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovlps, XMM10, XMM14, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovlps, FSxBX, XMM9
 
 ;
 ; [V]MOVLPD
@@ -1517,12 +975,10 @@ EMIT_INSTR_PLUS_ICEBP movlpd,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movlpd,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovlpd, XMM1, XMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovlpd, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movlpd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movlpd,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovlpd, XMM10, XMM14, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovlpd, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movlpd,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movlpd,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovlpd, XMM10, XMM14, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovlpd, FSxBX, XMM9
 
 ;
 ; [V]MOVHPS
@@ -1531,12 +987,10 @@ EMIT_INSTR_PLUS_ICEBP movhps,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movhps,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovhps, XMM1, XMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovhps, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movhps,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movhps,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovhps, XMM10, XMM14, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovhps, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movhps,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movhps,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovhps, XMM10, XMM14, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovhps, FSxBX, XMM9
 
 ;
 ; [V]MOVHPD
@@ -1545,109 +999,80 @@ EMIT_INSTR_PLUS_ICEBP movhpd,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movhpd,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovhpd, XMM1, XMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovhpd, FSxBX, XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movhpd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP movhpd,  FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovhpd, XMM10, XMM14, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovhpd, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movhpd,  XMM8, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movhpd,  FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovhpd, XMM10, XMM14, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovhpd, FSxBX, XMM9
 
 ;
 ; [V]MOVHLPS
 ;
 EMIT_INSTR_PLUS_ICEBP movhlps,  XMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vmovhlps, XMM1, XMM2, XMM3
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movhlps,  XMM8, XMM12
-EMIT_INSTR_PLUS_ICEBP vmovhlps, XMM10, XMM14, XMM12
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movhlps,  XMM8, XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 vmovhlps, XMM10, XMM14, XMM12
 
 ;
 ; [V]MOVSLDUP
 ;
-EMIT_INSTR_PLUS_ICEBP movsldup,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movsldup,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovsldup, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovsldup, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovsldup, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovsldup, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movsldup,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movsldup,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovsldup, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovsldup, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovsldup, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovsldup, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM movsldup
+EMIT_INSTR_PLUS_ICEBP_XMM vmovsldup
+EMIT_INSTR_PLUS_ICEBP_YMM vmovsldup
+EMIT_INSTR_PLUS_ICEBP_C64 movsldup,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movsldup,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsldup, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsldup, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsldup, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovsldup, YMM12, FSxBX
 
 ;
 ; [V]MOVSHDUP
 ;
-EMIT_INSTR_PLUS_ICEBP movshdup,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movshdup,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovshdup, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovshdup, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovshdup, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovshdup, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movshdup,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movshdup,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovshdup, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovshdup, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovshdup, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovshdup, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM movshdup
+EMIT_INSTR_PLUS_ICEBP_XMM vmovshdup
+EMIT_INSTR_PLUS_ICEBP_YMM vmovshdup
+EMIT_INSTR_PLUS_ICEBP_C64 movshdup,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movshdup,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovshdup, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovshdup, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovshdup, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovshdup, YMM12, FSxBX
 
 ;
 ; [V]MOVDDUP
 ;
-EMIT_INSTR_PLUS_ICEBP movddup,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movddup,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovddup, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovddup, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovddup, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovddup, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movddup,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movddup,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovddup, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovddup, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovddup, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovddup, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM movddup
+EMIT_INSTR_PLUS_ICEBP_XMM vmovddup
+EMIT_INSTR_PLUS_ICEBP_YMM vmovddup
+EMIT_INSTR_PLUS_ICEBP_C64 movddup,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movddup,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovddup, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovddup, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovddup, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovddup, YMM12, FSxBX
 
 ;
 ; [V]MOVAPS
 ;
-EMIT_INSTR_PLUS_ICEBP movaps,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movaps,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovaps, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovaps, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovaps, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovaps, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movaps,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movaps,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovaps, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovaps, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovaps, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovaps, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM movaps
+EMIT_INSTR_PLUS_ICEBP_XMM vmovaps
+EMIT_INSTR_PLUS_ICEBP_YMM vmovaps
+EMIT_INSTR_PLUS_ICEBP_C64 movaps,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movaps,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovaps, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovaps, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovaps, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovaps, YMM12, FSxBX
 
-EMIT_INSTR_PLUS_ICEBP movapd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP movapd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovapd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vmovapd, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovapd, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vmovapd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movapd,  XMM8,  XMM12
-EMIT_INSTR_PLUS_ICEBP movapd,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovapd, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovapd, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovapd, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovapd, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM movapd
+EMIT_INSTR_PLUS_ICEBP_XMM vmovapd
+EMIT_INSTR_PLUS_ICEBP_YMM vmovapd
+EMIT_INSTR_PLUS_ICEBP_C64 movapd,  XMM8,  XMM12
+EMIT_INSTR_PLUS_ICEBP_C64 movapd,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovapd, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovapd, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovapd, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovapd, YMM12, FSxBX
 
 ;
 ; [V]MOVD
@@ -1656,70 +1081,61 @@ EMIT_INSTR_PLUS_ICEBP movd,  MM1,   EDX
 EMIT_INSTR_PLUS_ICEBP movd,  MM1,   FSxBX
 EMIT_INSTR_PLUS_ICEBP movd,  EAX,   MM1
 EMIT_INSTR_PLUS_ICEBP movd,  FSxBX, MM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movd,  MM1,   R9D
-EMIT_INSTR_PLUS_ICEBP movd,  R10D,  MM0
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  MM1,   R9D
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  R10D,  MM0
 
 EMIT_INSTR_PLUS_ICEBP movd,  XMM1,  EAX
 EMIT_INSTR_PLUS_ICEBP movd,  XMM1,  FSxBX
 EMIT_INSTR_PLUS_ICEBP movd,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP movd,  EAX,   XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movd,  XMM9,  R8D
-EMIT_INSTR_PLUS_ICEBP movd,  R8D,   XMM9
-EMIT_INSTR_PLUS_ICEBP movd,  XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP movd,  FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  XMM9,  R8D
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  R8D,   XMM9
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  XMM9,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movd,  FSxBX, XMM9
 
 EMIT_INSTR_PLUS_ICEBP vmovd, XMM1,  EAX
 EMIT_INSTR_PLUS_ICEBP vmovd, XMM1,  FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovd, FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovd, EDX,   XMM1
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vmovd, XMM9,  R9D
-EMIT_INSTR_PLUS_ICEBP vmovd, R8D,   XMM9
-EMIT_INSTR_PLUS_ICEBP vmovd, XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovd, FSxBX, XMM9
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 vmovd, XMM9,  R9D
+EMIT_INSTR_PLUS_ICEBP_C64 vmovd, R8D,   XMM9
+EMIT_INSTR_PLUS_ICEBP_C64 vmovd, XMM9,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovd, FSxBX, XMM9
 
 ;
 ; [V]MOVQ - some hand coded stuff here as the assembler prefers the 7f/6f variants.
 ;
-EMIT_INSTR_PLUS_ICEBP movq,  MM1,   MM2
-EMIT_INSTR_PLUS_ICEBP movq,  MM1,   FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX movq
 EMIT_INSTR_PLUS_ICEBP movq,  FSxBX, MM1
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  R9,    MM1
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  MM1,   R9
  %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movq,  R9,    MM1
-EMIT_INSTR_PLUS_ICEBP movq,  MM1,   R9
 EMIT_INSTR_PLUS_ICEBP_BYTES 06e_movq_MM1_FSxBX,  FSxBX_PFX, 48h, 0fh, 06eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP_BYTES 07e_movq_FSxBX_MM1,  FSxBX_PFX, 48h, 0fh, 07eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
  %endif
 
-EMIT_INSTR_PLUS_ICEBP movq,  XMM1,  XMM2
-EMIT_INSTR_PLUS_ICEBP movq,  XMM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM movq
 EMIT_INSTR_PLUS_ICEBP movq,  FSxBX, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  XMM9,  R8
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  R8,    XMM9
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  XMM9,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movq,  FSxBX, XMM9
  %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movq,  XMM9,  R8
-EMIT_INSTR_PLUS_ICEBP movq,  R8,    XMM9
-EMIT_INSTR_PLUS_ICEBP movq,  XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP movq,  FSxBX, XMM9
 EMIT_INSTR_PLUS_ICEBP_BYTES 06e_movq_XMM1_FSxBX,  FSxBX_PFX, 66h, 48h, 0fh, 06eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP_BYTES 06e_movq_XMM9_FSxBX,  FSxBX_PFX, 66h, 4ch, 0fh, 06eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP_BYTES 07e_movq_FSxBX_XMM1,  FSxBX_PFX, 66h, 48h, 0fh, 07eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP_BYTES 07e_movq_FSxBX_XMM9,  FSxBX_PFX, 66h, 4ch, 0fh, 07eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
  %endif
 
-EMIT_INSTR_PLUS_ICEBP vmovq,  XMM1,  XMM2
-EMIT_INSTR_PLUS_ICEBP vmovq,  XMM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vmovq
 EMIT_INSTR_PLUS_ICEBP_BYTES 06e_vmovq_XMM1_FSxBX, FSxBX_PFX, 0c4h, 0e1h, 0f9h, 06eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP vmovq,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP_BYTES 07e_vmovq_FSxBX_XMM1, FSxBX_PFX, 0c4h, 0e1h, 0f9h, 07eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
+EMIT_INSTR_PLUS_ICEBP_C64 vmovq,  XMM9,  R8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovq,  R8,    XMM9
+EMIT_INSTR_PLUS_ICEBP_C64 vmovq,  XMM9,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovq,  FSxBX, XMM9
  %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vmovq,  XMM9,  R8
-EMIT_INSTR_PLUS_ICEBP vmovq,  R8,    XMM9
-EMIT_INSTR_PLUS_ICEBP vmovq,  XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovq,  FSxBX, XMM9
 EMIT_INSTR_PLUS_ICEBP_BYTES 06e_vmovq_XMM9_FSxBX, FSxBX_PFX, 0c4h, 061h, 0f9h, 06eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
 EMIT_INSTR_PLUS_ICEBP_BYTES 07e_vmovq_FSxBX_XMM9, FSxBX_PFX, 0c4h, 061h, 0f9h, 07eh, FSxBX_MODRM | (1 << X86_MODRM_REG_SHIFT)
  %endif
@@ -1727,9 +1143,8 @@ EMIT_INSTR_PLUS_ICEBP_BYTES 07e_vmovq_FSxBX_XMM9, FSxBX_PFX, 0c4h, 061h, 0f9h, 0
 ;
 ; [V]MOVDQU - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movdqu,  XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP_XMM movdqu
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_movdqu_XMM1_XMM2, 0f3h, 00fh, 07fh, X86_MODRM_MAKE(3, 2, 1)
-EMIT_INSTR_PLUS_ICEBP movdqu,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movdqu,  FSxBX, XMM1
 EMIT_INSTR_PLUS_ICEBP vmovdqu, XMM1, XMM2        ; C5 FA 6F CA
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqu_XMM1_XMM2, 0c5h, 0fah, 07fh, X86_MODRM_MAKE(3, 2, 1)
@@ -1739,768 +1154,467 @@ EMIT_INSTR_PLUS_ICEBP vmovdqu, YMM1, YMM2        ; C5 FE 6F CA
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqu_YMM1_YMM2, 0c5h, 0feh, 07fh, X86_MODRM_MAKE(3, 2, 1)
 EMIT_INSTR_PLUS_ICEBP vmovdqu, YMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovdqu, FSxBX, YMM1
+EMIT_INSTR_PLUS_ICEBP_C64 movdqu,  XMM8,  XMM12      ; F3 45 0F 6F C4
  %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movdqu,  XMM8,  XMM12      ; F3 45 0F 6F C4
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_movdqu_XMM8_XMM12, 0f3h, 045h, 00fh, 07fh, X86_MODRM_MAKE(3, 4, 0)
-EMIT_INSTR_PLUS_ICEBP movdqu,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP movdqu,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovdqu, XMM7,  XMM14
-EMIT_INSTR_PLUS_ICEBP vmovdqu, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovdqu, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovdqu, YMM12, YMM8
-EMIT_INSTR_PLUS_ICEBP vmovdqu, YMM12, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovdqu, FSxBX, YMM12
  %endif
+EMIT_INSTR_PLUS_ICEBP_C64 movdqu,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movdqu,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, XMM7,  XMM14
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, YMM12, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqu, FSxBX, YMM12
 
 ;
 ; [V]MOVDQA - not testing the 2nd register variant.
 ;
-EMIT_INSTR_PLUS_ICEBP movdqa,  XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP_XMM movdqa
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_movdqa_XMM1_XMM2, 066h, 00fh, 07fh, X86_MODRM_MAKE(3, 2, 1)
-EMIT_INSTR_PLUS_ICEBP movdqa,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP movdqa,  FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovdqa, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP_XMM vmovdqa
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqa_XMM1_XMM2, 0c5h, 0f9h, 07fh, X86_MODRM_MAKE(3, 2, 1)
-EMIT_INSTR_PLUS_ICEBP vmovdqa, XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovdqa, FSxBX, XMM1
-EMIT_INSTR_PLUS_ICEBP vmovdqa, YMM1, YMM2
+EMIT_INSTR_PLUS_ICEBP_YMM vmovdqa
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqa_YMM1_YMM2, 0c5h, 0fdh, 07fh, X86_MODRM_MAKE(3, 2, 1)
-EMIT_INSTR_PLUS_ICEBP vmovdqa, YMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vmovdqa, FSxBX, YMM1
  %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP movdqa,  XMM8,  XMM12      ; 66 45 0F 6F C4
+EMIT_INSTR_PLUS_ICEBP_C64 movdqa,  XMM8,  XMM12      ; 66 45 0F 6F C4
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_movdqa_XMM8_XMM12, 066h, 045h, 00fh, 07fh, X86_MODRM_MAKE(3, 4, 0)
-EMIT_INSTR_PLUS_ICEBP movdqa,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP movdqa,  FSxBX, XMM10
-EMIT_INSTR_PLUS_ICEBP vmovdqa, XMM8,  XMM14       ; C4     C1   79    6F   FE
+EMIT_INSTR_PLUS_ICEBP_C64 movdqa,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 movdqa,  FSxBX, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, XMM8,  XMM14       ; C4     C1   79    6F   FE
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqa_XMM8_XMM14, 0c4h, 041h, 79h, 07fh, X86_MODRM_MAKE(3, 6, 0)
-EMIT_INSTR_PLUS_ICEBP vmovdqa, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovdqa, FSxBX, XMM11
-EMIT_INSTR_PLUS_ICEBP vmovdqa, YMM12, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, FSxBX, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, YMM12, YMM8
 EMIT_INSTR_PLUS_ICEBP_BYTES 07f_vmovdqa_YMM12_YMM8, 0c4h, 041h, 7dh, 07fh, X86_MODRM_MAKE(3, 0, 4)
-EMIT_INSTR_PLUS_ICEBP vmovdqa, YMM12, FSxBX
-EMIT_INSTR_PLUS_ICEBP vmovdqa, FSxBX, YMM12
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, YMM12, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vmovdqa, FSxBX, YMM12
  %endif
 
 ;
 ; [V]PTEST
 ;
-EMIT_INSTR_PLUS_ICEBP ptest,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP ptest,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vptest, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vptest, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vptest, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vptest, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP ptest,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP ptest,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vptest, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vptest, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vptest, YMM9, YMM8
-EMIT_INSTR_PLUS_ICEBP vptest, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM ptest
+EMIT_INSTR_PLUS_ICEBP_XMM vptest
+EMIT_INSTR_PLUS_ICEBP_YMM vptest
+EMIT_INSTR_PLUS_ICEBP_XMM_98 ptest
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vptest
+EMIT_INSTR_PLUS_ICEBP_C64 vptest, YMM9, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vptest, YMM9, FSxBX
 
 ;
 ; [V]PAVGB
 ;
-EMIT_INSTR_PLUS_ICEBP   pavgb, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pavgb, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pavgb
 
-EMIT_INSTR_PLUS_ICEBP   pavgb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pavgb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pavgb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pavgb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pavgb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pavgb
 
-EMIT_INSTR_PLUS_ICEBP   vpavgb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpavgb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpavgb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpavgb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpavgb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpavgb
 
-EMIT_INSTR_PLUS_ICEBP   vpavgb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpavgb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpavgb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpavgb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpavgb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpavgb
 
 ;
 ; [V]PAVGW
 ;
-EMIT_INSTR_PLUS_ICEBP   pavgw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pavgw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   pavgw
 
-EMIT_INSTR_PLUS_ICEBP   pavgw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pavgw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pavgw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pavgw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pavgw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pavgw
 
-EMIT_INSTR_PLUS_ICEBP   vpavgw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpavgw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpavgw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpavgw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpavgw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpavgw
 
-EMIT_INSTR_PLUS_ICEBP   vpavgw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpavgw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpavgw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpavgw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpavgw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpavgw
 
 ;
 ; [V]PSIGNB
 ;
-EMIT_INSTR_PLUS_ICEBP   psignb, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psignb, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   psignb
 
-EMIT_INSTR_PLUS_ICEBP   psignb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psignb, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psignb, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psignb, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   psignb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psignb
 
-EMIT_INSTR_PLUS_ICEBP   vpsignb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignb, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignb, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsignb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsignb
 
-EMIT_INSTR_PLUS_ICEBP   vpsignb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsignb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsignb
 
 ;
 ; [V]PSIGNW
 ;
-EMIT_INSTR_PLUS_ICEBP   psignw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psignw, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   psignw
 
-EMIT_INSTR_PLUS_ICEBP   psignw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psignw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psignw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psignw, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   psignw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psignw
 
-EMIT_INSTR_PLUS_ICEBP   vpsignw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignw, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignw, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsignw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsignw
 
-EMIT_INSTR_PLUS_ICEBP   vpsignw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsignw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsignw
 
 ;
 ; [V]PSIGND
 ;
-EMIT_INSTR_PLUS_ICEBP   psignd, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psignd, MM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX   psignd
 
-EMIT_INSTR_PLUS_ICEBP   psignd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psignd, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psignd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psignd, XMM8, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   psignd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psignd
 
-EMIT_INSTR_PLUS_ICEBP   vpsignd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignd, XMM1, XMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignd, XMM8, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsignd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsignd
 
-EMIT_INSTR_PLUS_ICEBP   vpsignd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsignd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsignd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsignd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsignd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsignd
 
 ;
 ; [V]ABSB
 ;
-EMIT_INSTR_PLUS_ICEBP pabsb,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP pabsb,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP pabsb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pabsb,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpabsb, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsb, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vpabsb, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pabsb,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pabsb,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsb, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpabsb, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsb, YMM9, YMM8
-EMIT_INSTR_PLUS_ICEBP vpabsb, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX pabsb
+EMIT_INSTR_PLUS_ICEBP_XMM pabsb
+EMIT_INSTR_PLUS_ICEBP_XMM vpabsb
+EMIT_INSTR_PLUS_ICEBP_YMM vpabsb
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pabsb
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpabsb
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsb, YMM9, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsb, YMM9, FSxBX
 
 ;
 ; [V]ABSW
 ;
-EMIT_INSTR_PLUS_ICEBP pabsw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP pabsw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP pabsw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pabsw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpabsw, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsw, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vpabsw, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pabsw,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pabsw,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsw, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpabsw, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsw, YMM9, YMM8
-EMIT_INSTR_PLUS_ICEBP vpabsw, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX pabsw
+EMIT_INSTR_PLUS_ICEBP_XMM pabsw
+EMIT_INSTR_PLUS_ICEBP_XMM vpabsw
+EMIT_INSTR_PLUS_ICEBP_YMM vpabsw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pabsw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpabsw
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsw, YMM9, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsw, YMM9, FSxBX
 
 ;
 ; [V]ABSD
 ;
-EMIT_INSTR_PLUS_ICEBP pabsd,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP pabsd,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP pabsd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pabsd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpabsd, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsd, YMM1, YMM2
-EMIT_INSTR_PLUS_ICEBP vpabsd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pabsd,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pabsd,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpabsd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpabsd, YMM9, YMM8
-EMIT_INSTR_PLUS_ICEBP vpabsd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX pabsd
+EMIT_INSTR_PLUS_ICEBP_XMM pabsd
+EMIT_INSTR_PLUS_ICEBP_XMM vpabsd
+EMIT_INSTR_PLUS_ICEBP_YMM vpabsd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pabsd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpabsd
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsd, YMM9, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpabsd, YMM9, FSxBX
 
 ;
 ; [V]PHADDW
 ;
-EMIT_INSTR_PLUS_ICEBP   phaddw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phaddw, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phaddw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phaddw, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phaddw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phaddw, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phaddw
+EMIT_INSTR_PLUS_ICEBP_XMM   phaddw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphaddw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphaddw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phaddw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphaddw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphaddw
 
 ;
 ; [V]PHADDD
 ;
-EMIT_INSTR_PLUS_ICEBP   phaddd, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phaddd, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phaddd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phaddd, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddd, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phaddd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phaddd, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddd, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phaddd
+EMIT_INSTR_PLUS_ICEBP_XMM   phaddd
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphaddd
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphaddd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phaddd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphaddd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphaddd
 
 
 ;
 ; [V]PHSUBW
 ;
-EMIT_INSTR_PLUS_ICEBP   phsubw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phsubw, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phsubw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phsubw, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phsubw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phsubw, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phsubw
+EMIT_INSTR_PLUS_ICEBP_XMM   phsubw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphsubw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphsubw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phsubw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphsubw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphsubw
 
 ;
 ; [V]PHSUBD
 ;
-EMIT_INSTR_PLUS_ICEBP   phsubd, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phsubd, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phsubd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phsubd, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubd, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phsubd, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phsubd, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubd, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phsubd
+EMIT_INSTR_PLUS_ICEBP_XMM   phsubd
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphsubd
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphsubd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phsubd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphsubd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphsubd
 
 ;
 ; [V]PHADDSW
 ;
-EMIT_INSTR_PLUS_ICEBP   phaddsw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phaddsw, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phaddsw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phaddsw, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phaddsw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phaddsw, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphaddsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phaddsw
+EMIT_INSTR_PLUS_ICEBP_XMM   phaddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphaddsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphaddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phaddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphaddsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphaddsw
 
 ;
 ; [V]PHSUBSW
 ;
-EMIT_INSTR_PLUS_ICEBP   phsubsw, MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   phsubsw, MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   phsubsw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   phsubsw, XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   phsubsw, XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   phsubsw, XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vphsubsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   phsubsw
+EMIT_INSTR_PLUS_ICEBP_XMM   phsubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vphsubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vphsubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   phsubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vphsubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vphsubsw
 
 ;
 ; [V]PMADDUBSW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmaddubsw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmaddubsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   pmaddubsw
+EMIT_INSTR_PLUS_ICEBP_XMM   pmaddubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmaddubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmaddubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaddubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmaddubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmaddubsw
 
 ;
 ; [V]PMULHRSW
 ;
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmulhrsw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmulhrsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   pmulhrsw
+EMIT_INSTR_PLUS_ICEBP_XMM   pmulhrsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmulhrsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmulhrsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmulhrsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmulhrsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmulhrsw
 
 ;
 ; [V]PSADBW
 ;
-EMIT_INSTR_PLUS_ICEBP   psadbw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psadbw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   psadbw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psadbw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psadbw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psadbw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsadbw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   psadbw
+EMIT_INSTR_PLUS_ICEBP_XMM   psadbw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsadbw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsadbw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psadbw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsadbw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsadbw
 
 ;
 ; [V]PMULDQ
 ;
-EMIT_INSTR_PLUS_ICEBP   pmuldq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmuldq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmuldq,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmuldq,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmuldq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   pmuldq
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmuldq
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmuldq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmuldq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmuldq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmuldq
 
 ;
 ; [V]PMULUDQ
 ;
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pmuludq,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpmuludq, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   pmuludq
+EMIT_INSTR_PLUS_ICEBP_XMM   pmuludq
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpmuludq
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpmuludq
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmuludq
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpmuludq
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpmuludq
 
 ;
 ; [V]PUNPCKLPS
 ;
-EMIT_INSTR_PLUS_ICEBP   unpcklps,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   unpcklps,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   unpcklps,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   unpcklps,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vunpcklps, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   unpcklps
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vunpcklps
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vunpcklps
+EMIT_INSTR_PLUS_ICEBP_XMM_89   unpcklps
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vunpcklps
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vunpcklps
 
 ;
 ; [V]PUNPCKLPD
 ;
-EMIT_INSTR_PLUS_ICEBP   unpcklpd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   unpcklpd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   unpcklpd,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   unpcklpd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vunpcklpd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   unpcklpd
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vunpcklpd
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vunpcklpd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   unpcklpd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vunpcklpd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vunpcklpd
 
 ;
 ; [V]PUNPCKHPS
 ;
-EMIT_INSTR_PLUS_ICEBP   unpckhps,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   unpckhps,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   unpckhps,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   unpckhps,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vunpckhps, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   unpckhps
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vunpckhps
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vunpckhps
+EMIT_INSTR_PLUS_ICEBP_XMM_89   unpckhps
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vunpckhps
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vunpckhps
 
 ;
 ; [V]PUNPCKHPD
 ;
-EMIT_INSTR_PLUS_ICEBP   unpckhpd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   unpckhpd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   unpckhpd,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   unpckhpd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vunpckhpd, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM   unpckhpd
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vunpckhpd
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vunpckhpd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   unpckhpd
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vunpckhpd
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vunpckhpd
 
 ;
 ; [V]PMOVSXBW
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxbw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxbw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxbw
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxbw
 EMIT_INSTR_PLUS_ICEBP vpmovsxbw, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxbw, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxbw,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxbw,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbw, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxbw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxbw
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbw, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbw, YMM9, FSxBX
 
 ;
 ; [V]PMOVSXBD
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxbd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxbd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxbd
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxbd
 EMIT_INSTR_PLUS_ICEBP vpmovsxbd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxbd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxbd,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxbd,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxbd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxbd
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbd, YMM9, FSxBX
 
 ;
 ; [V]PMOVSXBQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxbq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxbq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxbq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxbq
 EMIT_INSTR_PLUS_ICEBP vpmovsxbq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxbq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxbq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxbq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxbq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxbq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxbq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxbq, YMM9, FSxBX
 
 ;
 ; [V]PMOVSXWD
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxwd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxwd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxwd
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxwd
 EMIT_INSTR_PLUS_ICEBP vpmovsxwd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxwd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxwd,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxwd,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxwd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxwd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxwd
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxwd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxwd, YMM9, FSxBX
 
 ;
 ; [V]PMOVSXWQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxwq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxwq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxwq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxwq
 EMIT_INSTR_PLUS_ICEBP vpmovsxwq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxwq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxwq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxwq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxwq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxwq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxwq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxwq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxwq, YMM9, FSxBX
 
 ;
 ; [V]PMOVSXDQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovsxdq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovsxdq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovsxdq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovsxdq
 EMIT_INSTR_PLUS_ICEBP vpmovsxdq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovsxdq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovsxdq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovsxdq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovsxdq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovsxdq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovsxdq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxdq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovsxdq, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXBW
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxbw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxbw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxbw
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxbw
 EMIT_INSTR_PLUS_ICEBP vpmovzxbw, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxbw, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxbw,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxbw,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbw, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxbw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxbw
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbw, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbw, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXBD
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxbd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxbd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxbd
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxbd
 EMIT_INSTR_PLUS_ICEBP vpmovzxbd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxbd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxbd,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxbd,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxbd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxbd
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbd, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXBQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxbq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxbq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxbq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxbq
 EMIT_INSTR_PLUS_ICEBP vpmovzxbq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxbq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxbq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxbq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxbq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxbq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxbq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxbq, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXWD
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxwd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxwd,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxwd
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxwd
 EMIT_INSTR_PLUS_ICEBP vpmovzxwd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxwd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxwd,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxwd,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxwd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxwd
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxwd
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxwd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxwd, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXWQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxwq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxwq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxwq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxwq
 EMIT_INSTR_PLUS_ICEBP vpmovzxwq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxwq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxwq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxwq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxwq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxwq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxwq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxwq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxwq, YMM9, FSxBX
 
 ;
 ; [V]PMOVZXDQ
 ;
-EMIT_INSTR_PLUS_ICEBP pmovzxdq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP pmovzxdq,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM pmovzxdq
+EMIT_INSTR_PLUS_ICEBP_XMM vpmovzxdq
 EMIT_INSTR_PLUS_ICEBP vpmovzxdq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpmovzxdq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP pmovzxdq,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP pmovzxdq,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpmovzxdq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 pmovzxdq
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpmovzxdq
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxdq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpmovzxdq, YMM9, FSxBX
 
 ;
 ; [V]SHUFPS
@@ -2520,22 +1634,20 @@ EMIT_INSTR_PLUS_ICEBP   vshufps, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vshufps, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vshufps, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   shufps,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   shufps,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   shufps,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   shufps,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   shufps,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   shufps,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   shufps,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   shufps,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vshufps, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufps, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufps, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vshufps, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vshufps, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufps, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufps, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vshufps, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufps, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]SHUFPD
@@ -2555,22 +1667,20 @@ EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   shufpd,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   shufpd,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   shufpd,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   shufpd,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   shufpd,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   shufpd,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   shufpd,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   shufpd,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vshufpd, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufpd, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufpd, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vshufpd, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vshufpd, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]LDDQU
@@ -2578,171 +1688,117 @@ EMIT_INSTR_PLUS_ICEBP   vshufpd, YMM8, YMM9, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP lddqu,  XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vlddqu, XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP vlddqu, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP lddqu,  XMM10, FSxBX
-EMIT_INSTR_PLUS_ICEBP vlddqu, XMM11, FSxBX
-EMIT_INSTR_PLUS_ICEBP vlddqu, YMM12, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 lddqu,  XMM10, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vlddqu, XMM11, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64 vlddqu, YMM12, FSxBX
 
 ;
 ; [V]PHMINPOSUW
 ;
-EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP phminposuw,  XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vphminposuw, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM phminposuw
+EMIT_INSTR_PLUS_ICEBP_XMM vphminposuw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 phminposuw
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vphminposuw
 
 ;
 ; VBROADCASTSS
 ;
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vbroadcastss
 EMIT_INSTR_PLUS_ICEBP vbroadcastss, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vbroadcastss, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vbroadcastss, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vbroadcastss
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcastss, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcastss, YMM9, FSxBX
 
 ;
 ; VBROADCASTSD
 ;
 EMIT_INSTR_PLUS_ICEBP vbroadcastsd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vbroadcastsd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vbroadcastsd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vbroadcastsd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcastsd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcastsd, YMM9, FSxBX
 
 ;
 ; VBROADCASTF128
 ;
 EMIT_INSTR_PLUS_ICEBP vbroadcastf128, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vbroadcastf128, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcastf128, YMM9, FSxBX
 
 ;
 ; VPBROADCASTB
 ;
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vpbroadcastb
 EMIT_INSTR_PLUS_ICEBP vpbroadcastb, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpbroadcastb, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastb, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpbroadcastb
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastb, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastb, YMM9, FSxBX
 
 ;
 ; VPBROADCASTW
 ;
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vpbroadcastw
 EMIT_INSTR_PLUS_ICEBP vpbroadcastw, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpbroadcastw, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastw, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpbroadcastw
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastw, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastw, YMM9, FSxBX
 
 ;
 ; VPBROADCASTD
 ;
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vpbroadcastd
 EMIT_INSTR_PLUS_ICEBP vpbroadcastd, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpbroadcastd, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastd, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpbroadcastd
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastd, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastd, YMM9, FSxBX
 
 ;
 ; VPBROADCASTQ
 ;
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM vpbroadcastq
 EMIT_INSTR_PLUS_ICEBP vpbroadcastq, YMM1, XMM2
 EMIT_INSTR_PLUS_ICEBP vpbroadcastq, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, YMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP vpbroadcastq, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_98 vpbroadcastq
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastq, YMM9, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64 vpbroadcastq, YMM9, FSxBX
 
 ;
 ; VPBROADCASTI128
 ;
 EMIT_INSTR_PLUS_ICEBP vbroadcasti128, YMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP vbroadcasti128, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 vbroadcasti128, YMM9, FSxBX
 
 ;
 ; SHA1NEXTE
 ;
-EMIT_INSTR_PLUS_ICEBP sha1nexte, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP sha1nexte, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha1nexte, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP sha1nexte, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM sha1nexte
+EMIT_INSTR_PLUS_ICEBP_XMM_98 sha1nexte
 
 ;
 ; SHA1MSG1
 ;
-EMIT_INSTR_PLUS_ICEBP sha1msg1, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP sha1msg1, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha1msg1, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP sha1msg1, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM sha1msg1
+EMIT_INSTR_PLUS_ICEBP_XMM_98 sha1msg1
 
 ;
 ; SHA1MSG2
 ;
-EMIT_INSTR_PLUS_ICEBP sha1msg2, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP sha1msg2, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha1msg2, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP sha1msg2, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM sha1msg2
+EMIT_INSTR_PLUS_ICEBP_XMM_98 sha1msg2
 
 ;
 ; SHA256MSG1
 ;
-EMIT_INSTR_PLUS_ICEBP sha256msg1, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP sha256msg1, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha256msg1, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP sha256msg1, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM sha256msg1
+EMIT_INSTR_PLUS_ICEBP_XMM_98 sha256msg1
 
 ;
 ; SHA256MSG2
 ;
-EMIT_INSTR_PLUS_ICEBP sha256msg2, XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP sha256msg2, XMM1, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha256msg2, XMM9, XMM8
-EMIT_INSTR_PLUS_ICEBP sha256msg2, XMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM sha256msg2
+EMIT_INSTR_PLUS_ICEBP_XMM_98 sha256msg2
 
 ;
 ; SHA1RNDS4
@@ -2755,89 +1811,67 @@ EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM1, XMM2,  002h
 EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM1, FSxBX, 002h
 EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM1, XMM2,  003h
 EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM1, FSxBX, 003h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, XMM8,  000h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, XMM8,  001h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, FSxBX, 001h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, XMM8,  002h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, FSxBX, 002h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, XMM8,  003h
-EMIT_INSTR_PLUS_ICEBP sha1rnds4, XMM9, FSxBX, 003h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, XMM8,  000h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, XMM8,  001h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, FSxBX, 001h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, XMM8,  002h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, FSxBX, 002h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, XMM8,  003h
+EMIT_INSTR_PLUS_ICEBP_C64 sha1rnds4, XMM9, FSxBX, 003h
 
 ;
 ; SHA256RNDS2 (xmm0 is implicit)
 ;
 EMIT_INSTR_PLUS_ICEBP sha256rnds2, XMM1, XMM2,  XMM0
 EMIT_INSTR_PLUS_ICEBP sha256rnds2, XMM1, FSxBX, XMM0
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP sha256rnds2, XMM8, XMM9,  XMM0
-EMIT_INSTR_PLUS_ICEBP sha256rnds2, XMM8, FSxBX, XMM0
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64 sha256rnds2, XMM8, XMM9,  XMM0
+EMIT_INSTR_PLUS_ICEBP_C64 sha256rnds2, XMM8, FSxBX, XMM0
 
 ;
 ; [V]PBLENDVB
 ;
-EMIT_INSTR_PLUS_ICEBP   pblendvb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pblendvb,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   pblendvb
 EMIT_INSTR_PLUS_ICEBP   vpblendvb, XMM1, XMM2, XMM3, XMM4
 EMIT_INSTR_PLUS_ICEBP   vpblendvb, XMM1, XMM2, FSxBX, XMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pblendvb,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   pblendvb,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpblendvb, XMM8, XMM9, XMM10, XMM11
-EMIT_INSTR_PLUS_ICEBP   vpblendvb, XMM8, XMM9, FSxBX, XMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pblendvb
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendvb, XMM8, XMM9, XMM10, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendvb, XMM8, XMM9, FSxBX, XMM11
 
 EMIT_INSTR_PLUS_ICEBP   vpblendvb, YMM1, YMM2, YMM3, YMM4
 EMIT_INSTR_PLUS_ICEBP   vpblendvb, YMM1, YMM2, FSxBX, YMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpblendvb, YMM8, YMM9, YMM10, YMM11
-EMIT_INSTR_PLUS_ICEBP   vpblendvb, YMM8, YMM9, FSxBX, YMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendvb, YMM8, YMM9, YMM10, YMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendvb, YMM8, YMM9, FSxBX, YMM11
 
 ;
 ; [V]BLENDVPS
 ;
-EMIT_INSTR_PLUS_ICEBP   blendvps,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   blendvps,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   blendvps
 EMIT_INSTR_PLUS_ICEBP   vblendvps, XMM1, XMM2, XMM3, XMM4
 EMIT_INSTR_PLUS_ICEBP   vblendvps, XMM1, XMM2, FSxBX, XMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   blendvps,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   blendvps,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vblendvps, XMM8, XMM9, XMM10, XMM11
-EMIT_INSTR_PLUS_ICEBP   vblendvps, XMM8, XMM9, FSxBX, XMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_89   blendvps
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvps, XMM8, XMM9, XMM10, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvps, XMM8, XMM9, FSxBX, XMM11
 
 EMIT_INSTR_PLUS_ICEBP   vblendvps, YMM1, YMM2, YMM3, YMM4
 EMIT_INSTR_PLUS_ICEBP   vblendvps, YMM1, YMM2, FSxBX, YMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vblendvps, YMM8, YMM9, YMM10, YMM11
-EMIT_INSTR_PLUS_ICEBP   vblendvps, YMM8, YMM9, FSxBX, YMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvps, YMM8, YMM9, YMM10, YMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvps, YMM8, YMM9, FSxBX, YMM11
 
 ;
 ; [V]BLENDVPD
 ;
-EMIT_INSTR_PLUS_ICEBP   blendvpd,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   blendvpd,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   blendvpd
 EMIT_INSTR_PLUS_ICEBP   vblendvpd, XMM1, XMM2, XMM3, XMM4
 EMIT_INSTR_PLUS_ICEBP   vblendvpd, XMM1, XMM2, FSxBX, XMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   blendvpd,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   blendvpd,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vblendvpd, XMM8, XMM9, XMM10, XMM11
-EMIT_INSTR_PLUS_ICEBP   vblendvpd, XMM8, XMM9, FSxBX, XMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_89   blendvpd
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvpd, XMM8, XMM9, XMM10, XMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvpd, XMM8, XMM9, FSxBX, XMM11
 
 EMIT_INSTR_PLUS_ICEBP   vblendvpd, YMM1, YMM2, YMM3, YMM4
 EMIT_INSTR_PLUS_ICEBP   vblendvpd, YMM1, YMM2, FSxBX, YMM4
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vblendvpd, YMM8, YMM9, YMM10, YMM11
-EMIT_INSTR_PLUS_ICEBP   vblendvpd, YMM8, YMM9, FSxBX, YMM11
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvpd, YMM8, YMM9, YMM10, YMM11
+EMIT_INSTR_PLUS_ICEBP_C64   vblendvpd, YMM8, YMM9, FSxBX, YMM11
 
 ;
 ; [V]PALIGNR
@@ -2878,34 +1912,32 @@ EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM1, YMM2, FSxBX, 003h
 EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM1, YMM2, YMM3,  013h
 EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM1, YMM2, FSxBX, 013h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, XMM9,  003h
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, FSxBX, 003h
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, XMM9,  013h
-EMIT_INSTR_PLUS_ICEBP   palignr,  XMM8, FSxBX, 013h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, XMM9,  003h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, FSxBX, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, XMM9,  013h
+EMIT_INSTR_PLUS_ICEBP_C64   palignr,  XMM8, FSxBX, 013h
 
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, XMM10, 003h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, FSxBX, 003h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, XMM10, 013h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, XMM8, XMM9, FSxBX, 013h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, XMM10, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, FSxBX, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, XMM10, 013h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, XMM8, XMM9, FSxBX, 013h
 
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, YMM10, 003h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, FSxBX, 003h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, YMM10, 013h
-EMIT_INSTR_PLUS_ICEBP   vpalignr, YMM8, YMM9, FSxBX, 013h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, YMM10, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, FSxBX, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, YMM10, 013h
+EMIT_INSTR_PLUS_ICEBP_C64   vpalignr, YMM8, YMM9, FSxBX, 013h
 
 ;
 ; [V]PBLENDW
@@ -2925,22 +1957,20 @@ EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pblendw,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   pblendw,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   pblendw,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   pblendw,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pblendw,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pblendw,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pblendw,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   pblendw,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpblendw, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpblendw, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpblendw, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vpblendw, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vpblendw, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpblendw, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]BLENDPS
@@ -2960,22 +1990,20 @@ EMIT_INSTR_PLUS_ICEBP   vblendps, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vblendps, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vblendps, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   blendps,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   blendps,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   blendps,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   blendps,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   blendps,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   blendps,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   blendps,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   blendps,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vblendps, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendps, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendps, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vblendps, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vblendps, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendps, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendps, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vblendps, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendps, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]BLENDPD
@@ -2995,22 +2023,20 @@ EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   blendpd,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   blendpd,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   blendpd,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   blendpd,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   blendpd,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   blendpd,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   blendpd,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   blendpd,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vblendpd, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendpd, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendpd, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vblendpd, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vblendpd, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vblendpd, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]PCLMULQDQ
@@ -3025,17 +2051,15 @@ EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM1, XMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM1, XMM2, XMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM1, XMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pclmulqdq,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   pclmulqdq,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   pclmulqdq,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   pclmulqdq,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pclmulqdq,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pclmulqdq,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pclmulqdq,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   pclmulqdq,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vpclmulqdq, XMM8, XMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpclmulqdq, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpclmulqdq, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpclmulqdq, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpclmulqdq, XMM8, XMM9, FSxBX, 000h
 
 ;
 ; [V]PINSRW
@@ -3055,20 +2079,18 @@ EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM1, XMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM1, XMM2, EDX,   000h
 EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM1, XMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  MM1, R9D,   0FFh
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  MM1, R9D,   000h
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  MM1, R9D,   0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  MM1, R9D,   000h
 
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  XMM8, R9D,   0FFh
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  XMM8, R9D,   000h
-EMIT_INSTR_PLUS_ICEBP   pinsrw,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  XMM8, R9D,   0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  XMM8, R9D,   000h
+EMIT_INSTR_PLUS_ICEBP_C64   pinsrw,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM8, XMM9, R9D,   0FFh
-EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM8, XMM9, R9D,   000h
-EMIT_INSTR_PLUS_ICEBP   vpinsrw, XMM8, XMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpinsrw, XMM8, XMM9, R9D,   0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpinsrw, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpinsrw, XMM8, XMM9, R9D,   000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpinsrw, XMM8, XMM9, FSxBX, 000h
 
 ;
 ; [V]PEXTRW
@@ -3082,22 +2104,20 @@ EMIT_INSTR_PLUS_ICEBP   pextrw,  EDX, XMM1, 000h
 EMIT_INSTR_PLUS_ICEBP   vpextrw, EDX, XMM1, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpextrw, EDX, XMM1, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   pextrw,  R9D, MM1, 0FFh
-EMIT_INSTR_PLUS_ICEBP   pextrw,  R9D, MM1, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, MM1, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, MM1, 000h
 
-; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP   pextrw,  RDX, XMM1, 0FFh
-; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP   pextrw,  RDX, XMM1, 000h
+; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  RDX, XMM1, 0FFh
+; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  RDX, XMM1, 000h
 
-EMIT_INSTR_PLUS_ICEBP   pextrw,  R9D, XMM8, 0FFh
-EMIT_INSTR_PLUS_ICEBP   pextrw,  R9D, XMM8, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, XMM8, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, XMM8, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpextrw, R9D, XMM8, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpextrw, R9D, XMM8, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, R9D, XMM8, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, R9D, XMM8, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vpextrw, RDX, XMM1, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vpextrw, RDX, XMM1, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, RDX, XMM1, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, RDX, XMM1, 000h
 
 ;
 ; [V]MOVMSKPS
@@ -3106,16 +2126,14 @@ EMIT_INSTR_PLUS_ICEBP   movmskps,  EDX, XMM1
 EMIT_INSTR_PLUS_ICEBP   vmovmskps, EDX, XMM1
 EMIT_INSTR_PLUS_ICEBP   vmovmskps, EDX, YMM1
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   movmskps, R9D, XMM8
-EMIT_INSTR_PLUS_ICEBP   movmskps, RDX, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64   movmskps, R9D, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64   movmskps, RDX, XMM1
 
-EMIT_INSTR_PLUS_ICEBP   vmovmskps, R9D, XMM8
-EMIT_INSTR_PLUS_ICEBP   vmovmskps, RDX, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskps, R9D, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskps, RDX, XMM1
 
-EMIT_INSTR_PLUS_ICEBP   vmovmskps, R9D, YMM8
-EMIT_INSTR_PLUS_ICEBP   vmovmskps, RDX, YMM1
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskps, R9D, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskps, RDX, YMM1
 
 ;
 ; [V]MOVMSKPD
@@ -3124,16 +2142,14 @@ EMIT_INSTR_PLUS_ICEBP   movmskpd,  EDX, XMM1
 EMIT_INSTR_PLUS_ICEBP   vmovmskpd, EDX, XMM1
 EMIT_INSTR_PLUS_ICEBP   vmovmskpd, EDX, YMM1
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   movmskpd, R9D, XMM8
-EMIT_INSTR_PLUS_ICEBP   movmskpd, RDX, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64   movmskpd, R9D, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64   movmskpd, RDX, XMM1
 
-EMIT_INSTR_PLUS_ICEBP   vmovmskpd, R9D, XMM8
-EMIT_INSTR_PLUS_ICEBP   vmovmskpd, RDX, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskpd, R9D, XMM8
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskpd, RDX, XMM1
 
-EMIT_INSTR_PLUS_ICEBP   vmovmskpd, R9D, YMM8
-EMIT_INSTR_PLUS_ICEBP   vmovmskpd, RDX, YMM1
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskpd, R9D, YMM8
+EMIT_INSTR_PLUS_ICEBP_C64   vmovmskpd, RDX, YMM1
 
 ;
 ; [V]MPSADBW
@@ -3153,22 +2169,20 @@ EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM1, YMM2, YMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   mpsadbw,  XMM8, XMM9,  0FFh
-EMIT_INSTR_PLUS_ICEBP   mpsadbw,  XMM8, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   mpsadbw,  XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   mpsadbw,  XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   mpsadbw,  XMM8, XMM9,  0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   mpsadbw,  XMM8, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   mpsadbw,  XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   mpsadbw,  XMM8, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, XMM8, XMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, XMM8, XMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, XMM8, XMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, XMM8, XMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, XMM8, XMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, XMM8, XMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, XMM8, XMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, XMM8, XMM9, FSxBX, 000h
 
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vmpsadbw, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vmpsadbw, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; VINSERTI128
@@ -3178,12 +2192,10 @@ EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM1, YMM2, XMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM8, YMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM8, YMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vinserti128, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vinserti128, YMM8, YMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vinserti128, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vinserti128, YMM8, YMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vinserti128, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; VINSERTF128
@@ -3193,322 +2205,218 @@ EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM1, YMM2, FSxBX, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM1, YMM2, XMM3,  000h
 EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM1, YMM2, FSxBX, 000h
 
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM8, YMM9, XMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM8, YMM9, XMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vinsertf128, YMM8, YMM9, FSxBX, 000h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vinsertf128, YMM8, YMM9, XMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vinsertf128, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vinsertf128, YMM8, YMM9, XMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vinsertf128, YMM8, YMM9, FSxBX, 000h
 
 ;
 ; [V]PSUBSB
 ;
-EMIT_INSTR_PLUS_ICEBP   psubsb,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psubsb,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   psubsb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psubsb,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psubsb,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psubsb,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubsb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   psubsb
+EMIT_INSTR_PLUS_ICEBP_XMM   psubsb
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsubsb
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsubsb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psubsb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsubsb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsubsb
 
 ;
 ; [V]PSUBSW
 ;
-EMIT_INSTR_PLUS_ICEBP   psubsw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psubsw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   psubsw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psubsw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psubsw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psubsw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   psubsw
+EMIT_INSTR_PLUS_ICEBP_XMM   psubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psubsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsubsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsubsw
 
 ;
 ; [V]PSUBUSB
 ;
-EMIT_INSTR_PLUS_ICEBP   psubusb,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psubusb,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   psubusb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psubusb,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psubusb,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psubusb,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubusb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   psubusb
+EMIT_INSTR_PLUS_ICEBP_XMM   psubusb
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsubusb
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsubusb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psubusb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsubusb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsubusb
 
 ;
 ; [V]PSUBUSW
 ;
-EMIT_INSTR_PLUS_ICEBP   psubusw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   psubusw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   psubusw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psubusw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   psubusw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   psubusw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpsubusw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   psubusw
+EMIT_INSTR_PLUS_ICEBP_XMM   psubusw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsubusw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpsubusw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   psubusw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsubusw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpsubusw
 
 ;
 ; [V]PADDUSB
 ;
-EMIT_INSTR_PLUS_ICEBP   paddusb,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   paddusb,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   paddusb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   paddusb,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   paddusb,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   paddusb,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddusb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   paddusb
+EMIT_INSTR_PLUS_ICEBP_XMM   paddusb
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpaddusb
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpaddusb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   paddusb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpaddusb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpaddusb
 
 ;
 ; [V]PADDUSW
 ;
-EMIT_INSTR_PLUS_ICEBP   paddusw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   paddusw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   paddusw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   paddusw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   paddusw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   paddusw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddusw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   paddusw
+EMIT_INSTR_PLUS_ICEBP_XMM   paddusw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpaddusw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpaddusw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   paddusw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpaddusw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpaddusw
 
 ;
 ; [V]PADDSB
 ;
-EMIT_INSTR_PLUS_ICEBP   paddsb,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   paddsb,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   paddsb,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   paddsb,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   paddsb,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   paddsb,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddsb, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   paddsb
+EMIT_INSTR_PLUS_ICEBP_XMM   paddsb
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpaddsb
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpaddsb
+EMIT_INSTR_PLUS_ICEBP_XMM_89   paddsb
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpaddsb
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpaddsb
 
 ;
 ; [V]PADDSW
 ;
-EMIT_INSTR_PLUS_ICEBP   paddsw,  MM1, MM2
-EMIT_INSTR_PLUS_ICEBP   paddsw,  MM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   paddsw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   paddsw,  XMM1, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, XMM1, XMM2, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, YMM1, YMM2, YMM3
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, YMM1, YMM2, FSxBX
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   paddsw,  XMM8, XMM9
-EMIT_INSTR_PLUS_ICEBP   paddsw,  XMM8, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, YMM8, YMM9, YMM10
-EMIT_INSTR_PLUS_ICEBP   vpaddsw, YMM8, YMM9, FSxBX
- %endif
+EMIT_INSTR_PLUS_ICEBP_MMX   paddsw
+EMIT_INSTR_PLUS_ICEBP_XMM   paddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpaddsw
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpaddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_89   paddsw
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpaddsw
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpaddsw
 
 ;
 ; [V]PSLLW
 ;
-EMIT_INSTR_PLUS_ICEBP   psllw,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psllw,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psllw
 EMIT_INSTR_PLUS_ICEBP   psllw,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psllw,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psllw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psllw,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psllw
 EMIT_INSTR_PLUS_ICEBP   psllw,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psllw,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsllw
 EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsllw, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsllw, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsllw
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllw, YMM8, YMM9, 012h
 
 ;
 ; [V]PSLLD
 ;
-EMIT_INSTR_PLUS_ICEBP   pslld,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   pslld,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX pslld
 EMIT_INSTR_PLUS_ICEBP   pslld,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   pslld,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   pslld,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   pslld,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   pslld
 EMIT_INSTR_PLUS_ICEBP   pslld,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   pslld,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpslld
 EMIT_INSTR_PLUS_ICEBP   vpslld, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpslld, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpslld, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpslld, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpslld, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpslld, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpslld, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpslld, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpslld, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpslld, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpslld, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpslld
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpslld, YMM8, YMM9, 012h
 
 ;
 ; [V]PSLLQ
 ;
-EMIT_INSTR_PLUS_ICEBP   psllq,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psllq,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psllq
 EMIT_INSTR_PLUS_ICEBP   psllq,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psllq,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psllq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psllq,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psllq
 EMIT_INSTR_PLUS_ICEBP   psllq,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psllq,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsllq
 EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsllq, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsllq, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsllq
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsllq, YMM8, YMM9, 012h
 
 ;
 ; [V]PSRAW
 ;
-EMIT_INSTR_PLUS_ICEBP   psraw,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psraw,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psraw
 EMIT_INSTR_PLUS_ICEBP   psraw,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psraw,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psraw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psraw,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psraw
 EMIT_INSTR_PLUS_ICEBP   psraw,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psraw,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsraw
 EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsraw, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsraw, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsraw
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsraw, YMM8, YMM9, 012h
 
 ;
 ; [V]PSRAD
 ;
-EMIT_INSTR_PLUS_ICEBP   psrad,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psrad,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psrad
 EMIT_INSTR_PLUS_ICEBP   psrad,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psrad,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psrad,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psrad,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psrad
 EMIT_INSTR_PLUS_ICEBP   psrad,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psrad,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsrad
 EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrad, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsrad
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrad, YMM8, YMM9, 012h
 
 ;
 ; no VPSRAQ -- does not exist until AVX512
@@ -3517,92 +2425,74 @@ EMIT_INSTR_PLUS_ICEBP   vpsrad, YMM8, YMM9, 012h
 ;
 ; [V]PSRLW
 ;
-EMIT_INSTR_PLUS_ICEBP   psrlw,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psrlw,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psrlw
 EMIT_INSTR_PLUS_ICEBP   psrlw,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psrlw,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psrlw,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psrlw,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psrlw
 EMIT_INSTR_PLUS_ICEBP   psrlw,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psrlw,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsrlw
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrlw, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsrlw
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlw, YMM8, YMM9, 012h
 
 ;
 ; [V]PSRLD
 ;
-EMIT_INSTR_PLUS_ICEBP   psrld,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psrld,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psrld
 EMIT_INSTR_PLUS_ICEBP   psrld,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psrld,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psrld,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psrld,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psrld
 EMIT_INSTR_PLUS_ICEBP   psrld,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psrld,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsrld
 EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrld, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrld, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsrld
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrld, YMM8, YMM9, 012h
 
 ;
 ; [V]PSRLQ
 ;
-EMIT_INSTR_PLUS_ICEBP   psrlq,  MM1,  MM2
-EMIT_INSTR_PLUS_ICEBP   psrlq,  MM1,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_MMX psrlq
 EMIT_INSTR_PLUS_ICEBP   psrlq,  MM1,  001h
 EMIT_INSTR_PLUS_ICEBP   psrlq,  MM1,  012h
-EMIT_INSTR_PLUS_ICEBP   psrlq,  XMM1, XMM2
-EMIT_INSTR_PLUS_ICEBP   psrlq,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM   psrlq
 EMIT_INSTR_PLUS_ICEBP   psrlq,  XMM1, 001h
 EMIT_INSTR_PLUS_ICEBP   psrlq,  XMM1, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM1, XMM2, XMM3
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM1, XMM2, FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpsrlq
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM1, XMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM1, XMM2, 012h
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM1, YMM2, XMM3
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM1, YMM2, FSxBX
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM1, YMM2, 001h
 EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM1, YMM2, 012h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM8, XMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM8, XMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM8, XMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, XMM8, XMM9, 012h
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM8, YMM9, XMM10
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM8, YMM9, FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM8, YMM9, 001h
-EMIT_INSTR_PLUS_ICEBP   vpsrlq, YMM8, YMM9, 012h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpsrlq
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, XMM8, XMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, XMM8, XMM9, 012h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, YMM8, YMM9, XMM10
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, YMM8, YMM9, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, YMM8, YMM9, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vpsrlq, YMM8, YMM9, 012h
 
 ;
 ; VPERM2I128
@@ -3627,28 +2517,26 @@ EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM1, YMM2, YMM3,  030h
 EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM1, YMM2, FSxBX, 030h
 EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM1, YMM2, YMM3,  080h
 EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM1, YMM2, FSxBX, 080h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 001h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 001h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 002h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 002h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 003h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 003h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 008h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 008h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 010h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 010h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 020h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 020h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 030h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 030h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, YMM10, 080h
-EMIT_INSTR_PLUS_ICEBP   vperm2i128, YMM8, YMM9, FSxBX, 080h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 002h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 002h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 008h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 008h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 010h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 010h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 020h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 020h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 030h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 030h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, YMM10, 080h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2i128, YMM8, YMM9, FSxBX, 080h
 
 ;
 ; VPERM2F128
@@ -3673,34 +2561,31 @@ EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM1, YMM2, YMM3,  030h
 EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM1, YMM2, FSxBX, 030h
 EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM1, YMM2, YMM3,  080h
 EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM1, YMM2, FSxBX, 080h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 0FFh
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 000h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 001h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 001h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 002h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 002h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 003h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 003h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 008h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 008h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 010h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 010h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 020h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 020h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 030h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 030h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, YMM10, 080h
-EMIT_INSTR_PLUS_ICEBP   vperm2f128, YMM8, YMM9, FSxBX, 080h
- %endif
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 001h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 002h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 002h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 003h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 008h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 008h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 010h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 010h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 020h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 020h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 030h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 030h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, YMM10, 080h
+EMIT_INSTR_PLUS_ICEBP_C64   vperm2f128, YMM8, YMM9, FSxBX, 080h
 
 ;
 ; VPERMILPS
 ;
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, XMM2,  XMM3
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, XMM2,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpermilps
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, XMM2,  000h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, XMM2,  01Bh
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, XMM2,  0E4h
@@ -3709,8 +2594,7 @@ EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, FSxBX, 01Bh
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, FSxBX, 0E4h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM1, FSxBX, 03Dh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, YMM2,  YMM3
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, YMM2,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpermilps
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, YMM2,  000h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, YMM2,  01Bh
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, YMM2,  0E4h
@@ -3719,66 +2603,56 @@ EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, FSxBX, 01Bh
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, FSxBX, 0E4h
 EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM1, FSxBX, 03Dh
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  XMM10
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  01Bh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  0E4h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, XMM9,  03Dh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, FSxBX, 01Bh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, FSxBX, 0E4h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, XMM8, FSxBX, 03Dh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  YMM10
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  01Bh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  0E4h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, YMM9,  03Dh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, FSxBX, 01Bh
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, FSxBX, 0E4h
-EMIT_INSTR_PLUS_ICEBP   vpermilps, YMM8, FSxBX, 03Dh
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpermilps
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, XMM9,  01Bh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, XMM9,  0E4h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, XMM9,  03Dh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, FSxBX, 01Bh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, FSxBX, 0E4h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, XMM8, FSxBX, 03Dh
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpermilps
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, YMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, YMM9,  01Bh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, YMM9,  0E4h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, YMM9,  03Dh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, FSxBX, 01Bh
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, FSxBX, 0E4h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilps, YMM8, FSxBX, 03Dh
 
 ;
 ; VPERMILPD
 ;
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, XMM2,  XMM3
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, XMM2,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_XMM_123   vpermilpd
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, XMM2,  000h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, XMM2,  0E7h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, XMM2,  091h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, FSxBX, 0E7h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM1, FSxBX, 091h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, YMM2,  YMM3
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, YMM2,  FSxBX
+EMIT_INSTR_PLUS_ICEBP_YMM_123   vpermilpd
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, YMM2,  000h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, YMM2,  0E7h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, YMM2,  091h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, FSxBX, 0E7h
 EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM1, FSxBX, 091h
- %if TMPL_BITS == 64
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, XMM9,  XMM10
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, XMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, XMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, XMM9,  0E7h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, XMM9,  091h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, FSxBX, 0E7h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, XMM8, FSxBX, 091h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, YMM9,  YMM10
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, YMM9,  FSxBX
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, YMM9,  000h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, YMM9,  0E7h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, YMM9,  091h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, FSxBX, 000h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, FSxBX, 0E7h
-EMIT_INSTR_PLUS_ICEBP   vpermilpd, YMM8, FSxBX, 091h
- %endif
+EMIT_INSTR_PLUS_ICEBP_XMM_890   vpermilpd
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, XMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, XMM9,  0E7h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, XMM9,  091h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, FSxBX, 0E7h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, XMM8, FSxBX, 091h
+EMIT_INSTR_PLUS_ICEBP_YMM_890   vpermilpd
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, YMM9,  000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, YMM9,  0E7h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, YMM9,  091h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 0E7h
+EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 091h
 
 %endif ; BS3_INSTANTIATING_CMN
 
