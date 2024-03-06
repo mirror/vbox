@@ -39,9 +39,6 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 
 /** Typedef for QPair of QStrings. */
 typedef QPair<QString, QString> QIStringPair;

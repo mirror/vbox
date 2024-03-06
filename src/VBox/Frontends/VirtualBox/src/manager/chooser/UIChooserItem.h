@@ -43,9 +43,6 @@
 #include "QIWithRetranslateUI.h"
 #include "UIChooserDefs.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 /* Forward declaration: */
 class QGraphicsSceneHoverEvent;
 class QGraphicsSceneMouseEvent;

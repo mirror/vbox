@@ -48,7 +48,7 @@
 
 /* Other VBox includes: */
 #ifdef VBOX_WS_MAC
-# include "iprt/cpp/utils.h"
+# include "iprt/cpp/utils.h" // for unconst stuff
 #endif
 
 /** Template with geometry saving/restoring capabilities. */

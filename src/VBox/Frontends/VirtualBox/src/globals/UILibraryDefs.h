@@ -32,7 +32,7 @@
 #endif
 
 /* Other VBox includes: */
-#include <iprt/cdefs.h>
+#include <iprt/cdefs.h> // for DECLEXPORT_CLASS / DECLIMPORT_CLASS stuff
 
 /* Define shared library stuff: */
 #ifdef VBOX_GUI_LIBRARY

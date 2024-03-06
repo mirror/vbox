@@ -40,8 +40,6 @@
 #include "QIWithRetranslateUI.h"
 #include "UIFileManagerHostTable.h"
 
-#include <iprt/stream.h>
-
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;

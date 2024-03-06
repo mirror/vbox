@@ -31,7 +31,8 @@
 # pragma once
 #endif
 
-#include <iprt/cdefs.h>
+/* Other VBox includes: */
+#include <iprt/cdefs.h> // for DECLEXPORT / DECLIMPORT stuff
 
 #ifdef IN_VBOXHLP
 # define VBOXHLPDECL(type) DECLEXPORT(type) RTCALL

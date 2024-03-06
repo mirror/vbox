@@ -35,7 +35,7 @@
 #include <QWidget>
 
 /* VBox includes: */
-#include <iprt/cdefs.h>
+#include <iprt/cdefs.h> // for RT_OVERRIDE stuff
 
 /* Forward declarations: */
 class QHBoxLayout;

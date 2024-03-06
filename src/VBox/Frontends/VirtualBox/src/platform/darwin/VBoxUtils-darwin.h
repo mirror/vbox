@@ -41,7 +41,6 @@
 #include <VBox/VBoxCocoa.h>
 #include <ApplicationServices/ApplicationServices.h>
 #undef PVM // Stupid, stupid apple headers (sys/param.h)!!
-#include <iprt/cdefs.h>
 
 /* External includes: */
 #include <ApplicationServices/ApplicationServices.h>

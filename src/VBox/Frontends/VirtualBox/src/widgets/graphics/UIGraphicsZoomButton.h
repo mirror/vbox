@@ -35,7 +35,7 @@
 #include "UIGraphicsButton.h"
 
 /* Other VBox includes: */
-#include "iprt/assert.h"
+#include "iprt/cdefs.h" // for RT_BIT stuff
 
 /* Forward declarations: */
 class QStateMachine;

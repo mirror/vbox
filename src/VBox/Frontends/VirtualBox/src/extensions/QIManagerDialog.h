@@ -39,9 +39,6 @@
 #include "QIWithRestorableGeometry.h"
 #include "UILibraryDefs.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 /* Forward declarations: */
 class QPushButton;
 class QIDialogButtonBox;

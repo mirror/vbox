@@ -35,7 +35,6 @@
 #include "UILibraryDefs.h"
 
 /* Other VBox includes: */
-#include <iprt/cdefs.h>
 #include <VBox/VBoxCocoa.h>
 
 /* Cocoa declarations: */

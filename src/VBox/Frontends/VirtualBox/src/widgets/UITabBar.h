@@ -38,7 +38,7 @@
 #include <QWidget>
 
 /* Other VBox includes: */
-#include <iprt/cdefs.h>
+#include <iprt/cdefs.h> // for RT_OVERRIDE stuff
 
 /* Forward declarations: */
 class QAction;

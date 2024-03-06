@@ -42,9 +42,6 @@
 #include "QIGraphicsWidget.h"
 #include "UITools.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 /* Forward declaration: */
 class QPropertyAnimation;
 class QGraphicsScene;

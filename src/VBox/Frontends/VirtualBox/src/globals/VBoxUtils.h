@@ -42,9 +42,6 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
-/* Other VBox includes: */
-#include <iprt/types.h>
-
 
 /** QObject subclass,
   * allowing to apply string-property value for a certain QObject. */

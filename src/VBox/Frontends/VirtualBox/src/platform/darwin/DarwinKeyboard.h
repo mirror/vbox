@@ -34,9 +34,6 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 /* External includes: */
 #include <CoreFoundation/CFBase.h>
 

@@ -44,7 +44,7 @@
 #include "CMedium.h"
 
 /* Other VBox includes: */
-#include "iprt/cpp/utils.h"
+#include "iprt/cpp/utils.h" // for unconst stuff
 
 /** Storage medium cache used to
   * override some UIMedium attributes in the
