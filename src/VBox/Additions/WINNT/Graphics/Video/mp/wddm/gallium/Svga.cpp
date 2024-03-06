@@ -539,6 +539,7 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                             xOrigin, yOrigin, u32Width, u32Height,
                             /* fPrimary = */ false, u32Offset, fBlank);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -560,6 +561,7 @@ NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
     {
         SvgaCmdDestroyScreen(pvCmd, u32ScreenId);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
