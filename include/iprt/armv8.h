@@ -132,6 +132,78 @@
 #define ARMV8_A64_REG_W30                           ARMV8_A64_REG_X30
 /** @} */
 
+/** @name The AArch64 NEON scalar register encoding.
+ * @{ */
+#define ARMV8_A64_REG_Q0                            0
+#define ARMV8_A64_REG_Q1                            1
+#define ARMV8_A64_REG_Q2                            2
+#define ARMV8_A64_REG_Q3                            3
+#define ARMV8_A64_REG_Q4                            4
+#define ARMV8_A64_REG_Q5                            5
+#define ARMV8_A64_REG_Q6                            6
+#define ARMV8_A64_REG_Q7                            7
+#define ARMV8_A64_REG_Q8                            8
+#define ARMV8_A64_REG_Q9                            9
+#define ARMV8_A64_REG_Q10                           10
+#define ARMV8_A64_REG_Q11                           11
+#define ARMV8_A64_REG_Q12                           12
+#define ARMV8_A64_REG_Q13                           13
+#define ARMV8_A64_REG_Q14                           14
+#define ARMV8_A64_REG_Q15                           15
+#define ARMV8_A64_REG_Q16                           16
+#define ARMV8_A64_REG_Q17                           17
+#define ARMV8_A64_REG_Q18                           18
+#define ARMV8_A64_REG_Q19                           19
+#define ARMV8_A64_REG_Q20                           20
+#define ARMV8_A64_REG_Q21                           21
+#define ARMV8_A64_REG_Q22                           22
+#define ARMV8_A64_REG_Q23                           23
+#define ARMV8_A64_REG_Q24                           24
+#define ARMV8_A64_REG_Q25                           25
+#define ARMV8_A64_REG_Q26                           26
+#define ARMV8_A64_REG_Q27                           27
+#define ARMV8_A64_REG_Q28                           28
+#define ARMV8_A64_REG_Q29                           29
+#define ARMV8_A64_REG_Q30                           30
+#define ARMV8_A64_REG_Q31                           31
+/** @} */
+
+/** @name The AArch64 NEON vector register encoding.
+ * @{ */
+#define ARMV8_A64_REG_V0                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V1                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V2                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V3                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V4                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V5                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V6                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V7                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V8                            ARMV8_A64_REG_Q8
+#define ARMV8_A64_REG_V9                            ARMV8_A64_REG_Q9
+#define ARMV8_A64_REG_V10                           ARMV8_A64_REG_Q10
+#define ARMV8_A64_REG_V11                           ARMV8_A64_REG_Q11
+#define ARMV8_A64_REG_V12                           ARMV8_A64_REG_Q12
+#define ARMV8_A64_REG_V13                           ARMV8_A64_REG_Q13
+#define ARMV8_A64_REG_V14                           ARMV8_A64_REG_Q14
+#define ARMV8_A64_REG_V15                           ARMV8_A64_REG_Q15
+#define ARMV8_A64_REG_V16                           ARMV8_A64_REG_Q16
+#define ARMV8_A64_REG_V17                           ARMV8_A64_REG_Q17
+#define ARMV8_A64_REG_V18                           ARMV8_A64_REG_Q18
+#define ARMV8_A64_REG_V19                           ARMV8_A64_REG_Q19
+#define ARMV8_A64_REG_V20                           ARMV8_A64_REG_Q20
+#define ARMV8_A64_REG_V21                           ARMV8_A64_REG_Q21
+#define ARMV8_A64_REG_V22                           ARMV8_A64_REG_Q22
+#define ARMV8_A64_REG_V23                           ARMV8_A64_REG_Q23
+#define ARMV8_A64_REG_V24                           ARMV8_A64_REG_Q24
+#define ARMV8_A64_REG_V25                           ARMV8_A64_REG_Q25
+#define ARMV8_A64_REG_V26                           ARMV8_A64_REG_Q26
+#define ARMV8_A64_REG_V27                           ARMV8_A64_REG_Q27
+#define ARMV8_A64_REG_V28                           ARMV8_A64_REG_Q28
+#define ARMV8_A64_REG_V29                           ARMV8_A64_REG_Q29
+#define ARMV8_A64_REG_V30                           ARMV8_A64_REG_Q30
+#define ARMV8_A64_REG_V31                           ARMV8_A64_REG_Q31
+/** @} */
+
 /** @name The AArch64 register 31.
  * @note Register 31 typically refers to the zero register, but can also in
  *       select case (by instruction and opecode field) refer the to stack
@@ -3938,6 +4010,165 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMsr(uint32_t iRegSrc, uint32_t idSysR
     return UINT32_C(0xd5100000)
          | (idSysReg << 5)
          | iRegSrc;
+}
+
+
+/** @} */
+
+
+/** @defgroup grp_rt_armv8_mkinstr_vec   Vector Instruction Encoding Helpers
+ * @ingroup grp_rt_armv8_mkinstr
+ *
+ * A few inlined functions and macros for assisting in encoding common ARMv8
+ * Neon/SIMD instructions.
+ *
+ * @{ */
+
+/**
+ * A64: Encodes ORR (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The 1st source register.
+ * @param   iVecRegSrc2 The 2nd source register.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrOrr(uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                  bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0ea01c00)
+         | ((uint32_t)f128Bit << 30)
+         | (iVecRegSrc2 << 16)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
+
+/**
+ * A64: Encodes EOR (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The 1st source register.
+ * @param   iVecRegSrc2 The 2nd source register.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrEor(uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                  bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x2e201c00)
+         | ((uint32_t)f128Bit << 30)
+         | (iVecRegSrc2 << 16)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
+
+/** Armv8 UMOV vector element size.    */
+typedef enum ARMV8INSTRUMOVSZ
+{
+    kArmv8InstrUmovSz_U8  = 0, /**< Byte. */
+    kArmv8InstrUmovSz_U16 = 1, /**< Halfword. */
+    kArmv8InstrUmovSz_U32 = 2, /**< 32-bit. */
+    kArmv8InstrUmovSz_U64 = 3, /**< 64-bit (only valid when the destination is a 64-bit register. */
+} ARMV8INSTRUMOVSZ;
+
+
+/**
+ * A64: Encodes UMOV (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   idxElem     The element index.
+ * @param   enmSz       Element size of the source evctor register.
+ * @param   fDst64Bit   Flag whether the destination register is 64-bit (true) or 32-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUmov(uint32_t iRegDst, uint32_t iVecRegSrc, uint8_t idxElem,
+                                                   ARMV8INSTRUMOVSZ enmSz = kArmv8InstrUmovSz_U64, bool fDst64Bit = true)
+{
+    Assert(iRegDst < 32); Assert(iVecRegSrc < 32);
+    Assert((fDst64Bit && enmSz == kArmv8InstrUmovSz_U64) || (!fDst64Bit && enmSz != kArmv8InstrUmovSz_U64));
+    Assert(   (enmSz == kArmv8InstrUmovSz_U8 && idxElem < 16)
+           || (enmSz == kArmv8InstrUmovSz_U16 && idxElem < 8)
+           || (enmSz == kArmv8InstrUmovSz_U32 && idxElem < 4)
+           || (enmSz == kArmv8InstrUmovSz_U64 && idxElem < 2));
+
+    return UINT32_C(0x0e003c00)
+         | ((uint32_t)fDst64Bit << 30)
+         | ((uint32_t)idxElem << enmSz)
+         | (RT_BIT_32(enmSz) << 16)
+         | (iVecRegSrc << 5)
+         | iRegDst;
+}
+
+
+/** Armv8 vector compare to zero vector element size.    */
+typedef enum ARMV8INSTRVECCMPZEROSZ
+{
+    kArmv8InstrCmpZeroSz_S8  = 0, /**< Byte. */
+    kArmv8InstrCmpZeroSz_S16 = 1, /**< Halfword. */
+    kArmv8InstrCmpZeroSz_S32 = 2, /**< 32-bit. */
+    kArmv8InstrCmpZeroSz_S64 = 3, /**< 64-bit. */
+} ARMV8INSTRVECCMPZEROSZ;
+
+
+/** Armv8 vector compare to zero vector operation.    */
+typedef enum ARMV8INSTRVECCMPZEROOP
+{
+    kArmv8InstrCmpZeroOp_Gt = 0,                            /**< Greater than. */
+    kArmv8InstrCmpZeroOp_Ge = RT_BIT_32(29),                /**< Greater than or equal to. */
+    kArmv8InstrCmpZeroOp_Eq = RT_BIT_32(12),                /**< Equal to. */
+    kArmv8InstrCmpZeroOp_Le = RT_BIT_32(29) | RT_BIT_32(12) /**< Lower than or equal to. */
+} ARMV8INSTRVECCMPZEROOP;
+
+
+/**
+ * A64: Encodes UMOV (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   idxElem     The element index.
+ * @param   fDst64Bit   Flag whether the destination register is 64-bit (true) or 32-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpToZero(uint32_t iVecRegDst, uint32_t iVecRegSrc, ARMV8INSTRVECCMPZEROSZ enmSz,
+                                                        ARMV8INSTRVECCMPZEROOP enmOp)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+
+    return UINT32_C(0x5e208800)
+         | ((uint32_t)enmSz << 22)
+         | (RT_BIT_32(enmSz) << 16)
+         | (iVecRegSrc << 5)
+         | iVecRegDst
+         | (uint32_t)enmOp;
+}
+
+
+/**
+ * A64: Encodes CNT (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iRegDst     The register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCnt(uint32_t iVecRegDst, uint32_t iVecRegSrc, bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+
+    return UINT32_C(0x0e205800)
+         | ((uint32_t)f128Bit << 30)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
 }
 
 
