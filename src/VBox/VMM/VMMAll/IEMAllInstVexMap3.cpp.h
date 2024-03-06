@@ -379,8 +379,18 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Ib_Opt, PCIEMOPMEDIAOPTF3IMM8, pImpl)
 FNIEMOP_STUB(iemOp_vpermq_Vqq_Wqq_Ib);
 /** Opcode VEX.66.0F3A 0x01. */
 FNIEMOP_STUB(iemOp_vpermqd_Vqq_Wqq_Ib);
-/** Opcode VEX.66.0F3A 0x02. */
-FNIEMOP_STUB(iemOp_vpblendd_Vx_Wx_Ib);
+
+
+/** Opcode VEX.66.0F3A 0x02.
+ * AVX2,AVX2  */
+FNIEMOP_DEF(iemOp_vpblendd_Vx_Hx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPBLENDD, vpblendd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0); /* @todo */
+    IEMOPMEDIAOPTF3IMM8_INIT_VARS(vpblendd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.66.0F3A 0x03 - invalid */
 
 
@@ -1335,7 +1345,7 @@ const PFNIEMOP g_apfnVexMap3[] =
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  iemOp_InvalidNeedRMImm8,    iemOp_vpermq_Vqq_Wqq_Ib,    iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x01 */  iemOp_InvalidNeedRMImm8,    iemOp_vpermqd_Vqq_Wqq_Ib,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
-    /* 0x02 */  iemOp_InvalidNeedRMImm8,    iemOp_vpblendd_Vx_Wx_Ib,    iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0x02 */  iemOp_InvalidNeedRMImm8,    iemOp_vpblendd_Vx_Hx_Wx_Ib, iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x03 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0x04 */  iemOp_InvalidNeedRMImm8,    iemOp_vpermilps_Vx_Wx_Ib,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0x05 */  iemOp_InvalidNeedRMImm8,    iemOp_vpermilpd_Vx_Wx_Ib,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
