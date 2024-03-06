@@ -32,7 +32,6 @@
 #include "UIWizardCloneVDFormatPage.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardDiskEditors.h"
-#include "UICommon.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */

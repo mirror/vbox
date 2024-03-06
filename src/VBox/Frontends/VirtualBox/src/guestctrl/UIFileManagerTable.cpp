@@ -41,7 +41,6 @@
 #include "QILineEdit.h"
 #include "QIToolBar.h"
 #include "UIActionPool.h"
-#include "UICommon.h"
 #include "UIFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIFileManager.h"

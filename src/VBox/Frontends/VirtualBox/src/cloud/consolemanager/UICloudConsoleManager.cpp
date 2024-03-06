@@ -39,7 +39,6 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QITreeWidget.h"
-#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"

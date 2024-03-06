@@ -33,7 +33,6 @@
 #include <QMimeData>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIPathOperations.h"

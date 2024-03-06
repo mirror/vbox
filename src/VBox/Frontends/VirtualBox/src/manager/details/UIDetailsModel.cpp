@@ -34,7 +34,6 @@
 #include <QMetaEnum>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIDetails.h"
@@ -44,6 +43,9 @@
 #include "UIDetailsModel.h"
 #include "UIDetailsView.h"
 #include "UIExtraDataManager.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 /*********************************************************************************************************************************

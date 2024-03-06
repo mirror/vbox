@@ -33,7 +33,6 @@
 
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIMonitorCommon.h"
 
 /* COM includes: */

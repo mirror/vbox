@@ -42,7 +42,6 @@
 #include "QILineEdit.h"
 #include "QITabWidget.h"
 #include "QIToolButton.h"
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMediumDetailsWidget.h"

@@ -28,7 +28,6 @@
 /* GUI includes: */
 #include "UIErrorString.h"
 #include "UIGuestControlInterface.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"

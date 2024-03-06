@@ -29,7 +29,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIChooser.h"
 #include "UIChooserModel.h"
 #include "UIChooserView.h"

@@ -37,9 +37,11 @@
 #include "QILineEdit.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIHostnameDomainNameEditor.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 UIHostnameDomainNameEditor::UIHostnameDomainNameEditor(QWidget *pParent /*  = 0 */)

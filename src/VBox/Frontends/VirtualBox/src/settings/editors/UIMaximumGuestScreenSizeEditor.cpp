@@ -33,7 +33,6 @@
 #include <QSpinBox>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
 

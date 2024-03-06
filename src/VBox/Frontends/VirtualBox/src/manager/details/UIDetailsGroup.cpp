@@ -40,7 +40,6 @@
 #include "UIDetailsView.h"
 #include "UIExtraDataManager.h"
 #include "UIVirtualMachineItem.h"
-#include "UICommon.h"
 
 
 UIDetailsGroup::UIDetailsGroup(QGraphicsScene *pParent)

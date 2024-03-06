@@ -30,7 +30,6 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIFilePathSelector.h"
 #include "UISnapshotFolderEditor.h"
 

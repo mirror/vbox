@@ -35,7 +35,6 @@
 
 /* GUI includes: */
 #include "QIMessageBox.h"
-#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIChooser.h"
 #include "UIChooserHandlerMouse.h"

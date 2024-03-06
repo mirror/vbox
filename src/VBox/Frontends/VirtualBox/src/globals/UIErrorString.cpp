@@ -31,7 +31,6 @@
 #include <QPalette>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIErrorString.h"
 #include "UITranslator.h"
 

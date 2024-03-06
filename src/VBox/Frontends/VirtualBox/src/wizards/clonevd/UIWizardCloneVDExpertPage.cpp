@@ -30,7 +30,6 @@
 #include <QGridLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDExpertPage.h"

@@ -32,7 +32,6 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIApplianceExportEditorWidget.h"
-#include "UICommon.h"
 #include "UIFormEditorWidget.h"
 #include "UINotificationCenter.h"
 #include "UIWizardExportApp.h"

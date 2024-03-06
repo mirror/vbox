@@ -30,8 +30,10 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UICursor.h"
+#ifdef VBOX_WS_NIX
+# include "UICommon.h"
+#endif
 
 
 /* static */

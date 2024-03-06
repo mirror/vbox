@@ -29,7 +29,6 @@
 #include <QActionGroup>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"

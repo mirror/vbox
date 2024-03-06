@@ -30,7 +30,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIDefaultMachineFolderEditor.h"
 #include "UIErrorString.h"
 #include "UIGlobalSettingsGeneral.h"

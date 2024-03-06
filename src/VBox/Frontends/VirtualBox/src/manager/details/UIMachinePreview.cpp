@@ -40,7 +40,6 @@
 #include "UIImageTools.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CConsole.h"

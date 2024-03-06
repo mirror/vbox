@@ -30,8 +30,10 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)

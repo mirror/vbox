@@ -35,7 +35,6 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "UICommon.h"
 #include "UIFilePathSelector.h"
 #include "UIWizardCloneVMExpertPage.h"
 #include "UIWizardCloneVM.h"

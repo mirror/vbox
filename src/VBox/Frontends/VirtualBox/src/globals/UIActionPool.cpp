@@ -31,7 +31,6 @@
 #include <QToolTip>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UIActionPoolManager.h"
 #include "UIActionPoolRuntime.h"

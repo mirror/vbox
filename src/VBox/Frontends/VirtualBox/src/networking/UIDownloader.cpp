@@ -26,7 +26,6 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "VBoxUtils.h"
 #include "UIDownloader.h"
 #include "UIMessageCenter.h"

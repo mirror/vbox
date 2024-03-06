@@ -42,7 +42,6 @@
 #include "UIShortcutPool.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVMLogViewerWidget.h"
-#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif

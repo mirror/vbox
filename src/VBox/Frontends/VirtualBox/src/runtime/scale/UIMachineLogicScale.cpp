@@ -32,7 +32,6 @@
 
 /* GUI includes: */
 #include "UIActionPoolRuntime.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIMachine.h"
 #include "UIMachineLogicScale.h"

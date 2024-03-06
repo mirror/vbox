@@ -26,7 +26,6 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConsoleEventHandler.h"
 #include "UIExtraDataManager.h"
 #include "UIMainEventListener.h"

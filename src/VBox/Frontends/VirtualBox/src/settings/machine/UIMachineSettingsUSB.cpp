@@ -44,7 +44,6 @@
 #include "UIMachineSettingsUSB.h"
 #include "UIErrorString.h"
 #include "QIToolBar.h"
-#include "UICommon.h"
 #include "UIUSBFiltersEditor.h"
 #include "UIUSBSettingsEditor.h"
 

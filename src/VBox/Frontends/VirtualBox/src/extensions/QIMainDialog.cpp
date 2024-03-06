@@ -38,7 +38,6 @@
 
 /* GUI includes: */
 #include "QIMainDialog.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "VBoxUtils.h"
 

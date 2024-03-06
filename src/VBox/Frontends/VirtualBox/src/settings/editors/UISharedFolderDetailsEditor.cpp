@@ -35,7 +35,6 @@
 
 /* GUI includes */
 #include "QIDialogButtonBox.h"
-#include "UICommon.h"
 #include "UIFilePathSelector.h"
 #include "UISharedFolderDetailsEditor.h"
 
