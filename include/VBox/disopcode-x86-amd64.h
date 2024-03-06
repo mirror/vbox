@@ -178,6 +178,8 @@ enum OPCODESX86
     OP_STI,
     OP_CLD,
     OP_STD,
+    OP_CLAC,
+    OP_STAC,
     OP_INC_GRP4,
     OP_IND_GRP5,
     OP_GRP6,
@@ -618,6 +620,11 @@ enum OPCODESX86
     OP_SHA1RNDS4,
     OP_VEX3B,
     OP_VEX2B,
+    OP_ENCLS,
+    OP_ENCLU,
+    OP_ENCLV,
+    OP_XEND,
+    OP_XTEST,
 /** @} */
 
 /** @name Floating point ops
@@ -797,6 +804,7 @@ enum OPCODESX86
     OP_VMXOFF,
     OP_VMCLEAR,
     OP_VMLAUNCH,
+    OP_VMOFF,
     OP_VMRESUME,
     OP_VMPTRLD,
     OP_VMPTRST,
