@@ -4427,6 +4427,7 @@ IEMIMPL_MEDIA_OPT_F3 vpaddsb
 IEMIMPL_MEDIA_OPT_F3 vpaddsw
 IEMIMPL_MEDIA_OPT_F3 vpermilps
 IEMIMPL_MEDIA_OPT_F3 vpermilpd
+IEMIMPL_MEDIA_OPT_F3 vpmaddwd
 
 ;;
 ; Media instruction working on one full sized source register, one full sized destination

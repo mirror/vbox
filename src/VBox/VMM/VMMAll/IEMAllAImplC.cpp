@@ -11252,6 +11252,53 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PCX86FXSTATE pFpuState, PRTUINT12
 #endif
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+{
+    RTUINT64U uSrc1 = { *puDst };
+    RTUINT64U uSrc2 = { *puSrc };
+    RTUINT64U uDst;
+
+    uDst.ai32[0] = (int32_t)uSrc1.ai16[0] * uSrc2.ai16[0] + (int32_t)uSrc1.ai16[1] * uSrc2.ai16[1];
+    uDst.ai32[1] = (int32_t)uSrc1.ai16[2] * uSrc2.ai16[2] + (int32_t)uSrc1.ai16[3] * uSrc2.ai16[3];
+    *puDst = uDst.u;
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RTUINT128U uSrc1 = *puDst;
+
+    puDst->ai32[0] = (int32_t)uSrc1.ai16[0] * puSrc->ai16[0] + (int32_t)uSrc1.ai16[1] * puSrc->ai16[1];
+    puDst->ai32[1] = (int32_t)uSrc1.ai16[2] * puSrc->ai16[2] + (int32_t)uSrc1.ai16[3] * puSrc->ai16[3];
+    puDst->ai32[2] = (int32_t)uSrc1.ai16[4] * puSrc->ai16[4] + (int32_t)uSrc1.ai16[5] * puSrc->ai16[5];
+    puDst->ai32[3] = (int32_t)uSrc1.ai16[6] * puSrc->ai16[6] + (int32_t)uSrc1.ai16[7] * puSrc->ai16[7];
+    RT_NOREF(pFpuState);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaddwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->ai32[0] = (int32_t)puSrc1->ai16[0] * puSrc2->ai16[0] + (int32_t)puSrc1->ai16[1] * puSrc2->ai16[1];
+    puDst->ai32[1] = (int32_t)puSrc1->ai16[2] * puSrc2->ai16[2] + (int32_t)puSrc1->ai16[3] * puSrc2->ai16[3];
+    puDst->ai32[2] = (int32_t)puSrc1->ai16[4] * puSrc2->ai16[4] + (int32_t)puSrc1->ai16[5] * puSrc2->ai16[5];
+    puDst->ai32[3] = (int32_t)puSrc1->ai16[6] * puSrc2->ai16[6] + (int32_t)puSrc1->ai16[7] * puSrc2->ai16[7];
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaddwd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->ai32[0] = (int32_t)puSrc1->ai16[0] * puSrc2->ai16[0] + (int32_t)puSrc1->ai16[1] * puSrc2->ai16[1];
+    puDst->ai32[1] = (int32_t)puSrc1->ai16[2] * puSrc2->ai16[2] + (int32_t)puSrc1->ai16[3] * puSrc2->ai16[3];
+    puDst->ai32[2] = (int32_t)puSrc1->ai16[4] * puSrc2->ai16[4] + (int32_t)puSrc1->ai16[5] * puSrc2->ai16[5];
+    puDst->ai32[3] = (int32_t)puSrc1->ai16[6] * puSrc2->ai16[6] + (int32_t)puSrc1->ai16[7] * puSrc2->ai16[7];
+    puDst->ai32[4] = (int32_t)puSrc1->ai16[8] * puSrc2->ai16[8] + (int32_t)puSrc1->ai16[9] * puSrc2->ai16[9];
+    puDst->ai32[5] = (int32_t)puSrc1->ai16[10] * puSrc2->ai16[10] + (int32_t)puSrc1->ai16[11] * puSrc2->ai16[11];
+    puDst->ai32[6] = (int32_t)puSrc1->ai16[12] * puSrc2->ai16[12] + (int32_t)puSrc1->ai16[13] * puSrc2->ai16[13];
+    puDst->ai32[7] = (int32_t)puSrc1->ai16[14] * puSrc2->ai16[14] + (int32_t)puSrc1->ai16[15] * puSrc2->ai16[15];
+}
+
+
 /*
  * PMAXUB / VPMAXUB / PMAXUW / VPMAXUW / PMAXUD / VPMAXUD
  */
