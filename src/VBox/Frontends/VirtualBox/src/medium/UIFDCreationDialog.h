@@ -40,6 +40,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMedium.h"
 #include "CMediumFormat.h"
 
 /* Forward declarations: */
@@ -48,7 +49,6 @@ class QComboBox;
 class QIDialogButtonBox;
 class QLabel;
 class UIFilePathSelector;
-class CMedium;
 
 /* A QDialog extension to get necessary setting from the user for floppy disk creation. */
 class SHARED_LIBRARY_STUFF UIFDCreationDialog : public QIWithRetranslateUI<QDialog>

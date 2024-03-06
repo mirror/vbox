@@ -45,7 +45,6 @@
 
 /* COM includes: */
 #include "CSystemProperties.h"
-#include "CMedium.h"
 #include "CMediumFormat.h"
 
 

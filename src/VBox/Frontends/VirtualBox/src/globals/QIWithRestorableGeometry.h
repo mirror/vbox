@@ -42,7 +42,6 @@
 # include "VBoxUtils-darwin.h"
 #endif
 #ifdef VBOX_WS_NIX
-# include "UICommon.h"
 # include "UIDesktopWidgetWatchdog.h"
 #endif
 
