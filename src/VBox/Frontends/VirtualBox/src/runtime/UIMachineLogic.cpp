@@ -106,7 +106,6 @@
 
 /* Other VBox includes: */
 #include <iprt/path.h>
-#include <iprt/thread.h>
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>

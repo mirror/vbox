@@ -59,7 +59,7 @@
 #include "CProgress.h"
 #include "CGuestSessionStateChangedEvent.h"
 
-#include <iprt/path.h>
+/* Other VBox includes: */
 #include <iprt/err.h>
 
 /*********************************************************************************************************************************

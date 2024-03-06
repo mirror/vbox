@@ -30,8 +30,6 @@
 
 #include <QMenu>
 
-#include <iprt/assert.h>
-
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSColor.h>
 #import <AppKit/NSFont.h>

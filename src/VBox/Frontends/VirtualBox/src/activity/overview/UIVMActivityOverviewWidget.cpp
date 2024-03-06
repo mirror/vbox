@@ -68,9 +68,6 @@
 #include "CMachineDebugger.h"
 #include "CPerformanceMetric.h"
 
-/* Other VBox includes: */
-#include <iprt/cidr.h>
-
 struct ResourceColumn
 {
     QString m_strName;

@@ -40,9 +40,6 @@
 #include "UIFileTableNavigationWidget.h"
 #include "UIPathOperations.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 
 /*********************************************************************************************************************************
 *   UIFileManagerHistoryComboBox definition.                                                                                     *

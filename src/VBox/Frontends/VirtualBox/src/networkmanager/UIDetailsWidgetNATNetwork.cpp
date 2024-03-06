@@ -46,7 +46,6 @@
 #include "UINotificationCenter.h"
 
 /* Other VBox includes: */
-#include "iprt/assert.h"
 #include "iprt/cidr.h"
 
 

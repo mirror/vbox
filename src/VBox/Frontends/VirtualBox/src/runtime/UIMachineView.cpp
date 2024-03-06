@@ -78,8 +78,6 @@
 /* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
 #include <VBoxVideo.h>
-#include <iprt/asm.h>
-#include <iprt/errcore.h>
 
 /* External includes: */
 #include <math.h>

@@ -53,7 +53,6 @@
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
 #include <iprt/path.h>
-#include <iprt/string.h>
 
 /* External includes: */
 #include <math.h>

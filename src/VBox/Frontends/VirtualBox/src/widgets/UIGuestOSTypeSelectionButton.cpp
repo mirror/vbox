@@ -36,8 +36,6 @@
 #include "UIGuestOSTypeSelectionButton.h"
 #include "UIIconPool.h"
 
-/* Other VBox includes: */
-#include "iprt/assert.h"
 
 UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)
     : QIWithRetranslateUI<QPushButton>(pParent)

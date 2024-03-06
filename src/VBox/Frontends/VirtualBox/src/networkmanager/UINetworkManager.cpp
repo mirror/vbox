@@ -65,9 +65,6 @@
 #endif
 #include "CNATNetwork.h"
 
-/* Other VBox includes: */
-#include <iprt/cidr.h>
-
 
 /** Tab-widget indexes. */
 enum TabWidgetIndex
