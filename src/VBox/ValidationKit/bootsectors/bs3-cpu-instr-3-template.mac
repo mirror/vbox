@@ -2654,6 +2654,17 @@ EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 000h
 EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 0E7h
 EMIT_INSTR_PLUS_ICEBP_C64   vpermilpd, YMM8, FSxBX, 091h
 
+;
+; [V]PMADDUBSW
+;
+EMIT_INSTR_PLUS_ICEBP_MMX      pmaddwd
+EMIT_INSTR_PLUS_ICEBP_XMM      pmaddwd
+EMIT_INSTR_PLUS_ICEBP_XMM_123  vpmaddwd
+EMIT_INSTR_PLUS_ICEBP_YMM_123  vpmaddwd
+EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaddwd
+EMIT_INSTR_PLUS_ICEBP_XMM_890  vpmaddwd
+EMIT_INSTR_PLUS_ICEBP_YMM_890  vpmaddwd
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
