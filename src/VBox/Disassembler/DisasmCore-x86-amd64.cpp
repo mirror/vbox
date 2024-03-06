@@ -97,11 +97,16 @@ static FNDISPARSEX86 ParseGrp8;
 static FNDISPARSEX86 ParseGrp9;
 static FNDISPARSEX86 ParseGrp10;
 static FNDISPARSEX86 ParseGrp12;
+static FNDISPARSEX86 ParseVGrp12;
 static FNDISPARSEX86 ParseGrp13;
+static FNDISPARSEX86 ParseVGrp13;
 static FNDISPARSEX86 ParseGrp14;
+static FNDISPARSEX86 ParseVGrp14;
 static FNDISPARSEX86 ParseGrp15;
+static FNDISPARSEX86 ParseVGrp15;
 static FNDISPARSEX86 ParseGrp16;
-static FNDISPARSEX86 ParseGrp17;
+static FNDISPARSEX86 ParseVGrp17;
+static FNDISPARSEX86 ParseVGrp17;
 static FNDISPARSEX86 ParseModFence;
 static FNDISPARSEX86 ParseNopPause;
 static FNDISPARSEX86 ParseVex2b;
@@ -149,11 +154,15 @@ static PFNDISPARSEX86 const g_apfnFullDisasm[IDX_ParseMax] =
     ParseGrp9,
     ParseGrp10,
     ParseGrp12,
+    ParseVGrp12,
     ParseGrp13,
+    ParseVGrp13,
     ParseGrp14,
+    ParseVGrp14,
     ParseGrp15,
+    ParseVGrp15,
     ParseGrp16,
-    ParseGrp17,
+    ParseVGrp17,
     ParseModFence,
     ParseYv,
     ParseYb,
@@ -200,11 +209,15 @@ static PFNDISPARSEX86 const g_apfnCalcSize[IDX_ParseMax] =
     ParseGrp9,
     ParseGrp10,
     ParseGrp12,
+    ParseVGrp12,
     ParseGrp13,
+    ParseVGrp13,
     ParseGrp14,
+    ParseVGrp14,
     ParseGrp15,
+    ParseVGrp15,
     ParseGrp16,
-    ParseGrp17,
+    ParseVGrp17,
     ParseModFence,
     ParseYv,
     ParseYb,
@@ -1691,9 +1704,7 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
                 pDis->x86.fPrefix &= ~DISPREFIX_OPSIZE;
 
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
-                {
                     pDis->x86.uOpMode = (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
-                }
                 else
                     pDis->x86.uOpMode  = pDis->uCpuMode;
             }
@@ -1762,9 +1773,7 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
                 /* Cancel prefix changes. */
                 pDis->x86.fPrefix &= ~DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
-                {
                     pDis->x86.uOpMode = (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
-                }
                 else
                     pDis->x86.uOpMode  = pDis->uCpuMode;
 
@@ -1787,9 +1796,7 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
                 pDis->x86.fPrefix &= ~DISPREFIX_REPNE;
                 pDis->x86.fPrefix &= ~DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
-                {
                     pDis->x86.uOpMode = (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
-                }
                 else
                     pDis->x86.uOpMode  = pDis->uCpuMode;
             }
@@ -1860,12 +1867,9 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
             /* Cancel prefix changes. */
             pDis->x86.fPrefix &= ~DISPREFIX_OPSIZE;
             if (pDis->uCpuMode == DISCPUMODE_64BIT)
-            {
                 pDis->x86.uOpMode = (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
-            }
             else
                 pDis->x86.uOpMode  = pDis->uCpuMode;
-
         }
     }
 
@@ -2069,10 +2073,36 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    uint8_t reg   = MODRM_REG(modrm);
-
-    pOp = &g_aMapX86_Group9[reg];
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    uint8_t const idx = MODRM_REG(bRm);
+    if (MODRM_MOD(bRm) != X86_MOD_REG)
+    {
+        if (pDis->x86.bLastPrefix == OP_OPSIZE /*0xf3*/)
+            pOp = &g_aMapX86_Group9_mem_66[idx];
+        else if (pDis->x86.bLastPrefix == OP_REPE /*0xf3*/)
+        {
+            pDis->x86.fPrefix &= ~DISPREFIX_REP;
+            pOp = &g_aMapX86_Group9_mem_f3[idx];
+        }
+        /** @todo bLastPrefix is also set for OP_SEG & OP_ADDRSIZE which aren't relevant here or to any other of the table */
+        else if (pDis->x86.bLastPrefix != OP_LOCK && pDis->x86.bLastPrefix != OP_REPNE)
+            pOp = &g_aMapX86_Group9_mem_none[idx];
+        else
+            pOp = &g_InvalidOpcode[0];
+    }
+    else
+    {
+        if (pDis->x86.bLastPrefix == OP_REPE /*0xf3*/)
+        {
+            pDis->x86.fPrefix &= ~DISPREFIX_REP;
+            pOp = &g_aMapX86_Group9_mod11_f3[idx];
+        }
+        /** @todo bLastPrefix is also set for OP_SEG & OP_ADDRSIZE which aren't relevant here or to any other of the table */
+        else if (pDis->x86.bLastPrefix != OP_LOCK && pDis->x86.bLastPrefix != OP_REPNE)
+            pOp = &g_aMapX86_Group9_mod11_none[idx];
+        else
+            pOp = &g_InvalidOpcode[0];
+    }
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2089,82 +2119,162 @@ static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Parses non-vex group 12.
+ */
 static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    uint8_t reg   = MODRM_REG(modrm);
-
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    uint8_t       idx = MODRM_REG(bRm);
     if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   /* 2nd table */
-
-    pOp = &g_aMapX86_Group12[reg];
+        idx += 8;   /* 2nd table */
+    pOp = &g_aMapX86_Group12[idx];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Parses vex group 12.
+ */
+static size_t ParseVGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    RT_NOREF_PV(pParam);
+
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    if ((pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_66)
+        pOp = &g_aMapX86_VGroup12[MODRM_REG(bRm)];
+    else
+        pOp = &g_InvalidOpcode[0];
+
+    return disParseInstruction(offInstr, pOp, pDis);
+}
+
+
+/**
+ * Parses non-vex group 13.
+ */
 static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    uint8_t reg   = MODRM_REG(modrm);
-    if (!(pDis->x86.fPrefix & DISPREFIX_VEX))
-    {
-        if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
-            reg += 8;   /* 2nd table */
-        pOp = &g_aMapX86_Group13[reg];
-    }
-    else
-        pOp = &g_aMapX86_VGroup13[(pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_66 ? reg + 8 : reg];
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    uint8_t       idx = MODRM_REG(bRm);
+    if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
+        idx += 8;   /* 2nd table */
+    pOp = &g_aMapX86_Group13[idx];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Parses vex group 13.
+ */
+static size_t ParseVGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    RT_NOREF_PV(pParam);
+
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    if ((pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_66)
+        pOp = &g_aMapX86_VGroup13[MODRM_REG(bRm)];
+    else
+        pOp = &g_InvalidOpcode[0];
+
+    return disParseInstruction(offInstr, pOp, pDis);
+}
+
+
+/**
+ * Parses non-vex group 14.
+ */
 static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    uint8_t reg   = MODRM_REG(modrm);
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    uint8_t       idx = MODRM_REG(bRm);
     if (pDis->x86.fPrefix & DISPREFIX_OPSIZE)
-        reg += 8;   /* 2nd table */
-
-    pOp = &g_aMapX86_Group14[reg];
+        idx += 8;   /* 2nd table */
+    pOp = &g_aMapX86_Group14[idx];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Parses vex group 14.
+ */
+static size_t ParseVGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    RT_NOREF_PV(pParam);
+
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    if ((pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_66)
+        pOp = &g_aMapX86_VGroup14[MODRM_REG(bRm)];
+    else
+        pOp = &g_InvalidOpcode[0];
+
+    return disParseInstruction(offInstr, pOp, pDis);
+}
+
+
+/**
+ * Parses non-vex group 15.
+ */
 static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    uint8_t mod   = MODRM_MOD(modrm);
-    uint8_t reg   = MODRM_REG(modrm);
-    uint8_t rm    = MODRM_RM(modrm);
-
-    if (mod == 3 && rm == 0)
-        pOp = &g_aMapX86_Group15_mod11_rm000[reg];
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    uint8_t idx       = MODRM_REG(bRm);
+    if (MODRM_MOD(bRm) != X86_MOD_REG)
+        pOp = &g_aMapX86_Group15_mem[idx];
+    else if (pDis->x86.bLastPrefix == OP_REPE /*0xf3*/)
+    {
+        pDis->x86.fPrefix &= ~DISPREFIX_REP;
+        pOp = &g_aMapX86_Group15_mod11[idx + 8];
+    }
+    /** @todo bLastPrefix is also set for OP_SEG & OP_ADDRSIZE which aren't relevant here or to any other of the table */
+    else if (pDis->x86.bLastPrefix != OP_LOCK && pDis->x86.bLastPrefix != OP_REPNE && pDis->x86.bLastPrefix != OP_OPSIZE)
+        pOp = &g_aMapX86_Group15_mod11[idx];
     else
-        pOp = &g_aMapX86_Group15_mem[reg];
+        pOp = &g_InvalidOpcode[0];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
-//*****************************************************************************
-//*****************************************************************************
+
+
+/**
+ * Parses vex group 15.
+ */
+static size_t ParseVGrp15(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+{
+    RT_NOREF_PV(pParam);
+
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    if ((pDis->x86.bVexByte2 & DISPREFIX_VEX_F_PP_MASK) == DISPREFIX_VEX_F_PP_NONE)
+        pOp = &g_aMapX86_VGroup15[MODRM_REG(bRm)];
+    else
+        pOp = &g_InvalidOpcode[0];
+
+    return disParseInstruction(offInstr, pOp, pDis);
+}
+
+
+/**
+ * Parses group 16.
+ */
 static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
-    uint8_t modrm = disReadByte(pDis, offInstr);
-    pOp = &g_aMapX86_Group16[MODRM_REG(modrm)];
+    uint8_t const bRm = disReadByte(pDis, offInstr);
+    pOp = &g_aMapX86_Group16[MODRM_REG(bRm)];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2173,12 +2283,12 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 /**
  * Parses (vex) group 17.
  */
-static size_t ParseGrp17(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+static size_t ParseVGrp17(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
     uint8_t const bRm = disReadByte(pDis, offInstr);
-    pOp = &g_aMapX86_Group17[(MODRM_REG(bRm) << 1) | (pDis->x86.bVexDestReg & 1)];
+    pOp = &g_aMapX86_VGroup17[(MODRM_REG(bRm) << 1) | (pDis->x86.bVexDestReg & 1)];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }

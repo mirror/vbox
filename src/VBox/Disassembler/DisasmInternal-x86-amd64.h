@@ -74,11 +74,15 @@ enum IDX_Parse
   IDX_ParseGrp9,
   IDX_ParseGrp10,
   IDX_ParseGrp12,
+  IDX_ParseVGrp12,
   IDX_ParseGrp13,
+  IDX_ParseVGrp13,
   IDX_ParseGrp14,
+  IDX_ParseVGrp14,
   IDX_ParseGrp15,
+  IDX_ParseVGrp15,
   IDX_ParseGrp16,
-  IDX_ParseGrp17,
+  IDX_ParseVGrp17,
   IDX_ParseModFence,
   IDX_ParseYv,
   IDX_ParseYb,
@@ -196,17 +200,24 @@ extern const DISOPCODE g_aMapX86_Group7_mod11_reg001[8];
 extern const DISOPCODE g_aMapX86_Group7_mod11_reg010[8];
 extern const DISOPCODE g_aMapX86_Group7_mod11_reg111[8];
 extern const DISOPCODE g_aMapX86_Group8[8];
-extern const DISOPCODE g_aMapX86_Group9[8];
+extern const DISOPCODE g_aMapX86_Group9_mem_none[8];
+extern const DISOPCODE g_aMapX86_Group9_mem_66[8];
+extern const DISOPCODE g_aMapX86_Group9_mem_f3[8];
+extern const DISOPCODE g_aMapX86_Group9_mod11_none[8];
+extern const DISOPCODE g_aMapX86_Group9_mod11_f3[8];
 extern const DISOPCODE g_aMapX86_Group10[8];
 extern const DISOPCODE g_aMapX86_Group11[8*2];
 extern const DISOPCODE g_aMapX86_Group12[8*2];
+extern const DISOPCODE g_aMapX86_VGroup12[8];
 extern const DISOPCODE g_aMapX86_Group13[8*2];
-extern const DISOPCODE g_aMapX86_VGroup13[8*2];
+extern const DISOPCODE g_aMapX86_VGroup13[8];
 extern const DISOPCODE g_aMapX86_Group14[8*2];
+extern const DISOPCODE g_aMapX86_VGroup14[8];
 extern const DISOPCODE g_aMapX86_Group15_mem[8];
-extern const DISOPCODE g_aMapX86_Group15_mod11_rm000[8];
+extern const DISOPCODE g_aMapX86_Group15_mod11[8*2];
+extern const DISOPCODE g_aMapX86_VGroup15[8];
 extern const DISOPCODE g_aMapX86_Group16[8];
-extern const DISOPCODE g_aMapX86_Group17[8*2];
+extern const DISOPCODE g_aMapX86_VGroup17[8*2];
 extern const DISOPCODE g_aMapX86_NopPause[2];
 /** @} */
 
