@@ -426,11 +426,18 @@ ifdef VBOX_WITH_BS3KIT
  #
  MISCBINS += bs3-cpu-instr-3
  bs3-cpu-instr-3_TEMPLATE = VBoxBS3KitImg
- bs3-cpu-instr-3_INCS = .
+ bs3-cpu-instr-3_INCS = . $(bs3-cpu-instr-3_0_OUTDIR)
  bs3-cpu-instr-3_SOURCES = \
  	bs3kit/bs3-first-init-all-pe32.asm \
  	bs3-cpu-instr-3.c32 \
  	bs3-cpu-instr-3-asm.asm
+ bs3-cpu-instr-3.c32_DEPS = $(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm-auto.h
+ bs3-cpu-instr-3_CLEANS = $(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm-auto.h
+
+ $$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm-auto.h: \
+ 		$$(VBoxBs3Obj2Hdr_1_TARGET) $$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm.o16
+	$(VBoxBs3Obj2Hdr_1_TARGET) --output "$@" "$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm.o16"
+
  bs3-cpu-instr-3-template.o:: \
  		$$(bs3-cpu-instr-3_0_OUTDIR)/bs3-cpu-instr-3-asm.o16
 

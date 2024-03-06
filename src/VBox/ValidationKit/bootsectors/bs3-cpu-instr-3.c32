@@ -39,6 +39,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <bs3kit.h>
+#include "bs3-cpu-instr-3-asm-auto.h"
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
@@ -47,12 +48,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define BS3_FNBS3FAR_PROTOTYPES_CMN(a_BaseNm) \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c16); \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c32); \
-    extern FNBS3FAR RT_CONCAT(a_BaseNm, _c64)
-
-
 /** Converts an execution mode (BS3_MODE_XXX) into an index into an array
  *  initialized by BS3CPUINSTR3_TEST1_MODES_INIT,
  *  BS3CPUINSTR3_TEST2_MODES_INIT, BS3CPUINSTR3_TEST3_MODES_INIT, ... . */
@@ -824,30 +819,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
 /*
  * PAND, VPAND, ANDPS, VANDPS, ANDPD, VANDPD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pand_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpand_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vandpd_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andps_andpd_pand(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -950,30 +921,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andps_andpd_pand(uint8_t bMode)
 /*
  * PANDN, VPANDN, ANDNPS, VANDNPS, ANDNPD, VANDNPD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pandn_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpandn_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_andnpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vandnpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vandnpd_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andnps_andnpd_pandn(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1077,30 +1024,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_andnps_andnpd_pandn(uint8_t bMode)
 /*
  * POR, VPOR, PORPS, VORPS, PORPD, VPORPD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_por_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpor_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_orpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vorpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vorpd_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_orps_orpd_por(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1202,30 +1125,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_orps_orpd_por(uint8_t bMode)
 /*
  * PXOR, VPXOR, XORPS, VXORPS, XORPD, VXORPD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pxor_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpxor_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorps_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_xorpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vxorpd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vxorpd_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_xorps_xorpd_pxor(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -1328,42 +1227,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_xorps_xorpd_pxor(uint8_t bMode)
 /*
  * PCMPGTB, VPCMPGTB, PCMPGTW, VPCMPGTW, PCMPGTD, VPCMPGTD, PCMPGTQ, VPCMPGTQ.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpgtd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpgtq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpgtq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpgtq_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -1538,42 +1401,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpgtb_pcmpgtw_pcmpgtd_pcmpgtq(uint8_t bMo
 /*
  * PCMPEQB, VPCMPEQB, PCMPEQW, VPCMPEQW, PCMPEQD, VPCMPEQD, PCMPEQQ, VPCMPEQQ.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpeqd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pcmpeqq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpcmpeqq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpcmpeqq_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -1748,44 +1575,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pcmpeqb_pcmpeqw_pcmpeqd_pcmpeqq(uint8_t bMo
 /*
  * PADDB, VPADDB, PADDW, VPADDW, PADDD, VPADDD, PADDQ, VPADDQ.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddq_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddb_paddw_paddd_paddq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -1966,44 +1755,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddb_paddw_paddd_paddq(uint8_t bMode)
 /*
  * PSUBB, VPSUBB, PSUBW, VPSUBW, PSUBD, VPSUBD, PSUBQ, VPSUBQ.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubb_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubb_YMM7_YMM2_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubd_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubd_YMM10_YMM8_YMM15_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubq_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubq_YMM10_YMM8_YMM15_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubb_psubw_psubd_psubq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -2184,24 +1935,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubb_psubw_psubd_psubq(uint8_t bMode)
 /*
  * PMULLW, VPMULLW, PMULLD, VPMULLD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmullw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmullw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmullw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmullw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmullw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmullw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmullw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmullw_YMM1_YMM1_FSxBX_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulld_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulld_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulld_XMM2_XMM1_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulld_XMM2_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulld_YMM2_YMM1_YMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulld_YMM2_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmulld_YMM10_YMM8_YMM15_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmulld_YMM10_YMM8_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmullw_pmulld(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesW[] =
@@ -2296,15 +2029,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmullw_pmulld(uint8_t bMode)
 /*
  * PMULHW, VPMULHW.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhw_YMM1_YMM1_FSxBX_icebp);
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesW[] =
@@ -2363,15 +2087,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhw(uint8_t bMode)
 /*
  * PMULHUW, VPMULHUW.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhuw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhuw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhuw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhuw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhuw_XMM1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhuw_XMM1_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhuw_YMM1_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhuw_YMM1_YMM1_FSxBX_icebp);
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhuw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesW[] =
@@ -2430,21 +2145,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhuw(uint8_t bMode)
 /*
  * PSHUFB
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pshufb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufb_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2534,21 +2234,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufb(uint8_t bMode)
 /*
  * [V]PUNPCKHBW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhbw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhbw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhbw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2631,21 +2316,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhbw(uint8_t bMode)
 /*
  * [V]PUNPCKHWD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhwd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhwd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhwd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhwd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2728,21 +2398,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhwd(uint8_t bMode)
 /*
  * [V]PUNPCKHDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhdq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2825,19 +2480,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhdq(uint8_t bMode)
 /*
  * [V]PUNPCKHQDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckhqdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckhqdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckhqdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckhqdq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhqdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -2899,21 +2541,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhqdq(uint8_t bMode)
 /*
  * [V]PUNPCKLBW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklbw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklbw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklbw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -2996,21 +2623,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklbw(uint8_t bMode)
 /*
  * [V]PUNPCKLWD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklwd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklwd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklwd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklwd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3093,21 +2705,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklwd(uint8_t bMode)
 /*
  * [V]PUNPCKLDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpckldq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpckldq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpckldq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpckldq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckldq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3190,19 +2787,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckldq(uint8_t bMode)
 /*
  * [V]PUNPCKLQDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_punpcklqdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_punpcklqdq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpunpcklqdq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpunpcklqdq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklqdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -3264,21 +2848,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklqdq(uint8_t bMode)
 /*
  * [V]PACKSSWB
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packsswb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packsswb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpacksswb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpacksswb_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packsswb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3367,21 +2936,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packsswb(uint8_t bMode)
 /*
  * [V]PACKSSDW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packssdw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packssdw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackssdw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackssdw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packssdw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3470,21 +3024,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packssdw(uint8_t bMode)
 /*
  * [V]PACKUSWB
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packuswb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packuswb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackuswb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackuswb_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packuswb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64[] =
@@ -3573,18 +3112,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packuswb(uint8_t bMode)
 /*
  * [V]PACKUSDW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_packusdw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_packusdw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpackusdw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpackusdw_YMM8_YMM9_FSxBX_icebp_c64;
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packusdw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesOthers[] =
@@ -3651,47 +3178,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_packusdw(uint8_t bMode)
  * [V]PMAXUW  - Compare unsigned word integers and returns maximum values.
  * [V]PMAXUD  - Compare unsigned double word integers and returns maximum values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxub_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxub_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxub_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxub_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxub_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxub_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxub_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxub_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxub_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxub_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxub_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxub_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxub_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxub_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxuw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxuw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxuw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxuw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxuw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxuw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxuw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxuw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxuw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxuw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxuw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxuw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxud_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxud_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxud_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxud_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxud_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxud_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxud_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxud_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxud_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxud_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxud_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxud_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaxub_pmaxuw_pmaxud(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB64[] =
@@ -3854,47 +3340,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaxub_pmaxuw_pmaxud(uint8_t bMode)
  * [V]PMAXSW  - Compare signed word integers and returns maximum values.
  * [V]PMAXSD  - Compare signed double word integers and returns maximum values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxsb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxsb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaxsd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaxsd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaxsd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaxsd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaxsd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaxsb_pmaxsw_pmaxsd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB64[] =
@@ -4057,47 +3502,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaxsb_pmaxsw_pmaxsd(uint8_t bMode)
  * [V]PMINUW  - Compare unsigned word integers and returns minimum values.
  * [V]PMINUD  - Compare unsigned double word integers and returns minimum values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminub_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminub_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminub_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminub_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminub_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminub_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminub_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminub_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminub_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminub_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminub_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminub_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminub_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminub_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminuw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminuw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminuw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminuw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminuw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminuw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminuw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminuw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminuw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminuw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminuw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminuw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminud_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminud_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminud_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminud_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminud_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminud_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminud_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminud_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminud_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminud_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminud_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminud_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pminub_pminuw_pminud(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB64[] =
@@ -4260,47 +3664,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pminub_pminuw_pminud(uint8_t bMode)
  * [V]PMINSW  - Compare signed word integers and returns minimum values.
  * [V]PMINSD  - Compare signed double word integers and returns minimum values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminsb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminsb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pminsd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pminsd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pminsd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpminsd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpminsd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpminsd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pminsb_pminsw_pminsd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB64[] =
@@ -4461,19 +3824,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pminsb_pminsw_pminsd(uint8_t bMode)
 /*
  * [V]MOVSS - move (mem) or merge (reg) scalar single-precision floating-point value.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movss_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movss_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movss_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovss_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovss_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovss_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movss_XMM11_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movss_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movss_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovss_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovss_XMM10_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovss_FSxBX_XMM9_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movss(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesR[] =
@@ -4553,19 +3903,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movss(uint8_t bMode)
 /*
  * [V]MOVSD - move (mem) or merge (reg) scalar single-precision floating-point value.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movsd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movsd_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movsd_XMM11_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movsd_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movsd_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovsd_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovsd_XMM10_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovsd_FSxBX_XMM9_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movsd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesR[] =
@@ -4649,24 +3986,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movsd(uint8_t bMode)
  *             The store variant just stores the high qword.
  * [V]MOVLPD - Same, just using double precision floating-point unit.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movlps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movlps_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovlps_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovlps_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movlps_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movlps_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovlps_XMM10_XMM14_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovlps_FSxBX_XMM9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movlpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movlpd_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovlpd_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovlpd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movlpd_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movlpd_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovlpd_XMM10_XMM14_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovlpd_FSxBX_XMM9_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movlps_movlpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesLd[] =
@@ -4758,24 +4077,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movlps_movlpd(uint8_t bMode)
  *             The store variant just stores the high qword.
  * [V]MOVHPD - Same, just using double precision floating-point unit.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movhps_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movhps_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovhps_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovhps_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movhps_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movhps_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovhps_XMM10_XMM14_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovhps_FSxBX_XMM9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movhpd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movhpd_FSxBX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovhpd_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovhpd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movhpd_XMM8_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movhpd_FSxBX_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovhpd_XMM10_XMM14_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovhpd_FSxBX_XMM9_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movhps_movhpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesLd[] =
@@ -4865,11 +4166,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movhps_movhpd(uint8_t bMode)
  *              the high qword in the destination as it was.  The VEX variant
  *              takes the high qword from the first source operand.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movhlps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovhlps_XMM1_XMM2_XMM3_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movhlps_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovhlps_XMM10_XMM14_XMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movhlps(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -4916,36 +4212,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movhlps(uint8_t bMode)
  * [V]PAVGB  - Average unsigned packed byte integers with rounding.
  * [V]PAVGW  - Average unsigned packed word integers with rounding.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pavgb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pavgb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpavgb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpavgb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpavgb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpavgb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pavgw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pavgw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pavgw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpavgw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpavgw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpavgw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpavgw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpavgw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pavgb_pavgw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -5057,51 +4323,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pavgb_pavgw(uint8_t bMode)
  * [V]PSIGNW  - Negate/Zero/Keep the destination packed word integers based on the sign of the corresponding source operand.
  * [V]PSIGND  - Negate/Zero/Keep the destination packed doubleword integers based on the sign of the corresponding source operand.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psignb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psignb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psignw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psignw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psignd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psignd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psignd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsignd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsignd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsignd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psignb_psignw_psignd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesB[] =
@@ -5257,36 +4478,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psignb_psignw_psignd(uint8_t bMode)
  * [V]PHADDW  - Horizontally add word sized signed integers.
  * [V]PHADDD  - Horizontally add doubleword sized signed integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phaddw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phaddw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phaddd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phaddd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phaddw_phaddd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64W[] =
@@ -5445,36 +4636,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phaddw_phaddd(uint8_t bMode)
  * [V]PHSUBW  - Horizontally subtract word sized signed integers.
  * [V]PHSUBD  - Horizontally subtract doubleword sized signed integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phsubw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phsubw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubw_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phsubd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phsubd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phsubw_phsubd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64W[] =
@@ -5632,21 +4793,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phsubw_phsubd(uint8_t bMode)
 /*
  * [V]PHADDSW  - Horizontally add and saturate word sized signed integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phaddsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phaddsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phaddsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphaddsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphaddsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphaddsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phaddsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64W[] =
@@ -5735,21 +4881,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phaddsw(uint8_t bMode)
 /*
  * [V]PHSUBSW  - Horizontally subtract and saturate word sized signed integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phsubsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phsubsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phsubsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphsubsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphsubsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphsubsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phsubsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64W[] =
@@ -5836,23 +4967,8 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phsubsw(uint8_t bMode)
 
 
 /*
- * [V]PMADDUBSW  - Horizontally subtract and saturate word sized signed integers.
+ * [V]PMADDUBSW  - Horizontally multiply signed by unsigned bytes, add and saturate to signed integer words.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaddubsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaddubsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaddubsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmaddubsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmaddubsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmaddubsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaddubsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaddubsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaddubsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaddubsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaddubsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmaddubsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmaddubsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmaddubsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaddubsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues64W[] =
@@ -5941,21 +5057,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmaddubsw(uint8_t bMode)
 /*
  * [V]PMULHRSW  - Vertically multiply, round and scale word sized signed integers and extract the high 16-bits.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhrsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhrsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhrsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmulhrsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmulhrsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmulhrsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhrsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhrsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmulhrsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmulhrsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhrsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmulhrsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmulhrsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmulhrsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhrsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -6020,21 +5121,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmulhrsw(uint8_t bMode)
 /*
  * [V]PSADBW  - Compute sum of absolute differences of packed unsigned byte integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psadbw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psadbw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psadbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psadbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psadbw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psadbw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsadbw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsadbw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsadbw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsadbw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsadbw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsadbw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsadbw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsadbw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psadbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -6099,19 +5185,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psadbw(uint8_t bMode)
 /*
  * [V]PMULDQ  - Multiply packed signed double word integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuldq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuldq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmuldq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmuldq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuldq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuldq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmuldq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmuldq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuldq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuldq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmuldq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmuldq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmuldq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -6170,21 +5243,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmuldq(uint8_t bMode)
 /*
  * [V]PMULUDQ  - Multiply packed unsigned double word integers.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuludq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuludq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuludq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmuludq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmuludq_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmuludq_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuludq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuludq_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmuludq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmuludq_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuludq_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmuludq_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmuludq_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmuludq_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmuludq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues[] =
@@ -6250,32 +5308,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmuludq(uint8_t bMode)
  * [V]PUNPCKLPS  - Unpack and interleave low packed single precision FP values.
  * [V]PUNPCKLPD  - Unpack and interleave low packed double precision FP values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpcklps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpcklps_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_unpcklps_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_unpcklps_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklps_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklps_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpcklps_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpcklps_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklps_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklps_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpcklps_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpcklps_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpcklpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpcklpd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_unpcklpd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_unpcklpd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklpd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklpd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpcklpd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpcklpd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklpd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpcklpd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpcklpd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpcklpd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklps_punpcklpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesS[] =
@@ -6374,32 +5406,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpcklps_punpcklpd(uint8_t bMode)
  * [V]PUNPCKHPS  - Unpack and interleave low packed single precision FP values.
  * [V]PUNPCKHPD  - Unpack and interleave low packed double precision FP values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpckhps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpckhps_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_unpckhps_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_unpckhps_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhps_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhps_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpckhps_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpckhps_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhps_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhps_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpckhps_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpckhps_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpckhpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_unpckhpd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_unpckhpd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_unpckhpd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhpd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhpd_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpckhpd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpckhpd_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhpd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vunpckhpd_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vunpckhpd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vunpckhpd_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhps_punpckhpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesS[] =
@@ -6497,31 +5503,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_punpckhps_punpckhpd(uint8_t bMode)
 /*
  * [V]SHUFPS - Shuffle two pairs of single precision floating point values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufps_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufps_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufps_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufps_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_shufps_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufps_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufps_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufps_XMM8_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vshufps_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_XMM8_XMM9_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufps_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vshufps_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufps_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_shufps(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -6619,31 +5600,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_shufps(uint8_t bMode)
 /*
  * [V]SHUFPD - Shuffle two pairs of double precision floating point values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufpd_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufpd_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufpd_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_shufpd_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_shufpd_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufpd_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufpd_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_shufpd_XMM8_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_XMM8_XMM9_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vshufpd_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vshufpd_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_shufpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -6741,66 +5697,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_shufpd(uint8_t bMode)
 /*
  * [V]PALIGNR - Concatenate and align source operands to the right.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_MM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_MM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_MM2_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_MM2_009h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_MM1_FSxBX_009h_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_XMM2_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_XMM2_013h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_palignr_XMM1_FSxBX_013h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_XMM9_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_FSxBX_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_XMM9_013h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_palignr_XMM8_FSxBX_013h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_XMM3_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_XMM3_013h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_XMM1_XMM2_FSxBX_013h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_XMM10_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_FSxBX_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_XMM10_013h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_XMM8_XMM9_FSxBX_013h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_YMM3_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_YMM3_013h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpalignr_YMM1_YMM2_FSxBX_013h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_YMM10_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_FSxBX_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_YMM10_013h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpalignr_YMM8_YMM9_FSxBX_013h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_palignr(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7055,33 +5951,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_palignr(uint8_t bMode)
 /*
  * [V]PBLENDW - Blend packed words based on an 8-bit immediate.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendw_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendw_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pblendw_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pblendw_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pblendw_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pblendw_XMM8_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_XMM8_XMM9_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendw_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendw_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pblendw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7183,33 +6052,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pblendw(uint8_t bMode)
 /*
  * [V]BLENDPS - Blend packed single precision floating point values based on an 8-bit immediate.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendps_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendps_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendps_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendps_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_blendps_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendps_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendps_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendps_XMM8_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendps_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_XMM8_XMM9_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendps_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendps_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendps_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendps(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7311,33 +6153,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendps(uint8_t bMode)
 /*
  * [V]BLENDPD - Blend packed double precision floating point values based on an 8-bit immediate.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendpd_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendpd_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendpd_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendpd_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_blendpd_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendpd_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendpd_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendpd_XMM8_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_XMM8_XMM9_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendpd_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendpd_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7439,24 +6254,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendpd(uint8_t bMode)
 /*
  * [V]PCLMULQDQ - Carry-less multiplication of a quadword.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pclmulqdq_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pclmulqdq_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pclmulqdq_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pclmulqdq_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pclmulqdq_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pclmulqdq_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pclmulqdq_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pclmulqdq_XMM8_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpclmulqdq_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpclmulqdq_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpclmulqdq_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpclmulqdq_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpclmulqdq_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpclmulqdq_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpclmulqdq_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpclmulqdq_XMM8_XMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pclmulqdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7542,48 +6339,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pclmulqdq(uint8_t bMode)
 /*
  * SHA1NEXTE / SHA1MSG1 / SHA1MSG2 / SHA256MSG1 / SHA256MSG2 / SHA1RNDS4
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1nexte_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1nexte_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha1nexte_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1nexte_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1msg1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1msg1_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha1msg1_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1msg1_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1msg2_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1msg2_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha1msg2_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1msg2_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256msg1_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256msg1_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha256msg1_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha256msg1_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256msg2_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256msg2_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha256msg2_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha256msg2_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_FSxBX_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_XMM2_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_FSxBX_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_XMM2_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha1rnds4_XMM1_FSxBX_003h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_XMM8_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_XMM8_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_FSxBX_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_XMM8_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_FSxBX_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_XMM8_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha1rnds4_XMM9_FSxBX_003h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_sha1nexte_sha1msg1_sha1msg2_sha256msg1_sha256msg2_sha1rnds4(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesSha1Nexte[] =
@@ -7796,33 +6551,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_sha1nexte_sha1msg1_sha1msg2_sha256msg1_sha2
 /*
  * [V]MPSADBW - Compute Multiple Packed Sums of Absolute Differences.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_mpsadbw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_mpsadbw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_mpsadbw_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_mpsadbw_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_mpsadbw_XMM8_XMM9_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_mpsadbw_XMM8_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_mpsadbw_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_mpsadbw_XMM8_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_XMM1_XMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_XMM1_XMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_XMM1_XMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_XMM8_XMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_XMM8_XMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_XMM8_XMM9_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmpsadbw_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmpsadbw_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_mpsadbw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -7926,24 +6654,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_mpsadbw(uint8_t bMode)
 /*
  * VINSERTI128/VINSERTF128 - Insert Packed Integer Values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinserti128_YMM1_YMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinserti128_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinserti128_YMM1_YMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinserti128_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vinserti128_YMM8_YMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinserti128_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinserti128_YMM8_YMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinserti128_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinsertf128_YMM1_YMM2_XMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinsertf128_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinsertf128_YMM1_YMM2_XMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vinsertf128_YMM1_YMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vinsertf128_YMM8_YMM9_XMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinsertf128_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinsertf128_YMM8_YMM9_XMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vinsertf128_YMM8_YMM9_FSxBX_000h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vinserti128_vinsertf128(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -8019,36 +6729,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vinserti128_vinsertf128(uint8_t bMode)
 /*
  * [V]PSUBSB/[V]PSUBSW  - Subtract paced signed integers with signed saturation.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psubsb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psubsb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubsb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubsb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubsb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubsb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psubsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psubsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubsb_psubsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues8[] =
@@ -8159,36 +6839,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubsb_psubsw(uint8_t bMode)
 /*
  * [V]PSUBUSB/[V]PSUBUSW  - Subtract paced unsigned integers with unsigned saturation.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psubusb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psubusb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubusb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubusb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubusb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubusb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psubusw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_psubusw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_psubusw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubusw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubusw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsubusw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsubusw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsubusw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubusb_psubusw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues8[] =
@@ -8299,36 +6949,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psubusb_psubusw(uint8_t bMode)
 /*
  * [V]PADDUSB/[V]PADDUSW  - Add paced unsigned integers with unsigned saturation.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_paddusb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_paddusb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddusb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddusb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddusb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddusb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddusw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_paddusw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_paddusw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddusw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddusw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddusw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddusw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddusw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddusb_paddusw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues8[] =
@@ -8439,36 +7059,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddusb_paddusw(uint8_t bMode)
 /*
  * [V]PADDSB/[V]PADDSW  - Add packed signed integers with signed saturation.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_paddsb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_paddsb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsb_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsb_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddsb_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddsb_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsb_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsb_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddsb_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddsb_YMM8_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_paddsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_paddsw_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_paddsw_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsw_XMM1_XMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddsw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddsw_XMM8_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsw_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpaddsw_YMM1_YMM2_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpaddsw_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpaddsw_YMM8_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddsb_paddsw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues8[] =
@@ -8579,81 +7169,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_paddsb_paddsw(uint8_t bMode)
 /*
  * [V]PSLLW/[V]PSLLD/[V]PSLLQ  - Shift packed data left logical
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllw_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllw_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllw_YMM8_YMM9_012h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pslld_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpslld_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpslld_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpslld_YMM8_YMM9_012h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psllq_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsllq_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsllq_YMM8_YMM9_012h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psllw_pslld_psllq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues16[] =
@@ -8931,56 +7446,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psllw_pslld_psllq(uint8_t bMode)
 /*
  * [V]PSRAW/[V]PSRAD  - Shift packed data right arithmetic (PSRAQ doesn't exist until AVX512)
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psraw_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM1_YMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM8_XMM9_XMM10_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM8_XMM9_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM8_XMM9_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_XMM8_XMM9_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM8_YMM9_XMM10_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM8_YMM9_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM8_YMM9_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsraw_YMM8_YMM9_012h_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrad_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrad_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrad_YMM8_YMM9_012h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psraw_psrad(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues16[] =
@@ -9171,81 +7636,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psraw_psrad(uint8_t bMode)
 /*
  * [V]PSRLW/[V]PSRLD/[V]PSRLQ  - Shift packed data right logical
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlw_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlw_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlw_YMM8_YMM9_012h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrld_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM1_YMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM8_XMM9_XMM10_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM8_XMM9_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM8_XMM9_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_XMM8_XMM9_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM8_YMM9_XMM10_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM8_YMM9_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM8_YMM9_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrld_YMM8_YMM9_012h_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_MM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_MM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_XMM1_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_psrlq_XMM1_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_XMM1_XMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_XMM1_XMM2_012h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_YMM1_YMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_YMM1_YMM2_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpsrlq_YMM1_YMM2_012h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_XMM8_XMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_XMM8_XMM9_012h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_YMM8_YMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_YMM8_YMM9_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpsrlq_YMM8_YMM9_012h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psrlw_psrld_psrlq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues16[] =
@@ -9523,88 +7913,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_psrlw_psrld_psrlq(uint8_t bMode)
 /*
  * VPERM2I128/VPERM2F128 - Permute Packed Integer/Fp Values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_008h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_008h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_010h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_010h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_020h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_020h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_030h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_030h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_YMM3_080h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2i128_YMM1_YMM2_FSxBX_080h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_008h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_008h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_010h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_010h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_020h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_020h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_030h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_030h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_YMM10_080h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2i128_YMM8_YMM9_FSxBX_080h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_001h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_002h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_003h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_008h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_008h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_010h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_010h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_020h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_020h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_030h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_030h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_YMM3_080h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vperm2f128_YMM1_YMM2_FSxBX_080h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_001h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_002h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_003h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_008h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_008h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_010h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_010h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_020h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_020h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_030h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_030h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_YMM10_080h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vperm2f128_YMM8_YMM9_FSxBX_080h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vperm2i128_vperm2f128(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValuesFF[] =
@@ -9851,47 +8159,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vperm2i128_vperm2f128(uint8_t bMode)
  * VPERMILPS - Permute In-Lane of Quadruples of Single Precision Floating-Point Values
  *           - ('Single Precision Floating-Point Values' AKA 'uninterpreted strings of 32-bits')
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_0E4h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_XMM2_03Dh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_FSxBX_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_FSxBX_0E4h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_XMM1_FSxBX_03Dh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_0E4h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_YMM2_03Dh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_FSxBX_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_FSxBX_0E4h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilps_YMM1_FSxBX_03Dh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_01Bh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_0E4h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_XMM9_03Dh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_FSxBX_01Bh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_FSxBX_0E4h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_XMM8_FSxBX_03Dh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_01Bh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_0E4h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_YMM9_03Dh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_FSxBX_01Bh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_FSxBX_0E4h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilps_YMM8_FSxBX_03Dh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vpermilps(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues00[] =
@@ -10037,39 +8304,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vpermilps(uint8_t bMode)
  * VPERMILPD - Permute In-Lane of Pairs of Double Precision Floating-Point Values
  *           - ('Double Precision Floating-Point Values' AKA 'uninterpreted strings of 64-bits')
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_XMM2_XMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_XMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_XMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_XMM2_0E7h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_XMM2_091h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_FSxBX_0E7h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_XMM1_FSxBX_091h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_YMM2_YMM3_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_YMM2_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_YMM2_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_YMM2_0E7h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_YMM2_091h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_FSxBX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_FSxBX_0E7h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpermilpd_YMM1_FSxBX_091h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_XMM9_XMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_XMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_XMM9_0E7h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_XMM9_091h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_FSxBX_0E7h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_XMM8_FSxBX_091h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_YMM9_YMM10_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_YMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_YMM9_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_YMM9_0E7h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_YMM9_091h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_FSxBX_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_FSxBX_0E7h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpermilpd_YMM8_FSxBX_091h_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vpermilpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST1_VALUES_T const s_aValues00[] =
@@ -10486,16 +8720,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
 /*
  * PMOVMSKB, VPMOVMSKB.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_qword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovmskb_EAX_dqword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_dqword_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovmskb_EAX_qqword_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovmskb_RAX_YMM9_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovmskb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST2_VALUES_T const s_aValues[] =
@@ -10552,65 +8776,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovmskb(uint8_t bMode)
 /*
  * [V]MOVD / [V]MOVQ - greg/mem variants only.
  */
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_MM1_EDX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_EAX_MM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_FSxBX_MM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movd_MM1_R9D_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movd_R10D_MM0_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_XMM1_EAX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_EAX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movd_XMM9_R8D_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movd_R8D_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movd_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movd_FSxBX_XMM9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovd_XMM1_EAX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovd_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovd_EDX_XMM1_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovd_XMM9_R9D_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovd_R8D_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovd_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovd_FSxBX_XMM9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_FSxBX_MM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movq_R9_MM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_06e_movq_MM1_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07e_movq_FSxBX_MM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movq_MM1_R9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movq_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movq_XMM9_R8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movq_R8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movq_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movq_FSxBX_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_06e_movq_XMM1_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_06e_movq_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07e_movq_FSxBX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07e_movq_FSxBX_XMM9_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovq_XMM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovq_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovq_XMM9_R8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovq_R8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovq_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovq_FSxBX_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_06e_vmovq_XMM1_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_06e_vmovq_XMM9_FSxBX_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07e_vmovq_FSxBX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07e_vmovq_FSxBX_XMM9_icebp_c64;
-
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movd_movq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST2_VALUES_T const s_aValuesRm[] =
@@ -10757,28 +8922,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movd_movq(uint8_t bMode)
 /*
  * [V]PEXTRW.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pextrw_RDX_XMM1_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pextrw_R9D_MM1_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pextrw_R9D_XMM8_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pextrw_RDX_XMM1_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pextrw_R9D_MM1_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pextrw_R9D_XMM8_0FFh_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_RDX_XMM1_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_EDX_XMM8_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_R9D_XMM8_000h_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_RDX_XMM1_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_EDX_XMM8_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpextrw_R9D_XMM8_0FFh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pextrw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST2_VALUES_T const s_aValues00[] =
@@ -10861,36 +9004,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pextrw(uint8_t bMode)
 /*
  * [V]MOVMSKPS / [V]MOVMSKPD.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movmskps_EDX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movmskps_RDX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movmskps_R9D_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movmskps_RDX_XMM8_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovmskps_EDX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_RDX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_EDX_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_R9D_XMM8_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovmskps_EDX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_RDX_YMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_EDX_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskps_R9D_YMM8_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movmskpd_EDX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movmskpd_RDX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movmskpd_R9D_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movmskpd_RDX_XMM8_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovmskpd_EDX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_RDX_XMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_EDX_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_R9D_XMM8_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovmskpd_EDX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_RDX_YMM1_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_EDX_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovmskpd_R9D_YMM8_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movmskps_movmskpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST2_VALUES_T const s_aValuesR32_128[] =
@@ -11233,11 +9346,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
 /*
  * PSHUFW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufw_MM1_MM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufw_MM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufw_MM1_MM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufw_MM1_FSxBX_01Bh_icebp);
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesFF[] =
@@ -11295,23 +9403,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_pshufw(uint8_t bMode)
 /*
  * [V]PSHUFHW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufhw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufhw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufhw_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufhw_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_YMM1_YMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_YMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_YMM1_YMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufhw_YMM1_FSxBX_01Bh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufhw_YMM12_YMM7_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufhw_YMM9_YMM12_01Bh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufhw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesFF[] =
@@ -11401,23 +9492,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufhw(uint8_t bMode)
 /*
  * [V]PSHUFLW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshuflw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshuflw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshuflw_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshuflw_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_YMM1_YMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_YMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_YMM1_YMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshuflw_YMM1_FSxBX_01Bh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshuflw_YMM12_YMM7_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshuflw_YMM9_YMM12_01Bh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshuflw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesFF[] =
@@ -11507,23 +9581,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshuflw(uint8_t bMode)
 /*
  * [V]PSHUFD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufd_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufd_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufd_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pshufd_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_XMM1_XMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_XMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_XMM1_XMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_XMM1_FSxBX_01Bh_icebp);
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_YMM1_YMM2_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_YMM1_FSxBX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_YMM1_YMM2_01Bh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpshufd_YMM1_FSxBX_01Bh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpshufd_YMM12_YMM7_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpshufd_YMM9_YMM12_01Bh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pshufd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesFF[] =
@@ -11629,13 +9686,6 @@ static BS3CPUINSTR3_TEST3_VALUES_T const g_aMoveValues3[] =
 /*
  * MOVNTDQA - load double qword, strictly aligned, with non-temporal hint.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntdqa_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movntdqa_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdqa_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntdqa_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdqa_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntdqa_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdqa(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -11669,13 +9719,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdqa(uint8_t bMode)
 /*
  * MOVNTDQ - store double qword, strictly aligned, with non-temporal hint.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntdq_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movntdq_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdq_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntdq_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntdq_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntdq_FSxBX_YMM10_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -11710,20 +9753,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntdq(uint8_t bMode)
  * [V]MOVNPS / [V]MOVNTPD - load single/double precision floating-point, aligned,
  *                          with non-temporal hint.  Only difference is the unit.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntps_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movntps_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntps_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntps_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntps_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntps_FSxBX_YMM12_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movntpd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movntpd_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntpd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntpd_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovntpd_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovntpd_FSxBX_YMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntps_movntpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -11775,26 +9804,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movntps_movntpd(uint8_t bMode)
  * Note! We only cover one of the two register<->register variants here
  *       thanks to the assembler (probably the one with the smaller opcode).
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movups_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movups_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movups_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movups_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovups_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovups_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovups_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovups_YMM12_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movups_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movups_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovups_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovups_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovups_FSxBX_YMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movups(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -11861,26 +9870,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movups(uint8_t bMode)
  * Note! We only cover one of the two register<->register variants here
  *       thanks to the assembler (probably the one with the smaller opcode).
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movupd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movupd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movupd_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movupd_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_YMM12_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movupd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movupd_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovupd_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovupd_FSxBX_YMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movupd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -11944,19 +9933,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movupd(uint8_t bMode)
 /*
  * [V]MOVSLDUP - Duplicate even single precision floating-point values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movsldup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movsldup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movsldup_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movsldup_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsldup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsldup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovsldup_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovsldup_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsldup_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovsldup_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovsldup_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovsldup_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movsldup(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues[] =
@@ -12020,19 +9996,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movsldup(uint8_t bMode)
 /*
  * [V]MOVSHDUP - Duplicate even single precision floating-point values.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movshdup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movshdup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movshdup_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movshdup_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovshdup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovshdup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovshdup_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovshdup_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovshdup_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovshdup_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovshdup_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovshdup_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movshdup(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues[] =
@@ -12098,19 +10061,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movshdup(uint8_t bMode)
  *
  * Similar to MOVSLDUP, but different exception class and unit size.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movddup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movddup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movddup_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movddup_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovddup_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovddup_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovddup_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovddup_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovddup_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovddup_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovddup_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovddup_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movddup(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues[] =
@@ -12175,32 +10125,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movddup(uint8_t bMode)
 /*
  * [V]MOVAPS / [V]MOVAPD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movaps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movaps_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movaps_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movaps_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovaps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovaps_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovaps_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovaps_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovaps_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovaps_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovaps_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovaps_YMM12_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movapd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movapd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movapd_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movapd_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovapd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovapd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovapd_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovapd_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovapd_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovapd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovapd_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovapd_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movaps_movapd(uint8_t bMode)
 {
     /* Note! Seems the 256-bit variants doesn't generate \#ACs on a 10980XE. WEIRD! */
@@ -12277,30 +10201,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movaps_movapd(uint8_t bMode)
 /*
  * [V]MOVDQU - move unaligned packed qwords.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqu_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_movdqu_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqu_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movdqu_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07f_movdqu_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movdqu_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_vmovdqu_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_XMM7_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_vmovdqu_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_YMM12_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqu_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movdqu_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqu_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqu_FSxBX_YMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movdqu(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -12374,32 +10274,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movdqu(uint8_t bMode)
 /*
  * [V]MOVDQA - move aligned packed qwords.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqa_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_movdqa_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqa_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movdqa_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07f_movdqa_XMM8_XMM12_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_movdqa_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_vmovdqa_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_XMM8_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07f_vmovdqa_XMM8_XMM14_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_07f_vmovdqa_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_07f_vmovdqa_YMM12_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_YMM12_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_movdqa_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_movdqa_FSxBX_XMM10_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_FSxBX_XMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vmovdqa_FSxBX_YMM1_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vmovdqa_FSxBX_YMM12_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movdqa(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -12475,51 +10349,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movdqa(uint8_t bMode)
 /*
  * [V]PABSB / [V]PABSW / [V]PABSD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsb_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsb_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pabsb_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pabsb_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsb_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsb_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsb_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsb_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsb_YMM9_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsb_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsw_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsw_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pabsw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pabsw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsw_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsw_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsw_YMM9_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsw_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsd_MM1_MM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsd_MM1_FSxBX_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pabsd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pabsd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pabsd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsd_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpabsd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpabsd_YMM9_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpabsd_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pabsb_pabsw_pabsd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesB[] =
@@ -12671,84 +10500,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pabsb_pabsw_pabsd(uint8_t bMode)
 /*
  * [V]PMOVSXBW / [V]PMOVSXBD / [V]PMOVSXBQ / [V]PMOVSXWD / [V]PMOVSXWQ / [V]PMOVSXDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbw_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbw_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbw_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbw_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxbq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxbq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxbq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxbq_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxwd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxwd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxwq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxwq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxwq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxwq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxwq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxwq_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovsxdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovsxdq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovsxdq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxdq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxdq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxdq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovsxdq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxdq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovsxdq_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovsxbw_pmovsxbd_pmovsxbq_pmovsxwd_pmovsxwq_pmovsxdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesBW[] =
@@ -12996,84 +10747,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovsxbw_pmovsxbd_pmovsxbq_pmovsxwd_pmovsxw
 /*
  * [V]PMOVZXBW / [V]PMOVZXBD / [V]PMOVZXBQ / [V]PMOVZXWD / [V]PMOVZXWQ / [V]PMOVZXDQ
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbw_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbw_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbw_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbw_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxbq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxbq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxbq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxbq_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxwd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxwd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxwq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxwq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxwq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxwq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxwq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxwq_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pmovzxdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pmovzxdq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pmovzxdq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxdq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxdq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxdq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxdq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxdq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpmovzxdq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxdq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpmovzxdq_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovzxbw_pmovzxbd_pmovzxbq_pmovzxwd_pmovzxwq_pmovzxdq(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValuesBW[] =
@@ -13321,13 +10994,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pmovzxbw_pmovzxbd_pmovzxbq_pmovzxwd_pmovzxw
 /*
  * [V]LDDQU - Load unaligned integer from memory.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_lddqu_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_lddqu_XMM10_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vlddqu_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vlddqu_XMM11_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vlddqu_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vlddqu_YMM12_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_lddqu(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_T const s_aTests16[] =
@@ -13366,15 +11032,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_lddqu(uint8_t bMode)
 /*
  * [V]PHMINPOSUW
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phminposuw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_phminposuw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_phminposuw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_phminposuw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphminposuw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vphminposuw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vphminposuw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vphminposuw_XMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phminposuw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues[] =
@@ -13424,23 +11081,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_phminposuw(uint8_t bMode)
 /*
  * VBROADCASTSS/VBROADCASTSD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastss_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastss_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastss_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastss_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastss_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastss_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastss_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastss_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastsd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastsd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastsd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastsd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcastf128_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vbroadcastf128_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vbroadcastss_vbroadcastsd_vbroadcastf128(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues32[] =
@@ -13521,45 +11161,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vbroadcastss_vbroadcastsd_vbroadcastf128(uint
 /*
  * VPBROADCASTB/VPBROADCASTW/VPBROADCASTD/VPBROADCASTQ/VPBROADCASTI128
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastb_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastb_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastb_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastb_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastb_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastb_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastw_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastw_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastw_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastw_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastw_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastw_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastw_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastw_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastd_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastd_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastd_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastd_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastd_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastd_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastq_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastq_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastq_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastq_XMM9_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastq_YMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpbroadcastq_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastq_YMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpbroadcastq_YMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vbroadcasti128_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vbroadcasti128_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vpbroadcastb_vpbroadcastw_vpbroadcastd_vpbroadcastq_vbroadcasti128(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST3_VALUES_T const s_aValues8[] =
@@ -13956,21 +11557,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType4(uint8_t bMode, BS3CPUINSTR3_TEST4_T 
 /*
  * PTEST
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_ptest_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_ptest_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_ptest_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_ptest_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vptest_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vptest_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vptest_XMM9_XMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vptest_XMM9_FSxBX_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vptest_YMM1_YMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vptest_YMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vptest_YMM9_YMM8_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vptest_YMM9_FSxBX_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_ptest(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST4_VALUES_T const s_aValues[] =
@@ -14328,19 +11914,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
 /*
  * PBLENDVB
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendvb_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pblendvb_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pblendvb_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pblendvb_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendvb_XMM1_XMM2_XMM3_XMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendvb_XMM1_XMM2_FSxBX_XMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpblendvb_XMM8_XMM9_XMM10_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendvb_XMM8_XMM9_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendvb_YMM1_YMM2_YMM3_YMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpblendvb_YMM1_YMM2_FSxBX_YMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpblendvb_YMM8_YMM9_YMM10_YMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpblendvb_YMM8_YMM9_FSxBX_YMM11_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pblendvb(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST5_VALUES_T const s_aValues[] =
@@ -14414,19 +11987,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pblendvb(uint8_t bMode)
 /*
  * BLENDPS
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendvps_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendvps_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_blendvps_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendvps_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvps_XMM1_XMM2_XMM3_XMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvps_XMM1_XMM2_FSxBX_XMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendvps_XMM8_XMM9_XMM10_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendvps_XMM8_XMM9_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvps_YMM1_YMM2_YMM3_YMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvps_YMM1_YMM2_FSxBX_YMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendvps_YMM8_YMM9_YMM10_YMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendvps_YMM8_YMM9_FSxBX_YMM11_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendvps(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST5_VALUES_T const s_aValues[] =
@@ -14500,19 +12060,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendvps(uint8_t bMode)
 /*
  * BLENDPD
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendvpd_XMM1_XMM2_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_blendvpd_XMM1_FSxBX_icebp);
-extern FNBS3FAR             bs3CpuInstr3_blendvpd_XMM8_XMM9_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_blendvpd_XMM8_FSxBX_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvpd_XMM1_XMM2_XMM3_XMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvpd_XMM1_XMM2_FSxBX_XMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendvpd_XMM8_XMM9_XMM10_XMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendvpd_XMM8_XMM9_FSxBX_XMM11_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvpd_YMM1_YMM2_YMM3_YMM4_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vblendvpd_YMM1_YMM2_FSxBX_YMM4_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vblendvpd_YMM8_YMM9_YMM10_YMM11_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vblendvpd_YMM8_YMM9_FSxBX_YMM11_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendvpd(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST5_VALUES_T const s_aValues[] =
@@ -14586,11 +12133,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_blendvpd(uint8_t bMode)
 /*
  * SHA256RNDS2
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256rnds2_XMM1_XMM2_XMM0_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_sha256rnds2_XMM1_FSxBX_XMM0_icebp);
-extern FNBS3FAR             bs3CpuInstr3_sha256rnds2_XMM8_XMM9_XMM0_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_sha256rnds2_XMM8_FSxBX_XMM0_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_sha256rnds2(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST5_VALUES_T const s_aValues[] =
@@ -14896,31 +12438,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType6(uint8_t bMode, BS3CPUINSTR3_TEST6_T 
 /*
  * [V]PINSRW.
  */
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_MM1_EDX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_MM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_MM1_R9D_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_MM1_EDX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_MM1_FSxBX_0FFh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_MM1_R9D_0FFh_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_XMM1_EDX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_XMM1_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_XMM8_R9D_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_XMM8_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_XMM1_EDX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_pinsrw_XMM1_FSxBX_0FFh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_XMM8_R9D_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_pinsrw_XMM8_FSxBX_0FFh_icebp_c64;
-
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpinsrw_XMM1_XMM2_EDX_000h_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpinsrw_XMM1_XMM2_FSxBX_000h_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpinsrw_XMM8_XMM9_R9D_000h_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpinsrw_XMM8_XMM9_FSxBX_000h_icebp_c64;
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpinsrw_XMM1_XMM2_EDX_0FFh_icebp);
-BS3_FNBS3FAR_PROTOTYPES_CMN(bs3CpuInstr3_vpinsrw_XMM1_XMM2_FSxBX_0FFh_icebp);
-extern FNBS3FAR             bs3CpuInstr3_vpinsrw_XMM8_XMM9_R9D_0FFh_icebp_c64;
-extern FNBS3FAR             bs3CpuInstr3_vpinsrw_XMM8_XMM9_FSxBX_0FFh_icebp_c64;
-
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pinsrw(uint8_t bMode)
 {
     static BS3CPUINSTR3_TEST6_VALUES_T const s_aValues00[] =
