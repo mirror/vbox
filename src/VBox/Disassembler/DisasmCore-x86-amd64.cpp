@@ -2074,7 +2074,7 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     RT_NOREF_PV(pParam);
 
     uint8_t const bRm = disReadByte(pDis, offInstr);
-    uint8_t const idx = MODRM_REG(bRm);
+    uint8_t       idx = MODRM_REG(bRm);
     if (MODRM_MOD(bRm) != X86_MOD_REG)
     {
         if (pDis->x86.bLastPrefix == OP_OPSIZE /*0xf3*/)
@@ -2085,8 +2085,12 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
             pOp = &g_aMapX86_Group9_mem_f3[idx];
         }
         /** @todo bLastPrefix is also set for OP_SEG & OP_ADDRSIZE which aren't relevant here or to any other of the table */
-        else if (pDis->x86.bLastPrefix != OP_LOCK && pDis->x86.bLastPrefix != OP_REPNE)
+        else if (pDis->x86.bLastPrefix != OP_REPNE && (pDis->x86.bLastPrefix != OP_LOCK || idx == 1 /*cmpxchg8/16b*/))
+        {
+            if ((pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_W) && (pDis->x86.fPrefix & DISPREFIX_REX))
+                idx += 8;
             pOp = &g_aMapX86_Group9_mem_none[idx];
+        }
         else
             pOp = &g_InvalidOpcode[0];
     }
@@ -2410,7 +2414,8 @@ static void disValidateLockSequence(PDISSTATE pDis)
     switch (pDis->pCurInstr->uOpcode)
     {
         /* simple: no variations */
-        case OP_CMPXCHG8B: /* == OP_CMPXCHG16B? */
+        case OP_CMPXCHG8B:
+        case OP_CMPXCHG16B:
             return;
 
         /* simple: /r - reject register destination. */

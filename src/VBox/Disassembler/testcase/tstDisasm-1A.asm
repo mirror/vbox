@@ -513,6 +513,12 @@ BEGINPROC TestProc64
         rdrand rax
         vmxon [rax]
 
+        cmpxchg8b [rdi]
+        lock cmpxchg8b [rdi]
+        cmpxchg16b [rdi]
+        lock cmpxchg16b [rdi]
+        vmptrst [rsi + 1]
+
         ret
 ENDPROC   TestProc64
 %endif ; !OS2

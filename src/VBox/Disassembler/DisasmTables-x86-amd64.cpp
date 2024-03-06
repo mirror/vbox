@@ -3117,17 +3117,27 @@ const DISOPCODE g_aMapX86_Group8[8] =
     OP("btc %Ev,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,       0,          OP_BTC,     OP_PARM_Ev,         OP_PARM_Ib ,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };
 
-/* 0F C7 mode=mem index by /reg - w/o SSE prefix */
-const DISOPCODE g_aMapX86_Group9_mem_none[8] =
+/* 0F C7 mode=mem index by /reg + REX.W*8 - w/o SSE prefix */
+const DISOPCODE g_aMapX86_Group9_mem_none[8 * 2] =
 {
+    /* REX.W = 0 */
     INVALID_OPCODE_MOD_RM(0x0),
-    OP("cmpxchg8b %Mq",      IDX_ParseModRM,     0,          0,          OP_CMPXCHG8B, OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("cmpxchg8b %Mq",      IDX_ParseModRM,     0,             0,       OP_CMPXCHG8B, OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE_MOD_RM(0x2),
     INVALID_OPCODE_MOD_RM(0x3),
     INVALID_OPCODE_MOD_RM(0x4),
     INVALID_OPCODE_MOD_RM(0x5),
-    OP("vmptrld %M",         IDX_ParseModRM,     0,             0,       OP_VMPTRLD,   OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("vmptrst %M",         IDX_ParseModRM,     0,             0,       OP_VMPTRST,   OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("vmptrld %Mq",        IDX_ParseModRM,     0,             0,       OP_VMPTRLD,   OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("vmptrst %Mq",        IDX_ParseModRM,     0,             0,       OP_VMPTRST,   OP_PARM_Mq,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    /* REX.W = 1 */
+    INVALID_OPCODE_MOD_RM(0x0),
+    OP("cmpxchg16b %Mdq",    IDX_ParseModRM,     0,             0,       OP_CMPXCHG16B, OP_PARM_Mdq,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    INVALID_OPCODE_MOD_RM(0x2),
+    INVALID_OPCODE_MOD_RM(0x3),
+    INVALID_OPCODE_MOD_RM(0x4),
+    INVALID_OPCODE_MOD_RM(0x5),
+    INVALID_OPCODE_MOD_RM(0x6),
+    INVALID_OPCODE_MOD_RM(0x7),
 };
 
 /* 0F C7 mode=mem index by /reg - w/ 0x66 SSE prefix */

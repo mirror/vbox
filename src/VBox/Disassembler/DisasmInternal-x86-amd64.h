@@ -200,7 +200,7 @@ extern const DISOPCODE g_aMapX86_Group7_mod11_reg001[8];
 extern const DISOPCODE g_aMapX86_Group7_mod11_reg010[8];
 extern const DISOPCODE g_aMapX86_Group7_mod11_reg111[8];
 extern const DISOPCODE g_aMapX86_Group8[8];
-extern const DISOPCODE g_aMapX86_Group9_mem_none[8];
+extern const DISOPCODE g_aMapX86_Group9_mem_none[8*2];
 extern const DISOPCODE g_aMapX86_Group9_mem_66[8];
 extern const DISOPCODE g_aMapX86_Group9_mem_f3[8];
 extern const DISOPCODE g_aMapX86_Group9_mod11_none[8];
