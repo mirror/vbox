@@ -51,9 +51,6 @@
 #include "CVirtualBox.h"
 #include "CVirtualBoxClient.h"
 
-/* Other VBox includes: */
-#include "VBox/com/Guid.h"
-
 /* Forward declarations: */
 class QGraphicsWidget;
 class QMenu;
