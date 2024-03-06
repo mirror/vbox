@@ -489,6 +489,25 @@ BEGINPROC TestProc64
         db 066h
         vpsrldq xmm1, xmm2, 3
 
+        ; group 7 stuff.
+        vmcall
+        vmlaunch
+        vmresume
+        vmxoff
+        monitor
+        mwait
+        clac
+        stac
+        encls
+        xgetbv
+        xsetbv
+        vmfunc
+        xend
+        xtest
+        enclu
+        swpgs
+        rdtscp
+
         ret
 ENDPROC   TestProc64
 %endif ; !OS2

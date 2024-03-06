@@ -2028,13 +2028,20 @@ static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     uint8_t reg   = MODRM_REG(modrm);
     uint8_t rm    = MODRM_RM(modrm);
 
-    if (mod == 3 && rm == 0)
-        pOp = &g_aMapX86_Group7_mod11_rm000[reg];
-    else
-    if (mod == 3 && rm == 1)
-        pOp = &g_aMapX86_Group7_mod11_rm001[reg];
-    else
+    if (mod != 3)
         pOp = &g_aMapX86_Group7_mem[reg];
+    else if (reg == 0)
+        pOp = &g_aMapX86_Group7_mod11_reg000[rm];
+    else if (reg == 1)
+        pOp = &g_aMapX86_Group7_mod11_reg001[rm];
+    else if (reg == 2)
+        pOp = &g_aMapX86_Group7_mod11_reg010[rm];
+    else if (reg == 7)
+        pOp = &g_aMapX86_Group7_mod11_reg111[rm];
+    else if (reg == 4 || reg == 6)
+        pOp = &g_aMapX86_Group7_mem[reg];
+    else
+        pOp = &g_InvalidOpcode[0];
 
     /* Cannot easily skip this hack because of monitor and vmcall! */
     //little hack to make sure the ModRM byte is included in the returned size

@@ -3056,32 +3056,52 @@ const DISOPCODE g_aMapX86_Group7_mem[8] =
     OP("invlpg %Mb",         IDX_ParseModRM,     0,          0,          OP_INVLPG,  OP_PARM_Mb,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
 };
 
-/* Note!! Group 7 is NOT using the INVALID_OPCODE_MOD_RM because of monitor and vmcall. */
-const DISOPCODE g_aMapX86_Group7_mod11_rm000[8] =
+const DISOPCODE g_aMapX86_Group7_mod11_reg000[8] =
 {
-    /* 0F 01 MOD=11b */
+    OP("enclv",              0,                  0,          0,          OP_ENCLV,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("vmlaunch",           0,                  0,          0,          OP_VMLAUNCH, OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("vmresume",           0,                  0,          0,          OP_VMRESUME, OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("vmoff",              0,                  0,          0,          OP_VMOFF,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     INVALID_OPCODE,
-    OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg, IDX_ParseFixedReg, IDX_ParseFixedReg,          OP_MONITOR,         OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX,    DISOPTYPE_HARMLESS ),
-    OP("xgetbv",             0,                  0,          0,          OP_XGETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
     INVALID_OPCODE,
-    OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
-    OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
-    OP("swapgs",             0,                  0,          0,          OP_SWAPGS,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS )
 };
 
-/* Note!! Group 7 is NOT using the INVALID_OPCODE_MOD_RM because of monitor and vmcall. */
-const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
+const DISOPCODE g_aMapX86_Group7_mod11_reg001[8] =
 {
-    /* 0F 01 MOD=11b */
-    OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
-    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,   OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX,OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
-    OP("xsetbv",             0,                  0,          0,          OP_XSETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
-    OP("vmmcall",            0,                  0,          0,          OP_VMMCALL, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
-    OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
+    OP("monitor %eAX,%eCX,%eDX", IDX_ParseFixedReg, IDX_ParseFixedReg, IDX_ParseFixedReg, OP_MONITOR, OP_PARM_REG_EAX, OP_PARM_REG_ECX, OP_PARM_REG_EDX, DISOPTYPE_HARMLESS ),
+    OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,  OP_MWAIT,    OP_PARM_REG_EAX,    OP_PARM_REG_ECX, OP_PARM_NONE,  DISOPTYPE_HARMLESS ),
+    OP("clac",               0,                  0,          0,         OP_CLAC,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("stac",               0,                  0,          0,         OP_STAC,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     INVALID_OPCODE,
-    OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),
-    OP("rdtscp",             0,                  0,          0,          OP_RDTSCP, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_POTENTIALLY_DANGEROUS ),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("encls",              0,                  0,          0,         OP_ENCLS,    OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+};
+
+const DISOPCODE g_aMapX86_Group7_mod11_reg010[8] =
+{
+    OP("xgetbv",             0,                  0,          0,          OP_XGETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
+    OP("xsetbv",             0,                  0,          0,          OP_XSETBV,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ), /* fixed ops: ECX & EDX:EAX like wrmsr we don't details these */
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("vmfunc",             0,                  0,          0,          OP_VMFUNC,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("xend",               0,                  0,          0,          OP_XEND,    OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("xtest",              0,                  0,          0,          OP_XTEST,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("enclu",              0,                  0,          0,          OP_ENCLU,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+};
+
+const DISOPCODE g_aMapX86_Group7_mod11_reg111[8] =
+{
+    OP("swapgs",             0,                  0,          0,          OP_SWAPGS,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
+    OP("rdtscp",             0,                  0,          0,          OP_RDTSCP,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_POTENTIALLY_DANGEROUS ),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
 };
 
 const DISOPCODE g_aMapX86_Group8[8] =
