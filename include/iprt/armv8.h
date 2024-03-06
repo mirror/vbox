@@ -4130,13 +4130,13 @@ typedef enum ARMV8INSTRVECCMPZEROOP
 
 
 /**
- * A64: Encodes UMOV (vector, register).
+ * A64: Encodes CMGT, CMGE, CMEQ or CMLE against zero (vector, register).
  *
  * @returns The encoded instruction.
- * @param   iRegDst     The register to put the result into.
+ * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc  The vector source register.
- * @param   idxElem     The element index.
- * @param   fDst64Bit   Flag whether the destination register is 64-bit (true) or 32-bit (false).
+ * @aram    enmSz       Vector element size.
+ * @param   enmOp       The compare operation against to encode.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpToZero(uint32_t iVecRegDst, uint32_t iVecRegSrc, ARMV8INSTRVECCMPZEROSZ enmSz,
                                                         ARMV8INSTRVECCMPZEROOP enmOp)
@@ -4156,7 +4156,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpToZero(uint32_t iVecRegDst, uin
  * A64: Encodes CNT (vector, register).
  *
  * @returns The encoded instruction.
- * @param   iRegDst     The register to put the result into.
+ * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc  The vector source register.
  * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
  *                      or just the low 64-bit (false).
