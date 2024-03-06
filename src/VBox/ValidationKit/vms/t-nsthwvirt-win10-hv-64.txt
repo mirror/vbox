@@ -1,0 +1,40 @@
+
+Test VM - tst-nsthwvirt-win10-hv-64
+===================================
+
+Setup:
+ - Verify md5sum of Win10_21H2_English_x64.iso is 823c3cb59ff0fd43272f12bb2e3a089d.
+ - VBoxManage unattended detect --iso=Win10_21H2_English_x64.iso
+     [..]
+     Image #6     = Windows 10 Pro (10.0.19041.1288 / x64 / en-US)
+     [..]
+ - Configure a new VM named "t-nsthwvirt-win10-hv-64" with default windows 10 64-bit settings and disk size.
+   Change RAM size to 8192 MB.
+   Change paravirtualization interface to "None".
+   Enable Nested VT-x/AMD.
+   Disable Audio.
+ - VBoxManage unattended install t-nsthwvirt-win10-hv-64
+              --iso=Win10_21H2_English_x64.iso
+              --hostname=t-nsthwvirt-win10-hv-64.smoketest
+	      --image-index=6
+	      --user=Administrator
+	      --password=password
+	      --install-txs
+	      --validation-kit-iso=/home/ram/vbox/trunk/validationkit/VBoxValidationKit.iso
+	      --time-zone=DE
+	      --locale=en_US
+	      --country=US
+	      --key=<redacted-Win-10-Pro-KMS-key>
+ - Start VM and perform unattended installation.
+ - Eject DVDs and floppy.
+ - Create a user 'test' without a password.
+ - Create a user 'test2' with 'test2' as password.
+ - Enable the guest user.
+ - Disable auto-reboot on guest BSOD using an elevated PowerShell with the command:
+     wmic RecoverOS set AutoReboot = False
+ - Proceed with other relevant steps shown in readme_first.txt
+ - Install Hyper-V role from "Windows Feature"
+     Check all items under "Hyper-V" i.e. both "Hyper-V Platform" and "Hyper-V Management Tools".
+     Once installed, restart the VM and let the Hyper-V install fully complete.
+     Finally after Hyper-V is fully installed and setup, shutdown the VM.
+

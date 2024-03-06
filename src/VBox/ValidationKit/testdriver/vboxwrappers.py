@@ -1075,7 +1075,11 @@ class SessionWrapper(TdTaskBase):
         """
         if not self.isPlatformX86(): return True;
         # Supported.
-        if self.fpApiVer < 5.3  or  not hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
+        if self.fpApiVer < 5.3:
+            return True;
+        if self.fpApiVer < 7.1 and not hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
+            return True;
+        if self.fpApiVer >= 7.1 and not hasattr(vboxcon, 'CPUPropertyTypeX86_HWVirt'):
             return True;
 
         # Enable/disable it.
