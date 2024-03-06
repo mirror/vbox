@@ -43,9 +43,6 @@
 #include "COMEnums.h"
 #include "CMedium.h"
 
-/* Other VBox includes: */
-#include "iprt/cpp/utils.h" // for unconst stuff
-
 /** Storage medium cache used to
   * override some UIMedium attributes in the
   * user-friendly "don't show diffs" mode. */
@@ -146,22 +143,14 @@ public:
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the worst state
       *        (in terms of inaccessibility) detected on the given hard drive chain. */
-    KMediumState state(bool fNoDiffs = false) const
-    {
-        unconst(this)->checkNoDiffs(fNoDiffs);
-        return fNoDiffs ? m_noDiffs.state : m_state;
-    }
+    KMediumState state(bool fNoDiffs = false) const;
 
     /** Returns the result of the last blockAndQueryState() call.
       * Indicates an error and contain a proper error info if the last state check fails.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the worst result
       *        (in terms of inaccessibility) detected on the given hard drive chain. */
-    const COMResult& result(bool fNoDiffs = false) const
-    {
-        unconst(this)->checkNoDiffs(fNoDiffs);
-        return fNoDiffs ? m_noDiffs.result : m_result;
-    }
+    const COMResult& result(bool fNoDiffs = false) const;
 
     /** Returns the error result of the last blockAndQueryState() call. */
     QString lastAccessError() const { return m_strLastAccessError; }

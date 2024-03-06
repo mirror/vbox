@@ -46,10 +46,6 @@
 # include "UIDesktopWidgetWatchdog.h"
 #endif
 
-/* Other VBox includes: */
-#ifdef VBOX_WS_MAC
-# include "iprt/cpp/utils.h" // for unconst stuff
-#endif
 
 /** Template with geometry saving/restoring capabilities. */
 template <class Base>
@@ -137,10 +133,10 @@ protected:
     }
 
     /** Returns whether the window is currently maximized. */
-    bool isCurrentlyMaximized() const
+    bool isCurrentlyMaximized()
     {
 #ifdef VBOX_WS_MAC
-        return ::darwinIsWindowMaximized(unconst(this));
+        return ::darwinIsWindowMaximized(this);
 #else
         return this->isMaximized();
 #endif

@@ -42,6 +42,9 @@
 #include "CMachine.h"
 #include "CSnapshot.h"
 
+/* Other VBox includes: */
+#include "iprt/cpp/utils.h" // for unconst stuff
+
 QUuid   UIMedium::m_uNullID;
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");
 QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
@@ -433,6 +436,18 @@ void UIMedium::refresh()
                 break;
         }
     }
+}
+
+KMediumState UIMedium::state(bool fNoDiffs /* = false */) const
+{
+    unconst(this)->checkNoDiffs(fNoDiffs);
+    return fNoDiffs ? m_noDiffs.state : m_state;
+}
+
+const COMResult &UIMedium::result(bool fNoDiffs /* = false */) const
+{
+    unconst(this)->checkNoDiffs(fNoDiffs);
+    return fNoDiffs ? m_noDiffs.result : m_result;
 }
 
 void UIMedium::updateParentID()
