@@ -44,6 +44,11 @@
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
 
+/* Other VBox includes: */
+#ifndef VBOX_WS_MAC
+# include "iprt/cidr.h"
+#endif
+
 
 UIDetailsWidgetHostNetwork::UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
