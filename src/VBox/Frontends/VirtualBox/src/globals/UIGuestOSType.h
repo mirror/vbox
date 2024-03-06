@@ -86,15 +86,19 @@ struct UISubtypeInfo
     /** Constructs empty subtype info. */
     UISubtypeInfo()
         : m_enmArch(KPlatformArchitecture_None)
+        , m_fSupported(false)
     {}
 
     /** Constructs subtype info.
-      * @param  strName  Brings the name.
-      * @param  enmArch  Brings the architecture type. */
+      * @param  strName     Brings the name.
+      * @param  enmArch     Brings the architecture type.
+      * @param  fSupported  Brings whether subtype is supported. */
     UISubtypeInfo(const QString &strName,
-                  KPlatformArchitecture enmArch)
+                  KPlatformArchitecture enmArch,
+                  bool fSupported)
         : m_strName(strName)
         , m_enmArch(enmArch)
+        , m_fSupported(fSupported)
     {}
 
     /** Returns whether this subtype info has the same name as @a other. */
@@ -107,6 +111,8 @@ struct UISubtypeInfo
     QString                m_strName;
     /** Holds the architecture. */
     KPlatformArchitecture  m_enmArch;
+    /** Holds whether subtype is supported. */
+    bool                   m_fSupported;
 };
 
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
@@ -180,11 +186,14 @@ public:
     /** Re-create the guest OS type database. */
     void reCacheGuestOSTypes();
 
-    /** Returns a list of all families. */
+    /** Returns a list of all families.
+      * @param  fListAll  Brings whether a list of all families is requested, supported otherwise. */
     UIGuestOSFamilyInfo getFamilies(bool fListAll,
                                     KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
-    /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
+    /** Returns the list of subtypes for @p strFamilyId. This may be an empty list.
+      * @param  fListAll  Brings whether a list of all subtypes is requested, supported otherwise. */
     UIGuestOSSubtypeInfo getSubtypesForFamilyId(const QString &strFamilyId,
+                                                bool fListAll,
                                                 KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strFamilyId. */
     UIGuestOSTypeInfo getTypesForFamilyId(const QString &strFamilyId,

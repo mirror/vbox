@@ -652,7 +652,7 @@ void UINameAndSystemEditor::populateDistributionCombo()
 
     /* Acquire a list of suitable sub-types: */
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
-        = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(m_strFamilyId, enmArch);
+        = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(m_strFamilyId, false, enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
 

@@ -108,7 +108,7 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
     }
 
     /* Cache or update subtype info: */
-    UISubtypeInfo si(strSubtype, enmArch);
+    UISubtypeInfo si(strSubtype, enmArch, fSupported);
     if (!m_guestOSSubtypes.contains(strFamilyId))
         m_guestOSSubtypes[strFamilyId] << si;
     else
@@ -122,6 +122,8 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
             AssertReturnVoid(iIndex >= 0);
             if (subtypes.at(iIndex).m_enmArch != enmArch)
                 subtypes[iIndex].m_enmArch = KPlatformArchitecture_None; // means any
+            if (subtypes.at(iIndex).m_fSupported != fSupported)
+                subtypes[iIndex].m_fSupported = true; // cause at least one is supported
         }
     }
 }
@@ -148,6 +150,7 @@ UIGuestOSTypeManager::getFamilies(bool fListAll,
 
 UIGuestOSTypeManager::UIGuestOSSubtypeInfo
 UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
+                                             bool fListAll,
                                              KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Return all subtypes by default: */
@@ -159,7 +162,8 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
     foreach (const UISubtypeInfo &si, m_guestOSSubtypes.value(strFamilyId))
     {
         const KPlatformArchitecture enmCurrentArch = si.m_enmArch;
-        if (enmCurrentArch == enmArch || enmCurrentArch == KPlatformArchitecture_None)
+        if (   (enmCurrentArch == enmArch || enmCurrentArch == KPlatformArchitecture_None)
+            && (fListAll || si.m_fSupported))
             subtypes << si;
     }
     return subtypes;
