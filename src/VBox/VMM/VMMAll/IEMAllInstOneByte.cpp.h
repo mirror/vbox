@@ -8941,13 +8941,14 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
                 pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
                 pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
                 pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
-                pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
             }
             else
             {
                 pVCpu->iem.s.uRexReg    = 0;
                 pVCpu->iem.s.uRexIndex  = 0;
                 pVCpu->iem.s.uRexB      = 0;
+                /** @todo testcase: Will attemps to access registers 8 thru 15 from 16&32 bit
+                 * code raise \#UD or just be ignored?  We're ignoring for now... */
                 pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0x7;
             }
             pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
