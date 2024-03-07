@@ -724,7 +724,7 @@ class TestBoxScript(object):
             sFullName = os.path.join(self._oOptions.sScratchRoot, sName);
             try:
                 if os.path.isdir(sFullName):
-                    shutil.rmtree(sFullName, False, oRc.onErrorCallback);
+                    shutil.rmtree(sFullName, False, oRc.onErrorCallback); # pylint: disable=deprecated-argument
                 else:
                     os.remove(sFullName);
                 if os.path.exists(sFullName):
