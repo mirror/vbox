@@ -171,13 +171,13 @@
 /** @name The AArch64 NEON vector register encoding.
  * @{ */
 #define ARMV8_A64_REG_V0                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V1                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V2                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V3                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V4                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V5                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V6                            ARMV8_A64_REG_Q0
-#define ARMV8_A64_REG_V7                            ARMV8_A64_REG_Q0
+#define ARMV8_A64_REG_V1                            ARMV8_A64_REG_Q1
+#define ARMV8_A64_REG_V2                            ARMV8_A64_REG_Q2
+#define ARMV8_A64_REG_V3                            ARMV8_A64_REG_Q3
+#define ARMV8_A64_REG_V4                            ARMV8_A64_REG_Q4
+#define ARMV8_A64_REG_V5                            ARMV8_A64_REG_Q5
+#define ARMV8_A64_REG_V6                            ARMV8_A64_REG_Q6
+#define ARMV8_A64_REG_V7                            ARMV8_A64_REG_Q7
 #define ARMV8_A64_REG_V8                            ARMV8_A64_REG_Q8
 #define ARMV8_A64_REG_V9                            ARMV8_A64_REG_Q9
 #define ARMV8_A64_REG_V10                           ARMV8_A64_REG_Q10
