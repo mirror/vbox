@@ -4076,7 +4076,7 @@ typedef enum ARMV8INSTRUMOVSZ
     kArmv8InstrUmovSz_U8  = 0, /**< Byte. */
     kArmv8InstrUmovSz_U16 = 1, /**< Halfword. */
     kArmv8InstrUmovSz_U32 = 2, /**< 32-bit. */
-    kArmv8InstrUmovSz_U64 = 3, /**< 64-bit (only valid when the destination is a 64-bit register. */
+    kArmv8InstrUmovSz_U64 = 3  /**< 64-bit (only valid when the destination is a 64-bit register. */
 } ARMV8INSTRUMOVSZ;
 
 
@@ -4115,7 +4115,7 @@ typedef enum ARMV8INSTRVECCMPZEROSZ
     kArmv8InstrCmpZeroSz_S8  = 0, /**< Byte. */
     kArmv8InstrCmpZeroSz_S16 = 1, /**< Halfword. */
     kArmv8InstrCmpZeroSz_S32 = 2, /**< 32-bit. */
-    kArmv8InstrCmpZeroSz_S64 = 3, /**< 64-bit. */
+    kArmv8InstrCmpZeroSz_S64 = 3  /**< 64-bit. */
 } ARMV8INSTRVECCMPZEROSZ;
 
 
