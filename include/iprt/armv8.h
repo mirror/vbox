@@ -4135,7 +4135,7 @@ typedef enum ARMV8INSTRVECCMPZEROOP
  * @returns The encoded instruction.
  * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc  The vector source register.
- * @aram    enmSz       Vector element size.
+ * @param   enmSz       Vector element size.
  * @param   enmOp       The compare operation against to encode.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpToZero(uint32_t iVecRegDst, uint32_t iVecRegSrc, ARMV8INSTRVECCMPZEROSZ enmSz,
