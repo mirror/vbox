@@ -230,7 +230,7 @@ static uint16_t const g_auEflStatusBitsVars[] =
 static uint8_t \
 RT_CONCAT(bs3CpuInstr2_CommonBinaryU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNBINTEST paTests, unsigned cTests, uint16_t fPassthruEfl, \
                                               RT_CONCAT(PCBS3CPUINSTR2BIN,a_cBits) paTestData, unsigned cTestData, bool fCarryIn, \
-                                              bool fMaskSrcWhenMemDst) \
+                                              bool fMaskSrcWhenMemDst, bool fReadOnly) \
 { \
     BS3REGCTX       Ctx; \
     BS3REGCTX       CtxExpect; \
@@ -253,6 +253,10 @@ RT_CONCAT(bs3CpuInstr2_CommonBinaryU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNBI
      */ \
     Bs3RegCtxSaveEx(&Ctx, bMode, 640); \
     Ctx.rflags.u32 &= ~X86_EFL_RF; \
+    if (ARCH_BITS == 64) \
+        for (iTest = 0; iTest < 16; iTest++) \
+            if (iTest != X86_GREG_xSP) \
+                (&Ctx.rax)[iTest].au32[1] = UINT32_C(0x8572ade) << (iTest & 7); \
     Bs3MemCpy(&CtxExpect, &Ctx, sizeof(CtxExpect)); \
     if (!BS3_MODE_IS_16BIT_SYS(bMode)) \
         CtxExpect.rflags.u32 |= X86_EFL_RF; \
@@ -302,6 +306,8 @@ RT_CONCAT(bs3CpuInstr2_CommonBinaryU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNBI
             *puCtxDst             = paTestData[iTestData].uSrc1; \
             *puCtxExpectSrc       = uSrc; \
             *puCtxExpectDst       = paTestData[iTestData].uResult; \
+            if (a_cBits == 32 && !fReadOnly && !paTests[iTest].fDstMem) \
+                puCtxExpectDst[1] = 0; \
             CtxExpect.rflags.u16 &= ~X86_EFL_STATUS_BITS; \
             CtxExpect.rflags.u16 |= paTestData[iTestData].fEflOut & X86_EFL_STATUS_BITS; \
             if (puMemPtrReg) \
@@ -389,14 +395,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_and)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(and) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_and_TestDataU8, g_cBs3CpuInstr2_and_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_and_TestDataU8, g_cBs3CpuInstr2_and_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_and_TestDataU16, g_cBs3CpuInstr2_and_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_and_TestDataU16, g_cBs3CpuInstr2_and_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_and_TestDataU32, g_cBs3CpuInstr2_and_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_and_TestDataU32, g_cBs3CpuInstr2_and_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_and_TestDataU64, g_cBs3CpuInstr2_and_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_and_TestDataU64, g_cBs3CpuInstr2_and_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -411,14 +421,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_or)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(or) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_or_TestDataU8, g_cBs3CpuInstr2_or_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_or_TestDataU8, g_cBs3CpuInstr2_or_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_or_TestDataU16, g_cBs3CpuInstr2_or_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_or_TestDataU16, g_cBs3CpuInstr2_or_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_or_TestDataU32, g_cBs3CpuInstr2_or_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_or_TestDataU32, g_cBs3CpuInstr2_or_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_or_TestDataU64, g_cBs3CpuInstr2_or_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_or_TestDataU64, g_cBs3CpuInstr2_or_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -433,14 +447,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_xor)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(xor) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_xor_TestDataU8, g_cBs3CpuInstr2_xor_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_xor_TestDataU8, g_cBs3CpuInstr2_xor_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_xor_TestDataU16, g_cBs3CpuInstr2_xor_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_xor_TestDataU16, g_cBs3CpuInstr2_xor_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_xor_TestDataU32, g_cBs3CpuInstr2_xor_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_xor_TestDataU32, g_cBs3CpuInstr2_xor_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_xor_TestDataU64, g_cBs3CpuInstr2_xor_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_xor_TestDataU64, g_cBs3CpuInstr2_xor_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -455,14 +473,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_test)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(test) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_test_TestDataU8, g_cBs3CpuInstr2_test_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_test_TestDataU8, g_cBs3CpuInstr2_test_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_test_TestDataU16, g_cBs3CpuInstr2_test_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_test_TestDataU16, g_cBs3CpuInstr2_test_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_test_TestDataU32, g_cBs3CpuInstr2_test_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_test_TestDataU32, g_cBs3CpuInstr2_test_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_test_TestDataU64, g_cBs3CpuInstr2_test_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_test_TestDataU64, g_cBs3CpuInstr2_test_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -477,14 +499,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_add)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(add) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_add_TestDataU8, g_cBs3CpuInstr2_add_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_add_TestDataU8, g_cBs3CpuInstr2_add_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_add_TestDataU16, g_cBs3CpuInstr2_add_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_add_TestDataU16, g_cBs3CpuInstr2_add_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_add_TestDataU32, g_cBs3CpuInstr2_add_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_add_TestDataU32, g_cBs3CpuInstr2_add_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_add_TestDataU64, g_cBs3CpuInstr2_add_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_add_TestDataU64, g_cBs3CpuInstr2_add_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -499,14 +525,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_adc)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(adc) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_adc_TestDataU8, g_cBs3CpuInstr2_adc_TestDataU8, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_adc_TestDataU8, g_cBs3CpuInstr2_adc_TestDataU8,
+                                true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_adc_TestDataU16, g_cBs3CpuInstr2_adc_TestDataU16, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_adc_TestDataU16, g_cBs3CpuInstr2_adc_TestDataU16,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_adc_TestDataU32, g_cBs3CpuInstr2_adc_TestDataU32, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_adc_TestDataU32, g_cBs3CpuInstr2_adc_TestDataU32,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_adc_TestDataU64, g_cBs3CpuInstr2_adc_TestDataU64, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_adc_TestDataU64, g_cBs3CpuInstr2_adc_TestDataU64,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -521,14 +551,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sub)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(sub) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_sub_TestDataU8, g_cBs3CpuInstr2_sub_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_sub_TestDataU8, g_cBs3CpuInstr2_sub_TestDataU8,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sub_TestDataU16, g_cBs3CpuInstr2_sub_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sub_TestDataU16, g_cBs3CpuInstr2_sub_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sub_TestDataU32, g_cBs3CpuInstr2_sub_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sub_TestDataU32, g_cBs3CpuInstr2_sub_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sub_TestDataU64, g_cBs3CpuInstr2_sub_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sub_TestDataU64, g_cBs3CpuInstr2_sub_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -543,14 +577,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_sbb)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(sbb) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_sbb_TestDataU8, g_cBs3CpuInstr2_sbb_TestDataU8, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_sbb_TestDataU8, g_cBs3CpuInstr2_sbb_TestDataU8,
+                                true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sbb_TestDataU16, g_cBs3CpuInstr2_sbb_TestDataU16, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sbb_TestDataU16, g_cBs3CpuInstr2_sbb_TestDataU16,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sbb_TestDataU32, g_cBs3CpuInstr2_sbb_TestDataU32, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sbb_TestDataU32, g_cBs3CpuInstr2_sbb_TestDataU32,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_sbb_TestDataU64, g_cBs3CpuInstr2_sbb_TestDataU64, true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_sbb_TestDataU64, g_cBs3CpuInstr2_sbb_TestDataU64,
+                                 true /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -565,14 +603,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmp)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_ALT_64(cmp) };
 #endif
     bs3CpuInstr2_CommonBinaryU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), 0 /*fPassthruEfl*/,
-                                g_aBs3CpuInstr2_cmp_TestDataU8, g_cBs3CpuInstr2_cmp_TestDataU8, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                g_aBs3CpuInstr2_cmp_TestDataU8, g_cBs3CpuInstr2_cmp_TestDataU8,
+                                false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_cmp_TestDataU16, g_cBs3CpuInstr2_cmp_TestDataU16, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_cmp_TestDataU16, g_cBs3CpuInstr2_cmp_TestDataU16,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_cmp_TestDataU32, g_cBs3CpuInstr2_cmp_TestDataU32, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_cmp_TestDataU32, g_cBs3CpuInstr2_cmp_TestDataU32,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), 0 /*fPassthruEfl*/,
-                                 g_aBs3CpuInstr2_cmp_TestDataU64, g_cBs3CpuInstr2_cmp_TestDataU64, false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_cmp_TestDataU64, g_cBs3CpuInstr2_cmp_TestDataU64,
+                                 false /*fCarryIn*/, false /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -588,12 +630,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bt)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(bt) };
 #endif
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bt_TestDataU16, g_cBs3CpuInstr2_bt_TestDataU16, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bt_TestDataU16, g_cBs3CpuInstr2_bt_TestDataU16,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bt_TestDataU32, g_cBs3CpuInstr2_bt_TestDataU32, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bt_TestDataU32, g_cBs3CpuInstr2_bt_TestDataU32,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bt_TestDataU64, g_cBs3CpuInstr2_bt_TestDataU64, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bt_TestDataU64, g_cBs3CpuInstr2_bt_TestDataU64,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, true /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -607,12 +652,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_btc)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(btc) };
 #endif
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btc_TestDataU16, g_cBs3CpuInstr2_btc_TestDataU16, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btc_TestDataU16, g_cBs3CpuInstr2_btc_TestDataU16,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btc_TestDataU32, g_cBs3CpuInstr2_btc_TestDataU32, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btc_TestDataU32, g_cBs3CpuInstr2_btc_TestDataU32,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btc_TestDataU64, g_cBs3CpuInstr2_btc_TestDataU64, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btc_TestDataU64, g_cBs3CpuInstr2_btc_TestDataU64,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -626,12 +674,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_btr)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(btr) };
 #endif
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btr_TestDataU16, g_cBs3CpuInstr2_btr_TestDataU16, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btr_TestDataU16, g_cBs3CpuInstr2_btr_TestDataU16,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btr_TestDataU32, g_cBs3CpuInstr2_btr_TestDataU32, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btr_TestDataU32, g_cBs3CpuInstr2_btr_TestDataU32,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_btr_TestDataU64, g_cBs3CpuInstr2_btr_TestDataU64, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_btr_TestDataU64, g_cBs3CpuInstr2_btr_TestDataU64,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
@@ -645,12 +696,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_bts)(uint8_t bMode)
     static const BS3CPUINSTR2CMNBINTEST s_aTests64[] = { BS3CPUINSTR2CMNBINTEST_ENTRIES_64(bts) };
 #endif
     bs3CpuInstr2_CommonBinaryU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bts_TestDataU16, g_cBs3CpuInstr2_bts_TestDataU16, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bts_TestDataU16, g_cBs3CpuInstr2_bts_TestDataU16,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
     bs3CpuInstr2_CommonBinaryU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bts_TestDataU32, g_cBs3CpuInstr2_bts_TestDataU32, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bts_TestDataU32, g_cBs3CpuInstr2_bts_TestDataU32,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #if ARCH_BITS == 64
     bs3CpuInstr2_CommonBinaryU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), BS3CPUINSTR2_BTx_PASSTHRU_EFL,
-                                 g_aBs3CpuInstr2_bts_TestDataU64, g_cBs3CpuInstr2_bts_TestDataU64, false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/);
+                                 g_aBs3CpuInstr2_bts_TestDataU64, g_cBs3CpuInstr2_bts_TestDataU64,
+                                 false /*fCarryIn*/, true /*fMaskSrcWhenMemDst*/, false /*fReadOnly*/);
 #endif
     return 0;
 }
