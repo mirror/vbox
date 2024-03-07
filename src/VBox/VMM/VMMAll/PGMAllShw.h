@@ -447,26 +447,70 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
     X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
-    /*
-     * We're currently ASSUMING that the SLAT mode here is always "direct".
-     * If a guest (e.g., nested Hyper-V) turns out to require this
-     * (probably while modifying shadow non-MMIO2 pages) then handle this
-     * by calling (NestedGetPage). Asserting for now.
-     */
-    Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
-    PEPTPD          pPDDst;
-    int rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
-    if (rc == VINF_SUCCESS) /** @todo this function isn't expected to return informational status codes. Check callers / fix. */
-    { /* likely */ }
+    EPTPDE Pde;
+    const unsigned iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
+
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT)
+    {
+        PEPTPD pPDDst;
+        int rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
+        if (rc == VINF_SUCCESS) /** @todo this function isn't expected to return informational status codes. Check callers / fix. */
+        { /* likely */ }
+        else
+        {
+            AssertRC(rc);
+            return rc;
+        }
+        Assert(pPDDst);
+        Pde = pPDDst->a[iPd];
+    }
     else
     {
-        AssertRC(rc);
-        return rc;
-    }
-    Assert(pPDDst);
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
+        Assert(!(GCPtr & GUEST_PAGE_OFFSET_MASK));
+        PGMPTWALK      Walk;
+        PGMPTWALKGST   GstWalkAll;
+        RTGCPHYS const GCPhysNestedPage = GCPtr;
+        int rc = pgmGstSlatWalk(pVCpu, GCPhysNestedPage, false /*fIsLinearAddrValid*/, 0 /*GCPtrNestedFault*/, &Walk,
+                                &GstWalkAll);
+        if (RT_SUCCESS(rc))
+        {
+#   ifdef DEBUG_ramshankar
+            /* Paranoia. */
+            Assert(GstWalkAll.enmType == PGMPTWALKGSTTYPE_EPT);
+            Assert(Walk.fSucceeded);
+            Assert(Walk.fEffective & (PGM_PTATTRS_EPT_R_MASK | PGM_PTATTRS_EPT_W_MASK | PGM_PTATTRS_EPT_X_SUPER_MASK));
+            Assert(Walk.fIsSlat);
+            Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_R_MASK)  ==  RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_R_MASK));
+            Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_W_MASK)  ==  RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_W_MASK));
+            Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_NX_MASK) == !RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK));
+#   endif
+            PGM_A20_ASSERT_MASKED(pVCpu, Walk.GCPhys);
 
-    const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
-    EPTPDE Pde = pPDDst->a[iPd];
+            /* Update the nested-guest physical address with the translated guest-physical address. */
+            GCPtr = Walk.GCPhys;
+
+            /* Get the PD. */
+            PSHWPD pEptPd;
+            rc = pgmShwGetNestedEPTPDPtr(pVCpu, GCPhysNestedPage, NULL /*ppPdpt*/, &pEptPd, &GstWalkAll);
+            AssertRCReturn(rc, rc);
+            Assert(pEptPd);
+
+            Assert(iPd < EPT_PG_ENTRIES);
+            Pde = pEptPd->a[iPd];
+        }
+        else
+        {
+            Log(("Failed to translate nested-guest physical address %#RGp rc=%Rrc\n", GCPhysNestedPage, rc));
+            return rc;
+        }
+
+#  else  /* !VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+        AssertFailed();
+        return VERR_PGM_SHW_NONE_IPE;
+#  endif /* !VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+    }
 
 # elif PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
     X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
