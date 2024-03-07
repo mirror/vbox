@@ -8917,16 +8917,19 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
             uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+#if 1
+            AssertCompile(IEM_OP_PRF_SIZE_REX_W == RT_BIT_32(9));
+            pVCpu->iem.s.fPrefixes |= (uint32_t)(bVex2 & 0x80) << (9 - 7);
+#else
+            if (bVex2 & 0x80 /* VEX.W */)
+                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
+#endif
             if (IEM_IS_64BIT_CODE(pVCpu))
             {
 #if 1
-                AssertCompile(IEM_OP_PRF_SIZE_REX_W == RT_BIT_32(9));
-                pVCpu->iem.s.fPrefixes |= (uint32_t)(bVex2 & 0x80) << (9 - 7);
                 AssertCompile(IEM_OP_PRF_REX_B == RT_BIT_32(25) && IEM_OP_PRF_REX_X == RT_BIT_32(26) && IEM_OP_PRF_REX_R == RT_BIT_32(27));
                 pVCpu->iem.s.fPrefixes |= (uint32_t)(~bRm & 0xe0) << (25 - 5);
 #else
-                if (bVex2 & 0x80 /* VEX.W */)
-                    pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
                 if (~bRm & 0x20 /* VEX.~B */)
                     pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_B;
                 if (~bRm & 0x40 /* VEX.~X */)
@@ -8934,11 +8937,19 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
                 if (~bRm & 0x80 /* VEX.~R */)
                     pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_R;
 #endif
+                pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
+                pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
+                pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
+                pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
+                pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
             }
-            pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
-            pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
-            pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
-            pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
+            else
+            {
+                pVCpu->iem.s.uRexReg    = 0;
+                pVCpu->iem.s.uRexIndex  = 0;
+                pVCpu->iem.s.uRexB      = 0;
+                pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0x7;
+            }
             pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
 
