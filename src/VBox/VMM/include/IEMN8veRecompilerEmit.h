@@ -6821,6 +6821,189 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+
+/**
+ * Emits a 128-bit vector register store to a VCpu value.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreVecRegToVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    AssertReleaseFailed();
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 128-bit vector register load of a VCpu value.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreVecRegToVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecReg, offVCpu);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a 128-bit vector register load of a VCpu value.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    AssertReleaseFailed();
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 128-bit vector register load of a VCpu value.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecReg, offVCpu);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a 256-bit vector register store to a VCpu value.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreVecRegToVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpuLow, uint32_t offVCpuHigh)
+{
+#ifdef RT_ARCH_AMD64
+    AssertReleaseFailed();
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecReg & 0x1));
+    off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, iVecReg,     offVCpuLow);
+    off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, iVecReg + 1, offVCpuHigh);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 256-bit vector register load of a VCpu value.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpuLow, uint32_t offVCpuHigh)
+{
+#ifdef RT_ARCH_AMD64
+    AssertReleaseFailed();
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecReg & 0x1));
+    off = iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, iVecReg,     offVCpuLow);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, iVecReg + 1, offVCpuHigh);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst = vecsrc load.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movdqu vecdst, vecsrc */
+    pCodeBuf[off++] = 0xf3;
+
+    if ((iVecRegDst | iVecRegSrc) >= 8)
+        pCodeBuf[off++] = iVecRegDst < 8  ? X86_OP_REX_B
+                        : iVecRegSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
+                        :                   X86_OP_REX_R;
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x6f;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    /* mov dst, src;   alias for: orr dst, src, src */
+    pCodeBuf[off++] = Armv8A64MkVecInstrOrr(iVecRegDst, iVecRegSrc, iVecRegSrc);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = gprsrc load, 128-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVecRegU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecRegDst, iVecRegSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iVecRegSrc);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = gprsrc load, 256-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    AssertReleaseFailed();
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecRegDst & 0x1)); Assert(!(iVecRegSrc & 0x1));
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, iVecRegDst,     iVecRegSrc    );
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, iVecRegDst + 1, iVecRegSrc + 1);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+#endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
+
 /** @} */
 
 #endif /* !VMM_INCLUDED_SRC_include_IEMN8veRecompilerEmit_h */

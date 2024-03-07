@@ -92,6 +92,12 @@ RT_C_DECLS_BEGIN
 # define IEMNATIVE_WITH_DELAYED_PC_UPDATING
 #endif
 
+/** @def IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+ * Enables the SIMD register allocator @bugref{10614}.  */
+//# define IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/** Enables access to even callee saved registers. */
+//# define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+
 /** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
  * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
  * executing native translation blocks.
@@ -963,6 +969,10 @@ typedef enum IEMTBDBGENTRYTYPE
     kIemTbDbgEntryType_Label,
     /** Info about a host register shadowing a guest register. */
     kIemTbDbgEntryType_GuestRegShadowing,
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Info about a host SIMD register shadowing a guest SIMD register. */
+    kIemTbDbgEntryType_GuestSimdRegShadowing,
+#endif
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     /** Info about a delayed RIP update. */
     kIemTbDbgEntryType_DelayedPcUpdate,
@@ -1038,6 +1048,21 @@ typedef union IEMTBDBGENTRY
         /** The previous host register number, UINT8_MAX if new.   */
         uint32_t    idxHstRegPrev : 8;
     } GuestRegShadowing;
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    struct
+    {
+        /* kIemTbDbgEntryType_GuestSimdRegShadowing. */
+        uint32_t    uType             : 4;
+        uint32_t    uUnused           : 4;
+        /** The guest register being shadowed (IEMNATIVEGSTSIMDREG). */
+        uint32_t    idxGstSimdReg     : 8;
+        /** The host new register number, UINT8_MAX if dropped. */
+        uint32_t    idxHstSimdReg     : 8;
+        /** The previous host register number, UINT8_MAX if new.   */
+        uint32_t    idxHstSimdRegPrev : 8;
+    } GuestSimdRegShadowing;
+#endif
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     struct

@@ -132,6 +132,10 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #ifdef VBOX_STRICT
 static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                 uint8_t idxReg, IEMNATIVEGSTREG enmGstReg);
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+static uint32_t iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSimdReg,
+                                                    IEMNATIVEGSTSIMDREG enmGstSimdReg, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz);
+# endif
 static void iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNative);
 #endif
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
@@ -3014,6 +3018,52 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
 #ifdef IEMNATIVE_REG_FIXED_PC_DBG
     pReNative->Core.aHstRegs[IEMNATIVE_REG_FIXED_PC_DBG].enmWhat     = kIemNativeWhat_PcShadow;
 #endif
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+# ifdef RT_ARCH_ARM64
+    /*
+     * Arm64 has 32 128-bit registers only, in order to support emulating 256-bit registers we pair
+     * two real registers statically to one virtual for now, leaving us with only 16 256-bit registers.
+     * We always pair v0 with v1, v2 with v3, etc. so we mark the higher register as fixed here during init
+     * and the register allocator assumes that it will be always free when the lower is picked.
+     */
+    uint32_t const fFixedAdditional = UINT32_C(0xaaaaaaaa);
+# else
+    uint32_t const fFixedAdditional = 0;
+# endif
+
+    pReNative->Core.bmHstSimdRegs          = IEMNATIVE_SIMD_REG_FIXED_MASK
+                                           | fFixedAdditional
+# if IEMNATIVE_HST_SIMD_REG_COUNT < 32
+                                           | ~(RT_BIT(IEMNATIVE_HST_SIMD_REG_COUNT) - 1U)
+# endif
+                                           ;
+    pReNative->Core.bmHstSimdRegsWithGstShadow   = 0;
+    pReNative->Core.bmGstSimdRegShadows          = 0;
+    pReNative->Core.bmGstSimdRegShadowDirtyLo128 = 0;
+    pReNative->Core.bmGstSimdRegShadowDirtyHi128 = 0;
+
+    /* Full host register reinit: */
+    for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstSimdRegs); i++)
+    {
+        pReNative->Core.aHstSimdRegs[i].fGstRegShadows = 0;
+        pReNative->Core.aHstSimdRegs[i].enmWhat        = kIemNativeWhat_Invalid;
+        pReNative->Core.aHstSimdRegs[i].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
+    }
+
+    fRegs = IEMNATIVE_SIMD_REG_FIXED_MASK | fFixedAdditional;
+    for (uint32_t idxReg = ASMBitFirstSetU32(fRegs) - 1; fRegs != 0; idxReg = ASMBitFirstSetU32(fRegs) - 1)
+    {
+        fRegs &= ~RT_BIT_32(idxReg);
+        pReNative->Core.aHstSimdRegs[idxReg].enmWhat = kIemNativeWhat_FixedReserved;
+    }
+
+#ifdef IEMNATIVE_SIMD_REG_FIXED_TMP0
+    pReNative->Core.aHstSimdRegs[IEMNATIVE_SIMD_REG_FIXED_TMP0].enmWhat = kIemNativeWhat_FixedTmp;
+#endif
+
+#endif
+
     return pReNative;
 }
 
@@ -3435,6 +3485,23 @@ static void iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, 
     pEntry->GuestRegShadowing.idxHstReg     = idxHstReg;
     pEntry->GuestRegShadowing.idxHstRegPrev = idxHstRegPrev;
 }
+
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Debug Info: Record info about guest register shadowing.
+ */
+static void iemNativeDbgInfoAddGuestSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                     uint8_t idxHstSimdReg = UINT8_MAX, uint8_t idxHstSimdRegPrev = UINT8_MAX)
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    pEntry->GuestSimdRegShadowing.uType             = kIemTbDbgEntryType_GuestSimdRegShadowing;
+    pEntry->GuestSimdRegShadowing.uUnused           = 0;
+    pEntry->GuestSimdRegShadowing.idxGstSimdReg     = enmGstSimdReg;
+    pEntry->GuestSimdRegShadowing.idxHstSimdReg     = idxHstSimdReg;
+    pEntry->GuestSimdRegShadowing.idxHstSimdRegPrev = idxHstSimdRegPrev;
+}
+# endif
 
 
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
@@ -5133,6 +5200,811 @@ iemNativeEmitPcWriteback(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #endif
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/*********************************************************************************************************************************
+*   SIMD register allocator (largely code duplication of the GPR allocator for now but might diverge)                            *
+*********************************************************************************************************************************/
+
+/**
+ * Info about shadowed guest SIMD register values.
+ * @see IEMNATIVEGSTSIMDREG
+ */
+static struct
+{
+    /** Offset in VMCPU of XMM (low 128-bit) registers. */
+    uint32_t    offXmm;
+    /** Offset in VMCPU of YmmHi (high 128-bit) registers. */
+    uint32_t    offYmm;
+    /** Name (for logging). */
+    const char *pszName;
+} const g_aGstSimdShadowInfo[] =
+{
+#define CPUMCTX_OFF_AND_SIZE(a_iSimdReg) (uint32_t)RT_UOFFSETOF(VMCPU, cpum.GstCtx.XState.x87.aXMM[a_iSimdReg]), \
+                                         (uint32_t)RT_UOFFSETOF(VMCPU, cpum.GstCtx.XState.u.YmmHi.aYmmHi[a_iSimdReg])
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  0] = */  { CPUMCTX_OFF_AND_SIZE(0),  "ymm0",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  1] = */  { CPUMCTX_OFF_AND_SIZE(1),  "ymm1",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  2] = */  { CPUMCTX_OFF_AND_SIZE(2),  "ymm2",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  3] = */  { CPUMCTX_OFF_AND_SIZE(3),  "ymm3",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  4] = */  { CPUMCTX_OFF_AND_SIZE(4),  "ymm4",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  5] = */  { CPUMCTX_OFF_AND_SIZE(5),  "ymm5",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  6] = */  { CPUMCTX_OFF_AND_SIZE(6),  "ymm6",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  7] = */  { CPUMCTX_OFF_AND_SIZE(7),  "ymm7",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  8] = */  { CPUMCTX_OFF_AND_SIZE(8),  "ymm8",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst +  9] = */  { CPUMCTX_OFF_AND_SIZE(9),  "ymm9",  },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 10] = */  { CPUMCTX_OFF_AND_SIZE(10), "ymm10", },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 11] = */  { CPUMCTX_OFF_AND_SIZE(11), "ymm11", },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 12] = */  { CPUMCTX_OFF_AND_SIZE(12), "ymm12", },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 13] = */  { CPUMCTX_OFF_AND_SIZE(13), "ymm13", },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 14] = */  { CPUMCTX_OFF_AND_SIZE(14), "ymm14", },
+    /* [kIemNativeGstSimdReg_SimdRegFirst + 15] = */  { CPUMCTX_OFF_AND_SIZE(15), "ymm15", },
+#undef CPUMCTX_OFF_AND_SIZE
+};
+AssertCompile(RT_ELEMENTS(g_aGstSimdShadowInfo) == kIemNativeGstSimdReg_End);
+
+
+#ifdef LOG_ENABLED
+/** Host CPU SIMD register names. */
+DECL_HIDDEN_CONST(const char * const) g_apszIemNativeHstSimdRegNames[] =
+{
+#ifdef RT_ARCH_AMD64
+    "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7", "ymm8", "ymm9", "ymm10", "ymm11", "ymm12", "ymm13", "ymm14", "ymm15"
+#elif RT_ARCH_ARM64
+    "v0",  "v1",  "v2",  "v3",  "v4",  "v5",  "v6",  "v7",  "v8",  "v9",  "v10", "v11", "v12", "v13", "v14", "v15",
+    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31",
+#else
+# error "port me"
+#endif
+};
+#endif
+
+
+DECL_FORCE_INLINE(uint8_t) iemNativeSimdRegMarkAllocated(PIEMRECOMPILERSTATE pReNative, uint8_t idxSimdReg,
+                                                         IEMNATIVEWHAT enmWhat, uint8_t idxVar = UINT8_MAX) RT_NOEXCEPT
+{
+    pReNative->Core.bmHstSimdRegs |= RT_BIT_32(idxSimdReg);
+
+    pReNative->Core.aHstSimdRegs[idxSimdReg].enmWhat        = enmWhat;
+    pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows = 0;
+    RT_NOREF(idxVar);
+    return idxSimdReg;
+}
+
+
+/**
+ * Frees a temporary SIMD register.
+ *
+ * Any shadow copies of guest registers assigned to the host register will not
+ * be flushed by this operation.
+ */
+DECLHIDDEN(void) iemNativeSimdRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg) RT_NOEXCEPT
+{
+    Assert(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxHstSimdReg));
+    Assert(pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmWhat == kIemNativeWhat_Tmp);
+    pReNative->Core.bmHstSimdRegs &= ~RT_BIT_32(idxHstSimdReg);
+    Log12(("iemNativeSimdRegFreeTmp: %s (gst: %#RX64)\n",
+           g_apszIemNativeHstSimdRegNames[idxHstSimdReg], pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows));
+}
+
+
+/**
+ * Locate a register, possibly freeing one up.
+ *
+ * This ASSUMES the caller has done the minimal/optimal allocation checks and
+ * failed.
+ *
+ * @returns Host register number on success. Returns UINT8_MAX if no registers
+ *          found, the caller is supposed to deal with this and raise a
+ *          allocation type specific status code (if desired).
+ *
+ * @throws  VBox status code if we're run into trouble spilling a variable of
+ *          recording debug info.  Does NOT throw anything if we're out of
+ *          registers, though.
+ */
+static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile,
+                                             uint32_t fRegMask = IEMNATIVE_HST_SIMD_REG_MASK & ~IEMNATIVE_SIMD_REG_FIXED_MASK)
+{
+    //STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFree);
+    Assert(!(fRegMask & ~IEMNATIVE_HST_SIMD_REG_MASK));
+    Assert(!(fRegMask & IEMNATIVE_SIMD_REG_FIXED_MASK));
+
+    AssertFailed();
+
+    /*
+     * Try a freed register that's shadowing a guest register.
+     */
+    uint32_t fRegs = ~pReNative->Core.bmHstSimdRegs & fRegMask;
+    if (fRegs)
+    {
+        //STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeNoVar);
+
+#if 0 /** @todo def IEMNATIVE_WITH_LIVENESS_ANALYSIS */
+        /*
+         * When we have livness information, we use it to kick out all shadowed
+         * guest register that will not be needed any more in this TB.  If we're
+         * lucky, this may prevent us from ending up here again.
+         *
+         * Note! We must consider the previous entry here so we don't free
+         *       anything that the current threaded function requires (current
+         *       entry is produced by the next threaded function).
+         */
+        uint32_t const idxCurCall = pReNative->idxCurCall;
+        if (idxCurCall > 0)
+        {
+            PCIEMLIVENESSENTRY const pLivenessEntry = &pReNative->paLivenessEntries[idxCurCall - 1];
+
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
+            /* Construct a mask of the guest registers in the UNUSED and XCPT_OR_CALL state. */
+            AssertCompile(IEMLIVENESS_STATE_UNUSED == 1 && IEMLIVENESS_STATE_XCPT_OR_CALL == 2);
+            uint64_t fToFreeMask = pLivenessEntry->Bit0.bm64 ^ pLivenessEntry->Bit1.bm64; /* mask of regs in either UNUSED */
+#else
+            /* Construct a mask of the registers not in the read or write state.
+               Note! We could skips writes, if they aren't from us, as this is just
+                     a hack to prevent trashing registers that have just been written
+                     or will be written when we retire the current instruction. */
+            uint64_t fToFreeMask = ~pLivenessEntry->aBits[IEMLIVENESS_BIT_READ].bm64
+                                 & ~pLivenessEntry->aBits[IEMLIVENESS_BIT_WRITE].bm64
+                                 & IEMLIVENESSBIT_MASK;
+#endif
+            /* Merge EFLAGS. */
+            uint64_t fTmp = fToFreeMask & (fToFreeMask >> 3);   /* AF2,PF2,CF2,Other2 = AF,PF,CF,Other & OF,SF,ZF,AF */
+            fTmp &= fTmp >> 2;                                  /*         CF3,Other3 = AF2,PF2 & CF2,Other2  */
+            fTmp &= fTmp >> 1;                                  /*             Other4 = CF3 & Other3 */
+            fToFreeMask &= RT_BIT_64(kIemNativeGstReg_EFlags) - 1;
+            fToFreeMask |= fTmp & RT_BIT_64(kIemNativeGstReg_EFlags);
+
+            /* If it matches any shadowed registers. */
+            if (pReNative->Core.bmGstRegShadows & fToFreeMask)
+            {
+                STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeLivenessUnshadowed);
+                iemNativeRegFlushGuestShadows(pReNative, fToFreeMask);
+                Assert(fRegs == (~pReNative->Core.bmHstRegs & fRegMask)); /* this shall not change. */
+
+                /* See if we've got any unshadowed registers we can return now. */
+                uint32_t const fUnshadowedRegs = fRegs & ~pReNative->Core.bmHstRegsWithGstShadow;
+                if (fUnshadowedRegs)
+                {
+                    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeLivenessHelped);
+                    return (fPreferVolatile
+                            ? ASMBitFirstSetU32(fUnshadowedRegs)
+                            : ASMBitLastSetU32(  fUnshadowedRegs & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK
+                                               ? fUnshadowedRegs & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK : fUnshadowedRegs))
+                         - 1;
+                }
+            }
+        }
+#endif /* IEMNATIVE_WITH_LIVENESS_ANALYSIS */
+
+        unsigned const idxReg = (fPreferVolatile
+                                 ? ASMBitFirstSetU32(fRegs)
+                                 : ASMBitLastSetU32(  fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+                                                    ? fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs))
+                              - 1;
+
+        Assert(pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows != 0);
+        Assert(   (pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadows)
+               == pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows);
+        Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxReg));
+        Assert(pReNative->Core.aHstSimdRegs[idxReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Invalid);
+
+        pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxReg);
+        pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
+        pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows = 0;
+        return idxReg;
+    }
+
+    /*
+     * Try free up a variable that's in a register.
+     *
+     * We do two rounds here, first evacuating variables we don't need to be
+     * saved on the stack, then in the second round move things to the stack.
+     */
+    //STAM_REL_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeVar);
+    AssertReleaseFailed(); /** @todo */
+#if 0
+    for (uint32_t iLoop = 0; iLoop < 2; iLoop++)
+    {
+        uint32_t fVars = pReNative->Core.bmSimdVars;
+        while (fVars)
+        {
+            uint32_t const idxVar = ASMBitFirstSetU32(fVars) - 1;
+            uint8_t const  idxReg = pReNative->Core.aSimdVars[idxVar].idxReg;
+            if (   idxReg < RT_ELEMENTS(pReNative->Core.aHstSimdRegs)
+                && (RT_BIT_32(idxReg) & fRegMask)
+                && (  iLoop == 0
+                    ? pReNative->Core.aSimdVars[idxVar].enmKind != kIemNativeVarKind_Stack
+                    : pReNative->Core.aSimdVars[idxVar].enmKind == kIemNativeVarKind_Stack)
+                && !pReNative->Core.aSimdVars[idxVar].fRegAcquired)
+            {
+                Assert(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg));
+                Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows)
+                       == pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows);
+                Assert(pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+                Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg))
+                       == RT_BOOL(pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows));
+
+                if (pReNative->Core.aSimdVars[idxVar].enmKind == kIemNativeVarKind_Stack)
+                {
+                    uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, IEMNATIVE_VAR_IDX_PACK(idxVar));
+                    *poff = iemNativeEmitStoreGprByBp(pReNative, *poff, iemNativeStackCalcBpDisp(idxStackSlot), idxReg);
+                }
+
+                pReNative->Core.aSimdVars[idxVar].idxReg    = UINT8_MAX;
+                pReNative->Core.bmHstSimdRegs              &= ~RT_BIT_32(idxReg);
+
+                pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxReg);
+                pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
+                pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows = 0;
+                return idxReg;
+            }
+            fVars &= ~RT_BIT_32(idxVar);
+        }
+    }
+#else
+    RT_NOREF(poff);
+#endif
+
+    return UINT8_MAX;
+}
+
+
+/**
+ * Marks host SIMD register @a idxHstSimdReg as containing a shadow copy of guest
+ * SIMD register @a enmGstSimdReg.
+ *
+ * ASSUMES that caller has made sure @a enmGstSimdReg is not associated with any
+ * host register before calling.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegMarkAsGstSimdRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, IEMNATIVEGSTSIMDREG enmGstSimdReg, uint32_t off)
+{
+    Assert(!(pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(enmGstSimdReg)));
+    Assert(!pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows);
+    Assert((unsigned)enmGstSimdReg < (unsigned)kIemNativeGstSimdReg_End);
+
+    pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg]       = idxHstSimdReg;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.bmGstSimdRegShadows                        |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.bmHstSimdRegsWithGstShadow                 |= RT_BIT_32(idxHstSimdReg);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, enmGstSimdReg, idxHstSimdReg);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Transfers the guest SIMD register shadow claims of @a enmGstSimdReg from @a idxSimdRegFrom
+ * to @a idxSimdRegTo.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegTransferGstSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxSimdRegFrom, uint8_t idxSimdRegTo,
+                                            IEMNATIVEGSTSIMDREG enmGstSimdReg, uint32_t off)
+{
+    Assert(pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows & RT_BIT_64(enmGstSimdReg));
+    Assert(pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg] == idxSimdRegFrom);
+    Assert(      (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows)
+              == pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows
+           && pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows)
+           == pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows);
+    Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdRegFrom))
+           == RT_BOOL(pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows));
+    Assert(   pReNative->Core.aHstSimdRegs[idxSimdRegFrom].enmLoaded
+           == pReNative->Core.aHstSimdRegs[idxSimdRegTo].enmLoaded);
+
+
+    uint64_t const fGstRegShadowsFrom = pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows & ~RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows  = fGstRegShadowsFrom;
+    if (!fGstRegShadowsFrom)
+    {
+        pReNative->Core.bmHstSimdRegsWithGstShadow               &= ~RT_BIT_32(idxSimdRegFrom);
+        pReNative->Core.aHstSimdRegs[idxSimdRegFrom].enmLoaded    = kIemNativeGstSimdRegLdStSz_Invalid;
+    }
+    pReNative->Core.bmHstSimdRegsWithGstShadow                |= RT_BIT_32(idxSimdRegTo);
+    pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg]       = idxSimdRegTo;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, enmGstSimdReg, idxSimdRegTo, idxSimdRegFrom);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Clear any guest register shadow claims from @a idxHstSimdReg.
+ *
+ * The register does not need to be shadowing any guest registers.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegClearGstSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, uint32_t off)
+{
+    Assert(      (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows)
+              == pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows
+           && pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstSimdReg_End));
+    Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxHstSimdReg))
+           == RT_BOOL(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows));
+    Assert(   !(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadowDirtyLo128)
+           && !(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadowDirtyHi128));
+
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    uint64_t fGstRegs = pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+    if (fGstRegs)
+    {
+        Assert(fGstRegs < RT_BIT_64(kIemNativeGstSimdReg_End));
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        while (fGstRegs)
+        {
+            unsigned const iGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+            fGstRegs &= ~RT_BIT_64(iGstReg);
+            iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, (IEMNATIVEGSTSIMDREG)iGstReg, UINT8_MAX, idxHstSimdReg);
+        }
+    }
+#else
+    RT_NOREF(off);
+#endif
+
+    pReNative->Core.bmHstSimdRegsWithGstShadow        &= ~RT_BIT_32(idxHstSimdReg);
+    pReNative->Core.bmGstSimdRegShadows               &= ~pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows = 0;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
+}
+
+
+/**
+ * Flushes a set of guest register shadow copies.
+ *
+ * This is usually done after calling a threaded function or a C-implementation
+ * of an instruction.
+ *
+ * @param   pReNative       The native recompile state.
+ * @param   fGstSimdRegs    Set of guest SIMD registers to flush.
+ */
+DECLHIDDEN(void) iemNativeSimdRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstSimdRegs) RT_NOEXCEPT
+{
+    /*
+     * Reduce the mask by what's currently shadowed
+     */
+    uint64_t const bmGstSimdRegShadows = pReNative->Core.bmGstSimdRegShadows;
+    fGstSimdRegs &= bmGstSimdRegShadows;
+    if (fGstSimdRegs)
+    {
+        uint64_t const bmGstSimdRegShadowsNew = bmGstSimdRegShadows & ~fGstSimdRegs;
+        Log12(("iemNativeSimdRegFlushGuestShadows: flushing %#RX64 (%#RX64 -> %#RX64)\n", fGstSimdRegs, bmGstSimdRegShadows, bmGstSimdRegShadowsNew));
+        pReNative->Core.bmGstSimdRegShadows = bmGstSimdRegShadowsNew;
+        if (bmGstSimdRegShadowsNew)
+        {
+            /*
+             * Partial.
+             */
+            do
+            {
+                unsigned const idxGstReg = ASMBitFirstSetU64(fGstSimdRegs) - 1;
+                uint8_t const  idxHstReg = pReNative->Core.aidxGstSimdRegShadows[idxGstReg];
+                Assert(idxHstReg < RT_ELEMENTS(pReNative->Core.aidxGstSimdRegShadows));
+                Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxHstReg));
+                Assert(pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+                Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstReg));
+
+                uint64_t const fInThisHstReg = (pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows & fGstSimdRegs) | RT_BIT_64(idxGstReg);
+                fGstSimdRegs &= ~fInThisHstReg;
+                uint64_t const fGstRegShadowsNew = pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows & ~fInThisHstReg;
+                pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows = fGstRegShadowsNew;
+                if (!fGstRegShadowsNew)
+                {
+                    pReNative->Core.bmHstSimdRegsWithGstShadow        &= ~RT_BIT_32(idxHstReg);
+                    pReNative->Core.aHstSimdRegs[idxHstReg].enmLoaded  = kIemNativeGstSimdRegLdStSz_Invalid;
+                }
+            } while (fGstSimdRegs != 0);
+        }
+        else
+        {
+            /*
+             * Clear all.
+             */
+            do
+            {
+                unsigned const idxGstReg = ASMBitFirstSetU64(fGstSimdRegs) - 1;
+                uint8_t const  idxHstReg = pReNative->Core.aidxGstSimdRegShadows[idxGstReg];
+                Assert(idxHstReg < RT_ELEMENTS(pReNative->Core.aidxGstSimdRegShadows));
+                Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxHstReg));
+                Assert(pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+                Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstReg));
+
+                fGstSimdRegs &= ~(pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows | RT_BIT_64(idxGstReg));
+                pReNative->Core.aHstSimdRegs[idxHstReg].fGstRegShadows = 0;
+                pReNative->Core.aHstSimdRegs[idxHstReg].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
+            } while (fGstSimdRegs != 0);
+            pReNative->Core.bmHstSimdRegsWithGstShadow = 0;
+        }
+    }
+}
+
+
+/**
+ * Allocates a temporary host SIMD register.
+ *
+ * This may emit code to save register content onto the stack in order to free
+ * up a register.
+ *
+ * @returns The host register number; throws VBox status code on failure,
+ *          so no need to check the return value.
+ * @param   pReNative       The native recompile state.
+ * @param   poff            Pointer to the variable with the code buffer position.
+ *                          This will be update if we need to move a variable from
+ *                          register to stack in order to satisfy the request.
+ * @param   fPreferVolatile Whether to prefer volatile over non-volatile
+ *                          registers (@c true, default) or the other way around
+ *                          (@c false, for iemNativeRegAllocTmpForGuestReg()).
+ */
+DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile /*= true*/)
+{
+    /*
+     * Try find a completely unused register, preferably a call-volatile one.
+     */
+    uint8_t  idxSimdReg;
+    uint32_t fRegs = ~pReNative->Core.bmHstRegs
+                   & ~pReNative->Core.bmHstRegsWithGstShadow
+                   & (~IEMNATIVE_SIMD_REG_FIXED_MASK & IEMNATIVE_HST_SIMD_REG_MASK);
+    if (fRegs)
+    {
+        if (fPreferVolatile)
+            idxSimdReg = (uint8_t)ASMBitFirstSetU32(  fRegs & IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+                                                    ? fRegs & IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
+        else
+            idxSimdReg = (uint8_t)ASMBitFirstSetU32(  fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+                                                    ? fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
+        Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows == 0);
+        Assert(!(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdReg)));
+        Log12(("iemNativeSimdRegAllocTmp: %s\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
+    }
+    else
+    {
+        idxSimdReg = iemNativeSimdRegAllocFindFree(pReNative, poff, fPreferVolatile);
+        AssertStmt(idxSimdReg != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP));
+        Log12(("iemNativeSimdRegAllocTmp: %s (slow)\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
+    }
+
+    Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Invalid);
+    return iemNativeSimdRegMarkAllocated(pReNative, idxSimdReg, kIemNativeWhat_Tmp);
+}
+
+
+/**
+ * Alternative version of iemNativeSimdRegAllocTmp that takes mask with acceptable
+ * registers.
+ *
+ * @returns The host register number; throws VBox status code on failure,
+ *          so no need to check the return value.
+ * @param   pReNative       The native recompile state.
+ * @param   poff            Pointer to the variable with the code buffer position.
+ *                          This will be update if we need to move a variable from
+ *                          register to stack in order to satisfy the request.
+ * @param   fRegMask        Mask of acceptable registers.
+ * @param   fPreferVolatile Whether to prefer volatile over non-volatile
+ *                          registers (@c true, default) or the other way around
+ *                          (@c false, for iemNativeRegAllocTmpForGuestReg()).
+ */
+DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpEx(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint32_t fRegMask,
+                                                      bool fPreferVolatile /*= true*/)
+{
+    Assert(!(fRegMask & ~IEMNATIVE_HST_SIMD_REG_MASK));
+    Assert(!(fRegMask & IEMNATIVE_SIMD_REG_FIXED_MASK));
+
+    /*
+     * Try find a completely unused register, preferably a call-volatile one.
+     */
+    uint8_t  idxSimdReg;
+    uint32_t fRegs = ~pReNative->Core.bmHstSimdRegs
+                   & ~pReNative->Core.bmHstSimdRegsWithGstShadow
+                   & (~IEMNATIVE_SIMD_REG_FIXED_MASK & IEMNATIVE_HST_SIMD_REG_MASK)
+                   & fRegMask;
+    if (fRegs)
+    {
+        if (fPreferVolatile)
+            idxSimdReg = (uint8_t)ASMBitFirstSetU32(  fRegs & IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+                                                    ? fRegs & IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
+        else
+            idxSimdReg = (uint8_t)ASMBitFirstSetU32(  fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+                                                    ? fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
+        Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows == 0);
+        Assert(!(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdReg)));
+        Log12(("iemNativeSimdRegAllocTmpEx: %s\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
+    }
+    else
+    {
+        idxSimdReg = iemNativeSimdRegAllocFindFree(pReNative, poff, fPreferVolatile, fRegMask);
+        AssertStmt(idxSimdReg != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP));
+        Log12(("iemNativeSimdRegAllocTmpEx: %s (slow)\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
+    }
+
+    Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Invalid);
+    return iemNativeSimdRegMarkAllocated(pReNative, idxSimdReg, kIemNativeWhat_Tmp);
+}
+
+
+static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstSimdRegDst,
+                                                            uint8_t idxHstSimdRegSrc, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSzDst)
+{
+    /* Easy case first, either the destination loads the same range as what the source has already loaded or the source has loaded everything. */
+    if (   pReNative->Core.aHstSimdRegs[idxHstSimdRegDst].enmLoaded == enmLoadSzDst
+        || pReNative->Core.aHstSimdRegs[idxHstSimdRegDst].enmLoaded == kIemNativeGstSimdRegLdStSz_256)
+    {
+# ifdef RT_ARCH_ARM64
+        /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+        Assert(!(idxHstSimdRegDst & 0x1)); Assert(!(idxHstSimdRegSrc & 0x1));
+# endif
+
+        switch (enmLoadSzDst)
+        {
+            case kIemNativeGstSimdRegLdStSz_256:
+                off = iemNativeEmitSimdLoadVecRegFromVecRegU256(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
+            case kIemNativeGstSimdRegLdStSz_Low128:
+                off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
+            case kIemNativeGstSimdRegLdStSz_High128:
+                off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst + 1, idxHstSimdRegSrc + 1);
+            default:
+                AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
+        }
+
+        pReNative->Core.aHstSimdRegs[idxHstSimdRegDst].enmLoaded = enmLoadSzDst;
+        return off;
+    }
+    else
+    {
+        /* Complicated stuff where the source is currently missing something, later. */
+        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
+    }
+
+    return off;
+}
+
+
+/**
+ * Allocates a temporary host SIMD register for keeping a guest
+ * SIMD register value.
+ *
+ * Since we may already have a register holding the guest register value,
+ * code will be emitted to do the loading if that's not the case. Code may also
+ * be emitted if we have to free up a register to satify the request.
+ *
+ * @returns The host register number; throws VBox status code on failure, so no
+ *          need to check the return value.
+ * @param   pReNative       The native recompile state.
+ * @param   poff            Pointer to the variable with the code buffer
+ *                          position. This will be update if we need to move a
+ *                          variable from register to stack in order to satisfy
+ *                          the request.
+ * @param   enmGstSimdReg   The guest SIMD register that will is to be updated.
+ * @param   enmIntendedUse  How the caller will be using the host register.
+ * @param   fNoVolatileRegs Set if no volatile register allowed, clear if any
+ *                          register is okay (default).  The ASSUMPTION here is
+ *                          that the caller has already flushed all volatile
+ *                          registers, so this is only applied if we allocate a
+ *                          new register.
+ * @sa      iemNativeRegAllocTmpForGuestRegIfAlreadyPresent
+ */
+DECL_HIDDEN_THROW(uint8_t)
+iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                        IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz, IEMNATIVEGSTREGUSE enmIntendedUse /*= kIemNativeGstRegUse_ReadOnly*/,
+                                        bool fNoVolatileRegs /*= false*/)
+{
+    Assert(enmGstSimdReg < kIemNativeGstSimdReg_End);
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) && 0 /** @todo r=aeichner */
+    AssertMsg(   pReNative->idxCurCall == 0
+              || (enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+                  ? IEMLIVENESS_STATE_IS_CLOBBER_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstSimdReg))
+                  : enmIntendedUse == kIemNativeGstRegUse_ForUpdate
+                  ? IEMLIVENESS_STATE_IS_MODIFY_EXPECTED( iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstSimdReg))
+                  : IEMLIVENESS_STATE_IS_INPUT_EXPECTED(  iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstSimdReg)) ),
+              ("%s - %u\n", g_aGstSimdShadowInfo[enmGstSimdReg].pszName, iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstSimdReg)));
+#endif
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
+    static const char * const s_pszIntendedUse[] = { "fetch", "update", "full write", "destructive calc" };
+#endif
+    uint32_t const fRegMask = !fNoVolatileRegs
+                            ? IEMNATIVE_HST_SIMD_REG_MASK & ~IEMNATIVE_SIMD_REG_FIXED_MASK
+                            : IEMNATIVE_HST_SIMD_REG_MASK & ~IEMNATIVE_SIMD_REG_FIXED_MASK & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK;
+
+    /*
+     * First check if the guest register value is already in a host register.
+     */
+    if (pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(enmGstSimdReg))
+    {
+        uint8_t idxSimdReg = pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg];
+        Assert(idxSimdReg < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
+        Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows & RT_BIT_64(enmGstSimdReg));
+        Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdReg));
+
+        /* It's not supposed to be allocated... */
+        if (!(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxSimdReg)))
+        {
+            /*
+             * If the register will trash the guest shadow copy, try find a
+             * completely unused register we can use instead.  If that fails,
+             * we need to disassociate the host reg from the guest reg.
+             */
+            /** @todo would be nice to know if preserving the register is in any way helpful. */
+            /* If the purpose is calculations, try duplicate the register value as
+               we'll be clobbering the shadow. */
+            if (   enmIntendedUse == kIemNativeGstRegUse_Calculation
+                && (  ~pReNative->Core.bmHstSimdRegs
+                    & ~pReNative->Core.bmHstSimdRegsWithGstShadow
+                    & (~IEMNATIVE_SIMD_REG_FIXED_MASK & IEMNATIVE_HST_SIMD_REG_MASK)))
+            {
+                uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask);
+
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+
+                Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Duplicated %s for guest %s into %s for destructive calc\n",
+                       g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName,
+                       g_apszIemNativeHstSimdRegNames[idxRegNew]));
+                idxSimdReg = idxRegNew;
+            }
+            /* If the current register matches the restrictions, go ahead and allocate
+               it for the caller. */
+            else if (fRegMask & RT_BIT_32(idxSimdReg))
+            {
+                pReNative->Core.bmHstSimdRegs |= RT_BIT_32(idxSimdReg);
+                pReNative->Core.aHstSimdRegs[idxSimdReg].enmWhat = kIemNativeWhat_Tmp;
+                if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
+                    Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Reusing %s for guest %s %s\n",
+                           g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName, s_pszIntendedUse[enmIntendedUse]));
+                else
+                {
+                    iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxSimdReg, *poff);
+                    Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Grabbing %s for guest %s - destructive calc\n",
+                           g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName));
+                }
+            }
+            /* Otherwise, allocate a register that satisfies the caller and transfer
+               the shadowing if compatible with the intended use.  (This basically
+               means the call wants a non-volatile register (RSP push/pop scenario).) */
+            else
+            {
+                Assert(fNoVolatileRegs);
+                uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask & ~RT_BIT_32(idxSimdReg),
+                                                                    !fNoVolatileRegs
+                                                                 && enmIntendedUse == kIemNativeGstRegUse_Calculation);
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+                if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
+                {
+                    iemNativeSimdRegTransferGstSimdRegShadowing(pReNative, idxSimdReg, idxRegNew, enmGstSimdReg, *poff);
+                    Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Transfering %s to %s for guest %s %s\n",
+                           g_apszIemNativeHstSimdRegNames[idxSimdReg], g_apszIemNativeHstSimdRegNames[idxRegNew],
+                           g_aGstSimdShadowInfo[enmGstSimdReg].pszName, s_pszIntendedUse[enmIntendedUse]));
+                }
+                else
+                    Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Duplicated %s for guest %s into %s for destructive calc\n",
+                           g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName,
+                           g_apszIemNativeHstSimdRegNames[idxRegNew]));
+                idxSimdReg = idxRegNew;
+            }
+        }
+        else
+        {
+            /*
+             * Oops. Shadowed guest register already allocated!
+             *
+             * Allocate a new register, copy the value and, if updating, the
+             * guest shadow copy assignment to the new register.
+             */
+            AssertMsg(   enmIntendedUse != kIemNativeGstRegUse_ForUpdate
+                      && enmIntendedUse != kIemNativeGstRegUse_ForFullWrite,
+                      ("This shouldn't happen: idxSimdReg=%d enmGstSimdReg=%d enmIntendedUse=%s\n",
+                       idxSimdReg, enmGstSimdReg, s_pszIntendedUse[enmIntendedUse]));
+
+            /** @todo share register for readonly access. */
+            uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask,
+                                                                 enmIntendedUse == kIemNativeGstRegUse_Calculation);
+
+            if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+            else
+            {
+                /** @todo This is a bit unsafe to mark the register already as loaded even though there is nothing written to it yet. */
+                pReNative->Core.aHstSimdRegs[idxRegNew].enmLoaded = enmLoadSz;
+            }
+
+            if (   enmIntendedUse != kIemNativeGstRegUse_ForUpdate
+                && enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
+                Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Duplicated %s for guest %s into %s for %s\n",
+                       g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName,
+                       g_apszIemNativeHstSimdRegNames[idxRegNew], s_pszIntendedUse[enmIntendedUse]));
+            else
+            {
+                iemNativeSimdRegTransferGstSimdRegShadowing(pReNative, idxSimdReg, idxRegNew, enmGstSimdReg, *poff);
+                Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Moved %s for guest %s into %s for %s\n",
+                       g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName,
+                       g_apszIemNativeHstSimdRegNames[idxRegNew], s_pszIntendedUse[enmIntendedUse]));
+            }
+            idxSimdReg = idxRegNew;
+        }
+        Assert(RT_BIT_32(idxSimdReg) & fRegMask); /* See assumption in fNoVolatileRegs docs. */
+
+#ifdef VBOX_STRICT
+        /* Strict builds: Check that the value is correct. */
+        *poff = iemNativeEmitGuestSimdRegValueCheck(pReNative, *poff, idxSimdReg, enmGstSimdReg, enmLoadSz);
+#endif
+
+        return idxSimdReg;
+    }
+
+    /*
+     * Allocate a new register, load it with the guest value and designate it as a copy of the
+     */
+    uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask, enmIntendedUse == kIemNativeGstRegUse_Calculation);
+
+    if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
+        *poff = iemNativeEmitLoadSimdRegWithGstShadowSimdReg(pReNative, *poff, idxRegNew, enmGstSimdReg, enmLoadSz);
+    else
+    {
+        /** @todo This is a bit unsafe to mark the register already as loaded even though there is nothing written to it yet. */
+        pReNative->Core.aHstSimdRegs[idxRegNew].enmLoaded = enmLoadSz;
+    }
+
+    if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
+        iemNativeSimdRegMarkAsGstSimdRegShadow(pReNative, idxRegNew, enmGstSimdReg, *poff);
+
+    Log12(("iemNativeRegAllocTmpForGuestSimdReg: Allocated %s for guest %s %s\n",
+           g_apszIemNativeHstSimdRegNames[idxRegNew], g_aGstSimdShadowInfo[enmGstSimdReg].pszName, s_pszIntendedUse[enmIntendedUse]));
+
+    return idxRegNew;
+}
+
+
+/**
+ * Emits code to flush a pending write of the given SIMD register if any, also flushes the guest to host SIMD register association.
+ *
+ * @returns New code bufferoffset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   idxGstSimdReg   The guest SIMD register to flush.
+ */
+static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGstSimdReg)
+{
+    uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxGstSimdReg];
+
+    Log12(("iemNativeSimdRegFlushPendingWrite: Clearing guest register %s shadowed by host %s with state DirtyLo:%u DirtyHi:%u\n",
+           g_aGstSimdShadowInfo[idxGstSimdReg].pszName, g_apszIemNativeHstSimdRegNames[idxHstSimdReg],
+           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg),
+           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg)));
+
+#ifdef RT_ARCH_AMD64
+# error "Port me"
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMING there are two consecutive host registers to store the potential 256-bit guest register. */
+    Assert(!(idxHstSimdReg & 0x1));
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
+        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
+    }
+
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
+        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg + 1, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
+    }
+#endif
+
+    IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(pReNative, idxGstSimdReg);
+    return off;
+}
+
+#endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
+
+
+
+/*********************************************************************************************************************************
+*   Code emitters for flushing pending guest register writes and sanity checks                                                   *
+*********************************************************************************************************************************/
+
 /**
  * Flushes delayed write of a specific guest register.
  *
@@ -5148,6 +6020,19 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILER
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     /* If for whatever reason it is possible to reference the PC register at some point we need to do the writeback here first. */
 #endif
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    if (   enmClass == kIemNativeGstRegRef_XReg
+        && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxReg))
+    {
+        off = iemNativeSimdRegFlushPendingWrite(pReNative, off, idxReg);
+        /* Flush the shadows as the register needs to be reloaded (there is no guarantee right now, that the referenced register doesn't change). */
+        uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxReg];
+
+        iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxHstSimdReg, off);
+        iemNativeSimdRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTSIMDREG_SIMD(idxReg)));
+    }
+#endif
     RT_NOREF(pReNative, enmClass, idxReg);
     return off;
 }
@@ -5162,13 +6047,37 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILER
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
  */
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept /*= 0*/)
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept /*= 0*/,
+                                                           bool fFlushShadows /*= true*/)
 {
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     if (!(fGstShwExcept & kIemNativeGstReg_Pc))
         off = iemNativeEmitPcWriteback(pReNative, off);
 #else
     RT_NOREF(pReNative, fGstShwExcept);
+#endif
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
+    for (uint8_t idxGstSimdReg = 0; idxGstSimdReg < RT_ELEMENTS(g_aGstSimdShadowInfo); idxGstSimdReg++)
+    {
+        Assert(   (pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxGstSimdReg)
+               || !IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg)));
+
+        if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg))
+            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, idxGstSimdReg);
+
+        if (   fFlushShadows
+            && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxGstSimdReg))
+        {
+            uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxGstSimdReg];
+
+            iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxHstSimdReg, off);
+            iemNativeSimdRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg)));
+        }
+    }
+#else
+    RT_NOREF(pReNative, fGstShwExcept, fFlushShadows);
 #endif
 
     return off;
@@ -5276,6 +6185,42 @@ iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off
     }
 }
 
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Loads the guest shadow SIMD register @a enmGstSimdReg into host SIMD reg @a idxHstSimdReg.
+ *
+ * @returns New code buffer offset on success, UINT32_MAX on failure.
+ * @param   pReNative       The recompiler state.
+ * @param   off             The current code buffer position.
+ * @param   idxHstSimdReg   The host register to load the guest register value into.
+ * @param   enmGstSimdReg   The guest register to load.
+ * @param   enmLoadSz       The load size of the register.
+ *
+ * @note This does not mark @a idxHstReg as having a shadow copy of @a enmGstReg,
+ *       that is something the caller needs to do if applicable.
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitLoadSimdRegWithGstShadowSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstSimdReg,
+                                             IEMNATIVEGSTSIMDREG enmGstSimdReg, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz)
+{
+    Assert((unsigned)enmGstSimdReg < RT_ELEMENTS(g_aGstSimdShadowInfo));
+
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded = enmLoadSz;
+    switch (enmLoadSz)
+    {
+        case kIemNativeGstSimdRegLdStSz_256:
+            return iemNativeEmitSimdLoadVecRegFromVCpuU256(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm,
+                                                           g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+        case kIemNativeGstSimdRegLdStSz_Low128:
+            return iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+        case kIemNativeGstSimdRegLdStSz_High128:
+            return iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+        default:
+            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
+    }
+}
+#endif
 
 #ifdef VBOX_STRICT
 /**
@@ -5430,6 +6375,67 @@ iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 # endif
     return off;
 }
+
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emitting code that checks that the content of SIMD register @a idxSimdReg is the same
+ * as what's in the guest register @a enmGstSimdReg, resulting in a breakpoint
+ * instruction if that's not the case.
+ *
+ * @note May of course trash IEMNATIVE_SIMD_REG_FIXED_TMP0 and IEMNATIVE_REG_FIXED_TMP0.
+ *       Trashes EFLAGS on AMD64.
+ */
+static uint32_t
+iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSimdReg, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                    IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz)
+{
+#  ifdef RT_ARCH_AMD64
+#   error "Port me!"
+#  elif defined(RT_ARCH_ARM64)
+    /* mov vectmp0, [gstreg] */
+    off = iemNativeEmitLoadSimdRegWithGstShadowSimdReg(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, enmGstSimdReg, enmLoadSz);
+
+    if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
+    {
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+        /* eor vectmp0, vectmp0, idxSimdReg */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrEor(IEMNATIVE_SIMD_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdReg);
+        /* cnt vectmp0, vectmp0, #0*/
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrCnt(IEMNATIVE_SIMD_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0);
+        /* umov tmp0, vectmp0.D[0] */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrUmov(IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0,
+                                                    0 /*idxElem*/, kArmv8InstrUmovSz_U64);
+        /* cbz tmp0, +1 */
+        pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
+        /* brk #0x1000+enmGstReg */
+        pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstSimdReg | UINT32_C(0x1000));
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+
+    if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
+    {
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+        /* eor vectmp0 + 1, vectmp0 + 1, idxSimdReg */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrEor(IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, idxSimdReg);
+        /* cnt vectmp0 + 1, vectmp0 + 1, #0*/
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrCnt(IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1);
+        /* umov tmp0, (vectmp0 + 1).D[0] */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrUmov(IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1,
+                                                    0 /*idxElem*/, kArmv8InstrUmovSz_U64);
+        /* cbz tmp0, +1 */
+        pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
+        /* brk #0x1000+enmGstReg */
+        pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstSimdReg | UINT32_C(0x1000));
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+
+#  else
+#   error "Port me!"
+#  endif
+    return off;
+}
+# endif
 #endif /* VBOX_STRICT */
 
 
@@ -7085,7 +8091,7 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
      *
      * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
      */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
+    off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
@@ -7146,7 +8152,7 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
      *
      * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
      */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
+    off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
     off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
@@ -10969,15 +11975,10 @@ iemNativeEmitRefXregXxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
     /* If we've delayed writing back the register value, flush it now. */
     off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_XReg, iXReg);
 
-    /** @todo r=aeichner This needs to be done as soon as we shadow SSE registers in host registers, needs
-     *                   figuring out the semantics on how this is tracked.
-     *                   For now this is safe though as the reference will directly operate on the CPUMCTX
-     *                   structure so the value can't get out of sync.
-     */
-#if 0
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /* If it's not a const reference we need to flush the shadow copy of the register now. */
     if (!fConst)
-        iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_XREG(iXReg)));
+        iemNativeSimdRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTSIMDREG_SIMD(iXReg)));
 #else
     RT_NOREF(fConst);
 #endif
@@ -14055,6 +15056,37 @@ iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/*********************************************************************************************************************************
+*   Emitters for SSE/AVX specific operations.                                                                                    *
+*********************************************************************************************************************************/
+
+#define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc) \
+    off = iemNativeEmitSimdCopyXregU128(pReNative, off, a_iXRegDst, a_iXRegSrc)
+
+/** Emits code for IEM_MC_FETCH_FSW. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdCopyXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXRegDst, uint8_t iXRegSrc)
+{
+    /* Allocate destination and source register. */
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXRegSrc),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegSrc);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXRegDst);
+    /* We don't need to write everything back here as the destination is marked as dirty and will be flushed automatically. */
+
+    /* Free but don't flush the source and destination register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+
+    return off;
+}
+#endif
+
+
 /*********************************************************************************************************************************
 *   The native code generator functions for each MC block.                                                                       *
 *********************************************************************************************************************************/
@@ -14168,6 +15200,40 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
         ENTRY(cpum.GstCtx.rip),
         ENTRY(cpum.GstCtx.eflags),
         ENTRY(cpum.GstCtx.uRipInhibitInt),
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[0]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[1]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[2]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[3]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[4]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[5]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[6]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[7]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[8]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[9]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[10]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[11]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[12]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[13]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[14]),
+        ENTRY(cpum.GstCtx.XState.x87.aXMM[15]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[0]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[1]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[2]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[3]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[4]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[5]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[6]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[7]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[8]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[9]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[10]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[11]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[12]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[13]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[14]),
+        ENTRY(cpum.GstCtx.XState.u.YmmHi.aYmmHi[15])
+#endif
 #undef ENTRY
     };
 #ifdef VBOX_STRICT
@@ -14501,6 +15567,25 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                                 g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
                             continue;
                         }
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+                        case kIemTbDbgEntryType_GuestSimdRegShadowing:
+                        {
+                            PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
+                            const char * const    pszGstReg = g_aGstSimdShadowInfo[pEntry->GuestSimdRegShadowing.idxGstSimdReg].pszName;
+                            if (pEntry->GuestSimdRegShadowing.idxHstSimdReg == UINT8_MAX)
+                                pHlp->pfnPrintf(pHlp, "  Guest SIMD register %s != host SIMD register %s\n", pszGstReg,
+                                                g_apszIemNativeHstSimdRegNames[pEntry->GuestSimdRegShadowing.idxHstSimdRegPrev]);
+                            else if (pEntry->GuestSimdRegShadowing.idxHstSimdRegPrev == UINT8_MAX)
+                                pHlp->pfnPrintf(pHlp, "  Guest SIMD register %s == host SIMD register %s\n", pszGstReg,
+                                                g_apszIemNativeHstSimdRegNames[pEntry->GuestSimdRegShadowing.idxHstSimdReg]);
+                            else
+                                pHlp->pfnPrintf(pHlp, "  Guest SIMD register %s == host SIMD register %s (previously in %s)\n", pszGstReg,
+                                                g_apszIemNativeHstSimdRegNames[pEntry->GuestSimdRegShadowing.idxHstSimdReg],
+                                                g_apszIemNativeHstSimdRegNames[pEntry->GuestSimdRegShadowing.idxHstSimdRegPrev]);
+                            continue;
+                        }
+#endif
 
                         case kIemTbDbgEntryType_Label:
                         {
@@ -15261,7 +16346,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
     {
         Log3(("----------------------------------------- %d calls ---------------------------------------\n", cCallsOrg));
         iemNativeDisassembleTb(pTb, DBGFR3InfoLogHlp());
-# ifdef DEBUG_bird
+# if defined(DEBUG_bird) || defined(DEBUG_aeichner)
         RTLogFlush(NULL);
 # endif
     }

@@ -156,6 +156,13 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 /** @def IEMNATIVE_REG_FIXED_MASK
  * Mask GPRs with fixes assignments, either by us or dictated by the CPU/OS
  * architecture. */
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/** @def IEMNATIVE_SIMD_REG_FIXED_TMP0
+ * Mask SIMD registers with fixes assignments, either by us or dictated by the CPU/OS
+ * architecture. */
+/** @def IEMNATIVE_SIMD_REG_FIXED_TMP0
+ * Dedicated temporary SIMD register. */
+#endif
 #if defined(RT_ARCH_AMD64) && !defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
 # define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
@@ -163,6 +170,15 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
                                             | RT_BIT_32(X86_GREG_xSP) \
                                             | RT_BIT_32(X86_GREG_xBP) )
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS) || !defined(_MSC_VER)
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   0
+#  else
+/** On Windows xmm6 through xmm15 are marked as callee saved. */
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (UINT32_C(0xffc0))
+#  endif
+# endif
 
 #elif defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
@@ -184,6 +200,17 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | RT_BIT_32(ARMV8_A64_REG_X18) \
                                              | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
                                              | IEMNATIVE_REG_FIXED_MASK_ADD)
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+# define IEMNATIVE_SIMD_REG_FIXED_TMP0     ARMV8_A64_REG_Q30
+#  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS)
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   RT_BIT_32(ARMV8_A64_REG_Q30)
+#  else
+/** arm64 declares the low 64-bit of v8-v15 as callee saved. */
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xff00) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q30))
+#  endif
+# endif
 
 #else
 # error "port me"
@@ -226,6 +253,11 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | RT_BIT_32(X86_GREG_x9) \
                                              | RT_BIT_32(X86_GREG_x10) \
                                              | RT_BIT_32(X86_GREG_x11) )
+#  ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/* xmm0 - xmm5 are marked as volatile. */
+#   define IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK (UINT32_C(0x3f))
+#  endif
+
 # else
 #  define IEMNATIVE_CALL_ARG_GREG_COUNT     6
 #  define IEMNATIVE_CALL_ARG0_GREG          X86_GREG_xDI
@@ -249,6 +281,10 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | RT_BIT_32(X86_GREG_x9) \
                                              | RT_BIT_32(X86_GREG_x10) \
                                              | RT_BIT_32(X86_GREG_x11) )
+#  ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/* xmm0 - xmm15 are marked as volatile. */
+#   define IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK (UINT32_C(0xffff))
+#  endif
 # endif
 
 #elif defined(RT_ARCH_ARM64)
@@ -288,6 +324,11 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | RT_BIT_32(ARMV8_A64_REG_X15) \
                                              | RT_BIT_32(ARMV8_A64_REG_X16) \
                                              | RT_BIT_32(ARMV8_A64_REG_X17) )
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/* The low 64 bits of v8 - v15 marked as callee saved but the rest is volatile,
+ * so to simplify our life a bit we just mark everything as volatile. */
+#  define IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK (UINT32_C(0xffffffff))
+# endif
 
 #endif
 
@@ -305,13 +346,31 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 /** @def IEMNATIVE_HST_GREG_MASK
  * Mask corresponding to IEMNATIVE_HST_GREG_COUNT that can be applied to
  * inverted register masks and such to get down to a correct set of regs. */
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/** @def IEMNATIVE_HST_SIMD_REG_COUNT
+ * Number of host SIMD registers we track. */
+/** @def IEMNATIVE_HST_SIMD_REG_MASK
+ * Mask corresponding to IEMNATIVE_HST_SIMD_REG_COUNT that can be applied to
+ * inverted register masks and such to get down to a correct set of regs. */
+#endif
 #ifdef RT_ARCH_AMD64
 # define IEMNATIVE_HST_GREG_COUNT           16
 # define IEMNATIVE_HST_GREG_MASK            UINT32_C(0xffff)
 
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#  define IEMNATIVE_HST_SIMD_REG_COUNT      16
+#  define IEMNATIVE_HST_SIMD_REG_MASK       UINT32_C(0xffff)
+# endif
+
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_HST_GREG_COUNT           32
 # define IEMNATIVE_HST_GREG_MASK            UINT32_MAX
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#  define IEMNATIVE_HST_SIMD_REG_COUNT      32
+#  define IEMNATIVE_HST_SIMD_REG_MASK       UINT32_MAX
+# endif
+
 #else
 # error "Port me!"
 #endif
@@ -734,6 +793,45 @@ AssertCompile((UINT64_C(0x7f) << kIemNativeGstReg_EFlags) == IEMLIVENESSBIT_ALL_
 #define IEMNATIVEGSTREG_SEG_ATTRIB(a_iSegReg)   ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegAttribFirst + (a_iSegReg) ))
 /** @} */
 
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Guest registers that can be shadowed in host SIMD registers.
+ *
+ * @todo r=aeichner Liveness tracking
+ * @todo r=aeichner Given that we can only track xmm/ymm here does this actually make sense?
+ */
+typedef enum IEMNATIVEGSTSIMDREG : uint8_t
+{
+    kIemNativeGstSimdReg_SimdRegFirst  = 0,
+    kIemNativeGstSimdReg_SimdRegLast   = kIemNativeGstSimdReg_SimdRegFirst + 15,
+    kIemNativeGstSimdReg_End
+} IEMNATIVEGSTSIMDREG;
+
+/** @name Helpers for converting register numbers to IEMNATIVEGSTSIMDREG values.
+ * @{  */
+#define IEMNATIVEGSTSIMDREG_SIMD(a_iSimdReg)   ((IEMNATIVEGSTSIMDREG)(kIemNativeGstSimdReg_SimdRegFirst + (a_iSimdReg)))
+/** @} */
+
+/**
+ * The Load/store size for a SIMD guest register.
+ */
+typedef enum IEMNATIVEGSTSIMDREGLDSTSZ : uint8_t
+{
+    /** Invalid size. */
+    kIemNativeGstSimdRegLdStSz_Invalid = 0,
+    /** Loads the low 128-bit of a guest SIMD register. */
+    kIemNativeGstSimdRegLdStSz_Low128,
+    /** Loads the high 128-bit of a guest SIMD register. */
+    kIemNativeGstSimdRegLdStSz_High128,
+    /** Loads the whole 256-bits of a guest SIMD register. */
+    kIemNativeGstSimdRegLdStSz_256,
+    /** End value. */
+    kIemNativeGstSimdRegLdStSz_End
+} IEMNATIVEGSTSIMDREGLDSTSZ;
+#endif
+
+
 /**
  * Intended use statement for iemNativeRegAllocTmpForGuestReg().
  */
@@ -911,6 +1009,36 @@ typedef struct IEMNATIVEHSTREG
 } IEMNATIVEHSTREG;
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Host SIMD register entry - this tracks a virtual 256-bit register split into two 128-bit
+ * halves, on architectures where there is no 256-bit register available this entry will track
+ * two adjacent 128-bit host registers.
+ *
+ * The actual allocation status is kept in IEMRECOMPILERSTATE::bmHstSimdRegs.
+ */
+typedef struct IEMNATIVEHSTSIMDREG
+{
+    /** Set of guest registers this one shadows.
+     *
+     * Using a bitmap here so we can designate the same host register as a copy
+     * for more than one guest register.  This is expected to be useful in
+     * situations where one value is copied to several registers in a sequence.
+     * If the mapping is 1:1, then we'd have to pick which side of a 'MOV SRC,DST'
+     * sequence we'd want to let this register follow to be a copy of and there
+     * will always be places where we'd be picking the wrong one.
+     */
+    uint64_t                  fGstRegShadows;
+    /** What is being kept in this register. */
+    IEMNATIVEWHAT             enmWhat;
+    /** Flag what is currently loaded, low 128-bits, high 128-bits or complete 256-bits. */
+    IEMNATIVEGSTSIMDREGLDSTSZ enmLoaded;
+    /** Alignment padding. */
+    uint8_t                   abAlign[6];
+} IEMNATIVEHSTSIMDREG;
+#endif
+
+
 /**
  * Core state for the native recompiler, that is, things that needs careful
  * handling when dealing with branches.
@@ -934,6 +1062,21 @@ typedef struct IEMNATIVECORESTATE
     /** Bitmap marking valid entries in aidxGstRegShadows. */
     uint64_t                    bmGstRegShadows;
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Allocation bitmap for aHstSimdRegs. */
+    uint32_t                    bmHstSimdRegs;
+
+    /** Bitmap marking which host SIMD register contains guest SIMD register shadow copies.
+     * This is used during register allocation to try preserve copies.  */
+    uint32_t                    bmHstSimdRegsWithGstShadow;
+    /** Bitmap marking valid entries in aidxSimdGstRegShadows. */
+    uint64_t                    bmGstSimdRegShadows;
+    /** Bitmap marking whether the low 128-bit of the shadowed guest register are dirty and need writeback. */
+    uint64_t                    bmGstSimdRegShadowDirtyLo128;
+    /** Bitmap marking whether the high 128-bit of the shadowed guest register are dirty and need writeback. */
+    uint64_t                    bmGstSimdRegShadowDirtyHi128;
+#endif
+
     union
     {
         /** Index of variable (unpacked) arguments, UINT8_MAX if not valid. */
@@ -952,9 +1095,20 @@ typedef struct IEMNATIVECORESTATE
      * (A shadow copy of a guest register can only be held in a one host register,
      * there are no duplicate copies or ambiguities like that). */
     uint8_t                     aidxGstRegShadows[kIemNativeGstReg_End];
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Maps a guest SIMD register to a host SIMD register (index by IEMNATIVEGSTSIMDREG).
+     * Entries are only valid if the corresponding bit in bmGstSimdRegShadows is set.
+     * (A shadow copy of a guest register can only be held in a one host register,
+     * there are no duplicate copies or ambiguities like that). */
+    uint8_t                     aidxGstSimdRegShadows[kIemNativeGstSimdReg_End];
+#endif
 
     /** Host register allocation tracking. */
     IEMNATIVEHSTREG             aHstRegs[IEMNATIVE_HST_GREG_COUNT];
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Host SIMD register allocation tracking. */
+    IEMNATIVEHSTSIMDREG         aHstSimdRegs[IEMNATIVE_HST_SIMD_REG_COUNT];
+#endif
 
     /** Variables and arguments. */
     IEMNATIVEVAR                aVars[9];
@@ -981,6 +1135,33 @@ typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
 #else
 # define IEMNATIVE_VAR_IDX_UNPACK(a_idxVar) (a_idxVar)
 # define IEMNATIVE_VAR_IDX_PACK(a_idxVar)   (a_idxVar)
+#endif
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/** Clear the dirty state of the given guest SIMD register. */
+# define IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(a_pReNative, a_iSimdReg) \
+    do { \
+        (a_pReNative)->Core.bmGstSimdRegShadowDirtyLo128 &= ~RT_BIT_64(a_iSimdReg); \
+        (a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128 &= ~RT_BIT_64(a_iSimdReg); \
+    } while (0)
+
+/** Returns whether the low 128-bits of the given guest SIMD register are dirty. */
+# define IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(a_pReNative, a_iSimdReg) \
+    RT_BOOL((a_pReNative)->Core.bmGstSimdRegShadowDirtyLo128 & RT_BIT_64(a_iSimdReg))
+/** Returns whether the high 128-bits of the given guest SIMD register are dirty. */
+# define IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(a_pReNative, a_iSimdReg) \
+    RT_BOOL((a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128 & RT_BIT_64(a_iSimdReg))
+/** Returns whether the given guest SIMD register is dirty. */
+# define IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(a_pReNative, a_iSimdReg) \
+    RT_BOOL(((a_pReNative)->Core.bmGstSimdRegShadowDirtyLo128 | (a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128) & RT_BIT_64(a_iSimdReg))
+
+/** Set the low 128-bits of the given guest SIMD register to the dirty state. */
+# define IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(a_pReNative, a_iSimdReg) \
+    ((a_pReNative)->Core.bmGstSimdRegShadowDirtyLo128 |= RT_BIT_64(a_iSimdReg))
+/** Set the high 128-bits of the given guest SIMD register to the dirty state. */
+# define IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(a_pReNative, a_iSimdReg) \
+    ((a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128 |= RT_BIT_64(a_iSimdReg))
 #endif
 
 
@@ -1237,7 +1418,7 @@ DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, u
 DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExept = 0);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExept = 0, bool fFlushShadows = true);
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
                                                                   uint32_t fKeepVars = 0);
 DECLHIDDEN(void)            iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstRegs) RT_NOEXCEPT;
@@ -1263,6 +1444,18 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative
                                                    uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                       PCIEMTHRDEDCALLENTRY pCallEntry);
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile = true);
+DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpEx(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint32_t fRegMask,
+                                                      bool fPreferVolatile = true);
+DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                   IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz, IEMNATIVEGSTREGUSE enmIntendedUse = kIemNativeGstRegUse_ReadOnly,
+                                                                   bool fNoVolatileRegs = false);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadSimdRegWithGstShadowSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t idxHstSimdReg, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                         IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz);
+#endif
 
 extern DECL_HIDDEN_DATA(const char * const) g_apszIemNativeHstRegNames[];
 
