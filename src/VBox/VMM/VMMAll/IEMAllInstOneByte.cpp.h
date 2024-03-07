@@ -308,6 +308,68 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
     } \
     (void)0
 
+/**
+ * Body for byte instruction CMP with a register as the destination.
+ */
+#define IEMOP_BODY_BINARY_r8_rm_RO(a_bRm, a_InsNm, a_fNativeArchs) \
+    /* \
+     * If rm is denoting a register, no more instruction bytes. \
+     */ \
+    if (IEM_IS_MODRM_REG_MODE(a_bRm)) \
+    { \
+        IEM_MC_BEGIN(3, 0, 0, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_ARG(uint8_t,         u8Src,   1); \
+        IEM_MC_FETCH_GREG_U8(u8Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
+        IEM_MC_NATIVE_IF(a_fNativeArchs) { \
+            IEM_MC_LOCAL(uint8_t,   u8Dst); \
+            IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
+            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
+            IEM_MC_LOCAL(uint32_t,  uEFlags); \
+            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
+            IEM_MC_COMMIT_EFLAGS(uEFlags); \
+        } IEM_MC_NATIVE_ELSE() { \
+            IEM_MC_ARG(uint8_t *,   pu8Dst,  0); \
+            IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
+            IEM_MC_ARG(uint32_t *,  pEFlags, 2); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(RT_CONCAT3(iemAImpl_,a_InsNm,_u8), pu8Dst, u8Src, pEFlags); \
+        } IEM_MC_NATIVE_ENDIF(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+        IEM_MC_END(); \
+    } \
+    else \
+    { \
+        /* \
+         * We're accessing memory. \
+         */ \
+        IEM_MC_BEGIN(3, 1, 0, 0); \
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+        IEM_MC_ARG(uint8_t,         u8Src,   1); \
+        IEM_MC_FETCH_MEM_U8(u8Src, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+        IEM_MC_NATIVE_IF(a_fNativeArchs) { \
+            IEM_MC_LOCAL(uint8_t,   u8Dst); \
+            IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
+            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
+            IEM_MC_LOCAL(uint32_t,  uEFlags); \
+            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
+            IEM_MC_COMMIT_EFLAGS(uEFlags); \
+        } IEM_MC_NATIVE_ELSE() { \
+            IEM_MC_ARG(uint8_t *,   pu8Dst,  0); \
+            IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
+            IEM_MC_ARG(uint32_t *,  pEFlags, 2); \
+            IEM_MC_REF_EFLAGS(pEFlags); \
+            IEM_MC_CALL_VOID_AIMPL_3(RT_CONCAT3(iemAImpl_,a_InsNm,_u8), pu8Dst, u8Src, pEFlags); \
+        } IEM_MC_NATIVE_ENDIF(); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+        IEM_MC_END(); \
+    } \
+    (void)0
+
 
 /**
  * Body for word/dword/qword instructions like ADD, AND, OR, ++ with
@@ -1791,7 +1853,7 @@ FNIEMOP_DEF(iemOp_cmp_Gb_Eb)
 {
     IEMOP_MNEMONIC(cmp_Gb_Eb, "cmp Gb,Eb");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_BODY_BINARY_r8_rm(bRm, cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
+    IEMOP_BODY_BINARY_r8_rm_RO(bRm, cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
