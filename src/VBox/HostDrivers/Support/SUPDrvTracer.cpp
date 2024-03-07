@@ -55,12 +55,14 @@
 #include <iprt/param.h>
 #include <iprt/uuid.h>
 
-#if RTLNX_VER_MIN(4,15,10)
-# include <asm/nospec-branch.h>
-#endif
-#if RTLNX_VER_MIN(5,17,0)
-# include <asm/linkage.h>
-#endif
+#if defined(RT_OS_LINUX)
+# if RTLNX_VER_MIN(4,15,10)
+#  include <asm/nospec-branch.h>
+# endif /* < 4.15.10 */
+# if RTLNX_VER_MIN(5,17,0)
+#  include <asm/linkage.h>
+# endif /* < 5.17.0 */
+#endif /* !RT_OS_LINUX */
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -1504,8 +1506,10 @@ SUPR0TracerFireProbe:                                                   \n\
 __asm__("\
             movq    g_pfnSupdrvProbeFireKernel(%rip), %rax              \n\
             "
-#  if RTLNX_VER_MIN(4,15,10)
+#  if defined(RT_OS_LINUX)
+#   if RTLNX_VER_MIN(4,15,10)
             ANNOTATE_RETPOLINE_SAFE
+#   endif
 #  endif
             " \n\
             jmp     *%rax \n\
@@ -1514,8 +1518,10 @@ __asm__("\
 __asm__("\
             movl    g_pfnSupdrvProbeFireKernel, %eax                    \n\
             "
-#  if RTLNX_VER_MIN(4,15,10)
+#  if defined(RT_OS_LINUX)
+#   if RTLNX_VER_MIN(4,15,10)
             ANNOTATE_RETPOLINE_SAFE
+#   endif
 #  endif
             " \n\
             jmp     *%eax \n\
@@ -1530,13 +1536,18 @@ __asm__("\
         .global supdrvTracerProbeFireStub                               \n\
 supdrvTracerProbeFireStub:                                              \n\
         "
+# if defined(RT_OS_LINUX)
 #  if RTLNX_VER_MIN(5,17,0)
         ASM_RET "\n\
         "
-#  else
+#  else /* < 5.17.0 */
         "ret \n\
         "
-#  endif
+#  endif /* < 5.17.0 */
+# else /* !RT_OS_LINUX */
+        "ret \n\
+        "
+# endif /* !RT_OS_LINUX */
         ".size supdrvTracerProbeFireStub, . - supdrvTracerProbeFireStub  \n\
                                                                         \n\
         .previous                                                       \n\
