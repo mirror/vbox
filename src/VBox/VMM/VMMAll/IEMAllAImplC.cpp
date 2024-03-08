@@ -11221,6 +11221,106 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pslldq_imm_u128,(PRTUINT128U puDst, uint8_t uSh
 
 
 /*
+ * VPSRLVD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlvd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint8_t uU32 = 0; uU32 < RT_ELEMENTS(puDst->au32); ++uU32)
+    {
+        puDst->au32[uU32] = (puSrc2->au32[uU32] > 31) ? 0 : puSrc1->au32[uU32] >> puSrc2->au8[uU32 << 2];
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlvd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint8_t uU32 = 0; uU32 < RT_ELEMENTS(puDst->au32); ++uU32)
+    {
+        puDst->au32[uU32] = (puSrc2->au32[uU32] > 31) ? 0 : puSrc1->au32[uU32] >> puSrc2->au8[uU32 << 2];
+    }
+}
+
+
+/*
+ * VPSRAVD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsravd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint8_t uI32 = 0; uI32 < RT_ELEMENTS(puDst->ai32); ++uI32)
+    {
+        puDst->ai32[uI32] = (puSrc2->au32[uI32] > 31) ? 0 : puSrc1->ai32[uI32] >> puSrc2->au8[uI32 << 2];
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsravd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint8_t uI32 = 0; uI32 < RT_ELEMENTS(puDst->ai32); ++uI32)
+    {
+        puDst->ai32[uI32] = (puSrc2->au32[uI32] > 31) ? 0 : puSrc1->ai32[uI32] >> puSrc2->au8[uI32 << 2];
+    }
+}
+
+
+/*
+ * VPSLLVD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllvd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint8_t uU32 = 0; uU32 < RT_ELEMENTS(puDst->au32); ++uU32)
+    {
+        puDst->au32[uU32] = (puSrc2->au32[uU32] > 31) ? 0 : puSrc1->au32[uU32] << puSrc2->au8[uU32 << 2];
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllvd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint8_t uU32 = 0; uU32 < RT_ELEMENTS(puDst->au32); ++uU32)
+    {
+        puDst->au32[uU32] = (puSrc2->au32[uU32] > 31) ? 0 : puSrc1->au32[uU32] << puSrc2->au8[uU32 << 2];
+    }
+}
+
+
+/*
+ * VPSRLVQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlvq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint8_t uU64 = 0; uU64 < RT_ELEMENTS(puDst->au64); ++uU64)
+    {
+        puDst->au64[uU64] = (puSrc2->au64[uU64] > 63) ? 0 : puSrc1->au64[uU64] >> puSrc2->au8[uU64 << 3];
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlvq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint8_t uU64 = 0; uU64 < RT_ELEMENTS(puDst->au64); ++uU64)
+    {
+        puDst->au64[uU64] = (puSrc2->au64[uU64] > 63) ? 0 : puSrc1->au64[uU64] >> puSrc2->au8[uU64 << 3];
+    }
+}
+
+
+/*
+ * VPSLLVQ
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllvq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    for (uint8_t uU64 = 0; uU64 < RT_ELEMENTS(puDst->au64); ++uU64)
+    {
+        puDst->au64[uU64] = (puSrc2->au64[uU64] > 63) ? 0 : puSrc1->au64[uU64] << puSrc2->au8[uU64 << 3];
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllvq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    for (uint8_t uU64 = 0; uU64 < RT_ELEMENTS(puDst->au64); ++uU64)
+    {
+        puDst->au64[uU64] = (puSrc2->au64[uU64] > 63) ? 0 : puSrc1->au64[uU64] << puSrc2->au8[uU64 << 3];
+    }
+}
+
+
+/*
  * PMADDWD / VPMADDWD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY

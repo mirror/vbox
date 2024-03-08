@@ -3714,6 +3714,17 @@ FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpermilpd_u128,     iemAImpl_vpermilpd_u12
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_vpermilpd_imm_u128, iemAImpl_vpermilpd_imm_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpermilpd_u256,     iemAImpl_vpermilpd_u256_fallback;
 FNIEMAIMPLMEDIAOPTF2U256IMM8 iemAImpl_vpermilpd_imm_u256, iemAImpl_vpermilpd_imm_u256_fallback;
+
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpsllvd_u128, iemAImpl_vpsllvd_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpsllvd_u256, iemAImpl_vpsllvd_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpsllvq_u128, iemAImpl_vpsllvq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpsllvq_u256, iemAImpl_vpsllvq_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpsravd_u128, iemAImpl_vpsravd_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpsravd_u256, iemAImpl_vpsravd_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpsrlvd_u128, iemAImpl_vpsrlvd_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpsrlvd_u256, iemAImpl_vpsrlvd_u256_fallback;
+FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpsrlvq_u128, iemAImpl_vpsrlvq_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256     iemAImpl_vpsrlvq_u256, iemAImpl_vpsrlvq_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends
