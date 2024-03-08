@@ -4479,15 +4479,27 @@ IEM_CIMPL_DEF_1(iemCImpl_sysret, IEMMODE, enmEffOpSize)
     pVCpu->cpum.GstCtx.cs.u32Limit   = UINT32_MAX;
     pVCpu->cpum.GstCtx.cs.fFlags     = CPUMSELREG_FLAGS_VALID;
 
+    /* The SS hidden bits remains unchanged says AMD, we presume they set DPL to 3.
+       Intel (and presuably VIA) OTOH sets loads valid ring-3 values it seems, see
+       X86_BUG_SYSRET_SS_ATTRS in linux 5.3. */
+    if (IEM_IS_GUEST_CPU_AMD(pVCpu))
+    {
+        Log(("sysret: ss:rsp=%04x:%08RX64 attr=%x -> %04x:%08RX64 attr=%#x\n", pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.ss.Attr.u, uNewSs | 3, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.ss.Attr.u | (3 << X86DESCATTR_DPL_SHIFT) ));
+        pVCpu->cpum.GstCtx.ss.Attr.u     |= (3 << X86DESCATTR_DPL_SHIFT);
+    }
+    else
+    {
+        Log(("sysret: ss:rsp=%04x:%08RX64 attr=%x -> %04x:%08RX64 attr=%#x\n", pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.ss.Attr.u, uNewSs | 3, pVCpu->cpum.GstCtx.rsp, X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC | (3 << X86DESCATTR_DPL_SHIFT) ));
+        pVCpu->cpum.GstCtx.ss.Attr.u      = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC
+                                          | (3 << X86DESCATTR_DPL_SHIFT);
+        pVCpu->cpum.GstCtx.ss.u64Base     = 0;
+        pVCpu->cpum.GstCtx.ss.u32Limit    = UINT32_MAX;
+    }
     pVCpu->cpum.GstCtx.ss.Sel        = uNewSs | 3;
     pVCpu->cpum.GstCtx.ss.ValidSel   = uNewSs | 3;
     pVCpu->cpum.GstCtx.ss.fFlags     = CPUMSELREG_FLAGS_VALID;
-    /* The SS hidden bits remains unchanged says AMD. To that I say "Yeah, right!". */
-    pVCpu->cpum.GstCtx.ss.Attr.u    |= (3 << X86DESCATTR_DPL_SHIFT);
     /** @todo Testcase: verify that SS.u1Long and SS.u1DefBig are left unchanged
-     *        on sysret. */
-    /** @todo intel documents SS.BASE and SS.LIMIT as being set as well as the
-     *        TYPE, S, DPL, P, B and G flag bits. */
+     *        on sysret on AMD and not on intel. */
 
     if (!f32Bit)
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
