@@ -1492,7 +1492,7 @@ FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 {
     IEMOP_MNEMONIC2(FIXED, SBB, sbb, AL, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_BINARY_AL_Ib(sbb, 0);
+    IEMOP_BODY_BINARY_AL_Ib(sbb, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -1504,7 +1504,7 @@ FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 FNIEMOP_DEF(iemOp_sbb_eAX_Iz)
 {
     IEMOP_MNEMONIC2(FIXED, SBB, sbb, rAX, Iz, DISOPTYPE_HARMLESS, 0);
-    IEMOP_BODY_BINARY_rAX_Iz_RW(sbb, 0);
+    IEMOP_BODY_BINARY_rAX_Iz_RW(sbb, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -4415,7 +4415,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_adc_Eb_Ib, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp1_sbb_Eb_Ib, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(sbb_Eb_Ib, "sbb Eb,Ib");
-    IEMOP_BODY_BINARY_Eb_Ib_RW(sbb, 0, 0);
+    IEMOP_BODY_BINARY_Eb_Ib_RW(sbb, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, 0);
 }
 
 
@@ -4988,7 +4988,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_adc_Ev_Iz, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp1_sbb_Ev_Iz, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(sbb_Ev_Iz, "sbb Ev,Iz");
-    IEMOP_BODY_BINARY_Ev_Iz_RW(sbb, 0, 0);
+    IEMOP_BODY_BINARY_Ev_Iz_RW(sbb, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, 0);
 }
 
 
