@@ -10153,7 +10153,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_imm_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpsrlw_imm_u128_fallback(puDst, puSrc1, RT_MIN(15, puSrc2->au64[0]));
+    iemAImpl_vpsrlw_imm_u128_fallback(puDst, puSrc1, RT_MIN(16, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
@@ -10200,7 +10200,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_imm_u256,(PRTUINT256U puDst, PCRTUINT256
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpsrlw_imm_u256_fallback(puDst, puSrc1, RT_MIN(15, puSrc2->au64[0]));
+    iemAImpl_vpsrlw_imm_u256_fallback(puDst, puSrc1, RT_MIN(16, puSrc2->au64[0]));
 }
 
 
@@ -10455,7 +10455,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpsllw_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpsllw_imm_u128_fallback(puDst, puSrc1, RT_MIN(16, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
@@ -10497,7 +10497,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u256_fallback,(PRTUINT256U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpsllw_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpsllw_imm_u256_fallback(puDst, puSrc1, RT_MIN(16, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllw_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -10610,7 +10610,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u128,(PRTUINT128U puDst, PCRTUINT128
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpsrld_imm_u128_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+    iemAImpl_vpsrld_imm_u128_fallback(puDst, puSrc1, RT_MIN(32, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -10639,7 +10639,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u256_fallback,(PRTUINT256U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpsrld_imm_u256_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+    iemAImpl_vpsrld_imm_u256_fallback(puDst, puSrc1, RT_MIN(32, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrld_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -10864,7 +10864,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u128,(PRTUINT128U puDst, PCRTUINT128
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpslld_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpslld_imm_u128_fallback(puDst, puSrc1, RT_MIN(32, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -10893,7 +10893,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u256_fallback,(PRTUINT256U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpslld_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpslld_imm_u256_fallback(puDst, puSrc1, RT_MIN(32, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpslld_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -10999,7 +10999,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u128,(PRTUINT128U puDst, PCRTUINT128
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpsrlq_imm_u128_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+    iemAImpl_vpsrlq_imm_u128_fallback(puDst, puSrc1, RT_MIN(64, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -11024,7 +11024,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u256_fallback,(PRTUINT256U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpsrlq_imm_u256_fallback(puDst, puSrc1, RT_MIN(31, puSrc2->au64[0]));
+    iemAImpl_vpsrlq_imm_u256_fallback(puDst, puSrc1, RT_MIN(64, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrlq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
@@ -11125,7 +11125,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u128_fallback,(PRTUINT128U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
 {
-    iemAImpl_vpsllq_imm_u128_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpsllq_imm_u128_fallback(puDst, puSrc1, RT_MIN(64, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc1, uint8_t uShift))
@@ -11155,7 +11155,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256_fallback,(PRTUINT256U puDst, PC
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
 {
-    iemAImpl_vpsllq_imm_u256_fallback(puDst, puSrc1, puSrc2->au8[0]);
+    iemAImpl_vpsllq_imm_u256_fallback(puDst, puSrc1, RT_MIN(64, puSrc2->au64[0]));
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc1, uint8_t uShift))
