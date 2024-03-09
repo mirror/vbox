@@ -7284,7 +7284,7 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
     }
 }
 #else
-FNIEMOP_STUB(iemOp_vmread_Ey_Gy);
+FNIEMOP_UD_STUB(iemOp_vmread_Ey_Gy);
 #endif
 
 /*  Opcode 0x66 0x0f 0x78 - AMD Group 17 */
@@ -7364,7 +7364,7 @@ FNIEMOP_DEF(iemOp_vmwrite_Gy_Ey)
     }
 }
 #else
-FNIEMOP_STUB(iemOp_vmwrite_Gy_Ey);
+FNIEMOP_UD_STUB(iemOp_vmwrite_Gy_Ey);
 #endif
 /*  Opcode 0x66 0x0f 0x79 - invalid */
 /*  Opcode 0xf3 0x0f 0x79 - invalid */

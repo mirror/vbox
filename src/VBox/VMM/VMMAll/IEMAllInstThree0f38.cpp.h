@@ -1355,7 +1355,7 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 #else
-FNIEMOP_STUB(iemOp_invept_Gy_Mdq);
+FNIEMOP_UD_STUB(iemOp_invept_Gy_Mdq);
 #endif
 
 /** Opcode 0x66 0x0f 0x38 0x81. */
@@ -1404,7 +1404,7 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 #else
-FNIEMOP_STUB(iemOp_invvpid_Gy_Mdq);
+FNIEMOP_UD_STUB(iemOp_invvpid_Gy_Mdq);
 #endif
 
 /** Opcode 0x66 0x0f 0x38 0x82. */
