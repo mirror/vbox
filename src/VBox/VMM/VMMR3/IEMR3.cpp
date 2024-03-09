@@ -917,7 +917,7 @@ static DECLCALLBACK(void) iemR3InfoDTlb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
 
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 /**
- * @callback_method_impl{FNDBGFINFOARGVINT, dtlb}
+ * @callback_method_impl{FNDBGFINFOARGVINT, tb}
  */
 static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
 {

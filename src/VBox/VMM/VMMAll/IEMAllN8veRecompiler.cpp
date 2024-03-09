@@ -11854,7 +11854,7 @@ iemNativeEmitFetchSReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxD
 #define IEM_MC_REF_GREG_U8_THREADED(a_pu8Dst, a_iGRegEx) \
     off = iemNativeEmitRefGregU8(pReNative, off, a_pu8Dst, a_iGRegEx, false /*fConst*/)
 
-#define IEM_MC_REF_GREG_U8_CONST_THREADED(a_pu8Dst, a_iGReg) \
+#define IEM_MC_REF_GREG_U8_CONST_THREADED(a_pu8Dst, a_iGRegEx) \
     off = iemNativeEmitRefGregU8(pReNative, off, a_pu8Dst, a_iGRegEx, true /*fConst*/)
 
 /** Handles IEM_MC_REF_GREG_U8[_CONST]. */

@@ -113,6 +113,84 @@ iemNativeEmitAmd64TwoByteModRmInstrRREx(PIEMNATIVEINSTR pCodeBuf, uint32_t off,
     return off;
 }
 
+
+/**
+ * Emits one of three opcodes with an immediate.
+ *
+ * These are expected to be a /idxRegReg form.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitAmd64OneByteModRmInstrRIEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t bOpcode8, uint8_t bOpcodeOtherImm8,
+                                        uint8_t bOpcodeOther, uint8_t cOpBits, uint8_t cImmBits, uint8_t idxRegReg,
+                                        uint8_t idxRegRm, uint64_t uImmOp)
+{
+    Assert(idxRegReg < 8); Assert(idxRegRm < 16);
+    if (cImmBits == 8 || uImmOp <= (uint64_t)0x7f)
+    {
+        switch (cOpBits)
+        {
+            case 16:
+                pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+                RT_FALL_THRU();
+            case 32:
+                if (idxRegRm >= 8)
+                    pCodeBuf[off++] = X86_OP_REX_B;
+                pCodeBuf[off++] = bOpcodeOtherImm8;
+                break;
+
+            default: AssertFailed(); RT_FALL_THRU();
+            case 64:
+                pCodeBuf[off++] = X86_OP_REX_W | (idxRegRm >= 8 ? X86_OP_REX_B : 0);
+                pCodeBuf[off++] = bOpcodeOtherImm8;
+                break;
+
+            case 8:
+                if (idxRegRm >= 8)
+                    pCodeBuf[off++] = X86_OP_REX_B;
+                else if (idxRegRm >= 4)
+                    pCodeBuf[off++] = X86_OP_REX;
+                pCodeBuf[off++] = bOpcode8;
+                break;
+        }
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegReg, idxRegRm & 7);
+        pCodeBuf[off++] = (uint8_t)uImmOp;
+    }
+    else
+    {
+        switch (cOpBits)
+        {
+            case 32:
+                if (idxRegRm >= 8)
+                    pCodeBuf[off++] = X86_OP_REX_B;
+                break;
+
+            default: AssertFailed(); RT_FALL_THRU();
+            case 64:
+                pCodeBuf[off++] = X86_OP_REX_W | (idxRegRm >= 8 ? X86_OP_REX_B : 0);
+                break;
+
+            case 16:
+                pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+                if (idxRegRm >= 8)
+                    pCodeBuf[off++] = X86_OP_REX_B;
+                pCodeBuf[off++] = bOpcodeOther;
+                pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegReg, idxRegRm & 7);
+                pCodeBuf[off++] = RT_BYTE1(uImmOp);
+                pCodeBuf[off++] = RT_BYTE2(uImmOp);
+                Assert(cImmBits == 16);
+                return off;
+        }
+        pCodeBuf[off++] = bOpcodeOther;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegReg, idxRegRm & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImmOp);
+        pCodeBuf[off++] = RT_BYTE2(uImmOp);
+        pCodeBuf[off++] = RT_BYTE3(uImmOp);
+        pCodeBuf[off++] = RT_BYTE4(uImmOp);
+        Assert(cImmBits == 32);
+    }
+    return off;
+}
+
 #endif /* RT_ARCH_AMD64 */
 
 /**
@@ -214,7 +292,7 @@ DECL_FORCE_INLINE_THROW(uint32_t)
 iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEfl, uint8_t idxRegEflIn
 #ifndef RT_ARCH_AMD64
                                  , uint8_t cOpBits, uint8_t idxRegResult, uint8_t idxRegDstIn, uint8_t idxRegSrc
-                                 , bool fInvertCarry
+                                 , bool fInvertCarry, uint64_t uImmSrc
 #endif
                                  )
 {
@@ -285,13 +363,31 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
             AssertCompile(X86_EFL_CF_BIT == 0);
             pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxRegEfl, idxRegResult, cOpBits, 1, false /*f64Bit*/);
 
-            /* The overflow flag is more work. See IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC. */
-            if (fInvertCarry) /* sbb:  ~((a_uDst) ^ ~(a_uSrcOf)) ->  (a_uDst) ^  (a_uSrcOf); HACK ALERT: fInvertCarry == sbb */
-                pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
-            else              /* adc:  ~((a_uDst) ^ (a_uSrcOf))  ->  (a_uDst) ^ ~(a_uSrcOf) */
-                pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
-            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg2,   idxRegDstIn, idxRegResult, false); /*  (a_uDst) ^ (a_uResult) */
-            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpReg,    idxTmpReg,   idxTmpReg2,   false /*f64Bit*/);
+            /* The overflow flag is more work. See IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC.
+               It is a bit simpler when the right side is constant. */
+            if (idxRegSrc != UINT8_MAX)
+            {
+                if (fInvertCarry) /* sbb:  ~((a_uDst) ^ ~(a_uSrcOf)) ->  (a_uDst) ^  (a_uSrcOf); HACK ALERT: fInvertCarry == sbb */
+                    pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
+                else              /* adc:  ~((a_uDst) ^ (a_uSrcOf))  ->  (a_uDst) ^ ~(a_uSrcOf) */
+                    pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg,  idxRegDstIn, idxRegSrc,  false);
+                pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg2,   idxRegDstIn, idxRegResult, false); /* (a_uDst) ^ (a_uResult) */
+                pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpReg,    idxTmpReg,   idxTmpReg2,   false /*f64Bit*/);
+            }
+            else if (uImmSrc & RT_BIT_32(cOpBits - 1))
+            {
+                if (fInvertCarry) /* sbb w/ top right 1: ~a_uDst & a_uResult ; HACK ALERT: fInvertCarry == sbb */
+                    pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg, idxRegResult, idxRegDstIn, false);
+                else              /* adc w/ top right 1: a_uDst & ~a_uResult */
+                    pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg, idxRegDstIn, idxRegResult, false);
+            }
+            else
+            {
+                if (fInvertCarry) /* sbb w/ top right 0: a_uDst & ~a_uResult ; HACK ALERT: fInvertCarry == sbb */
+                    pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg, idxRegDstIn, idxRegResult, false);
+                else              /* adc w/ top right 0: ~a_uDst & a_uResult */
+                    pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg, idxRegResult, idxRegDstIn, false);
+            }
             pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxTmpReg,   cOpBits - 1,  false /*f64Bit*/);
             pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl,    idxTmpReg,   X86_EFL_OF_BIT, 1);
             iemNativeRegFreeTmp(pReNative, idxTmpReg2);
@@ -308,9 +404,30 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
         pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxTmpReg, X86_EFL_PF_BIT, 1,  false /*f64Bit*/);
 
-        /* Calculate auxilary carry/borrow.  This is related to 8-bit BCD.*/
-        pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxRegDstIn, idxRegSrc, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxRegResult, false /*f64Bit*/);
+        /* Calculate auxilary carry/borrow.  This is related to 8-bit BCD.
+           General formula: ((uint32_t)(a_uResult)  ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF;
+               S D R
+               0 0 0 -> 0;  \
+               0 0 1 -> 1;   \  regular
+               0 1 0 -> 1;   /    xor R, D
+               0 1 1 -> 0;  /
+               1 0 0 -> 1;  \
+               1 0 1 -> 0;   \  invert one of the two
+               1 1 0 -> 0;   /    xor not(R), D
+               1 1 1 -> 1;  /
+           a_uSrc[bit 4]=0: ((uint32_t)(a_uResult)  ^ (uint32_t)(a_uDst)) & X86_EFL_AF;
+           a_uSrc[bit 4]=1: ((uint32_t)~(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF;
+           */
+
+        if (idxRegSrc != UINT8_MAX)
+        {
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxRegDstIn, idxRegSrc, false /*f64Bit*/);
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxRegResult, false /*f64Bit*/);
+        }
+        else if (uImmSrc & X86_EFL_AF)
+            pCodeBuf[off++] = Armv8A64MkInstrEon(idxTmpReg, idxRegDstIn, idxRegResult, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxRegDstIn, idxRegResult, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxTmpReg, idxTmpReg, X86_EFL_AF_BIT, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxTmpReg, X86_EFL_AF_BIT, 1,  false /*f64Bit*/);
 
@@ -363,6 +480,18 @@ iemNativeEmit_and_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 
 /**
+ * The AND instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_and_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
+    return off;
+}
+
+
+/**
  * The TEST instruction will clear OF, CF and AF (latter is undefined) and
  * set the other flags according to the result.
  */
@@ -407,6 +536,18 @@ iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 
 /**
+ * The TEST instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_test_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
+    return off;
+}
+
+
+/**
  * The OR instruction will clear OF, CF and AF (latter is undefined) and
  * set the other flags according to the result.
  */
@@ -440,6 +581,18 @@ iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 
 /**
+ * The OR instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_or_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
+    return off;
+}
+
+
+/**
  * The XOR instruction will clear OF, CF and AF (latter is undefined) and
  * set the other flags according to the result.
  */
@@ -468,6 +621,18 @@ iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
+    return off;
+}
+
+
+/**
+ * The XOR instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_xor_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
     return off;
 }
 
@@ -518,11 +683,79 @@ iemNativeEmit_add_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX, cOpBits, idxRegDst,
-                                           idxRegDstIn, idxRegSrc, false /*fInvertCarry*/);
+                                           idxRegDstIn, idxRegSrc, false /*fInvertCarry*/, 0);
 
     iemNativeRegFreeTmp(pReNative, idxRegDstIn);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
     iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * The ADD instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_add_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly sized ADD instruction to get the right EFLAGS.SF value. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0x80, 0x83, 0x81, cOpBits, cImmBits, 0, idxRegDst, uImmOp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX);
+
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we'll need the two input operands as well as the result in order
+       to calculate the right flags, even if we use ADDS and translates NZCV into
+       OF, CF, ZF and SF. */
+    uint8_t const   idxRegDstIn  = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR pCodeBuf     = iemNativeInstrBufEnsure(pReNative, off, 8);
+    off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, idxRegDstIn, idxRegDst);
+    if (cOpBits >= 32)
+    {
+        if (uImmOp <= 0xfffU)
+            pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegDst, idxRegDst, uImmOp, cOpBits > 32 /*f64Bit*/, true /*fSetFlags*/);
+        else if (uImmOp <= 0xfff000U && !(uImmOp & 0xfff))
+            pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegDst, idxRegDst, uImmOp, cOpBits > 32 /*f64Bit*/, true /*fSetFlags*/,
+                                                       true /*fShift12*/);
+        else
+        {
+            uint8_t const idxTmpImmReg = iemNativeRegAllocTmpImm(pReNative, &off, uImmOp);
+            pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+            pCodeBuf[off++] = Armv8A64MkInstrAddReg(idxRegDst, idxRegDst, idxTmpImmReg, cOpBits > 32 /*f64Bit*/, true /*fSetFlags*/);
+            iemNativeRegFreeTmpImm(pReNative, idxTmpImmReg);
+        }
+    }
+    else
+    {
+        /* Shift the operands up so we can perform a 32-bit operation and get all four flags. */
+        uint32_t const cShift = 32 - cOpBits;
+        uint8_t const idxTmpImmReg = iemNativeRegAllocTmpImm(pReNative, &off, uImmOp << cShift);
+        pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(idxRegDst, idxTmpImmReg, idxRegDstIn, false /*f64Bit*/, true /*fSetFlags*/, cShift);
+        pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegDst, idxRegDst, cShift, false /*f64Bit*/);
+        cOpBits = 32;
+        iemNativeRegFreeTmpImm(pReNative, idxTmpImmReg);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX, cOpBits, idxRegDst,
+                                           idxRegDstIn, UINT8_MAX, false /*fInvertCarry*/, uImmOp);
+
+    iemNativeRegFreeTmp(pReNative, idxRegDstIn);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+    RT_NOREF(cImmBits);
 
 #else
 # error "port me"
@@ -580,7 +813,7 @@ iemNativeEmit_adc_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, UINT8_MAX, idxRegEfl, cOpBits, idxRegDst,
-                                           idxRegDstIn, idxRegSrc, false /*fInvertCarry*/);
+                                           idxRegDstIn, idxRegSrc, false /*fInvertCarry*/, 0);
 
     iemNativeRegFreeTmp(pReNative, idxRegDstIn);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
@@ -592,6 +825,18 @@ iemNativeEmit_adc_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 # error "port me"
 #endif
     iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+    return off;
+}
+
+
+/**
+ * The ADC instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_adc_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
     return off;
 }
 
@@ -642,7 +887,7 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX, cOpBits, idxRegDst,
-                                           idxRegDstIn, idxRegSrc, true /*fInvertCarry*/);
+                                           idxRegDstIn, idxRegSrc, true /*fInvertCarry*/, 0);
 
     iemNativeRegFreeTmp(pReNative, idxRegDstIn);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
@@ -651,6 +896,18 @@ iemNativeEmit_sub_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #else
 # error "port me"
 #endif
+    return off;
+}
+
+
+/**
+ * The SUB instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_sub_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
     return off;
 }
 
@@ -697,7 +954,7 @@ iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, idxVarEfl, UINT8_MAX, cOpBits, idxRegResult,
-                                           idxRegDst, idxRegSrc, true /*fInvertCarry*/);
+                                           idxRegDst, idxRegSrc, true /*fInvertCarry*/, 0);
 
     iemNativeRegFreeTmp(pReNative, idxRegResult);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
@@ -706,6 +963,18 @@ iemNativeEmit_cmp_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #else
 # error "port me"
 #endif
+    return off;
+}
+
+
+/**
+ * The CMP instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_cmp_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
     return off;
 }
 
@@ -761,7 +1030,7 @@ iemNativeEmit_sbb_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForArithmetic(pReNative, off, UINT8_MAX, idxRegEfl, cOpBits, idxRegDst,
-                                           idxRegDstIn, idxRegSrc, true /*fInvertCarry*/);
+                                           idxRegDstIn, idxRegSrc, true /*fInvertCarry*/, 0);
 
     iemNativeRegFreeTmp(pReNative, idxRegDstIn);
     iemNativeVarRegisterRelease(pReNative, idxVarSrc);
@@ -773,6 +1042,18 @@ iemNativeEmit_sbb_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 # error "port me"
 #endif
     iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+    return off;
+}
+
+
+/**
+ * The SBB instruction with immediate value as right operand.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_sbb_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                          uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
+{
+    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
     return off;
 }
 
