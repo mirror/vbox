@@ -39,7 +39,7 @@
 
 /** @def IEMNATIVE_WITH_TB_DEBUG_INFO
  * Enables generating internal debug info for better TB disassembly dumping. */
-#if defined(DEBUG) || defined(DOXYGEN_RUNNING) || 1
+#if defined(DEBUG) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_WITH_TB_DEBUG_INFO
 #endif
 
