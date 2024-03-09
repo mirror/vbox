@@ -547,6 +547,108 @@ DECLINLINE(uint8_t) bs3CpuInstr3MemOpSize(uint8_t cbOperand, uint8_t enmRm)
 
 
 /*
+ * Code to make testing the tests faster.  `bs3CpuInstr3_SkipIt()' randomly
+ * skips a large fraction of the micro-tests.  It is sufficiently random
+ * that over a large number of runs, all micro-tests will be hit.
+ *
+ * This improves the runtime of the worst case (`#define ALL_TESTS' on a
+ * debug build, run with '--execute-all-in-iem') from ~9000 to ~800 seconds
+ * (on an Intel Core i7-10700, fwiw).
+ *
+ * To activate this 'developer's speed-testing mode', turn on
+ * `#define BS3_SKIPIT_DO_SKIP' here.
+ *
+ * BS3_SKIPIT_AVG_SKIP governs approximately how many micro-tests are
+ * skipped in a row; e.g. the default of 26 means about every 27th
+ * micro-test is run during a particular test run.  (This is not 27x
+ * faster due to other activities which are not skipped!)  Note this is
+ * only an average; the actual skips are random.
+ *
+ * You can also modify bs3CpuInstr3_SkipIt() to focus on specific sub-tests,
+ * using its (currently ignored) `bRing, iCfg, iTest, iVal, iVariant' args
+ * (to enable this: turn on `#define BS3_SKIPIT_DO_ARGS': which costs about
+ * 3% performance).
+ */
+#define BS3_SKIPIT_AVG_SKIP 26
+#undef  BS3_SKIPIT_DO_SKIP
+#undef  BS3_SKIPIT_DO_ARGS
+#define BS3_SKIPIT_DO_SKIP
+
+#if defined(BS3_SKIPIT_DO_SKIP)
+uint32_t BS3_ASMrdtsc_lo();
+#pragma aux BS3_ASMrdtsc_lo = \
+    ".586" \
+    "rdtsc" \
+    modify [edx eax] value [eax];
+
+DECLINLINE(uint32_t) bs3CpuInstr3_SimpleRand()
+{
+    /*
+     * A simple Lehmer linear congruential pseudo-random number
+     * generator using the constants suggested by Park & Miller:
+     *
+     *      modulus    = 2^31 - 1 (INT32_MAX)
+     *      multiplier = 7^5 (16807)
+     *
+     * It produces numbers in the range [1..INT32_MAX-1] and is
+     * more chaotic in the higher bits.
+     */
+    static uint32_t s_uSeedMemory = 0;
+
+    RTUINT64U uProduct;
+    uint32_t uHiMod, uLoMod;
+
+    if (!s_uSeedMemory)
+        s_uSeedMemory = BS3_ASMrdtsc_lo();
+
+    uProduct.u = (uint64_t)s_uSeedMemory * 16807;
+    /*
+     * This piece-wise modulus operation is vastly faster
+     * than openwatcom's built-in 64-div-32 routine!
+     */
+    uHiMod = (uProduct.au32[0] * 2) % INT32_MAX;
+    uLoMod = (uProduct.au32[1] & 0xFFFFFFFF) % INT32_MAX;
+    s_uSeedMemory = (uHiMod + uLoMod) % INT32_MAX;
+    return s_uSeedMemory;
+}
+#endif /* BS3_SKIPIT_DO_SKIP */
+
+static unsigned g_cSeen, g_cSkipped;
+
+static void bs3CpuInstr3_ShowTallies()
+{
+    Bs3TestPrintf("Micro-tests %d: tested %d / skipped %d\n", g_cSeen, g_cSeen - g_cSkipped, g_cSkipped);
+}
+
+#if defined(BS3_SKIPIT_DO_ARGS)
+# define BS3_SKIPIT(bRing, iCfg, iTest, iVal, iVariant) bs3CpuInstr3_SkipIt(bRing, iCfg, iTest, iVal, iVariant)
+static unsigned bs3CpuInstr3_SkipIt(uint8_t bRing, unsigned iCfg, unsigned iTest, unsigned iVal, unsigned iVariant)
+#else
+# define BS3_SKIPIT(bRing, iCfg, iTest, iVal, iVariant) bs3CpuInstr3_SkipIt()
+static unsigned bs3CpuInstr3_SkipIt()
+#endif
+{
+    static unsigned s_uTimes = 0;
+    unsigned uRet;
+
+    ++g_cSeen;
+#if !defined(BS3_SKIPIT_DO_SKIP)
+    return (uRet = s_uTimes);
+#else
+    /* Cache calls to the relatively expensive random routine */
+    if (!s_uTimes) {
+        s_uTimes = bs3CpuInstr3_SimpleRand() % (BS3_SKIPIT_AVG_SKIP * 2 + 1) + 1;
+    }
+    uRet = (--s_uTimes > 0);
+    if (uRet)
+        ++g_cSkipped;
+    if (g_cSeen % 25000 == 0)
+        bs3CpuInstr3_ShowTallies();
+    return uRet;
+#endif /* !BS3_SKIPIT_DO_SKIP */
+}
+
+/*
  * Test type #1.
  */
 
@@ -672,6 +774,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
+                    if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0)) continue;
                     /*
                      * Set up the context and some expectations.
                      */
@@ -9145,6 +9248,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                     uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
+                    if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0)) continue;
                     /*
                      * Set up the context and some expectations.
                      */
@@ -9818,6 +9922,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                     uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
+                    if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0)) continue;
                     /*
                      * Set up the context and some expectations.
                      */
@@ -12026,6 +12131,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType4(uint8_t bMode, BS3CPUINSTR3_TEST4_T 
                         uint16_t   uSavedFtw = 0xff;
                         RTUINT256U uMemOpExpect;
 
+                        if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, iEflVariation)) continue;
                         /*
                          * Set up the context and some expectations.
                          */
@@ -12347,6 +12453,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                     uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
+                    if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0)) continue;
                     /*
                      * Set up the context and some expectations.
                      */
@@ -12910,6 +13017,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType6(uint8_t bMode, BS3CPUINSTR3_TEST6_T 
                     uint16_t   uSavedFtw = 0xff;
                     RTUINT256U uMemOpExpect;
 
+                    if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0)) continue;
                     /*
                      * Set up the context and some expectations.
                      */
@@ -13456,6 +13564,7 @@ BS3_DECL(void) Main_pe32()
          * Do the tests.
          */
         Bs3TestDoModesByOne_pe32(g_aTests, RT_ELEMENTS(g_aTests), BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY);
+        bs3CpuInstr3_ShowTallies();
     }
     else
         Bs3TestFailed("Failed to allocate 16K buffer");
