@@ -1986,7 +1986,7 @@ FNIEMOP_DEF(iemOp_cmp_Gv_Ev)
 FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 {
     IEMOP_MNEMONIC(cmp_al_Ib, "cmp al,Ib");
-    IEMOP_BODY_BINARY_AL_Ib(cmp, 0);
+    IEMOP_BODY_BINARY_AL_Ib(cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -1997,7 +1997,7 @@ FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 FNIEMOP_DEF(iemOp_cmp_eAX_Iz)
 {
     IEMOP_MNEMONIC(cmp_rAX_Iz, "cmp rAX,Iz");
-    IEMOP_BODY_BINARY_rAX_Iz_RO(cmp, 0);
+    IEMOP_BODY_BINARY_rAX_Iz_RO(cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -4463,7 +4463,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_xor_Eb_Ib, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp1_cmp_Eb_Ib, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(cmp_Eb_Ib, "cmp Eb,Ib");
-    IEMOP_BODY_BINARY_Eb_Ib_RO(cmp, 0);
+    IEMOP_BODY_BINARY_Eb_Ib_RO(cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5036,7 +5036,7 @@ FNIEMOP_DEF_1(iemOp_Grp1_xor_Ev_Iz, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp1_cmp_Ev_Iz, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(cmp_Ev_Iz, "cmp Ev,Iz");
-    IEMOP_BODY_BINARY_Ev_Iz_RO(cmp, 0);
+    IEMOP_BODY_BINARY_Ev_Iz_RO(cmp, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
