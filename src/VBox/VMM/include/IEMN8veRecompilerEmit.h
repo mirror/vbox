@@ -6830,7 +6830,13 @@ DECL_FORCE_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreVecRegToVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    AssertReleaseFailed();
+    /* movdqa mem128, reg128 */ /* ASSUMING an aligned location here. */
+    pCodeBuf[off++] = 0x66;
+    if (iVecReg >= 8)
+        pCodeBuf[off++] = X86_OP_REX_R;
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x7f;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
 
@@ -6848,7 +6854,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreVecRegToVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
 #else
@@ -6866,7 +6872,13 @@ DECL_FORCE_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    AssertReleaseFailed();
+    /* movdqa reg128, mem128 */ /* ASSUMING an aligned location here. */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iVecReg >= 8)
+        pCodeBuf[off++] = X86_OP_REX_R;
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x6f;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
 
@@ -6884,7 +6896,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
 #else
@@ -6895,6 +6907,7 @@ iemNativeEmitSimdLoadVecRegFromVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t 
 }
 
 
+#if 0 /* unused */
 /**
  * Emits a 256-bit vector register store to a VCpu value.
  */
@@ -6913,6 +6926,7 @@ iemNativeEmitSimdStoreVecRegToVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t o
 #endif
     return off;
 }
+#endif
 
 
 /**
@@ -6923,6 +6937,7 @@ iemNativeEmitSimdLoadVecRegFromVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t 
 {
 #ifdef RT_ARCH_AMD64
     AssertReleaseFailed();
+    RT_NOREF(pReNative, off, iVecReg, offVCpuLow, offVCpuHigh);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecReg & 0x1));
@@ -6971,7 +6986,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVecRegU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 3), off, iVecRegDst, iVecRegSrc);
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 5), off, iVecRegDst, iVecRegSrc);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iVecRegSrc);
 #else
@@ -6983,13 +6998,31 @@ iemNativeEmitSimdLoadVecRegFromVecRegU128(PIEMRECOMPILERSTATE pReNative, uint32_
 
 
 /**
- * Emits a gprdst = gprsrc load, 256-bit.
+ * Emits a vecdst = vecsrc load, 256-bit.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
 {
 #ifdef RT_ARCH_AMD64
-    AssertReleaseFailed();
+    /* vmovdqa ymm, ymm */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    if (iVecRegDst >= 8 && iVecRegSrc >= 8)
+    {
+        pbCodeBuf[off++] = 0xc4;
+        pbCodeBuf[off++] = 0x41;
+        pbCodeBuf[off++] = 0x7d;
+        pbCodeBuf[off++] = 0x6f;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0xc5;                                               /* Two byte VEX prefix */
+        pbCodeBuf[off++] = (iVecRegSrc >= 8 || iVecRegDst >= 8) ? 0x7d : 0xfd;
+        pbCodeBuf[off++] = iVecRegSrc >= 8 ? 0x7f : 0x6f;
+        pbCodeBuf[off++] =   iVecRegSrc >= 8
+                           ? X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, iVecRegDst & 7)
+                           : X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
+    }
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegDst & 0x1)); Assert(!(iVecRegSrc & 0x1));

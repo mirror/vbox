@@ -5744,10 +5744,13 @@ static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE 
         {
             case kIemNativeGstSimdRegLdStSz_256:
                 off = iemNativeEmitSimdLoadVecRegFromVecRegU256(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
+                break;
             case kIemNativeGstSimdRegLdStSz_Low128:
                 off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
+                break;
             case kIemNativeGstSimdRegLdStSz_High128:
                 off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst + 1, idxHstSimdRegSrc + 1);
+                break;
             default:
                 AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
         }
@@ -5976,7 +5979,20 @@ static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative,
            IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg)));
 
 #ifdef RT_ARCH_AMD64
-# error "Port me"
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
+        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
+    }
+
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
+        AssertReleaseFailed();
+        //off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
+    }
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMING there are two consecutive host registers to store the potential 256-bit guest register. */
     Assert(!(idxHstSimdReg & 0x1));
@@ -5990,7 +6006,7 @@ static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative,
     if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
     {
         Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
-               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
         off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg + 1, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
     }
 #endif
@@ -6393,7 +6409,76 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                     IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz)
 {
 #  ifdef RT_ARCH_AMD64
-#   error "Port me!"
+    Assert(enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128); /** @todo 256-bit variant. */
+
+    /* movdqa vectmp0, idxSimdReg */
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdReg);
+
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 44);
+
+    /* pcmpeqq vectmp0, [gstreg] (ASSUMES SSE4.1) */
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (idxSimdReg >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0x38;
+    pbCodeBuf[off++] = 0x29;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+
+    /* pextrq tmp0, vectmp0, #0 (ASSUMES SSE4.1). */
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    pbCodeBuf[off++] =   X86_OP_REX_W
+                       | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                       | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0x3a;
+    pbCodeBuf[off++] = 0x16;
+    pbCodeBuf[off++] = 0xeb;
+    pbCodeBuf[off++] = 0x00;
+
+    /* test tmp0, 0xffffffff. */
+    pbCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0xf7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, IEMNATIVE_REG_FIXED_TMP0 & 7);
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+
+    /* je/jz +1 */
+    pbCodeBuf[off++] = 0x74;
+    pbCodeBuf[off++] = 0x01;
+
+    /* int3 */
+    pbCodeBuf[off++] = 0xcc;
+
+    /* pextrq tmp0, vectmp0, #1 (ASSUMES SSE4.1). */
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    pbCodeBuf[off++] =   X86_OP_REX_W
+                       | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                       | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0x3a;
+    pbCodeBuf[off++] = 0x16;
+    pbCodeBuf[off++] = 0xeb;
+    pbCodeBuf[off++] = 0x01;
+
+    /* test tmp0, 0xffffffff. */
+    pbCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
+    pbCodeBuf[off++] = 0xf7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, IEMNATIVE_REG_FIXED_TMP0 & 7);
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0xff;
+
+    /* je/jz +1 */
+    pbCodeBuf[off++] = 0x74;
+    pbCodeBuf[off++] = 0x01;
+
+    /* int3 */
+    pbCodeBuf[off++] = 0xcc;
+
 #  elif defined(RT_ARCH_ARM64)
     /* mov vectmp0, [gstreg] */
     off = iemNativeEmitLoadSimdRegWithGstShadowSimdReg(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, enmGstSimdReg, enmLoadSz);
@@ -6412,7 +6497,6 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
         pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
         /* brk #0x1000+enmGstReg */
         pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstSimdReg | UINT32_C(0x1000));
-        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
 
     if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
@@ -6429,12 +6513,13 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
         pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
         /* brk #0x1000+enmGstReg */
         pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstSimdReg | UINT32_C(0x1000));
-        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     }
 
 #  else
 #   error "Port me!"
 #  endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 # endif
@@ -8168,10 +8253,6 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
     uint8_t const idxXcr0Reg      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0, kIemNativeGstRegUse_ReadOnly);
     uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
     uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
-
-#if 1
-    off = iemNativeEmitBrk(pReNative, off, 0x4223); /** @todo Test this when AVX gets actually available. */
-#endif
 
     /** @todo r=aeichner Optimize this more later to have less compares and branches,
      *                   (see IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() in IEMMc.h but check that it has some

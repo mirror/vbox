@@ -172,6 +172,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                             | RT_BIT_32(X86_GREG_xBP) )
 
 # ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#  define IEMNATIVE_SIMD_REG_FIXED_TMP0    5 /* xmm5/ymm5 */
 #  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS) || !defined(_MSC_VER)
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK   0
 #  else
