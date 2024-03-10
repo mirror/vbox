@@ -604,9 +604,16 @@ DECLINLINE(uint32_t) bs3CpuInstr3_SimpleRand()
     /*
      * This piece-wise modulus operation is vastly faster
      * than openwatcom's built-in 64-div-32 routine!
+     *
+     * Math:    high longword's effect % INT32_MAX
+     *       = (high longword * 2^32) % INT32_MAX
+     *       = (high longword * (2^32 - 2 * INT32_MAX)) % INT32_MAX
+     *       = (high longword * 2) % INT32_MAX
+     *       = (high longword * 2), since uProduct is a 'small' 64-bit value
+     *              (high longword of a 32-bit-value * 16807, a 15-bit value)
      */
-    uHiMod = (uProduct.au32[0] * 2) % INT32_MAX;
-    uLoMod = (uProduct.au32[1] & 0xFFFFFFFF) % INT32_MAX;
+    uHiMod = uProduct.au32[1] * 2;
+    uLoMod = uProduct.au32[0] % INT32_MAX;
     s_uSeedMemory = (uHiMod + uLoMod) % INT32_MAX;
     return s_uSeedMemory;
 }
