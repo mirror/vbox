@@ -2904,6 +2904,9 @@ class McBlock(object):
         return asRet;
 
 
+## Temporary flag for enabling / disabling experimental MCs depending on the
+## SIMD register allocator.
+g_fNativeSimd = False;
 
 ## IEM_MC_XXX -> parser + info dictionary.
 #
@@ -2994,9 +2997,9 @@ g_dMcStmtParsers = {
     'IEM_MC_CLEAR_FSW_EX':                                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_CLEAR_HIGH_GREG_U64':                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_CLEAR_XREG_U32_MASK':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_CLEAR_YREG_128_UP':                                  (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_CLEAR_YREG_128_UP':                                  (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_COMMIT_EFLAGS':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
-    'IEM_MC_COPY_XREG_U128':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_COPY_XREG_U128':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_COPY_YREG_U128_ZX_VLMAX':                            (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_COPY_YREG_U256_ZX_VLMAX':                            (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_COPY_YREG_U64_ZX_VLMAX':                             (McBlock.parseMcGeneric,           True,  True,  False, ),
@@ -3085,8 +3088,8 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_SREG_ZX_U64':                                  (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_FETCH_XREG_U128':                                    (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_XREG_U16':                                     (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_FETCH_XREG_U32':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
-    'IEM_MC_FETCH_XREG_U64':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
+    'IEM_MC_FETCH_XREG_U32':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
+    'IEM_MC_FETCH_XREG_U64':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
     'IEM_MC_FETCH_XREG_U8':                                      (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_XREG_XMM':                                     (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_XREG_PAIR_U128':                               (McBlock.parseMcGeneric,           False, False, False, ),
@@ -3095,8 +3098,8 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_XREG_PAIR_XMM':                                (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_YREG_U128':                                    (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_YREG_U256':                                    (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_FETCH_YREG_U32':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
-    'IEM_MC_FETCH_YREG_U64':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
+    'IEM_MC_FETCH_YREG_U32':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
+    'IEM_MC_FETCH_YREG_U64':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
     'IEM_MC_FLIP_EFL_BIT':                                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FPU_FROM_MMX_MODE':                                  (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FPU_STACK_DEC_TOP':                                  (McBlock.parseMcGeneric,           True,  True,  False, ),
@@ -3327,10 +3330,10 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_XREG_R64':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_XREG_U128':                                    (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_XREG_U16':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_STORE_XREG_U32':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_STORE_XREG_U32':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_XREG_U32_U128':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_XREG_U32_ZX_U128':                             (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_STORE_XREG_U64':                                     (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_STORE_XREG_U64':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_XREG_U64_ZX_U128':                             (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_XREG_U8':                                      (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_XREG_XMM':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),

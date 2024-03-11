@@ -93,7 +93,9 @@ RT_C_DECLS_BEGIN
 #endif
 
 /** Enables the SIMD register allocator @bugref{10614}.  */
-#define IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#if defined(DOXYGEN_RUNNING) || 0
+# define IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#endif
 /** Enables access to even callee saved registers. */
 //# define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
 
