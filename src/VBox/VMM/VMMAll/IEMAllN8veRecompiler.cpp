@@ -5289,6 +5289,42 @@ DECLHIDDEN(void) iemNativeSimdRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t 
 
 
 /**
+ * Emits code to flush a pending write of the given SIMD register if any, also flushes the guest to host SIMD register association.
+ *
+ * @returns New code bufferoffset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   enmGstSimdReg   The guest SIMD register to flush.
+ */
+static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTSIMDREG enmGstSimdReg)
+{
+    uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg];
+
+    Log12(("iemNativeSimdRegFlushPendingWrite: Clearing guest register %s shadowed by host %s with state DirtyLo:%u DirtyHi:%u\n",
+           g_aGstSimdShadowInfo[enmGstSimdReg].pszName, g_apszIemNativeHstSimdRegNames[idxHstSimdReg],
+           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg),
+           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg)));
+
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
+        off = iemNativeEmitSimdStoreVecRegToVCpuLowU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+    }
+
+    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg))
+    {
+        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
+               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
+        off = iemNativeEmitSimdStoreVecRegToVCpuHighU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+    }
+
+    IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(pReNative, enmGstSimdReg);
+    return off;
+}
+
+
+/**
  * Locate a register, possibly freeing one up.
  *
  * This ASSUMES the caller has done the minimal/optimal allocation checks and
@@ -5308,8 +5344,6 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
     //STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFree);
     Assert(!(fRegMask & ~IEMNATIVE_HST_SIMD_REG_MASK));
     Assert(!(fRegMask & IEMNATIVE_SIMD_REG_FIXED_MASK));
-
-    AssertFailed();
 
     /*
      * Try a freed register that's shadowing a guest register.
@@ -5347,13 +5381,6 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
                                  & ~pLivenessEntry->aBits[IEMLIVENESS_BIT_WRITE].bm64
                                  & IEMLIVENESSBIT_MASK;
 #endif
-            /* Merge EFLAGS. */
-            uint64_t fTmp = fToFreeMask & (fToFreeMask >> 3);   /* AF2,PF2,CF2,Other2 = AF,PF,CF,Other & OF,SF,ZF,AF */
-            fTmp &= fTmp >> 2;                                  /*         CF3,Other3 = AF2,PF2 & CF2,Other2  */
-            fTmp &= fTmp >> 1;                                  /*             Other4 = CF3 & Other3 */
-            fToFreeMask &= RT_BIT_64(kIemNativeGstReg_EFlags) - 1;
-            fToFreeMask |= fTmp & RT_BIT_64(kIemNativeGstReg_EFlags);
-
             /* If it matches any shadowed registers. */
             if (pReNative->Core.bmGstRegShadows & fToFreeMask)
             {
@@ -5388,9 +5415,22 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
         Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxReg));
         Assert(pReNative->Core.aHstSimdRegs[idxReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Invalid);
 
+        /* We need to flush any pending guest register writes this host SIMD register shadows. */
+        uint32_t fGstRegShadows = pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
+        uint32_t idxGstSimdReg = 0;
+        do
+        {
+            if (fGstRegShadows & 0x1)
+                *poff = iemNativeSimdRegFlushPendingWrite(pReNative, *poff, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
+            Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg));
+            idxGstSimdReg++;
+            fGstRegShadows >>= 1;
+        } while (fGstRegShadows);
+
         pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxReg);
         pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
         pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows = 0;
+        pReNative->Core.aHstSimdRegs[idxReg].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
         return idxReg;
     }
 
@@ -5401,7 +5441,7 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
      * saved on the stack, then in the second round move things to the stack.
      */
     //STAM_REL_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeVar);
-    AssertReleaseFailed(); /** @todo */
+    AssertReleaseFailed(); /** @todo No variable support right now. */
 #if 0
     for (uint32_t iLoop = 0; iLoop < 2; iLoop++)
     {
@@ -5441,10 +5481,9 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
             fVars &= ~RT_BIT_32(idxVar);
         }
     }
-#else
-    RT_NOREF(poff);
 #endif
 
+    AssertFailed();
     return UINT8_MAX;
 }
 
@@ -5959,42 +5998,6 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
     return idxRegNew;
 }
 
-
-/**
- * Emits code to flush a pending write of the given SIMD register if any, also flushes the guest to host SIMD register association.
- *
- * @returns New code bufferoffset.
- * @param   pReNative       The native recompile state.
- * @param   off             Current code buffer position.
- * @param   idxGstSimdReg   The guest SIMD register to flush.
- */
-static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGstSimdReg)
-{
-    uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxGstSimdReg];
-
-    Log12(("iemNativeSimdRegFlushPendingWrite: Clearing guest register %s shadowed by host %s with state DirtyLo:%u DirtyHi:%u\n",
-           g_aGstSimdShadowInfo[idxGstSimdReg].pszName, g_apszIemNativeHstSimdRegNames[idxHstSimdReg],
-           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg),
-           IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg)));
-
-    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg))
-    {
-        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
-               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
-        off = iemNativeEmitSimdStoreVecRegToVCpuLowU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
-    }
-
-    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
-    {
-        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
-               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
-        off = iemNativeEmitSimdStoreVecRegToVCpuHighU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
-    }
-
-    IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(pReNative, idxGstSimdReg);
-    return off;
-}
-
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 
@@ -6023,7 +6026,7 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILER
     if (   enmClass == kIemNativeGstRegRef_XReg
         && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxReg))
     {
-        off = iemNativeSimdRegFlushPendingWrite(pReNative, off, idxReg);
+        off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxReg));
         /* Flush the shadows as the register needs to be reloaded (there is no guarantee right now, that the referenced register doesn't change). */
         uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxReg];
 
@@ -6063,7 +6066,7 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE p
                || !IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg)));
 
         if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg))
-            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, idxGstSimdReg);
+            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
 
         if (   fFlushShadows
             && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxGstSimdReg))
