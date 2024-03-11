@@ -1852,8 +1852,8 @@ class ThreadedFunction(object):
             sName = self.kdAnnotateNameRegStmts[sStmtNm];
 
         oStmt = iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_NATIVE_IF': True,});
-        if oStmt:
-            sName += '_n'; ## @todo check if enabled for the architecture
+        if oStmt and oStmt.asArchitectures:
+            sName += '_n'; ## @todo check if enabled for the host architecture
         self.sSubName = sName;
         return;
 
