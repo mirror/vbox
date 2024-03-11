@@ -466,7 +466,7 @@ iemNativeEmit_and_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size AND instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized AND instruction harvest the EFLAGS. */
     off = iemNativeEmitAmd64OneByteModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
                                                   0x22, 0x23, cOpBits, idxRegDst, idxRegSrc);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -499,7 +499,7 @@ iemNativeEmit_and_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 {
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size AND instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized AND instruction harvest the EFLAGS. */
     PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0x80, 0x83, 0x81, cOpBits, cImmBits, 4, idxRegDst, uImmOp);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -555,7 +555,7 @@ iemNativeEmit_test_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const         idxRegSrc    = idxVarSrc == idxVarDst ? idxRegDst /* special case of 'test samereg,samereg' */
                                        : iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size TEST instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized TEST instruction harvest the EFLAGS. */
     off = iemNativeEmitAmd64OneByteModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
                                                   0x84, 0x85, cOpBits, idxRegSrc, idxRegDst);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -597,7 +597,7 @@ iemNativeEmit_test_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 {
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size AND instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized AND instruction harvest the EFLAGS. */
     PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0xf6, 0xcc, 0xf7, cOpBits, cImmBits, 0, idxRegDst, uImmOp);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -657,7 +657,7 @@ iemNativeEmit_or_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size OR instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized OR instruction harvest the EFLAGS. */
     off = iemNativeEmitAmd64OneByteModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
                                                   0x0a, 0x0b, cOpBits, idxRegDst, idxRegSrc);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -691,7 +691,7 @@ iemNativeEmit_or_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 {
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size OR instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized OR instruction harvest the EFLAGS. */
     PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
     off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0x80, 0x83, 0x81, cOpBits, cImmBits, 1, idxRegDst, uImmOp);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -740,7 +740,7 @@ iemNativeEmit_xor_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
     uint8_t const idxRegSrc = iemNativeVarRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
 #ifdef RT_ARCH_AMD64
-    /* On AMD64 we just use the correctly size OR instruction harvest the EFLAGS. */
+    /* On AMD64 we just use the correctly sized OR instruction harvest the EFLAGS. */
     off = iemNativeEmitAmd64OneByteModRmInstrRREx(iemNativeInstrBufEnsure(pReNative, off, 4), off,
                                                   0x32, 0x33, cOpBits, idxRegDst, idxRegSrc);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -772,7 +772,42 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_xor_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
 {
-    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly sized XOR instruction harvest the EFLAGS. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0x80, 0x83, 0x81, cOpBits, cImmBits, 6, idxRegDst, uImmOp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl);
+
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit OR for the 8-bit and 16-bit bit ones, and of
+       course the immediate variant when possible to save a register load.  */
+    uint32_t uImmSizeLen, uImmRotations;
+    if (  cOpBits > 32
+        ? Armv8A64ConvertMask64ToImmRImmS(uImmOp, &uImmSizeLen, &uImmRotations)
+        : Armv8A64ConvertMask32ToImmRImmS(uImmOp, &uImmSizeLen, &uImmRotations))
+    {
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxRegDst, idxRegDst, uImmSizeLen, uImmRotations, cOpBits > 32 /*f64Bit*/);
+    }
+    else
+    {
+        uint8_t const idxRegTmpImm = iemNativeRegAllocTmpImm(pReNative, &off, uImmOp);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegDst, idxRegDst, idxRegTmpImm, cOpBits > 32 /*f64Bit*/);
+        iemNativeRegFreeTmpImm(pReNative, idxRegTmpImm);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
+    RT_NOREF_PV(cImmBits)
+
+#else
+# error "Port me"
+#endif
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
     return off;
 }
 
