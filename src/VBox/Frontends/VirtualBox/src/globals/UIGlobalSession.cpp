@@ -34,6 +34,11 @@
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxClientEventHandler.h"
 
+/* Other VBox includes: */
+#ifdef VBOX_WITH_XPCOM
+# include <iprt/path.h>
+#endif
+
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h> // for CLSID_VirtualBoxClient
 
