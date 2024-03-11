@@ -32,6 +32,7 @@
 /* GUI includes: */
 #include "UICursor.h"
 #ifdef VBOX_WS_NIX
+# include "UICommon.h"
 # include "UIVersion.h"
 #endif
 
