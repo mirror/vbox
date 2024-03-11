@@ -46,6 +46,9 @@ namespace UIExtension
                                       QString const &strDigest,
                                       QWidget *pParent,
                                       QString *pstrExtPackName);
+
+    /** Returns true if it can find at least one usable ext. pack. Else returns false. */
+    bool SHARED_LIBRARY_STUFF isExtentionPackInstalled();
 }
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIExtension_h */

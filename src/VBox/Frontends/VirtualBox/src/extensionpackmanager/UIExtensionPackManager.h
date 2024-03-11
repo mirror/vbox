@@ -113,6 +113,8 @@ private:
         void prepareToolBar();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
+        /** Prepare connections: */
+        void prepareConnections();
     /** @} */
 
     /** @name Loading stuff.

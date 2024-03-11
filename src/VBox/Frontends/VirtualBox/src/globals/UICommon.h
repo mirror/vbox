@@ -86,14 +86,6 @@ signals:
         void sigThemeChange();
     /** @} */
 
-    /** @name COM: Extension Pack stuff.
-     * @{ */
-        /** Notifies listeners about extension pack @a strName was installed. */
-        void sigExtensionPackInstalled(const QString &strName);
-        /** Notifies listeners about extension pack @a strName was uninstalled. */
-        void sigExtensionPackUninstalled(const QString &strName);
-    /** @} */
-
     /** @name Cloud Virtual Machine stuff.
      * @{ */
         /** Notifies listeners about cloud VM was unregistered.
@@ -492,12 +484,6 @@ public:
         /** Returns the property for help keyword of a QObject. If no such property exists returns an empty QString.
           * @param  pWidget      The object to get the help keyword property from. */
         static QString helpKeyword(const QObject *pWidget);
-    /** @} */
-
-    /** @name COM: Extension Pack stuff.
-     * @{ */
-        /** Returns true if it can find at least one usable ext. pack. Else returns false. */
-        bool isExtentionPackInstalled() const;
     /** @} */
 
 public slots:

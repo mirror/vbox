@@ -2503,10 +2503,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleCommitData);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
-    connect(&uiCommon(), &UICommon::sigExtensionPackInstalled,
-            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
-    connect(&uiCommon(), &UICommon::sigExtensionPackUninstalled,
-            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
 
     /* Widget connections: */
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigChooserPaneIndexChange,
@@ -2538,6 +2534,10 @@ void UIVirtualBoxManager::prepareConnections()
             m_pWidget, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
 
     /* Global VBox event handlers: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackInstalled,
+            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackUninstalled,
+            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIVirtualBoxManager::sltHandleStateChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
@@ -3737,7 +3737,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Machine_S_ExportToOCI:
         {
             return items.size() == 1 &&
-                   uiCommon().isExtentionPackInstalled() &&
+                   UIExtension::isExtentionPackInstalled() &&
                    pItem->toLocal();
         }
         case UIActionIndexMN_M_Machine_S_Remove:

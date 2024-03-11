@@ -4112,8 +4112,6 @@ UINotificationProgressExtensionPackInstall::UINotificationProgressExtensionPackI
     , m_strExtensionPackName(strExtensionPackName)
     , m_strDisplayInfo(strDisplayInfo)
 {
-    connect(this, &UINotificationProgress::sigProgressFinished,
-            this, &UINotificationProgressExtensionPackInstall::sltHandleProgressFinished);
 }
 
 QString UINotificationProgressExtensionPackInstall::name() const
@@ -4136,12 +4134,6 @@ CProgress UINotificationProgressExtensionPackInstall::createProgress(COMResult &
     return comProgress;
 }
 
-void UINotificationProgressExtensionPackInstall::sltHandleProgressFinished()
-{
-    if (error().isEmpty())
-        emit sigExtensionPackInstalled(m_strExtensionPackName);
-}
-
 
 /*********************************************************************************************************************************
 *   Class UINotificationProgressExtensionPackUninstall implementation.                                                           *
@@ -4154,8 +4146,6 @@ UINotificationProgressExtensionPackUninstall::UINotificationProgressExtensionPac
     , m_strExtensionPackName(strExtensionPackName)
     , m_strDisplayInfo(strDisplayInfo)
 {
-    connect(this, &UINotificationProgress::sigProgressFinished,
-            this, &UINotificationProgressExtensionPackUninstall::sltHandleProgressFinished);
 }
 
 QString UINotificationProgressExtensionPackUninstall::name() const
@@ -4178,12 +4168,6 @@ CProgress UINotificationProgressExtensionPackUninstall::createProgress(COMResult
     comResult = m_comExtPackManager;
     /* Return progress-wrapper: */
     return comProgress;
-}
-
-void UINotificationProgressExtensionPackUninstall::sltHandleProgressFinished()
-{
-    if (error().isEmpty())
-        emit sigExtensionPackUninstalled(m_strExtensionPackName);
 }
 
 
