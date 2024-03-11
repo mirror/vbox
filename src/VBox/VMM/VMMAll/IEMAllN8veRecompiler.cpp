@@ -15130,7 +15130,7 @@ iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc) \
     off = iemNativeEmitSimdCopyXregU128(pReNative, off, a_iXRegDst, a_iXRegSrc)
 
-/** Emits code for IEM_MC_FETCH_FSW. */
+/** Emits code for IEM_MC_COPY_XREG_U128. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXRegDst, uint8_t iXRegSrc)
 {
@@ -15150,7 +15150,35 @@ iemNativeEmitSimdCopyXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
     return off;
 }
-#endif
+
+
+#define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg, a_iQWord) \
+    off = iemNativeEmitSimdFetchXregU64(pReNative, off, a_u64Value, a_iXReg, a_iQWord)
+
+/** Emits code for IEM_MC_FETCH_XREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdFetchXregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iXReg, uint8_t iQWord)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint64_t));
+
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+
+    off = iemNativeEmitSimdLoadGprFromVecRegU64(pReNative, off, idxVarReg, idxSimdRegSrc, iQWord);
+
+    /* Free but don't flush the source register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
+
+    return off;
+}
+
+
+#endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 
 /*********************************************************************************************************************************

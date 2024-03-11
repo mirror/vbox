@@ -7029,7 +7029,7 @@ iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t o
 
 
 /**
- * Emits a gprdst = gprsrc load, 128-bit.
+ * Emits a vecdst = vecsrc load, 128-bit.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVecRegU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
@@ -7077,6 +7077,53 @@ iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_
     Assert(!(iVecRegDst & 0x1)); Assert(!(iVecRegSrc & 0x1));
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, iVecRegDst,     iVecRegSrc    );
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, iVecRegDst + 1, iVecRegSrc + 1);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = vecsrc[x] load, 64-bit.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdLoadGprFromVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iVecRegSrc, uint8_t iQWord)
+{
+#ifdef RT_ARCH_AMD64
+    /* pextrq gpr, vecsrc, #iQWord (ASSUMES SSE4.1). */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    pCodeBuf[off++] =   X86_OP_REX_W
+                      | (iVecRegSrc < 8 ? 0 : X86_OP_REX_R)
+                      | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x3a;
+    pCodeBuf[off++] = 0x16;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, iGprDst & 7);
+    pCodeBuf[off++] = iQWord;
+#elif defined(RT_ARCH_ARM64)
+    /* umov gprdst, vecsrc[iQWord] */
+    pCodeBuf[off++] = Armv8A64MkVecInstrUmov(iGprDst, iVecRegSrc, iQWord, kArmv8InstrUmovSz_U64);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = vecsrc[x] load, 64-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadGprFromVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iVecRegSrc, uint8_t iQWord)
+{
+    Assert(iQWord <= 1);
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadGprFromVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, iVecRegSrc, iQWord);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdLoadGprFromVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc, iQWord);
 #else
 # error "port me"
 #endif
