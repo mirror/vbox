@@ -1850,6 +1850,10 @@ class ThreadedFunction(object):
                 return;
             sStmtNm = sorted(dHits.keys())[-1]; # priority: STORE, MEM_MAP, FETCH.
             sName = self.kdAnnotateNameRegStmts[sStmtNm];
+
+        oStmt = iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_NATIVE_IF': True,});
+        if oStmt:
+            sName += '_n'; ## @todo check if enabled for the architecture
         self.sSubName = sName;
         return;
 
@@ -3429,6 +3433,10 @@ class IEMThreadedGenerator(object):
                              help    = 'Displays the version/revision of the script and exit.');
         self.oOptions = oParser.parse_args(asArgs[1:]);
         print("oOptions=%s" % (self.oOptions,), file = sys.stderr);
+
+        if self.oOptions.sHostArch not in ('amd64', 'arm64'):
+            print('error! Unsupported (or missing) host architecture: %s' % (self.oOptions.sHostArch,), file = sys.stderr);
+            return 1;
 
         #
         # Process the instructions specified in the IEM sources.

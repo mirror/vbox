@@ -445,6 +445,11 @@ class NativeRecompFunctionVariation(object):
                     del dFreedVars[sVarName];  ## @todo Try eliminate this one...
         return dFreedVars;
 
+    kdOptionArchToVal = {
+        'amd64': 'RT_ARCH_VAL_AMD64',
+        'arm64': 'RT_ARCH_VAL_ARM64',
+    };
+
     def __morphStatements(self, aoStmts, fForLiveness):
         """
         Morphs the given statement list into something more suitable for
@@ -483,7 +488,13 @@ class NativeRecompFunctionVariation(object):
         # function (this sounds a bit backwards, but has to be done this way
         # for the use we make of the flags in CIMPL calls).
         #
-        for iStmt, oStmt in enumerate(aoStmts):
+        # Second, eliminate IEM_MC_NATIVE_IF statements.
+        #
+        iConvArgToLocal = 0;
+        cStmts = len(aoStmts);
+        iStmt  = 0;
+        while iStmt < cStmts:
+            oStmt = aoStmts[iStmt];
             if oStmt.sName == 'IEM_MC_BEGIN':
                 fWithoutFlags = (    self.oVariation.isWithFlagsCheckingAndClearingVariation()
                                  and self.oVariation.oParent.hasWithFlagsCheckingAndClearingVariation());
@@ -495,7 +506,37 @@ class NativeRecompFunctionVariation(object):
                     if self.oVariation.oParent.dsCImplFlags:
                         oNewStmt.asParams[3] = ' | '.join(sorted(self.oVariation.oParent.dsCImplFlags.keys()));
                     aoStmts[iStmt] = oNewStmt;
-                break;
+            elif isinstance(oStmt, iai.McStmtNativeIf):
+                if self.kdOptionArchToVal[self.sHostArch] in oStmt.asArchitectures:
+                    iConvArgToLocal += 1;
+                    oBranch = oStmt.aoIfBranch;
+                else:
+                    iConvArgToLocal = -999;
+                    oBranch = oStmt.aoElseBranch;
+                aoStmts = aoStmts[:iStmt] + oBranch + aoStmts[iStmt+1:];
+                cStmts  = len(aoStmts);
+                continue;
+
+            iStmt += 1;
+
+        #
+        # If we encountered a IEM_MC_NATIVE_IF and took the native branch,
+        # ASSUME that all ARG variables can be converted to LOCAL variables
+        # because no calls will be made.
+        #
+        if iConvArgToLocal > 0:
+            for iStmt, oStmt in enumerate(aoStmts):
+                if isinstance(oStmt, iai.McStmtArg):
+                    if oStmt.sName == 'IEM_MC_ARG':
+                        aoStmts[iStmt] = iai.McStmtVar('IEM_MC_LOCAL', oStmt.asParams[:2],
+                                                       oStmt.sType, oStmt.sVarName);
+                    elif oStmt.sName == 'IEM_MC_ARG_CONST':
+                        aoStmts[iStmt] = iai.McStmtVar('IEM_MC_LOCAL_CONST', oStmt.asParams[:3],
+                                                       oStmt.sType, oStmt.sVarName, oStmt.sValue);
+                    else:
+                        self.raiseProblem('Unexpected argument declaration when emitting native code: %s (%s)'
+                                          % (oStmt.sName, oStmt.asParams,));
+                    assert(oStmt.sRefType == 'none');
 
         #
         # Do a simple liveness analysis of the variable and insert

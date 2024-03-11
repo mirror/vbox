@@ -1913,6 +1913,12 @@ class McStmtCond(McStmt):
         sRet += ' ' * cchIndent + '} IEM_MC%s_ENDIF();\n' % (self.sNativeInfix,);
         return sRet;
 
+class McStmtNativeIf(McStmtCond):
+    """ IEM_MC_NATIVE_IF """
+    def __init__(self, sName, asArchitectures):
+        McStmtCond.__init__(self, sName, ['|'.join(asArchitectures) if asArchitectures else '0',]);
+        self.asArchitectures = asArchitectures;
+
 class McStmtVar(McStmt):
     """ IEM_MC_LOCAL, IEM_MC_LOCAL_ASSIGN, IEM_MC_LOCAL_CONST """
     def __init__(self, sName, asParams, sType, sVarName, sValue = None):
@@ -2160,6 +2166,28 @@ class McBlock(object):
         """ Generic parser that returns a plain McStmtCond object. """
         _ = oSelf;
         return McStmtCond(sName, asParams);
+
+    kdArchVals = {
+        'RT_ARCH_VAL_X86':     True,
+        'RT_ARCH_VAL_AMD64':   True,
+        'RT_ARCH_VAL_ARM32':   True,
+        'RT_ARCH_VAL_ARM64':   True,
+        'RT_ARCH_VAL_SPARC32': True,
+        'RT_ARCH_VAL_SPARC64': True,
+    };
+
+    @staticmethod
+    def parseMcNativeIf(oSelf, sName, asParams):
+        """ IEM_MC_NATIVE_IF """
+        oSelf.checkStmtParamCount(sName, asParams, 1);
+        if asParams[0].strip() == '0':
+            asArchitectures = [];
+        else:
+            asArchitectures = [sArch.strip() for sArch in asParams[0].split('|')];
+            for sArch in asArchitectures:
+                if sArch not in oSelf.kdArchVals:
+                    oSelf.raiseStmtError(sName, 'Unknown architecture: %s' % (sArch,));
+        return McStmtNativeIf(sName, asArchitectures);
 
     @staticmethod
     def parseMcBegin(oSelf, sName, asParams):
@@ -3180,7 +3208,7 @@ g_dMcStmtParsers = {
     'IEM_MC_NATIVE_EMIT_5':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_6':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_7':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
-    'IEM_MC_NATIVE_IF':                                          (McBlock.parseMcGenericCond,       False, False, True,  ),
+    'IEM_MC_NATIVE_IF':                                          (McBlock.parseMcNativeIf,          False, False, True,  ),
     'IEM_MC_NATIVE_ELSE':                                        (McBlock.parseMcGenericCond,       False, False, True,  ),
     'IEM_MC_NATIVE_ENDIF':                                       (McBlock.parseMcGenericCond,       False, False, True,  ),
     'IEM_MC_OR_2LOCS_U32':                                       (McBlock.parseMcGeneric,           False, False, False, ),
