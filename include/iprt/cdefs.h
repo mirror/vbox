@@ -212,8 +212,8 @@
 #define RT_ARCH_VAL_AMD64         0x00000004
 #define RT_ARCH_VAL_ARM32         0x00000010
 #define RT_ARCH_VAL_ARM64         0x00000020
-#define RT_ARCH_VAL_SPAR32        0x00000100
-#define RT_ARCH_VAL_SPAR64        0x00000200
+#define RT_ARCH_VAL_SPARC32       0x00000100
+#define RT_ARCH_VAL_SPARC64       0x00000200
 /** @} */
 
 
