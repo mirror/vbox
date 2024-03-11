@@ -85,12 +85,8 @@ class tdCpuIemInstr1(vbox.TestDriver):
             #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-decoding-1'),
 
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-generated-1'),
-
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-2'),
-
-            # @todo r=aeichner Fails with IEM currently.
-            #IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-3'),
-
+            IemTestVm(self.oTestVmSet, self, 'bs3-cpu-instr-3'),
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-state64-1'),
             IemTestVm(self.oTestVmSet, self, 'bs3-cpu-weird-1'),
             IemTestVm(self.oTestVmSet, self, 'bs3-fpustate-1'),
