@@ -348,7 +348,7 @@ static bool bs3CpuInstr3ConfigReconfigure(PBS3CPUINSTR3_CONFIG_SAVED_T pSavedCfg
         pExtCtx->fXcr0Saved |= XSAVE_C_SSE;
     else
         pExtCtx->fXcr0Saved &= ~XSAVE_C_SSE;
-    if (pConfig->fXcr0Avx)
+    if (pConfig->fXcr0Avx && g_afTypeSupports[T_AVX_256])
         pExtCtx->fXcr0Saved |= XSAVE_C_YMM;
     else
         pExtCtx->fXcr0Saved &= ~XSAVE_C_YMM;
