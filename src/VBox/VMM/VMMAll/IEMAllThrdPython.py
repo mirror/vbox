@@ -1563,7 +1563,7 @@ class ThreadedFunction(object):
         ## and those determined by analyzeCodeOperation().
         self.dsCImplFlags   = {}            # type: Dict[str, bool]
         ## The unique sub-name for this threaded function.
-        self.sSubName  = '';
+        self.sSubName       = '';
         #if oMcBlock.iInFunction > 0 or (oMcBlock.oInstruction and len(oMcBlock.oInstruction.aoMcBlocks) > 1):
         #    self.sSubName  = '_%s' % (oMcBlock.iInFunction);
 
@@ -1834,11 +1834,68 @@ class ThreadedFunction(object):
         'IEM_MC_MERGE_YREG_U64LO_U64LOCAL_ZX_VLMAX':'__yreg64',
         'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':'__yreg64',
     };
+    kdAnnotateNameCallStmts = {
+        'IEM_MC_CALL_CIMPL_0':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_1':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_2':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_3':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_4':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_5':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_6':                      '__cimpl',
+        'IEM_MC_CALL_CIMPL_7':                      '__cimpl',
+        'IEM_MC_DEFER_TO_CIMPL_0_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_1_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_2_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_3_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_4_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_5_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_6_RET':              '__cimpl_defer',
+        'IEM_MC_DEFER_TO_CIMPL_7_RET':              '__cimpl_defer',
+        'IEM_MC_CALL_VOID_AIMPL_0':                 '__aimpl',
+        'IEM_MC_CALL_VOID_AIMPL_1':                 '__aimpl',
+        'IEM_MC_CALL_VOID_AIMPL_2':                 '__aimpl',
+        'IEM_MC_CALL_VOID_AIMPL_3':                 '__aimpl',
+        'IEM_MC_CALL_VOID_AIMPL_4':                 '__aimpl',
+        'IEM_MC_CALL_VOID_AIMPL_5':                 '__aimpl',
+        'IEM_MC_CALL_AIMPL_0':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_1':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_2':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_3':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_4':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_5':                      '__aimpl_ret',
+        'IEM_MC_CALL_AIMPL_6':                      '__aimpl_ret',
+        'IEM_MC_CALL_VOID_AIMPL_6':                 '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_0':                  '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_1':                  '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_2':                  '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_3':                  '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_4':                  '__aimpl_fpu',
+        'IEM_MC_CALL_FPU_AIMPL_5':                  '__aimpl_fpu',
+        'IEM_MC_CALL_MMX_AIMPL_0':                  '__aimpl_mmx',
+        'IEM_MC_CALL_MMX_AIMPL_1':                  '__aimpl_mmx',
+        'IEM_MC_CALL_MMX_AIMPL_2':                  '__aimpl_mmx',
+        'IEM_MC_CALL_MMX_AIMPL_3':                  '__aimpl_mmx',
+        'IEM_MC_CALL_MMX_AIMPL_4':                  '__aimpl_mmx',
+        'IEM_MC_CALL_MMX_AIMPL_5':                  '__aimpl_mmx',
+        'IEM_MC_CALL_SSE_AIMPL_0':                  '__aimpl_sse',
+        'IEM_MC_CALL_SSE_AIMPL_1':                  '__aimpl_sse',
+        'IEM_MC_CALL_SSE_AIMPL_2':                  '__aimpl_sse',
+        'IEM_MC_CALL_SSE_AIMPL_3':                  '__aimpl_sse',
+        'IEM_MC_CALL_SSE_AIMPL_4':                  '__aimpl_sse',
+        'IEM_MC_CALL_SSE_AIMPL_5':                  '__aimpl_sse',
+        'IEM_MC_CALL_AVX_AIMPL_0':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_1':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_2':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_3':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_4':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_5':                  '__aimpl_avx',
+    };
     def analyzeAndAnnotateName(self, aoStmts: List[iai.McStmt]):
         """
         Scans the statements and variation lists for clues about the threaded function,
         and sets self.sSubName if successfull.
         """
+        # Operand base naming:
         dHits = {};
         cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameMemStmts, dHits);
         if cHits > 0:
@@ -1846,14 +1903,24 @@ class ThreadedFunction(object):
             sName = self.kdAnnotateNameMemStmts[sStmtNm];
         else:
             cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameRegStmts, dHits);
-            if not cHits:
+            if cHits > 0:
+                sStmtNm = sorted(dHits.keys())[-1]; # priority: STORE, MEM_MAP, FETCH.
+                sName = self.kdAnnotateNameRegStmts[sStmtNm];
+            else:
+                # No op details, try name it by call type...
+                cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameCallStmts, dHits);
+                if cHits > 0:
+                    sStmtNm = sorted(dHits.keys())[-1]; # Not really necessary to sort, but simple this way.
+                    self.sSubName = self.kdAnnotateNameCallStmts[sStmtNm];
                 return;
-            sStmtNm = sorted(dHits.keys())[-1]; # priority: STORE, MEM_MAP, FETCH.
-            sName = self.kdAnnotateNameRegStmts[sStmtNm];
 
-        oStmt = iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_NATIVE_IF': True,});
-        if oStmt and oStmt.asArchitectures:
-            sName += '_n'; ## @todo check if enabled for the host architecture
+        # Add call info if any:
+        dHits = {};
+        cHits = iai.McStmt.countStmtsByName(aoStmts, self.kdAnnotateNameCallStmts, dHits);
+        if cHits > 0:
+            sStmtNm = sorted(dHits.keys())[-1]; # Not really necessary to sort, but simple this way.
+            sName += self.kdAnnotateNameCallStmts[sStmtNm][1:];
+
         self.sSubName = sName;
         return;
 
@@ -1948,7 +2015,7 @@ class ThreadedFunction(object):
 
         return sAnnotation;
 
-    def analyze(self, oGenerator):
+    def analyzeThreadedFunction(self, oGenerator):
         """
         Analyzes the code, identifying the number of parameters it requires and such.
 
@@ -2541,7 +2608,7 @@ class IEMThreadedGenerator(object):
         dRawParamCounts = {};
         dMinParamCounts = {};
         for oThreadedFunction in self.aoThreadedFuncs:
-            oThreadedFunction.analyze(self);
+            oThreadedFunction.analyzeThreadedFunction(self);
             for oVariation in oThreadedFunction.aoVariations:
                 dRawParamCounts[len(oVariation.dParamRefs)] = dRawParamCounts.get(len(oVariation.dParamRefs), 0) + 1;
                 dMinParamCounts[oVariation.cMinParams]      = dMinParamCounts.get(oVariation.cMinParams,      0) + 1;
@@ -2583,7 +2650,7 @@ class IEMThreadedGenerator(object):
 
         # Analyze the threaded functions and their variations for native recompilation.
         if fNativeRecompilerEnabled:
-            ian.displayStatistics(self.aoThreadedFuncs, sHostArch);
+            ian.analyzeThreadedFunctionsForNativeRecomp(self.aoThreadedFuncs, sHostArch);
 
         # Gather arguments + variable statistics for the MC blocks.
         cMaxArgs         = 0;
