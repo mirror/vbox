@@ -47,7 +47,6 @@
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIConverter.h"
-#include "UICursor.h"
 #include "UIDetailsElement.h"
 #include "UIDetailsGenerator.h"
 #include "UIDetailsSet.h"
@@ -858,9 +857,9 @@ void UIDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
 void UIDetailsElement::updateNameHoverLink()
 {
     if (m_fNameHovered)
-        UICursor::setCursor(this, Qt::PointingHandCursor);
+        setCursor(Qt::PointingHandCursor);
     else
-        UICursor::unsetCursor(this);
+        unsetCursor();
     update();
 }
 

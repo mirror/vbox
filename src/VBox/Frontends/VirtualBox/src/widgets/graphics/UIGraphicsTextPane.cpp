@@ -35,7 +35,6 @@
 #include <QRegularExpression>
 
 /* GUI includes: */
-#include "UICursor.h"
 #include "UIGraphicsTextPane.h"
 #include "UIRichTextString.h"
 
@@ -398,9 +397,9 @@ void UIGraphicsTextPane::updateHoverStuff()
 {
     /* Update mouse-cursor: */
     if (m_strHoveredAnchor.isNull())
-        UICursor::unsetCursor(this);
+        unsetCursor();
     else
-        UICursor::setCursor(this, Qt::PointingHandCursor);
+        setCursor(Qt::PointingHandCursor);
 
     /* Update text-layout: */
     updateTextLayout();

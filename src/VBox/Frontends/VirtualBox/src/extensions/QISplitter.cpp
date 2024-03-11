@@ -33,9 +33,6 @@
 
 /* GUI includes: */
 #include "QISplitter.h"
-#ifdef VBOX_WS_MAC
-# include "UICursor.h"
-#endif
 
 
 /** QSplitterHandle subclass representing flat line. */

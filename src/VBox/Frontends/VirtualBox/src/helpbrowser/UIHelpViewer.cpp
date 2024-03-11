@@ -50,7 +50,6 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "UICursor.h"
 #include "UICommon.h"
 #include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
@@ -288,11 +287,11 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
     if (pObject == m_pDragMoveLabel)
     {
         if (pEvent->type() == QEvent::Enter)
-            UICursor::setCursor(m_pDragMoveLabel, Qt::CrossCursor);
+            m_pDragMoveLabel->setCursor(Qt::CrossCursor);
         else if (pEvent->type() == QEvent::Leave)
         {
             if (parentWidget())
-                UICursor::setCursor(m_pDragMoveLabel, parentWidget()->cursor());
+                m_pDragMoveLabel->setCursor(parentWidget()->cursor());
         }
         else if (pEvent->type() == QEvent::MouseMove)
         {
@@ -303,13 +302,13 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
                 if (m_previousMousePosition != QPoint(-1, -1))
                     emit sigDragging(gPos - m_previousMousePosition);
                 m_previousMousePosition = gPos;
-                UICursor::setCursor(m_pDragMoveLabel, Qt::ClosedHandCursor);
+                m_pDragMoveLabel->setCursor(Qt::ClosedHandCursor);
             }
         }
         else if (pEvent->type() == QEvent::MouseButtonRelease)
         {
             m_previousMousePosition = QPoint(-1, -1);
-            UICursor::setCursor(m_pDragMoveLabel, Qt::CrossCursor);
+            m_pDragMoveLabel->setCursor(Qt::CrossCursor);
         }
     }
     return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
