@@ -15178,6 +15178,25 @@ iemNativeEmitSimdFetchXregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
+#define IEM_MC_CLEAR_YREG_128_UP(a_iYReg) \
+    off = iemNativeEmitSimdClearYregHighU128(pReNative, off, a_iYReg)
+
+/** Emits code for IEM_MC_CLEAR_YREG_128_UP. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdClearYregHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYReg)
+{
+    uint8_t const idxSimdReg = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYReg),
+                                                                       kIemNativeGstSimdRegLdStSz_High128, kIemNativeGstRegUse_ForFullWrite);
+
+    off = iemNativeEmitSimdZeroVecRegHighU128(pReNative, off, idxSimdReg);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, iYReg);
+
+    /* Free but don't flush the register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdReg);
+
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 

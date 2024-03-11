@@ -7131,6 +7131,57 @@ iemNativeEmitSimdLoadGprFromVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t of
     return off;
 }
 
+
+/**
+ * Emits a vecdst[128:255] = 0 store.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdZeroVecRegHighU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg)
+{
+#ifdef RT_ARCH_AMD64
+    /* vmovdqa xmm, xmm. This will clear the upper half of ymm */
+    if (iVecReg < 8)
+    {
+        pCodeBuf[off++] = X86_OP_VEX2;
+        pCodeBuf[off++] = 0xf9;
+    }
+    else
+    {
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = 0x41;
+        pCodeBuf[off++] = 0x79;
+    }
+    pCodeBuf[off++] = 0x6f;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecReg & 7, iVecReg & 7);
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecReg & 0x1));
+    /* eor vecreg, vecreg, vecreg */
+    pCodeBuf[off++] = Armv8A64MkVecInstrEor(iVecReg + 1, iVecReg + 1, iVecReg + 1);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[128:255] = 0 store.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdZeroVecRegHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdZeroVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iVecReg);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdZeroVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 /** @} */
