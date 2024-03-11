@@ -15298,8 +15298,8 @@ iemNativeEmitSimdStoreXregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
-#define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc) \
-    off = iemNativeEmitSimdFetchYregU64(pReNative, off, a_u64Dst, a_iYRegSrc, 0)
+#define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord) \
+    off = iemNativeEmitSimdFetchYregU64(pReNative, off, a_u64Dst, a_iYRegSrc, a_iQWord)
 
 /** Emits code for IEM_MC_FETCH_YREG_U64. */
 DECL_INLINE_THROW(uint32_t)

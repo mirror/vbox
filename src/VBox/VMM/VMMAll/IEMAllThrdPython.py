@@ -1808,7 +1808,6 @@ class ThreadedFunction(object):
         'IEM_MC_FETCH_YREG_U256':                   '__yreg256',
         'IEM_MC_FETCH_YREG_U128':                   '__yreg128',
         'IEM_MC_FETCH_YREG_U64':                    '__yreg64',
-        'IEM_MC_FETCH_YREG_2ND_U64':                '__yreg64',
         'IEM_MC_FETCH_YREG_U32':                    '__yreg32',
         'IEM_MC_STORE_YREG_U128':                   '__yreg128',
         'IEM_MC_STORE_YREG_U32_ZX_VLMAX':           '__yreg32zx',

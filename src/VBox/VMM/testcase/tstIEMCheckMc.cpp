@@ -837,8 +837,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEM_MC_FETCH_YREG_U256(a_u256Value, a_iYRegSrc)             do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u256Value); (a_u256Value).au64[0] = (a_u256Value).au64[1] = (a_u256Value).au64[2] = (a_u256Value).au64[3] = 0; CHK_TYPE(RTUINT256U, a_u256Value); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_YREG_U128(a_u128Value, a_iYRegSrc)             do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u128Value); (a_u128Value).au64[0] = (a_u128Value).au64[1] = 0; CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxRead; (void)fMcBegin; } while (0)
-#define IEM_MC_FETCH_YREG_U64(a_u64Value, a_iYRegSrc)               do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u64Value);  (a_u64Value) = UINT64_MAX; CHK_TYPE(uint64_t, a_u64Value); (void)fAvxRead; (void)fMcBegin; } while (0)
-#define IEM_MC_FETCH_YREG_2ND_U64(a_u64Value, a_iYRegSrc)           do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u64Value);  (a_u64Value) = UINT64_MAX; CHK_TYPE(uint64_t, a_u64Value); (void)fAvxRead; (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_YREG_U64(a_u64Value, a_iYRegSrc, a_iQWord)     do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u64Value);  (a_u64Value) = UINT64_MAX; CHK_TYPE(uint64_t, a_u64Value); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_YREG_U32(a_u32Value, a_iYRegSrc)               do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u32Value);  (a_u32Value) = UINT32_MAX; CHK_TYPE(uint32_t, a_u32Value); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U128(a_iYRegDst, a_iDQword, a_u128Value)  do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u128Value); CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U32_ZX_VLMAX(a_iYRegDst, a_u32Value)      do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u32Value);  CHK_TYPE(uint32_t,   a_u32Value);  (void)fAvxWrite; (void)fMcBegin; } while (0)
