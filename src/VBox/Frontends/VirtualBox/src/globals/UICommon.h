@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -32,9 +32,8 @@
 #endif
 
 /* Qt includes: */
-#include <QMap>
-#include <QReadWriteLock>
 #include <QObject>
+#include <QReadWriteLock>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -52,11 +51,9 @@
 #include "CVirtualBoxClient.h"
 
 /* Forward declarations: */
-class QGraphicsWidget;
 class QMenu;
 class QSessionManager;
 class QSpinBox;
-class QToolButton;
 class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
@@ -318,21 +315,21 @@ public:
     /** @name COM stuff.
      * @{ */
         /** Try to acquire COM cleanup protection token for reading. */
-        bool comTokenTryLockForRead() { return m_comCleanupProtectionToken.tryLockForRead(); }
+        bool comTokenTryLockForRead();
         /** Unlock previously acquired COM cleanup protection token. */
-        void comTokenUnlock() { return m_comCleanupProtectionToken.unlock(); }
+        void comTokenUnlock();
 
         /** Returns the copy of VirtualBox client wrapper. */
-        CVirtualBoxClient virtualBoxClient() const { return m_comVBoxClient; }
+        CVirtualBoxClient virtualBoxClient() const;
         /** Returns the copy of VirtualBox object wrapper. */
-        CVirtualBox virtualBox() const { return m_comVBox; }
+        CVirtualBox virtualBox() const;
         /** Returns the copy of VirtualBox host-object wrapper. */
-        CHost host() const { return m_comHost; }
+        CHost host() const;
         /** Returns the symbolic VirtualBox home-folder representation. */
-        QString homeFolder() const { return m_strHomeFolder; }
+        QString homeFolder() const;
 
         /** Returns the VBoxSVC availability value. */
-        bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
+        bool isVBoxSVCAvailable() const;
     /** @} */
 
     /** @name COM: Virtual Machine stuff.
@@ -374,7 +371,7 @@ public:
 
     /** @name COM: Guest OS type stuff.
      * @{ */
-        const UIGuestOSTypeManager &guestOSTypeManager();
+        const UIGuestOSTypeManager &guestOSTypeManager() const;
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -631,12 +628,6 @@ private:
 #endif
     /** @} */
 
-    /** @name COM stuff.
-     * @{ */
-        /** Re-initializes COM wrappers and containers. */
-        void comWrappersReinit();
-    /** @} */
-
     /** Holds the singleton UICommon instance. */
     static UICommon *s_pInstance;
 
@@ -746,38 +737,12 @@ private:
 #endif
     /** @} */
 
-    /** @name COM stuff.
-     * @{ */
-        /** Holds the COM cleanup protection token. */
-        QReadWriteLock  m_comCleanupProtectionToken;
-
-        /** Holds the instance of VirtualBox client wrapper. */
-        CVirtualBoxClient  m_comVBoxClient;
-        /** Holds the copy of VirtualBox object wrapper. */
-        CVirtualBox        m_comVBox;
-        /** Holds the copy of VirtualBox host-object wrapper. */
-        CHost              m_comHost;
-        /** Holds the symbolic VirtualBox home-folder representation. */
-        QString            m_strHomeFolder;
-
-        /** Holds whether acquired COM wrappers are currently valid. */
-        bool  m_fWrappersValid;
-        /** Holds whether VBoxSVC is currently available. */
-        bool  m_fVBoxSVCAvailable;
-    /** @} */
-
     /** @name Thread stuff.
      * @{ */
         /** Holds the thread-pool instance. */
         UIThreadPool *m_pThreadPool;
         /** Holds the thread-pool instance for cloud needs. */
         UIThreadPool *m_pThreadPoolCloud;
-    /** @} */
-
-    /** @name Guest OS type related stuff.
-     * @{ */
-        /** Holds the guest OS type manager instance. */
-        UIGuestOSTypeManager *m_pGuestOSTypeManager;
     /** @} */
 
     /** @name Media related stuff.
@@ -791,14 +756,6 @@ private:
         QStringList         m_recentMediaExcludeList;
     /** @} */
 
-#ifdef VBOX_WS_WIN
-    /** @name ATL stuff.
-     * @{ */
-        /** Holds the ATL module instance (for use with UICommon shared library only).
-          * @note  Required internally by ATL (constructor records instance in global variable). */
-        ATL::CComModule  _Module;
-    /** @} */
-#endif
     /** @name Font scaling related variables.
      * @{ */
        int iOriginalFontPixelSize;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -62,6 +62,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
@@ -221,11 +222,8 @@ UICommon::UICommon(UIType enmType)
     , m_enmLaunchRunning(LaunchRunning_Default)
 #endif
     , m_fSettingsPwSet(false)
-    , m_fWrappersValid(false)
-    , m_fVBoxSVCAvailable(true)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
-    , m_pGuestOSTypeManager(0)
     , m_pMediumEnumerator(0)
 {
     /* Assign instance: */
@@ -279,44 +277,11 @@ void UICommon::prepare()
     /* Load translation based on the current locale: */
     UITranslator::loadLanguage();
 
-    /* Prepare guest OS type manager before COM stuff: */
-    m_pGuestOSTypeManager = new UIGuestOSTypeManager;
-
-    HRESULT rc = COMBase::InitializeCOM(true);
-    if (FAILED(rc))
-    {
-#ifdef VBOX_WITH_XPCOM
-        if (rc == NS_ERROR_FILE_ACCESS_DENIED)
-        {
-            char szHome[RTPATH_MAX] = "";
-            com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
-            msgCenter().cannotInitUserHome(QString(szHome));
-        }
-        else
-#endif
-            msgCenter().cannotInitCOM(rc);
+    /* Init COM: */
+    UIGlobalSession::create();
+    if (!gpGlobalSession->prepare())
         return;
-    }
-
-    /* Make sure VirtualBoxClient instance created: */
-    m_comVBoxClient.createInstance(CLSID_VirtualBoxClient);
-    if (!m_comVBoxClient.isOk())
-    {
-        msgCenter().cannotCreateVirtualBoxClient(m_comVBoxClient);
-        return;
-    }
-    /* Make sure VirtualBox instance acquired: */
-    m_comVBox = m_comVBoxClient.GetVirtualBox();
-    if (!m_comVBoxClient.isOk())
-    {
-        msgCenter().cannotAcquireVirtualBox(m_comVBoxClient);
-        return;
-    }
-    /* Init wrappers: */
-    comWrappersReinit();
-
-    /* Watch for the VBoxSVC availability changes: */
-    connect(gVBoxClientEvents, &UIVirtualBoxClientEventHandler::sigVBoxSVCAvailabilityChange,
+    connect(gpGlobalSession, &UIGlobalSession::sigVBoxSVCAvailabilityChange,
             this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
 
     /* Prepare thread-pool instances: */
@@ -640,23 +605,24 @@ void UICommon::prepare()
 
         /* Search for corresponding VM: */
         QUuid uuid = QUuid(vmNameOrUuid);
-        const CMachine machine = m_comVBox.FindMachine(vmNameOrUuid);
+        const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+        const CMachine comMachine = comVBox.FindMachine(vmNameOrUuid);
         if (!uuid.isNull())
         {
-            if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineById(m_comVBox, uuid);
+            if (comMachine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineById(comVBox, uuid);
         }
         else
         {
-            if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineByName(m_comVBox, vmNameOrUuid);
+            if (comMachine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineByName(comVBox, vmNameOrUuid);
         }
-        m_uManagedVMId = machine.GetId();
+        m_uManagedVMId = comMachine.GetId();
 
         if (m_fSeparateProcess)
         {
             /* Create a log file for VirtualBoxVM process. */
-            QString str = machine.GetLogFolder();
+            QString str = comMachine.GetLogFolder();
             com::Utf8Str logDir(str.toUtf8().constData());
 
             /* make sure the Logs folder exists */
@@ -702,7 +668,10 @@ void UICommon::prepare()
     }
 
     if (m_fSettingsPwSet)
-        m_comVBox.SetSettingsSecret(m_astrSettingsPw);
+    {
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
+        comVBox.SetSettingsSecret(m_astrSettingsPw);
+    }
 
     if (visualStateType != UIVisualStateType_Invalid && !m_uManagedVMId.isNull())
         gEDataManager->setRequestedVisualState(visualStateType, m_uManagedVMId);
@@ -851,29 +820,12 @@ void UICommon::cleanup()
     delete m_pThreadPoolCloud;
     m_pThreadPoolCloud = 0;
 
-    /* Cleanup guest OS type manager before COM stuff: */
-    delete m_pGuestOSTypeManager;
-    m_pGuestOSTypeManager = 0;
+    /* First, make sure we don't use COM any more: */
+    emit sigAskToDetachCOM();
 
-    /* Starting COM cleanup: */
-    m_comCleanupProtectionToken.lockForWrite();
-    {
-        /* First, make sure we don't use COM any more: */
-        emit sigAskToDetachCOM();
-        m_comHost.detach();
-        m_comVBox.detach();
-        m_comVBoxClient.detach();
-
-        /* There may be UIMedium(s)EnumeratedEvent instances still in the message
-         * queue which reference COM objects. Remove them to release those objects
-         * before uninitializing the COM subsystem. */
-        QApplication::removePostedEvents(this);
-
-        /* Finally cleanup COM itself: */
-        COMBase::CleanupCOM();
-    }
-    /* Finishing COM cleanup: */
-    m_comCleanupProtectionToken.unlock();
+    /* Cleanup COM: */
+    gpGlobalSession->cleanup();
+    UIGlobalSession::destroy();
 
     /* Notify listener it can close UI now: */
     emit sigAskToCloseUI();
@@ -944,12 +896,14 @@ uint UICommon::qtCTVersion()
 
 QString UICommon::vboxVersionString() const
 {
-    return m_comVBox.GetVersion();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    return comVBox.GetVersion();
 }
 
 QString UICommon::vboxVersionStringNormalized() const
 {
-    return m_comVBox.GetVersionNormalized();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    return comVBox.GetVersionNormalized();
 }
 
 bool UICommon::isBeta() const
@@ -1020,9 +974,8 @@ VBGHDISPLAYSERVERTYPE UICommon::displayServerType() const
 
 QString UICommon::hostOperatingSystem() const
 {
-    if (!m_comHost.isOk())
-        return QString();
-    return m_comHost.GetOperatingSystem();
+    const CHost comHost = gpGlobalSession->host();
+    return comHost.GetOperatingSystem();
 }
 
 #if defined(VBOX_WS_MAC)
@@ -1343,6 +1296,41 @@ void UICommon::deletePidfile()
 
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
+bool UICommon::comTokenTryLockForRead()
+{
+    return gpGlobalSession->comTokenTryLockForRead();
+}
+
+void UICommon::comTokenUnlock()
+{
+    return gpGlobalSession->comTokenUnlock();
+}
+
+CVirtualBoxClient UICommon::virtualBoxClient() const
+{
+    return gpGlobalSession->virtualBoxClient();
+}
+
+CVirtualBox UICommon::virtualBox() const
+{
+    return gpGlobalSession->virtualBox();
+}
+
+CHost UICommon::host() const
+{
+    return gpGlobalSession->host();
+}
+
+QString UICommon::homeFolder() const
+{
+    return gpGlobalSession->homeFolder();
+}
+
+bool UICommon::isVBoxSVCAvailable() const
+{
+    return gpGlobalSession->isVBoxSVCAvailable();
+}
+
 /* static */
 bool UICommon::switchToMachine(CMachine &comMachine)
 {
@@ -1524,10 +1512,11 @@ CSession UICommon::openSession(QUuid uId, KLockType enmLockType /* = KLockType_W
         }
 
         /* Search for the corresponding machine: */
-        CMachine comMachine = m_comVBox.FindMachine(uId.toString());
+        const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+        CMachine comMachine = comVBox.FindMachine(uId.toString());
         if (comMachine.isNull())
         {
-            msgCenter().cannotFindMachineById(m_comVBox, uId);
+            msgCenter().cannotFindMachineById(comVBox, uId);
             break;
         }
 
@@ -1613,21 +1602,9 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
 }
 
-const UIGuestOSTypeManager &UICommon::guestOSTypeManager()
+const UIGuestOSTypeManager &UICommon::guestOSTypeManager() const
 {
-    /* Handle exceptional and undesired case!
-     * This object is created and destroyed within own timeframe.
-     * If pointer isn't yet initialized or already cleaned up,
-     * something is definitely wrong. */
-    AssertPtr(m_pGuestOSTypeManager);
-    if (!m_pGuestOSTypeManager)
-    {
-        m_pGuestOSTypeManager = new UIGuestOSTypeManager;
-        m_pGuestOSTypeManager->reCacheGuestOSTypes();
-    }
-
-    /* Return an object instance: */
-    return *m_pGuestOSTypeManager;
+    return gpGlobalSession->guestOSTypeManager();
 }
 
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
@@ -2744,9 +2721,7 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
 
 KGraphicsControllerType UICommon::getRecommendedGraphicsController(const QString &strGuestOSTypeId) const
 {
-    return   m_pGuestOSTypeManager
-           ? m_pGuestOSTypeManager->getRecommendedGraphicsController(strGuestOSTypeId)
-           : KGraphicsControllerType_Null;
+    return guestOSTypeManager().getRecommendedGraphicsController(strGuestOSTypeId);
 }
 
 /* static */
@@ -3045,63 +3020,23 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
 
 void UICommon::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 {
-    /* Make sure the VBoxSVC availability changed: */
-    if (m_fVBoxSVCAvailable == fAvailable)
-        return;
-
-    /* Cache the new VBoxSVC availability value: */
-    m_fVBoxSVCAvailable = fAvailable;
-
-    /* If VBoxSVC is not available: */
-    if (!m_fVBoxSVCAvailable)
-    {
-        /* Mark wrappers invalid: */
-        m_fWrappersValid = false;
-        /* Re-fetch corresponding CVirtualBox to restart VBoxSVC: */
-        m_comVBox = m_comVBoxClient.GetVirtualBox();
-        if (!m_comVBoxClient.isOk())
-        {
-            // The proper behavior would be to show the message and to exit the app, e.g.:
-            // msgCenter().cannotAcquireVirtualBox(m_comVBoxClient);
-            // return QApplication::quit();
-            // But CVirtualBox is still NULL in current Main implementation,
-            // and this call do not restart anything, so we are waiting
-            // for subsequent event about VBoxSVC is available again.
-        }
-    }
     /* If VBoxSVC is available: */
-    else
+    if (fAvailable)
     {
-        if (!m_fWrappersValid)
+        /* For Selector UI: */
+        if (uiType() == UIType_ManagerUI)
         {
-            /* Re-fetch corresponding CVirtualBox: */
-            m_comVBox = m_comVBoxClient.GetVirtualBox();
-            if (!m_comVBoxClient.isOk())
-            {
-                msgCenter().cannotAcquireVirtualBox(m_comVBoxClient);
-                return QApplication::quit();
-            }
-            /* Re-init wrappers: */
-            comWrappersReinit();
-
-            /* For Selector UI: */
-            if (uiType() == UIType_ManagerUI)
-            {
-                /* Recreate Main event listeners: */
-                UIVirtualBoxEventHandler::destroy();
-                UIVirtualBoxClientEventHandler::destroy();
-                UIExtraDataManager::destroy();
-                UIExtraDataManager::instance();
-                UIVirtualBoxEventHandler::instance();
-                UIVirtualBoxClientEventHandler::instance();
-                /* Ask UIStarter to restart UI: */
-                emit sigAskToRestartUI();
-            }
+            /* Recreate Main event listeners: */
+            UIVirtualBoxEventHandler::destroy();
+            UIVirtualBoxClientEventHandler::destroy();
+            UIExtraDataManager::destroy();
+            UIExtraDataManager::instance();
+            UIVirtualBoxEventHandler::instance();
+            UIVirtualBoxClientEventHandler::instance();
+            /* Ask UIStarter to restart UI: */
+            emit sigAskToRestartUI();
         }
     }
-
-    /* Notify listeners about the VBoxSVC availability change: */
-    emit sigVBoxSVCAvailabilityChange();
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -3126,7 +3061,8 @@ void UICommon::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const ch
     else if (rc != VERR_ENV_VAR_NOT_FOUND)
         strEnvValue = "veto";
 
-    QString strExtraValue = m_comVBox.GetExtraData(pszExtraDataName).toLower().trimmed();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    QString strExtraValue = comVBox.GetExtraData(pszExtraDataName).toLower().trimmed();
     if (strExtraValue.isEmpty())
         strExtraValue = QString();
 
@@ -3193,17 +3129,3 @@ bool UICommon::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) 
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-void UICommon::comWrappersReinit()
-{
-    /* Re-fetch corresponding objects/values: */
-    m_comHost = virtualBox().GetHost();
-    m_strHomeFolder = virtualBox().GetHomeFolder();
-
-    /* Re-initialize guest OS type database: */
-    if (m_pGuestOSTypeManager)
-        m_pGuestOSTypeManager->reCacheGuestOSTypes();
-
-    /* Mark wrappers valid: */
-    m_fWrappersValid = true;
-}

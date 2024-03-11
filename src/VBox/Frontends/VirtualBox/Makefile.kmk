@@ -821,6 +821,7 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UICommon.h \
 	src/globals/UIFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
+	src/globals/UIGlobalSession.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
@@ -1393,6 +1394,7 @@ UICommon_SOURCES = \
 	src/globals/UIDetailsGenerator.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIExtension.cpp \
+	src/globals/UIGlobalSession.cpp \
 	src/globals/UIGuestOSType.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
