@@ -7235,7 +7235,7 @@ iemNativeEmitSimdStoreGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, u
 #ifdef RT_ARCH_AMD64
     /* pinsrq vecsrc, gpr, #iQWord (ASSUMES SSE4.1). */
     pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (iGprDst >= 8 || iVecRegSrc >= 8)
+    if (iVecRegDst >= 8 || iGprSrc >= 8)
         pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
                           | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
     pCodeBuf[off++] = 0x0f;
