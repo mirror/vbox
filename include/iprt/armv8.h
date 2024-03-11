@@ -4070,14 +4070,14 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrEor(uint32_t iVecRegDst, uint32_t 
 }
 
 
-/** Armv8 UMOV vector element size.    */
-typedef enum ARMV8INSTRUMOVSZ
+/** Armv8 UMOV/INS vector element size.    */
+typedef enum ARMV8INSTRUMOVINSSZ
 {
-    kArmv8InstrUmovSz_U8  = 0, /**< Byte. */
-    kArmv8InstrUmovSz_U16 = 1, /**< Halfword. */
-    kArmv8InstrUmovSz_U32 = 2, /**< 32-bit. */
-    kArmv8InstrUmovSz_U64 = 3  /**< 64-bit (only valid when the destination is a 64-bit register. */
-} ARMV8INSTRUMOVSZ;
+    kArmv8InstrUmovInsSz_U8  = 0, /**< Byte. */
+    kArmv8InstrUmovInsSz_U16 = 1, /**< Halfword. */
+    kArmv8InstrUmovInsSz_U32 = 2, /**< 32-bit. */
+    kArmv8InstrUmovInsSz_U64 = 3  /**< 64-bit (only valid when the destination is a 64-bit register. */
+} ARMV8INSTRUMOVINSSZ;
 
 
 /**
@@ -4087,18 +4087,18 @@ typedef enum ARMV8INSTRUMOVSZ
  * @param   iRegDst     The register to put the result into.
  * @param   iVecRegSrc  The vector source register.
  * @param   idxElem     The element index.
- * @param   enmSz       Element size of the source evctor register.
+ * @param   enmSz       Element size of the source vector register.
  * @param   fDst64Bit   Flag whether the destination register is 64-bit (true) or 32-bit (false).
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUmov(uint32_t iRegDst, uint32_t iVecRegSrc, uint8_t idxElem,
-                                                   ARMV8INSTRUMOVSZ enmSz = kArmv8InstrUmovSz_U64, bool fDst64Bit = true)
+                                                   ARMV8INSTRUMOVINSSZ enmSz = kArmv8InstrUmovInsSz_U64, bool fDst64Bit = true)
 {
     Assert(iRegDst < 32); Assert(iVecRegSrc < 32);
-    Assert((fDst64Bit && enmSz == kArmv8InstrUmovSz_U64) || (!fDst64Bit && enmSz != kArmv8InstrUmovSz_U64));
-    Assert(   (enmSz == kArmv8InstrUmovSz_U8 && idxElem < 16)
-           || (enmSz == kArmv8InstrUmovSz_U16 && idxElem < 8)
-           || (enmSz == kArmv8InstrUmovSz_U32 && idxElem < 4)
-           || (enmSz == kArmv8InstrUmovSz_U64 && idxElem < 2));
+    Assert((fDst64Bit && enmSz == kArmv8InstrUmovInsSz_U64) || (!fDst64Bit && enmSz != kArmv8InstrUmovInsSz_U64));
+    Assert(   (enmSz == kArmv8InstrUmovInsSz_U8 && idxElem < 16)
+           || (enmSz == kArmv8InstrUmovInsSz_U16 && idxElem < 8)
+           || (enmSz == kArmv8InstrUmovInsSz_U32 && idxElem < 4)
+           || (enmSz == kArmv8InstrUmovInsSz_U64 && idxElem < 2));
 
     return UINT32_C(0x0e003c00)
          | ((uint32_t)fDst64Bit << 30)
@@ -4106,6 +4106,34 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUmov(uint32_t iRegDst, uint32_t iV
          | (RT_BIT_32(enmSz) << 16)
          | (iVecRegSrc << 5)
          | iRegDst;
+}
+
+
+/**
+ * A64: Encodes INS (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iRegSrc     The source register.
+ * @param   idxElem     The element index for the destination.
+ * @param   enmSz       Element size of the source vector register.
+ *
+ * @note This instruction assumes a 32-bit W<n> register for all noon 64bit vector sizes.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrIns(uint32_t iVecRegDst, uint32_t iRegSrc, uint8_t idxElem,
+                                                  ARMV8INSTRUMOVINSSZ enmSz = kArmv8InstrUmovInsSz_U64)
+{
+    Assert(iRegSrc < 32); Assert(iVecRegDst < 32);
+    Assert(   (enmSz == kArmv8InstrUmovInsSz_U8 && idxElem < 16)
+           || (enmSz == kArmv8InstrUmovInsSz_U16 && idxElem < 8)
+           || (enmSz == kArmv8InstrUmovInsSz_U32 && idxElem < 4)
+           || (enmSz == kArmv8InstrUmovInsSz_U64 && idxElem < 2));
+
+    return UINT32_C(0x4e001c00)
+         | ((uint32_t)idxElem << (16 + enmSz + 1))
+         | (RT_BIT_32(enmSz) << 16)
+         | (iRegSrc << 5)
+         | iVecRegDst;
 }
 
 
