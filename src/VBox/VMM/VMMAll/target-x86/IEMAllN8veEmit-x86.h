@@ -125,7 +125,8 @@ iemNativeEmitAmd64OneByteModRmInstrRIEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
                                         uint8_t idxRegRm, uint64_t uImmOp)
 {
     Assert(idxRegReg < 8); Assert(idxRegRm < 16);
-    if (cImmBits == 8 || uImmOp <= (uint64_t)0x7f)
+    if (   cImmBits == 8
+        || (uImmOp <= (uint64_t)0x7f && bOpcodeOtherImm8 != 0xcc))
     {
         switch (cOpBits)
         {
@@ -135,13 +136,13 @@ iemNativeEmitAmd64OneByteModRmInstrRIEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
             case 32:
                 if (idxRegRm >= 8)
                     pCodeBuf[off++] = X86_OP_REX_B;
-                pCodeBuf[off++] = bOpcodeOtherImm8;
+                pCodeBuf[off++] = bOpcodeOtherImm8; Assert(bOpcodeOtherImm8 != 0xcc);
                 break;
 
             default: AssertFailed(); RT_FALL_THRU();
             case 64:
                 pCodeBuf[off++] = X86_OP_REX_W | (idxRegRm >= 8 ? X86_OP_REX_B : 0);
-                pCodeBuf[off++] = bOpcodeOtherImm8;
+                pCodeBuf[off++] = bOpcodeOtherImm8; Assert(bOpcodeOtherImm8 != 0xcc);
                 break;
 
             case 8:
@@ -149,7 +150,7 @@ iemNativeEmitAmd64OneByteModRmInstrRIEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
                     pCodeBuf[off++] = X86_OP_REX_B;
                 else if (idxRegRm >= 4)
                     pCodeBuf[off++] = X86_OP_REX;
-                pCodeBuf[off++] = bOpcode8;
+                pCodeBuf[off++] = bOpcode8; Assert(bOpcode8 != 0xcc);
                 break;
         }
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegReg, idxRegRm & 7);
@@ -593,7 +594,52 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmit_test_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                           uint8_t idxVarDst, uint64_t uImmOp, uint8_t idxVarEfl, uint8_t cOpBits, uint8_t cImmBits)
 {
-    RT_NOREF(pReNative, off, idxVarDst, uImmOp, idxVarEfl, cOpBits, cImmBits);
+    uint8_t const idxRegDst = iemNativeVarRegisterAcquire(pReNative, idxVarDst, &off, true /*fInitialized*/);
+#ifdef RT_ARCH_AMD64
+    /* On AMD64 we just use the correctly size AND instruction harvest the EFLAGS. */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    off = iemNativeEmitAmd64OneByteModRmInstrRIEx(pCodeBuf, off, 0xf6, 0xcc, 0xf7, cOpBits, cImmBits, 0, idxRegDst, uImmOp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl);
+
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM64 we use 32-bit AND for the 8-bit and 16-bit bit ones.  We also
+       need to keep the result in order to calculate the flags. */
+    uint8_t const         idxRegResult = iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t uImmSizeLen, uImmRotations;
+    if (  cOpBits > 32
+        ? Armv8A64ConvertMask64ToImmRImmS(uImmOp, &uImmSizeLen, &uImmRotations)
+        : Armv8A64ConvertMask32ToImmRImmS(uImmOp, &uImmSizeLen, &uImmRotations))
+    {
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        if (cOpBits >= 32)
+            pCodeBuf[off++] = Armv8A64MkInstrAndsImm(idxRegResult, idxRegDst, uImmSizeLen, uImmRotations, cOpBits > 32 /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegResult, idxRegDst, uImmSizeLen, uImmRotations, cOpBits > 32 /*f64Bit*/);
+    }
+    else
+    {
+        uint8_t const idxRegTmpImm = iemNativeRegAllocTmpImm(pReNative, &off, uImmOp);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        if (cOpBits >= 32)
+            pCodeBuf[off++] = Armv8A64MkInstrAnds(idxRegResult, idxRegDst, idxRegTmpImm, cOpBits > 32 /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxRegResult, idxRegDst, idxRegTmpImm, cOpBits > 32 /*f64Bit*/);
+        iemNativeRegFreeTmpImm(pReNative, idxRegTmpImm);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+
+    off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegResult, cOpBits >= 32 /*fNativeFlags*/);
+
+    iemNativeRegFreeTmp(pReNative, idxRegResult);
+    RT_NOREF_PV(cImmBits)
+
+#else
+# error "Port me"
+#endif
     return off;
 }
 
