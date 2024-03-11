@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -34,6 +34,10 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
+/* Forward declarations: */
+class QString;
+class QWidget;
+
 /** Namespace with common extension pack stuff. */
 namespace UIExtension
 {
@@ -42,8 +46,8 @@ namespace UIExtension
       * @param  strDigest        Brings the extension pack file digest.
       * @param  pParent          Brings the parent dialog reference.
       * @param  pstrExtPackName  Brings the extension pack name. */
-    void SHARED_LIBRARY_STUFF install(QString const &strFilePath,
-                                      QString const &strDigest,
+    void SHARED_LIBRARY_STUFF install(const QString &strFilePath,
+                                      const QString &strDigest,
                                       QWidget *pParent,
                                       QString *pstrExtPackName);
 
