@@ -32,8 +32,8 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIGlobalSession.h"
 #include "UIParavirtProviderEditor.h"
 
 /* COM includes: */
@@ -154,7 +154,7 @@ void UIParavirtProviderEditor::populateCombo()
         const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
                                             ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                             : KPlatformArchitecture_x86;
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+        CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
         m_supportedValues = comProperties.GetSupportedParavirtProviders();
 
         /* Make sure requested value if sane is present as well: */

@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIErrorString.h"
+#include "UIGlobalSession.h"
 #include "UILoggingDefs.h"
 #include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
@@ -187,11 +188,11 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &comMedia /* = CMedi
     if (comMedia.isEmpty())
     {
         /* Compose new map of all known media & their children: */
-        addMediaToMap(uiCommon().virtualBox().GetHardDisks(), guiMedia);
-        addMediaToMap(uiCommon().host().GetDVDDrives(), guiMedia);
-        addMediaToMap(uiCommon().virtualBox().GetDVDImages(), guiMedia);
-        addMediaToMap(uiCommon().host().GetFloppyDrives(), guiMedia);
-        addMediaToMap(uiCommon().virtualBox().GetFloppyImages(), guiMedia);
+        addMediaToMap(gpGlobalSession->virtualBox().GetHardDisks(), guiMedia);
+        addMediaToMap(gpGlobalSession->host().GetDVDDrives(), guiMedia);
+        addMediaToMap(gpGlobalSession->virtualBox().GetDVDImages(), guiMedia);
+        addMediaToMap(gpGlobalSession->host().GetFloppyDrives(), guiMedia);
+        addMediaToMap(gpGlobalSession->virtualBox().GetFloppyImages(), guiMedia);
     }
     else
     {
@@ -343,7 +344,7 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
         else
         {
             /* Get VBox for temporary usage, it will cache the error info: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
+            CVirtualBox comVBox = gpGlobalSession->virtualBox();
             /* Open existing medium, this API can be used to open known medium as well, using ID as location for that: */
             CMedium comMedium = comVBox.OpenMedium(uMediumId.toString(), enmMediumType, KAccessMode_ReadWrite, false);
             if (!comVBox.isOk())

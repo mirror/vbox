@@ -40,6 +40,7 @@
 #include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -359,7 +360,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     AssertReturnVoid(comClient.isNotNull());
 
     /* Create appliance: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     CAppliance comAppliance = comVBox.CreateAppliance();
     if (!comVBox.isOk())
         return UINotificationMessage::cannotCreateAppliance(comVBox, pWizard->notificationCenter());

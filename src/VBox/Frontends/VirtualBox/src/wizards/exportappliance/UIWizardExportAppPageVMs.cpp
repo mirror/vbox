@@ -32,6 +32,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
@@ -85,7 +86,7 @@ private:
 void UIWizardExportAppVMs::populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames)
 {
     /* Add all VM items into VM selector: */
-    foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
+    foreach (const CMachine &comMachine, gpGlobalSession->virtualBox().GetMachines())
     {
         QPixmap pixIcon;
         QString strName;

@@ -39,6 +39,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerPaneContainer.h"
@@ -850,7 +851,7 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
 
     foreach (const QUuid &id, machineIdsToAdd)
     {
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
+        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(id.toString());
         if (comMachine.isNull())
             continue;
         UIFileManagerGuestTable *pGuestFileTable = new UIFileManagerGuestTable(m_pActionPool, comMachine, m_pGuestTablesContainer);

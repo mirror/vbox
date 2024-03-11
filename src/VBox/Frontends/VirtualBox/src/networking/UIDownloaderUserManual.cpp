@@ -34,6 +34,7 @@
 #include "QIFileDialog.h"
 #include "UICommon.h"
 #include "UIDownloaderUserManual.h"
+#include "UIGlobalSession.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
@@ -57,7 +58,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     addSource(strSource2);
 
     /* Set target: */
-    QString strUserManualDestination = QDir(uiCommon().homeFolder()).absoluteFilePath(strUserManualShortFileName);
+    QString strUserManualDestination = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(strUserManualShortFileName);
     setTarget(strUserManualDestination);
 }
 

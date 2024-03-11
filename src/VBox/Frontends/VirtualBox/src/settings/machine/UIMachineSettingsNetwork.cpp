@@ -31,8 +31,8 @@
 
 /* GUI includes: */
 #include "QITabWidget.h"
-#include "UICommon.h"
 #include "UIErrorString.h"
+#include "UIGlobalSession.h"
 #include "UIMachineSettingsNetwork.h"
 #include "UINetworkAttachmentEditor.h"
 #include "UINetworkSettingsEditor.h"
@@ -451,7 +451,7 @@ void UIMachineSettingsNetwork::prepareWidgets()
               * but in this place the m_machine field isn't set yet. My observation (on Linux)
               * is that the limitation to 4 isn't necessary any more, but this needs to be checked
               * on all platforms to be certain that it's usable everywhere. */
-            const ulong uCount = qMin((ULONG)4, uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxNetworkAdapters(KChipsetType_PIIX3));
+            const ulong uCount = qMin((ULONG)4, gpGlobalSession->virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxNetworkAdapters(KChipsetType_PIIX3));
 
             /* Create corresponding adapter tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
@@ -872,7 +872,7 @@ void UIMachineSettingsNetwork::refreshNATNetworkList()
 /* static */
 QString UIMachineSettingsNetwork::tabTitle(int iSlot)
 {
-    return UICommon::tr("Adapter %1").arg(QString("&%1").arg(iSlot + 1));
+    return QApplication::translate("UICommon", "Adapter %1").arg(QString("&%1").arg(iSlot + 1));
 }
 
 /* static */

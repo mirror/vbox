@@ -43,6 +43,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
@@ -1258,7 +1259,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced
 {
     /* Prepare the usage: */
     QStringList usage;
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     foreach (const QUuid &uMachineID, medium.curStateMachineIds())
     {
         CMachine machine = vbox.FindMachine(uMachineID.toString());
@@ -2091,7 +2092,7 @@ void UIMessageCenter::sltShowOnlineDocumentation()
 
 void UIMessageCenter::sltShowHelpAboutDialog()
 {
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     const QString strFullVersion = uiCommon().brandingIsActive()
                                  ? QString("%1 r%2 - %3").arg(vbox.GetVersion())
                                                          .arg(vbox.GetRevision())

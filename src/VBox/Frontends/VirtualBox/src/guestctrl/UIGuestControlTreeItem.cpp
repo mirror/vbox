@@ -28,9 +28,9 @@
 /* GUI includes: */
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIGuestControlTreeItem.h"
 #include "UIGuestProcessControlWidget.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CGuest.h"
@@ -90,7 +90,7 @@ void UIGuestControlTreeItem::cleanupListener(CEventSource comEventSource)
     m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
+    if (!gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Unregister event listener for CProgress event source: */

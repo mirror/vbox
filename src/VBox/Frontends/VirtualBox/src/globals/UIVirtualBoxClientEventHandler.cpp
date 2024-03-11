@@ -26,8 +26,8 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIMainEventListener.h"
 #include "UIVirtualBoxClientEventHandler.h"
 
@@ -117,7 +117,7 @@ void UIVirtualBoxClientEventHandlerProxy::prepareListener()
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBoxClient: */
-    const CVirtualBoxClient comVBoxClient = uiCommon().virtualBoxClient();
+    const CVirtualBoxClient comVBoxClient = gpGlobalSession->virtualBoxClient();
     /* Get VirtualBoxClient event source: */
     m_comEventSource = comVBoxClient.GetEventSource();
     Assert(comVBoxClient.isOk());

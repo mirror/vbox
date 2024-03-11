@@ -31,16 +31,16 @@
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
+#include "UIGlobalSession.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMNamePathPage.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CVirtualBox.h"
 
 QString UIWizardCloneVMNamePathCommon::composeCloneFilePath(const QString &strCloneName, const QString &strGroup, const QString &strFolderPath)
 {
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     return QDir::toNativeSeparators(vbox.ComposeMachineFilename(strCloneName, strGroup, QString(), strFolderPath));
 }
 

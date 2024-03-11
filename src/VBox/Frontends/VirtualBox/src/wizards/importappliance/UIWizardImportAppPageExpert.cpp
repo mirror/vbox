@@ -45,6 +45,7 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIFilePathSelector.h"
 #include "UIFormEditorWidget.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
 #include "UIToolBox.h"
@@ -244,8 +245,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         if (m_pEditorImportFilePath)
                         {
                             m_pEditorImportFilePath->setResetEnabled(true);
-                            m_pEditorImportFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-                            m_pEditorImportFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pEditorImportFilePath->setDefaultPath(gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pEditorImportFilePath->setPath(gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder());
                             m_pLabelImportFilePath->setBuddy(m_pEditorImportFilePath);
                             pLayoutAppliance->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
                         }

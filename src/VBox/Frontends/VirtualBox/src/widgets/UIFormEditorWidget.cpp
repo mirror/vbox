@@ -44,8 +44,8 @@
 #include "QIStyledItemDelegate.h"
 #include "QITableView.h"
 #include "QIWithRetranslateUI.h"
-#include "UICommon.h"
 #include "UIFormEditorWidget.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
 
@@ -782,7 +782,7 @@ RangedInteger64Editor::RangedInteger64Editor(QWidget *pParent /* = 0 */)
     , m_iMaximum(0)
 {
     /* Acquire min/max amount of RAM guest in theory could have: */
-    CSystemProperties comProps = uiCommon().virtualBox().GetSystemProperties();
+    CSystemProperties comProps = gpGlobalSession->virtualBox().GetSystemProperties();
     if (comProps.isOk())
     {
         m_iMinimumGuestRAM = comProps.GetMinGuestRAM();

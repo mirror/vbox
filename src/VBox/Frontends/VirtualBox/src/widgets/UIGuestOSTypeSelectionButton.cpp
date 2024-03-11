@@ -31,7 +31,7 @@
 #include <QStyle>
 
 /* GUI includes */
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIGuestOSTypeSelectionButton.h"
 #include "UIIconPool.h"
@@ -80,7 +80,7 @@ void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
     setIcon(generalIconPool().guestOSTypePixmapDefault(m_strOSTypeId));
 #endif
 
-    setText(uiCommon().guestOSTypeManager().getDescription(m_strOSTypeId));
+    setText(gpGlobalSession->guestOSTypeManager().getDescription(m_strOSTypeId));
 }
 
 void UIGuestOSTypeSelectionButton::retranslateUi()
@@ -106,21 +106,21 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     m_pMainMenu->clear();
 
     const UIGuestOSTypeManager::UIGuestOSFamilyInfo families
-        = uiCommon().guestOSTypeManager().getFamilies(true);
+        = gpGlobalSession->guestOSTypeManager().getFamilies(true);
 
     for (int i = 0; i < families.size(); ++i)
     {
         const UIFamilyInfo &fi = families.at(i);
         QMenu *pSubMenu = m_pMainMenu->addMenu(fi.m_strDescription);
         const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
-            = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(fi.m_strId, true);
+            = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(fi.m_strId, true);
 
         if (distributions.isEmpty())
-            createOSTypeMenu(uiCommon().guestOSTypeManager().getTypesForFamilyId(fi.m_strId), pSubMenu);
+            createOSTypeMenu(gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(fi.m_strId), pSubMenu);
         else
         {
             foreach (const UISubtypeInfo &distribution, distributions)
-                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypesForSubtype(distribution.m_strName),
+                createOSTypeMenu(gpGlobalSession->guestOSTypeManager().getTypesForSubtype(distribution.m_strName),
                                  pSubMenu->addMenu(distribution.m_strName));
         }
     }

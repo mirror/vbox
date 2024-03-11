@@ -30,8 +30,8 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIFilePathSelector.h"
+#include "UIGlobalSession.h"
 #include "UIVRDEAuthLibraryEditor.h"
 
 
@@ -104,7 +104,7 @@ void UIVRDEAuthLibraryEditor::prepare()
         {
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
-            m_pSelector->setInitialPath(uiCommon().homeFolder());
+            m_pSelector->setInitialPath(gpGlobalSession->homeFolder());
             m_pSelector->setMode(UIFilePathSelector::Mode_File_Open);
 
             m_pLayout->addWidget(m_pSelector, 0, 1);

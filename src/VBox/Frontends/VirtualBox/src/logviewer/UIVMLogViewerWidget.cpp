@@ -53,6 +53,7 @@
 #include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualMachineItem.h"
@@ -367,7 +368,7 @@ void UIVMLogViewerWidget::sltRefresh()
     if (!pCurrentPage || pCurrentPage->logFileId() == -1)
         return;
 
-    CMachine comMachine = uiCommon().virtualBox().FindMachine(pCurrentPage->machineId().toString());
+    CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(pCurrentPage->machineId().toString());
     if (comMachine.isNull())
         return;
 
@@ -984,11 +985,11 @@ void UIVMLogViewerWidget::createLogViewerPages(const QVector<QUuid> &machineList
         return;
     m_pTabWidget->blockSignals(true);
 
-    const CSystemProperties &sys = uiCommon().virtualBox().GetSystemProperties();
+    const CSystemProperties &sys = gpGlobalSession->virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
     foreach (const QUuid &machineId, machineList)
     {
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(machineId.toString());
+        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(machineId.toString());
         if (comMachine.isNull())
             continue;
 

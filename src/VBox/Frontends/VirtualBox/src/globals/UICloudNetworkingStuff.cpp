@@ -27,8 +27,8 @@
 
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
-#include "UICommon.h"
 #include "UIErrorString.h"
+#include "UIGlobalSession.h"
 #include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -44,7 +44,7 @@
 CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(UINotificationCenter *pParent /* = 0 */)
 {
     /* Acquire VBox: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
     if (comVBox.isNotNull())
     {
         /* Acquire cloud provider manager: */
@@ -61,7 +61,7 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(UINotificatio
 CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QString &strErrorMessage)
 {
     /* Acquire VBox: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
     if (comVBox.isNotNull())
     {
         /* Acquire cloud provider manager: */
@@ -202,7 +202,7 @@ CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProvide
 CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription(UINotificationCenter *pParent /* = 0 */)
 {
     /* Acquire VBox: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     if (comVBox.isNotNull())
     {
         /* Create appliance: */

@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 #include "UIActionPoolManager.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityToolWidget.h"
 #include "UIMessageCenter.h"
@@ -227,7 +227,7 @@ void UIVMActivityToolWidget::sltCurrentTabChanged(int iIndex)
     UIVMActivityMonitor *pActivityMonitor = qobject_cast<UIVMActivityMonitor*>(currentWidget());
     if (pActivityMonitor)
     {
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(pActivityMonitor->machineId().toString());
+        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(pActivityMonitor->machineId().toString());
         if (!comMachine.isNull())
         {
             setExportActionEnabled(comMachine.GetState() == KMachineState_Running);

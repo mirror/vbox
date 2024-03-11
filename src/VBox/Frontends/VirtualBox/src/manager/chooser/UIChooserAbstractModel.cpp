@@ -39,6 +39,7 @@
 #include "UIChooserNodeMachine.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UILoggingDefs.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -766,7 +767,7 @@ void UIChooserAbstractModel::sltLocalMachineRegistrationChanged(const QUuid &uMa
         if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
         {
             /* Add new machine-item: */
-            const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
+            const CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(uMachineId.toString());
             if (comMachine.isNotNull())
                 addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
         }
@@ -786,7 +787,7 @@ void UIChooserAbstractModel::sltLocalMachineGroupsChanged(const QUuid &uMachineI
     //       oldGroupList.join(", ").toUtf8().constData());
 
     /* Search for existing registered machine: */
-    const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
+    const CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(uMachineId.toString());
     if (comMachine.isNull())
         return;
     /* Look for a new group list: */
@@ -837,7 +838,7 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
     if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
     {
         /* Add new machine-item: */
-        const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
+        const CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(uMachineId.toString());
         addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
     }
 }
@@ -1144,7 +1145,7 @@ void UIChooserAbstractModel::reloadLocalTree()
     LogRelFlow(("UIChooserAbstractModel: Loading local VMs...\n"));
 
     /* Acquire VBox: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Acquire existing local machines: */
     const QVector<CMachine> machines = comVBox.GetMachines();

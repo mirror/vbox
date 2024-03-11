@@ -37,6 +37,7 @@
 #include "QIToolBar.h"
 #include "QITreeWidget.h"
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIUSBFilterDetailsEditor.h"
 #include "UIUSBFiltersEditor.h"
@@ -175,7 +176,7 @@ void UIUSBMenu::processAboutToShow()
     m_usbDeviceMap.clear();
 
     /* Get host for further activities: */
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
 
     /* Check whether we have host USB devices at all: */
     bool fIsUSBEmpty = comHost.GetUSBDevices().size() == 0;

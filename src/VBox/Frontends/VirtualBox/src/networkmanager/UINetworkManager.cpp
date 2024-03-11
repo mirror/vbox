@@ -44,6 +44,7 @@
 #include "UIDetailsWidgetHostNetwork.h"
 #include "UIDetailsWidgetNATNetwork.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINetworkManager.h"
@@ -546,7 +547,7 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
     oldData.m_strName = strNetworkName;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create network: */
     CHostOnlyNetwork comNetwork = comVBox.CreateHostOnlyNetwork(oldData.m_strName);
@@ -577,7 +578,7 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
 #else /* !VBOX_WS_MAC */
 
     /* Get host for further activities: */
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     CHostNetworkInterface comInterface;
 
     /* Create interface: */
@@ -601,7 +602,7 @@ void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHos
     else
     {
         /* Get VBox for further activities: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
         /* Find corresponding DHCP server (create if necessary): */
         CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -646,7 +647,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
         return;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Find corresponding network: */
     const CHostOnlyNetwork &comNetwork = comVBox.FindHostOnlyNetworkByName(strNetworkName);
@@ -690,7 +691,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
         return;
 
     /* Get host for further activities: */
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
 
     /* Find corresponding interface: */
     const CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
@@ -715,7 +716,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
         else
         {
             /* Get VBox for further activities: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
+            CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
             /* Find corresponding DHCP server: */
             const CDHCPServer &comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -809,7 +810,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
     oldData.m_fAdvertiseDefaultIPv6Route = false;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create network: */
     CNATNetwork comNetwork = comVBox.CreateNATNetwork(oldData.m_strName);
@@ -874,7 +875,7 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
         return;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Find corresponding network: */
     const CNATNetwork &comNetwork = comVBox.FindNATNetworkByName(strNetworkName);
@@ -946,7 +947,7 @@ void UINetworkManagerWidget::sltCreateCloudNetwork()
     oldData.m_strName = strNetworkName;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create network: */
     CCloudNetwork comNetwork = comVBox.CreateCloudNetwork(oldData.m_strName);
@@ -999,7 +1000,7 @@ void UINetworkManagerWidget::sltRemoveCloudNetwork()
         return;
 
     /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Find corresponding network: */
     const CCloudNetwork &comNetwork = comVBox.FindCloudNetworkByName(strNetworkName);
@@ -1273,7 +1274,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
 #ifdef VBOX_WS_MAC
         /* Get VirtualBox for further activities: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
         /* Find corresponding network: */
         CHostOnlyNetwork comNetwork = comVBox.FindHostOnlyNetworkByName(oldData.m_strName);
@@ -1316,7 +1317,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 #else /* !VBOX_WS_MAC */
 
         /* Get host for further activities: */
-        CHost comHost = uiCommon().host();
+        CHost comHost = gpGlobalSession->host();
 
         /* Find corresponding interface: */
         CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
@@ -1365,7 +1366,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
                 else
                 {
                     /* Get VBox for further activities: */
-                    CVirtualBox comVBox = uiCommon().virtualBox();
+                    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
                     /* Find corresponding DHCP server (create if necessary): */
                     CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -1502,7 +1503,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
         UIDataNATNetwork newData = m_pDetailsWidgetNATNetwork->data();
 
         /* Get VirtualBox for further activities: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
         /* Find corresponding network: */
         CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
@@ -1665,7 +1666,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesCloudNetwork()
         UIDataCloudNetwork newData = m_pDetailsWidgetCloudNetwork->data();
 
         /* Get VirtualBox for further activities: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
         /* Find corresponding network: */
         CCloudNetwork comNetwork = comVBox.FindCloudNetworkByName(oldData.m_strName);
@@ -2040,7 +2041,7 @@ void UINetworkManagerWidget::loadHostNetworks()
 
 #ifdef VBOX_WS_MAC
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Get networks for further activities: */
     const QVector<CHostOnlyNetwork> networks = comVBox.GetHostOnlyNetworks();
@@ -2069,7 +2070,7 @@ void UINetworkManagerWidget::loadHostNetworks()
 #else /* !VBOX_WS_MAC */
 
     /* Get host for further activities: */
-    const CHost comHost = uiCommon().host();
+    const CHost comHost = gpGlobalSession->host();
 
     /* Get interfaces for further activities: */
     const QVector<CHostNetworkInterface> interfaces = comHost.GetNetworkInterfaces();
@@ -2150,7 +2151,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
         UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(comInterface);
 
     /* Get VBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Find corresponding DHCP server (create if necessary): */
     CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -2191,7 +2192,7 @@ void UINetworkManagerWidget::loadNATNetworks()
     m_pTreeWidgetNATNetwork->clear();
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Get interfaces for further activities: */
     const QVector<CNATNetwork> networks = comVBox.GetNATNetworks();
@@ -2303,7 +2304,7 @@ void UINetworkManagerWidget::loadCloudNetworks()
     m_pTreeWidgetCloudNetwork->clear();
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Get interfaces for further activities: */
     const QVector<CCloudNetwork> networks = comVBox.GetCloudNetworks();

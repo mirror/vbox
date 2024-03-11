@@ -61,6 +61,7 @@
 #include "UIExtension.h"
 #include "UIExtensionPackManager.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
@@ -253,7 +254,7 @@ void UIAcquirePublicKeyDialog::sltHandleButtonClicked(QAbstractButton *pButton)
 
 void UIAcquirePublicKeyDialog::sltHandleOpenButtonClick()
 {
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     const QString strFileName = QIFileDialog::getOpenFileName(comVBox.GetHomeFolder(), QString(),
                                                               this, tr("Choose a public key file"));
     if (!strFileName.isEmpty())
@@ -828,7 +829,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
             if (UICommon::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 /* Handle VBox config file: */
-                CVirtualBox comVBox = uiCommon().virtualBox();
+                CVirtualBox comVBox = gpGlobalSession->virtualBox();
                 CMachine comMachine = comVBox.FindMachine(strFile);
                 if (comVBox.isOk() && comMachine.isNotNull())
                     launchMachine(comMachine);
@@ -866,7 +867,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
 
 void UIVirtualBoxManager::sltCheckUSBAccesibility()
 {
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     if (!comHost.isOk())
         return;
     if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
@@ -1260,7 +1261,7 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
             {
                 const QString strFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
                 const QString strDiskName = uiCommon().findUniqueFileName(strFolder, "NewVirtualDisk");
-                const CGuestOSType comGuestOSType = uiCommon().virtualBox().GetGuestOSType("Other");
+                const CGuestOSType comGuestOSType = gpGlobalSession->virtualBox().GetGuestOSType("Other");
                 const qulonglong uDiskSize = comGuestOSType.GetRecommendedHDD();
                 m_wizards[enmType] = new UIWizardNewVD(this,
                                                        strDiskName,
@@ -1494,7 +1495,7 @@ void UIVirtualBoxManager::sltPerformMachineMove()
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Open a file dialog for the user to select a destination folder. Start with the default machine folder: */
-    const QString strBaseFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    const QString strBaseFolder = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     const QString strTitle = tr("Select a destination folder to move the selected virtual machine");
     const QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
     if (!strDestinationFolder.isEmpty())
@@ -1751,7 +1752,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
     else
     {
         /* Otherwise upload command to external file which can be opened with Open command: */
-        QDir uiHomeFolder(uiCommon().virtualBox().GetHomeFolder());
+        QDir uiHomeFolder(gpGlobalSession->virtualBox().GetHomeFolder());
         const QString strAbsoluteCommandName = uiHomeFolder.absoluteFilePath("last.command");
         QFile file(strAbsoluteCommandName);
         file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
@@ -2840,7 +2841,7 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
 #else
     QString strTmpFile = strFileName;
 #endif
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* No file specified: */
     if (strTmpFile.isEmpty())
@@ -2967,7 +2968,7 @@ void UIVirtualBoxManager::launchMachine(CCloudMachine &comMachine)
 void UIVirtualBoxManager::startUnattendedInstall(const CUnattended &comUnattendedRef,
                                                  bool fStartHeadless, const QString &strMachineId)
 {
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     CMachine comMachine = comVBox.FindMachine(strMachineId);
     if (comMachine.isNull())
         return;

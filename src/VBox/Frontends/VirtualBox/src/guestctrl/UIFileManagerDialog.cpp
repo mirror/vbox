@@ -30,9 +30,9 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerDialog.h"
@@ -125,7 +125,7 @@ void UIFileManagerDialog::configure()
 void UIFileManagerDialog::configureCentralWidget()
 {
     CMachine comMachine;
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     if (!vbox.isNull() && !m_uMachineId.isNull())
         comMachine = vbox.FindMachine(m_uMachineId.toString());
     /* Create widget: */

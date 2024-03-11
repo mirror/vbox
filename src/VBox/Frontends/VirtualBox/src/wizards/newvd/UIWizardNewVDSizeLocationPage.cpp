@@ -32,7 +32,7 @@
 /* GUI includes: */
 #include "UIWizardNewVDSizeLocationPage.h"
 #include "UIWizardNewVD.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UINotificationCenter.h"
 #include "UIWizardDiskEditors.h"
 
@@ -43,7 +43,7 @@ UIWizardNewVDSizeLocationPage::UIWizardNewVDSizeLocationPage(const QString &strD
                                                              const QString &strDefaultPath, qulonglong uDefaultSize)
     : m_pMediumSizePathGroup(0)
     , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)

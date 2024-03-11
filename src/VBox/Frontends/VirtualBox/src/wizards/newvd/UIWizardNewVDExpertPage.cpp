@@ -33,7 +33,7 @@
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVDExpertPage.h"
 #include "UIWizardNewVD.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UINotificationCenter.h"
 
 /* COM includes: */
@@ -49,7 +49,7 @@ UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, 
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
     , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
 {
     prepare();
 }

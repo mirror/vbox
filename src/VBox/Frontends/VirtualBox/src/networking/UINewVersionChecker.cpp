@@ -32,6 +32,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UINetworkReply.h"
 #include "UINewVersionChecker.h"
 #include "UINotificationCenter.h"
@@ -57,25 +58,25 @@ void UINewVersionChecker::start()
 {
     /* Compose query: */
     QUrlQuery url;
-    url.addQueryItem("platform", uiCommon().virtualBox().GetPackageType());
+    url.addQueryItem("platform", gpGlobalSession->virtualBox().GetPackageType());
     /* Check if branding is active: */
     if (uiCommon().brandingIsActive())
     {
         /* Branding: Check whether we have a local branding file which tells us our version suffix "FOO"
                      (e.g. 3.06.54321_FOO) to identify this installation: */
-        url.addQueryItem("version", QString("%1_%2_%3").arg(uiCommon().virtualBox().GetVersion())
-                                                       .arg(uiCommon().virtualBox().GetRevision())
+        url.addQueryItem("version", QString("%1_%2_%3").arg(gpGlobalSession->virtualBox().GetVersion())
+                                                       .arg(gpGlobalSession->virtualBox().GetRevision())
                                                        .arg(uiCommon().brandingGetKey("VerSuffix")));
     }
     else
     {
         /* Use hard coded version set by VBOX_VERSION_STRING: */
-        url.addQueryItem("version", QString("%1_%2").arg(uiCommon().virtualBox().GetVersion())
-                                                    .arg(uiCommon().virtualBox().GetRevision()));
+        url.addQueryItem("version", QString("%1_%2").arg(gpGlobalSession->virtualBox().GetVersion())
+                                                    .arg(gpGlobalSession->virtualBox().GetRevision()));
     }
     url.addQueryItem("count", QString::number(gEDataManager->applicationUpdateCheckCounter()));
     url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).updateChannelName());
-    const QString strUserAgent(QString("VirtualBox %1 <%2>").arg(uiCommon().virtualBox().GetVersion()).arg(platformInfo()));
+    const QString strUserAgent(QString("VirtualBox %1 <%2>").arg(gpGlobalSession->virtualBox().GetVersion()).arg(platformInfo()));
 
     /* Send GET request: */
     UserDictionary headers;

@@ -32,6 +32,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 
@@ -74,8 +75,8 @@ void UIMediaComboBox::repopulate()
         && !uiCommon().isFullMediumEnumerationRequested())
     {
         CMediumVector comMedia;
-        comMedia << uiCommon().host().GetDVDDrives();
-        comMedia << uiCommon().virtualBox().GetDVDImages();
+        comMedia << gpGlobalSession->host().GetDVDDrives();
+        comMedia << gpGlobalSession->virtualBox().GetDVDImages();
         uiCommon().enumerateMedia(comMedia);
     }
     refresh();

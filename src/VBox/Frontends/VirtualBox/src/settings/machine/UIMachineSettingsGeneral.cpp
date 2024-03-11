@@ -32,12 +32,13 @@
 /* GUI includes: */
 #include "QITabWidget.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
-#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIDefs.h"
 #include "UIDescriptionEditor.h"
 #include "UIDiskEncryptionSettingsEditor.h"
 #include "UIDragAndDropEditor.h"
 #include "UIErrorString.h"
+#include "UIGlobalSession.h"
 #include "UIMachineSettingsGeneral.h"
 #include "UIModalWindowManager.h"
 #include "UINameAndSystemEditor.h"
@@ -395,7 +396,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     if (m_pEditorDiskEncryptionSettings->isFeatureEnabled())
     {
         /* Encryption Extension Pack presence test: */
-        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+        CExtPackManager extPackManager = gpGlobalSession->virtualBox().GetExtensionPackManager();
         if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
         {
             message.second << tr("You are trying to enable disk encryption for this virtual machine. "
@@ -782,7 +783,7 @@ bool UIMachineSettingsGeneral::saveBasicData()
                     {
                         const CPlatform comPlatform = m_machine.GetPlatform();
                         CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-                        const CGuestOSType comNewType = uiCommon().virtualBox().GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
+                        const CGuestOSType comNewType = gpGlobalSession->virtualBox().GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
                         comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_LongMode, comNewType.GetIs64Bit());
                         fSuccess = comPlatformX86.isOk();
                         /// @todo convey error info ..

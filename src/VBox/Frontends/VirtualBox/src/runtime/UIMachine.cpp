@@ -38,6 +38,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UISession.h"
@@ -152,7 +153,7 @@ bool UIMachine::startMachine()
     if (uiCommon().isSeparateProcess())
     {
         /* Get corresponding machine: */
-        CMachine machine = uiCommon().virtualBox().FindMachine(uiCommon().managedVMUuid().toString());
+        CMachine machine = gpGlobalSession->virtualBox().FindMachine(uiCommon().managedVMUuid().toString());
         AssertMsgReturn(!machine.isNull(), ("UICommon::managedVMUuid() should have filter that case before!\n"), false);
 
         /* Try to launch corresponding machine: */

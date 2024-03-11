@@ -34,6 +34,7 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIFilePathSelector.h"
 #include "UINameAndSystemEditor.h"
@@ -161,7 +162,7 @@ void UINameAndSystemEditor::setPath(const QString &strPath)
 QString UINameAndSystemEditor::path() const
 {
     if (!m_pSelectorPath)
-        return uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     return m_pSelectorPath->path();
 }
 
@@ -189,7 +190,7 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     for (int i = 0; i < m_pComboFamily->count() && iFamilyComboIndex == -1; ++i)
     {
         QString strComboFamilyId = m_pComboFamily->itemData(i).toString();
-        if (!strComboFamilyId.isEmpty() && strComboFamilyId == uiCommon().guestOSTypeManager().getFamilyId(strTypeId))
+        if (!strComboFamilyId.isEmpty() && strComboFamilyId == gpGlobalSession->guestOSTypeManager().getFamilyId(strTypeId))
             iFamilyComboIndex = i;
     }
     /* Bail out if family combo has no such item: */
@@ -199,7 +200,7 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
 
     /* If distribution is not empty then try to select correct index. This will populate type combo: */
-    QString strDistribution = uiCommon().guestOSTypeManager().getSubtype(strTypeId);
+    QString strDistribution = gpGlobalSession->guestOSTypeManager().getSubtype(strTypeId);
     if (!strDistribution.isEmpty())
     {
         int index = -1;
@@ -341,8 +342,8 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
     /* If distribution list is empty, all the types of the family are added to type combo: */
     const UIGuestOSTypeManager::UIGuestOSTypeInfo types
          = m_strDistribution.isEmpty()
-         ? uiCommon().guestOSTypeManager().getTypesForFamilyId(m_strFamilyId, enmArch)
-         : uiCommon().guestOSTypeManager().getTypesForSubtype(m_strDistribution, enmArch);
+         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(m_strFamilyId, enmArch)
+         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(m_strDistribution, enmArch);
 
     /* Save the most recently used item: */
     m_familyToDistribution[m_strFamilyId] = m_strDistribution;
@@ -427,7 +428,7 @@ void UINameAndSystemEditor::prepareWidgets()
             if (m_pSelectorPath)
             {
                 m_pLabelPath->setBuddy(m_pSelectorPath->focusProxy());
-                QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+                QString strDefaultMachineFolder = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 m_pSelectorPath->setPath(strDefaultMachineFolder);
                 m_pSelectorPath->setDefaultPath(strDefaultMachineFolder);
                 m_pLayout->addWidget(m_pSelectorPath, iRow, 1, 1, 2);
@@ -616,7 +617,7 @@ void UINameAndSystemEditor::populateFamilyCombo()
 
     /* Acquire family IDs: */
     const UIGuestOSTypeManager::UIGuestOSFamilyInfo families
-        = uiCommon().guestOSTypeManager().getFamilies(false, enmArch);
+        = gpGlobalSession->guestOSTypeManager().getFamilies(false, enmArch);
 
     /* Block signals initially and clear the combo: */
     m_pComboFamily->blockSignals(true);
@@ -652,7 +653,7 @@ void UINameAndSystemEditor::populateDistributionCombo()
 
     /* Acquire a list of suitable sub-types: */
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
-        = uiCommon().guestOSTypeManager().getSubtypesForFamilyId(m_strFamilyId, false, enmArch);
+        = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(m_strFamilyId, false, enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
 

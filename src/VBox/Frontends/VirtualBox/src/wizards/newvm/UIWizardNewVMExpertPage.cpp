@@ -32,9 +32,10 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "QIToolButton.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
+#include "UIGlobalSession.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 #include "UINameAndSystemEditor.h"
@@ -70,7 +71,7 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage(UIActionPool *pActionPool)
     , m_pDiskSelectionButton(0)
     , m_fRecommendedNoDisk(false)
     , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pActionPool(pActionPool)
 {
     /* Create widgets: */
@@ -346,7 +347,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
 
     QString strTypeId = pWizard->guestOSTypeId();
     /* Get recommended 'ram' field value: */
-    ULONG recommendedRam = uiCommon().guestOSTypeManager().getRecommendedRAM(strTypeId);
+    ULONG recommendedRam = gpGlobalSession->guestOSTypeManager().getRecommendedRAM(strTypeId);
 
     if (m_pHardwareWidgetContainer)
     {
@@ -360,7 +361,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Set Firmware Type of the widget and the wizard: */
-        KFirmwareType fwType = uiCommon().guestOSTypeManager().getRecommendedFirmware(strTypeId);
+        KFirmwareType fwType = gpGlobalSession->guestOSTypeManager().getRecommendedFirmware(strTypeId);
         if (!m_userModifiedParameters.contains("EFIEnabled"))
         {
             m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
@@ -368,7 +369,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Initialize CPU count:*/
-        int iCPUCount = uiCommon().guestOSTypeManager().getRecommendedCPUCount(strTypeId);
+        int iCPUCount = gpGlobalSession->guestOSTypeManager().getRecommendedCPUCount(strTypeId);
         if (!m_userModifiedParameters.contains("CPUCount"))
         {
             m_pHardwareWidgetContainer->setCPUCount(iCPUCount);
@@ -377,7 +378,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->blockSignals(false);
     }
 
-    LONG64 iRecommendedDiskSize = uiCommon().guestOSTypeManager().getRecommendedHDD(strTypeId);
+    LONG64 iRecommendedDiskSize = gpGlobalSession->guestOSTypeManager().getRecommendedHDD(strTypeId);
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
@@ -901,7 +902,7 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
         if (m_pNameAndSystemEditor)
             strMediumPath = m_pNameAndSystemEditor->path();
         else
-            strMediumPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+            strMediumPath = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     }
     QString strExtension = UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
     if (m_pSizeAndLocationGroup)

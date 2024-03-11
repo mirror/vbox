@@ -43,6 +43,7 @@
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
 #include "UIMediumDetailsWidget.h"
@@ -455,7 +456,7 @@ void UIMediumManagerWidget::sltHandleMachineStateChange(const QUuid &uId, const 
 
 void UIMediumManagerWidget::sltAddMedium()
 {
-    QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    QString strDefaultMachineFolder = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     uiCommon().openMediumWithFileOpenDialog(currentMediumType(), this,
                                               strDefaultMachineFolder, true /* use most recent medium folder */);
 }

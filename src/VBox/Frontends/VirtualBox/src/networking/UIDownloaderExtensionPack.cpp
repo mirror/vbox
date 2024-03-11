@@ -35,6 +35,7 @@
 #include "QIFileDialog.h"
 #include "UICommon.h"
 #include "UIDownloaderExtensionPack.h"
+#include "UIGlobalSession.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
@@ -56,7 +57,7 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     const QString strSourcePath = QString("https://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
     const QString strSource = strSourcePath + strSourceName;
     const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
-    const QString strTarget = QDir(uiCommon().homeFolder()).absoluteFilePath(strSourceName);
+    const QString strTarget = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(strSourceName);
 
     /* Set source/target: */
     setSource(strSource);

@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
@@ -76,7 +77,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     AssertReturn(m_uMediumSize > 0, false);
 
     /* Get VBox object: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create new virtual disk image: */
     CMedium comVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);

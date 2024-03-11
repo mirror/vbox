@@ -50,6 +50,7 @@
 #include "UIExtraDataManager.h"
 #include "UIFileManagerDialog.h"
 #include "UIFrameBuffer.h"
+#include "UIGlobalSession.h"
 #include "UIGuestProcessControlDialog.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIHostComboEditor.h"
@@ -346,7 +347,7 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 {
     /* Do nothing if VBoxSVC still availabile: */
-    if (uiCommon().isVBoxSVCAvailable())
+    if (gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Warn user about that: */
@@ -856,7 +857,7 @@ void UIMachineLogic::updateDockOverlay()
 void UIMachineLogic::prepareSessionConnections()
 {
     /* We should watch for VBoxSVC availability changes: */
-    connect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
+    connect(gpGlobalSession, &UIGlobalSession::sigVBoxSVCAvailabilityChange,
             this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should watch for machine UI initialization signal: */
@@ -1416,7 +1417,7 @@ void UIMachineLogic::cleanupHandlers()
 void UIMachineLogic::cleanupSessionConnections()
 {
     /* We should stop watching for VBoxSVC availability changes: */
-    disconnect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
+    disconnect(gpGlobalSession, &UIGlobalSession::sigVBoxSVCAvailabilityChange,
                this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should stop watching for machine UI initialization signal: */
@@ -2289,7 +2290,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
     bool fOnlyMount = sender() == actionPool()->action(UIActionIndexRT_M_Devices_S_InsertGuestAdditionsDisk);
 
     /* Try to acquire default additions ISO: */
-    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
+    CSystemProperties comSystemProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     const QString strAdditions = comSystemProperties.GetDefaultAdditionsISO();
     if (comSystemProperties.isOk() && !strAdditions.isEmpty())
     {
@@ -2300,7 +2301,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
     }
 
     /* Check whether we have already registered image: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     CMediumVector comMedia = comVBox.GetDVDImages();
     if (!comVBox.isOk())
         UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
@@ -2657,7 +2658,7 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
     uimachine()->acquireArchitectureType(enmArchType);
     KChipsetType enmChipsetType = KChipsetType_Null;
     uimachine()->acquireChipsetType(enmChipsetType);
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArchType);
+    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArchType);
     const ulong uCount = qMin((ulong)4, (ulong)comProperties.GetMaxNetworkAdapters(enmChipsetType));
 
     /* Enumerate existing network adapters: */
@@ -2778,7 +2779,7 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
         /* Prepare action-group: */
         m_pSharedClipboardActions = new QActionGroup(this);
         /* Load currently supported Clipboard modes: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
         QVector<KClipboardMode> clipboardModes = comProperties.GetSupportedClipboardModes();
         /* Take current clipboard mode into account: */
         if (!clipboardModes.contains(enmCurrentMode))
@@ -2828,7 +2829,7 @@ void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
         /* Prepare action-group: */
         m_pDragAndDropActions = new QActionGroup(this);
         /* Load currently supported DnD modes: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
         QVector<KDnDMode> dndModes = comProperties.GetSupportedDnDModes();
         /* Take current DnD mode into account: */
         if (!dndModes.contains(enmCurrentMode))
@@ -2991,7 +2992,7 @@ void UIMachineLogic::activateScreenSaver()
     if (!gEDataManager->disableHostScreenSaver())
         return;
 
-    QVector<CMachine> machines = uiCommon().virtualBox().GetMachines();
+    QVector<CMachine> machines = gpGlobalSession->virtualBox().GetMachines();
     bool fAnother = false;
     for (int i = 0; i < machines.size(); ++i)
     {

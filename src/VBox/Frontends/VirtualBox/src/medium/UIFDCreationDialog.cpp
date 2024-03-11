@@ -37,6 +37,7 @@
 #include "UICommon.h"
 #include "UIFDCreationDialog.h"
 #include "UIFilePathSelector.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
@@ -108,7 +109,7 @@ void UIFDCreationDialog::accept()
         return;
 
     /* Get VBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create medium: */
     CMedium comMedium = comVBox.CreateMedium(mediumFormats[0].GetName(), strMediumLocation,
@@ -290,7 +291,7 @@ QString UIFDCreationDialog::getDefaultFilePath() const
 
     /* Make sure it's not empty if possible: */
     if (strDefaultFilePath.isEmpty())
-        strDefaultFilePath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+        strDefaultFilePath = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     if (strDefaultFilePath.isEmpty())
         return strDefaultFilePath;
 
@@ -314,7 +315,7 @@ bool UIFDCreationDialog::checkFilePath(const QString &strPath) const
 /* static */
 QVector<CMediumFormat> UIFDCreationDialog::getFormatsForDeviceType(KDeviceType enmDeviceType)
 {
-    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
+    CSystemProperties comSystemProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
     QVector<CMediumFormat> formatList;
     for (int i = 0; i < mediumFormats.size(); ++i)

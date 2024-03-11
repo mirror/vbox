@@ -38,6 +38,7 @@
 #include "UIDetails.h"
 #include "UIErrorPane.h"
 #include "UIFileManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
@@ -230,7 +231,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
             {
                 if (!m_items.isEmpty())
                     m_pPaneFileManager = new UIFileManager(EmbedTo_Stack, m_pActionPool,
-                                                           uiCommon().virtualBox().FindMachine(m_items[0]->id().toString()),
+                                                           gpGlobalSession->virtualBox().FindMachine(m_items[0]->id().toString()),
                                                            0, false /* fShowToolbar */);
                 else
                     m_pPaneFileManager = new UIFileManager(EmbedTo_Stack, m_pActionPool, CMachine(),

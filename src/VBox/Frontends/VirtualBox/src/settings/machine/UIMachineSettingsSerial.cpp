@@ -30,8 +30,8 @@
 
 /* GUI includes: */
 #include "QITabWidget.h"
-#include "UICommon.h"
 #include "UIErrorString.h"
+#include "UIGlobalSession.h"
 #include "UIMachineSettingsSerial.h"
 #include "UISerialSettingsEditor.h"
 #include "UITranslator.h"
@@ -309,7 +309,7 @@ void UIMachineSettingsSerial::prepareWidgets()
         if (m_pTabWidget)
         {
             /* How many ports to display: */
-            const ulong uCount = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetSerialPortCount();
+            const ulong uCount = gpGlobalSession->virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetSerialPortCount();
 
             /* Create corresponding port tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)

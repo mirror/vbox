@@ -35,7 +35,7 @@
 /* GUI includes: */
 #include "QIAdvancedSlider.h"
 #include "UIBaseMemoryEditor.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -127,8 +127,8 @@ uint UIBaseMemorySlider::maxRAM() const
 
 void UIBaseMemorySlider::prepare()
 {
-    ulong uFullSize = uiCommon().host().GetMemorySize();
-    CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
+    ulong uFullSize = gpGlobalSession->host().GetMemorySize();
+    CSystemProperties sys = gpGlobalSession->virtualBox().GetSystemProperties();
     m_uMinRAM = sys.GetMinGuestRAM();
     m_uMaxRAM = RT_MIN(RT_ALIGN(uFullSize, _1G / _1M), sys.GetMaxGuestRAM());
 

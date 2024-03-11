@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMNamePathPage.h"
@@ -187,7 +188,7 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     /* Get VBox object: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     /* Create a new machine object: */
     CMachine cloneMachine = comVBox.CreateMachine(m_strCloneFilePath, m_strCloneName, KPlatformArchitecture_x86,
                                                   QVector<QString>(), QString(), QString(),
@@ -243,7 +244,7 @@ void UIWizardCloneVM::retranslateUi()
 
 void UIWizardCloneVM::populatePages()
 {
-    QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    QString strDefaultMachineFolder = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     /* Create corresponding pages: */
     switch (mode())
     {

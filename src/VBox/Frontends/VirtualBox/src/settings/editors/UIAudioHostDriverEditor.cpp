@@ -32,9 +32,9 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
-#include "UIConverter.h"
 #include "UIAudioHostDriverEditor.h"
+#include "UIConverter.h"
+#include "UIGlobalSession.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -146,7 +146,7 @@ void UIAudioHostDriverEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported audio driver types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
         m_supportedValues = comProperties.GetSupportedAudioDriverTypes();
 
         /* Make sure requested value if sane is present as well: */

@@ -49,6 +49,7 @@
 #include "UIConverter.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
@@ -1512,7 +1513,7 @@ void UIActivityOverviewModel::setColumnCaptions(const QMap<int, QString>& captio
 
 void UIActivityOverviewModel::initializeItems()
 {
-    foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
+    foreach (const CMachine &comMachine, gpGlobalSession->virtualBox().GetMachines())
     {
         if (!comMachine.isNull())
             addItem(comMachine.GetId(), comMachine.GetName(), comMachine.GetState());
@@ -1539,7 +1540,7 @@ void UIActivityOverviewModel::sltMachineRegistered(const QUuid &uId, bool fRegis
 {
     if (fRegistered)
     {
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
+        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(uId.toString());
         if (!comMachine.isNull())
             addItem(uId, comMachine.GetName(), comMachine.GetState());
     }
@@ -1550,7 +1551,7 @@ void UIActivityOverviewModel::sltMachineRegistered(const QUuid &uId, bool fRegis
 
 void UIActivityOverviewModel::getHostRAMStats()
 {
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     m_hostStats.m_iRAMTotal = _1M * (quint64)comHost.GetMemorySize();
     m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
@@ -1590,7 +1591,7 @@ void UIActivityOverviewModel::setupPerformanceCollector()
     const ULONG iPeriod = 1;
     const int iMetricSetupCount = 1;
     if (m_performanceCollector.isNull())
-        m_performanceCollector = uiCommon().virtualBox().GetPerformanceCollector();
+        m_performanceCollector = gpGlobalSession->virtualBox().GetPerformanceCollector();
     for (int i = 0; i < m_itemList.size(); ++i)
         m_nameList << "Guest/RAM/Usage*";
     /* This is for the host: */

@@ -37,8 +37,8 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "QIToolButton.h"
-#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UINetworkFeaturesEditor.h"
 
@@ -208,7 +208,7 @@ void UINetworkFeaturesEditor::setMinimumLayoutIndent(int iIndent)
 
 void UINetworkFeaturesEditor::generateMac()
 {
-    setMACAddress(uiCommon().host().GenerateMACAddress());
+    setMACAddress(gpGlobalSession->host().GenerateMACAddress());
 }
 
 void UINetworkFeaturesEditor::retranslateUi()
@@ -397,7 +397,7 @@ void UINetworkFeaturesEditor::populateAdapterTypeCombo()
         const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
                                             ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                             : KPlatformArchitecture_x86;
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+        CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
         QVector<KNetworkAdapterType> supportedTypes = comProperties.GetSupportedNetworkAdapterTypes();
 
         /* Make sure requested value if sane is present as well: */
@@ -430,7 +430,7 @@ void UINetworkFeaturesEditor::populatePromiscuousModeCombo()
         const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
                                             ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                             : KPlatformArchitecture_x86;
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+        CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
         QVector<KNetworkAdapterPromiscModePolicy> supportedTypes = comProperties.GetSupportedNetAdpPromiscModePols();
 
         /* Make sure requested value if sane is present as well: */

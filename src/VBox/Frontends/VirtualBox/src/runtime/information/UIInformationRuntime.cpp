@@ -36,8 +36,8 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIInformationRuntime.h"
 #include "UIGuestOSType.h"
@@ -351,7 +351,7 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
         strOSType = m_strOSNotDetected;
     else
     {
-        strOSType = uiCommon().guestOSTypeManager().getDescription(strOSType);
+        strOSType = gpGlobalSession->guestOSTypeManager().getDescription(strOSType);
     }
    updateInfoRow(InfoRow_GuestOSType, QString("%1").arg(m_strGuestOSTypeLabel), strOSType);
 }

@@ -51,8 +51,9 @@
 #include "UICursor.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIDetailsGenerator.h"
-#include "UIIconPool.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
+#include "UIIconPool.h"
 #include "UISnapshotDetailsWidget.h"
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
@@ -1289,8 +1290,8 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             /* Operating System: */
             ++iRowCount;
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                                     empReport(uiCommon().guestOSTypeManager().getDescription(comMachine.GetOSTypeId()),
-                                                               uiCommon().guestOSTypeManager().getDescription(comMachineOld.GetOSTypeId())));
+                                                     empReport(gpGlobalSession->guestOSTypeManager().getDescription(comMachine.GetOSTypeId()),
+                                                               gpGlobalSession->guestOSTypeManager().getDescription(comMachineOld.GetOSTypeId())));
 
             /* Location of the settings file: */
             QString strSettingsFilePath = comMachine.GetSettingsFilePath();
@@ -1714,7 +1715,7 @@ QString UISnapshotDetailsWidget::bootOrderReport(const CMachine &comMachine)
     /* Iterate through boot device types: */
     CPlatform comPlatform = comMachine.GetPlatform();
     const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
     for (ulong i = 1; i <= comProperties.GetMaxBootPosition(); ++i)
     {
         const KDeviceType enmDevice = comMachine.GetBootOrder(i);
@@ -1769,7 +1770,7 @@ QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
             CPlatformX86 comPlatformX86 = comPlatform.GetX86();
 
             /* VT-x/AMD-V and Nested Paging? */
-            if (uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+            if (gpGlobalSession->host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
             {
                 /* VT-x/AMD-V? */
                 if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
@@ -1963,7 +1964,7 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
     CPlatform comPlatform = comMachine.GetPlatform();
     const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
     const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
     const ulong cMaxNetworkAdapters = comProperties.GetMaxNetworkAdapters(enmChipsetType);
     for (ulong iSlot = 0; iSlot < cMaxNetworkAdapters; ++iSlot)
     {
@@ -2024,7 +2025,7 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
     /* Iterate through machine serial ports: */
     CPlatform comPlatform = comMachine.GetPlatform();
     const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
     const ulong cMaxSerialPorts = comProperties.GetSerialPortCount();
     for (ulong iSlot = 0; iSlot < cMaxSerialPorts; ++iSlot)
     {

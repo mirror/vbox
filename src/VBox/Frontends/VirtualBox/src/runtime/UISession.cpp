@@ -38,6 +38,7 @@
 #include "UIDetailsGenerator.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIGuestOSType.h"
 #include "UILoggingDefs.h"
@@ -891,7 +892,7 @@ bool UISession::mountBootMedium(const QUuid &uMediumId)
     AssertReturn(!uMediumId.isNull(), false);
 
     /* Get recommended controller bus & type: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     if (!comVBox.isOk())
     {
@@ -899,8 +900,8 @@ bool UISession::mountBootMedium(const QUuid &uMediumId)
         return false;
     }
 
-    const KStorageBus enmRecommendedDvdBus = uiCommon().guestOSTypeManager().getRecommendedDVDStorageBus(osTypeId());
-    const KStorageControllerType enmRecommendedDvdType = uiCommon().guestOSTypeManager().getRecommendedDVDStorageController(osTypeId());
+    const KStorageBus enmRecommendedDvdBus = gpGlobalSession->guestOSTypeManager().getRecommendedDVDStorageBus(osTypeId());
+    const KStorageControllerType enmRecommendedDvdType = gpGlobalSession->guestOSTypeManager().getRecommendedDVDStorageController(osTypeId());
 
     /* Search for an attachment of required bus & type: */
     CMachine comMachine = machine();
@@ -1055,7 +1056,7 @@ void UISession::acquireWhetherVideoInputDevicesEnabled(bool &fEnabled)
     fEnabled = false;
 
     /* Check whether video input devices are available: */
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     CHostVideoInputDeviceVector comVideoInputDevices = comHost.GetVideoInputDevices();
     if (!comHost.isOk() || comVideoInputDevices.isEmpty())
         return;
@@ -1072,7 +1073,7 @@ void UISession::acquireWhetherVideoInputDevicesEnabled(bool &fEnabled)
 
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
-    const CHost comHost = uiCommon().host();
+    const CHost comHost = gpGlobalSession->host();
     const CHostUSBDeviceVector comHostUSBDevices = comHost.GetUSBDevices();
     bool fSuccess = comHost.isOk();
     if (!fSuccess)
@@ -1134,7 +1135,7 @@ bool UISession::attachUSBDevice(const QUuid &uId)
     const bool fSuccess = comConsole.isOk();
     if (!fSuccess)
     {
-        CHost comHost = uiCommon().host();
+        CHost comHost = gpGlobalSession->host();
         /* Nothing to check for errors here because error is valid case as well. */
         CHostUSBDevice comHostUSBDevice = comHost.FindUSBDeviceById(uId);
         /* Get USB device from current host USB device,
@@ -1162,7 +1163,7 @@ bool UISession::detachUSBDevice(const QUuid &uId)
 
 bool UISession::webcamDevices(QList<WebcamDeviceInfo> &guiWebcamDevices)
 {
-    const CHost comHost = uiCommon().host();
+    const CHost comHost = gpGlobalSession->host();
     const CHostVideoInputDeviceVector comHostVideoInputDevices = comHost.GetVideoInputDevices();
     bool fSuccess = comHost.isOk();
     if (!fSuccess)
@@ -1277,7 +1278,7 @@ bool UISession::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
     bool fSuccess = acquireArchitectureType(enmArchType);
     {
         /* Acquire system properties: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
         AssertReturn(comVBox.isNotNull(), false);
         CPlatformProperties comProperties = comVBox.GetPlatformProperties(enmArchType);
         fSuccess = comVBox.isOk();
@@ -1358,8 +1359,8 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     /* Auto GA update is currently for Windows and Linux guests only */
-    bool fIsWindowOrLinux = uiCommon().guestOSTypeManager().isLinux(uimachine()->osTypeId())
-                         || uiCommon().guestOSTypeManager().isWindows(uimachine()->osTypeId());
+    bool fIsWindowOrLinux = gpGlobalSession->guestOSTypeManager().isLinux(uimachine()->osTypeId())
+                         || gpGlobalSession->guestOSTypeManager().isWindows(uimachine()->osTypeId());
 
     if (!fIsWindowOrLinux)
         return false;
@@ -2703,7 +2704,7 @@ void UISession::cleanupCOMStuff()
         m_comMachine.detach();
 
     /* Close session: */
-    if (!m_comSession.isNull() && uiCommon().isVBoxSVCAvailable())
+    if (!m_comSession.isNull() && gpGlobalSession->isVBoxSVCAvailable())
     {
         m_comSession.UnlockMachine();
         m_comSession.detach();
@@ -2741,7 +2742,7 @@ bool UISession::preprocessInitialization()
         QStringList availableInterfaceNames;
 
         /* Create host network interface names list: */
-        foreach (const CHostNetworkInterface &comNetIface, uiCommon().host().GetNetworkInterfaces())
+        foreach (const CHostNetworkInterface &comNetIface, gpGlobalSession->host().GetNetworkInterfaces())
         {
             availableInterfaceNames << comNetIface.GetName();
             availableInterfaceNames << comNetIface.GetShortName();
@@ -2749,7 +2750,7 @@ bool UISession::preprocessInitialization()
 
         /* Enumerate all the virtual network adapters: */
         CPlatform comPlatform             = machine().GetPlatform();
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(comPlatform.GetArchitecture());
+        CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(comPlatform.GetArchitecture());
         const ulong cCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
         for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
         {
@@ -2797,7 +2798,7 @@ bool UISession::preprocessInitialization()
 #endif /* VBOX_WITH_NETFLT */
 
     /* Check for USB enumeration warning. Don't return false even if we have a warning: */
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
     {
         /* Do not bitch if USB disabled: */
@@ -2816,7 +2817,7 @@ bool UISession::preprocessInitialization()
 bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName)
 {
     /* Get VBox: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Prepare medium to mount: */
     UIMedium guiMedium;

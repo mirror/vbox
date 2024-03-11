@@ -30,7 +30,7 @@
 #include <QThread>
 
 /* GUI includes: */
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UILoggingDefs.h"
 #include "UIMainEventListener.h"
 #include "UIMousePointerShapeData.h"
@@ -275,7 +275,7 @@ void UIMainEventListener::unregisterSources()
 STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
 {
     /* Try to acquire COM cleanup protection token first: */
-    if (!uiCommon().comTokenTryLockForRead())
+    if (!gpGlobalSession->comTokenTryLockForRead())
         return S_OK;
 
     CEvent comEvent(pEvent);
@@ -644,7 +644,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
     }
 
     /* Unlock COM cleanup protection token: */
-    uiCommon().comTokenUnlock();
+    gpGlobalSession->comTokenUnlock();
 
     return S_OK;
 }

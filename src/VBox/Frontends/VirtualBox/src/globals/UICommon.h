@@ -44,11 +44,8 @@
 #endif
 
 /* COM includes: */
-#include "CHost.h"
 #include "CMedium.h"
 #include "CSession.h"
-#include "CVirtualBox.h"
-#include "CVirtualBoxClient.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -59,7 +56,6 @@ class CHostVideoInputDevice;
 class CMachine;
 class CUSBDevice;
 class UIActionPool;
-class UIGuestOSTypeManager;
 class UIMedium;
 class UIMediumEnumerator;
 class UIThreadPool;
@@ -77,9 +73,6 @@ signals:
         void sigAskToRestartUI();
         /** Asks #UIStarter listener to close UI. */
         void sigAskToCloseUI();
-
-        /** Notifies listeners about the VBoxSVC availability change. */
-        void sigVBoxSVCAvailabilityChange();
 
         /** Asks listeners to commit data. */
         void sigAskToCommitData();
@@ -312,26 +305,6 @@ public:
 #endif
     /** @} */
 
-    /** @name COM stuff.
-     * @{ */
-        /** Try to acquire COM cleanup protection token for reading. */
-        bool comTokenTryLockForRead();
-        /** Unlock previously acquired COM cleanup protection token. */
-        void comTokenUnlock();
-
-        /** Returns the copy of VirtualBox client wrapper. */
-        CVirtualBoxClient virtualBoxClient() const;
-        /** Returns the copy of VirtualBox object wrapper. */
-        CVirtualBox virtualBox() const;
-        /** Returns the copy of VirtualBox host-object wrapper. */
-        CHost host() const;
-        /** Returns the symbolic VirtualBox home-folder representation. */
-        QString homeFolder() const;
-
-        /** Returns the VBoxSVC availability value. */
-        bool isVBoxSVCAvailable() const;
-    /** @} */
-
     /** @name COM: Virtual Machine stuff.
      * @{ */
         /** Switches to certain @a comMachine. */
@@ -367,11 +340,6 @@ public:
         void notifyCloudMachineRegistered(const QString &strProviderShortName,
                                           const QString &strProfileName,
                                           const CCloudMachine &comMachine);
-    /** @} */
-
-    /** @name COM: Guest OS type stuff.
-     * @{ */
-        const UIGuestOSTypeManager &guestOSTypeManager() const;
     /** @} */
 
     /** @name COM: Virtual Media stuff.

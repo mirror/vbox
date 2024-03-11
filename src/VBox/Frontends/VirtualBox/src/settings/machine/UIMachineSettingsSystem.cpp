@@ -34,9 +34,9 @@
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
 #include "UIChipsetEditor.h"
-#include "UICommon.h"
 #include "UIErrorString.h"
 #include "UIExecutionCapEditor.h"
+#include "UIGlobalSession.h"
 #include "UIMachineSettingsSystem.h"
 #include "UIMotherboardFeaturesEditor.h"
 #include "UIParavirtProviderEditor.h"
@@ -280,10 +280,10 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
 
     /* Gather support flags: */
-    oldSystemData.m_fSupportedPAE = uiCommon().host().GetProcessorFeature(KProcessorFeature_PAE);
-    oldSystemData.m_fSupportedNestedHwVirtEx = uiCommon().host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
-    oldSystemData.m_fSupportedHwVirtEx = uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    oldSystemData.m_fSupportedNestedPaging = uiCommon().host().GetProcessorFeature(KProcessorFeature_NestedPaging);
+    oldSystemData.m_fSupportedPAE = gpGlobalSession->host().GetProcessorFeature(KProcessorFeature_PAE);
+    oldSystemData.m_fSupportedNestedHwVirtEx = gpGlobalSession->host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
+    oldSystemData.m_fSupportedHwVirtEx = gpGlobalSession->host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    oldSystemData.m_fSupportedNestedPaging = gpGlobalSession->host().GetProcessorFeature(KProcessorFeature_NestedPaging);
 
     /* Gather old 'Motherboard' data: */
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
@@ -473,7 +473,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(0));
 
         /* RAM amount test: */
-        const ulong uFullSize = uiCommon().host().GetMemorySize();
+        const ulong uFullSize = gpGlobalSession->host().GetMemorySize();
         if (m_pEditorBaseMemory->value() > (int)m_pEditorBaseMemory->maxRAMAlw())
         {
             message.second << tr(
@@ -523,7 +523,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(1));
 
         /* VCPU amount test: */
-        const int cTotalCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
+        const int cTotalCPUs = gpGlobalSession->host().GetProcessorOnlineCoreCount();
         if (m_pEditorVCPU->value() > 2 * cTotalCPUs)
         {
             message.second << tr(

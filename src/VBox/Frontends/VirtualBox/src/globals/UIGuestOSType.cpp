@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 
 /* COM includes: */
@@ -38,7 +39,7 @@
 void UIGuestOSTypeManager::reCacheGuestOSTypes()
 {
     /* Acquire CVirtualBox: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Acquire a total list of guest OS types, supported or not: */
     CGuestOSTypeVector guestOSTypes = comVBox.GetGuestOSTypes();

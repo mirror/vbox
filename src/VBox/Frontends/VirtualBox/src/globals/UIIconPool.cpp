@@ -34,9 +34,9 @@
 #include <QWindow>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIModalWindowManager.h"
 
@@ -784,8 +784,8 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
 /* static */
 QString UIIconPoolGeneral::determineOSArchString(const QString &strOSTypeId)
 {
-    bool fIs64Bit = uiCommon().guestOSTypeManager().is64Bit(strOSTypeId);
-    KPlatformArchitecture enmPlatformArchitecture = uiCommon().guestOSTypeManager().getPlatformArchitecture(strOSTypeId);
+    bool fIs64Bit = gpGlobalSession->guestOSTypeManager().is64Bit(strOSTypeId);
+    KPlatformArchitecture enmPlatformArchitecture = gpGlobalSession->guestOSTypeManager().getPlatformArchitecture(strOSTypeId);
 
     if (enmPlatformArchitecture == KPlatformArchitecture_ARM)
     {

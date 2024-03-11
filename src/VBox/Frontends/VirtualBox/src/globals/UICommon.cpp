@@ -1201,7 +1201,7 @@ bool UICommon::processArgs()
             if (UICommon::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 /* So that we could run existing VMs: */
-                CVirtualBox comVBox = virtualBox();
+                CVirtualBox comVBox = gpGlobalSession->virtualBox();
                 CMachine comMachine = comVBox.FindMachine(strFile);
                 if (!comMachine.isNull())
                 {
@@ -1295,41 +1295,6 @@ void UICommon::deletePidfile()
 }
 
 #endif /* VBOX_GUI_WITH_PIDFILE */
-
-bool UICommon::comTokenTryLockForRead()
-{
-    return gpGlobalSession->comTokenTryLockForRead();
-}
-
-void UICommon::comTokenUnlock()
-{
-    return gpGlobalSession->comTokenUnlock();
-}
-
-CVirtualBoxClient UICommon::virtualBoxClient() const
-{
-    return gpGlobalSession->virtualBoxClient();
-}
-
-CVirtualBox UICommon::virtualBox() const
-{
-    return gpGlobalSession->virtualBox();
-}
-
-CHost UICommon::host() const
-{
-    return gpGlobalSession->host();
-}
-
-QString UICommon::homeFolder() const
-{
-    return gpGlobalSession->homeFolder();
-}
-
-bool UICommon::isVBoxSVCAvailable() const
-{
-    return gpGlobalSession->isVBoxSVCAvailable();
-}
 
 /* static */
 bool UICommon::switchToMachine(CMachine &comMachine)
@@ -1602,11 +1567,6 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
 }
 
-const UIGuestOSTypeManager &UICommon::guestOSTypeManager() const
-{
-    return gpGlobalSession->guestOSTypeManager();
-}
-
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure UICommon is already valid: */
@@ -1713,7 +1673,7 @@ QUuid UICommon::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLo
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
 
     /* Initialize variables: */
-    CVirtualBox comVBox = virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Open corresponding medium: */
     CMedium comMedium = comVBox.OpenMedium(strMediumLocation, mediumTypeToGlobal(enmMediumType), KAccessMode_ReadWrite, false);
@@ -1761,21 +1721,21 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
     {
         case UIMediumDeviceType_HardDisk:
         {
-            filters = HDDBackends(virtualBox());
+            filters = HDDBackends(gpGlobalSession->virtualBox());
             strTitle = tr("Please choose a virtual hard disk file");
             allType = tr("All virtual hard disk files (%1)");
             break;
         }
         case UIMediumDeviceType_DVD:
         {
-            filters = DVDBackends(virtualBox());
+            filters = DVDBackends(gpGlobalSession->virtualBox());
             strTitle = tr("Please choose a virtual optical disk file");
             allType = tr("All virtual optical disk files (%1)");
             break;
         }
         case UIMediumDeviceType_Floppy:
         {
-            filters = FloppyBackends(virtualBox());
+            filters = FloppyBackends(gpGlobalSession->virtualBox());
             strTitle = tr("Please choose a virtual floppy disk file");
             allType = tr("All virtual floppy disk files (%1)");
             break;
@@ -1784,7 +1744,7 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
             break;
     }
     QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder :
-                            strDefaultFolder.isEmpty() ? homeFolder() : strDefaultFolder;
+                            strDefaultFolder.isEmpty() ? gpGlobalSession->homeFolder() : strDefaultFolder;
 
     /* Prepare filters and backends: */
     for (int i = 0; i < filters.count(); ++i)
@@ -1889,8 +1849,8 @@ void UICommon::prepareStorageMenu(QMenu *pMenu,
     CMediumVector comMedia;
     switch (enmMediumType)
     {
-        case UIMediumDeviceType_DVD:    comMedia = host().GetDVDDrives(); break;
-        case UIMediumDeviceType_Floppy: comMedia = host().GetFloppyDrives(); break;
+        case UIMediumDeviceType_DVD:    comMedia = gpGlobalSession->host().GetDVDDrives(); break;
+        case UIMediumDeviceType_Floppy: comMedia = gpGlobalSession->host().GetFloppyDrives(); break;
         default: break;
     }
     /* Prepare choose-existing-host-drive actions: */
@@ -2295,7 +2255,7 @@ QString UICommon::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
     }
 
     if (strLastFolder.isEmpty())
-        return virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
 
     return strLastFolder;
 }
@@ -2522,7 +2482,7 @@ QString UICommon::usbToolTip(const CHostVideoInputDevice &comWebcam)
 int UICommon::supportedRecordingFeatures() const
 {
     int iSupportedFlag = 0;
-    CSystemProperties comProperties = virtualBox().GetSystemProperties();
+    CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
         iSupportedFlag |= enmFeature;
     return iSupportedFlag;
@@ -2721,7 +2681,7 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
 
 KGraphicsControllerType UICommon::getRecommendedGraphicsController(const QString &strGuestOSTypeId) const
 {
-    return guestOSTypeManager().getRecommendedGraphicsController(strGuestOSTypeId);
+    return gpGlobalSession->guestOSTypeManager().getRecommendedGraphicsController(strGuestOSTypeId);
 }
 
 /* static */
@@ -2741,9 +2701,10 @@ QString UICommon::helpKeyword(const QObject *pObject)
 
 bool UICommon::isExtentionPackInstalled() const
 {
-    const CExtPackManager comEPManager = virtualBox().GetExtensionPackManager();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    const CExtPackManager comEPManager = comVBox.GetExtensionPackManager();
 
-    if (!virtualBox().isOk())
+    if (!comVBox.isOk())
         return false;
 
     const QVector<CExtPack> extensionPacks = comEPManager.GetInstalledExtPacks();
@@ -2880,7 +2841,7 @@ void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
 void UICommon::sltHandleMachineCreated(const CMachine &comMachine)
 {
     /* Register created machine. */
-    CVirtualBox comVBox = virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     comVBox.RegisterMachine(comMachine);
     if (!comVBox.isOk())
         UINotificationMessage::cannotRegisterMachine(comVBox, comMachine.GetName());

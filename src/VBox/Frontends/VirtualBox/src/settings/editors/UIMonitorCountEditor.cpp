@@ -32,8 +32,8 @@
 
 /* GUI includes: */
 #include "QIAdvancedSlider.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIGlobalSession.h"
 #include "UIMonitorCountEditor.h"
 
 /* COM includes: */
@@ -129,7 +129,7 @@ void UIMonitorCountEditor::sltHandleSpinBoxChange()
 void UIMonitorCountEditor::prepare()
 {
     /* Prepare common variables: */
-    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
 
     /* Prepare main layout: */
     m_pLayout = new QGridLayout(this);

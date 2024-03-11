@@ -56,6 +56,7 @@
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIHostComboEditor.h"
 #include "UILoggingDefs.h"
 #include "UIMainEventListener.h"
@@ -175,7 +176,7 @@ void UIExtraDataEventHandler::prepareListener()
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBox: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
     /* Get VirtualBox event source: */
     CEventSource comEventSourceVBox = comVBox.GetEventSource();
     Assert(comVBox.isOk());
@@ -216,11 +217,11 @@ void UIExtraDataEventHandler::cleanupListener()
     m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
+    if (!gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Get VirtualBox: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
     /* Get VirtualBox event source: */
     CEventSource comEventSourceVBox = comVBox.GetEventSource();
     Assert(comVBox.isOk());
@@ -761,7 +762,7 @@ void UIExtraDataManagerWindow::sltMachineRegistered(const QUuid &uID, bool fRegi
             knownIDs.append(chooserID(iRow));
 
         /* Get machine items: */
-        const CMachineVector machines = uiCommon().virtualBox().GetMachines();
+        const CMachineVector machines = gpGlobalSession->virtualBox().GetMachines();
         /* Look for the proper place to insert new machine item: */
         QUuid uPositionID = UIExtraDataManager::GlobalID;
         foreach (const CMachine &machine, machines)
@@ -1182,7 +1183,7 @@ void UIExtraDataManagerWindow::sltSave()
     AssertReturnVoid(pSenderAction && m_pActionSave);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(uiCommon().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-save dialog to choose file to save extra-data into: */
     const QString strFileName = QIFileDialog::getSaveFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to save extra-data into..", 0, true, true);
@@ -1269,7 +1270,7 @@ void UIExtraDataManagerWindow::sltLoad()
     AssertReturnVoid(pSenderAction && m_pActionLoad);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(uiCommon().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-open dialog to choose file to open extra-data into: */
     const QString strFileName = QIFileDialog::getOpenFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to load extra-data from..");
@@ -1593,7 +1594,7 @@ void UIExtraDataManagerWindow::preparePaneChooser()
                     /* Add global chooser item into source-model: */
                     addChooserItemByID(UIExtraDataManager::GlobalID);
                     /* Add machine chooser items into source-model: */
-                    CMachineVector machines = uiCommon().virtualBox().GetMachines();
+                    CMachineVector machines = gpGlobalSession->virtualBox().GetMachines();
                     foreach (const CMachine &machine, machines)
                         addChooserItemByMachine(machine);
                     /* And sort proxy-model: */
@@ -1824,7 +1825,7 @@ void UIExtraDataManagerWindow::addChooserItemByID(const QUuid &uID,
         return addChooserItem(uID, QString("Global"), QString(), iPosition);
 
     /* Search for the corresponding machine by ID: */
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     const CMachine machine = vbox.FindMachine(uID.toString());
     /* Make sure VM is accessible: */
     if (vbox.isOk() && !machine.isNull() && machine.GetAccessible())
@@ -2062,7 +2063,7 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QUuid &uID)
     AssertReturnVoid(!m_data.contains(uID));
 
     /* Search for corresponding machine: */
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
     CMachine machine = vbox.FindMachine(uID.toString());
     if (machine.isNull())
         return;
@@ -2107,7 +2108,7 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QUuid &
 void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QUuid &uID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
+    if (!gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Hot-load machine extra-data map if necessary: */
@@ -2124,7 +2125,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     if (uID == GlobalID)
     {
         /* Get global object: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
         /* Update global extra-data: */
         comVBox.SetExtraData(strKey, strValue);
         if (!comVBox.isOk())
@@ -2144,7 +2145,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     else
     {
         /* Search for corresponding machine: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
         AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
         /* Check the configuration access-level: */
@@ -2208,7 +2209,7 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
 void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &value, const QUuid &uID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
+    if (!gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Hot-load machine extra-data map if necessary: */
@@ -2225,7 +2226,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     if (uID == GlobalID)
     {
         /* Get global object: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
         /* Update global extra-data: */
         comVBox.SetExtraDataStringList(strKey, value);
         if (!comVBox.isOk())
@@ -2245,7 +2246,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     else
     {
         /* Search for corresponding machine: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
         AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
         /* Check the configuration access-level: */
@@ -4960,7 +4961,7 @@ void UIExtraDataManager::prepare()
 void UIExtraDataManager::prepareGlobalExtraDataMap()
 {
     /* Get CVirtualBox: */
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
 
     /* Make sure at least empty map is created: */
     m_data[GlobalID] = ExtraDataMap();

@@ -30,9 +30,9 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIDefaultMachineFolderEditor.h"
 #include "UIFilePathSelector.h"
+#include "UIGlobalSession.h"
 
 
 UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* = 0 */)
@@ -105,7 +105,7 @@ void UIDefaultMachineFolderEditor::prepare()
         {
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
-            m_pSelector->setInitialPath(uiCommon().homeFolder());
+            m_pSelector->setInitialPath(gpGlobalSession->homeFolder());
             connect(m_pSelector, &UIFilePathSelector::pathChanged,
                     this, &UIDefaultMachineFolderEditor::sigPathChanged);
 

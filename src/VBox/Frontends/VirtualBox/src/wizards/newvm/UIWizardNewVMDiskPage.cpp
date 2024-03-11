@@ -40,7 +40,7 @@
 #include "UIMediaComboBox.h"
 #include "UIMediumSelector.h"
 #include "UIMediumSizeEditor.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIWizardNewVMDiskPage.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVM.h"
@@ -83,7 +83,7 @@ UIWizardNewVMDiskPage::UIWizardNewVMDiskPage(UIActionPool *pActionPool)
     , m_pFixedCheckBox(0)
     , m_fVDIFormatFound(false)
     , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pActionPool(pActionPool)
 {
     prepare();
@@ -267,7 +267,7 @@ void UIWizardNewVMDiskPage::initializePage()
 
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
-        iRecommendedSize = uiCommon().guestOSTypeManager().getRecommendedHDD(pWizard->guestOSTypeId());
+        iRecommendedSize = gpGlobalSession->guestOSTypeManager().getRecommendedHDD(pWizard->guestOSTypeId());
         if (iRecommendedSize != 0)
         {
             if (m_pDiskNew)
@@ -298,7 +298,7 @@ void UIWizardNewVMDiskPage::initializePage()
     if (!m_fVDIFormatFound)
     {
         /* We do not have any UI elements for HDD format selection since we default to VDI in case of guided wizard mode: */
-        CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+        CSystemProperties properties = gpGlobalSession->virtualBox().GetSystemProperties();
         const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
         foreach (const CMediumFormat &format, formats)
         {

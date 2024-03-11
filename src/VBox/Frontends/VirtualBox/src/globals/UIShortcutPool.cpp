@@ -26,9 +26,9 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIShortcutPool.h"
 
 
@@ -445,7 +445,7 @@ void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
                                           shortcut.primaryToPortableText());
     }
     /* Save overrides into the extra-data: */
-    uiCommon().virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
+    gpGlobalSession->virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
 }
 
 UIShortcut &UIShortcutPool::shortcut(const QString &strShortcutKey)

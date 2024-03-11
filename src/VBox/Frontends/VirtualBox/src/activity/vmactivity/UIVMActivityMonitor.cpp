@@ -42,6 +42,7 @@
 #include "QIFileDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UITranslator.h"
 #include "UIVMActivityMonitor.h"
@@ -1466,7 +1467,7 @@ void UIVMActivityMonitorLocal::prepareWidgets()
 
 void UIVMActivityMonitorLocal::prepareMetrics()
 {
-    m_performanceCollector = uiCommon().virtualBox().GetPerformanceCollector();
+    m_performanceCollector = gpGlobalSession->virtualBox().GetPerformanceCollector();
     if (m_performanceCollector.isNull())
         return;
 
@@ -1999,7 +2000,7 @@ QString UIVMActivityMonitorCloud::defaultMachineFolder() const
     int rc = RTPathUserDocuments(szPath, sizeof(szPath));
     if (RT_SUCCESS(rc))
         return QString(szPath);
-    return uiCommon().virtualBox().GetHomeFolder();
+    return gpGlobalSession->virtualBox().GetHomeFolder();
 }
 
 void UIVMActivityMonitorCloud::reset()

@@ -34,7 +34,7 @@
 #include "QIDialog.h"
 #include "QIDialogButtonBox.h"
 #include "QIToolBar.h"
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIGuestControlConsole.h"
 #include "UIGuestControlTreeItem.h"
 #include "UIGuestProcessControlWidget.h"
@@ -546,7 +546,7 @@ void UIGuestProcessControlWidget::sltCleanupListener()
     m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
+    if (!gpGlobalSession->isVBoxSVCAvailable())
         return;
 
     /* Get CProgress event source: */

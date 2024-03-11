@@ -37,6 +37,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIHelpBrowserWidget.h"
@@ -188,7 +189,7 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
     /* For OSE version we have to check if it present first: */
     QString strUserManualFileName1 = uiCommon().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
-    QString strUserManualFileName2 = QDir(uiCommon().homeFolder()).absoluteFilePath(strShortFileName);
+    QString strUserManualFileName2 = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(strShortFileName);
     /* Show if user manual already present: */
     if (QFile::exists(strUserManualFileName1))
         showUserManual(strUserManualFileName1, strKeyword);

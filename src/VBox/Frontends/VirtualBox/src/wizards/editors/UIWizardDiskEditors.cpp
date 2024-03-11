@@ -38,9 +38,9 @@
 #include "QILineEdit.h"
 #include "QIToolButton.h"
 #include "QIRichTextLabel.h"
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIFilePathSelector.h"
+#include "UIGlobalSession.h"
 #include "UIHostnameDomainNameEditor.h"
 #include "UIIconPool.h"
 #include "UIMediumSizeEditor.h"
@@ -140,7 +140,7 @@ QString UIWizardDiskEditors::openFileDialogForDiskFile(const QString &strInitial
 
     strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, pParent,
-                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
+                                                              QApplication::translate("UICommon", "Please choose a location for new virtual hard disk file"));
     return strChosenFilePath;
 }
 
@@ -480,7 +480,7 @@ const CMediumFormat &UIDiskFormatBase::VDIMediumFormat() const
 
 void UIDiskFormatBase::populateFormats(){
     /* Enumerate medium formats in special order: */
-    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    CSystemProperties properties = gpGlobalSession->virtualBox().GetSystemProperties();
     const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
     QMap<QString, CMediumFormat> vdi, preferred, others;
     foreach (const CMediumFormat &format, formats)

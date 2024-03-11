@@ -34,6 +34,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UITranslator.h"
@@ -327,7 +328,7 @@ void UIMedium::refresh()
         if (m_machineIds.size() > 0)
         {
             /* Get CVirtualBox object: */
-            CVirtualBox vbox = uiCommon().virtualBox();
+            CVirtualBox vbox = gpGlobalSession->virtualBox();
 
             /* By default we assuming that this medium is attached
              * to 'hidden' machines only, if at least one machine present: */

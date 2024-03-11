@@ -32,9 +32,9 @@
 #include <QLabel>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UINetworkAttachmentEditor.h"
 
 /* COM includes: */
@@ -132,7 +132,7 @@ void UINetworkAttachmentEditor::setMinimumLayoutIndent(int iIndent)
 QStringList UINetworkAttachmentEditor::bridgedAdapters()
 {
     QStringList bridgedAdapterList;
-    foreach (const CHostNetworkInterface &comInterface, uiCommon().host().GetNetworkInterfaces())
+    foreach (const CHostNetworkInterface &comInterface, gpGlobalSession->host().GetNetworkInterfaces())
     {
         if (   comInterface.GetInterfaceType() == KHostNetworkInterfaceType_Bridged
             && !bridgedAdapterList.contains(comInterface.GetName()))
@@ -144,14 +144,14 @@ QStringList UINetworkAttachmentEditor::bridgedAdapters()
 /* static */
 QStringList UINetworkAttachmentEditor::internalNetworks()
 {
-    return QList<QString>::fromVector(uiCommon().virtualBox().GetInternalNetworks());
+    return QList<QString>::fromVector(gpGlobalSession->virtualBox().GetInternalNetworks());
 }
 
 /* static */
 QStringList UINetworkAttachmentEditor::hostInterfaces()
 {
     QStringList hostInterfaceList;
-    foreach (const CHostNetworkInterface &comInterface, uiCommon().host().GetNetworkInterfaces())
+    foreach (const CHostNetworkInterface &comInterface, gpGlobalSession->host().GetNetworkInterfaces())
     {
         if (   comInterface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly
             && !hostInterfaceList.contains(comInterface.GetName()))
@@ -163,14 +163,14 @@ QStringList UINetworkAttachmentEditor::hostInterfaces()
 /* static */
 QStringList UINetworkAttachmentEditor::genericDrivers()
 {
-    return QList<QString>::fromVector(uiCommon().virtualBox().GetGenericNetworkDrivers());
+    return QList<QString>::fromVector(gpGlobalSession->virtualBox().GetGenericNetworkDrivers());
 }
 
 /* static */
 QStringList UINetworkAttachmentEditor::natNetworks()
 {
     QStringList natNetworkList;
-    foreach (const CNATNetwork &comNetwork, uiCommon().virtualBox().GetNATNetworks())
+    foreach (const CNATNetwork &comNetwork, gpGlobalSession->virtualBox().GetNATNetworks())
         natNetworkList << comNetwork.GetNetworkName();
     return natNetworkList;
 }
@@ -180,7 +180,7 @@ QStringList UINetworkAttachmentEditor::natNetworks()
 QStringList UINetworkAttachmentEditor::cloudNetworks()
 {
     QStringList cloudNetworkList;
-    foreach (const CCloudNetwork &comNetwork, uiCommon().virtualBox().GetCloudNetworks())
+    foreach (const CCloudNetwork &comNetwork, gpGlobalSession->virtualBox().GetCloudNetworks())
         cloudNetworkList << comNetwork.GetNetworkName();
     return cloudNetworkList;
 }
@@ -191,7 +191,7 @@ QStringList UINetworkAttachmentEditor::cloudNetworks()
 QStringList UINetworkAttachmentEditor::hostOnlyNetworks()
 {
     QStringList hostOnlyNetworkList;
-    foreach (const CHostOnlyNetwork &comNetwork, uiCommon().virtualBox().GetHostOnlyNetworks())
+    foreach (const CHostOnlyNetwork &comNetwork, gpGlobalSession->virtualBox().GetHostOnlyNetworks())
         hostOnlyNetworkList << comNetwork.GetNetworkName();
     return hostOnlyNetworkList;
 }
@@ -362,7 +362,7 @@ void UINetworkAttachmentEditor::populateTypeCombo()
     m_pComboType->clear();
 
     /* Load currently supported network attachment types (system-properties getter): */
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     QVector<KNetworkAttachmentType> supportedTypes = comProperties.GetSupportedNetworkAttachmentTypes();
     /* Filter out types unrelated to current experience mode: */
     if (!m_fInExpertMode)

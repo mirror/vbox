@@ -34,6 +34,7 @@
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIShortcutPool.h"
 
@@ -3501,7 +3502,7 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache extension-pack related action restrictions: */
-    CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+    CExtPackManager extPackManager = gpGlobalSession->virtualBox().GetExtensionPackManager();
     if (extPackManager.isNull() || !extPackManager.IsExtPackUsable(GUI_ExtPackName))
     {
         m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)

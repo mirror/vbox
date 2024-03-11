@@ -41,6 +41,7 @@
 #include "UIExtension.h"
 #include "UIExtensionPackManager.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -249,7 +250,7 @@ void UIExtensionPackManagerWidget::sltUninstallExtensionPack()
         if (msgCenter().confirmRemoveExtensionPack(strSelectedPackageName, this))
         {
             /* Get VirtualBox for further activities: */
-            const CVirtualBox comVBox = uiCommon().virtualBox();
+            const CVirtualBox comVBox = gpGlobalSession->virtualBox();
             /* Get Extension Pack Manager for further activities: */
             CExtPackManager comEPManager = comVBox.GetExtensionPackManager();
 
@@ -344,7 +345,7 @@ void UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled(const QString
         delete items.first();
 
     /* [Re]insert it into the tree: */
-    CExtPackManager comManager = uiCommon().virtualBox().GetExtensionPackManager();
+    CExtPackManager comManager = gpGlobalSession->virtualBox().GetExtensionPackManager();
     const CExtPack comExtensionPack = comManager.Find(strName);
     if (comExtensionPack.isOk())
     {
@@ -498,7 +499,7 @@ void UIExtensionPackManagerWidget::loadExtensionPacks()
     m_pTreeWidget->clear();
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
     /* Get Extension Pack Manager for further activities: */
     const CExtPackManager comEPManager = comVBox.GetExtensionPackManager();
 

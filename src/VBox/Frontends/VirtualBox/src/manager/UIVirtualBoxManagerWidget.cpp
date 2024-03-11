@@ -40,6 +40,7 @@
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UILoggingDefs.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -364,7 +365,7 @@ void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
     // WORKAROUND:
     // In certain intermediate states VM info can be NULL which
     // causing annoying assertions, such updates can be ignored?
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
     CMachine comMachine = comVBox.FindMachine(uId.toString());
     if (comVBox.isOk() && comMachine.isNotNull())
     {

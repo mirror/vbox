@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
@@ -95,7 +96,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
     connect(this, &UIWizardNewVM::rejected, this, &UIWizardNewVM::sltHandleWizardCancel);
 
     /* Create installer: */
-    m_comUnattended = uiCommon().virtualBox().CreateUnattendedInstaller();
+    m_comUnattended = gpGlobalSession->virtualBox().CreateUnattendedInstaller();
     AssertMsg(!m_comUnattended.isNull(), ("Could not create unattended installer!\n"));
 }
 
@@ -145,7 +146,7 @@ void UIWizardNewVM::cleanWizard()
 
 bool UIWizardNewVM::createVM()
 {
-    CVirtualBox vbox = uiCommon().virtualBox();
+    CVirtualBox vbox = gpGlobalSession->virtualBox();
 
     /* Create virtual machine: */
     if (m_machine.isNull())
@@ -221,7 +222,7 @@ bool UIWizardNewVM::createVirtualDisk()
     AssertReturn(m_uMediumSize > 0, false);
 
     /* Acquire VBox: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
 
     /* Create new virtual hard-disk: */
     CMedium newVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
@@ -280,7 +281,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         CMachine machine = session.GetMachine();
         if (!m_virtualDisk.isNull())
         {
-            KStorageBus enmHDDBus = uiCommon().guestOSTypeManager().getRecommendedHDStorageBus(m_guestOSTypeId);
+            KStorageBus enmHDDBus = gpGlobalSession->guestOSTypeManager().getRecommendedHDStorageBus(m_guestOSTypeId);
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
@@ -292,7 +293,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach optical drive: */
-        KStorageBus enmDVDBus = uiCommon().guestOSTypeManager().getRecommendedDVDStorageBus(m_guestOSTypeId);
+        KStorageBus enmDVDBus = gpGlobalSession->guestOSTypeManager().getRecommendedDVDStorageBus(m_guestOSTypeId);
         CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
         if (!comDVDController.isNull())
         {
@@ -300,7 +301,7 @@ bool UIWizardNewVM::attachDefaultDevices()
             QString strISOFilePath = ISOFilePath();
             if (!strISOFilePath.isEmpty() && !isUnattendedEnabled())
             {
-                CVirtualBox vbox = uiCommon().virtualBox();
+                CVirtualBox vbox = gpGlobalSession->virtualBox();
                 opticalDisk =
                     vbox.OpenMedium(strISOFilePath, KDeviceType_DVD, KAccessMode_ReadWrite, false);
                 if (!vbox.isOk())
@@ -313,7 +314,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach an empty floppy drive if recommended */
-        if (uiCommon().guestOSTypeManager().getRecommendedFloppy(m_guestOSTypeId))
+        if (gpGlobalSession->guestOSTypeManager().getRecommendedFloppy(m_guestOSTypeId))
         {
             CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
             if (!comFloppyController.isNull())
@@ -790,7 +791,7 @@ QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
 
 QString UIWizardNewVM::getGuestOSTypeDescription() const
 {
-    return uiCommon().guestOSTypeManager().getDescription(m_guestOSTypeId);
+    return gpGlobalSession->guestOSTypeManager().getDescription(m_guestOSTypeId);
 }
 
 bool UIWizardNewVM::isUnattendedEnabled() const

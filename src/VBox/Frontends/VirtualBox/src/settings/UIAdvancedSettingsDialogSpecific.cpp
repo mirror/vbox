@@ -32,6 +32,7 @@
 #include "UIAdvancedSettingsDialogSpecific.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UISettingsDefs.h"
@@ -128,8 +129,8 @@ void UIAdvancedSettingsDialogGlobal::retranslateUi()
 bool UIAdvancedSettingsDialogGlobal::load()
 {
     /* Get host & properties: */
-    CHost comHost = uiCommon().host();
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    CHost comHost = gpGlobalSession->host();
+    CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(comHost, comProperties);
@@ -145,8 +146,8 @@ bool UIAdvancedSettingsDialogGlobal::load()
 void UIAdvancedSettingsDialogGlobal::save()
 {
     /* Get host & properties: */
-    CHost comHost = uiCommon().host();
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    CHost comHost = gpGlobalSession->host();
+    CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(comHost, comProperties);
@@ -317,7 +318,7 @@ void UIAdvancedSettingsDialogMachine::setNewMachineId(const QUuid &uMachineId,
     m_strControl = strControl;
 
     /* Get corresponding machine (required to determine dialog type and page availability): */
-    m_machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
+    m_machine = gpGlobalSession->virtualBox().FindMachine(m_uMachineId.toString());
     AssertReturnVoid(!m_machine.isNull());
     m_enmSessionState = m_machine.GetSessionState();
     m_enmMachineState = m_machine.GetState();
@@ -491,7 +492,7 @@ QString UIAdvancedSettingsDialogMachine::title() const
 {
     QString strDialogTitle;
     /* Get corresponding machine (required to compose dialog title): */
-    const CMachine &machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
+    const CMachine &machine = gpGlobalSession->virtualBox().FindMachine(m_uMachineId.toString());
     if (!machine.isNull())
         strDialogTitle = tr("%1 - %2").arg(machine.GetName()).arg(titleExtension());
     return strDialogTitle;
@@ -632,7 +633,7 @@ void UIAdvancedSettingsDialogMachine::prepare()
             this, &UIAdvancedSettingsDialogMachine::sltMachineDataChanged);
 
     /* Get corresponding machine (required to determine dialog type and page availability): */
-    m_machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
+    m_machine = gpGlobalSession->virtualBox().FindMachine(m_uMachineId.toString());
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
     m_enmSessionState = m_machine.GetSessionState();
     m_enmMachineState = m_machine.GetState();

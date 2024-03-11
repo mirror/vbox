@@ -60,6 +60,7 @@
 #include "UIModalWindowManager.h"
 #include "UISoftKeyboard.h"
 #include "UICommon.h"
+#include "UIGlobalSession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -2530,7 +2531,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     if (!m_layouts.contains(m_uCurrentLayoutId))
         return;
     UISoftKeyboardLayout &currentLayout = m_layouts[m_uCurrentLayoutId];
-    QString strHomeFolder = uiCommon().homeFolder();
+    QString strHomeFolder = gpGlobalSession->homeFolder();
     QDir dir(strHomeFolder);
     if (!dir.exists(strSubDirectorName))
     {
@@ -3290,7 +3291,7 @@ bool UISoftKeyboardWidget::layoutByNameExists(const QString &strName) const
 
 void UISoftKeyboardWidget::lookAtDefaultLayoutFolder(QStringList &fileList)
 {
-    QString strFolder = QString("%1%2%3").arg(uiCommon().homeFolder()).arg(QDir::separator()).arg(strSubDirectorName);
+    QString strFolder = QString("%1%2%3").arg(gpGlobalSession->homeFolder()).arg(QDir::separator()).arg(strSubDirectorName);
     QDir dir(strFolder);
     if (!dir.exists())
         return;

@@ -31,7 +31,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
+#include "UIGlobalSession.h"
 #include "UIUSBControllerEditor.h"
 
 /* COM includes: */
@@ -155,7 +155,7 @@ void UIUSBControllerEditor::updateButtonSet()
     const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
                                         ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                         : KPlatformArchitecture_x86;
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
+    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
     m_supportedValues = comProperties.GetSupportedUSBControllerTypes();
 
     /* Make sure requested value if sane is present as well: */

@@ -34,6 +34,7 @@
 #include "UIExecutionQueue.h"
 #include "UIExtension.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
@@ -139,7 +140,7 @@ void UIUpdateStepVirtualBoxExtensionPack::exec()
     }
 
     /* Get extension pack manager: */
-    CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+    CExtPackManager extPackManager = gpGlobalSession->virtualBox().GetExtensionPackManager();
     /* Return if extension pack manager is NOT available: */
     if (extPackManager.isNull())
     {
@@ -231,7 +232,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
         /* Delete the downloaded extension pack: */
         QFile::remove(QDir::toNativeSeparators(strTarget));
         /* Get the list of old extension pack files in VirtualBox homefolder: */
-        const QStringList oldExtPackFiles = QDir(uiCommon().homeFolder()).entryList(QStringList("*.vbox-extpack"),
+        const QStringList oldExtPackFiles = QDir(gpGlobalSession->homeFolder()).entryList(QStringList("*.vbox-extpack"),
                                                                                     QDir::Files);
         /* Propose to delete old extension pack files if there are any: */
         if (oldExtPackFiles.size())
@@ -241,7 +242,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
                 foreach (const QString &strExtPackFile, oldExtPackFiles)
                 {
                     /* Delete the old extension pack file: */
-                    QFile::remove(QDir::toNativeSeparators(QDir(uiCommon().homeFolder()).filePath(strExtPackFile)));
+                    QFile::remove(QDir::toNativeSeparators(QDir(gpGlobalSession->homeFolder()).filePath(strExtPackFile)));
                 }
             }
         }
@@ -327,7 +328,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForcedCall /* = false */
 
     /* Load/decode curent update data: */
     VBoxUpdateData currentData;
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     currentData.load(comHost);
 
     /* If update is really necessary: */
@@ -351,7 +352,7 @@ void UIUpdateManager::sltHandleUpdateFinishing()
 {
     /* Load/decode curent update data: */
     VBoxUpdateData currentData;
-    CHost comHost = uiCommon().host();
+    CHost comHost = gpGlobalSession->host();
     currentData.load(comHost);
     /* Encode/save new update data: */
     VBoxUpdateData newData(currentData.isCheckEnabled(), currentData.updatePeriod(), currentData.updateChannel());
