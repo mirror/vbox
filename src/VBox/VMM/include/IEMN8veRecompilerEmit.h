@@ -7227,6 +7227,53 @@ iemNativeEmitSimdStoreGprToVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /**
+ * Emits a vecdst[x] = gprsrc store, 32-bit.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdStoreGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iDWord)
+{
+#ifdef RT_ARCH_AMD64
+    /* pinsrq vecsrc, gpr, #iQWord (ASSUMES SSE4.1). */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGprDst >= 8 || iVecRegSrc >= 8)
+        pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x3a;
+    pCodeBuf[off++] = 0x22;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+    pCodeBuf[off++] = iDWord;
+#elif defined(RT_ARCH_ARM64)
+    /* ins vecsrc[iDWord], gpr */
+    pCodeBuf[off++] = Armv8A64MkVecInstrIns(iVecRegDst, iGprSrc, iDWord, kArmv8InstrUmovInsSz_U32);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[x] = gprsrc store, 64-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreGprToVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iDWord)
+{
+    Assert(iDWord <= 3);
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iVecRegDst, iGprSrc, iDWord);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iGprSrc, iDWord);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a vecdst[128:255] = 0 store.
  */
 DECL_FORCE_INLINE(uint32_t)
