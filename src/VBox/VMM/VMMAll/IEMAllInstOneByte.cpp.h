@@ -5602,7 +5602,7 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
             IEM_MC_COMMIT_EFLAGS(uEFlags);
         } IEM_MC_NATIVE_ELSE() {
             IEM_MC_ARG(uint8_t *,   pu8Dst,  0);
-            IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_REG(pVCpu, bRm)); /* == IEM_GET_MODRM_RM(pVCpu, bRm) */
             IEM_MC_ARG(uint32_t *,  pEFlags, 2);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u8, pu8Dst, u8Src, pEFlags);
@@ -5648,7 +5648,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                     IEM_MC_COMMIT_EFLAGS(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
                     IEM_MC_ARG(uint16_t *, pu16Dst, 0);
-                    IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
+                    IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_REG(pVCpu, bRm)); /* == IEM_GET_MODRM_RM(pVCpu, bRm) */
                     IEM_MC_ARG(uint32_t *, pEFlags, 2);
                     IEM_MC_REF_EFLAGS(pEFlags);
                     IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u16, pu16Dst, u16Src, pEFlags);
@@ -5670,7 +5670,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                     IEM_MC_COMMIT_EFLAGS(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
                     IEM_MC_ARG(uint32_t *, pu32Dst, 0);
-                    IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
+                    IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_REG(pVCpu, bRm)); /* == IEM_GET_MODRM_RM(pVCpu, bRm) */
                     IEM_MC_ARG(uint32_t *, pEFlags, 2);
                     IEM_MC_REF_EFLAGS(pEFlags);
                     IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u32, pu32Dst, u32Src, pEFlags);
@@ -5692,7 +5692,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                     IEM_MC_COMMIT_EFLAGS(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
                     IEM_MC_ARG(uint64_t *,  pu64Dst, 0);
-                    IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
+                    IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_REG(pVCpu, bRm)); /* == IEM_GET_MODRM_RM(pVCpu, bRm) */
                     IEM_MC_ARG(uint32_t *,  pEFlags, 2);
                     IEM_MC_REF_EFLAGS(pEFlags);
                     IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u64, pu64Dst, u64Src, pEFlags);
