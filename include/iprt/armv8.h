@@ -4102,7 +4102,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUmov(uint32_t iRegDst, uint32_t iV
 
     return UINT32_C(0x0e003c00)
          | ((uint32_t)fDst64Bit << 30)
-         | ((uint32_t)idxElem << enmSz)
+         | ((uint32_t)idxElem << (16 + enmSz + 1))
          | (RT_BIT_32(enmSz) << 16)
          | (iVecRegSrc << 5)
          | iRegDst;
