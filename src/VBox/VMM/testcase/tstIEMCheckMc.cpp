@@ -819,7 +819,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_STORE_XREG_U16(a_iXReg, a_iWord,  a_u16Value)        do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_u16Value);  CHK_TYPE(uint16_t,   a_u16Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U8( a_iXReg, a_iByte,  a_u8Value )        do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_u8Value );  CHK_TYPE(uint8_t,    a_u8Value );  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value)          do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_u32Value);  CHK_TYPE(uint32_t,   a_u32Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
-#define IEM_MC_STORE_XREG_HI_U64(a_iXReg, a_u64Value)               do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_u64Value);  CHK_TYPE(uint64_t,   a_u64Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_R32(a_iXReg, a_r32Value)                  do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_r32Value);  CHK_TYPE(RTFLOAT32U, a_r32Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_XREG_R64(a_iXReg, a_r64Value)                  do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_r64Value);  CHK_TYPE(RTFLOAT64U, a_r64Value);  (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_BROADCAST_XREG_U8_ZX_VLMAX(a_iXRegDst, a_u8Value)    do { CHK_XREG_IDX(a_iXRegDst); CHK_VAR(a_u8Value);   CHK_TYPE(uint8_t,    a_u8Value);   (void)fAvxWrite; (void)fMcBegin; } while (0)

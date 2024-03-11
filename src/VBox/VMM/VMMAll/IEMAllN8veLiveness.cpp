@@ -694,7 +694,6 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_STORE_XREG_R32(a_iXReg, a_r32Value)                  NOP()
 #define IEM_MC_STORE_XREG_R64(a_iXReg, a_r64Value)                  NOP()
 #define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value)          NOP()
-#define IEM_MC_STORE_XREG_HI_U64(a_iXReg, a_u64Value)               NOP()
 
 #define IEM_MC_BROADCAST_XREG_U8_ZX_VLMAX(a_iXRegDst, a_u8Src)      NOP()
 #define IEM_MC_BROADCAST_XREG_U16_ZX_VLMAX(a_iXRegDst, a_u16Src)    NOP()

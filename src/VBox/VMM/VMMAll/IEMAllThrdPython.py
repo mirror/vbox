@@ -1789,7 +1789,6 @@ class ThreadedFunction(object):
         'IEM_MC_STORE_XREG_U16':                    '__xreg16',
         'IEM_MC_STORE_XREG_U8':                     '__xreg8',
         'IEM_MC_STORE_XREG_U32_ZX_U128':            '__xreg32zx128',
-        'IEM_MC_STORE_XREG_HI_U64':                 '__xreg64hi',
         'IEM_MC_STORE_XREG_R32':                    '__xreg32',
         'IEM_MC_STORE_XREG_R64':                    '__xreg64',
         'IEM_MC_BROADCAST_XREG_U8_ZX_VLMAX':        '__xreg8zx',
