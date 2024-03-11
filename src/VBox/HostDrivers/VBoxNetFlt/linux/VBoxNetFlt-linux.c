@@ -73,6 +73,7 @@
 #include <VBox/intnetinline.h>
 #include <VBox/vmm/pdmnetinline.h>
 #include <VBox/param.h>
+#include <VBox/VBoxLnxModInline.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -273,6 +274,11 @@ unsigned dev_get_flags(const struct net_device *dev)
 static int __init VBoxNetFltLinuxInit(void)
 {
     int rc;
+
+    /* Check if modue loading was disabled. */
+    if (!vbox_mod_should_load())
+        return -EINVAL;
+
     /*
      * Initialize IPRT.
      */

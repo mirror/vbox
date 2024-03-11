@@ -54,6 +54,7 @@
 #include <VBox/err.h>
 #include <iprt/mem.h>
 #include <VBox/log.h>
+#include <VBox/VBoxLnxModInline.h>
 #include <iprt/mp.h>
 
 /** @todo figure out the exact version number */
@@ -331,6 +332,10 @@ DECLINLINE(RTUID) vboxdrvLinuxEuidInNs(void)
 static int __init VBoxDrvLinuxInit(void)
 {
     int       rc;
+
+    /* Check if modue loading was disabled. */
+    if (!vbox_mod_should_load())
+        return -EINVAL;
 
 #if RTLNX_VER_MIN(5,0,0)
     spin_lock_init(&g_supdrvLinuxWrapperModuleSpinlock);
