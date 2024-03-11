@@ -5178,8 +5178,33 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_REX_X            UINT8_C(0x42)
 #define X86_OP_REX_R            UINT8_C(0x44)
 #define X86_OP_REX_W            UINT8_C(0x48)
+#define X86_OP_VEX3             UINT8_C(0xc4)
+#define X86_OP_VEX2             UINT8_C(0xc5)
 /** @} */
 
+/** @name X86_OP_VEX3_XXX - 3-byte VEX prefix helpers.
+ * @{ */
+#define X86_OP_VEX3_BYTE1_MAP_MASK      0x1f
+#define X86_OP_VEX3_BYTE1_B             RT_BIT(5)
+#define X86_OP_VEX3_BYTE1_X             RT_BIT(6)
+#define X86_OP_VEX3_BYTE1_R             RT_BIT(7)
+
+#define X86_OP_VEX3_BYTE3_P_MASK        0x3
+# define X86_OP_VEX3_BYTE3_P_NO_PRF     0
+# define X86_OP_VEX3_BYTE3_P_066H       1
+# define X86_OP_VEX3_BYTE3_P_0F3H       2
+# define X86_OP_VEX3_BYTE3_P_0F2H       3
+#define X86_OP_VEX3_BYTE3_L             RT_BIT(2)
+#define X86_OP_VEX3_BYTE3_VVVV_MASK     0x78
+#define X86_OP_VEX3_BYTE3_VVVV_SHIFT    3
+#define X86_OP_VEX3_BYTE3_W             RT_BIT(7)
+
+#define X86_OP_VEX3_BYTE3_MAKE(a_f64BitOpSz, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE3_W : 0) \
+     | (~((uint8_t)(a_iSrcReg) & 0xf)) \
+     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE3_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX3_BYTE3_P_MASK))
+/** @} */
 
 /** @} */
 

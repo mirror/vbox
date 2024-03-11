@@ -5978,38 +5978,19 @@ static uint32_t iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative,
            IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg),
            IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg)));
 
-#ifdef RT_ARCH_AMD64
     if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg))
     {
         Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
                || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
-        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
+        off = iemNativeEmitSimdStoreVecRegToVCpuLowU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
     }
 
     if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
     {
         Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
                || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
-        AssertReleaseFailed();
-        //off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
+        off = iemNativeEmitSimdStoreVecRegToVCpuHighU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
     }
-#elif defined(RT_ARCH_ARM64)
-    /* ASSUMING there are two consecutive host registers to store the potential 256-bit guest register. */
-    Assert(!(idxHstSimdReg & 0x1));
-    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, idxGstSimdReg))
-    {
-        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
-               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Low128);
-        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[idxGstSimdReg].offXmm);
-    }
-
-    if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, idxGstSimdReg))
-    {
-        Assert(   pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_256
-               || pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded == kIemNativeGstSimdRegLdStSz_High128);
-        off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, idxHstSimdReg + 1, g_aGstSimdShadowInfo[idxGstSimdReg].offYmm);
-    }
-#endif
 
     IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(pReNative, idxGstSimdReg);
     return off;
@@ -6228,12 +6209,12 @@ iemNativeEmitLoadSimdRegWithGstShadowSimdReg(PIEMRECOMPILERSTATE pReNative, uint
     switch (enmLoadSz)
     {
         case kIemNativeGstSimdRegLdStSz_256:
-            return iemNativeEmitSimdLoadVecRegFromVCpuU256(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm,
-                                                           g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+            off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+            return iemNativeEmitSimdLoadVecRegFromVCpuHighU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
         case kIemNativeGstSimdRegLdStSz_Low128:
-            return iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+            return iemNativeEmitSimdLoadVecRegFromVCpuLowU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
         case kIemNativeGstSimdRegLdStSz_High128:
-            return iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+            return iemNativeEmitSimdLoadVecRegFromVCpuHighU128(pReNative, off, idxHstSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
         default:
             AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
     }

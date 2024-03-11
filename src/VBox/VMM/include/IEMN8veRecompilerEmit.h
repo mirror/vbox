@@ -6827,7 +6827,7 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
  * Emits a 128-bit vector register store to a VCpu value.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreVecRegToVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+iemNativeEmitSimdStoreVecRegToVCpuLowU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
     /* movdqa mem128, reg128 */ /* ASSUMING an aligned location here. */
@@ -6851,12 +6851,58 @@ iemNativeEmitSimdStoreVecRegToVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off,
  * Emits a 128-bit vector register load of a VCpu value.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreVecRegToVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+iemNativeEmitSimdStoreVecRegToVCpuLowU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdStoreVecRegToVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitSimdStoreVecRegToVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdStoreVecRegToVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a high 128-bit vector register store to a VCpu value.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreVecRegToVCpuHighU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* vextracti128 mem128, reg128, 1 */ /* ASSUMES AVX2 support. */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    if (iVecReg >= 8)
+        pCodeBuf[off++] = 0x63;
+    else
+        pCodeBuf[off++] = 0xe3;
+    pCodeBuf[off++] = 0x7d;
+    pCodeBuf[off++] = 0x39;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iVecReg, offVCpu);
+    pCodeBuf[off++] = 0x01; /* Immediate */
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a high 128-bit vector register load of a VCpu value.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreVecRegToVCpuHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdStoreVecRegToVCpuHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 10), off, iVecReg, offVCpu);
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecReg & 0x1));
+    off = iemNativeEmitSimdStoreVecRegToVCpuHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg + 1, offVCpu);
 #else
 # error "port me"
 #endif
@@ -6869,7 +6915,7 @@ iemNativeEmitSimdStoreVecRegToVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t o
  * Emits a 128-bit vector register load of a VCpu value.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
     /* movdqa reg128, mem128 */ /* ASSUMING an aligned location here. */
@@ -6893,12 +6939,12 @@ iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off
  * Emits a 128-bit vector register load of a VCpu value.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdLoadVecRegFromVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
+iemNativeEmitSimdLoadVecRegFromVCpuLowU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 9), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitSimdLoadVecRegFromVCpuU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, offVCpu);
 #else
 # error "port me"
 #endif
@@ -6907,45 +6953,48 @@ iemNativeEmitSimdLoadVecRegFromVCpuU128(PIEMRECOMPILERSTATE pReNative, uint32_t 
 }
 
 
-#if 0 /* unused */
 /**
- * Emits a 256-bit vector register store to a VCpu value.
+ * Emits a 128-bit vector register load of a VCpu value.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreVecRegToVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpuLow, uint32_t offVCpuHigh)
+iemNativeEmitSimdLoadVecRegFromVCpuHighU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    AssertReleaseFailed();
+    /* vinserti128 ymm, ymm, mem128, 1. */ /* ASSUMES AVX2 support */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    if (iVecReg >= 8)
+        pCodeBuf[off++] = 0x63;
+    else
+        pCodeBuf[off++] = 0xe3;
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE3_MAKE(false, iVecReg, true, X86_OP_VEX3_BYTE3_P_066H);
+    pCodeBuf[off++] = 0x38;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iVecReg, offVCpu);
+    pCodeBuf[off++] = 0x01; /* Immediate */
 #elif defined(RT_ARCH_ARM64)
-    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
-    Assert(!(iVecReg & 0x1));
-    off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, iVecReg,     offVCpuLow);
-    off = iemNativeEmitSimdStoreVecRegToVCpuU128(pReNative, off, iVecReg + 1, offVCpuHigh);
+    off = iemNativeEmitGprByVCpuLdStEx(pCodeBuf, off, iVecReg, offVCpu, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
 #else
 # error "port me"
 #endif
     return off;
 }
-#endif
 
 
 /**
- * Emits a 256-bit vector register load of a VCpu value.
+ * Emits a 128-bit vector register load of a VCpu value.
  */
-DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitSimdLoadVecRegFromVCpuU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpuLow, uint32_t offVCpuHigh)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegFromVCpuHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    AssertReleaseFailed();
-    RT_NOREF(pReNative, off, iVecReg, offVCpuLow, offVCpuHigh);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 10), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecReg & 0x1));
-    off = iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, iVecReg,     offVCpuLow);
-    off = iemNativeEmitSimdLoadVecRegFromVCpuU128(pReNative, off, iVecReg + 1, offVCpuHigh);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg + 1, offVCpu);
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -7008,7 +7057,7 @@ iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
     if (iVecRegDst >= 8 && iVecRegSrc >= 8)
     {
-        pbCodeBuf[off++] = 0xc4;
+        pbCodeBuf[off++] = X86_OP_VEX3;
         pbCodeBuf[off++] = 0x41;
         pbCodeBuf[off++] = 0x7d;
         pbCodeBuf[off++] = 0x6f;
@@ -7016,7 +7065,7 @@ iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_
     }
     else
     {
-        pbCodeBuf[off++] = 0xc5;                                               /* Two byte VEX prefix */
+        pbCodeBuf[off++] = X86_OP_VEX2;
         pbCodeBuf[off++] = (iVecRegSrc >= 8 || iVecRegDst >= 8) ? 0x7d : 0xfd;
         pbCodeBuf[off++] = iVecRegSrc >= 8 ? 0x7f : 0x6f;
         pbCodeBuf[off++] =   iVecRegSrc >= 8
