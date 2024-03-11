@@ -46,7 +46,7 @@ module_param_named(disabled, g_fDisabled, int, 0400);
  * Check if module loading was explicitly disabled.
  *
  * Usually module loading can be disabled by
- * specifying <mod_name>.disabled=1 in kernel command line.
+ * specifying mod_name.disabled=1 in kernel command line.
  *
  * @returns True if modules loading was disabled, False otherwise.
  */
