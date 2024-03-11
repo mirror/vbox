@@ -8243,7 +8243,7 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
      *     return raisexcpt();
      */
     const uint8_t idxRegTmp = iemNativeRegAllocTmpImm(pReNative, &off, XSAVE_C_YMM | XSAVE_C_SSE);
-    off = iemNativeEmitOrGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
+    off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
     off = iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, idxRegTmp, XSAVE_C_YMM | XSAVE_C_SSE, idxLabelRaiseUd);
     iemNativeRegFreeTmp(pReNative, idxRegTmp);
 
