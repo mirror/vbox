@@ -5756,7 +5756,6 @@ static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE 
         }
 
         pReNative->Core.aHstSimdRegs[idxHstSimdRegDst].enmLoaded = enmLoadSzDst;
-        return off;
     }
     else
     {
@@ -15264,7 +15263,7 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
 {
     static struct { uint32_t off; const char *pszName; } const s_aMembers[] =
     {
-#define ENTRY(a_Member) { RT_UOFFSETOF(VMCPUCC, a_Member), #a_Member }
+#define ENTRY(a_Member) { (uint32_t)RT_UOFFSETOF(VMCPUCC, a_Member), #a_Member } /* cast is for stupid MSC */
         ENTRY(fLocalForcedActions),
         ENTRY(iem.s.rcPassUp),
         ENTRY(iem.s.fExec),

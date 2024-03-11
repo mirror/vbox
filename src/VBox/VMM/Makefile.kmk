@@ -272,9 +272,10 @@ ifdef VBOX_WITH_IEM_RECOMPILER
    VBoxVMM_DEFS        += VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
    VBoxVMM_LIBS.darwin += /opt/local/lib/libcapstone.dylib
   endif
-  VMMAll/IEMAllN8veRecompiler.cpp_CXXFLAGS.win = /bigobj
+  VMMAll/IEMAllN8veRecompiler.cpp_CXXFLAGS.win := -bigobj
+  VMMAll/IEMAllN8veLiveness.cpp_CXXFLAGS.win   := -bigobj
  endif
- VMMAll/IEMAllThrdFuncs.cpp_CXXFLAGS.win = /bigobj
+ VMMAll/IEMAllThrdFuncs.cpp_CXXFLAGS.win       := -bigobj
 endif
 
 ifdef VBOX_WITH_NATIVE_NEM
