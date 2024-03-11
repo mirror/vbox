@@ -54,6 +54,7 @@
 #include "UITools.h"
 #ifdef VBOX_WS_MAC
 # include "UIIconPool.h"
+# include "UIVersion.h"
 #endif
 #ifndef VBOX_WS_MAC
 # include "UIMenuBar.h"
@@ -678,7 +679,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 #ifdef VBOX_WS_MAC
                         m_pToolBar->emulateMacToolbar();
                         /* Branding stuff for Qt6 beta: */
-                        if (uiCommon().showBetaLabel())
+                        if (UIVersionInfo::showBetaLabel())
                             m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
                                                        "Dev Preview", // do we need to make it NLS?
                                                        QColor(246, 179, 0),

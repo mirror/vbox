@@ -58,6 +58,7 @@
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
 # include "UICocoaApplication.h"
+# include "UIVersion.h"
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
@@ -266,7 +267,7 @@ void UIMachineWindowNormal::prepareVisualState()
 
 #ifdef VBOX_WS_MAC
     /* Beta label? */
-    if (uiCommon().showBetaLabel())
+    if (UIVersionInfo::showBetaLabel())
     {
         QPixmap betaLabel = ::betaLabel(QSize(74, darwinWindowTitleHeight(this) - 1));
         ::darwinLabelWindow(this, &betaLabel);

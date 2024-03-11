@@ -53,6 +53,7 @@
 #include "UINotificationCenter.h"
 #include "UISession.h"
 #include "UITextTable.h"
+#include "UIVersion.h"
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
 # include <signal.h>
@@ -223,7 +224,7 @@ bool UISession::powerUp()
     }
 
     /* Some logging right after we powered up: */
-    LogRel(("GUI: Qt version: %s\n", UICommon::qtRTVersionString().toUtf8().constData()));
+    LogRel(("GUI: Qt version: %s\n", UIVersionInfo::qtRTVersionString().toUtf8().constData()));
 #ifdef VBOX_WS_NIX
     LogRel(("GUI: X11 Window Manager code: %d\n", (int)uiCommon().typeOfWindowManager()));
 #endif

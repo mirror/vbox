@@ -48,6 +48,7 @@
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
 # include "UICocoaApplication.h"
+# include "UIVersion.h"
 #endif
 
 
@@ -82,7 +83,7 @@ void UIMachineWindowScale::prepareVisualState()
     UIMachineWindow::prepareVisualState();
 
     /* Beta label? */
-    if (uiCommon().showBetaLabel())
+    if (UIVersionInfo::showBetaLabel())
     {
         QPixmap betaLabel = ::betaLabel(QSize(74, darwinWindowTitleHeight(this) - 1));
         ::darwinLabelWindow(this, &betaLabel);

@@ -30,13 +30,13 @@
 #include <QUrlQuery>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UINetworkReply.h"
 #include "UINewVersionChecker.h"
 #include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
+#include "UIVersion.h"
 #ifdef Q_OS_LINUX
 # include "QIProcess.h"
 #endif
@@ -60,13 +60,13 @@ void UINewVersionChecker::start()
     QUrlQuery url;
     url.addQueryItem("platform", gpGlobalSession->virtualBox().GetPackageType());
     /* Check if branding is active: */
-    if (uiCommon().brandingIsActive())
+    if (UIVersionInfo::brandingIsActive())
     {
         /* Branding: Check whether we have a local branding file which tells us our version suffix "FOO"
                      (e.g. 3.06.54321_FOO) to identify this installation: */
         url.addQueryItem("version", QString("%1_%2_%3").arg(gpGlobalSession->virtualBox().GetVersion())
                                                        .arg(gpGlobalSession->virtualBox().GetRevision())
-                                                       .arg(uiCommon().brandingGetKey("VerSuffix")));
+                                                       .arg(UIVersionInfo::brandingGetKey("VerSuffix")));
     }
     else
     {

@@ -31,10 +31,10 @@
 #include <QPixmapCache>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIImageTools.h"
 #include "UIMenuBar.h"
+#include "UIVersion.h"
 
 
 UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
@@ -42,7 +42,7 @@ UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
     , m_fShowBetaLabel(false)
 {
     /* Check for beta versions: */
-    if (uiCommon().showBetaLabel())
+    if (UIVersionInfo::showBetaLabel())
         m_fShowBetaLabel = true;
 }
 

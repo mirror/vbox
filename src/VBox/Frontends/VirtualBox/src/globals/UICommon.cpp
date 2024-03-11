@@ -36,7 +36,6 @@
 #include <QMutex>
 #include <QProcess>
 #include <QProgressDialog>
-#include <QRegularExpression>
 #include <QSessionManager>
 #include <QSettings>
 #include <QSpinBox>
@@ -79,6 +78,7 @@
 #include "UIShortcutPool.h"
 #include "UIThreadPool.h"
 #include "UITranslator.h"
+#include "UIVersion.h"
 #include "UIVirtualBoxClientEventHandler.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVisoCreator.h"
@@ -661,7 +661,7 @@ void UICommon::prepare()
                               _1M,
                               NULL /*pErrInfo*/);
 
-        LogRel(("Qt version: %s\n", qtRTVersionString().toUtf8().constData()));
+        LogRel(("Qt version: %s\n", UIVersionInfo::qtRTVersionString().toUtf8().constData()));
     }
 
     if (m_fSettingsPwSet)
@@ -841,97 +841,6 @@ void UICommon::cleanup()
     m_fValid = false;
 
     LogRel(("GUI: UICommon: aboutToQuit request handled!\n"));
-}
-
-/* static */
-QString UICommon::qtRTVersionString()
-{
-    return QString::fromLatin1(qVersion());
-}
-
-/* static */
-uint UICommon::qtRTVersion()
-{
-    const QString strVersionRT = UICommon::qtRTVersionString();
-    return (strVersionRT.section('.', 0, 0).toInt() << 16) +
-           (strVersionRT.section('.', 1, 1).toInt() << 8) +
-           strVersionRT.section('.', 2, 2).toInt();
-}
-
-/* static */
-uint UICommon::qtRTMajorVersion()
-{
-    return UICommon::qtRTVersionString().section('.', 0, 0).toInt();
-}
-
-/* static */
-uint UICommon::qtRTMinorVersion()
-{
-    return UICommon::qtRTVersionString().section('.', 1, 1).toInt();
-}
-
-/* static */
-uint UICommon::qtRTRevisionNumber()
-{
-    return UICommon::qtRTVersionString().section('.', 2, 2).toInt();
-}
-
-/* static */
-QString UICommon::qtCTVersionString()
-{
-    return QString::fromLatin1(QT_VERSION_STR);
-}
-
-/* static */
-uint UICommon::qtCTVersion()
-{
-    const QString strVersionCompiled = UICommon::qtCTVersionString();
-    return (strVersionCompiled.section('.', 0, 0).toInt() << 16) +
-           (strVersionCompiled.section('.', 1, 1).toInt() << 8) +
-           strVersionCompiled.section('.', 2, 2).toInt();
-}
-
-QString UICommon::vboxVersionString() const
-{
-    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
-    return comVBox.GetVersion();
-}
-
-QString UICommon::vboxVersionStringNormalized() const
-{
-    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
-    return comVBox.GetVersionNormalized();
-}
-
-bool UICommon::isBeta() const
-{
-    return vboxVersionString().contains(QRegularExpression("BETA|ALPHA", QRegularExpression::CaseInsensitiveOption));
-}
-
-bool UICommon::showBetaLabel() const
-{
-    return    isBeta()
-           && !gEDataManager->preventBetaBuildLavel();
-}
-
-bool UICommon::brandingIsActive(bool fForce /* = false */)
-{
-    if (fForce)
-        return true;
-
-    if (m_strBrandingConfigFilePath.isEmpty())
-    {
-        m_strBrandingConfigFilePath = QDir(QApplication::applicationDirPath()).absolutePath();
-        m_strBrandingConfigFilePath += "/custom/custom.ini";
-    }
-
-    return QFile::exists(m_strBrandingConfigFilePath);
-}
-
-QString UICommon::brandingGetKey(QString strKey) const
-{
-    QSettings settings(m_strBrandingConfigFilePath, QSettings::IniFormat);
-    return settings.value(QString("%1").arg(strKey)).toString();
 }
 
 #ifdef VBOX_WS_MAC

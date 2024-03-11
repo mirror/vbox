@@ -37,12 +37,15 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UILoggingDefs.h"
-#include "UIStarter.h"
 #include "UIModalWindowManager.h"
+#include "UIStarter.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 # include "UICocoaApplication.h"
 #endif /* VBOX_WS_MAC */
+#ifdef VBOX_WS_NIX
+# include "UIVersion.h"
+#endif
 
 /* Other VBox includes: */
 #include <iprt/buildconfig.h>
@@ -523,12 +526,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 # endif /* !Q_OS_SOLARIS */
 
         /* Qt version check (major.minor are sensitive, fix number is ignored): */
-        if (UICommon::qtRTVersion() < (UICommon::qtCTVersion() & 0xFFFF00))
+        if (UIVersionInfo::qtRTVersion() < (UIVersionInfo::qtCTVersion() & 0xFFFF00))
         {
             QString strMsg = QApplication::tr("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
                                               .arg(qAppName())
-                                              .arg(UICommon::qtCTVersionString().section('.', 0, 1))
-                                              .arg(UICommon::qtRTVersionString());
+                                              .arg(UIVersionInfo::qtCTVersionString().section('.', 0, 1))
+                                              .arg(UIVersionInfo::qtRTVersionString());
             QMessageBox::critical(0, QApplication::tr("Incompatible Qt Library Error"),
                                   strMsg, QMessageBox::Abort, QMessageBox::NoButton);
             qFatal("%s", strMsg.toUtf8().constData());

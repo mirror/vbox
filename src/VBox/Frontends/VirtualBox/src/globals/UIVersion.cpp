@@ -26,14 +26,28 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QRegularExpression>
+#include <QSettings>
 #include <QStringList>
 
 /* GUI includes: */
+#include "UIExtraDataManager.h"
+#include "UIGlobalSession.h"
 #include "UIVersion.h"
+
+/* COM includes: */
+#include "CVirtualBox.h"
 
 /* Other VBox includes: */
 #include <iprt/string.h>
 
+
+/*********************************************************************************************************************************
+*   Class UIVersion implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 UIVersion::UIVersion()
     : m_x(-1)
@@ -121,4 +135,109 @@ UIVersion UIVersion::effectiveReleasedVersion() const
 
     /* Finally, we just return that we have:  */
     return version;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIVersionInfo implementation.                                                                                          *
+*********************************************************************************************************************************/
+
+/* static */
+QString UIVersionInfo::s_strBrandingConfigFilePath = QString();
+
+/* static */
+QString UIVersionInfo::qtRTVersionString()
+{
+    return QString::fromLatin1(qVersion());
+}
+
+/* static */
+uint UIVersionInfo::qtRTVersion()
+{
+    const QString strVersionRT = qtRTVersionString();
+    return (strVersionRT.section('.', 0, 0).toInt() << 16) +
+           (strVersionRT.section('.', 1, 1).toInt() << 8) +
+           strVersionRT.section('.', 2, 2).toInt();
+}
+
+/* static */
+uint UIVersionInfo::qtRTMajorVersion()
+{
+    return qtRTVersionString().section('.', 0, 0).toInt();
+}
+
+/* static */
+uint UIVersionInfo::qtRTMinorVersion()
+{
+    return qtRTVersionString().section('.', 1, 1).toInt();
+}
+
+/* static */
+uint UIVersionInfo::qtRTRevisionNumber()
+{
+    return qtRTVersionString().section('.', 2, 2).toInt();
+}
+
+/* static */
+QString UIVersionInfo::qtCTVersionString()
+{
+    return QString::fromLatin1(QT_VERSION_STR);
+}
+
+/* static */
+uint UIVersionInfo::qtCTVersion()
+{
+    const QString strVersionCompiled = qtCTVersionString();
+    return   (strVersionCompiled.section('.', 0, 0).toInt() << 16)
+           + (strVersionCompiled.section('.', 1, 1).toInt() << 8)
+           + strVersionCompiled.section('.', 2, 2).toInt();
+}
+
+/* static */
+QString UIVersionInfo::vboxVersionString()
+{
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    return comVBox.GetVersion();
+}
+
+/* static */
+QString UIVersionInfo::vboxVersionStringNormalized()
+{
+    const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    return comVBox.GetVersionNormalized();
+}
+
+/* static */
+bool UIVersionInfo::isBeta()
+{
+    return vboxVersionString().contains(QRegularExpression("BETA|ALPHA", QRegularExpression::CaseInsensitiveOption));
+}
+
+/* static */
+bool UIVersionInfo::showBetaLabel()
+{
+    return    isBeta()
+           && !gEDataManager->preventBetaBuildLavel();
+}
+
+/* static */
+bool UIVersionInfo::brandingIsActive(bool fForce /* = false */)
+{
+    if (fForce)
+        return true;
+
+    if (s_strBrandingConfigFilePath.isEmpty())
+    {
+        s_strBrandingConfigFilePath = QDir(QApplication::applicationDirPath()).absolutePath();
+        s_strBrandingConfigFilePath += "/custom/custom.ini";
+    }
+
+    return QFile::exists(s_strBrandingConfigFilePath);
+}
+
+/* static */
+QString UIVersionInfo::brandingGetKey(QString strKey)
+{
+    QSettings settings(s_strBrandingConfigFilePath, QSettings::IniFormat);
+    return settings.value(QString("%1").arg(strKey)).toString();
 }

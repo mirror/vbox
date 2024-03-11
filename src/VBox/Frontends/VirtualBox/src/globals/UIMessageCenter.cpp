@@ -53,6 +53,7 @@
 #include "UINotificationCenter.h"
 #include "UIProgressDialog.h"
 #include "UITranslator.h"
+#include "UIVersion.h"
 #include "VBoxAboutDlg.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
@@ -2093,10 +2094,10 @@ void UIMessageCenter::sltShowOnlineDocumentation()
 void UIMessageCenter::sltShowHelpAboutDialog()
 {
     CVirtualBox vbox = gpGlobalSession->virtualBox();
-    const QString strFullVersion = uiCommon().brandingIsActive()
+    const QString strFullVersion = UIVersionInfo::brandingIsActive()
                                  ? QString("%1 r%2 - %3").arg(vbox.GetVersion())
                                                          .arg(vbox.GetRevision())
-                                                         .arg(uiCommon().brandingGetKey("Name"))
+                                                         .arg(UIVersionInfo::brandingGetKey("Name"))
                                  : QString("%1 r%2").arg(vbox.GetVersion())
                                                     .arg(vbox.GetRevision());
     (new VBoxAboutDlg(windowManager().mainWindowShown(), strFullVersion))->show();

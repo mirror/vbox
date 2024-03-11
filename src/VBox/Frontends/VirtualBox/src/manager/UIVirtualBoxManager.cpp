@@ -76,8 +76,8 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
-#include "UIVMLogViewerDialog.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVMLogViewerDialog.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVM.h"
@@ -92,6 +92,7 @@
 #ifdef VBOX_WS_MAC
 # include "UIImageTools.h"
 # include "UIWindowMenuManager.h"
+# include "UIVersion.h"
 # include "VBoxUtils.h"
 #else
 # include "UIMenuBar.h"
@@ -2398,7 +2399,7 @@ void UIVirtualBoxManager::prepare()
 
 #ifdef VBOX_WS_MAC
     /* Beta label? */
-    if (uiCommon().showBetaLabel())
+    if (UIVersionInfo::showBetaLabel())
     {
         QPixmap betaLabel = ::betaLabel(QSize(74, darwinWindowTitleHeight(this) - 1));
         ::darwinLabelWindow(this, &betaLabel);

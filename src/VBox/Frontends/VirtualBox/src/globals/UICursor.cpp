@@ -32,7 +32,7 @@
 /* GUI includes: */
 #include "UICursor.h"
 #ifdef VBOX_WS_NIX
-# include "UICommon.h"
+# include "UIVersion.h"
 #endif
 
 
@@ -47,8 +47,8 @@ void UICursor::setCursor(QWidget *pWidget, const QCursor &cursor)
      * in X11 QWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
-    if ((UICommon::qtRTMajorVersion() < 5) ||
-        (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
+    if ((UIVersionInfo::qtRTMajorVersion() < 5) ||
+        (UIVersionInfo::qtRTMajorVersion() == 5 && UIVersionInfo::qtRTMinorVersion() < 11))
     {
         if (NativeWindowSubsystem::checkExtension(uiCommon().X11ServerAvailable(), "RENDER"))
             pWidget->setCursor(cursor);
@@ -73,8 +73,8 @@ void UICursor::setCursor(QGraphicsWidget *pWidget, const QCursor &cursor)
      * in X11 QGraphicsWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
-    if ((UICommon::qtRTMajorVersion() < 5) ||
-        (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
+    if ((UIVersionInfo::qtRTMajorVersion() < 5) ||
+        (UIVersionInfo::qtRTMajorVersion() == 5 && UIVersionInfo::qtRTMinorVersion() < 11))
     {
         if (NativeWindowSubsystem::checkExtension(uiCommon().X11ServerAvailable(), "RENDER"))
             pWidget->setCursor(cursor);
@@ -99,8 +99,8 @@ void UICursor::unsetCursor(QWidget *pWidget)
      * in X11 QWidget::unsetCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
-    if ((UICommon::qtRTMajorVersion() < 5) ||
-        (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
+    if ((UIVersionInfo::qtRTMajorVersion() < 5) ||
+        (UIVersionInfo::qtRTMajorVersion() == 5 && UIVersionInfo::qtRTMinorVersion() < 11))
     {
         if (NativeWindowSubsystem::checkExtension(uiCommon().X11ServerAvailable(), "RENDER"))
             pWidget->unsetCursor();
@@ -125,8 +125,8 @@ void UICursor::unsetCursor(QGraphicsWidget *pWidget)
      * in X11 QGraphicsWidget::unsetCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
-    if ((UICommon::qtRTMajorVersion() < 5) ||
-        (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
+    if ((UIVersionInfo::qtRTMajorVersion() < 5) ||
+        (UIVersionInfo::qtRTMajorVersion() == 5 && UIVersionInfo::qtRTMinorVersion() < 11))
     {
         if (NativeWindowSubsystem::checkExtension(uiCommon().X11ServerAvailable(), "RENDER"))
             pWidget->unsetCursor();

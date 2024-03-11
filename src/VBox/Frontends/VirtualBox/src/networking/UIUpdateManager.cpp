@@ -30,7 +30,6 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIExecutionQueue.h"
 #include "UIExtension.h"
 #include "UIExtraDataManager.h"
@@ -40,6 +39,10 @@
 #include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
 #include "UIUpdateManager.h"
+#include "UIVersion.h"
+#ifdef VBOX_WITH_UPDATE_REQUEST
+# include "UICommon.h"
+#endif
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -158,7 +161,7 @@ void UIUpdateStepVirtualBoxExtensionPack::exec()
     }
 
     /* Get VirtualBox version: */
-    UIVersion vboxVersion(uiCommon().vboxVersionStringNormalized());
+    UIVersion vboxVersion(UIVersionInfo::vboxVersionStringNormalized());
     /* Get extension pack version: */
     QString strExtPackVersion(extPack.GetVersion());
 

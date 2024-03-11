@@ -149,39 +149,6 @@ public:
         bool isCleaningUp() const { return m_fCleaningUp; }
     /** @} */
 
-    /** @name Versioning stuff.
-     * @{ */
-        /** Returns Qt runtime version string. */
-        static QString qtRTVersionString();
-        /** Returns Qt runtime version. */
-        static uint qtRTVersion();
-        /** Returns Qt runtime major version. */
-        static uint qtRTMajorVersion();
-        /** Returns Qt runtime minor version. */
-        static uint qtRTMinorVersion();
-        /** Returns Qt runtime revision number. */
-        static uint qtRTRevisionNumber();
-
-        /** Returns Qt compiled version string. */
-        static QString qtCTVersionString();
-        /** Returns Qt compiled version. */
-        static uint qtCTVersion();
-
-        /** Returns VBox version string. */
-        QString vboxVersionString() const;
-        /** Returns normalized VBox version string. */
-        QString vboxVersionStringNormalized() const;
-        /** Returns whether VBox version string contains BETA word. */
-        bool isBeta() const;
-        /** Returns whether BETA label should be shown. */
-        bool showBetaLabel() const;
-
-        /** Returns whether branding is active. */
-        bool brandingIsActive(bool fForce = false);
-        /** Returns value for certain branding @a strKey from custom.ini file. */
-        QString brandingGetKey(QString strKey) const;
-    /** @} */
-
     /** @name Host OS stuff.
      * @{ */
 #ifdef VBOX_WS_MAC
@@ -598,12 +565,6 @@ private:
         /** Holds whether overall GUI data is committed. */
         bool  m_fDataCommitted;
 #endif
-    /** @} */
-
-    /** @name Versioning stuff.
-     * @{ */
-        /** Holds the VBox branding config file path. */
-        QString  m_strBrandingConfigFilePath;
     /** @} */
 
     /** @name Host OS stuff.
