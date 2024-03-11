@@ -3097,7 +3097,7 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_YREG_U128':                                    (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_YREG_U256':                                    (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_YREG_U32':                                     (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_FETCH_YREG_U64':                                     (McBlock.parseMcGeneric,           False, False, False, ),
+    'IEM_MC_FETCH_YREG_U64':                                     (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_FLIP_EFL_BIT':                                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FPU_FROM_MMX_MODE':                                  (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FPU_STACK_DEC_TOP':                                  (McBlock.parseMcGeneric,           True,  True,  False, ),
