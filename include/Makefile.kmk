@@ -141,6 +141,7 @@ VBOX_HDRS_OMIT := \
 	VBox/dbus-calls.h \
 	VBox/xrandr-calls.h \
 	VBox/VBoxKeyboard.h \
+	VBox/VBoxLnxModInline.h \
 	VBox/vmm/pdmpcidevint.h \
 	VBox/vmm/vmmr3vtable-def.h \
 	VBox/vmm/cpumctx-x86-amd64.h \
