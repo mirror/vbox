@@ -79,6 +79,7 @@
 #include <iprt/string.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/VBoxLnxModInline.h>
 
 
 /*********************************************************************************************************************************
@@ -707,6 +708,10 @@ static int __init vgdrvLinuxModInit(void)
     static const char * const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     PRTLOGGER                   pRelLogger;
     int                         rc;
+
+    /* Check if modue loading was disabled. */
+    if (!vbox_mod_should_load())
+        return -EINVAL;
 
     /*
      * Initialize IPRT first.

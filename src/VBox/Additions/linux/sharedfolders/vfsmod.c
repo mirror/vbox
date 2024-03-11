@@ -63,6 +63,7 @@
 #elif RTLNX_VER_MIN(2,6,0)
 # include <linux/parser.h>
 #endif
+#include <VBox/VBoxLnxModInline.h>
 
 
 /*********************************************************************************************************************************
@@ -1619,6 +1620,10 @@ static int __init init(void)
 {
     int rc;
     SFLOGFLOW(("vboxsf: init\n"));
+
+    /* Check if modue loading was disabled. */
+    if (!vbox_mod_should_load())
+        return -EINVAL;
 
     /*
      * Must be paranoid about the vbsf_mount_info_new size.

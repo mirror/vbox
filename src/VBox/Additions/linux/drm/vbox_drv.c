@@ -63,6 +63,8 @@
 # define VBOX_VIDEO_NOMODESET() 0
 #endif /* !CONFIG_VGA_CONSOLE */
 
+#include <VBox/VBoxLnxModInline.h>
+
 static int vbox_modeset = -1;
 
 MODULE_PARM_DESC(modeset, "Disable/Enable modesetting");
@@ -413,6 +415,10 @@ static struct drm_driver driver = {
 
 static int __init vbox_init(void)
 {
+	/* Check if modue loading was disabled. */
+	if (!vbox_mod_should_load())
+		return -EINVAL;
+
 	printk("vboxvideo: loading version " VBOX_VERSION_STRING " r" __stringify(VBOX_SVN_REV) "\n");
 	if (VBOX_VIDEO_NOMODESET())
 	{

@@ -38,6 +38,7 @@ FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_ROOT}/include/VBox/Graphics/HGSMIDefs.h=>hgsmi_defs.h \
     ${PATH_ROOT}/include/VBox/Graphics/VBoxVideoErr.h=>vbox_err.h \
     ${PATH_ROOT}/include/VBox/Graphics/VBoxVideoVBE.h=>vboxvideo_vbe.h \
+    ${PATH_ROOT}/include/VBox/VBoxLnxModInline.h=>VBox/VBoxLnxModInline.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp=>hgsmi_base.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp=>modesetting.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp=>vbva_base.c \
