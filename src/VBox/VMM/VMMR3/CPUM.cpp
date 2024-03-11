@@ -2247,6 +2247,16 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     pVM->cpum.s.HostFeatures.fSse42      = true;
     pVM->cpum.s.HostFeatures.fLahfSahf   = true;
     pVM->cpum.s.HostFeatures.fMovBe      = true;
+    pVM->cpum.s.HostFeatures.fXSaveRstor = true;
+    pVM->cpum.s.HostFeatures.fOpSysXSaveRstor = true;
+    /** @todo r=aeichner Keep AVX/AVX2 disabled for now, too many missing instruction emulations. */
+# if 1
+    pVM->cpum.s.HostFeatures.cbMaxExtendedState = RT_UOFFSETOF(X86XSAVEAREA, u.YmmHi);
+# else
+    pVM->cpum.s.HostFeatures.cbMaxExtendedState = RT_UOFFSETOF(X86XSAVEAREA, u.YmmHi) + sizeof(X86XSAVEYMMHI);
+    pVM->cpum.s.HostFeatures.fAvx               = false;
+    pVM->cpum.s.HostFeatures.fAvx2              = false;
+# endif
 #endif
 
     /*
@@ -2281,6 +2291,9 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         AssertLogRelMsgStmt((fXStateHostMask & (XSAVE_C_X87 | XSAVE_C_SSE)) == (XSAVE_C_X87 | XSAVE_C_SSE),
                             ("%#llx\n", fXStateHostMask), fXStateHostMask = 0);
     }
+#elif defined(RT_ARCH_ARM64)
+    /** @todo r=aeichner Keep AVX/AVX2 disabled for now, too many missing instruction emulations. */
+    fXStateHostMask = XSAVE_C_X87 | XSAVE_C_SSE /*| XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI*/;
 #endif
     pVM->cpum.s.fXStateHostMask = fXStateHostMask;
     LogRel(("CPUM: fXStateHostMask=%#llx; initial: %#llx; host XCR0=%#llx\n",
@@ -2289,14 +2302,12 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Initialize the host XSAVE/XRSTOR mask.
      */
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     uint32_t cbMaxXState = pVM->cpum.s.HostFeatures.cbMaxExtendedState;
     cbMaxXState = RT_ALIGN(cbMaxXState, 128);
     AssertLogRelReturn(   pVM->cpum.s.HostFeatures.cbMaxExtendedState >= sizeof(X86FXSTATE)
                        && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Host.abXState)
                        && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Guest.abXState)
                        , VERR_CPUM_IPE_2);
-#endif
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
