@@ -625,7 +625,10 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h,) \
- +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h,) \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h \
