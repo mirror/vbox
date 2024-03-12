@@ -308,8 +308,12 @@ class RemoteExecutor(object):
             fRc = self.oTxsSession.syncRmTree(sDir, cMsTimeout);
         else:
             try:
-                reporter.log("rmTree (%s) using shutil.rmtree function" % sDir);
-                shutil.rmtree(sDir);
+                if os.path.isfile(sDir):
+                    reporter.log("deleting file: %s" % sDir)
+                    os.remove(sDir)
+                else:
+                    reporter.log("rmTree (%s) using shutil.rmtree function" % sDir);
+                    shutil.rmtree(sDir);
             except:
                 fRc = False;
 
