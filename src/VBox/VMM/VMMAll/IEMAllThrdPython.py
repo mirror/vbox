@@ -2777,7 +2777,7 @@ class IEMThreadedGenerator(object):
         ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2, True  ),
     );
 
-    def generateThreadedFunctionsHeader(self, oOut):
+    def generateThreadedFunctionsHeader(self, oOut, _):
         """
         Generates the threaded functions header file.
         Returns success indicator.
@@ -2884,7 +2884,7 @@ class IEMThreadedGenerator(object):
         return True;
 
     kasThreadedParamNames = ('uParam0', 'uParam1', 'uParam2');
-    def generateThreadedFunctionsSource(self, oOut):
+    def generateThreadedFunctionsSource(self, oOut, _):
         """
         Generates the threaded functions source file.
         Returns success indicator.
@@ -3034,7 +3034,7 @@ class IEMThreadedGenerator(object):
 
         return True;
 
-    def generateNativeFunctionsHeader(self, oOut):
+    def generateNativeFunctionsHeader(self, oOut, _):
         """
         Generates the native recompiler functions header file.
         Returns success indicator.
@@ -3072,14 +3072,36 @@ class IEMThreadedGenerator(object):
                     'IEM_DECL_IEMNATIVELIVENESSFUNC_PROTO(iemNativeLivenessFunc_BltIn_%s);' % (sFuncNm,),
                 ];
 
+        # Emit prototypes for table function.
+        asLines += [
+            '',
+            '#ifdef IEMNATIVE_INCL_TABLE_FUNCTION_PROTOTYPES'
+        ]
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
+            asLines += [
+                '',
+                '/* Variation: ' + sVarName + ' */',
+            ];
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None) # type: ThreadedFunctionVariation
+                if oVariation and oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                    asLines.append('IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(' + oVariation.getNativeFunctionName() + ');');
+        asLines += [
+            '',
+            '#endif /* IEMNATIVE_INCL_TABLE_FUNCTION_PROTOTYPES */',
+        ]
+
         oOut.write('\n'.join(asLines));
         return True;
 
-    def generateNativeFunctionsSource(self, oOut):
+    def generateNativeFunctionsSource(self, oOut, idxPart):
         """
         Generates the native recompiler functions source file.
         Returns success indicator.
         """
+        cParts = 4;
+        assert(idxPart in range(cParts));
         if not self.oOptions.fNativeRecompilerEnabled:
             return True;
 
@@ -3091,7 +3113,17 @@ class IEMThreadedGenerator(object):
         #
         # Emit the functions.
         #
-        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+        # The files are split up by threaded variation as that's the simplest way to
+        # do it, even if the distribution isn't entirely even (ksVariation_Default
+        # only has the defer to cimpl bits and the pre-386 variants will naturally
+        # have fewer instructions).
+        #
+        cVariationsPerFile = len(ThreadedFunctionVariation.kasVariationsEmitOrder) // cParts;
+        idxFirstVar        = idxPart * cVariationsPerFile;
+        idxEndVar          = idxFirstVar + cVariationsPerFile;
+        if idxPart + 1 >= cParts:
+            idxEndVar      = len(ThreadedFunctionVariation.kasVariationsEmitOrder);
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder[idxFirstVar:idxEndVar]:
             sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
             oOut.write(  '\n'
                        + '\n'
@@ -3115,7 +3147,7 @@ class IEMThreadedGenerator(object):
                                      os.path.split(oMcBlock.sSrcFile)[1],
                                      ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
                                + ' */\n'
-                               + 'static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(' + oVariation.getNativeFunctionName() + ')\n'
+                               + 'IEM_DECL_IEMNATIVERECOMPFUNC_DEF(' + oVariation.getNativeFunctionName() + ')\n'
                                + '{\n');
 
                     # Unpack parameters.
@@ -3130,48 +3162,50 @@ class IEMThreadedGenerator(object):
                     oOut.write('}\n');
 
         #
-        # Output the function table.
+        # Output the function table if this is the first file.
         #
-        oOut.write(   '\n'
-                    + '\n'
-                    + '/*\n'
-                    + ' * Function table running parallel to g_apfnIemThreadedFunctions and friends.\n'
-                    + ' */\n'
-                    + 'const PFNIEMNATIVERECOMPFUNC g_apfnIemNativeRecompileFunctions[kIemThreadedFunc_End] =\n'
-                    + '{\n'
-                    + '    /*Invalid*/ NULL,'
-                    + '\n'
-                    + '    /*\n'
-                    + '     * Predefined.\n'
-                    + '     */\n'
-                    );
-        for sFuncNm, _, fHaveRecompFunc in self.katBltIns:
-            if fHaveRecompFunc:
-                oOut.write('    iemNativeRecompFunc_BltIn_%s,\n' % (sFuncNm,))
-            else:
-                oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
+        if idxPart == 0:
+            oOut.write(   '\n'
+                        + '\n'
+                        + '/*\n'
+                        + ' * Function table running parallel to g_apfnIemThreadedFunctions and friends.\n'
+                        + ' */\n'
+                        + 'const PFNIEMNATIVERECOMPFUNC g_apfnIemNativeRecompileFunctions[kIemThreadedFunc_End] =\n'
+                        + '{\n'
+                        + '    /*Invalid*/ NULL,'
+                        + '\n'
+                        + '    /*\n'
+                        + '     * Predefined.\n'
+                        + '     */\n'
+                        );
+            for sFuncNm, _, fHaveRecompFunc in self.katBltIns:
+                if fHaveRecompFunc:
+                    oOut.write('    iemNativeRecompFunc_BltIn_%s,\n' % (sFuncNm,))
+                else:
+                    oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
 
-        iThreadedFunction = 1 + len(self.katBltIns);
-        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
-            oOut.write(  '    /*\n'
-                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
-                       + '     */\n');
-            for oThreadedFunction in self.aoThreadedFuncs:
-                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
-                if oVariation:
-                    iThreadedFunction += 1;
-                    assert oVariation.iEnumValue == iThreadedFunction;
-                    sName = oVariation.getNativeFunctionName();
-                    if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
-                        oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, sName,));
-                    else:
-                        oOut.write('    /*%4u*/ NULL /*%s*/,\n' % (iThreadedFunction, sName,));
+            iThreadedFunction = 1 + len(self.katBltIns);
+            for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+                oOut.write(  '    /*\n'
+                           + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
+                           + '     */\n');
+                for oThreadedFunction in self.aoThreadedFuncs:
+                    oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                    if oVariation:
+                        iThreadedFunction += 1;
+                        assert oVariation.iEnumValue == iThreadedFunction;
+                        sName = oVariation.getNativeFunctionName();
+                        if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                            oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, sName,));
+                        else:
+                            oOut.write('    /*%4u*/ NULL /*%s*/,\n' % (iThreadedFunction, sName,));
 
-        oOut.write(  '};\n'
-                   + '\n');
+            oOut.write(  '};\n');
+
+        oOut.write('\n');
         return True;
 
-    def generateNativeLivenessSource(self, oOut):
+    def generateNativeLivenessSource(self, oOut, _):
         """
         Generates the native recompiler liveness analysis functions source file.
         Returns success indicator.
@@ -3372,34 +3406,6 @@ class IEMThreadedGenerator(object):
 
         return True;
 
-    def generateModifiedInput1(self, oOut):
-        """
-        Generates the combined modified input source/header file, part 1.
-        Returns success indicator.
-        """
-        return self.generateModifiedInput(oOut, 1);
-
-    def generateModifiedInput2(self, oOut):
-        """
-        Generates the combined modified input source/header file, part 2.
-        Returns success indicator.
-        """
-        return self.generateModifiedInput(oOut, 2);
-
-    def generateModifiedInput3(self, oOut):
-        """
-        Generates the combined modified input source/header file, part 3.
-        Returns success indicator.
-        """
-        return self.generateModifiedInput(oOut, 3);
-
-    def generateModifiedInput4(self, oOut):
-        """
-        Generates the combined modified input source/header file, part 4.
-        Returns success indicator.
-        """
-        return self.generateModifiedInput(oOut, 4);
-
 
     #
     # Main
@@ -3447,14 +3453,32 @@ class IEMThreadedGenerator(object):
                              action  = 'store',
                              default = '-',
                              help    = 'The output header file for the native recompiler functions.');
-        oParser.add_argument('--out-n8ve-funcs-cpp',
-                             metavar = 'file-n8tv-funcs.cpp',
-                             dest    = 'sOutFileN8veFuncsCpp',
+        oParser.add_argument('--out-n8ve-funcs-cpp1',
+                             metavar = 'file-n8tv-funcs1.cpp',
+                             dest    = 'sOutFileN8veFuncsCpp1',
                              action  = 'store',
                              default = '-',
-                             help    = 'The output C++ file for the native recompiler functions.');
+                             help    = 'The output C++ file for the native recompiler functions part 1.');
+        oParser.add_argument('--out-n8ve-funcs-cpp2',
+                             metavar = 'file-n8ve-funcs2.cpp',
+                             dest    = 'sOutFileN8veFuncsCpp2',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++ file for the native recompiler functions part 2.');
+        oParser.add_argument('--out-n8ve-funcs-cpp3',
+                             metavar = 'file-n8ve-funcs3.cpp',
+                             dest    = 'sOutFileN8veFuncsCpp3',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++ file for the native recompiler functions part 3.');
+        oParser.add_argument('--out-n8ve-funcs-cpp4',
+                             metavar = 'file-n8ve-funcs4.cpp',
+                             dest    = 'sOutFileN8veFuncsCpp4',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++ file for the native recompiler functions part 4.');
         oParser.add_argument('--out-n8ve-liveness-cpp',
-                             metavar = 'file-n8tv-liveness.cpp',
+                             metavar = 'file-n8ve-liveness.cpp',
                              dest    = 'sOutFileN8veLivenessCpp',
                              action  = 'store',
                              default = '-',
@@ -3511,18 +3535,21 @@ class IEMThreadedGenerator(object):
             # Generate the output files.
             #
             aaoOutputFiles = (
-                 ( self.oOptions.sOutFileThrdFuncsHdr,      self.generateThreadedFunctionsHeader ),
-                 ( self.oOptions.sOutFileThrdFuncsCpp,      self.generateThreadedFunctionsSource ),
-                 ( self.oOptions.sOutFileN8veFuncsHdr,      self.generateNativeFunctionsHeader ),
-                 ( self.oOptions.sOutFileN8veFuncsCpp,      self.generateNativeFunctionsSource ),
-                 ( self.oOptions.sOutFileN8veLivenessCpp,   self.generateNativeLivenessSource ),
-                 ( self.oOptions.sOutFileModInput1,         self.generateModifiedInput1 ),
-                 ( self.oOptions.sOutFileModInput2,         self.generateModifiedInput2 ),
-                 ( self.oOptions.sOutFileModInput3,         self.generateModifiedInput3 ),
-                 ( self.oOptions.sOutFileModInput4,         self.generateModifiedInput4 ),
+                 ( self.oOptions.sOutFileThrdFuncsHdr,      self.generateThreadedFunctionsHeader, 0, ),
+                 ( self.oOptions.sOutFileThrdFuncsCpp,      self.generateThreadedFunctionsSource, 0, ),
+                 ( self.oOptions.sOutFileN8veFuncsHdr,      self.generateNativeFunctionsHeader,   0, ),
+                 ( self.oOptions.sOutFileN8veFuncsCpp1,     self.generateNativeFunctionsSource,   0, ),
+                 ( self.oOptions.sOutFileN8veFuncsCpp2,     self.generateNativeFunctionsSource,   1, ),
+                 ( self.oOptions.sOutFileN8veFuncsCpp3,     self.generateNativeFunctionsSource,   2, ),
+                 ( self.oOptions.sOutFileN8veFuncsCpp4,     self.generateNativeFunctionsSource,   3, ),
+                 ( self.oOptions.sOutFileN8veLivenessCpp,   self.generateNativeLivenessSource,    0, ),
+                 ( self.oOptions.sOutFileModInput1,         self.generateModifiedInput,           1, ),
+                 ( self.oOptions.sOutFileModInput2,         self.generateModifiedInput,           2, ),
+                 ( self.oOptions.sOutFileModInput3,         self.generateModifiedInput,           3, ),
+                 ( self.oOptions.sOutFileModInput4,         self.generateModifiedInput,           4, ),
             );
             fRc = True;
-            for sOutFile, fnGenMethod in aaoOutputFiles:
+            for sOutFile, fnGenMethod, iPartNo in aaoOutputFiles:
                 if sOutFile == '-':
                     fRc = fnGenMethod(sys.stdout) and fRc;
                 else:
@@ -3531,7 +3558,7 @@ class IEMThreadedGenerator(object):
                     except Exception as oXcpt:
                         print('error! Failed open "%s" for writing: %s' % (sOutFile, oXcpt,), file = sys.stderr);
                         return 1;
-                    fRc = fnGenMethod(oOut) and fRc;
+                    fRc = fnGenMethod(oOut, iPartNo) and fRc;
                     oOut.close();
             if fRc:
                 return 0;

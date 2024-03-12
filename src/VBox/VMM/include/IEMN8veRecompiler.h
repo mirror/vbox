@@ -795,8 +795,8 @@ AssertCompile((UINT64_C(0x7f) << kIemNativeGstReg_EFlags) == IEMLIVENESSBIT_ALL_
 #define IEMNATIVEGSTREG_SEG_ATTRIB(a_iSegReg)   ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegAttribFirst + (a_iSegReg) ))
 /** @} */
 
-
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+
 /**
  * Guest registers that can be shadowed in host SIMD registers.
  *
@@ -831,8 +831,8 @@ typedef enum IEMNATIVEGSTSIMDREGLDSTSZ : uint8_t
     /** End value. */
     kIemNativeGstSimdRegLdStSz_End
 } IEMNATIVEGSTSIMDREGLDSTSZ;
-#endif
 
+#endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 /**
  * Intended use statement for iemNativeRegAllocTmpForGuestReg().
@@ -1394,6 +1394,20 @@ typedef FNIEMNATIVELIVENESSFUNC *PFNIEMNATIVELIVENESSFUNC;
     DECL_HIDDEN_THROW(a_RetType) VBOXCALL a_Name a_ArgList
 
 
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg,
+                                                                 uint8_t idxHstReg = UINT8_MAX, uint8_t idxHstRegPrev = UINT8_MAX);
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestSimdRegShadowing(PIEMRECOMPILERSTATE pReNative,
+                                                                     IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                     uint8_t idxHstSimdReg = UINT8_MAX,
+                                                                     uint8_t idxHstSimdRegPrev = UINT8_MAX);
+# endif
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE pReNative,
+                                                               uint32_t offPc, uint32_t cInstrSkipped);
+#endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
+
 DECL_HIDDEN_THROW(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                                  uint32_t offWhere = UINT32_MAX, uint16_t uData = 0);
 DECL_HIDDEN_THROW(void)     iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere);
@@ -1415,19 +1429,56 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEM
 
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar,
+                                                            uint32_t fForbiddenRegs = IEMNATIVE_CALL_VOLATILE_GREG_MASK);
 DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExept = 0, bool fFlushShadows = true);
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
                                                                   uint32_t fKeepVars = 0);
 DECLHIDDEN(void)            iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstRegs) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFlushGuestShadowsByHostMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegs) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegRestoreGuestShadowsInVolatileRegs(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                           uint32_t fHstRegsActiveShadows);
+#ifdef VBOX_STRICT
+DECLHIDDEN(void)            iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNative);
+#endif
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                               uint64_t fGstShwExcept, bool fFlushShadows);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+#endif
 
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(uint8_t)  iemNativeSimdRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile = true);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeSimdRegAllocTmpEx(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint32_t fRegMask,
+                                                       bool fPreferVolatile = true);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                                                    IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                    IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz,
+                                                                    IEMNATIVEGSTREGUSE enmIntendedUse = kIemNativeGstRegUse_ReadOnly,
+                                                                    bool fNoVolatileRegs = false);
+DECLHIDDEN(void)            iemNativeSimdRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeSimdRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstSimdRegs) RT_NOEXCEPT;
+DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                              IEMNATIVEGSTSIMDREG enmGstSimdReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadSimdRegWithGstShadowSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t idxHstSimdReg, IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                         IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz);
+#endif
+
+DECL_HIDDEN_THROW(uint8_t)  iemNativeArgAlloc(PIEMRECOMPILERSTATE pReNative, uint8_t iArgNo, uint8_t cbType);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeArgAllocConst(PIEMRECOMPILERSTATE pReNative, uint8_t iArgNo, uint8_t cbType, uint64_t uValue);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeArgAllocLocalRef(PIEMRECOMPILERSTATE pReNative, uint8_t iArgNo, uint8_t idxOtherVar);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAlloc(PIEMRECOMPILERSTATE pReNative, uint8_t cbType);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative, uint8_t cbType, uint64_t uValue);
+DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
+DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToConst(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint64_t uValue);
+DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToGstRegRef(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
+                                                           IEMNATIVEGSTREGREF enmRegClass, uint8_t idxReg);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff,
                                                         bool fInitialized = false, uint8_t idxRegPref = UINT8_MAX);
@@ -1437,29 +1488,160 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILE
                                                                    uint32_t fHstRegsNotToSave);
 DECL_HIDDEN_THROW(uint32_t) iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                        uint32_t fHstRegsNotToSave);
+DECLHIDDEN(void)            iemNativeVarFreeOneWorker(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
+DECLHIDDEN(void)            iemNativeVarFreeAllSlow(PIEMRECOMPILERSTATE pReNative, uint32_t bmVars);
 
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                  uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg);
+#ifdef VBOX_STRICT
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitTop32BitsClearCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxReg,
+                                                            IEMNATIVEGSTREG enmGstReg);
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSimdReg,
+                                                                IEMNATIVEGSTSIMDREG enmGstSimdReg,
+                                                                IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz);
+# endif
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitExecFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fExec);
+#endif
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
                                                    uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
                                                    uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                       PCIEMTHRDEDCALLENTRY pCallEntry);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                        uint8_t idxAddrReg, uint8_t idxInstr);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                                  uint8_t idxAddrReg, uint8_t idxInstr);
 
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile = true);
-DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpEx(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint32_t fRegMask,
-                                                      bool fPreferVolatile = true);
-DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, IEMNATIVEGSTSIMDREG enmGstSimdReg,
-                                                                   IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz, IEMNATIVEGSTREGUSE enmIntendedUse = kIemNativeGstRegUse_ReadOnly,
-                                                                   bool fNoVolatileRegs = false);
-DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadSimdRegWithGstShadowSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                         uint8_t idxHstSimdReg, IEMNATIVEGSTSIMDREG enmGstSimdReg,
-                                                                         IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz);
-#endif
 
-extern DECL_HIDDEN_DATA(const char * const) g_apszIemNativeHstRegNames[];
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu, int rc, uint8_t idxInstr));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseXf,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpNeedCsLimChecking,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpCheckBranchMiss,(PVMCPUCC pVCpu));
+
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8_Sx_U16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8_Sx_U32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU16_Sx_U32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU16_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU32_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint8_t u8Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint16_t u16Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint64_t u64Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackStoreU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackStoreU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackStoreU32SReg,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackStoreU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint64_t u64Value));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t, iemNativeHlpStackFetchU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t, iemNativeHlpStackFetchU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpStackFetchU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU8_Sx_U16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU8_Sx_U32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU8_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU16_Sx_U32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU16_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU32_Sx_U64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFlatFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t u8Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint64_t u64Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackFlatStoreU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackFlatStoreU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackFlatStoreU32SReg,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpStackFlatStoreU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint64_t u64Value));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t, iemNativeHlpStackFlatFetchU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t, iemNativeHlpStackFlatFetchU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpStackFlatFetchU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem));
+
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemMapDataU8Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemMapDataU8Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemMapDataU8Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t const *,  iemNativeHlpMemMapDataU8Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemMapDataU16Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t const *, iemNativeHlpMemMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemMapDataU32Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t const *, iemNativeHlpMemMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemMapDataU64Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t const *, iemNativeHlpMemMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTFLOAT80U *,     iemNativeHlpMemMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTPBCD80U *,      iemNativeHlpMemMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemMapDataU128Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U const *, iemNativeHlpMemMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem, uint8_t iSegReg));
+
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemFlatMapDataU8Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemFlatMapDataU8Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t *,        iemNativeHlpMemFlatMapDataU8Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint8_t const *,  iemNativeHlpMemFlatMapDataU8Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemFlatMapDataU16Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemFlatMapDataU16Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t *,       iemNativeHlpMemFlatMapDataU16Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint16_t const *, iemNativeHlpMemFlatMapDataU16Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemFlatMapDataU32Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemFlatMapDataU32Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t *,       iemNativeHlpMemFlatMapDataU32Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint32_t const *, iemNativeHlpMemFlatMapDataU32Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemFlatMapDataU64Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemFlatMapDataU64Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t *,       iemNativeHlpMemFlatMapDataU64Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(uint64_t const *, iemNativeHlpMemFlatMapDataU64Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTFLOAT80U *,     iemNativeHlpMemFlatMapDataR80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTPBCD80U *,      iemNativeHlpMemFlatMapDataD80Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemFlatMapDataU128Atomic,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemFlatMapDataU128Rw,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U *,     iemNativeHlpMemFlatMapDataU128Wo,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+IEM_DECL_NATIVE_HLP_PROTO(RTUINT128U const *, iemNativeHlpMemFlatMapDataU128Ro,(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, RTGCPTR GCPtrMem));
+
+IEM_DECL_NATIVE_HLP_PROTO(void, iemNativeHlpMemCommitAndUnmapAtomic,(PVMCPUCC pVCpu, uint8_t bUnmapInfo));
+IEM_DECL_NATIVE_HLP_PROTO(void, iemNativeHlpMemCommitAndUnmapRw,(PVMCPUCC pVCpu, uint8_t bUnmapInfo));
+IEM_DECL_NATIVE_HLP_PROTO(void, iemNativeHlpMemCommitAndUnmapWo,(PVMCPUCC pVCpu, uint8_t bUnmapInfo));
+IEM_DECL_NATIVE_HLP_PROTO(void, iemNativeHlpMemCommitAndUnmapRo,(PVMCPUCC pVCpu, uint8_t bUnmapInfo));
+
+
+/**
+ * Info about shadowed guest register values.
+ * @see IEMNATIVEGSTREG
+ */
+typedef struct IEMANTIVEGSTREGINFO
+{
+    /** Offset in VMCPU. */
+    uint32_t    off;
+    /** The field size. */
+    uint8_t     cb;
+    /** Name (for logging). */
+    const char *pszName;
+} IEMANTIVEGSTREGINFO;
+extern DECL_HIDDEN_DATA(IEMANTIVEGSTREGINFO const)  g_aGstShadowInfo[];
+extern DECL_HIDDEN_DATA(const char * const)         g_apszIemNativeHstRegNames[];
+extern DECL_HIDDEN_DATA(int32_t const)              g_aoffIemNativeCallStackArgBpDisp[];
+extern DECL_HIDDEN_DATA(uint32_t const)             g_afIemNativeCallRegs[];
+extern DECL_HIDDEN_DATA(uint8_t const)              g_aidxIemNativeCallRegs[];
+
 
 
 /**
@@ -1577,6 +1759,511 @@ DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNativ
     Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired);
     pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired = false;
 }
+
+
+/**
+ * Converts IEM_CIMPL_F_XXX flags into a guest register shadow copy flush mask.
+ *
+ * @returns The flush mask.
+ * @param   fCImpl          The IEM_CIMPL_F_XXX flags.
+ * @param   fGstShwFlush    The starting flush mask.
+ */
+DECL_FORCE_INLINE(uint64_t) iemNativeCImplFlagsToGuestShadowFlushMask(uint32_t fCImpl, uint64_t fGstShwFlush)
+{
+    if (fCImpl & IEM_CIMPL_F_BRANCH_FAR)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_CS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_CS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS);
+    if (fCImpl & IEM_CIMPL_F_BRANCH_STACK_FAR)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                     |  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_SS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_SS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_SS);
+    else if (fCImpl & IEM_CIMPL_F_BRANCH_STACK)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP);
+    if (fCImpl & (IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_STATUS_FLAGS | IEM_CIMPL_F_INHIBIT_SHADOW))
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_EFlags);
+    return fGstShwFlush;
+}
+
+
+/** Number of hidden arguments for CIMPL calls.
+ * @note We're sufferning from the usual VBOXSTRICTRC fun on Windows. */
+#if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
+# define IEM_CIMPL_HIDDEN_ARGS 3
+#else
+# define IEM_CIMPL_HIDDEN_ARGS 2
+#endif
+
+
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
+/**
+ * Helper for iemNativeLivenessGetStateByGstReg.
+ *
+ * @returns IEMLIVENESS_STATE_XXX
+ * @param   fMergedStateExp2    This is the RT_BIT_32() of each sub-state
+ *                              ORed together.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeLivenessMergeExpandedEFlagsState(uint32_t fMergedStateExp2)
+{
+    /* INPUT trumps anything else. */
+    if (fMergedStateExp2 & RT_BIT_32(IEMLIVENESS_STATE_INPUT))
+        return IEMLIVENESS_STATE_INPUT;
+
+    /* CLOBBERED trumps XCPT_OR_CALL and UNUSED. */
+    if (fMergedStateExp2 & RT_BIT_32(IEMLIVENESS_STATE_CLOBBERED))
+    {
+        /* If not all sub-fields are clobbered they must be considered INPUT. */
+        if (fMergedStateExp2 & (RT_BIT_32(IEMLIVENESS_STATE_UNUSED) | RT_BIT_32(IEMLIVENESS_STATE_XCPT_OR_CALL)))
+            return IEMLIVENESS_STATE_INPUT;
+        return IEMLIVENESS_STATE_CLOBBERED;
+    }
+
+    /* XCPT_OR_CALL trumps UNUSED. */
+    if (fMergedStateExp2 & RT_BIT_32(IEMLIVENESS_STATE_XCPT_OR_CALL))
+        return IEMLIVENESS_STATE_XCPT_OR_CALL;
+
+    return IEMLIVENESS_STATE_UNUSED;
+}
+# endif /* !IEMLIVENESS_EXTENDED_LAYOUT */
+
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeLivenessGetStateByGstRegEx(PCIEMLIVENESSENTRY pLivenessEntry, unsigned enmGstRegEx)
+{
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
+    return ((pLivenessEntry->Bit0.bm64 >> enmGstRegEx) & 1)
+         | (((pLivenessEntry->Bit1.bm64 >> enmGstRegEx) << 1) & 2);
+# else
+    return ( (pLivenessEntry->Bit0.bm64 >> enmGstRegEx)       & 1)
+         | (((pLivenessEntry->Bit1.bm64 >> enmGstRegEx) << 1) & 2)
+         | (((pLivenessEntry->Bit2.bm64 >> enmGstRegEx) << 2) & 4)
+         | (((pLivenessEntry->Bit3.bm64 >> enmGstRegEx) << 2) & 8);
+# endif
+}
+
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeLivenessGetStateByGstReg(PCIEMLIVENESSENTRY pLivenessEntry, IEMNATIVEGSTREG enmGstReg)
+{
+    uint32_t uRet = iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, (unsigned)enmGstReg);
+    if (enmGstReg == kIemNativeGstReg_EFlags)
+    {
+        /* Merge the eflags states to one. */
+# ifndef IEMLIVENESS_EXTENDED_LAYOUT
+        uRet  = RT_BIT_32(uRet);
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflCf | (pLivenessEntry->Bit1.fEflCf << 1));
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflPf | (pLivenessEntry->Bit1.fEflPf << 1));
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflAf | (pLivenessEntry->Bit1.fEflAf << 1));
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflZf | (pLivenessEntry->Bit1.fEflZf << 1));
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflSf | (pLivenessEntry->Bit1.fEflSf << 1));
+        uRet |= RT_BIT_32(pLivenessEntry->Bit0.fEflOf | (pLivenessEntry->Bit1.fEflOf << 1));
+        uRet  = iemNativeLivenessMergeExpandedEFlagsState(uRet);
+# else
+        AssertCompile(IEMLIVENESSBIT_IDX_EFL_OTHER == (unsigned)kIemNativeGstReg_EFlags);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_CF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_PF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_AF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_ZF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_SF);
+        uRet |= iemNativeLivenessGetStateByGstRegEx(pLivenessEntry, IEMLIVENESSBIT_IDX_EFL_OF);
+# endif
+    }
+    return uRet;
+}
+
+
+# ifdef VBOX_STRICT
+/** For assertions only, user checks that idxCurCall isn't zerow. */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeLivenessGetPrevStateByGstReg(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg)
+{
+    return iemNativeLivenessGetStateByGstReg(&pReNative->paLivenessEntries[pReNative->idxCurCall - 1], enmGstReg);
+}
+# endif /* VBOX_STRICT */
+
+#endif /* IEMNATIVE_WITH_LIVENESS_ANALYSIS */
+
+
+/**
+ * Gets the number of hidden arguments for an expected IEM_MC_CALL statement.
+ */
+DECL_FORCE_INLINE(uint8_t) iemNativeArgGetHiddenArgCount(PIEMRECOMPILERSTATE pReNative)
+{
+    if (pReNative->fCImpl & IEM_CIMPL_F_CALLS_CIMPL)
+        return IEM_CIMPL_HIDDEN_ARGS;
+    if (pReNative->fCImpl & IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE)
+        return 1;
+    return 0;
+}
+
+
+DECL_FORCE_INLINE(uint8_t) iemNativeRegMarkAllocated(PIEMRECOMPILERSTATE pReNative, unsigned idxReg,
+                                                     IEMNATIVEWHAT enmWhat, uint8_t idxVar = UINT8_MAX) RT_NOEXCEPT
+{
+    pReNative->Core.bmHstRegs |= RT_BIT_32(idxReg);
+
+    pReNative->Core.aHstRegs[idxReg].enmWhat        = enmWhat;
+    pReNative->Core.aHstRegs[idxReg].fGstRegShadows = 0;
+    pReNative->Core.aHstRegs[idxReg].idxVar         = idxVar;
+    return (uint8_t)idxReg;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Register Allocator (GPR)                                                                                                     *
+*********************************************************************************************************************************/
+
+/**
+ * Marks host register @a idxHstReg as containing a shadow copy of guest
+ * register @a enmGstReg.
+ *
+ * ASSUMES that caller has made sure @a enmGstReg is not associated with any
+ * host register before calling.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg, uint32_t off)
+{
+    Assert(!(pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg)));
+    Assert(!pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows);
+    Assert((unsigned)enmGstReg < (unsigned)kIemNativeGstReg_End);
+
+    pReNative->Core.aidxGstRegShadows[enmGstReg]       = idxHstReg;
+    pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = RT_BIT_64(enmGstReg); /** @todo why? not OR? */
+    pReNative->Core.bmGstRegShadows                   |= RT_BIT_64(enmGstReg);
+    pReNative->Core.bmHstRegsWithGstShadow            |= RT_BIT_32(idxHstReg);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestRegShadowing(pReNative, enmGstReg, idxHstReg);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Clear any guest register shadow claims from @a idxHstReg.
+ *
+ * The register does not need to be shadowing any guest registers.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, uint32_t off)
+{
+    Assert(      (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows)
+              == pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows
+           && pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg))
+           == RT_BOOL(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows));
+
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    uint64_t fGstRegs = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
+    if (fGstRegs)
+    {
+        Assert(fGstRegs < RT_BIT_64(kIemNativeGstReg_End));
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        while (fGstRegs)
+        {
+            unsigned const iGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+            fGstRegs &= ~RT_BIT_64(iGstReg);
+            iemNativeDbgInfoAddGuestRegShadowing(pReNative, (IEMNATIVEGSTREG)iGstReg, UINT8_MAX, idxHstReg);
+        }
+    }
+#else
+    RT_NOREF(off);
+#endif
+
+    pReNative->Core.bmHstRegsWithGstShadow            &= ~RT_BIT_32(idxHstReg);
+    pReNative->Core.bmGstRegShadows                   &= ~pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
+    pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = 0;
+}
+
+
+/**
+ * Clear guest register shadow claim regarding @a enmGstReg from @a idxHstReg
+ * and global overview flags.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegClearGstRegShadowingOne(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg, uint32_t off)
+{
+    Assert(pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(      (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows)
+              == pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows
+           && pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(pReNative->Core.bmGstRegShadows                    & RT_BIT_64(enmGstReg));
+    Assert(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(enmGstReg));
+    Assert(pReNative->Core.bmHstRegsWithGstShadow             & RT_BIT_32(idxHstReg));
+
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestRegShadowing(pReNative, enmGstReg, UINT8_MAX, idxHstReg);
+#else
+    RT_NOREF(off);
+#endif
+
+    uint64_t const fGstRegShadowsNew = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & ~RT_BIT_64(enmGstReg);
+    pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = fGstRegShadowsNew;
+    if (!fGstRegShadowsNew)
+        pReNative->Core.bmHstRegsWithGstShadow        &= ~RT_BIT_32(idxHstReg);
+    pReNative->Core.bmGstRegShadows                   &= ~RT_BIT_64(enmGstReg);
+}
+
+
+#if 0 /* unused */
+/**
+ * Clear any guest register shadow claim for @a enmGstReg.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegClearGstRegShadowingByGstReg(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg, uint32_t off)
+{
+    Assert(pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
+    {
+        Assert(pReNative->Core.aidxGstRegShadows[enmGstReg] < RT_ELEMENTS(pReNative->Core.aHstRegs));
+        iemNativeRegClearGstRegShadowingOne(pReNative, pReNative->Core.aidxGstRegShadows[enmGstReg], enmGstReg, off);
+    }
+}
+#endif
+
+
+/**
+ * Clear any guest register shadow claim for @a enmGstReg and mark @a idxHstRegNew
+ * as the new shadow of it.
+ *
+ * Unlike the other guest reg shadow helpers, this does the logging for you.
+ * However, it is the liveness state is not asserted here, the caller must do
+ * that.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegClearAndMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstRegNew,
+                                       IEMNATIVEGSTREG enmGstReg, uint32_t off)
+{
+    Assert(pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
+    {
+        uint8_t const idxHstRegOld = pReNative->Core.aidxGstRegShadows[enmGstReg];
+        Assert(idxHstRegOld < RT_ELEMENTS(pReNative->Core.aHstRegs));
+        if (idxHstRegOld == idxHstRegNew)
+            return;
+        Log12(("iemNativeRegClearAndMarkAsGstRegShadow: %s for guest %s (from %s)\n", g_apszIemNativeHstRegNames[idxHstRegNew],
+               g_aGstShadowInfo[enmGstReg].pszName, g_apszIemNativeHstRegNames[idxHstRegOld]));
+        iemNativeRegClearGstRegShadowingOne(pReNative, pReNative->Core.aidxGstRegShadows[enmGstReg], enmGstReg, off);
+    }
+    else
+        Log12(("iemNativeRegClearAndMarkAsGstRegShadow: %s for guest %s\n", g_apszIemNativeHstRegNames[idxHstRegNew],
+               g_aGstShadowInfo[enmGstReg].pszName));
+    iemNativeRegMarkAsGstRegShadow(pReNative, idxHstRegNew, enmGstReg, off);
+}
+
+
+/**
+ * Transfers the guest register shadow claims of @a enmGstReg from @a idxRegFrom
+ * to @a idxRegTo.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRegFrom, uint8_t idxRegTo,
+                                    IEMNATIVEGSTREG enmGstReg, uint32_t off)
+{
+    Assert(pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows & RT_BIT_64(enmGstReg));
+    Assert(pReNative->Core.aidxGstRegShadows[enmGstReg] == idxRegFrom);
+    Assert(      (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows)
+              == pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows
+           && pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(   (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxRegTo].fGstRegShadows)
+           == pReNative->Core.aHstRegs[idxRegTo].fGstRegShadows);
+    Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxRegFrom))
+           == RT_BOOL(pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows));
+
+    uint64_t const fGstRegShadowsFrom = pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows & ~RT_BIT_64(enmGstReg);
+    pReNative->Core.aHstRegs[idxRegFrom].fGstRegShadows  = fGstRegShadowsFrom;
+    if (!fGstRegShadowsFrom)
+        pReNative->Core.bmHstRegsWithGstShadow          &= ~RT_BIT_32(idxRegFrom);
+    pReNative->Core.bmHstRegsWithGstShadow              |= RT_BIT_32(idxRegTo);
+    pReNative->Core.aHstRegs[idxRegTo].fGstRegShadows   |= RT_BIT_64(enmGstReg);
+    pReNative->Core.aidxGstRegShadows[enmGstReg]         = idxRegTo;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestRegShadowing(pReNative, enmGstReg, idxRegTo, idxRegFrom);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Flushes any delayed guest register writes.
+ *
+ * This must be called prior to calling CImpl functions and any helpers that use
+ * the guest state (like raising exceptions) and such.
+ *
+ * This optimization has not yet been implemented.  The first target would be
+ * RIP updates, since these are the most common ones.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0, bool fFlushShadows = true)
+{
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (!(fGstShwExcept & kIemNativeGstReg_Pc))
+        return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fFlushShadows);
+#else
+    RT_NOREF(pReNative, fGstShwExcept);
+#endif
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** @todo r=bird: There must be a quicker way to check if anything needs doing here!  */
+    /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
+    return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fFlushShadows);
+#else
+    RT_NOREF(pReNative, fGstShwExcept, fFlushShadows);
+    return off;
+#endif
+}
+
+
+
+/*********************************************************************************************************************************
+*   SIMD register allocator (largely code duplication of the GPR allocator for now but might diverge)                            *
+*********************************************************************************************************************************/
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+
+DECL_FORCE_INLINE(uint8_t)
+iemNativeSimdRegMarkAllocated(PIEMRECOMPILERSTATE pReNative, uint8_t idxSimdReg,
+                              IEMNATIVEWHAT enmWhat, uint8_t idxVar = UINT8_MAX) RT_NOEXCEPT
+{
+    pReNative->Core.bmHstSimdRegs |= RT_BIT_32(idxSimdReg);
+
+    pReNative->Core.aHstSimdRegs[idxSimdReg].enmWhat        = enmWhat;
+    pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows = 0;
+    RT_NOREF(idxVar);
+    return idxSimdReg;
+}
+
+
+/**
+ * Marks host SIMD register @a idxHstSimdReg as containing a shadow copy of guest
+ * SIMD register @a enmGstSimdReg.
+ *
+ * ASSUMES that caller has made sure @a enmGstSimdReg is not associated with any
+ * host register before calling.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegMarkAsGstSimdRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg,
+                                       IEMNATIVEGSTSIMDREG enmGstSimdReg, uint32_t off)
+{
+    Assert(!(pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(enmGstSimdReg)));
+    Assert(!pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows);
+    Assert((unsigned)enmGstSimdReg < (unsigned)kIemNativeGstSimdReg_End);
+
+    pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg]       = idxHstSimdReg;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.bmGstSimdRegShadows                        |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.bmHstSimdRegsWithGstShadow                 |= RT_BIT_32(idxHstSimdReg);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, enmGstSimdReg, idxHstSimdReg);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Transfers the guest SIMD register shadow claims of @a enmGstSimdReg from @a idxSimdRegFrom
+ * to @a idxSimdRegTo.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegTransferGstSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxSimdRegFrom, uint8_t idxSimdRegTo,
+                                            IEMNATIVEGSTSIMDREG enmGstSimdReg, uint32_t off)
+{
+    Assert(pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows & RT_BIT_64(enmGstSimdReg));
+    Assert(pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg] == idxSimdRegFrom);
+    Assert(      (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows)
+              == pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows
+           && pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows)
+           == pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows);
+    Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdRegFrom))
+           == RT_BOOL(pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows));
+    Assert(   pReNative->Core.aHstSimdRegs[idxSimdRegFrom].enmLoaded
+           == pReNative->Core.aHstSimdRegs[idxSimdRegTo].enmLoaded);
+
+    uint64_t const fGstRegShadowsFrom = pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows & ~RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.aHstSimdRegs[idxSimdRegFrom].fGstRegShadows  = fGstRegShadowsFrom;
+    if (!fGstRegShadowsFrom)
+    {
+        pReNative->Core.bmHstSimdRegsWithGstShadow               &= ~RT_BIT_32(idxSimdRegFrom);
+        pReNative->Core.aHstSimdRegs[idxSimdRegFrom].enmLoaded    = kIemNativeGstSimdRegLdStSz_Invalid;
+    }
+    pReNative->Core.bmHstSimdRegsWithGstShadow                |= RT_BIT_32(idxSimdRegTo);
+    pReNative->Core.aHstSimdRegs[idxSimdRegTo].fGstRegShadows |= RT_BIT_64(enmGstSimdReg);
+    pReNative->Core.aidxGstSimdRegShadows[enmGstSimdReg]       = idxSimdRegTo;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, enmGstSimdReg, idxSimdRegTo, idxSimdRegFrom);
+#else
+    RT_NOREF(off);
+#endif
+}
+
+
+/**
+ * Clear any guest register shadow claims from @a idxHstSimdReg.
+ *
+ * The register does not need to be shadowing any guest registers.
+ */
+DECL_FORCE_INLINE(void)
+iemNativeSimdRegClearGstSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, uint32_t off)
+{
+    Assert(      (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows)
+              == pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows
+           && pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstSimdReg_End));
+    Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxHstSimdReg))
+           == RT_BOOL(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows));
+    Assert(   !(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadowDirtyLo128)
+           && !(pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadowDirtyHi128));
+
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    uint64_t fGstRegs = pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+    if (fGstRegs)
+    {
+        Assert(fGstRegs < RT_BIT_64(kIemNativeGstSimdReg_End));
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        while (fGstRegs)
+        {
+            unsigned const iGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+            fGstRegs &= ~RT_BIT_64(iGstReg);
+            iemNativeDbgInfoAddGuestSimdRegShadowing(pReNative, (IEMNATIVEGSTSIMDREG)iGstReg, UINT8_MAX, idxHstSimdReg);
+        }
+    }
+#else
+    RT_NOREF(off);
+#endif
+
+    pReNative->Core.bmHstSimdRegsWithGstShadow        &= ~RT_BIT_32(idxHstSimdReg);
+    pReNative->Core.bmGstSimdRegShadows               &= ~pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows = 0;
+    pReNative->Core.aHstSimdRegs[idxHstSimdReg].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
+}
+
+#endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
+
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+/**
+ * Emits code to update the guest RIP value by adding the current offset since the start of the last RIP update.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitPcWriteback(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    if (pReNative->Core.offPc)
+        return iemNativeEmitPcWritebackSlow(pReNative, off);
+    return off;
+}
+#endif /* IEMNATIVE_WITH_DELAYED_PC_UPDATING  */
+
 
 /** @} */
 
