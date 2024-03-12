@@ -5979,12 +5979,12 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     /* pcmpeqq vectmp0, [gstreg] (ASSUMES SSE4.1) */
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (idxSimdReg >= 8)
+    if (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0x38;
     pbCodeBuf[off++] = 0x29;
-    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxSimdReg, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
 
     /* pextrq tmp0, vectmp0, #0 (ASSUMES SSE4.1). */
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
@@ -5997,13 +5997,10 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     pbCodeBuf[off++] = 0xeb;
     pbCodeBuf[off++] = 0x00;
 
-    /* test tmp0, 0xffffffff. */
+    /* cmp tmp0, 0xffffffffffffffff. */
     pbCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0xf7;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, IEMNATIVE_REG_FIXED_TMP0 & 7);
-    pbCodeBuf[off++] = 0xff;
-    pbCodeBuf[off++] = 0xff;
-    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0x83;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, IEMNATIVE_REG_FIXED_TMP0 & 7);
     pbCodeBuf[off++] = 0xff;
 
     /* je/jz +1 */
@@ -6024,13 +6021,10 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     pbCodeBuf[off++] = 0xeb;
     pbCodeBuf[off++] = 0x01;
 
-    /* test tmp0, 0xffffffff. */
+    /* cmp tmp0, 0xffffffffffffffff. */
     pbCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
-    pbCodeBuf[off++] = 0xf7;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, IEMNATIVE_REG_FIXED_TMP0 & 7);
-    pbCodeBuf[off++] = 0xff;
-    pbCodeBuf[off++] = 0xff;
-    pbCodeBuf[off++] = 0xff;
+    pbCodeBuf[off++] = 0x83;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, IEMNATIVE_REG_FIXED_TMP0 & 7);
     pbCodeBuf[off++] = 0xff;
 
     /* je/jz +1 */
