@@ -143,9 +143,11 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 # else
     NOREF(pSrcPos);
 # endif
+# ifdef IN_RING3
     if (pSrcPos)
         Log12Func(("%p: uId=%p ln=%u fn=%s\n", pCritSect, pSrcPos->uId, pSrcPos->uLine, pSrcPos->pszFunction));
     else
+# endif
         Log12Func(("%p\n", pCritSect));
 
     STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
