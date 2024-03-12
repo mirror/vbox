@@ -36,7 +36,6 @@
 #include "UIProgressTask.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
 

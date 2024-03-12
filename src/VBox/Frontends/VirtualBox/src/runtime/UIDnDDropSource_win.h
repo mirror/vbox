@@ -32,7 +32,6 @@
 #endif
 
 /* COM includes: */
-#include "COMEnums.h"
 
 class UIDnDDataObject;
 

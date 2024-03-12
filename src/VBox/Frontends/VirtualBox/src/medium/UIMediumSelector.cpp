@@ -53,7 +53,6 @@
 #include "QIToolBar.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CMediumFormat.h"

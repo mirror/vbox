@@ -36,7 +36,10 @@
 #include "UIPortForwardingTable.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KNetworkAdapterType.h"
+#include "KNetworkAttachmentType.h"
+#include "KNetworkAdapterPromiscModePolicy.h"
+
 
 /* Forward declarations: */
 class QCheckBox;

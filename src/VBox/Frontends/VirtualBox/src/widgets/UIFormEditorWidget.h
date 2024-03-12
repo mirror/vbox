@@ -36,7 +36,6 @@
 #include <QWidget>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CFormValue.h"
 
 /* Forward declarations: */

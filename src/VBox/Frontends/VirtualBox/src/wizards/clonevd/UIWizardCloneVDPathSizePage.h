@@ -39,7 +39,6 @@
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declarations: */
 class UIMediumSizeAndPathGroupBox;

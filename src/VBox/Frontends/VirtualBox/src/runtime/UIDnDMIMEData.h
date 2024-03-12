@@ -35,7 +35,6 @@
 #include <QMimeData>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CConsole.h"
 #include "CDnDSource.h"
 #include "CGuest.h"

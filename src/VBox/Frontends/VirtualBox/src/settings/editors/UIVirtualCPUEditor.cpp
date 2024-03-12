@@ -38,7 +38,6 @@
 #include "UIVirtualCPUEditor.h"
 
 /* COM includes */
-#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 UIVirtualCPUEditor::UIVirtualCPUEditor(QWidget *pParent /* = 0 */)

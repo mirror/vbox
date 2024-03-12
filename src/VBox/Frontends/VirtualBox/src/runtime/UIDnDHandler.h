@@ -37,7 +37,6 @@
 #include <QStringList>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CDnDTarget.h"
 #include "CDnDSource.h"
 

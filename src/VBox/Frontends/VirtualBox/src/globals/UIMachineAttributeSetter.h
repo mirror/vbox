@@ -32,8 +32,8 @@
 #endif
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
+#include "KNetworkAttachmentType.h"
 
 /** Known machine attributes. */
 enum MachineAttribute

@@ -35,7 +35,6 @@
 # include <QUuid>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CGuest.h"

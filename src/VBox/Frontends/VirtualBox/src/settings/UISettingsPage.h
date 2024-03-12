@@ -37,7 +37,6 @@
 #include "UISettingsDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CConsole.h"
 #include "CHost.h"
 #include "CMachine.h"

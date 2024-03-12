@@ -38,8 +38,8 @@
 #include <QWidget>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuestSession.h"
+#include "KFsObjType.h"
 
 /* GUI includes: */
 #include "QIDialog.h"

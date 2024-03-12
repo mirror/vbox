@@ -38,7 +38,7 @@
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KCloneMode.h"
 
 /* Forward declaration: */
 class QIRichTextLabel;

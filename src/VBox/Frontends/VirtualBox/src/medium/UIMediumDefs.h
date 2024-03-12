@@ -39,7 +39,8 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KDeviceType.h"
+#include "KStorageBus.h"
 
 /* Forward declarations: */
 class CVirtualBox;

@@ -33,12 +33,40 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
+/* COM includes: */
+#include "KAudioControllerType.h"
+#include "KAuthType.h"
+#include "KAudioDriverType.h"
+#include "KChipsetType.h"
+#include "KClipboardMode.h"
+#include "KCloudMachineState.h"
+#include "KDeviceType.h"
+#include "KDnDMode.h"
+#include "KGraphicsControllerType.h"
+#include "KGuestSessionStatus.h"
+#include "KMachineState.h"
+#include "KMediumType.h"
+#include "KMediumVariant.h"
+#include "KMetricType.h"
+#include "KNATProtocol.h"
+#include "KNetworkAdapterType.h"
+#include "KNetworkAttachmentType.h"
+#include "KNetworkAdapterPromiscModePolicy.h"
+#include "KParavirtProvider.h"
+#include "KPointingHIDType.h"
+#include "KAudioDriverType.h"
+#include "KPortMode.h"
+#include "KProcessStatus.h"
+#include "KSessionState.h"
+#include "KStorageBus.h"
+#include "KStorageControllerType.h"
+#include "KTpmType.h"
+#include "KUSBControllerType.h"
+#include "KUSBDeviceFilterAction.h"
+#include "KUSBDeviceState.h"
 
 /* QIcon <= KCloudMachineState: */
 template<> SHARED_LIBRARY_STUFF QIcon UIConverter::toIcon(const KCloudMachineState &state) const

@@ -40,7 +40,7 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KNATProtocol.h"
 
 /* Forward declarations: */
 class QAction;

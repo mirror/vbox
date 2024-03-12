@@ -35,7 +35,7 @@
 #include "UIEditor.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KPortMode.h"
 
 /* Forward declarations: */
 class QCheckBox;

@@ -42,7 +42,6 @@
 #include "UITranslator.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CAudioAdapter.h"
 #include "CAudioSettings.h"
 #include "CBooleanFormValue.h"

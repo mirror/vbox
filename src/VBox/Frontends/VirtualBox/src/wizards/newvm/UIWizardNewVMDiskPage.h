@@ -39,7 +39,6 @@
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMedium.h"
 
 /* Forward declarations: */

@@ -31,11 +31,12 @@
 # pragma once
 #endif
 
+/* COM includes: */
+#include "KProxyMode.h"
+
 /* GUI includes: */
 #include "UIEditor.h"
 
-/* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declarations: */
 class QButtonGroup;

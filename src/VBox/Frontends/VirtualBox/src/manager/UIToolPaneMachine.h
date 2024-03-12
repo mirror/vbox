@@ -39,7 +39,6 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 
 /* Forward declarations: */

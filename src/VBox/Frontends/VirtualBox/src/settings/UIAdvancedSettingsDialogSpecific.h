@@ -35,7 +35,6 @@
 #include "UIAdvancedSettingsDialog.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CConsole.h"
 #include "CMachine.h"
 #include "CSession.h"

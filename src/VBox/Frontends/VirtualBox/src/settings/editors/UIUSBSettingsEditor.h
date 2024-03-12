@@ -36,7 +36,7 @@
 #include "UIUSBFiltersEditor.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KUSBControllerType.h"
 
 /* Forward declarations: */
 class QCheckBox;

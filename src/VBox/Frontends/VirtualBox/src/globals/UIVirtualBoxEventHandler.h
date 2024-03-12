@@ -38,9 +38,10 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
+#include "KMachineState.h"
+#include "KSessionState.h"
 
 /* Forward declarations: */
 class UIVirtualBoxEventHandlerProxy;

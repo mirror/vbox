@@ -37,7 +37,6 @@
 #include <QVector>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuestOSType.h"
 
 /** Represents guest OS family info. */

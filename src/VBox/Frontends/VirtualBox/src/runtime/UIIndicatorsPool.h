@@ -39,7 +39,7 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KDeviceActivity.h"
 
 /* Forward declarations: */
 class QTimer;
@@ -140,4 +140,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIIndicatorsPool_h */
-

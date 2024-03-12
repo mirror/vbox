@@ -46,7 +46,6 @@
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,

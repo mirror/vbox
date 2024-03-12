@@ -36,6 +36,9 @@
 #include "UIExtraDataDefs.h"
 #include "UIAdvancedSettingsDialog.h"
 
+/* COM includes: */
+#include "KGuestMonitorChangedEventType.h"
+
 /* Forward declarations: */
 class QAction;
 class QActionGroup;

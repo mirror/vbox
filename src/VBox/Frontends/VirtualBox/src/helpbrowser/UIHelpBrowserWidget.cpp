@@ -65,7 +65,6 @@
 
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 

@@ -36,7 +36,8 @@
 #include "UIPortForwardingTable.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KAudioControllerType.h"
+#include "KAudioDriverType.h"
 
 /* Forward declarations: */
 class QCheckBox;

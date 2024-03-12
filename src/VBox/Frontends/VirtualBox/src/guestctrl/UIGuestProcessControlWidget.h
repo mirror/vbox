@@ -35,7 +35,6 @@
 #include <QWidget>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuest.h"
 #include "CEventListener.h"
 

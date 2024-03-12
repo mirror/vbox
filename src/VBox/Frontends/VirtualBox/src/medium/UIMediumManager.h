@@ -39,6 +39,9 @@
 #include "QIWithRetranslateUI.h"
 #include "UIMediumDefs.h"
 
+/* COM includes: */
+#include "KMachineState.h"
+
 /* Forward declarations: */
 class QAbstractButton;
 class QLabel;

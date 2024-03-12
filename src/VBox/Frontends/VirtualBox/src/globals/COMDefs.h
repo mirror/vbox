@@ -87,6 +87,7 @@
 #undef ASSERT
 
 /* Qt includes */
+#include <QMetaType>
 #include <QString>
 #include <QUuid>
 #include <QVector>
@@ -1160,4 +1161,3 @@ public:
 /** @} */
 
 #endif /* !FEQT_INCLUDED_SRC_globals_COMDefs_h */
-

@@ -41,7 +41,6 @@
 #include "UIModalWindowManager.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 #include <VBox/com/VirtualBox.h> /* Need GUEST_OS_ID_STR_X86 and friends. */
 

@@ -41,7 +41,6 @@
 #include "QITreeWidget.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 #include "CPlatform.h"
 #include "CPlatformProperties.h"

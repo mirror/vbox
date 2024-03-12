@@ -38,8 +38,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Other VBox includes: */
-#include "COMEnums.h"
-
+#include "KCloneMode.h"
 
 /* Forward declarations: */
 class QAbstractButton;

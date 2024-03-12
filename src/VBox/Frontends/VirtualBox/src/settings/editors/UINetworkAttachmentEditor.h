@@ -36,7 +36,7 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KNetworkAttachmentType.h"
 
 /* Forward declarations: */
 class QComboBox;

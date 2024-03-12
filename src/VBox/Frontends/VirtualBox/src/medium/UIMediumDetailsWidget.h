@@ -40,7 +40,8 @@
 #include "UIMediumDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KMediumType.h"
+#include "KMediumVariant.h"
 
 /* Forward declarations: */
 class QAbstractButton;

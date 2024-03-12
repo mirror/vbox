@@ -36,7 +36,6 @@
 #include "UIMousePointerShapeData.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCanShowWindowEvent.h"
 #include "CClipboardErrorEvent.h"
 #include "CClipboardModeChangedEvent.h"

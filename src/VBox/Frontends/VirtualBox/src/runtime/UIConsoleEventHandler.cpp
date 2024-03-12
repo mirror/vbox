@@ -36,7 +36,6 @@
 #endif
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CConsole.h"
 #include "CEventListener.h"
 #include "CEventSource.h"

@@ -39,7 +39,6 @@
 #include <QHash>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuest.h"
 #include "CMachine.h"
 #include "CCloudMachine.h"

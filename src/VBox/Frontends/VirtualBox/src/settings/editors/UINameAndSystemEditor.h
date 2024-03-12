@@ -36,7 +36,6 @@
 #include "UIGuestOSType.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuestOSType.h"
 
 /* Forward declarations: */

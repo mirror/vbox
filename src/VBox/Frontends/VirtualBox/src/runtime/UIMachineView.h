@@ -44,7 +44,7 @@
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KMachineState.h"
 
 /* Other VBox includes: */
 #include "VBox/com/ptr.h"

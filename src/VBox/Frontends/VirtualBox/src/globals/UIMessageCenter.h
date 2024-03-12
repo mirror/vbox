@@ -39,7 +39,6 @@
 #include "UIMediumDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CProgress.h"
 
 /* Forward declarations: */

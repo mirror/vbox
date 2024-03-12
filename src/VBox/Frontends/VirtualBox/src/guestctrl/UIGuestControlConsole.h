@@ -35,7 +35,6 @@
 # include <QPlainTextEdit>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuest.h"
 
 class UIGuestControlInterface;

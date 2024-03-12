@@ -38,7 +38,6 @@
 #include "UITask.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudMachine.h"
 #include "CForm.h"
 

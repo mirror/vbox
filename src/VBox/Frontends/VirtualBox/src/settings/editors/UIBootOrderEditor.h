@@ -35,7 +35,7 @@
 #include "UIEditor.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KDeviceType.h"
 
 /* Forward declarations: */
 class QGridLayout;

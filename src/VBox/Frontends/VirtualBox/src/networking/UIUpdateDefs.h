@@ -39,9 +39,8 @@
 #include "UIVersion.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CHost.h"
-
+#include "KUpdateChannel.h"
 
 /** Update period types. */
 enum UpdatePeriodType

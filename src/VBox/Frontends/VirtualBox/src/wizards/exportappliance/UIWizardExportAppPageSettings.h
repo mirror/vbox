@@ -38,7 +38,6 @@
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CAppliance.h"
 
 /* Forward declarations: */

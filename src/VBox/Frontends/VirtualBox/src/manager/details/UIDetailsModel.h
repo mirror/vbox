@@ -41,7 +41,6 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declaration: */
 class QGraphicsItem;

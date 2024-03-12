@@ -38,7 +38,9 @@
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KClipboardMode.h"
+#include "KDnDMode.h"
+#include "KGuestMonitorChangedEventType.h"
 
 /* Forward declarations: */
 class QAction;

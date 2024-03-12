@@ -38,7 +38,7 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KFsObjType.h"
 
 class QMimeData;
 class UIFileSystemModel;

@@ -45,7 +45,6 @@
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 
 

@@ -185,33 +185,33 @@
  *  Declare enums:
 -->
 <xsl:template name="declareEnums">
-    <!-- Starting COMEnums.h file: -->
-    <xsl:call-template name="startFile">
-        <xsl:with-param name="file" select="'COMEnums.h'" />
-    </xsl:call-template>
-
-    <!-- Write down file header: -->
-    <xsl:text>/*&#x0A;</xsl:text>
-    <xsl:text> * DO NOT EDIT! This is a generated file.&#x0A;</xsl:text>
-    <xsl:text> *&#x0A;</xsl:text>
-    <xsl:text> * Qt-based wrappers for VirtualBox Main API (COM) enums.&#x0A;</xsl:text>
-    <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
-    <xsl:text> *&#x0A;</xsl:text>
-    <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
-    <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/src/globals/COMWrappers.xsl&#x0A;</xsl:text>
-    <xsl:text> */&#x0A;&#x0A;</xsl:text>
-    <xsl:text>#ifndef ___COMEnums_h___&#x0A;</xsl:text>
-    <xsl:text>#define ___COMEnums_h___&#x0A;&#x0A;</xsl:text>
-    <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
-    <xsl:text>#include "QMetaType"&#x0A;&#x0A;</xsl:text>
-
     <!-- Enumerate all enums: -->
     <xsl:for-each select="application/enum">
+        <!-- Starting enumeration header file: -->
+        <xsl:variable name="enumName" select="concat('K',@name)"/>
+        <xsl:variable name="fileName" select="concat(concat('K',@name), '.h')"/>
+        <xsl:call-template name="startFile">
+            <xsl:with-param name="file" select="$fileName" />
+        </xsl:call-template>
+        <!-- Write down file header: -->
+        <xsl:text>/*&#x0A;</xsl:text>
+        <xsl:text> * DO NOT EDIT! This is a generated file.&#x0A;</xsl:text>
+        <xsl:text> *&#x0A;</xsl:text>
+        <xsl:text> * Qt-based wrappers for VirtualBox Main API (COM) enums.&#x0A;</xsl:text>
+        <xsl:text> * Generated from XIDL (XML interface definition).&#x0A;</xsl:text>
+        <xsl:text> *&#x0A;</xsl:text>
+        <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
+        <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/src/globals/COMWrappers.xsl&#x0A;</xsl:text>
+        <xsl:text> */&#x0A;&#x0A;</xsl:text>
+        <xsl:text>#ifndef ___</xsl:text><xsl:value-of select="$enumName" /><xsl:text>_h___&#x0A;</xsl:text>
+        <xsl:text>#define ___</xsl:text><xsl:value-of select="$enumName" /><xsl:text>_h___&#x0A;</xsl:text>
+        <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
+        <xsl:text>#include "QMetaType"&#x0A;&#x0A;</xsl:text>
         <xsl:text>/* </xsl:text>
-        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:value-of select="$enumName"/>
         <xsl:text> enum: */&#x0A;</xsl:text>
         <xsl:text>enum </xsl:text>
-        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:value-of select="$enumName"/>
         <xsl:text>&#x0A;{&#x0A;</xsl:text>
         <xsl:for-each select="const">
             <xsl:text>    </xsl:text>
@@ -221,27 +221,22 @@
             <xsl:text>,&#x0A;</xsl:text>
         </xsl:for-each>
         <xsl:text>    </xsl:text>
-        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:value-of select="$enumName"/>
         <xsl:text>_Max&#x0A;</xsl:text>
         <xsl:text>};&#x0A;&#x0A;</xsl:text>
-    </xsl:for-each>
-
-    <!-- Declare enums to QMetaObject: -->
-    <xsl:text>/* Let QMetaType know about generated enums: */&#x0A;</xsl:text>
-    <xsl:for-each select="application/enum">
+        <!-- Declare enums to QMetaObject: -->
+        <xsl:text>/* Let QMetaType know about the generated enum: */&#x0A;</xsl:text>
         <xsl:text>Q_DECLARE_METATYPE(</xsl:text>
-        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:value-of select="$enumName"/>
         <xsl:text>)&#x0A;</xsl:text>
+        <xsl:text>&#x0A;</xsl:text>
+        <!-- Write down file footer: -->
+        <xsl:text>#endif /* ___</xsl:text><xsl:value-of select="$enumName" /><xsl:text>_h___ */&#x0A;</xsl:text>
+        <!-- Finishing enumeration header file: -->
+        <xsl:call-template name="endFile">
+            <xsl:with-param name="file" select="$fileName" />
+        </xsl:call-template>
     </xsl:for-each>
-    <xsl:text>&#x0A;</xsl:text>
-
-    <!-- Write down file footer: -->
-    <xsl:text>#endif /* __COMEnums_h__ */&#x0A;&#x0A;</xsl:text>
-
-    <!-- Finishing COMEnums.h file: -->
-    <xsl:call-template name="endFile">
-        <xsl:with-param name="file" select="'COMEnums.h'" />
-    </xsl:call-template>
 </xsl:template>
 
 
@@ -266,9 +261,6 @@
     <xsl:text> */&#x0A;&#x0A;</xsl:text>
 
     <xsl:text>#include "VBox/com/VirtualBox.h"&#x0A;&#x0A;</xsl:text>
-
-    <xsl:text>/* COM includes: */&#x0A;</xsl:text>
-    <xsl:text>#include "COMEnums.h"&#x0A;</xsl:text>
 
     <!-- Enumerate all interface definitions: -->
     <xsl:apply-templates select="application/if | application/interface[not(@internal='yes')]" mode="include"/>
@@ -323,6 +315,13 @@
     <xsl:text>COM_STRUCT_OR_CLASS(</xsl:text><xsl:value-of select="@name"/><xsl:text>);&#x0A;</xsl:text>
     <xsl:text>#endif&#x0A;</xsl:text>
 
+    <xsl:if test="name()='interface'">
+        <xsl:call-template name="findIncludes">
+        <xsl:with-param name="iface" select="."/>
+        </xsl:call-template>
+    </xsl:if>
+    <!-- <xsl:apply-templates select="attribute/@type" mode="dependency"/> -->
+    <xsl:text>&#x0A;&#x0A;</xsl:text>
     <!-- Forward declarations: -->
     <xsl:text>/* Forward declarations: */&#x0A;</xsl:text>
     <xsl:for-each select="//interface[not(@internal='yes')]">
@@ -679,6 +678,44 @@
   <xsl:apply-templates select="parent::node()" mode="end"/>
 </xsl:template>
 
+<xsl:template name="findIncludes">
+  <xsl:param name="iface"/>
+<xsl:apply-templates select="$iface//attribute[not(@internal='yes')]/@type | $iface//param[not(@internal='yes')]/@type" mode="dependency"/>
+  <xsl:if test="$iface//attribute[not(@internal='yes')]">
+    <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
+  <!-- go to the base interface -->
+  <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
+    <xsl:choose>
+      <!-- interfaces within application/if -->
+      <xsl:when test="name(..)='if'">
+        <xsl:call-template name="findIncludes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[self::interface and @name=$iface/@extends] |
+            following-sibling::
+              *[self::interface and @name=$iface/@extends] |
+            ../preceding-sibling::if[@target=../@target]/
+              *[self::interface and @name=$iface/@extends] |
+            ../following-sibling::if[@target=../@target]/
+              *[self::interface and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:when>
+      <!-- interfaces within application -->
+      <xsl:otherwise>
+        <xsl:call-template name="findIncludes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[self::interface and @name=$iface/@extends] |
+            following-sibling::
+              *[self::interface and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+</xsl:template>
 
 <!--
  *  interface includes
@@ -1544,6 +1581,27 @@
   </xsl:choose>
 </xsl:template>
 
+<!-- Returns include file name when an enum is referenced -->
+<xsl:template match="attribute/@type | param/@type" mode="dependency">
+    <xsl:choose>
+        <xsl:when test="count(key('G_keyEnumsByName', current())) > 0">
+            <xsl:text>&#xA;</xsl:text>
+            <xsl:text>#include "</xsl:text>
+            <xsl:value-of select="concat('K',string(.))"/>
+            <xsl:text>.h"</xsl:text>
+        </xsl:when>
+<!--         <xsl:otherwise>
+            <xsl:choose>
+                <xsl:when test="count(key('G_keyInterfacesByName', current())) > 0">
+                    <xsl:text>&#xA;</xsl:text>
+                    <xsl:text>#include "</xsl:text>
+                    <xsl:value-of select="concat('K',string(.))"/>
+                    <xsl:text>.h"</xsl:text>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:otherwise> -->
+    </xsl:choose>
+</xsl:template>
 
 <!--
  *  attribute/parameter type conversion (returns plain Qt type name)

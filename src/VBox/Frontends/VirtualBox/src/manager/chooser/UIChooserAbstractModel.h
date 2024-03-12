@@ -41,8 +41,9 @@
 #include "UIManagerDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudMachine.h" /* required for Qt6 / c++17 */
+#include "KMachineState.h"
+#include "KSessionState.h"
 
 /* Forward declaration: */
 class UIChooser;

@@ -40,7 +40,9 @@
 #include "UISettingsDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KChipsetType.h"
+#include "KPlatformArchitecture.h"
+#include "KStorageControllerType.h"
 
 /* Using declarations: */
 using namespace UISettingsDefs;

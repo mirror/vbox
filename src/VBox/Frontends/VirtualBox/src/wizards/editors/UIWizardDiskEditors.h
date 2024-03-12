@@ -58,7 +58,6 @@ class UIUserNamePasswordEditor;
 class UIMediumSizeEditor;
 
 /* Other VBox includes: */
-#include "COMEnums.h"
 #include "CMediumFormat.h"
 
 /** A set of static utility functions used by several wizard in the context of virtual media. */

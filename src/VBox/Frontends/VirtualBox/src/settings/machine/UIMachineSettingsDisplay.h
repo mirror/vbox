@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* COM includes: */
+#include "KGraphicsControllerType.h"
+
 /* GUI includes: */
 #include "UISettingsPage.h"
 

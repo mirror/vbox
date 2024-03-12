@@ -44,7 +44,18 @@
 #include "UITextTable.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KBitmapFormat.h"
+#include "KChipsetType.h"
+#include "KClipboardMode.h"
+#include "KDeviceActivity.h"
+#include "KDnDMode.h"
+#include "KGraphicsControllerType.h"
+#include "KGuestMonitorChangedEventType.h"
+#include "KGuestMonitorStatus.h"
+#include "KMachineState.h"
+#include "KParavirtProvider.h"
+#include "KPlatformArchitecture.h"
+#include "KVMExecutionEngine.h"
 
 /* Forward declarations: */
 class QWidget;

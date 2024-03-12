@@ -35,7 +35,6 @@
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudClient.h"
 
 /* Forward declarations: */

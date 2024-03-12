@@ -38,7 +38,6 @@
 #include <QVariant>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CDndSource.h"
 #include "CSession.h"
 

@@ -39,7 +39,6 @@
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuest.h"
 
 /** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */

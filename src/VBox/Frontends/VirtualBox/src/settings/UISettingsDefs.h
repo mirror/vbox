@@ -40,8 +40,8 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-
+#include "KSessionState.h"
+#include "KMachineState.h"
 
 /** Settings configuration namespace. */
 namespace UISettingsDefs

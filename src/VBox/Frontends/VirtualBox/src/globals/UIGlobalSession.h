@@ -36,7 +36,6 @@
 #include <QReadWriteLock>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CHost.h"
 #include "CVirtualBox.h"
 #include "CVirtualBoxClient.h"

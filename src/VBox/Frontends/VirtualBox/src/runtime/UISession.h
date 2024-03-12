@@ -46,7 +46,6 @@
 #include "UITextTable.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CConsole.h"
 #include "CDisplay.h"
 #include "CGuest.h"
@@ -55,6 +54,10 @@
 #include "CMachineDebugger.h"
 #include "CMouse.h"
 #include "CSession.h"
+#include "KChipsetType.h"
+#include "KGraphicsControllerType.h"
+#include "KGuestMonitorChangedEventType.h"
+#include "KPlatformArchitecture.h"
 
 /* Forward declarations: */
 class QMenu;

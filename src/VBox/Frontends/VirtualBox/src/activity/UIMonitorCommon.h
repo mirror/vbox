@@ -33,7 +33,6 @@
 
 #include <QPainterPath>
 #include "UIProgressTask.h"
-#include "COMEnums.h"
 #include "CStringArray.h"
 #include "CCloudMachine.h"
 

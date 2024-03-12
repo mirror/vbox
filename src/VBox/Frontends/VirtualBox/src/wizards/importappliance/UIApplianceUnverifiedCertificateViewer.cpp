@@ -36,7 +36,6 @@
 #include "UIApplianceUnverifiedCertificateViewer.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCertificate.h"
 
 

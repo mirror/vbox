@@ -36,7 +36,8 @@
 #include "UIMachineSettingsPortForwardingDlg.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KNetworkAdapterType.h"
+#include "KNetworkAdapterPromiscModePolicy.h"
 
 /* Forward declarations: */
 class QCheckBox;

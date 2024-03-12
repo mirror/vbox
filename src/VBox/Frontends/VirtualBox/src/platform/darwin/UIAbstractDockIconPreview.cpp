@@ -39,7 +39,6 @@
 #include "UIMachineView.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 
 
 UIAbstractDockIconPreview::UIAbstractDockIconPreview(UIMachine *, const QPixmap &)

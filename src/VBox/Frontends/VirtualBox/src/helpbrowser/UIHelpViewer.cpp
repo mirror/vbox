@@ -57,7 +57,6 @@
 #include "UISearchLineEdit.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 

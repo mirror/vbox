@@ -46,6 +46,8 @@
 /* COM includes: */
 #include "CMedium.h"
 #include "CSession.h"
+#include "KGraphicsControllerType.h"
+#include "KLockType.h"
 
 /* Forward declarations: */
 class QMenu;

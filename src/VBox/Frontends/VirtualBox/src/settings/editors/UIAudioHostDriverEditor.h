@@ -35,7 +35,7 @@
 #include "UIEditor.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KAudioDriverType.h"
 
 /* Forward declarations: */
 class QComboBox;

@@ -62,7 +62,6 @@
 #include "UIVMLogViewerPanel.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 #include "CSystemProperties.h"
 

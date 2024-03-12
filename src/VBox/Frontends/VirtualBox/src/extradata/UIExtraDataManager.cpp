@@ -76,7 +76,6 @@
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CMachine.h"

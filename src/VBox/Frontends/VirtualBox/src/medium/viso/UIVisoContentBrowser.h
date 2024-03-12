@@ -41,7 +41,7 @@
 #include <QWidget>
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KFsObjType.h"
 
 /* Forward declarations: */
 class QFileInfo;

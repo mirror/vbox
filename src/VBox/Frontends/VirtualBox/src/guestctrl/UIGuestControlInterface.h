@@ -37,8 +37,8 @@
 #include <QMap>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CGuest.h"
+#include "KFsObjType.h"
 
 class UIGuestControlSubCommandBase;
 class CommandData;

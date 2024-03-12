@@ -43,7 +43,6 @@
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
-#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 

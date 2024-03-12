@@ -36,7 +36,8 @@
 #include "UITextTable.h"
 
 /* COM includes: */
-#include "COMEnums.h"
+#include "KParavirtProvider.h"
+#include "KVMExecutionEngine.h"
 
 /* Forward declarations: */
 class CCloudMachine;

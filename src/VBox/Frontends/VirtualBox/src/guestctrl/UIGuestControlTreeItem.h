@@ -36,7 +36,6 @@
 #include "UIMainEventListener.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CEventListener.h"
 #include "CGuestSession.h"
 

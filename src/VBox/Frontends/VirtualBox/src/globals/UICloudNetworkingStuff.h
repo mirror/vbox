@@ -36,7 +36,6 @@
 #include "UINotificationCenter.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
 #include "CCloudProfile.h"

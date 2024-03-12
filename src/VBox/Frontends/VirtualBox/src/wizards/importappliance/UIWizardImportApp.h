@@ -35,7 +35,6 @@
 #include "UINativeWizard.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CAppliance.h"
 #include "CVirtualSystemDescriptionForm.h"
 

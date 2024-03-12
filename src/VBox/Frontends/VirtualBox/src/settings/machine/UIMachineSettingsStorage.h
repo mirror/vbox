@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* COM includes: */
+#include "KChipsetType.h"
+
 /* GUI includes: */
 #include "UISettingsPage.h"
 

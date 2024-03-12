@@ -40,8 +40,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-
+#include "KMachineState.h"
 
 /* Forward declarations: */
 class QITabWidget;

@@ -36,11 +36,14 @@
 #include <QRect>
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBDevice.h"
 #include "CVirtualBoxErrorInfo.h"
+#include "KClipboardMode.h"
+#include "KDnDMode.h"
+#include "KGuestMonitorChangedEventType.h"
+#include "KMachineState.h"
 
 /* Forward declarations: */
 class UIConsoleEventHandlerProxy;

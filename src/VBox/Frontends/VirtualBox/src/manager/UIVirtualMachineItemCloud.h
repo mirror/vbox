@@ -35,7 +35,6 @@
 #include "UIVirtualMachineItem.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CCloudMachine.h"
 
 /* Forward declarations: */

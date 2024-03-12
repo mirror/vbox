@@ -38,7 +38,6 @@
 #include "UILibraryDefs.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
 

@@ -42,7 +42,6 @@
 #include "UIToolsItem.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declaration: */
 class QGraphicsItem;
