@@ -7406,7 +7406,7 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     /** @todo If anyone has a better idea on how to do this more efficiently I'm all ears,
      *        vbroadcast needs a memory operand or another xmm register to work... */
 
-    /* pinsrd vecsrc, gpr, #0 (ASSUMES SSE4.1). */
+    /* pinsrd vecdst, gpr, #0 (ASSUMES SSE4.1). */
     pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (iVecRegDst >= 8 || iGprSrc >= 8)
         pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
@@ -7423,6 +7423,7 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
         /* vbroadcastss ymm, xmm (ASSUMES AVX2). */
         pCodeBuf[off++] = X86_OP_VEX3;
         pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
+                          | 0x02                 /* opcode map. */
                           | (  iVecRegDst >= 8
                              ? 0
                              : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
@@ -7432,7 +7433,7 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     }
     else
     {
-        /* pinsrd vecsrc, gpr, #1 (ASSUMES SSE4.1). */
+        /* pinsrd vecdst, gpr, #1 (ASSUMES SSE4.1). */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
         if (iVecRegDst >= 8 || iGprSrc >= 8)
             pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
@@ -7441,9 +7442,9 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
         pCodeBuf[off++] = 0x3a;
         pCodeBuf[off++] = 0x22;
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x01;
 
-        /* pinsrd vecsrc, gpr, #2 (ASSUMES SSE4.1). */
+        /* pinsrd vecdst, gpr, #2 (ASSUMES SSE4.1). */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
         if (iVecRegDst >= 8 || iGprSrc >= 8)
             pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
@@ -7452,9 +7453,9 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
         pCodeBuf[off++] = 0x3a;
         pCodeBuf[off++] = 0x22;
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x02;
 
-        /* pinsrd vecsrc, gpr, #3 (ASSUMES SSE4.1). */
+        /* pinsrd vecdst, gpr, #3 (ASSUMES SSE4.1). */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
         if (iVecRegDst >= 8 || iGprSrc >= 8)
             pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
@@ -7463,7 +7464,7 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
         pCodeBuf[off++] = 0x3a;
         pCodeBuf[off++] = 0x22;
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x00;
+        pCodeBuf[off++] = 0x03;
     }
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
@@ -7508,11 +7509,11 @@ iemNativeEmitSimdBroadcastGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     /** @todo If anyone has a better idea on how to do this more efficiently I'm all ears,
      *        vbroadcast needs a memory operand or another xmm register to work... */
 
-    /* pinsrq vecsrc, gpr, #0 (ASSUMES SSE4.1). */
+    /* pinsrq vecdst, gpr, #0 (ASSUMES SSE4.1). */
     pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (iVecRegDst >= 8 || iGprSrc >= 8)
-        pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] =   X86_OP_REX_W
+                      | (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                      | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
     pCodeBuf[off++] = 0x0f;
     pCodeBuf[off++] = 0x3a;
     pCodeBuf[off++] = 0x22;
@@ -7525,6 +7526,7 @@ iemNativeEmitSimdBroadcastGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
         /* vbroadcastsd ymm, xmm (ASSUMES AVX2). */
         pCodeBuf[off++] = X86_OP_VEX3;
         pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
+                          | 0x02                 /* opcode map. */
                           | (  iVecRegDst >= 8
                              ? 0
                              : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
@@ -7534,11 +7536,11 @@ iemNativeEmitSimdBroadcastGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     }
     else
     {
-        /* pinsrq vecsrc, gpr, #1 (ASSUMES SSE4.1). */
+        /* pinsrq vecdst, gpr, #1 (ASSUMES SSE4.1). */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (iVecRegDst >= 8 || iGprSrc >= 8)
-            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] =   X86_OP_REX_W
+                          | (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
         pCodeBuf[off++] = 0x0f;
         pCodeBuf[off++] = 0x3a;
         pCodeBuf[off++] = 0x22;
