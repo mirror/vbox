@@ -5182,6 +5182,26 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_VEX2             UINT8_C(0xc5)
 /** @} */
 
+/** @name X86_OP_VEX2_XXX - 2-byte VEX prefix helpers.
+ * @{ */
+#define X86_OP_VEX2_BYTE1_P_MASK        0x3
+# define X86_OP_VEX2_BYTE1_P_NO_PRF     0
+# define X86_OP_VEX2_BYTE1_P_066H       1
+# define X86_OP_VEX2_BYTE1_P_0F3H       2
+# define X86_OP_VEX2_BYTE1_P_0F2H       3
+#define X86_OP_VEX2_BYTE1_L             RT_BIT(2)
+#define X86_OP_VEX2_BYTE1_VVVV_MASK     0x78
+#define X86_OP_VEX2_BYTE1_VVVV_SHIFT    3
+#define X86_OP_VEX2_BYTE1_VVVV_NONE     15
+#define X86_OP_VEX2_BYTE1_R             RT_BIT(7)
+
+#define X86_OP_VEX2_BYTE1_MAKE(a_fRegW, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_fRegW) ? 0 : X86_OP_VEX2_BYTE1_R) \
+     | (~((uint8_t)(a_iSrcReg) & 0xf) << X86_OP_VEX2_BYTE1_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX2_BYTE1_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX2_BYTE1_P_MASK))
+/** @} */
+
 /** @name X86_OP_VEX3_XXX - 3-byte VEX prefix helpers.
  * @{ */
 #define X86_OP_VEX3_BYTE1_MAP_MASK      0x1f
