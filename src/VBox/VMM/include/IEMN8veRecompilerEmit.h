@@ -7261,7 +7261,7 @@ DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitSimdStoreGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iDWord)
 {
 #ifdef RT_ARCH_AMD64
-    /* pinsrq vecsrc, gpr, #iQWord (ASSUMES SSE4.1). */
+    /* pinsrd vecsrc, gpr, #iDWord (ASSUMES SSE4.1). */
     pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (iVecRegDst >= 8 || iGprSrc >= 8)
         pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
@@ -7388,6 +7388,108 @@ iemNativeEmitSimdZeroVecRegHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     off = iemNativeEmitSimdZeroVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iVecReg);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitSimdZeroVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a vecdst = gprsrc broadcast, 32-bit.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, bool f256Bit = false)
+{
+#ifdef RT_ARCH_AMD64
+    /** @todo If anyone has a better idea on how to do this more efficiently I'm all ears,
+     *        vbroadcast needs a memory operand or another xmm register to work... */
+
+    /* pinsrd vecsrc, gpr, #0 (ASSUMES SSE4.1). */
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iVecRegDst >= 8 || iGprSrc >= 8)
+        pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x3a;
+    pCodeBuf[off++] = 0x22;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+    pCodeBuf[off++] = 0x00;
+
+    if (f256Bit)
+    {
+        /* When broadcasting the entire ymm register we can use vbroadcastss now. */
+        /* vbroadcastss ymm, xmm (ASSUMES AVX2). */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
+                          | (  iVecRegDst >= 8
+                             ? 0
+                             : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
+        pCodeBuf[off++] = 0x7d;
+        pCodeBuf[off++] = 0x18;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegDst & 7);
+    }
+    else
+    {
+        /* pinsrd vecsrc, gpr, #1 (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iVecRegDst >= 8 || iGprSrc >= 8)
+            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+        pCodeBuf[off++] = 0x00;
+
+        /* pinsrd vecsrc, gpr, #2 (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iVecRegDst >= 8 || iGprSrc >= 8)
+            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+        pCodeBuf[off++] = 0x00;
+
+        /* pinsrd vecsrc, gpr, #3 (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iVecRegDst >= 8 || iGprSrc >= 8)
+            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+        pCodeBuf[off++] = 0x00;
+    }
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecRegDst & 0x1) || !f256Bit);
+
+    /* dup vecsrc, gpr */
+    pCodeBuf[off++] = Armv8A64MkVecInstrDup(iVecRegDst, iGprSrc, kArmv8InstrUmovInsSz_U32);
+    if (f256Bit)
+        pCodeBuf[off++] = Armv8A64MkVecInstrDup(iVecRegDst + 1, iGprSrc, kArmv8InstrUmovInsSz_U32);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[x] = gprsrc broadcast, 32-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdBroadcastGprToVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, bool f256Bit = false)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdBroadcastGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, f256Bit ? 12 : 28), off, iVecRegDst, iGprSrc, f256Bit);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdBroadcastGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, f256Bit ? 2 : 1), off, iVecRegDst, iGprSrc, f256Bit);
 #else
 # error "port me"
 #endif
