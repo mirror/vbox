@@ -2939,6 +2939,9 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->Core.offPc                  = 0;
     pReNative->Core.cInstrPcUpdateSkipped  = 0;
 #endif
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    pReNative->fSimdRaiseXcptChecksEmitted = 0;
+#endif
     pReNative->Core.bmHstRegs              = IEMNATIVE_REG_FIXED_MASK
 #if IEMNATIVE_HST_GREG_COUNT < 32
                                            | ~(RT_BIT(IEMNATIVE_HST_GREG_COUNT) - 1U)

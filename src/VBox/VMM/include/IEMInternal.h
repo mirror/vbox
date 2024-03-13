@@ -1897,8 +1897,23 @@ typedef struct IEMCPU
     /** Native recompiler: Number of PC updates which could be delayed. */
     STAMCOUNTER             StatNativePcUpdateDelayed;
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks. */
+    STAMCOUNTER             StatNativeMaybeDeviceNotAvailXcptCheckPotential;
+    /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks. */
+    STAMCOUNTER             StatNativeMaybeSseXcptCheckPotential;
+    /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks. */
+    STAMCOUNTER             StatNativeMaybeAvxXcptCheckPotential;
 
-    uint64_t                u64Padding;
+    /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks omitted. */
+    STAMCOUNTER             StatNativeMaybeDeviceNotAvailXcptCheckOmitted;
+    /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks omitted. */
+    STAMCOUNTER             StatNativeMaybeSseXcptCheckOmitted;
+    /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks omitted. */
+    STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
+#endif
+
+    uint64_t                au64Padding[3];
     /** @} */
 
     /** Data TLB.

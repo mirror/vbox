@@ -1205,6 +1205,13 @@ typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
 /** Set the high 128-bits of the given guest SIMD register to the dirty state. */
 # define IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(a_pReNative, a_iSimdReg) \
     ((a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128 |= RT_BIT_64(a_iSimdReg))
+
+/** Flag for indicating that IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() has emitted code in the current TB. */
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE RT_BIT_32(0)
+/** Flag for indicating that IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() has emitted code in the current TB. */
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE                  RT_BIT_32(1)
+/** Flag for indicating that IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() has emitted code in the current TB. */
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX                  RT_BIT_32(2)
 #endif
 
 
@@ -1305,6 +1312,16 @@ typedef struct IEMRECOMPILERSTATE
     uint32_t                    fMc;
     /** The expected IEMCPU::fExec value for the current call/instruction. */
     uint32_t                    fExec;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_XXX flags for exception flags
+     * we only emit once per TB (or when the cr0/cr4/xcr0 register changes).
+     *
+     * This is an optimization because these control registers can only be changed from
+     * by calling a C helper we can catch. Should reduce the number of instructions in a TB
+     * consisting of multiple SIMD instructions.
+     */
+    uint32_t                    fSimdRaiseXcptChecksEmitted;
+#endif
 
     /** Core state requiring care with branches. */
     IEMNATIVECORESTATE          Core;

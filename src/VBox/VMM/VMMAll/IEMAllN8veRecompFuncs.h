@@ -808,33 +808,46 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
 {
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an #NM and all guest register must be up to date in CPUMCTX.
-     *
-     * @todo r=aeichner Can we postpone this to the RaiseNm path?
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeDeviceNotAvailXcptCheckPotential);
+
+    if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE))
+    {
+#endif
+        /*
+         * Make sure we don't have any outstanding guest register writes as we may
+         * raise an #NM and all guest register must be up to date in CPUMCTX.
+         *
+         * @todo r=aeichner Can we postpone this to the RaiseNm path?
+         */
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
 #else
-    RT_NOREF(idxInstr);
+        RT_NOREF(idxInstr);
 #endif
 
-    /* Allocate a temporary CR0 register. */
-    uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
+        /* Allocate a temporary CR0 register. */
+        uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
 
-    /*
-     * if (cr0 & (X86_CR0_EM | X86_CR0_TS) != 0)
-     *     return raisexcpt();
-     */
-    /* Test and jump. */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM | X86_CR0_TS, idxLabelRaiseNm);
+        /*
+         * if (cr0 & (X86_CR0_EM | X86_CR0_TS) != 0)
+         *     return raisexcpt();
+         */
+        /* Test and jump. */
+        off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM | X86_CR0_TS, idxLabelRaiseNm);
 
-    /* Free but don't flush the CR0 register. */
-    iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+        /* Free but don't flush the CR0 register. */
+        iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE;
+    }
+    else
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeDeviceNotAvailXcptCheckOmitted);
+#endif
 
     return off;
 }
@@ -900,48 +913,60 @@ iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
 {
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-     *
-     * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeSseXcptCheckPotential);
+
+    if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE))
+    {
+#endif
+        /*
+         * Make sure we don't have any outstanding guest register writes as we may
+         * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
+         *
+         * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
+         */
+        off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
 #else
-    RT_NOREF(idxInstr);
+        RT_NOREF(idxInstr);
 #endif
 
-    /* Allocate a temporary CR0 and CR4 register. */
-    uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
-    uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
+        /* Allocate a temporary CR0 and CR4 register. */
+        uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
+        uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
 
-    /** @todo r=aeichner Optimize this more later to have less compares and branches,
-     *                   (see IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() in IEMMc.h but check that it has some
-     *                   actual performance benefit first). */
-    /*
-     * if (cr0 & X86_CR0_EM)
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_EM_BIT, idxLabelRaiseUd);
-    /*
-     * if (!(cr4 & X86_CR4_OSFXSR))
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR_BIT, idxLabelRaiseUd);
-    /*
-     * if (cr0 & X86_CR0_TS)
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
+        /** @todo r=aeichner Optimize this more later to have less compares and branches,
+         *                   (see IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() in IEMMc.h but check that it has some
+         *                   actual performance benefit first). */
+        /*
+         * if (cr0 & X86_CR0_EM)
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_EM_BIT, idxLabelRaiseUd);
+        /*
+         * if (!(cr4 & X86_CR4_OSFXSR))
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR_BIT, idxLabelRaiseUd);
+        /*
+         * if (cr0 & X86_CR0_TS)
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
 
-    /* Free but don't flush the CR0 and CR4 register. */
-    iemNativeRegFreeTmp(pReNative, idxCr0Reg);
-    iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+        /* Free but don't flush the CR0 and CR4 register. */
+        iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+        iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE;
+    }
+    else
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeSseXcptCheckOmitted);
+#endif
 
     return off;
 }
@@ -961,54 +986,66 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
 {
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-     *
-     * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeAvxXcptCheckPotential);
+
+    if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX))
+    {
+#endif
+        /*
+         * Make sure we don't have any outstanding guest register writes as we may
+         * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
+         *
+         * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
+         */
+        off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
 #else
-    RT_NOREF(idxInstr);
+        RT_NOREF(idxInstr);
 #endif
 
-    /* Allocate a temporary CR0, CR4 and XCR0 register. */
-    uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxXcr0Reg      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
-    uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
+        /* Allocate a temporary CR0, CR4 and XCR0 register. */
+        uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxXcr0Reg      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
+        uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
 
-    /** @todo r=aeichner Optimize this more later to have less compares and branches,
-     *                   (see IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() in IEMMc.h but check that it has some
-     *                   actual performance benefit first). */
-    /*
-     * if ((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE))
-     *     return raisexcpt();
-     */
-    const uint8_t idxRegTmp = iemNativeRegAllocTmpImm(pReNative, &off, XSAVE_C_YMM | XSAVE_C_SSE);
-    off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
-    off = iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, idxRegTmp, XSAVE_C_YMM | XSAVE_C_SSE, idxLabelRaiseUd);
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+        /** @todo r=aeichner Optimize this more later to have less compares and branches,
+         *                   (see IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() in IEMMc.h but check that it has some
+         *                   actual performance benefit first). */
+        /*
+         * if ((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE))
+         *     return raisexcpt();
+         */
+        const uint8_t idxRegTmp = iemNativeRegAllocTmpImm(pReNative, &off, XSAVE_C_YMM | XSAVE_C_SSE);
+        off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
+        off = iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, idxRegTmp, XSAVE_C_YMM | XSAVE_C_SSE, idxLabelRaiseUd);
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
 
-    /*
-     * if (!(cr4 & X86_CR4_OSXSAVE))
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE_BIT, idxLabelRaiseUd);
-    /*
-     * if (cr0 & X86_CR0_TS)
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
+        /*
+         * if (!(cr4 & X86_CR4_OSXSAVE))
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE_BIT, idxLabelRaiseUd);
+        /*
+         * if (cr0 & X86_CR0_TS)
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
 
-    /* Free but don't flush the CR0, CR4 and XCR0 register. */
-    iemNativeRegFreeTmp(pReNative, idxCr0Reg);
-    iemNativeRegFreeTmp(pReNative, idxCr4Reg);
-    iemNativeRegFreeTmp(pReNative, idxXcr0Reg);
+        /* Free but don't flush the CR0, CR4 and XCR0 register. */
+        iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+        iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+        iemNativeRegFreeTmp(pReNative, idxXcr0Reg);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX;
+    }
+    else
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeAvxXcptCheckOmitted);
+#endif
 
     return off;
 }
@@ -1988,6 +2025,21 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /* Clear the appropriate check emitted flags when a helper is called which could modify a control register. */
+    if (pfnCImpl == (uintptr_t)iemCImpl_xsetbv) /* Modifies xcr0 which only the AVX check uses. */
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX;
+    else if (pfnCImpl == (uintptr_t)iemCImpl_mov_Cd_Rd) /* Can modify cr4 which all checks use. */
+        pReNative->fSimdRaiseXcptChecksEmitted = 0;
+    else if (   pfnCImpl == (uintptr_t)iemCImpl_FarJmp
+             || pfnCImpl == (uintptr_t)iemCImpl_callf
+             || pfnCImpl == (uintptr_t)iemCImpl_lmsw
+             || pfnCImpl == (uintptr_t)iemCImpl_clts) /* Will only modify cr0 */
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~(  IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX
+                                                    | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE
+                                                    | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE);
+#endif
 
     /*
      * Do all the call setup and cleanup.
