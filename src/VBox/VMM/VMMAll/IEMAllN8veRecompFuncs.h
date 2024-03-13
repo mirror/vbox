@@ -1776,7 +1776,6 @@ iemNativeEmitIfMxcsrXcptPending(PIEMRECOMPILERSTATE pReNative, uint32_t off)
                                                                    kIemNativeGstRegUse_Calculation);
     uint8_t const idxRegTmp      = iemNativeRegAllocTmp(pReNative, &off);
 
-
     /* mov tmp0, mxcsr */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegTmp, idxGstMxcsrReg);
     /* tmp0 &= X86_MXCSR_XCPT_FLAGS */

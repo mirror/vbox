@@ -7081,7 +7081,7 @@ iemNativeEmitInvBitsGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDs
     pCodeBuf[off++] = 0xf7;
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, iGprDst & 7);
 #elif defined(RT_ARCH_ARM64)
-    pCodeBuf[off++] = Armv8A64MkInstrOrn(iGprDst, iGprSrc, ARMV8_A64_REG_XZR, f64Bit);
+    pCodeBuf[off++] = Armv8A64MkInstrOrn(iGprDst, ARMV8_A64_REG_XZR, iGprSrc, f64Bit);
 #else
 # error "port me"
 #endif
