@@ -6411,7 +6411,8 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
      */
     /** @todo save+restore active registers and maybe guest shadows in miss
      *        scenario. */
-    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */, RT_BIT_32(idxVarUnmapInfo));
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /* vacate all non-volatile regs */,
+                                                RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(idxVarUnmapInfo)));
 
     /*
      * If idxVarUnmapInfo is zero, we can skip all this. Otherwise we'll have
