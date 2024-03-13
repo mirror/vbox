@@ -1760,6 +1760,46 @@ iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uin
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+
+#define IEM_MC_IF_MXCSR_XCPT_PENDING() \
+    off = iemNativeEmitIfMxcsrXcptPending(pReNative, off); \
+    do {
+
+/** Emits code for IEM_MC_IF_MXCSR_XCPT_PENDING. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfMxcsrXcptPending(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+
+    uint8_t const idxGstMxcsrReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
+                                                                   kIemNativeGstRegUse_Calculation);
+    uint8_t const idxRegTmp      = iemNativeRegAllocTmp(pReNative, &off);
+
+
+    /* mov tmp0, mxcsr */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegTmp, idxGstMxcsrReg);
+    /* tmp0 &= X86_MXCSR_XCPT_FLAGS */
+    off = iemNativeEmitAndGprByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS);
+    /* mxcsr &= X86_MXCSR_XCPT_MASK */
+    off = iemNativeEmitAndGprByImm(pReNative, off, idxGstMxcsrReg, X86_MXCSR_XCPT_MASK);
+    /* mxcsr ~= mxcsr */
+    off = iemNativeEmitInvBitsGpr(pReNative, off, idxGstMxcsrReg, idxGstMxcsrReg);
+    /* mxcsr >>= X86_MXCSR_XCPT_MASK_SHIFT */
+    off = iemNativeEmitShiftGprRight(pReNative, off, idxGstMxcsrReg, X86_MXCSR_XCPT_MASK_SHIFT);
+    /* tmp0 &= mxcsr */
+    off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxGstMxcsrReg);
+
+    off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, idxRegTmp, true /*f64Bit*/, pEntry->idxLabelElse);
+    iemNativeRegFreeTmp(pReNative, idxGstMxcsrReg);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+#endif
+
 
 /*********************************************************************************************************************************
 *   Emitters for IEM_MC_ARG_XXX, IEM_MC_LOCAL, IEM_MC_LOCAL_CONST, ++                                                            *

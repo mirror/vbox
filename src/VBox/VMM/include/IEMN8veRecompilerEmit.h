@@ -7059,6 +7059,55 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 
 /**
+ * Emits a gprdst = ~gprsrc store.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitInvBitsGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc, bool f64Bit = true)
+{
+#ifdef RT_ARCH_AMD64
+    if (iGprDst != iGprSrc)
+    {
+        /* mov gprdst, gprsrc. */
+        if (f64Bit)
+            off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, iGprDst, iGprSrc);
+        else
+            off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, iGprDst, iGprSrc); /* Bits 32:63 are cleared. */
+    }
+
+    /* not gprdst */
+    if (f64Bit || iGprDst >= 8)
+        pCodeBuf[off++] =    (f64Bit ? X86_OP_REX_W : 0)
+                           | (iGprDst >= 8 ? X86_OP_REX_B : 0);
+    pCodeBuf[off++] = 0xf7;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, iGprDst & 7);
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrOrn(iGprDst, iGprSrc, ARMV8_A64_REG_XZR, f64Bit);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = ~gprsrc store.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitInvBitsGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc, bool f64Bit = true)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitInvBitsGprEx(iemNativeInstrBufEnsure(pReNative, off, 9), off, iGprDst, iGprSrc, f64Bit);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitInvBitsGprEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iGprSrc, f64Bit);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a 128-bit vector register store to a VCpu value.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
