@@ -191,7 +191,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK   RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0)
 #  else
 /** On Windows xmm6 through xmm15 are marked as callee saved. */
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xffc0)
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xffc0) \
                                             | RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
 #  endif
 # endif
