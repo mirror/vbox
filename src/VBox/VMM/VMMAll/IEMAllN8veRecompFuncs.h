@@ -6996,6 +6996,37 @@ iemNativeEmitSimdStoreYregU64ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
     return off;
 }
 
+
+#define IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX(a_iYRegDst, a_u64Local, a_iYRegSrcHx) \
+    off = iemNativeEmitSimdMergeYregU64LocalU64HiZxVlmax(pReNative, off, a_iYRegDst, a_u64Local, a_iYRegSrcHx)
+
+/** Emits code for IEM_MC_STORE_YREG_U32_ZX_VLMAX. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdMergeYregU64LocalU64HiZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t idxSrcVar, uint8_t iYRegSrcHx)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSrcVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSrcVar, sizeof(uint64_t));
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxSimdRegSrcHx = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrcHx),
+                                                                            kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxSrcVar, &off);
+
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegSrcHx);
+    off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxSimdRegDst, idxVarReg, 0 /*iQWord*/);
+    off = iemNativeEmitSimdZeroVecRegHighU128(pReNative, off, idxSimdRegDst);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iYRegDst);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, iYRegDst);
+
+    /* Free but don't flush the source and destination registers. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrcHx);
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxSrcVar);
+
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 

@@ -3199,7 +3199,7 @@ g_dMcStmtParsers = {
     'IEM_MC_MERGE_YREG_U64HI_U64HI_ZX_VLMAX':                    (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MERGE_YREG_U64LO_U64LO_ZX_VLMAX':                    (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MERGE_YREG_U64LO_U64LOCAL_ZX_VLMAX':                 (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':                 (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':                 (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_MODIFIED_MREG':                                      (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MODIFIED_MREG_BY_REF':                               (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_NATIVE_EMIT_0':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
