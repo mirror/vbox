@@ -2964,7 +2964,7 @@ g_dMcStmtParsers = {
     'IEM_MC_BROADCAST_XREG_U8_ZX_VLMAX':                         (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_BROADCAST_YREG_U128_ZX_VLMAX':                       (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_BROADCAST_YREG_U16_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_BROADCAST_YREG_U32_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_BROADCAST_YREG_U32_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_BROADCAST_YREG_U64_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_BROADCAST_YREG_U8_ZX_VLMAX':                         (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_BSWAP_LOCAL_U16':                                    (McBlock.parseMcGeneric,           False, False, True,  ),
