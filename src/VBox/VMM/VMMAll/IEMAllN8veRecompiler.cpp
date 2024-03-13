@@ -5059,8 +5059,10 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
         do
         {
             if (fGstRegShadows & 0x1)
+            {
                 *poff = iemNativeSimdRegFlushPendingWrite(pReNative, *poff, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
-            Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg));
+                Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg));
+            }
             idxGstSimdReg++;
             fGstRegShadows >>= 1;
         } while (fGstRegShadows);
