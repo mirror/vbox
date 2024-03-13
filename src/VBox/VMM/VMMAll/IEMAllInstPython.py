@@ -2906,7 +2906,7 @@ class McBlock(object):
 
 ## Temporary flag for enabling / disabling experimental MCs depending on the
 ## SIMD register allocator.
-g_fNativeSimd = False;
+g_fNativeSimd = True;
 
 ## IEM_MC_XXX -> parser + info dictionary.
 #
