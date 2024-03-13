@@ -462,6 +462,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Times liveness info helped finding the return register in iemNativeRegAllocFindFree.",
                         "/IEM/CPU%u/re/NativeRegFindFreeLivenessHelped", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeEflArithmeticSkipped,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Skipped all status flag updating, arithmetic instruction",
+                        "/IEM/CPU%u/re/NativeEFlagsArithmeticSkipped", idCpu);
+
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflCfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.CF updating",       "/IEM/CPU%u/re/NativeLivenessEFlagsCfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflPfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.PF updating",       "/IEM/CPU%u/re/NativeLivenessEFlagsPfSkippable", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeLivenessEflAfSkippable,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Skippable EFLAGS.AF updating",       "/IEM/CPU%u/re/NativeLivenessEFlagsAfSkippable", idCpu);

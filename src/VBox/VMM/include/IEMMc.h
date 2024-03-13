@@ -218,6 +218,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); \
         Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); \
     } while (0)
+#define IEM_MC_COMMIT_EFLAGS_OPT(a_EFlags)                               IEM_MC_COMMIT_EFLAGS(a_EFlags)
+#define IEM_MC_COMMIT_EFLAGS_OPT_EX(a_EFlags, a_fEflInput, a_fEflOutput) IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput)
 
 /** ASSUMES the source variable not used after this statement. */
 #define IEM_MC_ASSIGN_TO_SMALLER(a_VarDst, a_VarSrcEol) (a_VarDst) = (a_VarSrcEol)

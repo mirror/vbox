@@ -829,6 +829,39 @@ iemNativeEmitStoreGprToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
 
 /**
+ * Emits a store of an immediate value to a 32-bit VCpu field.
+ *
+ * @note ARM64: Will allocate temporary registers.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreImmToVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t uImm, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem32, imm32 */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+    pCodeBuf[off++] = 0xc7;
+    off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, offVCpu);
+    pCodeBuf[off++] = RT_BYTE1(uImm);
+    pCodeBuf[off++] = RT_BYTE2(uImm);
+    pCodeBuf[off++] = RT_BYTE3(uImm);
+    pCodeBuf[off++] = RT_BYTE4(uImm);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+    uint8_t const idxRegImm = uImm == 0 ? ARMV8_A64_REG_XZR : iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, idxRegImm, offVCpu, kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t));
+    if (idxRegImm != ARMV8_A64_REG_XZR)
+        iemNativeRegFreeTmpImm(pReNative, idxRegImm);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+
+/**
  * Emits a store of an immediate value to a 16-bit VCpu field.
  *
  * @note ARM64: A idxTmp1 is always required! The idxTmp2 depends on whehter the
@@ -1115,6 +1148,208 @@ iemNativeEmitIncU32CounterInVCpu(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
     off = iemNativeEmitIncU32CounterInVCpuEx(iemNativeInstrBufEnsure(pReNative, off, 6), off, idxTmp1, idxTmp2, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitIncU32CounterInVCpuEx(iemNativeInstrBufEnsure(pReNative, off, 4+3), off, idxTmp1, idxTmp2, offVCpu);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for OR'ing a bitmask into a 32-bit VMCPU member.
+ *
+ * @note  May allocate temporary registers (not AMD64).
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitOrImmIntoVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fMask, uint32_t offVCpu)
+{
+    Assert(!(offVCpu & 3)); /* ASSUME correctly aligned member. */
+#ifdef RT_ARCH_AMD64
+    /* or dword [pVCpu + offVCpu], imm8/32 */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+    if (fMask < 0x80)
+    {
+        pCodeBuf[off++] = 0x83;
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 1, offVCpu);
+        pCodeBuf[off++] = (uint8_t)fMask;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0x81;
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 1, offVCpu);
+        pCodeBuf[off++] = RT_BYTE1(fMask);
+        pCodeBuf[off++] = RT_BYTE2(fMask);
+        pCodeBuf[off++] = RT_BYTE3(fMask);
+        pCodeBuf[off++] = RT_BYTE4(fMask);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    /* If the constant is unwieldy we'll need a register to hold it as well. */
+    uint32_t uImmSizeLen, uImmRotate;
+    uint8_t const idxTmpMask  = Armv8A64ConvertMask32ToImmRImmS(fMask, &uImmSizeLen, &uImmRotate) ? UINT8_MAX
+                              : iemNativeRegAllocTmpImm(pReNative, &off, fMask);
+
+    /* We need a temp register for holding the member value we're modifying. */
+    uint8_t const idxTmpValue = iemNativeRegAllocTmp(pReNative, &off);
+
+    /* Determine how we're to access pVCpu first. */
+    uint32_t const cbData = sizeof(uint32_t);
+    if (offVCpu < (unsigned)(_4K * cbData))
+    {
+        /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrOrr(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+    }
+    else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData))
+    {
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrOrr(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+    }
+    else
+    {
+        /* The offset is too large, so we must load it into a register and use
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>)].  We'll try use the 'LSL, #2' feature
+           of the instruction if that'll reduce the constant to 16-bits. */
+        uint8_t const         idxTmpIndex = iemNativeRegAllocTmp(pReNative, &off);
+        PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 5);
+        bool const            fShifted    = offVCpu / cbData < (unsigned)UINT16_MAX;
+        if (fShifted)
+            pCodeBuf[off++] = Armv8A64MkInstrMovZ(idxTmpIndex, offVCpu / cbData);
+        else
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, idxTmpIndex, offVCpu);
+
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PVMCPU,
+                                                    idxTmpIndex, kArmv8A64InstrLdStExtend_Lsl, fShifted /*fShifted(2)*/);
+
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrOrr(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PVMCPU,
+                                                    idxTmpIndex, kArmv8A64InstrLdStExtend_Lsl, fShifted /*fShifted(2)*/);
+        iemNativeRegFreeTmp(pReNative, idxTmpIndex);
+    }
+    iemNativeRegFreeTmp(pReNative, idxTmpValue);
+    if (idxTmpMask != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxTmpMask);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for AND'ing a bitmask into a 32-bit VMCPU member.
+ *
+ * @note  May allocate temporary registers (not AMD64).
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitAndImmIntoVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fMask, uint32_t offVCpu)
+{
+    Assert(!(offVCpu & 3)); /* ASSUME correctly aligned member. */
+#ifdef RT_ARCH_AMD64
+    /* and dword [pVCpu + offVCpu], imm8/32 */
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+    if (fMask < 0x80)
+    {
+        pCodeBuf[off++] = 0x83;
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 4, offVCpu);
+        pCodeBuf[off++] = (uint8_t)fMask;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0x81;
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 4, offVCpu);
+        pCodeBuf[off++] = RT_BYTE1(fMask);
+        pCodeBuf[off++] = RT_BYTE2(fMask);
+        pCodeBuf[off++] = RT_BYTE3(fMask);
+        pCodeBuf[off++] = RT_BYTE4(fMask);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    /* If the constant is unwieldy we'll need a register to hold it as well. */
+    uint32_t uImmSizeLen, uImmRotate;
+    uint8_t const idxTmpMask  = Armv8A64ConvertMask32ToImmRImmS(fMask, &uImmSizeLen, &uImmRotate) ? UINT8_MAX
+                              : iemNativeRegAllocTmpImm(pReNative, &off, fMask);
+
+    /* We need a temp register for holding the member value we're modifying. */
+    uint8_t const idxTmpValue = iemNativeRegAllocTmp(pReNative, &off);
+
+    /* Determine how we're to access pVCpu first. */
+    uint32_t const cbData = sizeof(uint32_t);
+    if (offVCpu < (unsigned)(_4K * cbData))
+    {
+        /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+    }
+    else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData))
+    {
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                   (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
+    }
+    else
+    {
+        /* The offset is too large, so we must load it into a register and use
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>)].  We'll try use the 'LSL, #2' feature
+           of the instruction if that'll reduce the constant to 16-bits. */
+        uint8_t const         idxTmpIndex = iemNativeRegAllocTmp(pReNative, &off);
+        PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 5);
+        bool const            fShifted    = offVCpu / cbData < (unsigned)UINT16_MAX;
+        if (fShifted)
+            pCodeBuf[off++] = Armv8A64MkInstrMovZ(idxTmpIndex, offVCpu / cbData);
+        else
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, idxTmpIndex, offVCpu);
+
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PVMCPU,
+                                                    idxTmpIndex, kArmv8A64InstrLdStExtend_Lsl, fShifted /*fShifted(2)*/);
+
+        if (idxTmpMask == UINT8_MAX)
+            pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
+
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PVMCPU,
+                                                    idxTmpIndex, kArmv8A64InstrLdStExtend_Lsl, fShifted /*fShifted(2)*/);
+        iemNativeRegFreeTmp(pReNative, idxTmpIndex);
+    }
+    iemNativeRegFreeTmp(pReNative, idxTmpValue);
+    if (idxTmpMask != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxTmpMask);
+
 #else
 # error "port me"
 #endif
@@ -5838,7 +6073,7 @@ iemNativeEmitJccToFixedEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint32_t offTa
  *       the right target address on all platforms!
  *
  *       Please also note that on x86 it is necessary pass off + 256 or higher
- *       for @a offTarget one believe the intervening code is more than 127
+ *       for @a offTarget if one believe the intervening code is more than 127
  *       bytes long.
  */
 DECL_INLINE_THROW(uint32_t)

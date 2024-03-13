@@ -92,6 +92,9 @@
 #endif
 
 #include "IEMThreadedFunctions.h"
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+# include "IEMN8veRecompiler.h"
+#endif
 
 
 /*
@@ -2609,6 +2612,9 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
 # endif
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
         pVCpu->iem.s.pvTbFramePointerR3 = NULL;
+# endif
+# ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        Assert(pVCpu->iem.s.fSkippingEFlags == 0);
 # endif
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))

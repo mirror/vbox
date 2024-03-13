@@ -1785,13 +1785,10 @@ typedef struct IEMCPU
     uint32_t                fTbPrevInstr;
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
-    /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
-     * This is used together with fTbBranched and GCVirtTbBranchSrcBuf to determin
-     * whether a branch instruction jumps to a new page or stays within the
-     * current one. */
-    RTGCPHYS                GCPhysTbBranchSrcBufUnused;
-    /** Copy of IEMCPU::uInstrBufPc after decoding a branch instruction.  */
-    uint64_t                GCVirtTbBranchSrcBufUnused;
+    /** Strict: Tracking skipped EFLAGS calculations.  Any bits set here are
+     *  currently not up to date in EFLAGS. */
+    uint32_t                fSkippingEFlags;
+    uint32_t                au32Padding[1];
     /** Pointer to the ring-3 TB allocator for this EMT. */
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /** Pointer to the ring-3 executable memory allocator for this EMT. */
@@ -1854,6 +1851,9 @@ typedef struct IEMCPU
     /** Native recompiler: Liveness info helped with the allocation in
      *  iemNativeRegAllocFindFree. */
     STAMCOUNTER             StatNativeRegFindFreeLivenessHelped;
+
+    /** Native recompiler: Number of times status flags calc has been skipped. */
+    STAMCOUNTER             StatNativeEflArithmeticSkipped;
 
     /** Native recompiler: Number of opportunities to skip EFLAGS.CF updating. */
     STAMCOUNTER             StatNativeLivenessEflCfSkippable;

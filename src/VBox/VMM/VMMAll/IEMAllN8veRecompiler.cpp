@@ -6124,6 +6124,56 @@ iemNativeEmitExecFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_
 
 #endif /* VBOX_STRICT */
 
+
+#ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+/**
+ * Worker for IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK.
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitEFlagsSkippingCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fEflNeeded)
+{
+    uint32_t const offVCpu = RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags);
+
+    fEflNeeded &= X86_EFL_STATUS_BITS;
+    if (fEflNeeded)
+    {
+# ifdef RT_ARCH_AMD64
+        /* test dword [pVCpu + offVCpu], imm32 */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+        if (fEflNeeded <= 0xff)
+        {
+            pCodeBuf[off++] = 0xf6;
+            off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, offVCpu);
+            pCodeBuf[off++] = RT_BYTE1(fEflNeeded);
+        }
+        else
+        {
+            pCodeBuf[off++] = 0xf7;
+            off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, offVCpu);
+            pCodeBuf[off++] = RT_BYTE1(fEflNeeded);
+            pCodeBuf[off++] = RT_BYTE2(fEflNeeded);
+            pCodeBuf[off++] = RT_BYTE3(fEflNeeded);
+            pCodeBuf[off++] = RT_BYTE4(fEflNeeded);
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+# else
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
+        off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxRegTmp, offVCpu);
+        off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fEflNeeded);
+#  ifdef RT_ARCH_ARM64
+        off = iemNativeEmitJzToFixed(pReNative, off, off + 2);
+        off = iemNativeEmitBrk(pReNative, off, 0x7777);
+#  else
+#   error "Port me!"
+#  endif
+# endif
+    }
+    return off;
+}
+#endif /* IEMNATIVE_STRICT_EFLAGS_SKIPPING */
+
+
 /**
  * Emits a code for checking the return code of a call and rcPassUp, returning
  * from the code if either are non-zero.
@@ -6360,6 +6410,8 @@ iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxI
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
+
     /* We don't know what the threaded function is doing so we must flush all pending writes. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
@@ -6738,6 +6790,8 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
      */
     uint32_t const idxReturn = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Return, off);
     *pidxReturnLabel = idxReturn;
+
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
 
     /*
      * Restore registers and return.

@@ -1283,6 +1283,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
 /** Emits code for IEM_MC_IF_EFL_ANY_BITS_SET. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitsInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* Get the eflags. */
@@ -1309,6 +1310,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE 
 /** Emits code for IEM_MC_IF_EFL_NO_BITS_SET. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitsInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* Get the eflags. */
@@ -1335,6 +1337,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pR
 /** Emits code for IEM_MC_IF_EFL_BIT_SET. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* Get the eflags. */
@@ -1364,6 +1367,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReN
 /** Emits code for IEM_MC_IF_EFL_BIT_NOT_SET. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* Get the eflags. */
@@ -1399,6 +1403,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                   uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBit1InEfl | fBit2InEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* Get the eflags. */
@@ -1472,6 +1477,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl,
                                               uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl | fBit1InEfl | fBit2InEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* We need an if-block label for the non-inverted variant. */
@@ -1657,6 +1663,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfRcxEcxIsNotOne(PIEMRECOMPILERSTATE pR
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfCxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl, bool fCheckIfSet)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
@@ -1718,6 +1725,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                uint32_t fBitInEfl, bool fCheckIfSet, bool f64Bit)
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
     PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
@@ -1940,6 +1948,8 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
                              uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cArgs)
 
 {
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
+
     /*
      * Do all the call setup and cleanup.
      */
@@ -3309,6 +3319,8 @@ iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 # endif
 #endif
 
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fEflInput);
+
     /** @todo this is suboptimial. EFLAGS is probably shadowed and we should use
      *        the existing shadow copy. */
     uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxVarEFlags, &off, false /*fInitialized*/);
@@ -3326,11 +3338,17 @@ iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 #undef  IEM_MC_COMMIT_EFLAGS /* should not be used */
 #define IEM_MC_COMMIT_EFLAGS_EX(a_EFlags, a_fEflInput, a_fEflOutput) \
     IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput); \
-    off = iemNativeEmitCommitEFlags(pReNative, off, a_EFlags, a_fEflOutput)
+    off = iemNativeEmitCommitEFlags(pReNative, off, a_EFlags, a_fEflOutput, true /*fUpdateSkipping*/)
+
+#undef IEM_MC_COMMIT_EFLAGS_OPT /* should not be used */
+#define IEM_MC_COMMIT_EFLAGS_OPT_EX(a_EFlags, a_fEflInput, a_fEflOutput) \
+    IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput); \
+    off = iemNativeEmitCommitEFlags(pReNative, off, a_EFlags, a_fEflOutput, false /*fUpdateSkipping*/)
 
 /** Handles IEM_MC_COMMIT_EFLAGS_EX. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEFlags, uint32_t fEflOutput)
+iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEFlags, uint32_t fEflOutput,
+                          bool fUpdateSkipping)
 {
     RT_NOREF(fEflOutput);
     uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxVarEFlags, &off, true /*fInitialized*/);
@@ -3350,6 +3368,19 @@ iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     iemNativeFixupFixedJump(pReNative, offFixup, off);
 
     /** @todo validate that only bits in the fElfOutput mask changed. */
+#endif
+
+#ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+    if (fUpdateSkipping)
+    {
+        if ((fEflOutput & X86_EFL_STATUS_BITS) == X86_EFL_STATUS_BITS)
+            off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+        else
+            off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~(fEflOutput & X86_EFL_STATUS_BITS),
+                                                 RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+    }
+#else
+    RT_NOREF_PV(fUpdateSkipping);
 #endif
 
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxReg, kIemNativeGstReg_EFlags, off);
@@ -3490,14 +3521,28 @@ iemNativeEmitRefGregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 #undef  IEM_MC_REF_EFLAGS /* should not be used. */
 #define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) \
     IEMNATIVE_EFLAGS_OPTIMIZATION_STATS(a_fEflInput, a_fEflOutput); \
-    off = iemNativeEmitRefEFlags(pReNative, off, a_pEFlags)
+    off = iemNativeEmitRefEFlags(pReNative, off, a_pEFlags, a_fEflInput, a_fEflOutput)
 
 /** Handles IEM_MC_REF_EFLAGS. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef)
+iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef, uint32_t fEflInput, uint32_t fEflOutput)
 {
     iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_EFlags, 0);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarRef, sizeof(void *));
+
+#ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+    IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fEflInput);
+
+    /* Updating the skipping according to the outputs is a little early, but
+       we don't have any other hooks for references atm. */
+    if ((fEflOutput & X86_EFL_STATUS_BITS) == X86_EFL_STATUS_BITS)
+        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+    else if (fEflOutput & X86_EFL_STATUS_BITS)
+        off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~(fEflOutput & X86_EFL_STATUS_BITS),
+                                             RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+#else
+    RT_NOREF(fEflInput, fEflOutput);
+#endif
 
     /* If we've delayed writing back the register value, flush it now. */
     off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_EFlags, 0);

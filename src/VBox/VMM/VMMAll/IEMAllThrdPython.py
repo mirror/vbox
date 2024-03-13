@@ -1103,7 +1103,8 @@ class ThreadedFunctionVariation(object):
                                                                                      self.kdVariationsWithFlat64StackAddress)];
 
                 # Add EFLAGS usage annotations to relevant MCs.
-                elif oNewStmt.sName in ('IEM_MC_COMMIT_EFLAGS', 'IEM_MC_REF_EFLAGS', 'IEM_MC_FETCH_EFLAGS'):
+                elif oNewStmt.sName in ('IEM_MC_COMMIT_EFLAGS', 'IEM_MC_COMMIT_EFLAGS_OPT', 'IEM_MC_REF_EFLAGS',
+                                        'IEM_MC_FETCH_EFLAGS'):
                     oInstruction = self.oParent.oMcBlock.oInstruction;
                     oNewStmt.sName += '_EX';
                     oNewStmt.asParams.append(oInstruction.getTestedFlagsCStyle());   # Shall crash and burn if oInstruction is
@@ -1995,8 +1996,8 @@ class ThreadedFunction(object):
                 sAnnotation = g_ksFinishAnnotation_DeferToCImpl;
 
             # Collect MCs working on EFLAGS.  Caller will check this.
-            if oStmt.sName in ('IEM_MC_FETCH_EFLAGS', 'IEM_MC_FETCH_EFLAGS_U8', 'IEM_MC_COMMIT_EFLAGS', 'IEM_MC_REF_EFLAGS',
-                               'IEM_MC_ARG_LOCAL_EFLAGS', ):
+            if oStmt.sName in ('IEM_MC_FETCH_EFLAGS', 'IEM_MC_FETCH_EFLAGS_U8', 'IEM_MC_COMMIT_EFLAGS',
+                               'IEM_MC_COMMIT_EFLAGS_OPT', 'IEM_MC_REF_EFLAGS', 'IEM_MC_ARG_LOCAL_EFLAGS', ):
                 dEflStmts[oStmt.sName] = oStmt;
             elif isinstance(oStmt, iai.McStmtCall):
                 if oStmt.sName in ('IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1', 'IEM_MC_CALL_CIMPL_2',
@@ -2059,10 +2060,10 @@ class ThreadedFunction(object):
                 sMcNames = '+'.join(dEflStmts.keys());
                 if len(dEflStmts) != 1 or not sMcNames.startswith('IEM_MC_CALL_CIMPL_'): # Hack for far calls
                     self.error('Uses %s but has no @opflmodify, @opfltest or @opflclass with details!' % (sMcNames,), oGenerator);
-            elif 'IEM_MC_COMMIT_EFLAGS' in dEflStmts:
+            elif 'IEM_MC_COMMIT_EFLAGS' in dEflStmts  or  'IEM_MC_COMMIT_EFLAGS_OPT' in dEflStmts:
                 if not oInstruction.asFlModify:
                     if oInstruction.sMnemonic not in [ 'not', ]:
-                        self.error('Uses IEM_MC_COMMIT_EFLAGS but has no flags in @opflmodify!', oGenerator);
+                        self.error('Uses IEM_MC_COMMIT_EFLAGS[_OPT] but has no flags in @opflmodify!', oGenerator);
             elif (   'IEM_MC_CALL_CIMPL_0' in dEflStmts
                   or 'IEM_MC_CALL_CIMPL_1' in dEflStmts
                   or 'IEM_MC_CALL_CIMPL_2' in dEflStmts

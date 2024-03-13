@@ -206,8 +206,8 @@ iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 #endif
                               )
 {
-#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
-    if (1) /** @todo check if all bits are clobbered. */
+#ifdef IEMNATIVE_WITH_EFLAGS_SKIPPING
+    /** @todo */
 #endif
     {
 #ifdef RT_ARCH_AMD64
@@ -275,6 +275,10 @@ iemNativeEmitEFlagsForLogical(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 # error "port me"
 #endif
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#  ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+#  endif
     }
     return off;
 }
@@ -293,10 +297,24 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
 #endif
                                  )
 {
-#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
-    if (1) /** @todo check if all bits are clobbered. */
+#ifdef IEMNATIVE_WITH_EFLAGS_SKIPPING
+    /*
+     * See if we can skip this wholesale.
+     */
+    PCIEMLIVENESSENTRY const pLivenessEntry = &pReNative->paLivenessEntries[pReNative->idxCurCall];
+    if (IEMLIVENESS_STATE_ARE_STATUS_EFL_TO_BE_CLOBBERED(pLivenessEntry))
+    {
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeEflArithmeticSkipped);
+# ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        off = iemNativeEmitOrImmIntoVCpuU32(pReNative, off, X86_EFL_STATUS_BITS, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+# endif
+    }
+    else
 #endif
     {
+#ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        uint32_t fSkipped = 0;
+#endif
 #ifdef RT_ARCH_AMD64
         /*
          * Collect flags and merge them with eflags.
@@ -445,10 +463,15 @@ iemNativeEmitEFlagsForArithmetic(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
         if (idxRegEflIn != idxRegEfl)
             iemNativeVarRegisterRelease(pReNative, idxVarEfl);
         iemNativeRegFreeTmp(pReNative, idxTmpReg);
+
 #else
 # error "port me"
 #endif
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, fSkipped, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+#endif
     }
     return off;
 

@@ -2999,6 +2999,7 @@ g_dMcStmtParsers = {
     'IEM_MC_CLEAR_XREG_U32_MASK':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_CLEAR_YREG_128_UP':                                  (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_COMMIT_EFLAGS':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_COMMIT_EFLAGS_OPT':                                  (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_COPY_XREG_U128':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_COPY_YREG_U128_ZX_VLMAX':                            (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_COPY_YREG_U256_ZX_VLMAX':                            (McBlock.parseMcGeneric,           True,  True,  False, ),

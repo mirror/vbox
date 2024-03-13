@@ -121,6 +121,7 @@ g_dMcStmtThreaded = {
 
     'IEM_MC_REF_EFLAGS_EX':                                              (None, False, False, True,  ),
     'IEM_MC_COMMIT_EFLAGS_EX':                                           (None, True,  True,  True,  ),
+    'IEM_MC_COMMIT_EFLAGS_OPT_EX':                                       (None, True,  True,  True,  ),
     'IEM_MC_FETCH_EFLAGS_EX':                                            (None, False, False, True,  ),
     'IEM_MC_ASSERT_EFLAGS':                                              (None, True,  True,  True,  ),
 
