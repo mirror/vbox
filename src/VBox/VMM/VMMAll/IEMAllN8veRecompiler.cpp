@@ -6159,13 +6159,14 @@ iemNativeEmitEFlagsSkippingCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
 # else
         uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
         off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxRegTmp, offVCpu);
-        off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fEflNeeded);
+        off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxRegTmp, fEflNeeded);
 #  ifdef RT_ARCH_ARM64
         off = iemNativeEmitJzToFixed(pReNative, off, off + 2);
         off = iemNativeEmitBrk(pReNative, off, 0x7777);
 #  else
 #   error "Port me!"
 #  endif
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
 # endif
     }
     return off;
