@@ -6697,6 +6697,62 @@ iemNativeEmitSimdStoreXregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
+#define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
+    off = iemNativeEmitSimdStoreXregU64ZxU128(pReNative, off, a_iXReg, a_u64Value)
+
+/** Emits code for IEM_MC_STORE_XREG_U32. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreXregU64ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint64_t));
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+
+    /* Zero the vector register first, then store the 64-bit value to the lower 64-bit. */
+    off = iemNativeEmitSimdZeroVecRegLowU128(pReNative, off, idxSimdRegDst);
+    off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxSimdRegDst, idxVarReg, 0);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXReg);
+
+    /* Free but don't flush the source register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
+
+    return off;
+}
+
+
+#define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value) \
+    off = iemNativeEmitSimdStoreXregU32ZxU128(pReNative, off, a_iXReg, a_u32Value)
+
+/** Emits code for IEM_MC_STORE_XREG_U32. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreXregU32ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint32_t));
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+
+    /* Zero the vector register first, then store the 32-bit value to the lowest 32-bit element. */
+    off = iemNativeEmitSimdZeroVecRegLowU128(pReNative, off, idxSimdRegDst);
+    off = iemNativeEmitSimdStoreGprToVecRegU32(pReNative, off, idxSimdRegDst, idxVarReg, 0);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXReg);
+
+    /* Free but don't flush the source register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
+
+    return off;
+}
+
+
 #define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord) \
     off = iemNativeEmitSimdFetchYregU64(pReNative, off, a_u64Dst, a_iYRegSrc, a_iQWord)
 
