@@ -5052,7 +5052,6 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
         Assert(   (pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstSimdRegShadows)
                == pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows);
         Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxReg));
-        Assert(pReNative->Core.aHstSimdRegs[idxReg].enmLoaded == kIemNativeGstSimdRegLdStSz_Invalid);
 
         /* We need to flush any pending guest register writes this host SIMD register shadows. */
         uint32_t fGstRegShadows = pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
