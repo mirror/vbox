@@ -4610,7 +4610,7 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
                     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
                     PIEMNATIVEVAR const pVar   = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
                     Assert(pVar->idxReg == idxReg);
-                    if (!(RT_BIT_32(idxVar) & fKeepVars))
+                    if (!(RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(idxVar)) & fKeepVars))
                     {
                         Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: idxVar=%#x enmKind=%d idxReg=%d\n",
                                idxVar, pVar->enmKind, pVar->idxReg));
