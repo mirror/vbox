@@ -4118,7 +4118,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUmov(uint32_t iRegDst, uint32_t iV
  * @param   idxElem     The element index for the destination.
  * @param   enmSz       Element size of the source vector register.
  *
- * @note This instruction assumes a 32-bit W<n> register for all noon 64bit vector sizes.
+ * @note This instruction assumes a 32-bit W<n> register for all non 64bit vector sizes.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrIns(uint32_t iVecRegDst, uint32_t iRegSrc, uint8_t idxElem,
                                                   ARMV8INSTRUMOVINSSZ enmSz = kArmv8InstrUmovInsSz_U64)
@@ -4131,6 +4131,35 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrIns(uint32_t iVecRegDst, uint32_t 
 
     return UINT32_C(0x4e001c00)
          | ((uint32_t)idxElem << (16 + enmSz + 1))
+         | (RT_BIT_32(enmSz) << 16)
+         | (iRegSrc << 5)
+         | iVecRegDst;
+}
+
+
+/**
+ * A64: Encodes DUP (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iRegSrc     The source register (ZR is valid).
+ * @param   enmSz       Element size of the source vector register.
+ * @param   f128Bit     Flag whether the instruction operates on the whole 128-bit of the vector register (true) or
+ *                      just the low 64-bit (false).
+ *
+ * @note This instruction assumes a 32-bit W<n> register for all non 64bit vector sizes.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrDup(uint32_t iVecRegDst, uint32_t iRegSrc, ARMV8INSTRUMOVINSSZ enmSz,
+                                                  bool f128Bit = true)
+{
+    Assert(iRegSrc < 32); Assert(iVecRegDst < 32);
+    Assert(   (enmSz == kArmv8InstrUmovInsSz_U8)
+           || (enmSz == kArmv8InstrUmovInsSz_U16)
+           || (enmSz == kArmv8InstrUmovInsSz_U32)
+           || (enmSz == kArmv8InstrUmovInsSz_U64));
+
+    return UINT32_C(0x0e000c00)
+         | ((uint32_t)f128Bit << 30)
          | (RT_BIT_32(enmSz) << 16)
          | (iRegSrc << 5)
          | iVecRegDst;
