@@ -594,11 +594,11 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
         { \
             IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx); \
-            IEM_MC_ARG(PRTUINT128U,          puDst,  0); \
-            IEM_MC_ARG(uint64_t,             uSrc,   1); \
+            IEM_MC_ARG(PRTUINT128U,             puDst,  0); \
+            IEM_MC_ARG(uint ## a_SrcWidth ##_t, uSrc,   1); \
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
             IEM_MC_PREPARE_AVX_USAGE(); \
-            IEM_MC_FETCH_XREG_U64(uSrc,  IEM_GET_MODRM_RM(pVCpu, bRm), 0 /* a_iQword*/); \
+            IEM_MC_FETCH_XREG_U ## a_SrcWidth (uSrc,  IEM_GET_MODRM_RM(pVCpu, bRm), 0); \
             IEM_MC_REF_XREG_U128(puDst,  IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_ ## a_Instr ## _u128, \
                                                                  iemAImpl_## a_Instr ## _u128_fallback), \
