@@ -638,7 +638,8 @@ void UIMachineSettingsSystem::polishPage()
     m_pEditorBootOrder->setEnabled(isMachineOffline());
     if (m_pEditorChipset)
         m_pEditorChipset->setEnabled(isMachineOffline());
-    m_pEditorTpm->setEnabled(isMachineOffline());
+    if (m_pEditorTpm)
+        m_pEditorTpm->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
     m_pEditorMotherboardFeatures->setEnabled(isMachineOffline());
 
@@ -871,8 +872,9 @@ void UIMachineSettingsSystem::prepareConnections()
     if (m_pEditorChipset)
         connect(m_pEditorChipset, &UIChipsetEditor::sigValueChanged,
                 this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pEditorTpm, &UITpmEditor::sigValueChanged,
-            this, &UIMachineSettingsSystem::revalidate);
+    if (m_pEditorTpm)
+        connect(m_pEditorTpm, &UITpmEditor::sigValueChanged,
+                this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorPointingHID, &UIPointingHIDEditor::sigValueChanged,
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorBaseMemory, &UIBaseMemoryEditor::sigValidChanged,
@@ -903,7 +905,10 @@ void UIMachineSettingsSystem::updateOptionSet()
 
     /* Some options visible only for x86 machines: */
     const bool fx86 = enmArch == KPlatformArchitecture_x86;
-    m_pEditorChipset->setVisible(fx86);
+    if (m_pEditorChipset)
+        m_pEditorChipset->setVisible(fx86);
+    if (m_pEditorTpm)
+        m_pEditorTpm->setVisible(fx86);
     m_pEditorProcessorFeatures->setVisible(fx86);
 }
 
