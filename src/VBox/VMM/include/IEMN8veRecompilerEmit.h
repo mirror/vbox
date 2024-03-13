@@ -6966,7 +6966,7 @@ iemNativeEmitSimdLoadVecRegFromVCpuHighU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t
         pCodeBuf[off++] = 0x63;
     else
         pCodeBuf[off++] = 0xe3;
-    pCodeBuf[off++] = X86_OP_VEX3_BYTE3_MAKE(false, iVecReg, true, X86_OP_VEX3_BYTE3_P_066H);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecReg, true, X86_OP_VEX3_BYTE2_P_066H);
     pCodeBuf[off++] = 0x38;
     off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, iVecReg, offVCpu);
     pCodeBuf[off++] = 0x01; /* Immediate */
@@ -7417,55 +7417,16 @@ iemNativeEmitSimdBroadcastGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
     pCodeBuf[off++] = 0x00;
 
-    if (f256Bit)
-    {
-        /* When broadcasting the entire ymm register we can use vbroadcastss now. */
-        /* vbroadcastss ymm, xmm (ASSUMES AVX2). */
-        pCodeBuf[off++] = X86_OP_VEX3;
-        pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
-                          | 0x02                 /* opcode map. */
-                          | (  iVecRegDst >= 8
-                             ? 0
-                             : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
-        pCodeBuf[off++] = 0x7d;
-        pCodeBuf[off++] = 0x18;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegDst & 7);
-    }
-    else
-    {
-        /* pinsrd vecdst, gpr, #1 (ASSUMES SSE4.1). */
-        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (iVecRegDst >= 8 || iGprSrc >= 8)
-            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-        pCodeBuf[off++] = 0x0f;
-        pCodeBuf[off++] = 0x3a;
-        pCodeBuf[off++] = 0x22;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x01;
-
-        /* pinsrd vecdst, gpr, #2 (ASSUMES SSE4.1). */
-        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (iVecRegDst >= 8 || iGprSrc >= 8)
-            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-        pCodeBuf[off++] = 0x0f;
-        pCodeBuf[off++] = 0x3a;
-        pCodeBuf[off++] = 0x22;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x02;
-
-        /* pinsrd vecdst, gpr, #3 (ASSUMES SSE4.1). */
-        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        if (iVecRegDst >= 8 || iGprSrc >= 8)
-            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-        pCodeBuf[off++] = 0x0f;
-        pCodeBuf[off++] = 0x3a;
-        pCodeBuf[off++] = 0x22;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x03;
-    }
+    /* vpbroadcastd {y,x}mm, xmm (ASSUMES AVX2). */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
+                      | 0x02                 /* opcode map. */
+                      | (  iVecRegDst >= 8
+                         ? 0
+                         : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, f256Bit, X86_OP_VEX3_BYTE2_P_066H);
+    pCodeBuf[off++] = 0x58;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegDst & 7);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegDst & 0x1) || !f256Bit);
@@ -7488,7 +7449,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdBroadcastGprToVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, bool f256Bit = false)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdBroadcastGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, f256Bit ? 12 : 28), off, iVecRegDst, iGprSrc, f256Bit);
+    off = iemNativeEmitSimdBroadcastGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 12), off, iVecRegDst, iGprSrc, f256Bit);
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitSimdBroadcastGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, f256Bit ? 2 : 1), off, iVecRegDst, iGprSrc, f256Bit);
 #else
@@ -7520,33 +7481,16 @@ iemNativeEmitSimdBroadcastGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t of
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
     pCodeBuf[off++] = 0x00;
 
-    if (f256Bit)
-    {
-        /* When broadcasting the entire ymm register we can use vbroadcastsd now. */
-        /* vbroadcastsd ymm, xmm (ASSUMES AVX2). */
-        pCodeBuf[off++] = X86_OP_VEX3;
-        pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
-                          | 0x02                 /* opcode map. */
-                          | (  iVecRegDst >= 8
-                             ? 0
-                             : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
-        pCodeBuf[off++] = 0x7d;
-        pCodeBuf[off++] = 0x19;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegDst & 7);
-    }
-    else
-    {
-        /* pinsrq vecdst, gpr, #1 (ASSUMES SSE4.1). */
-        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-        pCodeBuf[off++] =   X86_OP_REX_W
-                          | (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-        pCodeBuf[off++] = 0x0f;
-        pCodeBuf[off++] = 0x3a;
-        pCodeBuf[off++] = 0x22;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-        pCodeBuf[off++] = 0x01;
-    }
+    /* vpbroadcastq {y,x}mm, xmm (ASSUMES AVX2). */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] =   X86_OP_VEX3_BYTE1_X
+                      | 0x02                 /* opcode map. */
+                      | (  iVecRegDst >= 8
+                         ? 0
+                         : X86_OP_VEX3_BYTE1_B | X86_OP_VEX3_BYTE1_R);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, f256Bit, X86_OP_VEX3_BYTE2_P_066H);
+    pCodeBuf[off++] = 0x59;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegDst & 7);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegDst & 0x1) || !f256Bit);

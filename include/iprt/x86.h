@@ -5189,21 +5189,28 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_VEX3_BYTE1_X             RT_BIT(6)
 #define X86_OP_VEX3_BYTE1_R             RT_BIT(7)
 
-#define X86_OP_VEX3_BYTE3_P_MASK        0x3
-# define X86_OP_VEX3_BYTE3_P_NO_PRF     0
-# define X86_OP_VEX3_BYTE3_P_066H       1
-# define X86_OP_VEX3_BYTE3_P_0F3H       2
-# define X86_OP_VEX3_BYTE3_P_0F2H       3
-#define X86_OP_VEX3_BYTE3_L             RT_BIT(2)
-#define X86_OP_VEX3_BYTE3_VVVV_MASK     0x78
-#define X86_OP_VEX3_BYTE3_VVVV_SHIFT    3
-#define X86_OP_VEX3_BYTE3_W             RT_BIT(7)
+#define X86_OP_VEX3_BYTE2_P_MASK        0x3
+# define X86_OP_VEX3_BYTE2_P_NO_PRF     0
+# define X86_OP_VEX3_BYTE2_P_066H       1
+# define X86_OP_VEX3_BYTE2_P_0F3H       2
+# define X86_OP_VEX3_BYTE2_P_0F2H       3
+#define X86_OP_VEX3_BYTE2_L             RT_BIT(2)
+#define X86_OP_VEX3_BYTE2_VVVV_MASK     0x78
+#define X86_OP_VEX3_BYTE2_VVVV_SHIFT    3
+#define X86_OP_VEX3_BYTE2_VVVV_NONE     15
+#define X86_OP_VEX3_BYTE2_W             RT_BIT(7)
 
-#define X86_OP_VEX3_BYTE3_MAKE(a_f64BitOpSz, a_iSrcReg, a_f256BitAvx, a_fPrf) \
-    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE3_W : 0) \
-     | (~((uint8_t)(a_iSrcReg) & 0xf)) \
-     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE3_L : 0) \
-     | ((a_fPrf) & X86_OP_VEX3_BYTE3_P_MASK))
+#define X86_OP_VEX3_BYTE2_MAKE(a_f64BitOpSz, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE2_W : 0) \
+     | (~((uint8_t)(a_iSrcReg) & 0xf) << X86_OP_VEX3_BYTE2_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
+
+#define X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(a_f64BitOpSz, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE2_W : 0) \
+     | (X86_OP_VEX3_BYTE2_VVVV_NONE << X86_OP_VEX3_BYTE2_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
 /** @} */
 
 /** @} */
