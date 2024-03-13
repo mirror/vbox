@@ -7537,6 +7537,58 @@ iemNativeEmitSimdStoreGprToVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /**
+ * Emits a vecdst.au32[iDWord] = 0 store.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdZeroVecRegElemU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecReg, uint8_t iDWord)
+{
+    Assert(iDWord <= 7);
+
+#ifdef RT_ARCH_AMD64
+    /*
+     * xor tmp0, tmp0
+     * pinsrd xmm, tmp0, iDword
+     */
+    if (IEMNATIVE_REG_FIXED_TMP0 >= 8)
+        pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+    pCodeBuf[off++] = 0x33;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_REG_FIXED_TMP0 & 7, IEMNATIVE_REG_FIXED_TMP0 & 7);
+    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(&pCodeBuf[off], off, iVecReg, IEMNATIVE_REG_FIXED_TMP0, iDWord);
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecReg & 0x1));
+    /* ins vecsrc[iDWord], wzr */
+    if (iDWord >= 4)
+        pCodeBuf[off++] = Armv8A64MkVecInstrIns(iVecReg + 1, ARMV8_A64_REG_WZR, iDWord - 4, kArmv8InstrUmovInsSz_U32);
+    else
+        pCodeBuf[off++] = Armv8A64MkVecInstrIns(iVecReg, ARMV8_A64_REG_WZR, iDWord, kArmv8InstrUmovInsSz_U32);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst.au32[iDWord] = 0 store.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdZeroVecRegElemU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint8_t iDWord)
+{
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdZeroVecRegElemU32Ex(iemNativeInstrBufEnsure(pReNative, off, 10), off, iVecReg, iDWord);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdZeroVecRegElemU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg, iDWord);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a vecdst[0:127] = 0 store.
  */
 DECL_FORCE_INLINE(uint32_t)

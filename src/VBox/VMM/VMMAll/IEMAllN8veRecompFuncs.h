@@ -7104,6 +7104,35 @@ iemNativeEmitSimdMergeYregU64LoU64LocalZxVlmax(PIEMRECOMPILERSTATE pReNative, ui
     return off;
 }
 
+
+#define IEM_MC_CLEAR_XREG_U32_MASK(a_iXReg, a_bMask) \
+    off = iemNativeEmitSimdClearXregU32Mask(pReNative, off, a_iXReg, a_bMask)
+
+
+/** Emits code for IEM_MC_CLEAR_XREG_U32_MASK. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdClearXregU32Mask(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t bImm8Mask)
+{
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
+
+    /** @todo r=aeichner For certain bit combinations we could reduce the number of emitted instructions. */
+    if (bImm8Mask & RT_BIT(0))
+        off = iemNativeEmitSimdZeroVecRegElemU32(pReNative, off, idxSimdRegDst, 0 /*iDWord*/);
+    if (bImm8Mask & RT_BIT(1))
+        off = iemNativeEmitSimdZeroVecRegElemU32(pReNative, off, idxSimdRegDst, 1 /*iDWord*/);
+    if (bImm8Mask & RT_BIT(2))
+        off = iemNativeEmitSimdZeroVecRegElemU32(pReNative, off, idxSimdRegDst, 2 /*iDWord*/);
+    if (bImm8Mask & RT_BIT(3))
+        off = iemNativeEmitSimdZeroVecRegElemU32(pReNative, off, idxSimdRegDst, 3 /*iDWord*/);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXReg);
+
+    /* Free but don't flush the destination register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 
