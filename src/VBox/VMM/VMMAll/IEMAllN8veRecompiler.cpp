@@ -1639,6 +1639,18 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseXf,(PVMCPUCC pVCpu))
 
 
 /**
+ * Used by TB code when it wants to raise a \#DE.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu))
+{
+    iemRaiseDivideErrorJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
  * Used by TB code when detecting opcode changes.
  * @see iemThreadeFuncWorkerObsoleteTb
  */
@@ -2954,7 +2966,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 13);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 14);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2968,6 +2980,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[10]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[11]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[12]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[13]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -6692,6 +6705,27 @@ static uint32_t iemNativeEmitRaiseXf(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /**
+ * Emits the code at the RaiseDe label.
+ */
+static uint32_t iemNativeEmitRaiseDe(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseDe);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        /* iemNativeHlpExecRaiseDe(PVMCPUCC pVCpu) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseDe);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
+
+
+/**
  * Emits the code at the ReturnWithFlags label (returns
  * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
@@ -8797,6 +8831,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_RaiseXf:
                                     pszName = "RaiseXf";
                                     break;
+                                case kIemNativeLabelType_RaiseDe:
+                                    pszName = "RaiseDe";
+                                    break;
                                 case kIemNativeLabelType_ObsoleteTb:
                                     pszName = "ObsoleteTb";
                                     break;
@@ -9401,6 +9438,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitRaiseMf(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseXf))
             off = iemNativeEmitRaiseXf(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseDe))
+            off = iemNativeEmitRaiseDe(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ObsoleteTb))
             off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))

@@ -5232,6 +5232,9 @@ DECL_NO_RETURN(void)    iemRaiseXcptOrIntJmp(PVMCPUCC pVCpu, uint8_t cbInstr, ui
                                              uint32_t fFlags, uint16_t uErr, uint64_t uCr2) IEM_NOEXCEPT_MAY_LONGJMP;
 #endif
 VBOXSTRICTRC            iemRaiseDivideError(PVMCPUCC pVCpu) RT_NOEXCEPT;
+#ifdef IEM_WITH_SETJMP
+DECL_NO_RETURN(void)    iemRaiseDivideErrorJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+#endif
 VBOXSTRICTRC            iemRaiseDebugException(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC            iemRaiseBoundRangeExceeded(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC            iemRaiseUndefinedOpcode(PVMCPUCC pVCpu) RT_NOEXCEPT;

@@ -1100,6 +1100,39 @@ iemNativeEmitRaiseSseAvxSimdFpXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 }
 
 
+#define IEM_MC_RAISE_DIVIDE_ERROR() \
+    off = iemNativeEmitRaiseDivideError(pReNative, off, pCallEntry->idxInstr)
+
+/**
+ * Emits code to raise a \#DE.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRaiseDivideError(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint8_t const idxLabelRaiseDe = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseDe);
+
+    /* raise \#DE exception unconditionally. */
+    off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelRaiseDe);
+
+    return off;
+}
+
 
 /*********************************************************************************************************************************
 *   Emitters for conditionals (IEM_MC_IF_XXX, IEM_MC_ELSE, IEM_MC_ENDIF)                                                         *
@@ -1797,6 +1830,32 @@ iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uin
 }
 
 
+#define IEM_MC_IF_LOCAL_IS_Z(a_Local) \
+    off = iemNativeEmitIfLocalIsZ(pReNative, off, a_Local); \
+    do {
+
+/** Emits code for IEM_MC_IF_LOCAL_IS_Z. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfLocalIsZ(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarLocal)
+{
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarLocal);
+    PIEMNATIVEVAR const pVarRc = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVarLocal)];
+    AssertStmt(pVarRc->uArgNo == UINT8_MAX,       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_8));
+    AssertStmt(pVarRc->cbVar == sizeof(int32_t), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_9));
+
+    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxVarLocal, &off);
+
+    off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, idxReg, false /*f64Bit*/, pEntry->idxLabelElse);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarLocal);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 
 #define IEM_MC_IF_MXCSR_XCPT_PENDING() \
@@ -2191,10 +2250,7 @@ iemNativeEmitCallAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
      */
     off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
     if (idxVarRc != UINT8_MAX)
-    {
-off = iemNativeEmitBrk(pReNative, off, 0x4222); /** @todo test IEM_MC_CALL_AIMPL_3 and IEM_MC_CALL_AIMPL_4 return codes. */
         iemNativeVarRegisterSet(pReNative, idxVarRc, IEMNATIVE_CALL_RET_GREG, off);
-    }
 
     return off;
 }

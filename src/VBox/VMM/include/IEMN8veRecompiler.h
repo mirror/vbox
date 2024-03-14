@@ -406,6 +406,7 @@ typedef enum
     kIemNativeLabelType_RaiseUd,
     kIemNativeLabelType_RaiseMf,
     kIemNativeLabelType_RaiseXf,
+    kIemNativeLabelType_RaiseDe,
     kIemNativeLabelType_ObsoleteTb,
     kIemNativeLabelType_NeedCsLimChecking,
     kIemNativeLabelType_CheckBranchMiss,
@@ -1586,6 +1587,7 @@ IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseXf,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpNeedCsLimChecking,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpCheckBranchMiss,(PVMCPUCC pVCpu));

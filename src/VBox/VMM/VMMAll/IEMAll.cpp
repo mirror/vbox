@@ -4193,6 +4193,15 @@ VBOXSTRICTRC iemRaiseDivideError(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
+#ifdef IEM_WITH_SETJMP
+/** \#UD - 06.  */
+DECL_NO_RETURN(void) iemRaiseDivideErrorJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemRaiseXcptOrIntJmp(pVCpu, 0, X86_XCPT_DE, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+#endif
+
+
 /** \#DB - 01.
  * @note This automatically clear DR7.GD.  */
 VBOXSTRICTRC iemRaiseDebugException(PVMCPUCC pVCpu) RT_NOEXCEPT
