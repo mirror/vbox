@@ -1455,7 +1455,12 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     if sMountPoint:
                         fMode = 0o777;
                         sDir  = os.path.join(sMountPoint, 'test');
-                        if os.path.exists(sDir) or self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', fMode):
+                        fDirExist = os.path.exists(sDir)
+                        fMountPointExist = os.path.exists(sMountPoint)
+                        reporter.log("fExist for sMountPoint: %s, fExist for sDir (test folder): %s" % \
+                                                                                                    (fMountPointExist,
+                                                                                                     fDirExist))
+                        if fDirExist or self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', fMode):
                             sMountPoint = sDir
                         else:
                             reporter.error('Creating volume directory "%s" (mode %x) failed' % (sDir, fMode,));

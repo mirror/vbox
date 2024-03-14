@@ -280,8 +280,9 @@ class RemoteExecutor(object):
         """
         fRc = True;
         if self.oTxsSession is not None:
-            fRc = self.oTxsSession.syncMkDir(sDir, fMode, cMsTimeout);
+            fRc = self.oTxsSession.syncMkDir(sDir, fMode, cMsTimeout, fIgnoreErrors=False);
         elif not os.path.isdir(sDir):
+            reporter.log("if no txs session found and os.path.isdir is False do os.mkdir for %s" % sDir)
             fRc = os.mkdir(sDir, fMode);
 
         return fRc;
