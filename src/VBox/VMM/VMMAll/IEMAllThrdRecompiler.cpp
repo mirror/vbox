@@ -1276,6 +1276,98 @@ void iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs)
 /*********************************************************************************************************************************
 *   Threaded Recompiler Core                                                                                                     *
 *********************************************************************************************************************************/
+/**
+ * Formats TB flags (IEM_F_XXX and IEMTB_F_XXX) to string.
+ * @returns pszBuf.
+ * @param   fFlags  The flags.
+ * @param   pszBuf  The output buffer.
+ * @param   cbBuf   The output buffer size.  At least 32 bytes.
+ */
+DECLEXPORT(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf) RT_NOEXCEPT
+{
+    Assert(cbBuf >= 32);
+    static RTSTRTUPLE const s_aModes[] =
+    {
+        /* [00] = */ { RT_STR_TUPLE("16BIT") },
+        /* [01] = */ { RT_STR_TUPLE("32BIT") },
+        /* [02] = */ { RT_STR_TUPLE("!2!") },
+        /* [03] = */ { RT_STR_TUPLE("!3!") },
+        /* [04] = */ { RT_STR_TUPLE("16BIT_PRE_386") },
+        /* [05] = */ { RT_STR_TUPLE("32BIT_FLAT") },
+        /* [06] = */ { RT_STR_TUPLE("!6!") },
+        /* [07] = */ { RT_STR_TUPLE("!7!") },
+        /* [08] = */ { RT_STR_TUPLE("16BIT_PROT") },
+        /* [09] = */ { RT_STR_TUPLE("32BIT_PROT") },
+        /* [0a] = */ { RT_STR_TUPLE("64BIT") },
+        /* [0b] = */ { RT_STR_TUPLE("!b!") },
+        /* [0c] = */ { RT_STR_TUPLE("16BIT_PROT_PRE_386") },
+        /* [0d] = */ { RT_STR_TUPLE("32BIT_PROT_FLAT") },
+        /* [0e] = */ { RT_STR_TUPLE("!e!") },
+        /* [0f] = */ { RT_STR_TUPLE("!f!") },
+        /* [10] = */ { RT_STR_TUPLE("!10!") },
+        /* [11] = */ { RT_STR_TUPLE("!11!") },
+        /* [12] = */ { RT_STR_TUPLE("!12!") },
+        /* [13] = */ { RT_STR_TUPLE("!13!") },
+        /* [14] = */ { RT_STR_TUPLE("!14!") },
+        /* [15] = */ { RT_STR_TUPLE("!15!") },
+        /* [16] = */ { RT_STR_TUPLE("!16!") },
+        /* [17] = */ { RT_STR_TUPLE("!17!") },
+        /* [18] = */ { RT_STR_TUPLE("16BIT_PROT_V86") },
+        /* [19] = */ { RT_STR_TUPLE("32BIT_PROT_V86") },
+        /* [1a] = */ { RT_STR_TUPLE("!1a!") },
+        /* [1b] = */ { RT_STR_TUPLE("!1b!") },
+        /* [1c] = */ { RT_STR_TUPLE("!1c!") },
+        /* [1d] = */ { RT_STR_TUPLE("!1d!") },
+        /* [1e] = */ { RT_STR_TUPLE("!1e!") },
+        /* [1f] = */ { RT_STR_TUPLE("!1f!") },
+    };
+    AssertCompile(RT_ELEMENTS(s_aModes) == IEM_F_MODE_MASK + 1);
+    memcpy(pszBuf, s_aModes[fFlags & IEM_F_MODE_MASK].psz, s_aModes[fFlags & IEM_F_MODE_MASK].cch);
+    size_t off = s_aModes[fFlags & IEM_F_MODE_MASK].cch;
+
+    pszBuf[off++] = ' ';
+    pszBuf[off++] = 'C';
+    pszBuf[off++] = 'P';
+    pszBuf[off++] = 'L';
+    pszBuf[off++] = '0' + ((fFlags >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK);
+    Assert(off < 32);
+
+    fFlags &= ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_SMASK);
+
+    static struct { const char *pszName; uint32_t cchName; uint32_t fFlag; } const s_aFlags[] =
+    {
+        { RT_STR_TUPLE("BYPASS_HANDLERS"),      IEM_F_BYPASS_HANDLERS    },
+        { RT_STR_TUPLE("PENDING_BRK_INSTR"),    IEM_F_PENDING_BRK_INSTR  },
+        { RT_STR_TUPLE("PENDING_BRK_DATA"),     IEM_F_PENDING_BRK_DATA   },
+        { RT_STR_TUPLE("PENDING_BRK_X86_IO"),   IEM_F_PENDING_BRK_X86_IO },
+        { RT_STR_TUPLE("X86_DISREGARD_LOCK"),   IEM_F_X86_DISREGARD_LOCK },
+        { RT_STR_TUPLE("X86_CTX_VMX"),          IEM_F_X86_CTX_VMX        },
+        { RT_STR_TUPLE("X86_CTX_SVM"),          IEM_F_X86_CTX_SVM        },
+        { RT_STR_TUPLE("X86_CTX_IN_GUEST"),     IEM_F_X86_CTX_IN_GUEST   },
+        { RT_STR_TUPLE("X86_CTX_SMM"),          IEM_F_X86_CTX_SMM        },
+        { RT_STR_TUPLE("INHIBIT_SHADOW"),       IEMTB_F_INHIBIT_SHADOW   },
+        { RT_STR_TUPLE("INHIBIT_NMI"),          IEMTB_F_INHIBIT_NMI      },
+        { RT_STR_TUPLE("CS_LIM_CHECKS"),        IEMTB_F_CS_LIM_CHECKS    },
+        { RT_STR_TUPLE("TYPE_THREADED"),        IEMTB_F_TYPE_THREADED    },
+        { RT_STR_TUPLE("TYPE_NATIVE"),          IEMTB_F_TYPE_NATIVE      },
+    };
+    if (fFlags)
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
+            if (s_aFlags[i].fFlag & fFlags)
+            {
+                AssertReturnStmt(off + 1 + s_aFlags[i].cchName + 1 <= cbBuf, pszBuf[off] = '\0', pszBuf);
+                pszBuf[off++] = ' ';
+                memcpy(&pszBuf[off], s_aFlags[i].pszName, s_aFlags[i].cchName);
+                off += s_aFlags[i].cchName;
+                fFlags &= ~s_aFlags[i].fFlag;
+                if (!fFlags)
+                    break;
+            }
+    pszBuf[off] = '\0';
+
+    return pszBuf;
+}
+
 
 /** @callback_method_impl{FNDISREADBYTES, Dummy.} */
 static DECLCALLBACK(int) iemThreadedDisasReadBytesDummy(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
