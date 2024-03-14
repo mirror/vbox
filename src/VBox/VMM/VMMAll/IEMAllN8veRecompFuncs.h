@@ -6864,6 +6864,32 @@ iemNativeEmitSimdFetchXregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
+#define IEM_MC_FETCH_XREG_U8(a_u64Value, a_iXReg, a_iByte) \
+    off = iemNativeEmitSimdFetchXregU8(pReNative, off, a_u64Value, a_iXReg, a_iByte)
+
+/** Emits code for IEM_MC_FETCH_XREG_U8. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdFetchXregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iXReg, uint8_t iByte)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint8_t));
+
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+
+    off = iemNativeEmitSimdLoadGprFromVecRegU8(pReNative, off, idxVarReg, idxSimdRegSrc, iByte);
+
+    /* Free but don't flush the source register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+    iemNativeVarRegisterRelease(pReNative, idxDstVar);
+
+    return off;
+}
+
+
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_iQWord, a_u64Value) \
     off = iemNativeEmitSimdStoreXregU64(pReNative, off, a_iXReg, a_u64Value, a_iQWord)
 
