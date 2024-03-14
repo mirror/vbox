@@ -2086,7 +2086,26 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-    /* Clear the appropriate check emitted flags when a helper is called which could modify a control register. */
+    /* Clear the appropriate IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_XXX flags
+       when a calls clobber any of the relevatn control registers. */
+# if 1
+    if (!(fGstShwFlush & (RT_BIT_64(kIemNativeGstReg_Cr0) | RT_BIT_64(kIemNativeGstReg_Cr4) | RT_BIT_64(kIemNativeGstReg_Xcr0))))
+    {
+        /* Likely as long as call+ret are done via cimpl. */
+        Assert(   /*pfnCImpl != (uintptr_t)iemCImpl_mov_Cd_Rd && pfnCImpl != (uintptr_t)iemCImpl_xsetbv
+               &&*/ pfnCImpl != (uintptr_t)iemCImpl_lmsw      && pfnCImpl != (uintptr_t)iemCImpl_clts);
+    }
+    else if (fGstShwFlush & RT_BIT_64(kIemNativeGstReg_Xcr0))
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX;
+    else if (fGstShwFlush & RT_BIT_64(kIemNativeGstReg_Cr4))
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~(  IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX
+                                                    | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE);
+    else
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~(  IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX
+                                                    | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE
+                                                    | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE);
+
+# else
     if (pfnCImpl == (uintptr_t)iemCImpl_xsetbv) /* Modifies xcr0 which only the AVX check uses. */
         pReNative->fSimdRaiseXcptChecksEmitted &= ~IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX;
     else if (pfnCImpl == (uintptr_t)iemCImpl_mov_Cd_Rd) /* Can modify cr4 which all checks use. */
@@ -2098,6 +2117,7 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
         pReNative->fSimdRaiseXcptChecksEmitted &= ~(  IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX
                                                     | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE
                                                     | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE);
+# endif
 #endif
 
     /*
