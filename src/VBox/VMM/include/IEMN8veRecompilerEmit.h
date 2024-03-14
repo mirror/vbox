@@ -7480,9 +7480,69 @@ iemNativeEmitSimdLoadGprFromVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t of
     Assert(!(iVecRegSrc & 0x1));
     /* Need to access the "high" 128-bit vector register. */
     if (iDWord >= 4)
-        off = iemNativeEmitSimdLoadGprFromVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc + 1, iDWord - 4);
+        off = iemNativeEmitSimdLoadGprFromVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc + 1, iDWord - 4);
     else
         off = iemNativeEmitSimdLoadGprFromVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc, iDWord);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = vecsrc[x] load, 16-bit.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdLoadGprFromVecRegU16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iVecRegSrc, uint8_t iWord)
+{
+#ifdef RT_ARCH_AMD64
+    if (iWord >= 8)
+    {
+        /** @todo Currently not used. */
+        AssertReleaseFailed();
+    }
+    else
+    {
+        /* pextrw gpr, vecsrc, #iWord */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iGprDst >= 8 || iVecRegSrc >= 8)
+            pCodeBuf[off++] =   (iVecRegSrc < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0xc5;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iVecRegSrc & 7);
+        pCodeBuf[off++] = iWord;
+    }
+#elif defined(RT_ARCH_ARM64)
+    /* umov gprdst, vecsrc[iWord] */
+    pCodeBuf[off++] = Armv8A64MkVecInstrUmov(iGprDst, iVecRegSrc, iWord, kArmv8InstrUmovInsSz_U16, false /*fDst64Bit*/);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = vecsrc[x] load, 16-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadGprFromVecRegU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iVecRegSrc, uint8_t iWord)
+{
+    Assert(iWord <= 16);
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadGprFromVecRegU16Ex(iemNativeInstrBufEnsure(pReNative, off, 6), off, iGprDst, iVecRegSrc, iWord);
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecRegSrc & 0x1));
+    /* Need to access the "high" 128-bit vector register. */
+    if (iWord >= 8)
+        off = iemNativeEmitSimdLoadGprFromVecRegU16Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc + 1, iWord - 8);
+    else
+        off = iemNativeEmitSimdLoadGprFromVecRegU16Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, iVecRegSrc, iWord);
 #else
 # error "port me"
 #endif
