@@ -3552,7 +3552,7 @@ class IEMThreadedGenerator(object):
             fRc = True;
             for sOutFile, fnGenMethod, iPartNo in aaoOutputFiles:
                 if sOutFile == '-':
-                    fRc = fnGenMethod(sys.stdout) and fRc;
+                    fRc = fnGenMethod(sys.stdout, iPartNo) and fRc;
                 else:
                     try:
                         oOut = open(sOutFile, 'w');                 # pylint: disable=consider-using-with,unspecified-encoding
