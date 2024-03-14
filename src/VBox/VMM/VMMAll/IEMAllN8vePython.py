@@ -383,7 +383,10 @@ class NativeRecompFunctionVariation(object):
                     # dVar at this point (since only arguments can hold variable
                     # references).
                     #
-                    for sParam in oStmt.asParams[oStmt.idxParams:]:
+                    asCallParams = oStmt.asParams[oStmt.idxParams:];
+                    if oStmt.sName.startswith('IEM_MC_CALL_AVX_AIMPL_'):
+                        asCallParams.insert(0, 'pXState');
+                    for sParam in asCallParams:
                         oVarInfo = dVars.get(sParam);
                         if oVarInfo:
                             if not oVarInfo.isArg():
