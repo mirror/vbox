@@ -817,9 +817,8 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
         /*
          * Make sure we don't have any outstanding guest register writes as we may
          * raise an #NM and all guest register must be up to date in CPUMCTX.
-         *
-         * @todo r=aeichner Can we postpone this to the RaiseNm path?
          */
+        /** @todo r=aeichner Can we postpone this to the RaiseNm path? */
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
@@ -870,9 +869,8 @@ iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /*
      * Make sure we don't have any outstanding guest register writes as we may
      * raise an #MF and all guest register must be up to date in CPUMCTX.
-     *
-     * @todo r=aeichner Can we postpone this to the RaiseMf path?
      */
+    /** @todo r=aeichner Can we postpone this to the RaiseMf path? */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
@@ -922,9 +920,8 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         /*
          * Make sure we don't have any outstanding guest register writes as we may
          * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-         *
-         * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
          */
+        /** @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path? */
         off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
@@ -934,33 +931,54 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #endif
 
         /* Allocate a temporary CR0 and CR4 register. */
-        uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
-        uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
+        uint8_t const idxLabelRaiseSseRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseSseRelated);
+        uint8_t const idxCr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxCr4Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
 
-        /** @todo r=aeichner Optimize this more later to have less compares and branches,
-         *                   (see IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() in IEMMc.h but check that it has some
-         *                   actual performance benefit first). */
+        AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
+#ifdef RT_ARCH_AMD64
         /*
-         * if (cr0 & X86_CR0_EM)
-         *     return raisexcpt();
+         * We do a modified test here:
+         *  if (!(((cr4 & X86_CR4_OSFXSR) | cr0) ^ X86_CR4_OSFXSR)) { likely }
+         *  else                                                    { goto RaiseSseRelated; }
+         * This ASSUMES that CR0[bit 9] is always zero.  This is the case on
+         * all targets except the 386, which doesn't support SSE, this should
+         * be a safe assumption.
          */
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_EM_BIT, idxLabelRaiseUd);
-        /*
-         * if (!(cr4 & X86_CR4_OSFXSR))
-         *     return raisexcpt();
-         */
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSFXSR_BIT, idxLabelRaiseUd);
-        /*
-         * if (cr0 & X86_CR0_TS)
-         *     return raisexcpt();
-         */
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1+6+3+3+7+7+6);
+        pCodeBuf[off++] = 0xcc;
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off,    idxTmpReg, X86_CR4_OSFXSR); /* Isolate CR4.OSFXSR as CR4.TSD and */
+        off = iemNativeEmitAndGpr32ByGpr32Ex(pCodeBuf, off, idxTmpReg, idxCr4Reg);      /* CR4.DE would overlap the CR0 bits. */
+        off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off,    idxTmpReg, idxCr0Reg);
+        off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off,   idxTmpReg, X86_CR0_EM | X86_CR0_TS | X86_CR4_OSFXSR);
+        off = iemNativeEmitXorGpr32ByImmEx(pCodeBuf, off,   idxTmpReg, X86_CR4_OSFXSR);
+        off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelRaiseSseRelated, kIemNativeInstrCond_ne);
 
-        /* Free but don't flush the CR0 and CR4 register. */
+#elif defined(RT_ARCH_ARM64)
+        /*
+         * We do a modified test here:
+         *  if (!((cr0 & (X86_CR0_EM | X86_CR0_TS)) | (((cr4 >> X86_CR4_OSFXSR_BIT) & 1) ^ 1))) { likely }
+         *  else                                                                                { goto RaiseSseRelated; }
+         */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1+5);
+        //pCodeBuf[off++] = Armv8A64MkInstrBrk(0x1111);
+        Assert(Armv8A64ConvertImmRImmS2Mask32(1, 32 - X86_CR0_EM_BIT) == (X86_CR0_EM | X86_CR0_TS));
+        pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxCr0Reg, 1, 32 - X86_CR0_EM_BIT, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxTmpReg, idxCr4Reg, X86_CR4_OSFXSR_BIT, 1, false /*f64Bit*/);
+        /* -> idxTmpReg[0]=OSFXSR;  idxTmpReg[2]=EM; idxTmpReg[3]=TS; (the rest is zero) */
+        Assert(Armv8A64ConvertImmRImmS2Mask32(0, 0) == 1);
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);              /* -> bit 0 = ~OSFXSR */
+        /* -> idxTmpReg[0]=~OSFXSR; idxTmpReg[2]=EM; idxTmpReg[3]=TS; (the rest is zero) */
+        off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
+                                                             idxLabelRaiseSseRelated);
+#endif
+
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        iemNativeRegFreeTmp(pReNative, idxTmpReg);
         iemNativeRegFreeTmp(pReNative, idxCr0Reg);
         iemNativeRegFreeTmp(pReNative, idxCr4Reg);
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
         pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE;
     }

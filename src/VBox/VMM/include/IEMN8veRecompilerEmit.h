@@ -4809,6 +4809,60 @@ iemNativeEmitOrGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 }
 
 
+
+/**
+ * ORs two 64-bit GPRs together, storing the result in a third register.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitGprEqGprOrGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc1, uint8_t iGprSrc2)
+{
+#ifdef RT_ARCH_AMD64
+    if (iGprDst != iGprSrc1 && iGprDst != iGprSrc2)
+    {
+        /** @todo consider LEA */
+        off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, iGprDst, iGprSrc1);
+        off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, iGprDst, iGprSrc2);
+    }
+    else
+        off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, iGprDst, iGprDst != iGprSrc1 ? iGprSrc1 : iGprSrc2);
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, iGprSrc1, iGprSrc2);
+
+#else
+# error "Port me!"
+#endif
+    return off;
+}
+
+
+
+/**
+ * Ors two 32-bit GPRs together, storing the result in a third register.
+ * @note Bits 32 thru 63 in @a iGprDst will be zero after the operation.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitGpr32EqGprOrGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc1, uint8_t iGprSrc2)
+{
+#ifdef RT_ARCH_AMD64
+    if (iGprDst != iGprSrc1 && iGprDst != iGprSrc2)
+    {
+        off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, iGprDst, iGprSrc1);
+        off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off, iGprDst, iGprSrc2);
+    }
+    else
+        off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off, iGprDst, iGprDst != iGprSrc1 ? iGprSrc1 : iGprSrc2);
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, iGprSrc1, iGprSrc2, false /*f64Bit*/);
+
+#else
+# error "Port me!"
+#endif
+    return off;
+}
+
+
 /**
  * Emits code for XOR'ing two 64-bit GPRs.
  */

@@ -3622,6 +3622,20 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbzCbnz(bool fJmpIfNotZero, int32_t i
 }
 
 
+/** A64: Encodes the CBZ instructions. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbz(int32_t iImm19, uint32_t iReg, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, iImm19, iReg, f64Bit);
+}
+
+
+/** A64: Encodes the CBNZ instructions. */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbnz(int32_t iImm19, uint32_t iReg, bool f64Bit = true)
+{
+    return Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, iImm19, iReg, f64Bit);
+}
+
+
 /**
  * A64: Encodes TBZ and TBNZ (conditional branch w/ immediate) instructions.
  *

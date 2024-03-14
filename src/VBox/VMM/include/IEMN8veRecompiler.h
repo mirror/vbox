@@ -396,21 +396,31 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 typedef enum
 {
     kIemNativeLabelType_Invalid = 0,
-    /* Labels w/o data, only once instance per TB: */
+    /*
+     * Labels w/o data, only once instance per TB:
+     */
+    /* Simple labels comes first for indexing reasons. RaiseXx is order by the exception's numerical value(s). */
+    kIemNativeLabelType_RaiseDe,            /**< Raise (throw) X86_XCPT_DE (00h). */
+    kIemNativeLabelType_RaiseUd,            /**< Raise (throw) X86_XCPT_UD (06h). */
+    kIemNativeLabelType_RaiseSseRelated,    /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to cr0 & cr4. */
+    kIemNativeLabelType_RaiseAvxRelated,    /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to xcr0, cr0 & cr4. */
+    kIemNativeLabelType_RaiseNm,            /**< Raise (throw) X86_XCPT_NM (07h). */
+    kIemNativeLabelType_RaiseGp0,           /**< Raise (throw) X86_XCPT_GP (0dh) w/ errcd=0. */
+    kIemNativeLabelType_RaiseMf,            /**< Raise (throw) X86_XCPT_MF (10h). */
+    kIemNativeLabelType_RaiseXf,            /**< Raise (throw) X86_XCPT_XF (13h). */
+    kIemNativeLabelType_ObsoleteTb,
+    kIemNativeLabelType_NeedCsLimChecking,
+    kIemNativeLabelType_CheckBranchMiss,
+    kIemNativeLabelType_LastSimple = kIemNativeLabelType_CheckBranchMiss,
+    /* Manually defined labels. */
     kIemNativeLabelType_Return,
     kIemNativeLabelType_ReturnBreak,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
-    kIemNativeLabelType_RaiseGp0,
-    kIemNativeLabelType_RaiseNm,
-    kIemNativeLabelType_RaiseUd,
-    kIemNativeLabelType_RaiseMf,
-    kIemNativeLabelType_RaiseXf,
-    kIemNativeLabelType_RaiseDe,
-    kIemNativeLabelType_ObsoleteTb,
-    kIemNativeLabelType_NeedCsLimChecking,
-    kIemNativeLabelType_CheckBranchMiss,
-    /* Labels with data, potentially multiple instances per TB: */
+
+    /*
+     * Labels with data, potentially multiple instances per TB:
+     */
     kIemNativeLabelType_FirstWithMultipleInstances,
     kIemNativeLabelType_If = kIemNativeLabelType_FirstWithMultipleInstances,
     kIemNativeLabelType_Else,
@@ -1451,6 +1461,9 @@ typedef FNIEMNATIVELIVENESSFUNC *PFNIEMNATIVELIVENESSFUNC;
 /** Prototype a native recompiler helper function, safe to call from the TB code. */
 #define IEM_DECL_NATIVE_HLP_PROTO(a_RetType, a_Name, a_ArgList) \
     DECL_HIDDEN_THROW(a_RetType) VBOXCALL a_Name a_ArgList
+/** Pointer typedef a native recompiler helper function, safe to call from the TB code. */
+#define IEM_DECL_NATIVE_HLP_PTR(a_RetType, a_Name, a_ArgList) \
+    a_RetType (VBOXCALL *a_Name) a_ArgList
 
 
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO

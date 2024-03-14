@@ -1579,11 +1579,59 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu,
 
 
 /**
- * Used by TB code when it wants to raise a \#GP(0).
+ * Used by TB code when it wants to raise a \#DE.
  */
-IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu))
 {
-    iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+    iemRaiseDivideErrorJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
+ * Used by TB code when it wants to raise a \#UD.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
+{
+    iemRaiseUndefinedOpcodeJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
+ * Used by TB code when it wants to raise an SSE related \#UD or \#NM.
+ *
+ * See IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseRelated,(PVMCPUCC pVCpu))
+{
+    if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM)
+        || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR))
+        iemRaiseUndefinedOpcodeJmp(pVCpu);
+    else
+        iemRaiseDeviceNotAvailableJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
+ * Used by TB code when it wants to raise an AVX related \#UD or \#NM.
+ *
+ * See IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu))
+{
+    if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE)
+        || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
+        iemRaiseUndefinedOpcodeJmp(pVCpu);
+    else
+        iemRaiseDeviceNotAvailableJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
 #endif
@@ -1603,11 +1651,11 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu))
 
 
 /**
- * Used by TB code when it wants to raise a \#UD.
+ * Used by TB code when it wants to raise a \#GP(0).
  */
-IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
 {
-    iemRaiseUndefinedOpcodeJmp(pVCpu);
+    iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
 #endif
@@ -1632,18 +1680,6 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu))
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseXf,(PVMCPUCC pVCpu))
 {
     iemRaiseSimdFpExceptionJmp(pVCpu);
-#ifndef _MSC_VER
-    return VINF_IEM_RAISED_XCPT; /* not reached */
-#endif
-}
-
-
-/**
- * Used by TB code when it wants to raise a \#DE.
- */
-IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu))
-{
-    iemRaiseDivideErrorJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
 #endif
@@ -2966,7 +3002,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 14);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 16);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2981,6 +3017,8 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[11]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[12]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[13]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[14]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[15]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -3314,6 +3352,12 @@ iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idx
 {
     Assert(idxLabel <= UINT16_MAX);
     Assert((unsigned)enmType <= UINT8_MAX);
+#ifdef RT_ARCH_ARM64
+    AssertStmt(   enmType != kIemNativeFixupType_RelImm14At5
+               || pReNative->paLabels[idxLabel].enmType >= kIemNativeLabelType_FirstWithMultipleInstances
+               || pReNative->paLabels[idxLabel].off != UINT32_MAX,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_SHORT_JMP_TO_TAIL_LABEL));
+#endif
 
     /*
      * Make sure we've room.
@@ -6537,195 +6581,6 @@ iemNativeEmitThreadCallStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMT
 
 
 /**
- * Emits the code at the CheckBranchMiss label.
- */
-static uint32_t iemNativeEmitCheckBranchMiss(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_CheckBranchMiss);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* int iemNativeHlpCheckBranchMiss(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpCheckBranchMiss);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the NeedCsLimChecking label.
- */
-static uint32_t iemNativeEmitNeedCsLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_NeedCsLimChecking);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* int iemNativeHlpNeedCsLimChecking(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpNeedCsLimChecking);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the ObsoleteTb label.
- */
-static uint32_t iemNativeEmitObsoleteTb(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_ObsoleteTb);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* int iemNativeHlpObsoleteTb(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpObsoleteTb);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseGP0 label.
- */
-static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseGp0);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseGp0(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseGp0);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseNm label.
- */
-static uint32_t iemNativeEmitRaiseNm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseNm);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseNm(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseNm);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseUd label.
- */
-static uint32_t iemNativeEmitRaiseUd(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseUd);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseUd(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseUd);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseMf label.
- */
-static uint32_t iemNativeEmitRaiseMf(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseMf);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseMf(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseMf);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseXf label.
- */
-static uint32_t iemNativeEmitRaiseXf(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseXf);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseXf(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseXf);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
- * Emits the code at the RaiseDe label.
- */
-static uint32_t iemNativeEmitRaiseDe(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
-{
-    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseDe);
-    if (idxLabel != UINT32_MAX)
-    {
-        iemNativeLabelDefine(pReNative, idxLabel, off);
-
-        /* iemNativeHlpExecRaiseDe(PVMCPUCC pVCpu) */
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseDe);
-
-        /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
-    }
-    return off;
-}
-
-
-/**
  * Emits the code at the ReturnWithFlags label (returns
  * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
@@ -8410,6 +8265,10 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
         ENTRY(cpum.GstCtx.rip),
         ENTRY(cpum.GstCtx.eflags),
         ENTRY(cpum.GstCtx.uRipInhibitInt),
+        ENTRY(cpum.GstCtx.cr0),
+        ENTRY(cpum.GstCtx.cr4),
+        ENTRY(cpum.GstCtx.aXcr[0]),
+        ENTRY(cpum.GstCtx.aXcr[1]),
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
         ENTRY(cpum.GstCtx.XState.x87.aXMM[0]),
         ENTRY(cpum.GstCtx.XState.x87.aXMM[1]),
@@ -8711,45 +8570,21 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                             bool        fNumbered  = pDbgInfo->aEntries[iDbgEntry].Label.uData != 0;
                             switch ((IEMNATIVELABELTYPE)pDbgInfo->aEntries[iDbgEntry].Label.enmLabel)
                             {
-                                case kIemNativeLabelType_Return:
-                                    pszName = "Return";
-                                    break;
-                                case kIemNativeLabelType_ReturnBreak:
-                                    pszName = "ReturnBreak";
-                                    break;
-                                case kIemNativeLabelType_ReturnWithFlags:
-                                    pszName = "ReturnWithFlags";
-                                    break;
-                                case kIemNativeLabelType_NonZeroRetOrPassUp:
-                                    pszName = "NonZeroRetOrPassUp";
-                                    break;
-                                case kIemNativeLabelType_RaiseGp0:
-                                    pszName = "RaiseGp0";
-                                    break;
-                                case kIemNativeLabelType_RaiseNm:
-                                    pszName = "RaiseNm";
-                                    break;
-                                case kIemNativeLabelType_RaiseUd:
-                                    pszName = "RaiseUd";
-                                    break;
-                                case kIemNativeLabelType_RaiseMf:
-                                    pszName = "RaiseMf";
-                                    break;
-                                case kIemNativeLabelType_RaiseXf:
-                                    pszName = "RaiseXf";
-                                    break;
-                                case kIemNativeLabelType_RaiseDe:
-                                    pszName = "RaiseDe";
-                                    break;
-                                case kIemNativeLabelType_ObsoleteTb:
-                                    pszName = "ObsoleteTb";
-                                    break;
-                                case kIemNativeLabelType_NeedCsLimChecking:
-                                    pszName = "NeedCsLimChecking";
-                                    break;
-                                case kIemNativeLabelType_CheckBranchMiss:
-                                    pszName = "CheckBranchMiss";
-                                    break;
+                                case kIemNativeLabelType_Return:                pszName = "Return"; break;
+                                case kIemNativeLabelType_ReturnBreak:           pszName = "ReturnBreak"; break;
+                                case kIemNativeLabelType_ReturnWithFlags:       pszName = "ReturnWithFlags"; break;
+                                case kIemNativeLabelType_NonZeroRetOrPassUp:    pszName = "NonZeroRetOrPassUp"; break;
+                                case kIemNativeLabelType_RaiseDe:               pszName = "RaiseDe"; break;
+                                case kIemNativeLabelType_RaiseUd:               pszName = "RaiseUd"; break;
+                                case kIemNativeLabelType_RaiseSseRelated:       pszName = "RaiseSseRelated"; break;
+                                case kIemNativeLabelType_RaiseAvxRelated:       pszName = "RaiseAvxRelated"; break;
+                                case kIemNativeLabelType_RaiseNm:               pszName = "RaiseNm"; break;
+                                case kIemNativeLabelType_RaiseGp0:              pszName = "RaiseGp0"; break;
+                                case kIemNativeLabelType_RaiseMf:               pszName = "RaiseMf"; break;
+                                case kIemNativeLabelType_RaiseXf:               pszName = "RaiseXf"; break;
+                                case kIemNativeLabelType_ObsoleteTb:            pszName = "ObsoleteTb"; break;
+                                case kIemNativeLabelType_NeedCsLimChecking:     pszName = "NeedCsLimChecking"; break;
+                                case kIemNativeLabelType_CheckBranchMiss:       pszName = "CheckBranchMiss"; break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -9335,24 +9170,61 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnWithFlags))
             off = iemNativeEmitReturnWithFlags(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseGp0))
-            off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseNm))
-            off = iemNativeEmitRaiseNm(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseUd))
-            off = iemNativeEmitRaiseUd(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseMf))
-            off = iemNativeEmitRaiseMf(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseXf))
-            off = iemNativeEmitRaiseXf(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseDe))
-            off = iemNativeEmitRaiseDe(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ObsoleteTb))
-            off = iemNativeEmitObsoleteTb(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_NeedCsLimChecking))
-            off = iemNativeEmitNeedCsLimChecking(pReNative, off, idxReturnLabel);
-        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_CheckBranchMiss))
-            off = iemNativeEmitCheckBranchMiss(pReNative, off, idxReturnLabel);
+
+        /*
+         * Generate simple TB tail labels that just calls a help with a pVCpu
+         * arg and either return or longjmps/throws a non-zero status.
+         *
+         * The array entries must be ordered by enmLabel value so we can index
+         * using fTailLabels bit numbers.
+         */
+        typedef IEM_DECL_NATIVE_HLP_PTR(int, PFNIEMNATIVESIMPLETAILLABELCALL,(PVMCPUCC pVCpu));
+        static struct
+        {
+            IEMNATIVELABELTYPE              enmLabel;
+            PFNIEMNATIVESIMPLETAILLABELCALL pfnCallback;
+        } const g_aSimpleTailLabels[] =
+        {
+            {   kIemNativeLabelType_Invalid,                NULL },
+            {   kIemNativeLabelType_RaiseDe,                iemNativeHlpExecRaiseDe },
+            {   kIemNativeLabelType_RaiseUd,                iemNativeHlpExecRaiseUd },
+            {   kIemNativeLabelType_RaiseSseRelated,        iemNativeHlpExecRaiseSseRelated },
+            {   kIemNativeLabelType_RaiseAvxRelated,        iemNativeHlpExecRaiseAvxRelated },
+            {   kIemNativeLabelType_RaiseNm,                iemNativeHlpExecRaiseNm },
+            {   kIemNativeLabelType_RaiseGp0,               iemNativeHlpExecRaiseGp0 },
+            {   kIemNativeLabelType_RaiseMf,                iemNativeHlpExecRaiseMf },
+            {   kIemNativeLabelType_RaiseXf,                iemNativeHlpExecRaiseXf },
+            {   kIemNativeLabelType_ObsoleteTb,             iemNativeHlpObsoleteTb },
+            {   kIemNativeLabelType_NeedCsLimChecking,      iemNativeHlpNeedCsLimChecking },
+            {   kIemNativeLabelType_CheckBranchMiss,        iemNativeHlpCheckBranchMiss },
+        };
+        AssertCompile(RT_ELEMENTS(g_aSimpleTailLabels) == (unsigned)kIemNativeLabelType_LastSimple + 1U);
+        AssertCompile(kIemNativeLabelType_Invalid == 0);
+        uint64_t fTailLabels = pReNative->bmLabelTypes & (RT_BIT_64(kIemNativeLabelType_LastSimple + 1U) - 2U);
+        if (fTailLabels)
+        {
+            do
+            {
+                IEMNATIVELABELTYPE const enmLabel = (IEMNATIVELABELTYPE)(ASMBitFirstSetU64(fTailLabels) - 1U);
+                fTailLabels &= ~RT_BIT_64(enmLabel);
+                Assert(g_aSimpleTailLabels[enmLabel].enmLabel == enmLabel);
+
+                uint32_t const idxLabel = iemNativeLabelFind(pReNative, enmLabel);
+                Assert(idxLabel != UINT32_MAX);
+                if (idxLabel != UINT32_MAX)
+                {
+                    iemNativeLabelDefine(pReNative, idxLabel, off);
+
+                    /* int pfnCallback(PVMCPUCC pVCpu) */
+                    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+                    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)g_aSimpleTailLabels[enmLabel].pfnCallback);
+
+                    /* jump back to the return sequence. */
+                    off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+                }
+
+            } while (fTailLabels);
+        }
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
     {

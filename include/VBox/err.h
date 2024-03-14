@@ -2528,28 +2528,30 @@
 #define VERR_IEM_FIXUP_IPE_1                        (-5326)
 /** Recompiler: Too many fixups. */
 #define VERR_IEM_FIXUP_TOO_MANY                     (-5327)
-/** Recompiler: Out of memory. */
+/** Recompiler: Out of memory for fixups. */
 #define VERR_IEM_FIXUP_OUT_OF_MEMORY                (-5328)
+/** Recompiler: Wrong jump instruction targeting label at end of TB. */
+#define VERR_IEM_FIXUP_SHORT_JMP_TO_TAIL_LABEL      (-5329)
 /** Recompiler: Hit instruction buffer size limit. */
-#define VERR_IEM_INSTR_BUF_TOO_LARGE                (-5329)
+#define VERR_IEM_INSTR_BUF_TOO_LARGE                (-5330)
 /** Recompiler: Out of memory for the instruction buffer (regular heap). */
-#define VERR_IEM_INSTR_BUF_OUT_OF_MEMORY            (-5330)
+#define VERR_IEM_INSTR_BUF_OUT_OF_MEMORY            (-5331)
 /** Recompiler: Too many labels. */
-#define VERR_IEM_LABEL_TOO_MANY                     (-5331)
+#define VERR_IEM_LABEL_TOO_MANY                     (-5332)
 /** Recompiler: Out of memory for labels.   */
-#define VERR_IEM_LABEL_OUT_OF_MEMORY                (-5332)
+#define VERR_IEM_LABEL_OUT_OF_MEMORY                (-5333)
 /** Recompiler: Label internal processing error \#1. */
-#define VERR_IEM_LABEL_IPE_1                        (-5333)
+#define VERR_IEM_LABEL_IPE_1                        (-5334)
 /** Recompiler: Label internal processing error \#2. */
-#define VERR_IEM_LABEL_IPE_2                        (-5334)
+#define VERR_IEM_LABEL_IPE_2                        (-5335)
 /** Recompiler: Label internal processing error \#3. */
-#define VERR_IEM_LABEL_IPE_3                        (-5335)
+#define VERR_IEM_LABEL_IPE_3                        (-5336)
 /** Recompiler: Label internal processing error \#4. */
-#define VERR_IEM_LABEL_IPE_4                        (-5336)
+#define VERR_IEM_LABEL_IPE_4                        (-5337)
 /** Recompiler: Label internal processing error \#5. */
-#define VERR_IEM_LABEL_IPE_5                        (-5337)
+#define VERR_IEM_LABEL_IPE_5                        (-5338)
 /** Recompiler: Label internal processing error \#6. */
-#define VERR_IEM_LABEL_IPE_6                        (-5338)
+#define VERR_IEM_LABEL_IPE_6                        (-5339)
 
 /** Recompiler: No temporary host register available. */
 #define VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP          (-5340)
