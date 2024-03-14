@@ -233,14 +233,14 @@ DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va)
 DECLHIDDEN(int) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue)
 {
     RT_NOREF(pValue);
-    autostartSvcLogError("%s - RTGetOpt failure, %Rrc (%d): %s", pszAction, rc, rc, iArg < argc ? argv[iArg] : "<null>");
+    autostartSvcLogError("%s - RTGetOpt failure, %Rrc (%d): %s\n", pszAction, rc, rc, iArg < argc ? argv[iArg] : "<null>");
     return RTEXITCODE_SYNTAX;
 }
 
 DECLHIDDEN(int) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg)
 {
     AssertReturn(iArg < argc, RTEXITCODE_FAILURE);
-    autostartSvcLogError("%s - Too many arguments: %s", pszAction, argv[iArg]);
+    autostartSvcLogError("%s - Too many arguments: %s\n", pszAction, argv[iArg]);
     for ( ; iArg < argc; iArg++)
         LogRel(("arg#%i: %s\n", iArg, argv[iArg]));
     return VERR_INVALID_PARAMETER;
@@ -250,7 +250,7 @@ DECLHIDDEN(RTEXITCODE) autostartSvcDisplayErrorV(const char *pszFormat, va_list 
 {
     RTStrmPrintf(g_pStdErr, "Error: ");
     RTStrmPrintfV(g_pStdErr, pszFormat, va);
-    Log(("autostartSvcDisplayErrorV: %s", pszFormat)); /** @todo format it! */
+    Log(("autostartSvcDisplayErrorV: %s\n", pszFormat)); /** @todo format it! */
     return RTEXITCODE_FAILURE;
 }
 
@@ -267,7 +267,7 @@ DECLHIDDEN(RTEXITCODE) autostartSvcDisplayGetOptError(const char *pszAction, int
 {
     char szMsg[4096];
     RTGetOptFormatError(szMsg, sizeof(szMsg), rc, pValue);
-    autostartSvcDisplayError("%s - %s", pszAction, szMsg);
+    autostartSvcDisplayError("%s - %s\n", pszAction, szMsg);
     return RTEXITCODE_SYNTAX;
 }
 

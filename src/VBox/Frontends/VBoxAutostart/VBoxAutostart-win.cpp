@@ -111,6 +111,8 @@ static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. *
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static SC_HANDLE autostartSvcWinOpenSCManager(const char *pszAction, DWORD dwAccess);
+static RTEXITCODE autostartSvcWinShowHelp(void);
+
 
 static int autostartGetProcessDomainUser(com::Utf8Str &aUser)
 {
@@ -1099,7 +1101,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPWSTR *papwszArgs)
                 g_hSupSvcWinEvent = NIL_RTSEMEVENTMULTI;
             }
             else
-                autostartSvcLogError("RTSemEventMultiCreate failed, rc=%Rrc", rc);
+                autostartSvcLogError("RTSemEventMultiCreate failed, rc=%Rrc\n", rc);
         }
         else
         {
@@ -1219,7 +1221,7 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
                 }
                 catch (...)
                 {
-                    autostartSvcLogError("runit failed, service name is not valid UTF-8 string or out of memory");
+                    autostartSvcLogError("runit failed, service name is not valid UTF-8 string or out of memory\n");
                     return RTEXITCODE_FAILURE;
                 }
                 break;
@@ -1231,7 +1233,7 @@ static RTEXITCODE autostartSvcWinRunIt(int argc, char **argv)
 
     if (!pszServiceName)
     {
-        autostartSvcLogError("runit failed, service name is missing");
+        autostartSvcLogError("runit failed, service name is missing\n");
         return RTEXITCODE_SYNTAX;
     }
 
@@ -1371,7 +1373,7 @@ int main(int argc, char **argv)
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
     {
-        autostartSvcLogError("RTR3InitExe failed with rc=%Rrc", rc);
+        autostartSvcLogError("RTR3InitExe failed with rc=%Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
 
@@ -1380,7 +1382,7 @@ int main(int argc, char **argv)
      */
     enum
     {
-        kAutoSvcAction_RunIt,
+        kAutoSvcAction_RunIt, /* Default action, also called by SCM. */
 
         kAutoSvcAction_Create,
         kAutoSvcAction_Delete,
@@ -1459,7 +1461,12 @@ int main(int argc, char **argv)
     switch (enmAction)
     {
         case kAutoSvcAction_RunIt:
-            return autostartSvcWinRunIt(argc - iArg, argv + iArg);
+        {
+            RTEXITCODE const rcExit = autostartSvcWinRunIt(argc - iArg, argv + iArg);
+            if (rcExit == RTEXITCODE_SYNTAX) /* When called by a user (e.g. w/o specifying any command, print our syntax help. */
+                autostartSvcWinShowHelp();
+            return rcExit;
+        }
 
         case kAutoSvcAction_Create:
             return autostartSvcWinCreate(argc - iArg, argv + iArg);
@@ -1488,6 +1495,7 @@ int main(int argc, char **argv)
 
         default:
             AssertMsgFailed(("enmAction=%d\n", enmAction));
-            return RTEXITCODE_FAILURE;
     }
+
+    return RTEXITCODE_FAILURE;
 }
