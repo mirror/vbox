@@ -7508,8 +7508,8 @@ iemNativeEmitSimdLoadGprFromVecRegU16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
         /* pextrw gpr, vecsrc, #iWord */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
         if (iGprDst >= 8 || iVecRegSrc >= 8)
-            pCodeBuf[off++] =   (iVecRegSrc < 8 ? 0 : X86_OP_REX_R)
-                              | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+            pCodeBuf[off++] =   (iGprDst < 8 ? 0 : X86_OP_REX_R)
+                              | (iVecRegSrc < 8 ? 0 : X86_OP_REX_B);
         pCodeBuf[off++] = 0x0f;
         pCodeBuf[off++] = 0xc5;
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iVecRegSrc & 7);
