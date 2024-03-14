@@ -1283,7 +1283,7 @@ void iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs)
  * @param   pszBuf  The output buffer.
  * @param   cbBuf   The output buffer size.  At least 32 bytes.
  */
-DECLEXPORT(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf) RT_NOEXCEPT
+DECLHIDDEN(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf) RT_NOEXCEPT
 {
     Assert(cbBuf >= 32);
     static RTSTRTUPLE const s_aModes[] =
