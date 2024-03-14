@@ -609,7 +609,7 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
             else
             {
                 hrc = VBOX_E_IPRT_ERROR;
-                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc (%Rrc)\n", hrc));
+                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc (%Rrc)\n", hrc, vrc));
             }
         }
         catch (...)
