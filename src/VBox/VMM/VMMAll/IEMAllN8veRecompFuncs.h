@@ -7076,6 +7076,34 @@ iemNativeEmitSimdClearYregHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 }
 
 
+#define IEM_MC_BROADCAST_XREG_U16_ZX_VLMAX(a_iXRegDst, a_u16Src) \
+    off = iemNativeEmitSimdBroadcastXregU16ZxVlmax(pReNative, off, a_iXRegDst, a_u16Src)
+
+/** Emits code for IEM_MC_BROADCAST_XREG_U16_ZX_VLMAX. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdBroadcastXregU16ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxSrcVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSrcVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSrcVar, sizeof(uint16_t));
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxSrcVar, &off);
+
+    off = iemNativeEmitSimdBroadcastGprToVecRegU16(pReNative, off, idxSimdRegDst, idxVarReg, false /*f256Bit*/);
+    off = iemNativeEmitSimdZeroVecRegHighU128(pReNative, off, idxSimdRegDst);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXReg);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, iXReg);
+
+    /* Free but don't flush the source register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeVarRegisterRelease(pReNative, idxSrcVar);
+
+    return off;
+}
+
+
 #define IEM_MC_BROADCAST_XREG_U32_ZX_VLMAX(a_iXRegDst, a_u32Src) \
     off = iemNativeEmitSimdBroadcastXregU32ZxVlmax(pReNative, off, a_iXRegDst, a_u32Src)
 
