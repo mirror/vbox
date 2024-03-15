@@ -80,16 +80,18 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes()
 
 void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
+    /* Acquire guest OS type ID and whether it's supported: */
+    const QString strId = comType.GetId();
+    const bool fSupported = m_supportedGuestOSTypeIDs.contains(strId);
+
     /* Append guest OS type to a list of cached wrappers: */
-    m_guestOSTypes.append(UIGuestOSType(comType));
+    m_guestOSTypes.append(UIGuestOSType(comType, fSupported));
 
     /* Acquire a bit of attributes: */
-    const QString strId = m_guestOSTypes.last().getId();
     const QString strFamilyId = m_guestOSTypes.last().getFamilyId();
     const QString strFamilyDesc = m_guestOSTypes.last().getFamilyDescription();
     const QString strSubtype = m_guestOSTypes.last().getSubtype();
     const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
-    const bool fSupported = m_supportedGuestOSTypeIDs.contains(strId);
 
     /* Remember guest OS type index as well: */
     m_typeIdIndexMap[strId] = m_guestOSTypes.size() - 1;
@@ -311,17 +313,24 @@ bool UIGuestOSTypeManager::isDOSType(const QString &strOSTypeId)
 *********************************************************************************************************************************/
 
 UIGuestOSType::UIGuestOSType()
+    : m_fSupported(false)
 {
 }
 
-UIGuestOSType::UIGuestOSType(const CGuestOSType &comGuestOSType)
+UIGuestOSType::UIGuestOSType(const CGuestOSType &comGuestOSType, bool fSupported)
     : m_comGuestOSType(comGuestOSType)
+    , m_fSupported(fSupported)
 {
 }
 
 bool UIGuestOSType::isOk() const
 {
     return (!m_comGuestOSType.isNull() && m_comGuestOSType.isOk());
+}
+
+bool UIGuestOSType::isSupported() const
+{
+    return m_fSupported;
 }
 
 const QString &UIGuestOSType::getFamilyId() const

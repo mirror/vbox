@@ -120,8 +120,10 @@ class SHARED_LIBRARY_STUFF UIGuestOSType
 
 public:
 
-    UIGuestOSType(const CGuestOSType &comGuestOSType);
+    UIGuestOSType(const CGuestOSType &comGuestOSType, bool fSupported);
     UIGuestOSType();
+
+    bool isSupported() const;
 
     const QString &getFamilyId() const;
     const QString &getFamilyDescription() const;
@@ -148,6 +150,10 @@ public:
 
 private:
 
+    CGuestOSType m_comGuestOSType;
+
+    bool m_fSupported;
+
     /** @name CGuestOSType properties. Cached here for a faster access.
       * @{ */
         mutable QString m_strFamilyId;
@@ -156,8 +162,6 @@ private:
         mutable QString m_strSubtype;
         mutable QString m_strDescription;
     /** @} */
-
-    CGuestOSType m_comGuestOSType;
 };
 
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
