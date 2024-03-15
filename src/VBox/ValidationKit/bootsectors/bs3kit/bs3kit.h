@@ -195,6 +195,11 @@ RT_C_DECLS_BEGIN
  *
  * @{ */
 
+/** Test repetitions necessary to make sure of engaging native recompilation.
+ * @note See iemTbCacheLookup() for the actual constant. */
+#define BS3_THRESHOLD_NATIVE_RECOMPILER     18
+
+
 /** @name Execution modes.
  * @{ */
 #define BS3_MODE_INVALID    UINT8_C(0x00)
