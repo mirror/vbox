@@ -738,8 +738,27 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
      * Similarly, if the size is 320KB or 360KB the FDC detects it as a double
      * sided 5.25" floppy with 40 tracks, while the BIOS keeps reporting a
      * 1.44MB 3.5" floppy. So, just avoid those sizes too.
+     *
+     * There are many problem sizes like 400kB, 820kB; see fd_formats[] in
+     * src/VBox/Devices/Storage/DevFdc.cpp.  Every size in the table is an
+     * even number of kB; let's just pad to an odd number number of kB.
+     *
+     * Controller-recognized sizes cause boot failure in bs3-bootsector.asm.
+     * When avoiding 64kB DMA boundaries it tries to read a sector outside the
+     * guessed geometry, receiving a hard I/O error.
      */
     uint32_t cbOutput = ftell(pOutput);
+#if 1
+    uint32_t uBoundary = cbOutput % (2 * 1024);
+    if (uBoundary != 1024)
+    {
+        static uint8_t const s_abZeroBytes[2 * 1024] = { 0 };
+        uint32_t cbPaddingNeeded = (uBoundary < 1024) ? 1024 - uBoundary : 3 * 1024 - uBoundary;
+
+        if (fwrite(s_abZeroBytes, sizeof(uint8_t), cbPaddingNeeded, pOutput) != cbPaddingNeeded)
+            return RTMsgErrorExitFailure("fwrite failed (padding)");
+    }
+#else
     if (   cbOutput == 512 * 8 * 40 * 1 /* 160kB 5"1/4 SS */
         || cbOutput == 512 * 9 * 40 * 1 /* 180kB 5"1/4 SS */
         || cbOutput == 512 * 8 * 40 * 2 /* 320kB 5"1/4 DS */
@@ -749,6 +768,7 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
         if (fwrite(s_abZeroSector, sizeof(uint8_t), sizeof(s_abZeroSector), pOutput) != sizeof(s_abZeroSector))
             return RTMsgErrorExitFailure("fwrite failed (padding)");
     }
+#endif
 
     return RTEXITCODE_SUCCESS;
 }
