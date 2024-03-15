@@ -1199,25 +1199,25 @@ iemNativeEmitOrImmIntoVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint3
     {
         /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
         if (idxTmpMask == UINT8_MAX)
             pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
         else
             pCodeBuf[off++] = Armv8A64MkInstrOrr(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmpValue,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
     }
     else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData))
     {
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
         if (idxTmpMask == UINT8_MAX)
             pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
         else
             pCodeBuf[off++] = Armv8A64MkInstrOrr(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
     }
     else
@@ -1300,25 +1300,25 @@ iemNativeEmitAndImmIntoVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     {
         /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
         if (idxTmpMask == UINT8_MAX)
             pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
         else
             pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmpValue,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
     }
     else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData))
     {
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
         if (idxTmpMask == UINT8_MAX)
             pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpValue, idxTmpValue, uImmSizeLen, uImmRotate, false /*f64Bit*/);
         else
             pCodeBuf[off++] = Armv8A64MkInstrAnd(idxTmpValue, idxTmpValue, idxTmpMask, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmpValue, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
     }
     else
