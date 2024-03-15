@@ -56,6 +56,8 @@
 %define BS3KIT_BOOTSECTOR_LOAD_DOTS
 ;; Enables support for fake 63.5 MB floppies with 255 sectors, 2 heads and 255 tracks.
 %define BS3KIT_BOOTSECTOR_SUPPORT_63_5MB_FLOPPIES
+;; Enables code to avoid trying to read across 64kB DMA boundaries.
+%define BS3KIT_BOOTSECTOR_DODGE_BOUNDARIES
 
 ;; Halts on failure location. For debugging.
 ;%define HLT_ON_FAILURE 1
@@ -498,6 +500,22 @@ BEGINPROC bs3InitLoadImage
         jae     .do_read
         mov     ax, si
 .do_read:
+
+ %ifdef BS3KIT_BOOTSECTOR_DODGE_BOUNDARIES
+                                        ; Dodge around 64kB DMA boundaries
+        push    di                      ; di is 'paragraph' address of buffer
+        push    ax                      ; Example: di = 1f60h, al = 12h = 18-sector request;
+        shr     di, 5                   ; 0fbh   addr = 1f600h (can fit 5x 200h below 128kB)
+        and     di, 7fh                 ;  7bh
+        add     di, ax                  ;  8dh
+        sub     di, 80h                 ;  0dh
+        pop     ax                      ;  12h
+        js      .non_boundary
+        sub     ax, di                  ;  05h
+.non_boundary:
+        pop     di
+ %endif
+
  %if 0 ; DEBUG
         push    ax
         call bs3PrintHexInAl
@@ -510,33 +528,16 @@ BEGINPROC bs3InitLoadImage
         xor     bx, bx
         mov     es, di                  ; es:bx -> buffer
         int     13h
+ %ifdef BS3KIT_BOOTSECTOR_DODGE_BOUNDARIES
+        jc      .failure
+ %else
         jnc     .advance_sector
 
         cmp     ah, 9                   ; DMA 64KB crossing error
- %if 0 ; This hack doesn't work. If the FDC is in single sided mode we end up with a garbled image. Probably "missing" sides.
-        je      .read_one
-
-        cmp     ah, 20h                 ; Controller error, probably because we're reading side 1 on a single sided floppy
         jne     .failure
-        cmp     bMaxHead, 0
-        je      .failure
-        cmp     dh, 1
-        jne     .failure
-        xor     dh, dh
-        mov     bMaxHead, dh
-        inc     ch
-        jmp     .the_load_loop
-.read_one:
- %elifdef HLT_ON_FAILURE
-        je      .read_one_ok
-        cli
-        hlt
-.read_one_ok:
- %else
-        jne     .failure
- %endif
         mov     ax, 1                   ; Retry reading a single sector.
         jmp     .read_again
+ %endif ; !BS3KIT_BOOTSECTOR_DODGE_BOUNDARIES
 
         ; advance to the next sector/head/cylinder and address.
 .advance_sector:
@@ -591,38 +592,25 @@ BEGINPROC bs3InitLoadImage
         ;
         ; Something went wrong, display a message.
         ;
+.str_sErrMsgBang:
+        db ' rd err!'
+
 .failure:
  %if 1 ; Disable to save space for debugging.
-  %if 1
-        push    ax
-  %endif
-
+        mov     al, ah
+        call    bs3PrintHexInAl
         ; print message
-        mov     si, .s_szErrMsg
+        mov     si, .str_sErrMsgBang
 .failure_next_char:
         lodsb
         call    bs3PrintChrInAl
-        cmp     si, .s_szErrMsgEnd
-        jb      .failure_next_char
-
-        ; panic
-  %if 1
-        pop     ax
-        mov     al, ah
-        push    bs3PrintHexInAl
-  %endif
-        call    Bs3Panic
-.s_szErrMsg:
-        db 13, 10, 'rd err! '
- %else
-        hlt
-        jmp .failure
+        cmp     byte [si], '!'          ; Don't trust that int 10h/0eh preserves al
+        jne     .failure_next_char
  %endif
 %else
 .failure:
-        hlt
 %endif
-.s_szErrMsgEnd:
+        jmp     Bs3Panic
 ;ENDPROC bs3InitLoadImage - don't want the padding.
 
 
