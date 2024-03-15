@@ -170,6 +170,7 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
+                                          bool fListAll,
                                           KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
@@ -177,6 +178,8 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
+        if (!fListAll && !type.isSupported())
+            continue;
         if (type.getFamilyId() != strFamilyId)
             continue;
         QPair<QString, QString> info(type.getId(), type.getDescription());
@@ -191,6 +194,7 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
+                                         bool fListAll,
                                          KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
@@ -198,6 +202,8 @@ UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
+        if (!fListAll && !type.isSupported())
+            continue;
         if (type.getSubtype() != strSubtype)
             continue;
         QPair<QString, QString> info(type.getId(), type.getDescription());

@@ -342,8 +342,8 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
     /* If distribution list is empty, all the types of the family are added to type combo: */
     const UIGuestOSTypeManager::UIGuestOSTypeInfo types
          = m_strDistribution.isEmpty()
-         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(m_strFamilyId, enmArch)
-         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(m_strDistribution, enmArch);
+         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(m_strFamilyId, false, enmArch)
+         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(m_strDistribution, false, enmArch);
 
     /* Save the most recently used item: */
     m_familyToDistribution[m_strFamilyId] = m_strDistribution;

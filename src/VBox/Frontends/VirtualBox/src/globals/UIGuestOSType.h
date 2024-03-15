@@ -200,9 +200,11 @@ public:
                                                 KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strFamilyId. */
     UIGuestOSTypeInfo getTypesForFamilyId(const QString &strFamilyId,
+                                          bool fListAll,
                                           KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strSubtype. */
     UIGuestOSTypeInfo getTypesForSubtype(const QString &strSubtype,
+                                         bool fListAll,
                                          KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
 
     /** Returns whether specified @a strOSTypeId is of DOS type. */
