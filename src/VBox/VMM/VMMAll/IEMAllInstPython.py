@@ -3138,7 +3138,7 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_FPUREG_NOT_EMPTY':                                (McBlock.parseMcGenericCond,       True,  True,  False, ),
     'IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80':                        (McBlock.parseMcGenericCond,       True,  True,  False, ),
     'IEM_MC_IF_GREG_BIT_SET':                                    (McBlock.parseMcGenericCond,       True,  False, False, ),
-    'IEM_MC_IF_LOCAL_IS_Z':                                      (McBlock.parseMcGenericCond,       True,  False, True,  ),
+    'IEM_MC_IF_LOCAL_IS_Z':                                      (McBlock.parseMcGenericCond,       True,  False, False, ), # @todo r=aeichner One of the instructions corrupts the TLB on arm64
     'IEM_MC_IF_MXCSR_XCPT_PENDING':                              (McBlock.parseMcGenericCond,       True,  True,  g_fNativeSimd),
     'IEM_MC_IF_RCX_IS_NZ':                                       (McBlock.parseMcGenericCond,       True,  False, True,  ),
     'IEM_MC_IF_RCX_IS_NOT_ONE':                                  (McBlock.parseMcGenericCond,       True,  False, True,  ),
