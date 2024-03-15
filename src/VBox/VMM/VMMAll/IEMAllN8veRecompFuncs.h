@@ -7477,6 +7477,48 @@ iemNativeEmitSimdClearXregU32Mask(PIEMRECOMPILERSTATE pReNative, uint32_t off, u
     return off;
 }
 
+
+
+/*********************************************************************************************************************************
+*   Emitters for IEM_MC_CALL_SSE_AIMPL_XXX                                                                                       *
+*********************************************************************************************************************************/
+
+/**
+ * Common worker for IEM_MC_CALL_SSE_AIMPL_XXX.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallSseAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
+{
+    /*
+     * Need to do the FPU preparation.
+     */
+    off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/);
+
+    /*
+     * Do all the call setup and cleanup.
+     */
+    off = iemNativeEmitCallCommon(pReNative, off, cArgs + IEM_SSE_AIMPL_HIDDEN_ARGS, IEM_SSE_AIMPL_HIDDEN_ARGS);
+
+    /*
+     * Load the XState::x87 pointer.
+     */
+    off = iemNativeEmitLeaGprByGstRegRef(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, kIemNativeGstRegRef_X87, 0 /*idxRegInClass*/);
+
+    /*
+     * Make the call.
+     */
+    off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
+
+    return off;
+}
+
+
+
+#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
+    off = iemNativeEmitCallSseAImplCommon(pReNative, off, (uintptr_t)(a_pfnAImpl), 2)
+
+#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a3) \
+    off = iemNativeEmitCallSseAImplCommon(pReNative, off, (uintptr_t)(a_pfnAImpl), 3)
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 

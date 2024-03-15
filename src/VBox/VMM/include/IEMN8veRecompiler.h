@@ -920,6 +920,8 @@ typedef enum IEMNATIVEGSTREGREF : uint8_t
     kIemNativeGstRegRef_FpuReg,
     kIemNativeGstRegRef_MReg,
     kIemNativeGstRegRef_XReg,
+    kIemNativeGstRegRef_X87,
+    kIemNativeGstRegRef_XState,
     //kIemNativeGstRegRef_YReg, - doesn't work.
     kIemNativeGstRegRef_End
 } IEMNATIVEGSTREGREF;
@@ -1592,6 +1594,8 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECO
                                                                         uint8_t idxAddrReg, uint8_t idxInstr);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                                   uint8_t idxAddrReg, uint8_t idxInstr);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGprDst,
+                                                           IEMNATIVEGSTREGREF enmClass, uint8_t idxRegInClass);
 
 
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu, int rc, uint8_t idxInstr));
@@ -1871,6 +1875,12 @@ DECL_FORCE_INLINE(uint64_t) iemNativeCImplFlagsToGuestShadowFlushMask(uint32_t f
 # define IEM_CIMPL_HIDDEN_ARGS 3
 #else
 # define IEM_CIMPL_HIDDEN_ARGS 2
+#endif
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/** Number of hidden arguments for SSE_AIMPL calls. */
+# define IEM_SSE_AIMPL_HIDDEN_ARGS 1
 #endif
 
 

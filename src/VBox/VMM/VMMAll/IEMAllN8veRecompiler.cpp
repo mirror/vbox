@@ -3355,7 +3355,7 @@ iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idx
 #ifdef RT_ARCH_ARM64
     AssertStmt(   enmType != kIemNativeFixupType_RelImm14At5
                || pReNative->paLabels[idxLabel].enmType >= kIemNativeLabelType_FirstWithMultipleInstances
-               || pReNative->paLabels[idxLabel].off != UINT32_MAX,
+               || pReNative->paLabels[idxLabel].off == UINT32_MAX,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_SHORT_JMP_TO_TAIL_LABEL));
 #endif
 
@@ -7691,7 +7691,7 @@ DECLHIDDEN(void) iemNativeVarFreeAllSlow(PIEMRECOMPILERSTATE pReNative, uint32_t
 /**
  * Emits code to load a reference to the given guest register into @a idxGprDst.
   */
-DECL_INLINE_THROW(uint32_t)
+DECL_HIDDEN_THROW(uint32_t)
 iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGprDst,
                                IEMNATIVEGSTREGREF enmClass, uint8_t idxRegInClass)
 {
@@ -7740,6 +7740,16 @@ iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
         case kIemNativeGstRegRef_XReg:
             Assert(idxRegInClass < 16);
             offCpumCtx = RT_UOFFSETOF_DYN(CPUMCTX, XState.x87.aXMM[idxRegInClass]);
+            break;
+
+        case kIemNativeGstRegRef_X87: /* Not a register actually but we would just duplicate code otherwise. */
+            Assert(idxRegInClass == 0);
+            offCpumCtx = RT_UOFFSETOF(CPUMCTX, XState.x87);
+            break;
+
+        case kIemNativeGstRegRef_XState: /* Not a register actually but we would just duplicate code otherwise. */
+            Assert(idxRegInClass == 0);
+            offCpumCtx = RT_UOFFSETOF(CPUMCTX, XState);
             break;
 
         default:
