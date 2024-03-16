@@ -6413,9 +6413,32 @@ iemNativeEmitTestBitInGprAndJmpToLabelIfCc(PIEMRECOMPILERSTATE pReNative, uint32
 
 #elif defined(RT_ARCH_ARM64)
     /* Use the TBNZ instruction here. */
-    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm14At5);
-    pu32CodeBuf[off++] = Armv8A64MkInstrTbzTbnz(fJmpIfSet, 0, iGprSrc, iBitNo);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+    if (pReNative->paLabels[idxLabel].enmType > kIemNativeLabelType_LastWholeTbBranch)
+    {
+        AssertMsg(pReNative->paLabels[idxLabel].off == UINT32_MAX,
+                  ("TODO: Please enable & test commented out code for jumping back to a predefined label.\n"));
+        //uint32_t offLabel = pReNative->paLabels[idxLabel].off;
+        //if (offLabel == UINT32_MAX)
+        {
+            iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm14At5);
+            pu32CodeBuf[off++] = Armv8A64MkInstrTbzTbnz(fJmpIfSet, 0, iGprSrc, iBitNo);
+        }
+        //else
+        //{
+        //    RT_BREAKPOINT();
+        //    Assert(off - offLabel <= 0x1fffU);
+        //    pu32CodeBuf[off++] = Armv8A64MkInstrTbzTbnz(fJmpIfSet, offLabel - off, iGprSrc, iBitNo);
+        //
+        //}
+    }
+    else
+    {
+        Assert(Armv8A64ConvertImmRImmS2Mask64(0x40, (64U - iBitNo) & 63U) == RT_BIT_64(iBitNo));
+        pu32CodeBuf[off++] = Armv8A64MkInstrTstImm(iGprSrc, 0x40, (64U - iBitNo) & 63U);
+        iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBCond(fJmpIfSet ? kArmv8InstrCond_Ne : kArmv8InstrCond_Eq, 0);
+    }
 
 #else
 # error "Port me!"

@@ -1117,8 +1117,6 @@ iemNativeEmitRaiseSseAvxSimdFpXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /*
      * Make sure we don't have any outstanding guest register writes as we may
      * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-     *
-     * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
      */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
