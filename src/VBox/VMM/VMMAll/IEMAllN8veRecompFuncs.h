@@ -932,8 +932,8 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
         /* Allocate a temporary CR0 and CR4 register. */
         uint8_t const idxLabelRaiseSseRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseSseRelated);
-        uint8_t const idxCr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxCr4Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
+        uint8_t const idxCr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0);
+        uint8_t const idxCr4Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4);
         uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
 
         AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
@@ -968,10 +968,13 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxTmpReg, idxCr4Reg, X86_CR4_OSFXSR_BIT, 1, false /*f64Bit*/);
         /* -> idxTmpReg[0]=OSFXSR;  idxTmpReg[2]=EM; idxTmpReg[3]=TS; (the rest is zero) */
         Assert(Armv8A64ConvertImmRImmS2Mask32(0, 0) == 1);
-        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);              /* -> bit 0 = ~OSFXSR */
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);
         /* -> idxTmpReg[0]=~OSFXSR; idxTmpReg[2]=EM; idxTmpReg[3]=TS; (the rest is zero) */
         off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
                                                              idxLabelRaiseSseRelated);
+
+#else
+# error "Port me!"
 #endif
 
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -1013,9 +1016,8 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         /*
          * Make sure we don't have any outstanding guest register writes as we may
          * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-         *
-         * @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path?
          */
+        /** @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path? */
         off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
@@ -1025,36 +1027,65 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #endif
 
         /* Allocate a temporary CR0, CR4 and XCR0 register. */
-        uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxXcr0Reg      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
-        uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
-
-        /** @todo r=aeichner Optimize this more later to have less compares and branches,
-         *                   (see IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() in IEMMc.h but check that it has some
-         *                   actual performance benefit first). */
-        /*
-         * if ((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE))
-         *     return raisexcpt();
-         */
-        const uint8_t idxRegTmp = iemNativeRegAllocTmpImm(pReNative, &off, XSAVE_C_YMM | XSAVE_C_SSE);
-        off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxXcr0Reg);
-        off = iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, idxRegTmp, XSAVE_C_YMM | XSAVE_C_SSE, idxLabelRaiseUd);
-        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+        uint8_t const idxLabelRaiseAvxRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseAvxRelated);
+        uint8_t const idxCr0Reg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0);
+        uint8_t const idxCr4Reg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4);
+        uint8_t const idxXcr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0);
+        uint8_t const idxTmpReg  = iemNativeRegAllocTmp(pReNative, &off);
 
         /*
-         * if (!(cr4 & X86_CR4_OSXSAVE))
-         *     return raisexcpt();
+         * We have the following in IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT:
+         *  if (RT_LIKELY(   (  (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE))
+         *                    | (pVCpu->cpum.GstCtx.cr4     & X86_CR4_OSXSAVE)
+         *                    | (pVCpu->cpum.GstCtx.cr0     & X86_CR0_TS))
+         *                == (XSAVE_C_YMM | XSAVE_C_SSE | X86_CR4_OSXSAVE)))
+         *       { likely }
+         *  else { goto RaiseAvxRelated; }
          */
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSXSAVE_BIT, idxLabelRaiseUd);
-        /*
-         * if (cr0 & X86_CR0_TS)
-         *     return raisexcpt();
-         */
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxCr0Reg, X86_CR0_TS_BIT, idxLabelRaiseNm);
+#ifdef RT_ARCH_AMD64
+        /*  if (!(  (  ((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) << 2)
+                     | (((cr4 >> X86_CR4_OSFXSR_BIT) & 1)    << 1)
+                     | ((cr0 >> X86_CR0_TS_BIT)      & 1)         )
+                  ^ 0x1a) ) { likely }
+            else            { goto RaiseAvxRelated; } */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1+6+3+5+3+5+3+7+6);
+        //pCodeBuf[off++] = 0xcc;
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off,                 idxTmpReg, XSAVE_C_YMM | XSAVE_C_SSE);
+        off = iemNativeEmitAndGpr32ByGpr32Ex(pCodeBuf, off,              idxTmpReg, idxXcr0Reg);
+        off = iemNativeEmitAmd64TestBitInGprEx(pCodeBuf, off,            idxCr4Reg, X86_CR4_OSXSAVE_BIT);
+        off = iemNativeEmitAmd64RotateGpr32LeftViaCarryEx(pCodeBuf, off, idxTmpReg, 1);
+        /* -> idxTmpReg[0]=CR4.OSXSAVE;  idxTmpReg[1]=0; idxTmpReg[2]=SSE;  idxTmpReg[3]=YMM; (the rest is zero) */
+        off = iemNativeEmitAmd64TestBitInGprEx(pCodeBuf, off,            idxCr0Reg, X86_CR0_TS_BIT);
+        off = iemNativeEmitAmd64RotateGpr32LeftViaCarryEx(pCodeBuf, off, idxTmpReg, 1);
+        /* -> idxTmpReg[0]=CR0.TS idxTmpReg[1]=CR4.OSXSAVE; idxTmpReg[2]=0; idxTmpReg[3]=SSE; idxTmpReg[4]=YMM; */
+        off = iemNativeEmitXorGpr32ByImmEx(pCodeBuf, off,                idxTmpReg, ((XSAVE_C_YMM | XSAVE_C_SSE) << 2) | 2);
+        /* -> idxTmpReg[0]=CR0.TS idxTmpReg[1]=~CR4.OSXSAVE; idxTmpReg[2]=0; idxTmpReg[3]=~SSE; idxTmpReg[4]=~YMM; */
+        off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelRaiseAvxRelated, kIemNativeInstrCond_ne);
 
-        /* Free but don't flush the CR0, CR4 and XCR0 register. */
+#elif defined(RT_ARCH_ARM64)
+        /*  if (!(  (((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) | ((cr4 >> X86_CR4_OSFXSR_BIT) & 1)) ^ 7) << 1)
+                  | ((cr0 >> X86_CR0_TS_BIT) & 1) ) { likely }
+            else                                    { goto RaiseAvxRelated; } */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1+6);
+        //pCodeBuf[off++] = Armv8A64MkInstrBrk(0x1111);
+        Assert(Armv8A64ConvertImmRImmS2Mask32(1, 32 - XSAVE_C_SSE_BIT) == (XSAVE_C_YMM | XSAVE_C_SSE));
+        pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxXcr0Reg, 1, 32 - XSAVE_C_SSE_BIT, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxTmpReg, idxCr4Reg, X86_CR4_OSXSAVE_BIT, 1, false /*f64Bit*/);
+        /* -> idxTmpReg[0]=CR4.OSXSAVE;  idxTmpReg[1]=SSE;  idxTmpReg[2]=YMM; (the rest is zero) */
+        Assert(Armv8A64ConvertImmRImmS2Mask32(2, 0) == 7);
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 2, 0, false /*f64Bit*/);
+        /* -> idxTmpReg[0]=~CR4.OSXSAVE; idxTmpReg[1]=~SSE; idxTmpReg[2]=~YMM; (the rest is zero) */
+        pCodeBuf[off++] = Armv8A64MkInstrLslImm(idxTmpReg, idxTmpReg, 1, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxTmpReg, idxCr0Reg, X86_CR0_TS_BIT, 1, false /*f64Bit*/);
+        /* -> idxTmpReg[0]=CR0.TS; idxTmpReg[1]=~CR4.OSXSAVE; idxTmpReg[2]=~SSE; idxTmpReg[3]=~YMM; (the rest is zero) */
+        off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
+                                                             idxLabelRaiseAvxRelated);
+
+#else
+# error "Port me!"
+#endif
+
+        iemNativeRegFreeTmp(pReNative, idxTmpReg);
         iemNativeRegFreeTmp(pReNative, idxCr0Reg);
         iemNativeRegFreeTmp(pReNative, idxCr4Reg);
         iemNativeRegFreeTmp(pReNative, idxXcr0Reg);

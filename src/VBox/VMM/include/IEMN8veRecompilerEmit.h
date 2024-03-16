@@ -5260,6 +5260,36 @@ iemNativeEmitRotateGprLeftEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGp
 }
 
 
+#if defined(RT_ARCH_AMD64)
+/**
+ * Emits code for rotating a 32-bit GPR a fixed number of bits to the left via carry.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitAmd64RotateGpr32LeftViaCarryEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t cShift)
+{
+    Assert(cShift > 0 && cShift < 32);
+
+    /* rcl dst, cShift */
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    if (cShift != 1)
+    {
+        pCodeBuf[off++] = 0xc1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, iGprDst & 7);
+        pCodeBuf[off++] = cShift;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0xd1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, iGprDst & 7);
+    }
+
+    return off;
+}
+#endif /* RT_ARCH_AMD64 */
+
+
+
 /**
  * Emits code for reversing the byte order for a 16-bit value in a 32-bit GPR.
  * @note Bits 63:32 of the destination GPR will be cleared.
@@ -6323,6 +6353,28 @@ DECL_INLINE_THROW(void) iemNativeFixupFixedJump(PIEMRECOMPILERSTATE pReNative, u
 # error "Port me!"
 #endif
 }
+
+
+#ifdef RT_ARCH_AMD64
+/**
+ * For doing bt on a register.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAmd64TestBitInGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprSrc, uint8_t iBitNo)
+{
+    Assert(iBitNo < 64);
+    /* bt Ev, imm8 */
+    if (iBitNo >= 32)
+        pCodeBuf[off++] = X86_OP_REX_W | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+    else if (iGprSrc >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xba;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprSrc & 7);
+    pCodeBuf[off++] = iBitNo;
+    return off;
+}
+#endif /* RT_ARCH_AMD64 */
 
 
 /**
