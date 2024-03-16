@@ -90,6 +90,7 @@ typedef enum
 enum {
     RM_REG = 0,
     RM_MEM,
+    RM_MEM16, /**< Memory operand is 16 bits.  Hack for movss and similar. */
     RM_MEM32, /**< Memory operand is 32 bits.  Hack for movss and similar. */
     RM_MEM64  /**< Memory operand is 64 bits.  Hack for movss and similar. */
 };
@@ -537,6 +538,8 @@ DECLINLINE(uint8_t) bs3CpuInstr3MemOpSize(uint8_t cbOperand, uint8_t enmRm)
 {
     if (enmRm <= RM_MEM)
         return cbOperand;
+    if (enmRm == RM_MEM16)
+        return sizeof(uint16_t);
     if (enmRm == RM_MEM32)
         return sizeof(uint32_t);
     if (enmRm == RM_MEM64)
@@ -9672,47 +9675,85 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_pextrw(uint8_t bMode)
 
     static BS3CPUINSTR3_TEST2_T const s_aTests16[] =
     {
-        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c16,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c16,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c16,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c16,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c16,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_000h_icebp_c16,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_000h_icebp_c16,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c16,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_000h_icebp_c16, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_000h_icebp_c16,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
 
-        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c16,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c16,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c16,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c16,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c16,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_0FFh_icebp_c16,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_0FFh_icebp_c16,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c16,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_0FFh_icebp_c16, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_0FFh_icebp_c16,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
     };
     static BS3CPUINSTR3_TEST2_T const s_aTests32[] =
     {
-        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c32,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c32,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c32,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c32,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c32,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_000h_icebp_c32,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_000h_icebp_c32,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c32,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_000h_icebp_c32, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_000h_icebp_c32,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
 
-        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c32,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c32,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c32,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c32,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c32,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_0FFh_icebp_c32,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_0FFh_icebp_c32,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c32,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_0FFh_icebp_c32, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_0FFh_icebp_c32,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
     };
     static BS3CPUINSTR3_TEST2_T const s_aTests64[] =
     {
-        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c64,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_pextrw_R9D_MM1_000h_icebp_c64,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 9,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c64,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        /// @todo Emits the SSE4.1 0f3a variant {  bs3CpuInstr3_pextrw_RDX_XMM1_000h_icebp_c64,          255, RM_REG, T_SSE2,         8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_pextrw_R9D_XMM8_000h_icebp_c64,          255, RM_REG, T_SSE2,         4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c64,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_vpextrw_RDX_XMM1_000h_icebp_c64,         255, RM_REG, T_AVX_128,      8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
-        {  bs3CpuInstr3_vpextrw_R9D_XMM8_000h_icebp_c64,         255, RM_REG, T_AVX_128,      4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_000h_icebp_c64,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_000h_icebp_c64,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_000h_icebp_c64,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_000h_icebp_c64,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_000h_icebp_c64,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_000h_icebp_c64, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_000h_icebp_c64,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
 
-        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c64,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
-        {  bs3CpuInstr3_pextrw_R9D_MM1_0FFh_icebp_c64,           255, RM_REG, T_MMX_SSE,      4, 32, false, true, 9,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
-        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c64,          255, RM_REG, T_SSE2,         4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        /// @todo Emits the SSE4.1 0f3a variant {  bs3CpuInstr3_pextrw_RDX_XMM1_0FFh_icebp_c64,          255, RM_REG, T_SSE2,         8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_pextrw_R9D_XMM8_0FFh_icebp_c64,          255, RM_REG, T_SSE2,         4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c64,         255, RM_REG, T_AVX_128,      4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_vpextrw_RDX_XMM1_0FFh_icebp_c64,         255, RM_REG, T_AVX_128,      8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
-        {  bs3CpuInstr3_vpextrw_R9D_XMM8_0FFh_icebp_c64,         255, RM_REG, T_AVX_128,      4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_EDX_MM1_0FFh_icebp_c64,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
+        {  bs3CpuInstr3_pextrw_EDX_XMM1_0FFh_icebp_c64,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_EDX_XMM1_0FFh_icebp_c64,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM1_0FFh_icebp_c64,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_EDX_XMM1_0FFh_icebp_c64,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_alt_EDX_XMM1_0FFh_icebp_c64, 255,         RM_REG,   T_AVX_128, 4, 32, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM1_0FFh_icebp_c64,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+
+        {  bs3CpuInstr3_pextrw_R9D_MM1_000h_icebp_c64,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 9,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_R9D_XMM8_000h_icebp_c64,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_R9D_XMM8_000h_icebp_c64,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM8_000h_icebp_c64,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_R9D_XMM8_000h_icebp_c64,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM8_000h_icebp_c64,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+
+        {  bs3CpuInstr3_pextrw_R9D_MM1_0FFh_icebp_c64,       255,         RM_REG,   T_MMX_SSE, 4, 32, false, true, 9,   1, RT_ELEMENTS(s_aValuesFF_64), s_aValuesFF_64 },
+        {  bs3CpuInstr3_pextrw_R9D_XMM8_0FFh_icebp_c64,      255,         RM_REG,   T_SSE2,    4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_R9D_XMM8_0FFh_icebp_c64,  255,         RM_REG,   T_SSE4_1,  4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_FSxBX_XMM8_0FFh_icebp_c64,    255,         RM_MEM16, T_SSE4_1,  2, 16, false, true, 255, 8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_R9D_XMM8_0FFh_icebp_c64,     255,         RM_REG,   T_AVX_128, 4, 32, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_FSxBX_XMM8_0FFh_icebp_c64,   X86_XCPT_AC, RM_MEM16, T_AVX_128, 2, 16, false, true, 255, 8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+
+        {  bs3CpuInstr3_pextrw_R9_XMM8_000h_icebp_c64,       255,         RM_REG,   T_SSE2,    8, 64, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_RDX_XMM1_000h_icebp_c64,  255,         RM_REG,   T_SSE4_1,  8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_pextrw_alt_R9_XMM8_000h_icebp_c64,   255,         RM_REG,   T_SSE4_1,  8, 64, false, true, 9,   8, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+        {  bs3CpuInstr3_vpextrw_RDX_XMM1_000h_icebp_c64,     255,         RM_REG,   T_AVX_128, 8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValues00),    s_aValues00 },
+
+        {  bs3CpuInstr3_pextrw_R9_XMM8_0FFh_icebp_c64,       255,         RM_REG,   T_SSE2,    8, 64, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_RDX_XMM1_0FFh_icebp_c64,  255,         RM_REG,   T_SSE4_1,  8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_pextrw_alt_R9_XMM8_0FFh_icebp_c64,   255,         RM_REG,   T_SSE4_1,  8, 64, false, true, 9,   8, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
+        {  bs3CpuInstr3_vpextrw_RDX_XMM1_0FFh_icebp_c64,     255,         RM_REG,   T_AVX_128, 8, 64, false, true, 2,   1, RT_ELEMENTS(s_aValuesFF),    s_aValuesFF },
     };
     static BS3CPUINSTR3_TEST2_MODE_T const s_aTests[3] = BS3CPUINSTR3_TEST2_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
     unsigned const                         iTest       = BS3CPUINSTR3_TEST_MODES_INDEX(bMode);
-    return bs3CpuInstr3_WorkerTestType2(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+    return  bs3CpuInstr3_WorkerTestType2(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
                                         g_aXcptConfig5, RT_ELEMENTS(g_aXcptConfig5));
 }
 

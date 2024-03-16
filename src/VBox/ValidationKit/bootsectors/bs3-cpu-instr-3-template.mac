@@ -2167,24 +2167,81 @@ EMIT_INSTR_PLUS_ICEBP   pextrw,  EDX, MM1, 000h
 
 EMIT_INSTR_PLUS_ICEBP   pextrw,  EDX, XMM1, 0FFh
 EMIT_INSTR_PLUS_ICEBP   pextrw,  EDX, XMM1, 000h
+EMIT_INSTR_PLUS_ICEBP   pextrw,  FSxBX, XMM1, 0FFh
+EMIT_INSTR_PLUS_ICEBP   pextrw,  FSxBX, XMM1, 000h
 
 EMIT_INSTR_PLUS_ICEBP   vpextrw, EDX, XMM1, 0FFh
 EMIT_INSTR_PLUS_ICEBP   vpextrw, EDX, XMM1, 000h
+EMIT_INSTR_PLUS_ICEBP   vpextrw, FSxBX, XMM1, 000h
+EMIT_INSTR_PLUS_ICEBP   vpextrw, FSxBX, XMM1, 0FFh
 
 EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, MM1, 0FFh
 EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, MM1, 000h
 
-; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  RDX, XMM1, 0FFh
-; @todo Emits the SSE4.1 0f3a variant EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  RDX, XMM1, 000h
-
 EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, XMM8, 0FFh
 EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9D, XMM8, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9,  XMM8, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  R9,  XMM8, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  FSxBX, XMM8, 0FFh
+EMIT_INSTR_PLUS_ICEBP_C64   pextrw,  FSxBX, XMM8, 000h
 
 EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, R9D, XMM8, 0FFh
 EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, R9D, XMM8, 000h
 
 EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, RDX, XMM1, 0FFh
 EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, RDX, XMM1, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, FSxBX, XMM8, 000h
+EMIT_INSTR_PLUS_ICEBP_C64   vpextrw, FSxBX, XMM8, 0FFh
+
+;
+; [v]pextrw alternate encodings (SSE4.1 & AVX 0f3a variants)
+;
+%ifndef EMIT_V_PEXTRW_ALT_INSTR_DEFINED
+ %define EMIT_V_PEXTRW_ALT_INSTR_DEFINED
+ ;; @param 1    imm8 byte
+ %macro EMIT_V_PEXTRW_ALT_INSTR 1
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pextrw_alt_EDX_XMM1_ %+ %1 %+ _icebp
+        db      66h, 0fh, 3ah, 15h, 0cah, %1        ; pextrw [alt] edx, xmm1, %1
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pextrw_alt_EDX_XMM1_ %+ %1 %+ _icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_vpextrw_alt_EDX_XMM1_ %+ %1 %+ _icebp
+        db      0c4h, 0e3h, 79h, 15h, 0cah, %1      ; vpextrw [alt] edx, xmm1, %1
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_vpextrw_alt_EDX_XMM1_ %+ %1 %+ _icebp
+
+  %if TMPL_BITS == 64
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pextrw_alt_R9D_XMM8_ %+ %1 %+ _icebp
+        db      66h, 45h, 0fh, 3ah, 15h, 0c1h, %1   ; pextrw [alt] r9d, xmm8, %1
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pextrw_alt_R9D_XMM8_ %+ %1 %+ _icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pextrw_alt_RDX_XMM1_ %+ %1 %+ _icebp
+        db      66h, 48h, 0fh, 3ah, 15h, 0cah, %1   ; pextrw [alt] rdx, xmm1, %1
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pextrw_alt_RDX_XMM1_ %+ %1 %+ _icebp
+
+BS3CPUINSTR3_PROC_BEGIN_CMN bs3CpuInstr3_pextrw_alt_R9_XMM8_ %+ %1 %+ _icebp
+        db      66h, 4dh, 0fh, 3ah, 15h, 0c1h, %1   ; pextrw [alt] r9, xmm8, %1
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr3_pextrw_alt_R9_XMM8_ %+ %1 %+ _icebp
+  %endif
+
+ %endmacro ; EMIT_V_PEXTRW_ALT_INSTR
+%endif ; !EMIT_V_PEXTRW_ALT_INSTR_DEFINED
+
+EMIT_V_PEXTRW_ALT_INSTR   000h
+EMIT_V_PEXTRW_ALT_INSTR   0FFh
 
 ;
 ; [V]MOVMSKPS
