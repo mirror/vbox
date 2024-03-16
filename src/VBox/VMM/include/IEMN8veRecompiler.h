@@ -420,6 +420,8 @@ typedef enum
     kIemNativeLabelType_ReturnBreak,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
+    /** The last fixup for branches that can span almost the whole TB length. */
+    kIemNativeLabelType_LastWholeTbBranch = kIemNativeLabelType_NonZeroRetOrPassUp,
 
     /*
      * Labels with data, potentially multiple instances per TB:

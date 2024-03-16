@@ -3354,8 +3354,7 @@ iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idx
     Assert((unsigned)enmType <= UINT8_MAX);
 #ifdef RT_ARCH_ARM64
     AssertStmt(   enmType != kIemNativeFixupType_RelImm14At5
-               || pReNative->paLabels[idxLabel].enmType >= kIemNativeLabelType_FirstWithMultipleInstances
-               || pReNative->paLabels[idxLabel].off == UINT32_MAX,
+               || pReNative->paLabels[idxLabel].enmType >= kIemNativeLabelType_LastWholeTbBranch,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_SHORT_JMP_TO_TAIL_LABEL));
 #endif
 
