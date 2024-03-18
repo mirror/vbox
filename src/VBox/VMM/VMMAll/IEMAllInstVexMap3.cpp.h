@@ -773,8 +773,7 @@ FNIEMOP_DEF(iemOp_vmpsadbw_Vx_Hx_Wx_Ib)
 /** Opcode VEX.66.0F3A 0x44. */
 FNIEMOP_DEF(iemOp_vpclmulqdq_Vdq_Hdq_Wdq_Ib)
 {
-    //IEMOP_MNEMONIC3(VEX_RVM, VPCLMULQDQ, vpclmulqdq, Vdq, Hdq, Wdq, DISOPTYPE_HARMLESS, 0); /* @todo */
-
+    IEMOP_MNEMONIC4(VEX_RVMI, VPCLMULQDQ, vpclmulqdq, Vdq_WO, Hdq, Wdq, Id, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -837,8 +836,7 @@ FNIEMOP_DEF(iemOp_vpclmulqdq_Vdq_Hdq_Wdq_Ib)
 /** Opcode VEX.66.0F3A 0x46 (vex only)  */
 FNIEMOP_DEF(iemOp_vperm2i128_Vqq_Hqq_Wqq_Ib)
 {
-    //IEMOP_MNEMONIC4(VEX_RVM, VPERM2I128, vperm2i128, Vqq, Hqq, Wqq, Ib, DISOPTYPE_HARMLESS, 0); /** @todo */
-
+    IEMOP_MNEMONIC4(VEX_RVMI, VPERM2I128, vperm2i128, Vqq_WO, Hqq, Wqq, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ONE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
