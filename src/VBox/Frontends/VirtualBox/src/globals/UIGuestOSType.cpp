@@ -133,17 +133,21 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 
 UIGuestOSTypeManager::UIGuestOSFamilyInfo
 UIGuestOSTypeManager::getFamilies(bool fListAll /* = true */,
+                                  const QStringList &including /* = QStringList() */,
                                   KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Otherwise we'll have to prepare list by arch type: */
     UIGuestOSTypeManager::UIGuestOSFamilyInfo families;
     foreach (const UIFamilyInfo &fi, m_guestOSFamilies)
     {
+        if (   !fListAll
+            && !fi.m_fSupported
+            && !including.contains(fi.m_strId))
+            continue;
         const KPlatformArchitecture enmCurrentArch = fi.m_enmArch;
-        if (   (   enmCurrentArch == enmArch
-                || enmCurrentArch == KPlatformArchitecture_None
-                || enmArch == KPlatformArchitecture_None)
-            && (fListAll || fi.m_fSupported))
+        if (   enmCurrentArch == enmArch
+            || enmCurrentArch == KPlatformArchitecture_None
+            || enmArch == KPlatformArchitecture_None)
             families << fi;
     }
     return families;
@@ -152,17 +156,21 @@ UIGuestOSTypeManager::getFamilies(bool fListAll /* = true */,
 UIGuestOSTypeManager::UIGuestOSSubtypeInfo
 UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
                                              bool fListAll /* = true */,
+                                             const QStringList &including /* = QStringList() */,
                                              KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Otherwise we'll have to prepare list by arch type: */
     UIGuestOSSubtypeInfo subtypes;
     foreach (const UISubtypeInfo &si, m_guestOSSubtypes.value(strFamilyId))
     {
+        if (   !fListAll
+            && !si.m_fSupported
+            && !including.contains(si.m_strName))
+            continue;
         const KPlatformArchitecture enmCurrentArch = si.m_enmArch;
-        if (   (   enmCurrentArch == enmArch
-                || enmCurrentArch == KPlatformArchitecture_None
-                || enmArch == KPlatformArchitecture_None)
-            && (fListAll || si.m_fSupported))
+        if (   enmCurrentArch == enmArch
+            || enmCurrentArch == KPlatformArchitecture_None
+            || enmArch == KPlatformArchitecture_None)
             subtypes << si;
     }
     return subtypes;
@@ -171,6 +179,7 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
                                           bool fListAll /* = true */,
+                                          const QStringList &including /* = QStringList() */,
                                           KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
@@ -178,7 +187,9 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
-        if (!fListAll && !type.isSupported())
+        if (   !fListAll
+            && !type.isSupported()
+            && !including.contains(type.getId()))
             continue;
         if (type.getFamilyId() != strFamilyId)
             continue;
@@ -195,6 +206,7 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
                                          bool fListAll /* = true */,
+                                         const QStringList &including /* = QStringList() */,
                                          KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
@@ -202,7 +214,9 @@ UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
-        if (!fListAll && !type.isSupported())
+        if (   !fListAll
+            && !type.isSupported()
+            && !including.contains(type.getId()))
             continue;
         if (type.getSubtype() != strSubtype)
             continue;

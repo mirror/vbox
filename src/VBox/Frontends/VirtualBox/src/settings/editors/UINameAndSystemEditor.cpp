@@ -358,9 +358,11 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
          = strDistribution.isEmpty()
          ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(familyId(),
                                                                      false /* including restricted? */,
+                                                                     QStringList() << typeId(),
                                                                      enmArch)
          : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(distribution(),
                                                                     false /* including restricted? */,
+                                                                    QStringList() << typeId(),
                                                                     enmArch);
 
     /* Populate type combo: */
@@ -642,6 +644,7 @@ void UINameAndSystemEditor::populateFamilyCombo()
     /* Acquire family IDs: */
     const UIGuestOSTypeManager::UIGuestOSFamilyInfo families
         = gpGlobalSession->guestOSTypeManager().getFamilies(false /* including restricted? */,
+                                                            QStringList() << familyId(),
                                                             enmArch);
 
     /* Block signals initially and clear the combo: */
@@ -680,6 +683,7 @@ void UINameAndSystemEditor::populateDistributionCombo()
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
         = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(familyId(),
                                                                        false /* including restricted? */,
+                                                                       QStringList() << distribution(),
                                                                        enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
