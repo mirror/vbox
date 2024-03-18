@@ -320,11 +320,11 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
     qt-bin_SOURCES = \
     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/bin/$(qtmod)$(SUFF_DLL)))
     qt-bin_SOURCES += \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qwindowsVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindowsVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qminimalVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimalVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qoffscreenVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreenVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/sqldrivers/qsqliteVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqliteVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/styles/qwindowsvistastyleVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyleVBox$(VBOX_QT_DBG)$(SUFF_DLL)
+    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qwindows$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qminimal$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/platforms/qoffscreen$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/sqldrivers/qsqlite$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt-bin,$(PATH_SDK_QT6)/plugins/styles/qwindowsvistastyle$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_POSTFIX)$(VBOX_QT_DBG)$(SUFF_DLL)
     ifdef VBOX_WITH_QT_PDBS
      qt-bin_SOURCES += $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT6)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
     endif

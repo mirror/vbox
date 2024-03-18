@@ -7819,8 +7819,11 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  VBOX_PATH_QT     ?= /usr
  VBOX_PATH_QT_LIB ?= $(VBOX_PATH_QT)/lib
 
- if defined(VBOX_WITH_ORACLE_QT) && (!defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin")
-  VBOX_QT_INFIX := VBox$(VBOX_QT_DBG)
+ ifdef VBOX_WITH_ORACLE_QT
+  if !defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin"
+   VBOX_QT_INFIX := VBox$(VBOX_QT_DBG)
+  endif
+  VBOX_QT_POSTFIX := VBox
  endif
 
  if "$(VBOX_QT_DBG)" != "" && "$(VBOX_QT_DBG)" != "$(VBOX_VCC_CRT_TYPE)" && "$(KBUILD_TARGET)" == "win"
