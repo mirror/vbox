@@ -2105,6 +2105,58 @@ iemNativeEmitLoadGprByBpU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emits a 128-bit vector register load instruction with an BP relative source address.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadVecRegByBpU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 9);
+
+    /* movdqu reg128, mem128 */
+    pbCodeBuf[off++] = 0xf3;
+    if (iVecRegDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0x6f;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iVecRegDst, offDisp, pReNative);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iVecRegDst, offDisp, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+#else
+# error "port me"
+#endif
+}
+
+
+/**
+ * Emits a 256-bit vector register load instruction with an BP relative source address.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadVecRegByBpU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+    /* vmovdqu reg256, mem256 */
+    pbCodeBuf[off++] = X86_OP_VEX2;
+    pbCodeBuf[off++] = X86_OP_VEX2_BYTE1_MAKE_NO_VVVV(iVecRegDst >= 8, true /*f256BitAvx*/, X86_OP_VEX2_BYTE1_P_0F3H);
+    pbCodeBuf[off++] = 0x6f;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iVecRegDst, offDisp, pReNative);
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES two consecutive vector registers for the 256-bit value. */
+    Assert(!(iVecRegDst & 0x1));
+    off = iemNativeEmitGprByBpLdSt(pReNative, off, iVecRegDst,     offDisp,                      kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iVecRegDst + 1, offDisp + sizeof(RTUINT128U), kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+#else
+# error "port me"
+#endif
+}
+
+#endif
+
+
 /**
  * Emits a load effective address to a GRP with an BP relative source address.
  */
@@ -2250,6 +2302,91 @@ iemNativeEmitStoreImm64ByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t
     off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, uImm64);
     return iemNativeEmitStoreGprByBp(pReNative, off, offDisp, IEMNATIVE_REG_FIXED_TMP0);
 }
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emits a 128-bit vector register store with an BP relative destination address.
+ *
+ * @note May trash IEMNATIVE_REG_FIXED_TMP0.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByBpU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offDisp, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movdqu [rbp + offDisp], vecsrc */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    pbCodeBuf[off++] = 0xf3;
+    if (iVecRegSrc >= 8)
+        pbCodeBuf[off++] =  X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0x7f;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iVecRegSrc, offDisp, pReNative);
+
+#elif defined(RT_ARCH_ARM64)
+    if (offDisp >= 0 && offDisp < 4096 * 8 && !((uint32_t)offDisp & 7))
+    {
+        /* str w/ unsigned imm12 (scaled) */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Vr_128, iVecRegSrc,
+                                                      ARMV8_A64_REG_BP, (uint32_t)offDisp / 8);
+    }
+    else if (offDisp >= -256 && offDisp <= 256)
+    {
+        /* stur w/ signed imm9 (unscaled) */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrSturLdur(kArmv8A64InstrLdStType_St_Vr_128, iVecRegSrc, ARMV8_A64_REG_BP, offDisp);
+    }
+    else if ((uint32_t)-offDisp < (unsigned)_4K)
+    {
+        /* Use temporary indexing register w/ sub uimm12. */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0,
+                                                         ARMV8_A64_REG_BP, (uint32_t)-offDisp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Vr_128, iVecRegSrc, IEMNATIVE_REG_FIXED_TMP0, 0);
+    }
+    else
+    {
+        /* Use temporary indexing register. */
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uint32_t)offDisp);
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Vr_128, iVecRegSrc, ARMV8_A64_REG_BP,
+                                                       IEMNATIVE_REG_FIXED_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+
+#else
+# error "Port me!"
+#endif
+}
+
+
+/**
+ * Emits a 256-bit vector register store with an BP relative destination address.
+ *
+ * @note May trash IEMNATIVE_REG_FIXED_TMP0.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByBpU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offDisp, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+    /* vmovdqu mem256, reg256 */
+    pbCodeBuf[off++] = X86_OP_VEX2;
+    pbCodeBuf[off++] = X86_OP_VEX2_BYTE1_MAKE_NO_VVVV(iVecRegSrc >= 8, true /*f256BitAvx*/, X86_OP_VEX2_BYTE1_P_0F3H);
+    pbCodeBuf[off++] = 0x7f;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iVecRegSrc, offDisp, pReNative);
+#elif defined(RT_ARCH_ARM64)
+    Assert(!(iVecRegSrc & 0x1));
+    off =  iemNativeEmitStoreVecRegByBpU128(pReNative, off, offDisp,                      iVecRegSrc);
+    return iemNativeEmitStoreVecRegByBpU128(pReNative, off, offDisp + sizeof(RTUINT128U), iVecRegSrc + 1);
+#else
+# error "Port me!"
+#endif
+}
+#endif
 
 #if defined(RT_ARCH_ARM64)
 
@@ -7154,7 +7291,7 @@ iemNativeEmitLoadArgGregFromImmOrStackVar(PIEMRECOMPILERSTATE pReNative, uint32_
 
 
 /**
- * Emits code to load the variable address into an argument GRP.
+ * Emits code to load the variable address into an argument GPR.
  *
  * This only works for uninitialized and stack variables.
  */
@@ -7172,6 +7309,23 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     int32_t const offBpDisp      = iemNativeStackCalcBpDisp(idxStackSlot);
 
     uint8_t const idxRegVar      = pVar->idxReg;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    if (   idxRegVar != UINT8_MAX
+        && pVar->fSimdReg)
+    {
+        Assert(idxRegVar < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
+        Assert(pVar->cbVar == sizeof(RTUINT128U) || pVar->cbVar == sizeof(RTUINT256U));
+
+        if (pVar->cbVar == sizeof(RTUINT128U))
+            off = iemNativeEmitStoreVecRegByBpU128(pReNative, off, offBpDisp, idxRegVar);
+        else
+            off = iemNativeEmitStoreVecRegByBpU256(pReNative, off, offBpDisp, idxRegVar);
+
+        iemNativeSimdRegFreeVar(pReNative, idxRegVar, fFlushShadows);
+        Assert(pVar->idxReg == UINT8_MAX);
+    }
+    else
+#endif
     if (idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
         off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, idxRegVar);
@@ -7399,11 +7553,11 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegFromVCpuHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 10), off, iVecReg, offVCpu);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 10), off, iVecReg, offVCpu);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecReg & 0x1));
-    off = iemNativeEmitSimdLoadVecRegFromVCpuLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg + 1, offVCpu);
+    off = iemNativeEmitSimdLoadVecRegFromVCpuHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecReg + 1, offVCpu);
 #else
 # error "port me"
 #endif

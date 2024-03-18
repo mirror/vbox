@@ -188,7 +188,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 # ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 #  define IEMNATIVE_SIMD_REG_FIXED_TMP0    5 /* xmm5/ymm5 */
 #  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS) || !defined(_MSC_VER)
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0)
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
 #  else
 /** On Windows xmm6 through xmm15 are marked as callee saved. */
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xffc0) \
@@ -976,9 +976,18 @@ typedef struct IEMNATIVEVAR
     /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not.
      * @todo not sure what this really is for...   */
     IEMNATIVEGSTREG     enmGstReg;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Flag whether this variable is held in a SIMD register (only supported for 128-bit and 256-bit variables),
+     * only valid when idxReg is not UINT8_MAX. */
+    bool                fSimdReg     : 1;
+    /** Set if the registered is currently used exclusively, false if the
+     *  variable is idle and the register can be grabbed. */
+    bool                fRegAcquired : 1;
+#else
     /** Set if the registered is currently used exclusively, false if the
      *  variable is idle and the register can be grabbed. */
     bool                fRegAcquired;
+#endif
 
     union
     {
@@ -1094,10 +1103,12 @@ typedef struct IEMNATIVEHSTSIMDREG
     uint64_t                  fGstRegShadows;
     /** What is being kept in this register. */
     IEMNATIVEWHAT             enmWhat;
+    /** Variable index (packed) if holding a variable, otherwise UINT8_MAX. */
+    uint8_t                   idxVar;
     /** Flag what is currently loaded, low 128-bits, high 128-bits or complete 256-bits. */
     IEMNATIVEGSTSIMDREGLDSTSZ enmLoaded;
     /** Alignment padding. */
-    uint8_t                   abAlign[6];
+    uint8_t                   abAlign[5];
 } IEMNATIVEHSTSIMDREG;
 #endif
 
@@ -1518,6 +1529,7 @@ DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint
 DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeSimdRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, bool fFlushShadows) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
                                                                   uint32_t fKeepVars = 0);
@@ -1565,6 +1577,10 @@ DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToGstRegRef(PIEMRECOMPILERSTATE p
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff,
                                                         bool fInitialized = false, uint8_t idxRegPref = UINT8_MAX);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarSimdRegisterAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff,
+                                                            bool fInitialized = false, uint8_t idxRegPref = UINT8_MAX);
+#endif
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
                                                                    IEMNATIVEGSTREG enmGstReg, uint32_t *poff);
 DECL_HIDDEN_THROW(uint32_t) iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
@@ -1848,6 +1864,15 @@ DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNativ
     Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired);
     pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired = false;
 }
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_INLINE_THROW(void) iemNativeVarSimdRegisterRelease(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fSimdReg);
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+}
+#endif
 
 
 /**
@@ -2232,8 +2257,8 @@ iemNativeSimdRegMarkAllocated(PIEMRECOMPILERSTATE pReNative, uint8_t idxSimdReg,
     pReNative->Core.bmHstSimdRegs |= RT_BIT_32(idxSimdReg);
 
     pReNative->Core.aHstSimdRegs[idxSimdReg].enmWhat        = enmWhat;
+    pReNative->Core.aHstSimdRegs[idxSimdReg].idxVar         = idxVar;
     pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows = 0;
-    RT_NOREF(idxVar);
     return idxSimdReg;
 }
 
