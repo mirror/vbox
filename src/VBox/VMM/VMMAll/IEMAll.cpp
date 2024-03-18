@@ -856,14 +856,16 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
          * We might have a partial buffer match, deal with that first to make the
          * rest simpler.  This is the first part of the cross page/buffer case.
          */
-        if (pVCpu->iem.s.pbInstrBuf != NULL)
+        uint8_t const * const pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
+        if (pbInstrBuf != NULL)
         {
             Assert(cbDst != 0); /* pbInstrBuf shall be NULL in case of a TLB load */
-            if (offBuf < pVCpu->iem.s.cbInstrBuf)
+            uint32_t const cbInstrBuf = pVCpu->iem.s.cbInstrBuf;
+            if (offBuf < cbInstrBuf)
             {
-                Assert(offBuf + cbDst > pVCpu->iem.s.cbInstrBuf);
-                uint32_t const cbCopy = pVCpu->iem.s.cbInstrBuf - pVCpu->iem.s.offInstrNextByte;
-                memcpy(pvDst, &pVCpu->iem.s.pbInstrBuf[offBuf], cbCopy);
+                Assert(offBuf + cbDst > cbInstrBuf);
+                uint32_t const cbCopy = cbInstrBuf - offBuf;
+                memcpy(pvDst, &pbInstrBuf[offBuf], cbCopy);
 
                 cbDst  -= cbCopy;
                 pvDst   = (uint8_t *)pvDst + cbCopy;
