@@ -191,20 +191,20 @@ public:
 
     /** Returns a list of all families.
       * @param  fListAll  Brings whether a list of all families is requested, supported otherwise. */
-    UIGuestOSFamilyInfo getFamilies(bool fListAll,
+    UIGuestOSFamilyInfo getFamilies(bool fListAll = true,
                                     KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns the list of subtypes for @p strFamilyId. This may be an empty list.
       * @param  fListAll  Brings whether a list of all subtypes is requested, supported otherwise. */
     UIGuestOSSubtypeInfo getSubtypesForFamilyId(const QString &strFamilyId,
-                                                bool fListAll,
+                                                bool fListAll = true,
                                                 KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strFamilyId. */
     UIGuestOSTypeInfo getTypesForFamilyId(const QString &strFamilyId,
-                                          bool fListAll,
+                                          bool fListAll = true,
                                           KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
     /** Returns a list of OS types for the @p strSubtype. */
     UIGuestOSTypeInfo getTypesForSubtype(const QString &strSubtype,
-                                         bool fListAll,
+                                         bool fListAll = true,
                                          KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
 
     /** Returns whether specified @a strOSTypeId is of DOS type. */

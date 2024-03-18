@@ -132,7 +132,7 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 }
 
 UIGuestOSTypeManager::UIGuestOSFamilyInfo
-UIGuestOSTypeManager::getFamilies(bool fListAll,
+UIGuestOSTypeManager::getFamilies(bool fListAll /* = true */,
                                   KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Otherwise we'll have to prepare list by arch type: */
@@ -151,7 +151,7 @@ UIGuestOSTypeManager::getFamilies(bool fListAll,
 
 UIGuestOSTypeManager::UIGuestOSSubtypeInfo
 UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
-                                             bool fListAll,
+                                             bool fListAll /* = true */,
                                              KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     /* Otherwise we'll have to prepare list by arch type: */
@@ -170,7 +170,7 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
-                                          bool fListAll,
+                                          bool fListAll /* = true */,
                                           KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
@@ -194,7 +194,7 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo
 UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
-                                         bool fListAll,
+                                         bool fListAll /* = true */,
                                          KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
