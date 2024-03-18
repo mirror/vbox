@@ -1431,6 +1431,7 @@ enum OP_PARM
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
+#define OP_PARM_Ew_WO           OP_PARM_Ew              /**< Annotates write only operand. */
 #define OP_PARM_Ed_WO           OP_PARM_Ed              /**< Annotates write only operand. */
 #define OP_PARM_Eq              (OP_PARM_E+OP_PARM_q)
 #define OP_PARM_Eq_WO           OP_PARM_Eq              /**< Annotates write only operand. */
@@ -1468,6 +1469,7 @@ enum OP_PARM
 #define OP_PARM_VqHi            OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_VqHi_WO         OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are written. */
 #define OP_PARM_VqZx_WO         OP_PARM_Vq              /**< Annotates that the registers get their upper bits cleared */
+#define OP_PARM_Vqq_WO          OP_PARM_Vq              /**< Annotates write only operand. */
 #define OP_PARM_VsdZx_WO        OP_PARM_Vsd             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_VssZx_WO        OP_PARM_Vss             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_Vss_WO          OP_PARM_Vss             /**< Annotates write only operand. */

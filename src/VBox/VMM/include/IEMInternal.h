@@ -2311,32 +2311,38 @@ typedef struct IEM
 #define IEMOPFORM_VEX_RVM_REG   (IEMOPFORM_VEX_RVM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, vvvv, r/m (memory). */
 #define IEMOPFORM_VEX_RVM_MEM   (IEMOPFORM_VEX_RVM | IEMOPFORM_NOT_MOD3)
+/** VEX+ModR/M: reg, vvvv, r/m, imm */
+#define IEMOPFORM_VEX_RVMI      22
+/** VEX+ModR/M: reg, vvvv, r/m (register), imm. */
+#define IEMOPFORM_VEX_RVMI_REG  (IEMOPFORM_VEX_RVMI | IEMOPFORM_MOD3)
+/** VEX+ModR/M: reg, vvvv, r/m (memory), imm. */
+#define IEMOPFORM_VEX_RVMI_MEM  (IEMOPFORM_VEX_RVMI | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg, r/m, vvvv */
-#define IEMOPFORM_VEX_RMV       22
+#define IEMOPFORM_VEX_RMV       23
 /** VEX+ModR/M: reg, r/m, vvvv (register). */
 #define IEMOPFORM_VEX_RMV_REG   (IEMOPFORM_VEX_RMV | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m, vvvv (memory). */
 #define IEMOPFORM_VEX_RMV_MEM   (IEMOPFORM_VEX_RMV | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg, r/m, imm8 */
-#define IEMOPFORM_VEX_RMI       23
+#define IEMOPFORM_VEX_RMI       24
 /** VEX+ModR/M: reg, r/m, imm8 (register). */
 #define IEMOPFORM_VEX_RMI_REG   (IEMOPFORM_VEX_RMI | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m, imm8 (memory). */
 #define IEMOPFORM_VEX_RMI_MEM   (IEMOPFORM_VEX_RMI | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg */
-#define IEMOPFORM_VEX_MVR       24
+#define IEMOPFORM_VEX_MVR       25
 /** VEX+ModR/M: r/m, vvvv, reg (register) */
 #define IEMOPFORM_VEX_MVR_REG   (IEMOPFORM_VEX_MVR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg (memory) */
 #define IEMOPFORM_VEX_MVR_MEM   (IEMOPFORM_VEX_MVR | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m */
-#define IEMOPFORM_VEX_VM        25
+#define IEMOPFORM_VEX_VM        26
 /** VEX+ModR/M+/n: vvvv, r/m (register) */
 #define IEMOPFORM_VEX_VM_REG    (IEMOPFORM_VEX_VM | IEMOPFORM_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m (memory) */
 #define IEMOPFORM_VEX_VM_MEM    (IEMOPFORM_VEX_VM | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m, imm8 */
-#define IEMOPFORM_VEX_VMI       26
+#define IEMOPFORM_VEX_VMI       27
 /** VEX+ModR/M+/n: vvvv, r/m, imm8 (register) */
 #define IEMOPFORM_VEX_VMI_REG   (IEMOPFORM_VEX_VMI | IEMOPFORM_MOD3)
 /** VEX+ModR/M+/n: vvvv, r/m, imm8 (memory) */
