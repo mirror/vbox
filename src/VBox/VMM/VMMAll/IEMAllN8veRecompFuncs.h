@@ -7542,12 +7542,31 @@ iemNativeEmitCallSseAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 }
 
 
-
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
-    off = iemNativeEmitCallSseAImplCommon(pReNative, off, (uintptr_t)(a_pfnAImpl), 2)
+    off = iemNativeEmitCallSseAImpl2(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1))
 
-#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a3) \
-    off = iemNativeEmitCallSseAImplCommon(pReNative, off, (uintptr_t)(a_pfnAImpl), 3)
+/** Emits code for IEM_MC_CALL_SSE_AIMPL_2. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallSseAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
+{
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
+    return iemNativeEmitCallSseAImplCommon(pReNative, off, pfnAImpl, 2);
+}
+
+
+#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    off = iemNativeEmitCallSseAImpl3(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
+
+/** Emits code for IEM_MC_CALL_SSE_AIMPL_3. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
+{
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_SSE_AIMPL_HIDDEN_ARGS);
+    return iemNativeEmitCallSseAImplCommon(pReNative, off, pfnAImpl, 3);
+}
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 
