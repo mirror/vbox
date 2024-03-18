@@ -835,6 +835,7 @@ void iemOpcodeFlushHeavy(PVMCPUCC pVCpu, uint8_t cbInstr)
  *      - Advancing beyond the buffer boundrary (e.g. cross page).
  *      - Advancing beyond the CS segment limit.
  *      - Fetching from non-mappable page (e.g. MMIO).
+ *      - TLB loading in the recompiler (@a pvDst = NULL, @a cbDst = 0).
  *
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
