@@ -227,6 +227,23 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     return true;
 }
 
+QString UINameAndSystemEditor::familyId() const
+{
+    return m_strFamilyId;
+}
+
+QString UINameAndSystemEditor::distribution() const
+{
+    return m_familyToDistribution.value(familyId());
+}
+
+QString UINameAndSystemEditor::typeId() const
+{
+    return   !m_familyToDistribution.contains(familyId())
+           ? m_familyToType.value(familyId())
+           : m_distributionToType.value(distribution());
+}
+
 void UINameAndSystemEditor::markNameEditor(bool fError)
 {
     if (m_pEditorName)
@@ -320,10 +337,10 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
     /* Acquire new family ID: */
     m_strFamilyId = m_pComboFamily->itemData(iIndex).toString();
-    AssertReturnVoid(!m_strFamilyId.isEmpty());
+    AssertReturnVoid(!familyId().isEmpty());
 
     /* Notify listeners about this change: */
-    emit sigOSFamilyChanged(m_strFamilyId);
+    emit sigOSFamilyChanged(familyId());
 
     /* Pupulate distribution combo: */
     populateDistributionCombo();
@@ -331,8 +348,14 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
 void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistribution)
 {
-    /* Save new distribution: */
-    m_strDistribution = strDistribution;
+    /* Save the most recently used distribution: */
+    if (!strDistribution.isEmpty())
+    {
+//        printf("Saving current distribution [for family=%s] as: %s\n",
+//               familyId().toUtf8().constData(),
+//               strDistribution.toUtf8().constData());
+        m_familyToDistribution[familyId()] = strDistribution;
+    }
 
     /* Get current arch type, usually we'd default to x86, but here 'None' meaningful as well: */
     const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
@@ -341,12 +364,9 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
 
     /* If distribution list is empty, all the types of the family are added to type combo: */
     const UIGuestOSTypeManager::UIGuestOSTypeInfo types
-         = m_strDistribution.isEmpty()
-         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(m_strFamilyId, false /* including restricted? */, enmArch)
-         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(m_strDistribution, false /* including restricted? */, enmArch);
-
-    /* Save the most recently used item: */
-    m_familyToDistribution[m_strFamilyId] = m_strDistribution;
+         = strDistribution.isEmpty()
+         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(familyId(), false /* including restricted? */, enmArch)
+         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(distribution(), false /* including restricted? */, enmArch);
 
     /* Populate type combo: */
     populateTypeCombo(types);
@@ -354,21 +374,29 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
-    /* Sanity check: */
-    AssertPtrReturnVoid(m_pComboType);
-
     /* Acquire new type ID: */
-    m_strTypeId = m_pComboType->itemData(iIndex).toString();
-    AssertReturnVoid(!m_strTypeId.isEmpty());
+    AssertPtrReturnVoid(m_pComboType);
+    const QString strTypeId = m_pComboType->itemData(iIndex).toString();
+    AssertReturnVoid(!strTypeId.isEmpty());
+
+    /* Save the most recently used type: */
+    if (distribution().isEmpty())
+    {
+//        printf("Saving current type [for family=%s] as: %s\n",
+//               familyId().toUtf8().constData(),
+//               strTypeId.toUtf8().constData());
+        m_familyToType[familyId()] = strTypeId;
+    }
+    else
+    {
+//        printf("Saving current type [for distribution=%s] as: %s\n",
+//               distribution().toUtf8().constData(),
+//               strTypeId.toUtf8().constData());
+        m_distributionToType[distribution()] = strTypeId;
+    }
 
     /* Update selected type pixmap: */
-    m_pIconType->setPixmap(generalIconPool().guestOSTypePixmapDefault(m_strTypeId));
-
-    /* Save the most recently used item: */
-    if (m_strDistribution.isEmpty())
-        m_familyToType[m_strFamilyId] = m_strTypeId;
-    else
-        m_distributionToType[m_strDistribution] = m_strTypeId;
+    m_pIconType->setPixmap(generalIconPool().guestOSTypePixmapDefault(strTypeId));
 
     /* Notifies listeners about this change: */
     emit sigOsTypeChanged();
@@ -653,7 +681,7 @@ void UINameAndSystemEditor::populateDistributionCombo()
 
     /* Acquire a list of suitable sub-types: */
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
-        = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(m_strFamilyId, false /* including restricted? */, enmArch);
+        = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(familyId(), false /* including restricted? */, enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
 
@@ -665,11 +693,11 @@ void UINameAndSystemEditor::populateDistributionCombo()
     foreach (const UISubtypeInfo &distribution, distributions)
         m_pComboDistribution->addItem(distribution.m_strName);
 
-    /* Unblock signals finally: */
-    m_pComboDistribution->blockSignals(false);
-
     /* Select preferred OS distribution: */
     selectPreferredDistribution();
+
+    /* Unblock signals finally: */
+    m_pComboDistribution->blockSignals(false);
 
     /* Trigger distribution change handler manually: */
     sltDistributionChanged(m_pComboDistribution->currentText());
@@ -692,11 +720,11 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
         m_pComboType->setItemData(i, types[i].first);
     }
 
-    /* Unblock signals finally: */
-    m_pComboType->blockSignals(false);
-
     /* Select preferred OS type: */
     selectPreferredType();
+
+    /* Unblock signals finally: */
+    m_pComboType->blockSignals(false);
 
     /* Trigger type change handler manually: */
     sltTypeChanged(m_pComboType->currentIndex());
@@ -704,63 +732,73 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
 
 void UINameAndSystemEditor::selectPreferredDistribution()
 {
-    /* Try to restore current distribution if possible: */
-    if (m_familyToDistribution.contains(m_strFamilyId))
-        m_pComboDistribution->setCurrentText(m_familyToDistribution.value(m_strFamilyId));
-    /* Oracle Linux for Linux family: */
-    else if (m_strFamilyId == "Linux")
+    /* Sanity check: */
+    AssertPtrReturnVoid(m_pComboDistribution);
+
+    /* What will be the choice? */
+    int iChosenIndex = -1;
+
+    /* Try to restore previous distribution if possible: */
+    if (   iChosenIndex == -1
+        && !distribution().isEmpty())
     {
-        const int iOracleIndex = m_pComboDistribution->findText("Oracle", Qt::MatchContains);
-        if (iOracleIndex != -1)
-            m_pComboDistribution->setCurrentIndex(iOracleIndex);
+//        printf("Restoring distribution [for family=%s] to: %s\n",
+//               familyId().toUtf8().constData(),
+//               distribution().toUtf8().constData());
+        iChosenIndex = m_pComboDistribution->findText(distribution());
     }
+
+    /* Try to choose Oracle Linux for Linux family: */
+    if (   iChosenIndex == -1
+        && familyId() == "Linux")
+        iChosenIndex = m_pComboDistribution->findText("Oracle", Qt::MatchContains);
+
+    /* Choose the item under the index we found or 1st one item otherwise: */
+    m_pComboDistribution->setCurrentIndex(iChosenIndex != -1 ? iChosenIndex : 0);
 }
 
 void UINameAndSystemEditor::selectPreferredType()
 {
-    /* Try to restore current type if possible: */
-    if (   m_familyToType.contains(m_strFamilyId)
-        || m_distributionToType.contains(m_strDistribution))
+    /* Sanity check: */
+    AssertPtrReturnVoid(m_pComboType);
+
+    /* What will be the choice? */
+    int iChosenIndex = -1;
+
+    /* Try to restore previous type if possible: */
+    if (   iChosenIndex == -1
+        && !typeId().isEmpty())
     {
-        const QString strCurrentType = m_familyToType.contains(m_strFamilyId)
-                                     ? m_familyToType.value(m_strFamilyId)
-                                     : m_distributionToType.contains(m_strDistribution)
-                                     ? m_distributionToType.value(m_strDistribution)
-                                     : QString();
-        const int iCurrentIndex = m_pComboType->findData(strCurrentType);
-        if (iCurrentIndex != -1)
-            m_pComboType->setCurrentIndex(iCurrentIndex);
+//        printf("Restoring type [for family=%s/distribution=%s] to: %s\n",
+//               familyId().toUtf8().constData(),
+//               distribution().toUtf8().constData(),
+//               typeId().toUtf8().constData());
+        iChosenIndex = m_pComboType->findData(typeId());
     }
-    /* Windows 11 for Windows family: */
-    else if (m_strFamilyId == "Windows")
+
+    /* Try to choose Windows 11 for Windows family: */
+    if (   iChosenIndex == -1
+        && familyId() == "Windows")
     {
         const QString strDefaultID = GUEST_OS_ID_STR_X64("Windows11");
-        const int iIndexWin11 = m_pComboType->findData(strDefaultID);
-        if (iIndexWin11 != -1)
-        {
-            m_pComboType->setCurrentIndex(iIndexWin11);
-            return;
-        }
+        iChosenIndex = m_pComboType->findData(strDefaultID);
     }
-    /* Oracle Linux for Oracle distribution: */
-    else if (m_strDistribution == "Oracle")
+
+    /* Try to choose Oracle Linux x64 for Oracle distribution: */
+    if (   iChosenIndex == -1
+        && distribution() == "Oracle")
     {
         const QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
-        const int iIndexOracle = m_pComboType->findData(strDefaultID);
-        if (iIndexOracle != -1)
-        {
-            m_pComboType->setCurrentIndex(iIndexOracle);
-            return;
-        }
+        iChosenIndex = m_pComboType->findData(strDefaultID);
     }
-    else
+
+    /* Else try to pick the first 64-bit one if it exists: */
+    if (iChosenIndex == -1)
     {
-        /* Else try to pick the first 64-bit one if it exists: */
         const QString strDefaultID = GUEST_OS_ID_STR_X64("");
-        const int iIndexAll = m_pComboType->findData(strDefaultID, Qt::UserRole, Qt::MatchContains);
-        if (iIndexAll != -1)
-            m_pComboType->setCurrentIndex(iIndexAll);
-        else
-            m_pComboType->setCurrentIndex(0);
+        iChosenIndex = m_pComboType->findData(strDefaultID, Qt::UserRole, Qt::MatchContains);
     }
+
+    /* Choose the item under the index we found or 1st one item otherwise: */
+    m_pComboType->setCurrentIndex(iChosenIndex != -1 ? iChosenIndex : 0);
 }

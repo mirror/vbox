@@ -119,10 +119,12 @@ public:
 
     /* strTypeId should be one of the type ids defined in Global.cpp and returned by IGuestOSType::getId(). */
     bool setGuestOSTypeByTypeId(const QString &strTypeId);
-    /** Returns the VM OS family ID. */
-    QString familyId() const { return m_strFamilyId; }
-    /** Returns the VM OS type ID. */
-    QString typeId() const { return m_strTypeId; }
+    /** Returns current family ID. */
+    QString familyId() const;
+    /** Returns current distribution. */
+    QString distribution() const;
+    /** Returns current type ID. */
+    QString typeId() const;
 
     /** Passes the @p fError to QILineEdit::mark(bool) effectively marking it for error. */
     void markNameEditor(bool fError);
@@ -201,10 +203,6 @@ private:
      * @{ */
         /** Holds the VM OS family ID. */
         QString  m_strFamilyId;
-        /** Holds the VM OS distribution. */
-        QString  m_strDistribution;
-        /** Holds the VM OS type ID. */
-        QString  m_strTypeId;
 
         /** Holds the currently chosen OS distributions on per-family basis. */
         QMap<QString, QString>  m_familyToDistribution;
