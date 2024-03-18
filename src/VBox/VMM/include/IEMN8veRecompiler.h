@@ -1529,7 +1529,9 @@ DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint
 DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 DECLHIDDEN(void)            iemNativeSimdRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, bool fFlushShadows) RT_NOEXCEPT;
+#endif
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
                                                                   uint32_t fKeepVars = 0);
