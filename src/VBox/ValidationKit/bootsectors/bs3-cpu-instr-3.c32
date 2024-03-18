@@ -584,7 +584,7 @@ DECLINLINE(uint8_t) bs3CpuInstr3MemOpSize(uint8_t cbOperand, uint8_t enmRm)
 # define BS3_SKIPIT(bRing, iCfg, iTest, iVal, iVariant) (false)
 #else
 # include <iprt/asm-amd64-x86.h>
-/** @todo port to 32-bit watcom: iprt/asm-math.h */
+# include <iprt/asm-math.h>
 
 DECLINLINE(uint32_t) bs3CpuInstr3_SimpleRand(void)
 {
@@ -597,35 +597,17 @@ DECLINLINE(uint32_t) bs3CpuInstr3_SimpleRand(void)
      *
      * It produces numbers in the range [1..INT32_MAX-1] and is
      * more chaotic in the higher bits.
+     *
+     * Note! Runtime/common/rand/randparkmiller.cpp is also use this algorithm,
+     *       though the zero handling is different.
      */
     static uint32_t s_uSeedMemory = 0;
-    if (!s_uSeedMemory)
-        s_uSeedMemory = (uint32_t)ASMReadTSC();
-
-# if 0 /* see Runtime/common/rand/randparkmiller.cpp - unfortunately the two mul+div wrappers haven't been ported to watcom speak */
-    s_uSeedMemory = ASMModU64ByU32RetU32(ASMMult2xU32RetU64(s_uSeedMemory, 16807), INT32_MAX);
-# else
-    {
-        RTUINT64U uProduct;
-        uint32_t uHiMod, uLoMod;
-        uProduct.u = (uint64_t)s_uSeedMemory * 16807;
-        /*
-         * This piece-wise modulus operation is vastly faster
-         * than openwatcom's built-in 64-div-32 routine!
-         *
-         * Math:    high longword's effect % INT32_MAX
-         *       = (high longword * 2^32) % INT32_MAX
-         *       = (high longword * (2^32 - 2 * INT32_MAX)) % INT32_MAX
-         *       = (high longword * 2) % INT32_MAX
-         *       = (high longword * 2), since uProduct is a 'small' 64-bit value
-         *              (high longword of a 32-bit-value * 16807, a 15-bit value)
-         */
-        uHiMod = uProduct.au32[1] * 2;
-        uLoMod = uProduct.au32[0] % INT32_MAX;
-        s_uSeedMemory = (uHiMod + uLoMod) % INT32_MAX;
-    }
-# endif
-    return s_uSeedMemory;
+    uint32_t uVal = s_uSeedMemory;
+    if (!uVal)
+        uVal = (uint32_t)ASMReadTSC();
+    uVal = ASMModU64ByU32RetU32(ASMMult2xU32RetU64(uVal, 16807), INT32_MAX);
+    s_uSeedMemory = uVal;
+    return uVal;
 }
 
 static unsigned g_cSeen, g_cSkipped;
