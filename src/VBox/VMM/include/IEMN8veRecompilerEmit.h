@@ -7724,7 +7724,7 @@ iemNativeEmitSimdLoadGprFromVecRegU8(PIEMRECOMPILERSTATE pReNative, uint32_t off
     Assert(iByte <= 32);
 
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadGprFromVecRegU8Ex(iemNativeInstrBufEnsure(pReNative, off, 6), off, iGprDst, iVecRegSrc, iByte);
+    off = iemNativeEmitSimdLoadGprFromVecRegU8Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, iVecRegSrc, iByte);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegSrc & 0x1));
