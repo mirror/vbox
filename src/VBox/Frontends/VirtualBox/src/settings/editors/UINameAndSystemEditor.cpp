@@ -182,48 +182,37 @@ QString UINameAndSystemEditor::ISOImagePath() const
 
 bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
 {
-    /* Sanity check: */
-    AssertPtrReturn(m_pComboFamily, false);
+    /* Cache passed values locally, they will be required for the final result check: */
+    const QString strFamilyId = gpGlobalSession->guestOSTypeManager().getFamilyId(strTypeId);
+    const QString strDistribution = gpGlobalSession->guestOSTypeManager().getSubtype(strTypeId);
 
-    int iFamilyComboIndex = -1;
-    /* We already have to have an item in the family combo box for this family id: */
-    for (int i = 0; i < m_pComboFamily->count() && iFamilyComboIndex == -1; ++i)
-    {
-        QString strComboFamilyId = m_pComboFamily->itemData(i).toString();
-        if (!strComboFamilyId.isEmpty() && strComboFamilyId == gpGlobalSession->guestOSTypeManager().getFamilyId(strTypeId))
-            iFamilyComboIndex = i;
-    }
-    /* Bail out if family combo has no such item: */
-    if (iFamilyComboIndex == -1)
-        return false;
-    /* Set the family combo's index. This will cause distribution combo to be populated accordingly: */
-    m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
-
-    /* If distribution is not empty then try to select correct index. This will populate type combo: */
-    QString strDistribution = gpGlobalSession->guestOSTypeManager().getSubtype(strTypeId);
+    /* Save passed values, but they can be overridden
+     * in the below populateFamilyCombo() call: */
+    m_strFamilyId = strFamilyId;
     if (!strDistribution.isEmpty())
-    {
-        int index = -1;
-        for (int i = 0; i < m_pComboDistribution->count() && index == -1; ++i)
-        {
-            if (strDistribution == m_pComboDistribution->itemText(i))
-                index = i;
-        }
-        if (index != -1)
-            m_pComboDistribution->setCurrentIndex(index);
-        else
-            return false;
-    }
+        m_familyToDistribution[familyId()] = strDistribution;
+    if (distribution().isEmpty())
+        m_familyToType[familyId()] = strTypeId;
+    else
+        m_distributionToType[distribution()] = strTypeId;
 
-    /* At this point type combo should include the type we want to select: */
-    int iTypeIndex = -1;
-    for (int i = 0; i < m_pComboType->count() && iTypeIndex == -1; ++i)
-    {
-        if (strTypeId == m_pComboType->itemData(i))
-            iTypeIndex = i;
-    }
-    if (iTypeIndex != -1)
-        m_pComboType->setCurrentIndex(iTypeIndex);
+    /* Repopulate VM OS family/distribution/type combo(s): */
+    populateFamilyCombo();
+
+    /* Family check: */
+    AssertPtrReturn(m_pComboFamily, false);
+    if (m_pComboFamily->currentData().toString() != strFamilyId)
+        return false;
+    /* Distribution check: */
+    AssertPtrReturn(m_pComboDistribution, false);
+    if (m_pComboDistribution->currentText() != strDistribution)
+        return false;
+    /* Type check: */
+    AssertPtrReturn(m_pComboType, false);
+    if (m_pComboType->currentData().toString() != strTypeId)
+        return false;
+
+    /* Success by default: */
     return true;
 }
 
@@ -367,8 +356,12 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
     /* If distribution list is empty, all the types of the family are added to type combo: */
     const UIGuestOSTypeManager::UIGuestOSTypeInfo types
          = strDistribution.isEmpty()
-         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(familyId(), false /* including restricted? */, enmArch)
-         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(distribution(), false /* including restricted? */, enmArch);
+         ? gpGlobalSession->guestOSTypeManager().getTypesForFamilyId(familyId(),
+                                                                     false /* including restricted? */,
+                                                                     enmArch)
+         : gpGlobalSession->guestOSTypeManager().getTypesForSubtype(distribution(),
+                                                                    false /* including restricted? */,
+                                                                    enmArch);
 
     /* Populate type combo: */
     populateTypeCombo(types);
@@ -648,7 +641,8 @@ void UINameAndSystemEditor::populateFamilyCombo()
 
     /* Acquire family IDs: */
     const UIGuestOSTypeManager::UIGuestOSFamilyInfo families
-        = gpGlobalSession->guestOSTypeManager().getFamilies(false /* including restricted? */, enmArch);
+        = gpGlobalSession->guestOSTypeManager().getFamilies(false /* including restricted? */,
+                                                            enmArch);
 
     /* Block signals initially and clear the combo: */
     m_pComboFamily->blockSignals(true);
@@ -684,7 +678,9 @@ void UINameAndSystemEditor::populateDistributionCombo()
 
     /* Acquire a list of suitable distributions: */
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
-        = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(familyId(), false /* including restricted? */, enmArch);
+        = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(familyId(),
+                                                                       false /* including restricted? */,
+                                                                       enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
 
