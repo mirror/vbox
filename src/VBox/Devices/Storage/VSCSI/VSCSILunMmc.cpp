@@ -1221,6 +1221,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                                             |  (pVScsiReq->pbCDB[2] <<  8)
                                             | ((pVScsiReq->pbCDB[1] & 0x1f) << 16));
                 cSectorTransfer = pVScsiReq->pbCDB[4];
+                cSectorTransfer = cSectorTransfer ? cSectorTransfer : 256;  /* Zero blocks means 256 */
                 cbSector        = _2K;
                 break;
             }

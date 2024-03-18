@@ -217,6 +217,7 @@ static int vscsiLUNSSCReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                                          | (pVScsiReq->pbCDB[3] <<  8)
                                          | (pVScsiReq->pbCDB[2] << 16));
             cBlocksTransfer = pVScsiReq->pbCDB[4];
+            cSectorTransfer = cSectorTransfer ? cSectorTransfer : 256;  /* Zero blocks means 256 */
             uTransferStart  = pVScsiLUNSSC->uCurPos;
             pVScsiLUNSSC->uCurPos += cbTransfer;
             break;
@@ -228,6 +229,7 @@ static int vscsiLUNSSCReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                                          | (pVScsiReq->pbCDB[3] <<  8)
                                          | (pVScsiReq->pbCDB[2] << 16));
             cBlocksTransfer = pVScsiReq->pbCDB[4];
+            cSectorTransfer = cSectorTransfer ? cSectorTransfer : 256;  /* Zero blocks means 256 */
             uTransferStart  = pVScsiLUNSSC->uCurPos;
             pVScsiLUNSSC->uCurPos += cbTransfer;
             break;
