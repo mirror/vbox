@@ -858,6 +858,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
          */
         if (pVCpu->iem.s.pbInstrBuf != NULL)
         {
+            Assert(cbDst != 0); /* pbInstrBuf shall be NULL in case of a TLB load */
             if (offBuf < pVCpu->iem.s.cbInstrBuf)
             {
                 Assert(offBuf + cbDst > pVCpu->iem.s.cbInstrBuf);
@@ -867,7 +868,6 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 cbDst  -= cbCopy;
                 pvDst   = (uint8_t *)pvDst + cbCopy;
                 offBuf += cbCopy;
-                pVCpu->iem.s.offInstrNextByte += offBuf;
             }
         }
 
@@ -1045,7 +1045,10 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
                 pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
                 pVCpu->iem.s.pbInstrBuf       = pTlbe->pbMappingR3;
-                memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbDst);
+                if (cbDst > 0) /* To make ASAN happy in the TLB load case. */
+                    memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbDst);
+                else
+                    Assert(!pvDst);
                 return;
             }
             pVCpu->iem.s.pbInstrBuf = NULL;
@@ -1141,6 +1144,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             pVCpu->iem.s.pbInstrBuf       = NULL;
             if (cbToRead == cbDst)
                 return;
+            Assert(cbToRead == cbMaxRead);
         }
 
         /*
