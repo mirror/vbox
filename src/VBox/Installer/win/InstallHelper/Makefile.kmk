@@ -33,9 +33,16 @@ DLLS += VBoxInstallHelper
 VBoxInstallHelper_TEMPLATE = VBoxR3StaticDllNoAsan
 VBoxInstallHelper_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxInstallHelper_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_NETFLT
+if defined(VBOX_WITH_NETFLT) || defined(VBOX_WITH_NETADP)
  VBoxInstallHelper_SDKS   += VBoxWinNewDevLib
- VBoxInstallHelper_DEFS   += VBOX_WITH_NETFLT=1
+ VBoxInstallHelper_DEFS   += \
+	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT,) \
+	$(if $(VBOX_WITH_NETADP),VBOX_WITH_NETADP,)
+ VBoxInstallHelper_LIBS   += \
+ 	$(PATH_STAGE_LIB)/WinNetConfigSharedStatic.lib \
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfgSharedStatic.lib \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
 endif
 VBoxInstallHelper_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxInstallHelper_SOURCES  = \
@@ -47,15 +54,8 @@ ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += \
  	internal/VBoxSerial.cpp
 endif
-VBoxInstallHelper_LIBS    = \
+VBoxInstallHelper_LIBS += \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
-ifdef VBOX_WITH_NETFLT
- VBoxInstallHelper_LIBS   += \
- 	$(PATH_STAGE_LIB)/WinNetConfigSharedStatic.lib \
- 	$(PATH_STAGE_LIB)/VBoxDrvCfgSharedStatic.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
- 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
-endif
 
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_TESTCASES) && !defined(VBOX_OSE)
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk

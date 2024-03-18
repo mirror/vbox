@@ -29,16 +29,16 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_NETFLT
+#if defined(VBOX_WITH_NETFLT) || defined(VBOX_WITH_NETADP)
 # include "VBox/VBoxNetCfg-win.h"
 # include "VBox/VBoxDrvCfg-win.h"
 #endif
 
-#include <msi.h>
-#include <msiquery.h>
-
 #define _WIN32_DCOM
 #include <iprt/win/windows.h>
+
+#include <msi.h>
+#include <msiquery.h>
 
 #include <shellapi.h>
 #define INITGUID
@@ -873,7 +873,7 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
     return ERROR_SUCCESS; /* Do not fail here. */
 }
 
-#ifdef VBOX_WITH_NETFLT
+#if defined(VBOX_WITH_NETFLT) || defined(VBOX_WITH_NETADP)
 
 /** @todo should use some real VBox app name */
 #define VBOX_NETCFG_APP_NAME L"VirtualBox Installer"
@@ -1055,7 +1055,9 @@ static UINT doNetCfgInit(MSIHANDLE hModule, INetCfg **ppnc, BOOL bWrite)
 
     return uErr;
 }
+#endif /* defined(VBOX_WITH_NETFLT) || defined(VBOX_WITH_NETADP) */
 
+#ifdef VBOX_WITH_NETFLT
 static UINT vboxNetFltQueryInfArray(MSIHANDLE hModule, OUT LPWSTR pwszPtInf, DWORD cwcPtInf,
                                     OUT LPWSTR pwszMpInf, DWORD cwcMpInf)
 {
@@ -1086,11 +1088,8 @@ static UINT vboxNetFltQueryInfArray(MSIHANDLE hModule, OUT LPWSTR pwszPtInf, DWO
     return uErr;
 }
 
-#endif /*VBOX_WITH_NETFLT*/
-
-/*static*/ UINT _uninstallNetFlt(MSIHANDLE hModule)
+static UINT _uninstallNetFlt(MSIHANDLE hModule)
 {
-#ifdef VBOX_WITH_NETFLT
     INetCfg *pNetCfg;
     UINT uErr;
 
@@ -1127,21 +1126,26 @@ static UINT vboxNetFltQueryInfArray(MSIHANDLE hModule, OUT LPWSTR pwszPtInf, DWO
         }
         netCfgLoggerDisable();
     }
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETFLT */
 
 UINT __stdcall UninstallNetFlt(MSIHANDLE hModule)
 {
-    (void)_uninstallNetLwf(hModule);
+#ifdef VBOX_WITH_NETFLT
+    _uninstallNetLwf(hModule);
     return _uninstallNetFlt(hModule);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETFLT
 static UINT _installNetFlt(MSIHANDLE hModule)
 {
-#ifdef VBOX_WITH_NETFLT
     UINT uErr;
     INetCfg *pNetCfg;
 
@@ -1188,22 +1192,26 @@ static UINT _installNetFlt(MSIHANDLE hModule)
         }
         netCfgLoggerDisable();
     }
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the install even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETFLT */
 
 UINT __stdcall InstallNetFlt(MSIHANDLE hModule)
 {
-    (void)_uninstallNetLwf(hModule);
+#ifdef VBOX_WITH_NETFLT
+    _uninstallNetLwf(hModule);
     return _installNetFlt(hModule);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
-
-/*static*/ UINT _uninstallNetLwf(MSIHANDLE hModule)
-{
 #ifdef VBOX_WITH_NETFLT
+static UINT _uninstallNetLwf(MSIHANDLE hModule)
+{
     INetCfg *pNetCfg;
     UINT uErr;
 
@@ -1240,21 +1248,26 @@ UINT __stdcall InstallNetFlt(MSIHANDLE hModule)
         }
         netCfgLoggerDisable();
     }
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETFLT */
 
 UINT __stdcall UninstallNetLwf(MSIHANDLE hModule)
 {
-    (void)_uninstallNetFlt(hModule);
+#ifdef VBOX_WITH_NETFLT
+    _uninstallNetFlt(hModule);
     return _uninstallNetLwf(hModule);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETFLT
 static UINT _installNetLwf(MSIHANDLE hModule)
 {
-#ifdef VBOX_WITH_NETFLT
     UINT uErr;
     INetCfg *pNetCfg;
 
@@ -1317,20 +1330,25 @@ static UINT _installNetLwf(MSIHANDLE hModule)
         }
         netCfgLoggerDisable();
     }
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the install even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETFLT */
 
 UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
 {
-    (void)_uninstallNetFlt(hModule);
+#ifdef VBOX_WITH_NETFLT
+    _uninstallNetFlt(hModule);
     return _installNetLwf(hModule);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
 
-#if 0
+#if 0 /** @todo r=andy Remove this? */
 static BOOL RenameHostOnlyConnectionsCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
 {
     WCHAR DevName[256];
@@ -1386,11 +1404,11 @@ static BOOL RenameHostOnlyConnectionsCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DAT
 
     return TRUE;
 }
-#endif
+#endif /* 0 */
 
+#ifdef VBOX_WITH_NETADP
 static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR pwszInfName)
 {
-#ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
     BOOL fSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
@@ -1459,12 +1477,12 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
             //in fail case call CreateHostOnlyInterface
             logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinUpdateHostOnlyNetworkInterface failed, hr = %#x", hr);
             logStringF(hModule, "CreateHostOnlyInterface: calling VBoxNetCfgWinCreateHostOnlyNetworkInterface");
-#ifdef VBOXNETCFG_DELAYEDRENAME
+# ifdef VBOXNETCFG_DELAYEDRENAME
             BSTR devId;
             hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, fIsFile, NULL, &guid, &devId, NULL);
-#else /* !VBOXNETCFG_DELAYEDRENAME */
+# else /* !VBOXNETCFG_DELAYEDRENAME */
             hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, fIsFile, NULL, &guid, NULL, NULL);
-#endif /* !VBOXNETCFG_DELAYEDRENAME */
+# endif /* !VBOXNETCFG_DELAYEDRENAME */
             logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface returns %#x", hr);
             if (SUCCEEDED(hr))
             {
@@ -1475,12 +1493,12 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
                 logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig returns %#x", hr);
                 if (FAILED(hr))
                     logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig failed, error = %#x", hr);
-#ifdef VBOXNETCFG_DELAYEDRENAME
+# ifdef VBOXNETCFG_DELAYEDRENAME
                 hr = VBoxNetCfgWinRenameHostOnlyConnection(&guid, devId, NULL);
                 if (FAILED(hr))
                     logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinRenameHostOnlyConnection failed, error = %#x", hr);
                 SysFreeString(devId);
-#endif /* VBOXNETCFG_DELAYEDRENAME */
+# endif /* VBOXNETCFG_DELAYEDRENAME */
             }
             else
                 logStringF(hModule, "CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface failed, error = %#x", hr);
@@ -1497,21 +1515,26 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 
     netCfgLoggerDisable();
 
-#endif /* VBOX_WITH_NETFLT */
-
     logStringF(hModule, "CreateHostOnlyInterface: Returns success (ignoring all failures)");
     /* Never fail the install even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETADP */
 
 UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _createHostOnlyInterface(hModule, NETADP_ID, L"VBoxNetAdp.inf");
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
 UINT __stdcall Ndis6CreateHostOnlyInterface(MSIHANDLE hModule)
 {
-#if 0 /* Trick for allowing the debugger to be attached. */
+#ifdef VBOX_WITH_NETADP
+# if 0 /* Trick for allowing the debugger to be attached. */
     for (unsigned i = 0; i < 128 && !IsDebuggerPresent(); i++)
     {
         logStringF(hModule, "Waiting for debugger to attach: windbg -p %u", GetCurrentProcessId());
@@ -1519,13 +1542,17 @@ UINT __stdcall Ndis6CreateHostOnlyInterface(MSIHANDLE hModule)
     }
     Sleep(1002);
     __debugbreak();
-#endif
+# endif
     return _createHostOnlyInterface(hModule, NETADP_ID, L"VBoxNetAdp6.inf");
+#else /* !VBOX_WITH_NETADP */
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETADP
 static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 {
-#ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
     logStringF(hModule, "RemoveHostOnlyInterfaces: Removing all host-only interfaces");
@@ -1549,20 +1576,25 @@ static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
         SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETADP */
 
 UINT __stdcall RemoveHostOnlyInterfaces(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _removeHostOnlyInterfaces(hModule, NETADP_ID);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETADP
 static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 {
-#ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
     logStringF(hModule, "StopHostOnlyInterfaces: Stopping all host-only interfaces");
@@ -1580,20 +1612,25 @@ static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
         SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETADP */
 
 UINT __stdcall StopHostOnlyInterfaces(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _stopHostOnlyInterfaces(hModule, NETADP_ID);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETADP
 static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LPCWSTR pwszId)
 {
-#ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
     logStringF(hModule, "UpdateHostOnlyInterfaces: Updating all host-only interfaces");
@@ -1660,25 +1697,35 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
         SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the update even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETADP */
 
 UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _updateHostOnlyInterfaces(hModule, L"VBoxNetAdp.inf", NETADP_ID);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
 UINT __stdcall Ndis6UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _updateHostOnlyInterfaces(hModule, L"VBoxNetAdp6.inf", NETADP_ID);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_NETADP
 static UINT _uninstallNetAdp(MSIHANDLE hModule, LPCWSTR pwszId)
 {
-#ifdef VBOX_WITH_NETFLT
     INetCfg *pNetCfg;
     UINT uErr;
 
@@ -1715,15 +1762,20 @@ static UINT _uninstallNetAdp(MSIHANDLE hModule, LPCWSTR pwszId)
         }
         netCfgLoggerDisable();
     }
-#endif /* VBOX_WITH_NETFLT */
 
     /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
+#endif /* VBOX_WITH_NETADP */
 
 UINT __stdcall UninstallNetAdp(MSIHANDLE hModule)
 {
+#ifdef VBOX_WITH_NETADP
     return _uninstallNetAdp(hModule, NETADP_ID);
+#else
+    RT_NOREF(hModule);
+    return ERROR_SUCCESS;
+#endif
 }
 
 static bool isTAPDevice(const WCHAR *pwszGUID)
