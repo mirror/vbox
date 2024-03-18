@@ -790,8 +790,7 @@ static void fdctrl_write (fdctrl_t *fdctrl, uint32_t reg, uint32_t value)
         fdctrl_write_tape(fdctrl, value);
         break;
     case FD_REG_DSR:
-        fdctrl_write_data(fdctrl, value);
-//        fdctrl_write_rate(fdctrl, value);
+        fdctrl_write_rate(fdctrl, value);
         break;
     case FD_REG_FIFO:
         fdctrl_write_data(fdctrl, value);
@@ -1045,7 +1044,7 @@ static void fdctrl_write_rate(fdctrl_t *fdctrl, uint32_t value)
     /* Reset: autoclear */
     if (value & FD_DSR_SWRESET) {
         fdctrl->dor &= ~FD_DOR_nRESET;
-//        fdctrl_reset(fdctrl, 1);
+        fdctrl_reset(fdctrl, 1);
         fdctrl->dor |= FD_DOR_nRESET;
     }
     if (value & FD_DSR_PWRDOWN) {
