@@ -337,6 +337,8 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
     /* Acquire new family ID: */
     m_strFamilyId = m_pComboFamily->itemData(iIndex).toString();
+//    printf("Saving current family as: %s\n",
+//           familyId().toUtf8().constData());
     AssertReturnVoid(!familyId().isEmpty());
 
     /* Notify listeners about this change: */
@@ -394,6 +396,7 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 //               strTypeId.toUtf8().constData());
         m_distributionToType[distribution()] = strTypeId;
     }
+    AssertReturnVoid(!typeId().isEmpty());
 
     /* Update selected type pixmap: */
     m_pIconType->setPixmap(generalIconPool().guestOSTypePixmapDefault(strTypeId));
@@ -659,11 +662,11 @@ void UINameAndSystemEditor::populateFamilyCombo()
         m_pComboFamily->setItemData(i, fi.m_strId);
     }
 
+    /* Select preferred OS family: */
+    selectPreferredFamily();
+
     /* Unblock signals finally: */
     m_pComboFamily->blockSignals(false);
-
-    /* Select 1st OS family: */
-    m_pComboFamily->setCurrentIndex(0);
 
     /* Trigger family change handler manually: */
     sltFamilyChanged(m_pComboFamily->currentIndex());
@@ -679,7 +682,7 @@ void UINameAndSystemEditor::populateDistributionCombo()
                                         ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                         : KPlatformArchitecture_None;
 
-    /* Acquire a list of suitable sub-types: */
+    /* Acquire a list of suitable distributions: */
     const UIGuestOSTypeManager::UIGuestOSSubtypeInfo distributions
         = gpGlobalSession->guestOSTypeManager().getSubtypesForFamilyId(familyId(), false /* including restricted? */, enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
@@ -728,6 +731,27 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
 
     /* Trigger type change handler manually: */
     sltTypeChanged(m_pComboType->currentIndex());
+}
+
+void UINameAndSystemEditor::selectPreferredFamily()
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(m_pComboFamily);
+
+    /* What will be the choice? */
+    int iChosenIndex = -1;
+
+    /* Try to restore previous family if possible: */
+    if (   iChosenIndex == -1
+        && !familyId().isEmpty())
+    {
+//        printf("Restoring family to: %s\n",
+//               familyId().toUtf8().constData());
+        iChosenIndex = m_pComboFamily->findData(familyId());
+    }
+
+    /* Choose the item under the index we found or 1st one item otherwise: */
+    m_pComboFamily->setCurrentIndex(iChosenIndex != -1 ? iChosenIndex : 0);
 }
 
 void UINameAndSystemEditor::selectPreferredDistribution()

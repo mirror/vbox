@@ -180,6 +180,8 @@ private:
       * @param  types  Brings the list of type pairs. */
     void populateTypeCombo(const QList<QPair<QString, QString> > &types);
 
+    /** Selects preferred family. */
+    void selectPreferredFamily();
     /** Selects preferred distribution. */
     void selectPreferredDistribution();
     /** Selects preferred type. */
