@@ -1853,7 +1853,9 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeRegFindFreeLivenessHelped;
 
     /** Native recompiler: Number of times status flags calc has been skipped. */
-    STAMCOUNTER             StatNativeEflArithmeticSkipped;
+    STAMCOUNTER             StatNativeEflSkippedArithmetic;
+    /** Native recompiler: Number of times status flags calc has been skipped. */
+    STAMCOUNTER             StatNativeEflSkippedLogical;
 
     /** Native recompiler: Number of opportunities to skip EFLAGS.CF updating. */
     STAMCOUNTER             StatNativeLivenessEflCfSkippable;
@@ -1913,7 +1915,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 #endif
 
-    uint64_t                au64Padding[3];
+    uint64_t                au64Padding[2];
     /** @} */
 
     /** Data TLB.
