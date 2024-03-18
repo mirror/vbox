@@ -13608,7 +13608,7 @@ BS3_DECL(void) Main_pe32()
         { "sha1nexte/sha1msg1/sha1msg2/sha256msg1/sha256msg2/sha1rnds4",  bs3CpuInstr3_v_sha1nexte_sha1msg1_sha1msg2_sha256msg1_sha256msg2_sha1rnds4, 0 },
         { "sha256rnds2",                                                  bs3CpuInstr3_v_sha256rnds2, 0 },
 #endif
-#if defined (ALL_TESTS)
+#if defined(ALL_TESTS)
         { "[v]mpsadbw",                                     bs3CpuInstr3_v_mpsadbw, 0 },
 
 #endif
