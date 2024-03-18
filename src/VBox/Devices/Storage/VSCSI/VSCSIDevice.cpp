@@ -59,13 +59,15 @@ DECLINLINE(bool) vscsiDeviceLunIsPresent(PVSCSIDEVICEINT pVScsiDevice, uint32_t 
  *
  * @returns Flag whether we could handle the request.
  * @param   pVScsiDevice    The virtual SCSI device instance.
- * @param   pVScsiReq       The SCSi request.
+ * @param   pVScsiReq       The SCSI request.
  * @param   prcReq          The final return value if the request was handled.
  */
 static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq,
                                   int *prcReq)
 {
     bool fProcessed = true;
+
+    LogFlowFunc(("CDB: %.*Rhxs Cmd: %s\n", pVScsiReq->cbCDB, pVScsiReq->pbCDB, SCSICmdText(pVScsiReq->pbCDB[0])));
 
     switch (pVScsiReq->pbCDB[0])
     {

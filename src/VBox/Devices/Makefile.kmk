@@ -107,6 +107,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
  	Storage/VSCSI/VSCSISense.cpp \
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	Storage/VSCSI/VSCSIVpdPagePool.cpp \
+ 	Storage/Debug.cpp \
  	build/VBoxDDUDeps.cpp
 
  ifdef VBOX_WITH_VSCSI_SSC

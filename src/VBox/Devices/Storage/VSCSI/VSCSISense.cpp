@@ -44,6 +44,7 @@ void vscsiSenseInit(PVSCSISENSE pVScsiSense)
 
 int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
 {
+    LogFlowFunc(("STATUS OK\n"));
     memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
 
     pVScsiSense->abSenseBuf[0]  = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
@@ -63,6 +64,7 @@ int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
 
 int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC, uint8_t uSCSIASCQ)
 {
+    LogFlowFunc(("CHECK CONDITION: %s %s\n", SCSISenseText(uSCSISenseKey), SCSISenseExtText(uSCSIASC, uSCSIASCQ)));
     memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
     pVScsiSense->abSenseBuf[0] = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
     pVScsiSense->abSenseBuf[2] = uSCSISenseKey;
@@ -81,6 +83,7 @@ int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8
 
 int vscsiReqSenseErrorInfoSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC, uint8_t uSCSIASCQ, uint32_t uInfo)
 {
+    LogFlowFunc(("CHECK CONDITION: %s %s uInfo:%02x\n", SCSISenseText(uSCSISenseKey), SCSISenseExtText(uSCSIASC, uSCSIASCQ), uInfo));
     memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
     pVScsiSense->abSenseBuf[0] = RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
     pVScsiSense->abSenseBuf[2] = uSCSISenseKey;

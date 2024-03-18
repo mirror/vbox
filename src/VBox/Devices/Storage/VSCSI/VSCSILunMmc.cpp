@@ -1296,12 +1296,13 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                             break;
                         case 0x10:
-                            /* normal read */
+                            /* user data only (normal read) */
                             enmTxDir = VSCSIIOREQTXDIR_READ;
                             cbSector = _2K;
                             break;
                         case 0xf8:
                         {
+                            /* everything (sync, headers, user data, ECC) */
                             if (cbSectorRegion == 2048)
                             {
                                 /*
@@ -1350,6 +1351,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                                     PRTSGSEG paSegsNew = (PRTSGSEG)RTMemAllocZ(cSegsNew * sizeof(RTSGSEG));
                                     if (paSegsNew)
                                     {
+                                        Assert(cbSectorRegion == 2048);
+                                        cbSector = cbSectorRegion;
                                         enmTxDir = VSCSIIOREQTXDIR_READ;
 
                                         uint32_t idxSeg = 0;
