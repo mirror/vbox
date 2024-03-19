@@ -7210,6 +7210,14 @@ void iemMemRollback(PVMCPUCC pVCpu) RT_NOEXCEPT
 #define TMPL_MEM_FMT_DESC   "dqword"
 #include "IEMAllMemRWTmpl.cpp.h"
 
+#define TMPL_MEM_TYPE           RTUINT128U
+#define TMPL_MEM_TYPE_ALIGN     (sizeof(RTUINT128U) - 1)
+#define TMPL_MEM_MAP_FLAGS_ADD  (IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE)
+#define TMPL_MEM_FN_SUFF        U128AlignedSse
+#define TMPL_MEM_FMT_TYPE       "%.16Rhxs"
+#define TMPL_MEM_FMT_DESC       "dqword"
+#include "IEMAllMemRWTmpl.cpp.h"
+
 #define TMPL_MEM_TYPE       RTUINT128U
 #define TMPL_MEM_TYPE_ALIGN 0
 #define TMPL_MEM_FN_SUFF    U128NoAc
@@ -7273,65 +7281,6 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
         *pu64Dst = 0;
 #endif
     return rc;
-}
-#endif
-
-
-/**
- * Fetches a data dqword (double qword) at an aligned address, generally SSE
- * related.
- *
- * Raises \#GP(0) if not aligned.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pu128Dst            Where to return the qword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
-{
-    /* The lazy approach for now... */
-    uint8_t      bUnmapInfo;
-    PCRTUINT128U pu128Src;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu128Src, &bUnmapInfo, sizeof(*pu128Src), iSegReg, GCPtrMem,
-                                IEM_ACCESS_DATA_R, (sizeof(*pu128Src) - 1) | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE);
-    if (rc == VINF_SUCCESS)
-    {
-        pu128Dst->au64[0] = pu128Src->au64[0];
-        pu128Dst->au64[1] = pu128Src->au64[1];
-        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
-        Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
-    }
-    return rc;
-}
-
-
-#ifdef IEM_WITH_SETJMP
-/**
- * Fetches a data dqword (double qword) at an aligned address, generally SSE
- * related, longjmp on error.
- *
- * Raises \#GP(0) if not aligned.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pu128Dst            Where to return the qword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-void iemMemFetchDataU128AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg,
-                                      RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    /* The lazy approach for now... */
-    uint8_t      bUnmapInfo;
-    PCRTUINT128U pu128Src = (PCRTUINT128U)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R,
-                                                       (sizeof(*pu128Src) - 1) | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE);
-    pu128Dst->au64[0] = pu128Src->au64[0];
-    pu128Dst->au64[1] = pu128Src->au64[1];
-    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
-    Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
