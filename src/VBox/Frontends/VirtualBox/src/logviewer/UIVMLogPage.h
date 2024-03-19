@@ -32,6 +32,7 @@
 #endif
 
 /* Qt includes: */
+#include <QSet>
 #include <QWidget>
 #include <QUuid>
 
