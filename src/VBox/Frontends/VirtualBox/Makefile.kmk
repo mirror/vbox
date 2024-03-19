@@ -835,6 +835,7 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIThreadPool.h \
 	src/globals/UITextTable.h \
 	src/globals/UITranslator.h \
+	src/globals/UITranslationEventListener.h \
 	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/UIVirtualBoxClientEventHandler.h \
 	src/globals/VBoxUtils.h \
@@ -1413,6 +1414,7 @@ UICommon_SOURCES = \
 	src/globals/UITask.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UITranslator.cpp \
+	src/globals/UITranslationEventListener.cpp \
 	src/globals/UIVersion.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \

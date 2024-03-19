@@ -61,6 +61,7 @@ class UIActionPool;
 class UIMedium;
 class UIMediumEnumerator;
 class UIThreadPool;
+class UITranslationEventListener;
 
 /** QObject subclass containing common GUI functionality. */
 class SHARED_LIBRARY_STUFF UICommon : public QObject
@@ -679,6 +680,7 @@ private:
        int iOriginalFontPointSize;
     /** @} */
 
+    UITranslationEventListener *m_pTranlationEventListener;
     /** Allows for shortcut access. */
     friend UICommon &uiCommon();
 };
