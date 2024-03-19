@@ -67,6 +67,12 @@ UITranslationEventListener::UITranslationEventListener(QObject *pParent /* = 0 *
     :QObject(pParent)
 {
     qApp->installEventFilter(this);
+    s_pInstance = this;
+}
+
+UITranslationEventListener::~UITranslationEventListener()
+{
+    s_pInstance = 0;
 }
 
 bool UITranslationEventListener::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -75,7 +81,7 @@ bool UITranslationEventListener::eventFilter(QObject *pObject, QEvent *pEvent)
            && pEvent->type() == QEvent::LanguageChange)
     {
         //&& (pObject == qApp || pObject == this))
-        emit sigRetranslate();
+        emit sigRetranslateUI();
     }
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
