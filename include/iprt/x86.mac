@@ -40,15 +40,20 @@
 %ifndef RT_WITHOUT_PRAGMA_ONCE
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
+ %ifndef __ASSEMBLER__
+ %else
+ %endif
 %else
 %endif
 %ifdef RT_OS_SOLARIS
 %endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_EFL_CF          RT_BIT_32(0)
 %define X86_EFL_CF_BIT      0
@@ -95,11 +100,13 @@
 %define X86_EFL_POPF_BITS_386   (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
                                  | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT )
 %define X86_EFL_STATUS_BITS     ( X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF )
-%ifndef VBOX_FOR_DTRACE_LIB
-%else
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%else
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %else
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %else
+ %endif
 %endif
 %define X86_CPUID_VENDOR_INTEL_EBX      0x756e6547
 %define X86_CPUID_VENDOR_INTEL_ECX      0x6c65746e
@@ -180,6 +187,23 @@
 %define X86_CPUID_FEATURE_EDX_PBE       RT_BIT_32(31)
 %define X86_CPUID_MWAIT_ECX_EXT            RT_BIT_32(0)
 %define X86_CPUID_MWAIT_ECX_BREAKIRQIF0    RT_BIT_32(1)
+%define X86_CPUID_POWER_EAX_DTS            RT_BIT_32(0)
+%define X86_CPUID_POWER_EAX_TURBOBOOST     RT_BIT_32(1)
+%define X86_CPUID_POWER_EAX_ARAT           RT_BIT_32(2)
+%define X86_CPUID_POWER_EAX_PLN            RT_BIT_32(4)
+%define X86_CPUID_POWER_EAX_ECMD           RT_BIT_32(5)
+%define X86_CPUID_POWER_EAX_PTM            RT_BIT_32(6)
+%define X86_CPUID_POWER_EAX_HWP            RT_BIT_32(7)
+%define X86_CPUID_POWER_EAX_HWP_NOTIFY     RT_BIT_32(8)
+%define X86_CPUID_POWER_EAX_HWP_ACT_WIN    RT_BIT_32(9)
+%define X86_CPUID_POWER_EAX_HWP_NRG_PP     RT_BIT_32(10)
+%define X86_CPUID_POWER_EAX_HWP_PLR        RT_BIT_32(11)
+%define X86_CPUID_POWER_EAX_HDC            RT_BIT_32(13)
+%define X86_CPUID_POWER_EAX_TBM30          RT_BIT_32(14)
+%define X86_CPUID_POWER_EAX_HWP_HPC        RT_BIT_32(15)
+%define X86_CPUID_POWER_EAX_HWP_PECI       RT_BIT_32(16)
+%define X86_CPUID_POWER_EAX_HWP_FLEX       RT_BIT_32(17)
+%define X86_CPUID_POWER_ECX_HCFC           RT_BIT_32(0)
 %define X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE          RT_BIT_32(0)
 %define X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT_32(1)
 %define X86_CPUID_STEXT_FEATURE_EBX_SGX               RT_BIT_32(2)
@@ -220,6 +244,7 @@
 %define X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT_32(27)
 %define X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD         RT_BIT_32(28)
 %define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
+%define X86_CPUID_STEXT_FEATURE_EDX_CORECAP           RT_BIT_32(30)
 %define X86_CPUID_STEXT_FEATURE_EDX_SSBD              RT_BIT_32(31)
 %define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT_32(0)
 %define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT_32(11)
@@ -321,54 +346,87 @@
 %define X86_CPUID_SVM_FEATURE_EDX_BUS_LOCK_THRESHOLD        RT_BIT(29)
 %define X86_CR0_PE                          RT_BIT_32(0)
 %define X86_CR0_PROTECTION_ENABLE           RT_BIT_32(0)
+%define X86_CR0_PE_BIT                      0
 %define X86_CR0_MP                          RT_BIT_32(1)
 %define X86_CR0_MONITOR_COPROCESSOR         RT_BIT_32(1)
+%define X86_CR0_MP_BIT                      1
 %define X86_CR0_EM                          RT_BIT_32(2)
 %define X86_CR0_EMULATE_FPU                 RT_BIT_32(2)
+%define X86_CR0_EM_BIT                      2
 %define X86_CR0_TS                          RT_BIT_32(3)
 %define X86_CR0_TASK_SWITCH                 RT_BIT_32(3)
+%define X86_CR0_TS_BIT                      3
 %define X86_CR0_ET                          RT_BIT_32(4)
 %define X86_CR0_EXTENSION_TYPE              RT_BIT_32(4)
+%define X86_CR0_ET_BIT                      4
 %define X86_CR0_NE                          RT_BIT_32(5)
 %define X86_CR0_NUMERIC_ERROR               RT_BIT_32(5)
+%define X86_CR0_NE_BIT                      5
 %define X86_CR0_WP                          RT_BIT_32(16)
 %define X86_CR0_WRITE_PROTECT               RT_BIT_32(16)
+%define X86_CR0_WP_BIT                      16
 %define X86_CR0_AM                          RT_BIT_32(18)
 %define X86_CR0_ALIGMENT_MASK               RT_BIT_32(18)
+%define X86_CR0_AM_BIT                      18
 %define X86_CR0_NW                          RT_BIT_32(29)
 %define X86_CR0_NOT_WRITE_THROUGH           RT_BIT_32(29)
+%define X86_CR0_NW_BIT                      29
 %define X86_CR0_CD                          RT_BIT_32(30)
 %define X86_CR0_CACHE_DISABLE               RT_BIT_32(30)
+%define X86_CR0_CD_BIT                      30
 %define X86_CR0_PG                          RT_BIT_32(31)
 %define X86_CR0_PAGING                      RT_BIT_32(31)
 %define X86_CR0_BIT_PG                      31
 %define X86_CR3_PWT                         RT_BIT_32(3)
+%define X86_CR3_PWT_BIT                     3
 %define X86_CR3_PCD                         RT_BIT_32(4)
+%define X86_CR3_PCD_BIT                     4
 %define X86_CR3_PAGE_MASK                   (0xfffff000)
 %define X86_CR3_PAE_PAGE_MASK               (0xffffffe0)
 %define X86_CR3_AMD64_PAGE_MASK             0x000ffffffffff000
 %define X86_CR3_EPT_PAGE_MASK               0x000ffffffffff000
 %define X86_CR4_VME                         RT_BIT_32(0)
+%define X86_CR4_VME_BIT                     0
 %define X86_CR4_PVI                         RT_BIT_32(1)
+%define X86_CR4_PVI_BIT                     1
 %define X86_CR4_TSD                         RT_BIT_32(2)
+%define X86_CR4_TSD_BIT                     2
 %define X86_CR4_DE                          RT_BIT_32(3)
+%define X86_CR4_DE_BIT                      3
 %define X86_CR4_PSE                         RT_BIT_32(4)
+%define X86_CR4_PSE_BIT                     4
 %define X86_CR4_PAE                         RT_BIT_32(5)
+%define X86_CR4_PAE_BIT                     5
 %define X86_CR4_MCE                         RT_BIT_32(6)
+%define X86_CR4_MCE_BIT                     6
 %define X86_CR4_PGE                         RT_BIT_32(7)
+%define X86_CR4_PGE_BIT                     7
 %define X86_CR4_PCE                         RT_BIT_32(8)
+%define X86_CR4_PCE_BIT                     8
 %define X86_CR4_OSFXSR                      RT_BIT_32(9)
+%define X86_CR4_OSFXSR_BIT                  9
 %define X86_CR4_OSXMMEEXCPT                 RT_BIT_32(10)
+%define X86_CR4_OSXMMEEXCPT_BIT             10
 %define X86_CR4_UMIP                        RT_BIT_32(11)
+%define X86_CR4_UMIP_BIT                    11
 %define X86_CR4_VMXE                        RT_BIT_32(13)
+%define X86_CR4_VMXE_BIT                    13
 %define X86_CR4_SMXE                        RT_BIT_32(14)
+%define X86_CR4_SMXE_BIT                    14
 %define X86_CR4_FSGSBASE                    RT_BIT_32(16)
+%define X86_CR4_FSGSBASE_BIT                16
 %define X86_CR4_PCIDE                       RT_BIT_32(17)
+%define X86_CR4_PCIDE_BIT                   17
 %define X86_CR4_OSXSAVE                     RT_BIT_32(18)
+%define X86_CR4_OSXSAVE_BIT                 18
 %define X86_CR4_SMEP                        RT_BIT_32(20)
+%define X86_CR4_SMEP_BIt                    20
 %define X86_CR4_SMAP                        RT_BIT_32(21)
+%define X86_CR4_SMAP_BIT                    21
 %define X86_CR4_PKE                         RT_BIT_32(22)
+%define X86_CR4_PKE_BIT                     22
 %define X86_CR4_CET                         RT_BIT_32(23)
+%define X86_CR4_CET_BIT                     23
 %define X86_DR6_B0                          RT_BIT_32(0)
 %define X86_DR6_B1                          RT_BIT_32(1)
 %define X86_DR6_B2                          RT_BIT_32(2)
@@ -460,6 +518,10 @@
  %define MSR_IA32_APICBASE_ADDR             0x00000000fee00000
  %define MSR_IA32_APICBASE_GET_ADDR(a_Msr)  ((a_Msr) & X86_PAGE_4K_BASE_MASK)
 %endif
+%define MSR_MEMORY_CTRL                     0x33
+%define MSR_MEMORY_CTRL_UC_STORE_THROTTLE           RT_BIT_64(27)
+%define MSR_MEMORY_CTRL_UC_LOCK_DISABLE             RT_BIT_64(28)
+%define MSR_MEMORY_CTRL_SPLIT_LOCK_DISABLE          RT_BIT_64(29)
 %define MSR_CORE_THREAD_COUNT               0x35
 %define MSR_IA32_FEATURE_CONTROL                      0x3A
 %define MSR_IA32_FEATURE_CONTROL_LOCK                 RT_BIT_64(0)
@@ -499,6 +561,14 @@
 %define MSR_IA32_PMC6                       0xC7
 %define MSR_IA32_PMC7                       0xC8
 %define MSR_IA32_PLATFORM_INFO              0xCE
+%define MSR_IA32_CORE_CAPABILITIES          0xCF
+%define MSR_IA32_CORE_CAP_STLB_QOS                  RT_BIT_64(0)
+%define MSR_IA32_CORE_CAP_FUSA                      RT_BIT_64(2)
+%define MSR_IA32_CORE_CAP_RSM_CPL0                  RT_BIT_64(3)
+%define MSR_IA32_CORE_CAP_UC_LOCK_DISABLE           RT_BIT_64(4)
+%define MSR_IA32_CORE_CAP_SPLIT_LOCK_DISABLE        RT_BIT_64(5)
+%define MSR_IA32_CORE_CAP_SNOOP_FILTER_QOS          RT_BIT_64(6)
+%define MSR_IA32_CORE_CAP_UC_STORE_THROTTLE         RT_BIT_64(7)
 %define MSR_IA32_FSB_CLOCK_STS              0xCD
 %define MSR_PKG_CST_CONFIG_CONTROL          0x000000e2
 %define MSR_IA32_MPERF                      0xE7
@@ -509,7 +579,9 @@
 %define MSR_IA32_MTRR_CAP_WC                RT_BIT_64(10)
 %define MSR_IA32_MTRR_CAP_SMRR              RT_BIT_64(11)
 %define MSR_IA32_MTRR_CAP_PRMRR             RT_BIT_64(12)
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_MTRR_MT_UC                      0
 %define X86_MTRR_MT_WC                      1
@@ -739,6 +811,7 @@
                                              | MSR_IA32_MTRR_DEF_TYPE_FIXED_EN    \
                                              | MSR_IA32_MTRR_DEF_TYPE_MTRR_EN)
 %define MSR_IA32_MTRR_PHYSMASK_VALID        RT_BIT_64(11)
+%define MSR_IA32_MTRR_PHYSBASE_MT_MASK      0xff
 %define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
 %define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
 %define MSR_IA32_PERF_GLOBAL_OVF_CTRL       0x390
@@ -905,7 +978,11 @@
 %define MSR_K8_VM_HSAVE_PA                  0xc0010117
 %define MSR_AMD_VIRT_SPEC_CTL               0xc001011f
  %define MSR_AMD_VIRT_SPEC_CTL_F_SSBD       RT_BIT(2)
+%ifndef __ASSEMBLER__
+%endif
 %define X86_PG_ENTRIES                      1024
+%ifndef __ASSEMBLER__
+%endif
 %define X86_PG_PAE_ENTRIES                  512
 %define X86_PG_PAE_PDPE_ENTRIES             4
 %define X86_PG_AMD64_ENTRIES                X86_PG_PAE_ENTRIES
@@ -964,23 +1041,27 @@
 %define X86_PTE_PAE_MBZ_MASK_NO_NX          0xfff0000000000000
 %define X86_PTE_LM_MBZ_MASK_NX              0x0000000000000000
 %define X86_PTE_LM_MBZ_MASK_NO_NX           0x8000000000000000
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PT_SHIFT                        12
 %define X86_PT_MASK                         0x3ff
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PT_PAE_SHIFT                    12
 %define X86_PT_PAE_MASK                     0x1ff
@@ -999,9 +1080,11 @@
 %define X86_PDE_PAE_MBZ_MASK_NO_NX          0xfff0000000000080
 %define X86_PDE_LM_MBZ_MASK_NX              0x0000000000000080
 %define X86_PDE_LM_MBZ_MASK_NO_NX           0x8000000000000080
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PDE4M_P                         RT_BIT_32(0)
 %define X86_PDE4M_RW                        RT_BIT_32(1)
@@ -1025,23 +1108,29 @@
 %define X86_PDE2M_PAE_MBZ_MASK_NO_NX        0xfff00000001fe000
 %define X86_PDE2M_LM_MBZ_MASK_NX            0x00000000001fe000
 %define X86_PDE2M_LM_MBZ_MASK_NO_NX         0x80000000001fe000
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PD_SHIFT                        22
 %define X86_PD_MASK                         0x3ff
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PD_PAE_SHIFT                    21
 %define X86_PD_PAE_MASK                     0x1ff
@@ -1061,17 +1150,19 @@
 %define X86_PDPE_LM_MBZ_MASK_NO_NX          0x8000000000000180
 %define X86_PDPE1G_LM_MBZ_MASK_NX           0x000000003fffe000
 %define X86_PDPE1G_LM_MBZ_MASK_NO_NX        0x800000003fffe000
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PDPT_SHIFT             30
 %define X86_PDPT_MASK_PAE          0x3
@@ -1087,13 +1178,15 @@
 %define X86_PML4E_MBZ_MASK_NX               0x0000000000000080
 %define X86_PML4E_MBZ_MASK_NO_NX            0x8000000000000080
 %define X86_PML4E_NX                        RT_BIT_64(63)
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
@@ -1105,21 +1198,23 @@
 %define X86_FPU_INT64_INDEFINITE    INT64_MIN
 %define X86_FPU_INT32_INDEFINITE    INT32_MIN
 %define X86_FPU_INT16_INDEFINITE    INT16_MIN
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_OFF_FXSTATE_RSVD            0x1d0
 %define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
@@ -1221,23 +1316,25 @@
 %define X86_MXCSR_FZ          RT_BIT_32(15)
 %define X86_MXCSR_MM          RT_BIT_32(17)
 %define X86_MXCSR_ZERO_MASK   0xfffd0000
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define XSAVE_C_X87_BIT         0
 %define XSAVE_C_X87             RT_BIT_64(XSAVE_C_X87_BIT)
@@ -1261,7 +1358,9 @@
 %define XSAVE_C_LWP             RT_BIT_64(XSAVE_C_LWP_BIT)
 %define XSAVE_C_X_BIT           63
 %define XSAVE_C_X               RT_BIT_64(XSAVE_C_X_BIT)
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86DESCATTR_TYPE            0x0000000f
 %define X86DESCATTR_DT              0x00000010
@@ -1274,42 +1373,51 @@
 %define X86DESCATTR_D               0x00004000
 %define X86DESCATTR_G               0x00008000
 %define X86DESCATTR_UNUSABLE        0x00010000
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
-%define X86DESCGENERIC_BIT_OFF_LIMIT_LOW        (0)
-%define X86DESCGENERIC_BIT_OFF_BASE_LOW         (16)
-%define X86DESCGENERIC_BIT_OFF_BASE_HIGH1       (32)
-%define X86DESCGENERIC_BIT_OFF_TYPE             (40)
-%define X86DESCGENERIC_BIT_OFF_DESC_TYPE        (44)
-%define X86DESCGENERIC_BIT_OFF_DPL              (45)
-%define X86DESCGENERIC_BIT_OFF_PRESENT          (47)
-%define X86DESCGENERIC_BIT_OFF_LIMIT_HIGH       (48)
-%define X86DESCGENERIC_BIT_OFF_AVAILABLE        (52)
-%define X86DESCGENERIC_BIT_OFF_LONG             (53)
-%define X86DESCGENERIC_BIT_OFF_DEF_BIG          (54)
-%define X86DESCGENERIC_BIT_OFF_GRANULARITY      (55)
-%define X86DESCGENERIC_BIT_OFF_BASE_HIGH2       (56)
-%define X86LAR_F_TYPE            0x0f00
-%define X86LAR_F_DT              0x1000
-%define X86LAR_F_DPL             0x6000
-%define X86LAR_F_DPL_SHIFT       13
-%define X86LAR_F_P               0x8000
-%define X86LAR_F_AVL             0x00100000
-%define X86LAR_F_L               0x00200000
-%define X86LAR_F_D               0x00400000
-%define X86LAR_F_G               0x00800000
+%ifndef __ASSEMBLER__
+ %endif
+ %define X86DESCGENERIC_BIT_OFF_LIMIT_LOW       (0)
+ %define X86DESCGENERIC_BIT_OFF_BASE_LOW        (16)
+ %define X86DESCGENERIC_BIT_OFF_BASE_HIGH1      (32)
+ %define X86DESCGENERIC_BIT_OFF_TYPE            (40)
+ %define X86DESCGENERIC_BIT_OFF_DESC_TYPE       (44)
+ %define X86DESCGENERIC_BIT_OFF_DPL             (45)
+ %define X86DESCGENERIC_BIT_OFF_PRESENT         (47)
+ %define X86DESCGENERIC_BIT_OFF_LIMIT_HIGH      (48)
+ %define X86DESCGENERIC_BIT_OFF_AVAILABLE       (52)
+ %define X86DESCGENERIC_BIT_OFF_LONG            (53)
+ %define X86DESCGENERIC_BIT_OFF_DEF_BIG         (54)
+ %define X86DESCGENERIC_BIT_OFF_GRANULARITY     (55)
+ %define X86DESCGENERIC_BIT_OFF_BASE_HIGH2      (56)
+ %define X86LAR_F_TYPE           0x0f00
+ %define X86LAR_F_DT             0x1000
+ %define X86LAR_F_DPL            0x6000
+ %define X86LAR_F_DPL_SHIFT      13
+ %define X86LAR_F_P              0x8000
+ %define X86LAR_F_AVL            0x00100000
+ %define X86LAR_F_L              0x00200000
+ %define X86LAR_F_D              0x00400000
+ %define X86LAR_F_G              0x00800000
+ %ifndef __ASSEMBLER__
+ %endif
 %endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %if HC_ARCH_BITS == 64
 %else
 %endif
@@ -1318,6 +1426,7 @@
 %endif
 %if HC_ARCH_BITS == 64
 %else
+%endif
 %endif
 %define X86_SEL_TYPE_CODE                   8
 %define X86_SEL_TYPE_MEMORY                 RT_BIT_32(4)
@@ -1375,11 +1484,13 @@
 %define X86_DESC_G                          RT_BIT_32(23)
 %define X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN      0x2b
 %define X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN      0x67
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %endif
 %endif
 %define X86_SEL_SHIFT           3
 %define X86_SEL_MASK            0xfff8
@@ -1387,6 +1498,8 @@
 %define X86_SEL_LDT             0x0004
 %define X86_SEL_RPL             0x0003
 %define X86_SEL_RPL_LDT         0x0007
+%ifndef __ASSEMBLER__
+%endif
 %define X86_XCPT_LAST               0x1f
 %define X86_TRAP_ERR_EXTERNAL       1
 %define X86_TRAP_ERR_IDT            2
@@ -1399,11 +1512,13 @@
 %define X86_TRAP_PF_RSVD            RT_BIT_32(3)
 %define X86_TRAP_PF_ID              RT_BIT_32(4)
 %define X86_TRAP_PF_PK              RT_BIT_32(5)
-%ifndef VBOX_FOR_DTRACE_LIB
-%else
-%endif
-%ifndef VBOX_FOR_DTRACE_LIB
-%else
+%ifndef __ASSEMBLER__
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %else
+ %endif
+ %ifndef VBOX_FOR_DTRACE_LIB
+ %else
+ %endif
 %endif
 %define X86_MODRM_RM_MASK       0x07
 %define X86_MODRM_REG_MASK      0x38
@@ -1470,5 +1585,56 @@
 %define X86_OP_REX_X            0x42
 %define X86_OP_REX_R            0x44
 %define X86_OP_REX_W            0x48
+%define X86_OP_VEX3             0xc4
+%define X86_OP_VEX2             0xc5
+%define X86_OP_VEX2_BYTE1_P_MASK        0x3
+ %define X86_OP_VEX2_BYTE1_P_NO_PRF     0
+ %define X86_OP_VEX2_BYTE1_P_066H       1
+ %define X86_OP_VEX2_BYTE1_P_0F3H       2
+ %define X86_OP_VEX2_BYTE1_P_0F2H       3
+%define X86_OP_VEX2_BYTE1_L             RT_BIT(2)
+%define X86_OP_VEX2_BYTE1_VVVV_MASK     0x78
+%define X86_OP_VEX2_BYTE1_VVVV_SHIFT    3
+%define X86_OP_VEX2_BYTE1_VVVV_NONE     15
+%define X86_OP_VEX2_BYTE1_R             RT_BIT(7)
+%define X86_OP_VEX2_BYTE1_MAKE(a_fRegW, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_fRegW) ? 0 : X86_OP_VEX2_BYTE1_R) \
+     | (~((uint8_t)(a_iSrcReg) & 0xf) << X86_OP_VEX2_BYTE1_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX2_BYTE1_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX2_BYTE1_P_MASK))
+%define X86_OP_VEX2_BYTE1_MAKE_NO_VVVV(a_fRegW, a_f256BitAvx, a_fPrf) \
+    (  ((a_fRegW) ? 0 : X86_OP_VEX2_BYTE1_R) \
+     | (X86_OP_VEX2_BYTE1_VVVV_NONE << X86_OP_VEX2_BYTE1_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX2_BYTE1_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX2_BYTE1_P_MASK))
+%define X86_OP_VEX3_BYTE1_MAP_MASK      0x1f
+%define X86_OP_VEX3_BYTE1_B             RT_BIT(5)
+%define X86_OP_VEX3_BYTE1_X             RT_BIT(6)
+%define X86_OP_VEX3_BYTE1_R             RT_BIT(7)
+%define X86_OP_VEX3_BYTE1_MAKE(a_idxMap, a_B, a_X, a_R) \
+     (  (uint8_t)(a_idxMap) \
+      | ((a_B) ? 0 : X86_OP_VEX3_BYTE1_B) \
+      | ((a_X) ? 0 : X86_OP_VEX3_BYTE1_X) \
+      | ((a_R) ? 0 : X86_OP_VEX3_BYTE1_R))
+%define X86_OP_VEX3_BYTE2_P_MASK        0x3
+ %define X86_OP_VEX3_BYTE2_P_NO_PRF     0
+ %define X86_OP_VEX3_BYTE2_P_066H       1
+ %define X86_OP_VEX3_BYTE2_P_0F3H       2
+ %define X86_OP_VEX3_BYTE2_P_0F2H       3
+%define X86_OP_VEX3_BYTE2_L             RT_BIT(2)
+%define X86_OP_VEX3_BYTE2_VVVV_MASK     0x78
+%define X86_OP_VEX3_BYTE2_VVVV_SHIFT    3
+%define X86_OP_VEX3_BYTE2_VVVV_NONE     15
+%define X86_OP_VEX3_BYTE2_W             RT_BIT(7)
+%define X86_OP_VEX3_BYTE2_MAKE(a_f64BitOpSize, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSize) ? X86_OP_VEX3_BYTE2_W : 0) \
+     | ((~((uint8_t)(a_iSrcReg) & 0xf) << X86_OP_VEX3_BYTE2_VVVV_SHIFT) & X86_OP_VEX3_BYTE2_VVVV_MASK) \
+     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
+%define X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(a_f64BitOpSize, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSize) ? X86_OP_VEX3_BYTE2_W : 0) \
+     | (X86_OP_VEX3_BYTE2_VVVV_NONE << X86_OP_VEX3_BYTE2_VVVV_SHIFT) \
+     | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
+     | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
 %endif
 %include "iprt/x86extra.mac"
