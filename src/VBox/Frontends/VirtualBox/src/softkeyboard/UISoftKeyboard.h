@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
@@ -53,9 +52,8 @@ class QStackedWidget;
 
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
-typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
 
-class UISoftKeyboard : public QMainWindowWithRestorableGeometryAndRetranslateUi
+class UISoftKeyboard : public QMainWindowWithRestorableGeometry
 {
     Q_OBJECT;
 
@@ -70,7 +68,6 @@ public:
 
 protected:
 
-    virtual void retranslateUi() RT_OVERRIDE;
     virtual bool shouldBeMaximized() const RT_OVERRIDE;
     virtual void closeEvent(QCloseEvent *event) RT_OVERRIDE;
     bool event(QEvent *pEvent) RT_OVERRIDE;

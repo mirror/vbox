@@ -3985,7 +3985,7 @@ void UISoftKeyboardSettingsWidget::sltColorSelectionButtonClicked()
 
 UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
                                QWidget *pCenterWidget, QString strMachineName /* = QString() */)
-    : QMainWindowWithRestorableGeometryAndRetranslateUi(pParent)
+    : QMainWindowWithRestorableGeometry(pParent)
     , m_pMachine(pMachine)
     , m_pCenterWidget(pCenterWidget)
     , m_pMainLayout(0)
@@ -4012,12 +4012,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
 
     loadSettings();
     configure();
-    retranslateUi();
     uiCommon().setHelpKeyword(this, "soft-keyb");
-}
-
-void UISoftKeyboard::retranslateUi()
-{
 }
 
 bool UISoftKeyboard::shouldBeMaximized() const
@@ -4081,7 +4076,7 @@ bool UISoftKeyboard::event(QEvent *pEvent)
         }
     }
 
-    return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
+    return QMainWindowWithRestorableGeometry::event(pEvent);
 }
 
 void UISoftKeyboard::sltLayoutSelectionChanged(const QUuid &layoutUid)
@@ -4319,8 +4314,6 @@ void UISoftKeyboard::prepareObjects()
     statusBar()->setStyleSheet( "QStatusBar::item { border: 0px}" );
     m_pStatusBarWidget = new UISoftKeyboardStatusBarWidget;
     statusBar()->addPermanentWidget(m_pStatusBarWidget);
-
-    retranslateUi();
 }
 
 void UISoftKeyboard::prepareConnections()
