@@ -5214,6 +5214,11 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_VEX3_BYTE1_B             RT_BIT(5)
 #define X86_OP_VEX3_BYTE1_X             RT_BIT(6)
 #define X86_OP_VEX3_BYTE1_R             RT_BIT(7)
+#define X86_OP_VEX3_BYTE1_MAKE(a_idxMap, a_B, a_X, a_R) \
+     (  (uint8_t)(a_idxMap) \
+      | ((a_B) ? 0 : X86_OP_VEX3_BYTE1_B) \
+      | ((a_X) ? 0 : X86_OP_VEX3_BYTE1_X) \
+      | ((a_R) ? 0 : X86_OP_VEX3_BYTE1_R))
 
 #define X86_OP_VEX3_BYTE2_P_MASK        0x3
 # define X86_OP_VEX3_BYTE2_P_NO_PRF     0
@@ -5226,14 +5231,16 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_VEX3_BYTE2_VVVV_NONE     15
 #define X86_OP_VEX3_BYTE2_W             RT_BIT(7)
 
-#define X86_OP_VEX3_BYTE2_MAKE(a_f64BitOpSz, a_iSrcReg, a_f256BitAvx, a_fPrf) \
-    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE2_W : 0) \
+/** @todo r=bird: Is the '& UINT8_C(0xf)' bit needed? You mask it again after
+ *        shifting. */
+#define X86_OP_VEX3_BYTE2_MAKE(a_f64BitOpSize, a_iSrcReg, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSize) ? X86_OP_VEX3_BYTE2_W : 0) \
      | ((~((uint8_t)(a_iSrcReg) & UINT8_C(0xf)) << X86_OP_VEX3_BYTE2_VVVV_SHIFT) & X86_OP_VEX3_BYTE2_VVVV_MASK) \
      | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
      | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
 
-#define X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(a_f64BitOpSz, a_f256BitAvx, a_fPrf) \
-    (  ((a_f64BitOpSz) ? X86_OP_VEX3_BYTE2_W : 0) \
+#define X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(a_f64BitOpSize, a_f256BitAvx, a_fPrf) \
+    (  ((a_f64BitOpSize) ? X86_OP_VEX3_BYTE2_W : 0) \
      | (X86_OP_VEX3_BYTE2_VVVV_NONE << X86_OP_VEX3_BYTE2_VVVV_SHIFT) \
      | ((a_f256BitAvx) ? X86_OP_VEX3_BYTE2_L : 0) \
      | ((a_fPrf) & X86_OP_VEX3_BYTE2_P_MASK))
