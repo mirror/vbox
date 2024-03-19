@@ -32,6 +32,35 @@
 #include "UITranslationEventListener.h"
 #include "UITranslator.h"
 
+/* static */
+UITranslationEventListener *UITranslationEventListener::s_pInstance = 0;
+
+UITranslationEventListener *UITranslationEventListener::instance()
+{
+    return s_pInstance;
+}
+
+/* static */
+void UITranslationEventListener::create()
+{
+    /* Make sure instance is NOT created yet: */
+    if (s_pInstance)
+        return;
+
+    /* Create instance: */
+    new UITranslationEventListener;
+}
+
+/* static */
+void UITranslationEventListener::destroy()
+{
+    /* Make sure instance is NOT destroyed yet: */
+    if (!s_pInstance)
+        return;
+
+    /* Destroy instance: */
+    delete s_pInstance;
+}
 
 
 UITranslationEventListener::UITranslationEventListener(QObject *pParent /* = 0 */)
