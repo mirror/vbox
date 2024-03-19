@@ -4654,7 +4654,12 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                || pVarGCPtrMem->enmKind == kIemNativeVarKind_Stack,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
     Assert(iSegReg < 6 || iSegReg == UINT8_MAX);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    Assert(   cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8
+           || cbMem == sizeof(RTUINT128U) || cbMem == sizeof(RTUINT256U));
+#else
     Assert(cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8);
+#endif
     AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
 #ifdef VBOX_STRICT
     if (iSegReg == UINT8_MAX)
@@ -4700,6 +4705,16 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                            : enmOp == kIemNativeEmitMemOp_Fetch        ? (uintptr_t)iemNativeHlpMemFlatFetchDataU64
                            : UINT64_C(0xc000b000a0009000) ));
                 break;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+            case sizeof(RTUINT128U):
+                Assert(enmOp == kIemNativeEmitMemOp_Store || enmOp == kIemNativeEmitMemOp_Fetch);
+                Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128AlignedSse
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128NoAc))
+                       || (   enmOp == kIemNativeEmitMemOp_Store
+                           && (pfnFunction == UINT64_C(0xc000b000a0009000))));
+                break;
+#endif
         }
     }
     else
@@ -4743,6 +4758,16 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                            : enmOp == kIemNativeEmitMemOp_Fetch        ? (uintptr_t)iemNativeHlpMemFetchDataU64
                            : UINT64_C(0xc000b000a0009000) ));
                 break;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+            case sizeof(RTUINT128U):
+                Assert(enmOp == kIemNativeEmitMemOp_Store || enmOp == kIemNativeEmitMemOp_Fetch);
+                Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128AlignedSse
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128NoAc))
+                       || (   enmOp == kIemNativeEmitMemOp_Store
+                           && (pfnFunction == UINT64_C(0xc000b000a0009000))));
+                break;
+#endif
         }
     }
 #endif
@@ -4782,10 +4807,23 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
      * register if we can).
      */
     uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    uint8_t  idxRegValueFetch = UINT8_MAX;
+
+    if (cbMem == sizeof(RTUINT128U) || cbMem == sizeof(RTUINT256U))
+        idxRegValueFetch = enmOp == kIemNativeEmitMemOp_Store ? UINT8_MAX
+                         : iemNativeVarSimdRegisterAcquire(pReNative, idxVarValue, &off);
+    else
+        idxRegValueFetch = enmOp == kIemNativeEmitMemOp_Store ? UINT8_MAX
+                         : !(pReNative->Core.bmHstRegs & RT_BIT_32(IEMNATIVE_CALL_RET_GREG))
+                         ? iemNativeVarRegisterSetAndAcquire(pReNative, idxVarValue, IEMNATIVE_CALL_RET_GREG, &off)
+                         : iemNativeVarRegisterAcquire(pReNative, idxVarValue, &off);
+#else
     uint8_t  const idxRegValueFetch  = enmOp == kIemNativeEmitMemOp_Store ? UINT8_MAX
                                      : !(pReNative->Core.bmHstRegs & RT_BIT_32(IEMNATIVE_CALL_RET_GREG))
                                      ? iemNativeVarRegisterSetAndAcquire(pReNative, idxVarValue, IEMNATIVE_CALL_RET_GREG, &off)
                                      : iemNativeVarRegisterAcquire(pReNative, idxVarValue, &off);
+#endif
     IEMNATIVEEMITTLBSTATE const TlbState(pReNative, &off, idxVarGCPtrMem, iSegReg, cbMem, offDisp);
     uint8_t  const idxRegValueStore  =    !TlbState.fSkip
                                        && enmOp == kIemNativeEmitMemOp_Store
@@ -4848,6 +4886,26 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
     /* IEMNATIVE_CALL_ARG2/3_GREG = uValue (idxVarValue) - if store */
     uint32_t fVolGregMask = IEMNATIVE_CALL_VOLATILE_GREG_MASK;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    if (cbMem == sizeof(RTUINT128U) || cbMem == sizeof(RTUINT256U))
+    {
+        /*
+         * For SIMD based variables we pass the reference on the stack for both fetches and stores.
+         *
+         * @note There was a register variable assigned to the variable for the TlbLookup case above
+         *       which must not be freed or the value loaded into the register will not be synced into the register
+         *       further down the road because the variable doesn't know it had a variable assigned.
+         *
+         * @note For loads it is not required to sync what is in the assigned register with the stack slot
+         *       as it will be overwritten anyway.
+         */
+        uint8_t const idxRegArgValue = iSegReg == UINT8_MAX ? IEMNATIVE_CALL_ARG2_GREG : IEMNATIVE_CALL_ARG3_GREG;
+        off = iemNativeEmitLoadArgGregWithSimdVarAddrForMemAccess(pReNative, off, idxRegArgValue, idxVarValue,
+                                                                  enmOp == kIemNativeEmitMemOp_Store /*fSyncRegWithStack*/);
+        fVolGregMask &= ~RT_BIT_32(idxRegArgValue);
+    }
+    else
+#endif
     if (enmOp == kIemNativeEmitMemOp_Store)
     {
         uint8_t const idxRegArgValue = iSegReg == UINT8_MAX ? IEMNATIVE_CALL_ARG2_GREG : IEMNATIVE_CALL_ARG3_GREG;
@@ -4886,9 +4944,22 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
      */
     if (enmOp != kIemNativeEmitMemOp_Store)
     {
-        Assert(idxRegValueFetch == pVarValue->idxReg);
-        if (idxRegValueFetch != IEMNATIVE_CALL_RET_GREG)
-            off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegValueFetch, IEMNATIVE_CALL_RET_GREG);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        if (   cbMem == sizeof(RTUINT128U)
+            || cbMem == sizeof(RTUINT256U))
+        {
+            Assert(enmOp == kIemNativeEmitMemOp_Fetch);
+
+            /* Sync the value on the stack with the host register assigned to the variable. */
+            off = iemNativeEmitSimdVarSyncStackToRegister(pReNative, off, idxVarValue);
+        }
+        else
+#endif
+        {
+            Assert(idxRegValueFetch == pVarValue->idxReg);
+            if (idxRegValueFetch != IEMNATIVE_CALL_RET_GREG)
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegValueFetch, IEMNATIVE_CALL_RET_GREG);
+        }
     }
 
 #ifndef IEMNATIVE_WITH_FREE_AND_FLUSH_VOLATILE_REGS_AT_TLB_LOOKUP
@@ -5006,6 +5077,13 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                         break;
                     case 8:
                         off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, idxRegValueFetch, idxRegMemResult);
+                        break;
+                    case sizeof(RTUINT128U):
+                        /*
+                         * No need to back the register with the stack, this is done by the generic variable handling
+                         * code if there is a register assigned to a variable and the stack must be accessed.
+                         */
+                        off = iemNativeEmitLoadVecRegByGprU128Ex(pCodeBuf, off, idxRegValueFetch, idxRegMemResult);
                         break;
                     default:
                         AssertFailed();
@@ -5268,6 +5346,31 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                                                sizeof(uint64_t), sizeof(uint64_t) - 1, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFlatFetchDataU64, pCallEntry->idxInstr)
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/* 128-bit segmented: */
+#define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, a_iSeg, a_GCPtrMem, \
+                                               sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU128AlignedSse, pCallEntry->idxInstr)
+
+/* 128-bit flat: */
+#define IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE(a_u128Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU128AlignedSse, pCallEntry->idxInstr)
+
+/* 128-bit segmented: */
+#define IEM_MC_FETCH_MEM_U128_NO_AC(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, a_iSeg, a_GCPtrMem, \
+                                               sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU128NoAc, pCallEntry->idxInstr)
+
+/* 128-bit flat: */
+#define IEM_MC_FETCH_MEM_FLAT_U128_NO_AC(a_u128Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU128NoAc, pCallEntry->idxInstr)
+#endif
 
 
 /*********************************************************************************************************************************

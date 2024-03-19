@@ -43,6 +43,9 @@ import sys;
 # Out python imports:
 import IEMAllInstPython as iai;
 
+## Temporary flag for enabling / disabling experimental MCs depending on the
+## SIMD register allocator.
+g_fNativeSimd = True;
 
 ## Supplememnts g_dMcStmtParsers.
 g_dMcStmtThreaded = {
@@ -135,8 +138,8 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_MEM_FLAT_R32':                                         (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_R64':                                         (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_R80':                                         (None, True,  True,  False, ),
-    'IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE':                              (None, True,  True,  False, ),
-    'IEM_MC_FETCH_MEM_FLAT_U128_NO_AC':                                  (None, True,  True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE':                              (None, True,  True,  g_fNativeSimd),
+    'IEM_MC_FETCH_MEM_FLAT_U128_NO_AC':                                  (None, True,  True,  g_fNativeSimd),
     'IEM_MC_FETCH_MEM_FLAT_U128':                                        (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_U16_DISP':                                    (None, True,  True,  True,  ),
     'IEM_MC_FETCH_MEM_FLAT_U16_SX_U32':                                  (None, True,  True,  True,  ),

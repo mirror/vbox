@@ -2853,6 +2853,61 @@ iemNativeEmitLoadGprByGprU16SignExtendedFromS8Ex(PIEMNATIVEINSTR pCodeBuf, uint3
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emits a 128-bit vector register load via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x7ff8...0x7ff8 range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadVecRegByGprU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase,
+                                   int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movdqu reg128, mem128 */
+    pCodeBuf[off++] = 0xf3;
+    if (iVecRegDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iVecRegDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x6f;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iVecRegDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdStEx(pCodeBuf, off, iVecRegDst, iGprBase, offDisp,
+                                      kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 128-bit GPR load via a GPR base address with a displacement.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadVecRegByGprU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadVecRegByGprU128Ex(iemNativeInstrBufEnsure(pReNative, off, 8), off, iVecRegDst, iGprBase, offDisp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitGprByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+#endif
+
+
 /**
  * Emits a 64-bit GPR store via a GPR base address with a displacement.
  *
@@ -7304,28 +7359,13 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     AssertStmt(   pVar->enmKind == kIemNativeVarKind_Invalid
                || pVar->enmKind == kIemNativeVarKind_Stack,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    AssertStmt(!pVar->fSimdReg,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
 
     uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxVar);
     int32_t const offBpDisp      = iemNativeStackCalcBpDisp(idxStackSlot);
 
     uint8_t const idxRegVar      = pVar->idxReg;
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-    if (   idxRegVar != UINT8_MAX
-        && pVar->fSimdReg)
-    {
-        Assert(idxRegVar < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
-        Assert(pVar->cbVar == sizeof(RTUINT128U) || pVar->cbVar == sizeof(RTUINT256U));
-
-        if (pVar->cbVar == sizeof(RTUINT128U))
-            off = iemNativeEmitStoreVecRegByBpU128(pReNative, off, offBpDisp, idxRegVar);
-        else
-            off = iemNativeEmitStoreVecRegByBpU256(pReNative, off, offBpDisp, idxRegVar);
-
-        iemNativeSimdRegFreeVar(pReNative, idxRegVar, fFlushShadows);
-        Assert(pVar->idxReg == UINT8_MAX);
-    }
-    else
-#endif
     if (idxRegVar < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
         off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, idxRegVar);
@@ -7340,6 +7380,83 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emits code to load the variable address into an argument GPR.
+ *
+ * This is a special variant intended for SIMD variables only and only called
+ * by the TLB miss path in the memory fetch/store code because there we pass
+ * the value by reference and need both the register and stack depending on which
+ * path is taken (TLB hit vs. miss).
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitLoadArgGregWithSimdVarAddrForMemAccess(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxRegArg, uint8_t idxVar,
+                                                    bool fSyncRegWithStack = true)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    AssertStmt(   pVar->enmKind == kIemNativeVarKind_Invalid
+               || pVar->enmKind == kIemNativeVarKind_Stack,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    AssertStmt(pVar->fSimdReg,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    Assert(   pVar->idxStackSlot != UINT8_MAX
+           && pVar->idxReg != UINT8_MAX);
+
+    uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxVar);
+    int32_t const offBpDisp      = iemNativeStackCalcBpDisp(idxStackSlot);
+
+    uint8_t const idxRegVar      = pVar->idxReg;
+    Assert(idxRegVar < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
+    Assert(pVar->cbVar == sizeof(RTUINT128U) || pVar->cbVar == sizeof(RTUINT256U));
+
+    if (fSyncRegWithStack)
+    {
+        if (pVar->cbVar == sizeof(RTUINT128U))
+            off = iemNativeEmitStoreVecRegByBpU128(pReNative, off, offBpDisp, idxRegVar);
+        else
+            off = iemNativeEmitStoreVecRegByBpU256(pReNative, off, offBpDisp, idxRegVar);
+    }
+
+    return iemNativeEmitLeaGprByBp(pReNative, off, idxRegArg, offBpDisp);
+}
+
+
+/**
+ * Emits code to sync the host SIMD register assigned to the given SIMD variable.
+ *
+ * This is a special helper and only called
+ * by the TLB miss path in the memory fetch/store code because there we pass
+ * the value by reference and need to sync the value on the stack with the assigned host register
+ * after a TLB miss where the value ends up on the stack.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdVarSyncStackToRegister(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    AssertStmt(   pVar->enmKind == kIemNativeVarKind_Invalid
+               || pVar->enmKind == kIemNativeVarKind_Stack,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    AssertStmt(pVar->fSimdReg,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
+    Assert(   pVar->idxStackSlot != UINT8_MAX
+           && pVar->idxReg != UINT8_MAX);
+
+    uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxVar);
+    int32_t const offBpDisp      = iemNativeStackCalcBpDisp(idxStackSlot);
+
+    uint8_t const idxRegVar      = pVar->idxReg;
+    Assert(idxRegVar < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
+    Assert(pVar->cbVar == sizeof(RTUINT128U) || pVar->cbVar == sizeof(RTUINT256U));
+
+    if (pVar->cbVar == sizeof(RTUINT128U))
+        off = iemNativeEmitLoadVecRegByBpU128(pReNative, off, idxRegVar, offBpDisp);
+    else
+        off = iemNativeEmitLoadVecRegByBpU256(pReNative, off, idxRegVar, offBpDisp);
+
+    return off;
+}
+
 
 /**
  * Emits a gprdst = ~gprsrc store.
