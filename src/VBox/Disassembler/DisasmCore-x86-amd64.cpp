@@ -1526,6 +1526,13 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
         pParam->fUse  |= DISUSE_REG_FP;
         pParam->x86.cb     = 10;
     }
+    else if (pParam->x86.fParam <= OP_PARM_REG_SSE_END)
+    {
+        /* SSE registers. */
+        pParam->x86.Base.idxFpuReg = (uint8_t)(pParam->x86.fParam - OP_PARM_REG_SSE_END);
+        pParam->fUse  |= DISUSE_REG_XMM;
+        pParam->x86.cb = 16;
+    }
     Assert(!(pParam->x86.fParam >= OP_PARM_REG_GEN64_START && pParam->x86.fParam <= OP_PARM_REG_GEN64_END));
 
     /* else - not supported for now registers. */

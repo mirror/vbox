@@ -2235,35 +2235,41 @@ typedef struct IEM
 /** ModR/M: reg, r/m, imm */
 #define IEMOPFORM_RMI           1
 /** ModR/M: reg, r/m (register), imm */
-#define IEMOPFORM_RMI_REG       (IEMOPFORM_RM | IEMOPFORM_MOD3)
+#define IEMOPFORM_RMI_REG       (IEMOPFORM_RMI | IEMOPFORM_MOD3)
 /** ModR/M: reg, r/m (memory), imm   */
-#define IEMOPFORM_RMI_MEM       (IEMOPFORM_RM | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_RMI_MEM       (IEMOPFORM_RMI | IEMOPFORM_NOT_MOD3)
+/** ModR/M: reg, r/m, xmm0 */
+#define IEMOPFORM_RM0           2
+/** ModR/M: reg, r/m (register), xmm0 */
+#define IEMOPFORM_RM0_REG       (IEMOPFORM_RM0 | IEMOPFORM_MOD3)
+/** ModR/M: reg, r/m (memory), xmm0   */
+#define IEMOPFORM_RM0_MEM       (IEMOPFORM_RM0 | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m, reg */
-#define IEMOPFORM_MR            2
+#define IEMOPFORM_MR            3
 /** ModR/M: r/m (register), reg */
 #define IEMOPFORM_MR_REG        (IEMOPFORM_MR | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), reg */
 #define IEMOPFORM_MR_MEM        (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m, reg, imm */
-#define IEMOPFORM_MRI           3
+#define IEMOPFORM_MRI           4
 /** ModR/M: r/m (register), reg, imm */
-#define IEMOPFORM_MRI_REG       (IEMOPFORM_MR | IEMOPFORM_MOD3)
+#define IEMOPFORM_MRI_REG       (IEMOPFORM_MRI | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), reg, imm */
-#define IEMOPFORM_MRI_MEM       (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_MRI_MEM       (IEMOPFORM_MRI | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m only */
-#define IEMOPFORM_M             4
+#define IEMOPFORM_M             5
 /** ModR/M: r/m only (register). */
 #define IEMOPFORM_M_REG         (IEMOPFORM_M | IEMOPFORM_MOD3)
 /** ModR/M: r/m only (memory). */
 #define IEMOPFORM_M_MEM         (IEMOPFORM_M | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m, imm */
-#define IEMOPFORM_MI            5
+#define IEMOPFORM_MI            6
 /** ModR/M: r/m (register), imm */
 #define IEMOPFORM_MI_REG        (IEMOPFORM_MI | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), imm */
 #define IEMOPFORM_MI_MEM        (IEMOPFORM_MI | IEMOPFORM_NOT_MOD3)
 /** ModR/M: r/m, 1  (shift and rotate instructions) */
-#define IEMOPFORM_M1            6
+#define IEMOPFORM_M1            7
 /** ModR/M: r/m (register), 1. */
 #define IEMOPFORM_M1_REG        (IEMOPFORM_M1 | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), 1. */
@@ -2271,13 +2277,13 @@ typedef struct IEM
 /** ModR/M: r/m, CL  (shift and rotate instructions)
  * @todo This should just've been a generic fixed register. But the python
  *       code doesn't needs more convincing. */
-#define IEMOPFORM_M_CL          7
+#define IEMOPFORM_M_CL          8
 /** ModR/M: r/m (register), CL. */
 #define IEMOPFORM_M_CL_REG      (IEMOPFORM_M_CL | IEMOPFORM_MOD3)
 /** ModR/M: r/m (memory), CL. */
 #define IEMOPFORM_M_CL_MEM      (IEMOPFORM_M_CL | IEMOPFORM_NOT_MOD3)
 /** ModR/M: reg only */
-#define IEMOPFORM_R             8
+#define IEMOPFORM_R             9
 
 /** VEX+ModR/M: reg, r/m */
 #define IEMOPFORM_VEX_RM        16

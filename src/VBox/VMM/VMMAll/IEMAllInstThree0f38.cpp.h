@@ -736,7 +736,8 @@ FNIEMOP_DEF(iemOp_pmulhrsw_Vx_Wx)
 /** Opcode 0x66 0x0f 0x38 0x10 (legacy only). */
 FNIEMOP_DEF(iemOp_pblendvb_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, PBLENDVB, pblendvb, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_MNEMONIC3EX(pblendvb_Vdq_Wdq_XMM0, "pblendvb Vdq,Wdq,xmm0",
+                      RM0, PBLENDVB, pblendvb, Vdq, Wdq, REG_XMM0, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     IEMOP_BODY_P_BLEND_X(pblendvb);
 }
 
@@ -753,7 +754,8 @@ FNIEMOP_DEF(iemOp_pblendvb_Vdq_Wdq)
 /** Opcode 0x66 0x0f 0x38 0x14 (legacy only). */
 FNIEMOP_DEF(iemOp_blendvps_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, BLENDVPS, blendvps, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_MNEMONIC3EX(blendvps_Vdq_Wdq_XMM0, "blendvps Vdq,Wdq,xmm0",
+                      RM0, BLENDVPS, blendvps, Vdq, Wdq, REG_XMM0, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     IEMOP_BODY_P_BLEND_X(blendvps);
 }
 
@@ -764,7 +766,8 @@ FNIEMOP_DEF(iemOp_blendvps_Vdq_Wdq)
 /** Opcode 0x66 0x0f 0x38 0x15 (legacy only). */
 FNIEMOP_DEF(iemOp_blendvpd_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, BLENDVPD, blendvpd, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo RM0 */
+    IEMOP_MNEMONIC3EX(blendvpd_Vdq_Wdq_XMM0, "blendvpd Vdq,Wdq,xmm0",
+                      RM0, BLENDVPD, blendvpd, Vdq, Wdq, REG_XMM0, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
     IEMOP_BODY_P_BLEND_X(blendvpd);
 }
 

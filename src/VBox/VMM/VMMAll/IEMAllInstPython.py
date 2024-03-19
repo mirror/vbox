@@ -212,6 +212,7 @@ g_kdOpLocations = {
     'FS':       [],
     'GS':       [],
     'SS':       [],
+    'XMM0':     [],
 
     # fixed valures.
     '1':        [],
@@ -369,6 +370,7 @@ g_kdOpTypes = {
     # Fixed registers.
     'AL':           ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  '',      ),
     'REG_CL':       ( 'IDX_ParseFixedReg',  'CL',     'cl',   'REG_CL',  '',      ),
+    'REG_XMM0':     ( 'IDX_ParseFixedReg',  'XMM0',   'xmm0', 'REG_XMM0','',      ),
     'rAX':          ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', '',      ),
     'rDX':          ( 'IDX_ParseFixedReg',  'rDX',    '%eDX', 'REG_EDX', '',      ),
     'CS':           ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  '',      ), # 8086: push CS
@@ -394,6 +396,9 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]                    opcodesu
     'RMI':          ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],             '',            ),
     'RMI_REG':      ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],             '11 mr/reg',   ),
     'RMI_MEM':      ( 'ModR/M',     [ 'reg', 'rm', 'imm' ],             '!11 mr/reg',  ),
+    'RM0':          ( 'ModR/M',     [ 'reg', 'rm', 'XMM0' ],            '',            ),
+    'RM0_REG':      ( 'ModR/M',     [ 'reg', 'rm', 'XMM0' ],            '11 mr/reg',   ),
+    'RM0_MEM':      ( 'ModR/M',     [ 'reg', 'rm', 'XMM0' ],            '!11 mr/reg',  ),
     'MR':           ( 'ModR/M',     [ 'rm', 'reg' ],                    '',            ),
     'MR_REG':       ( 'ModR/M',     [ 'rm', 'reg' ],                    '11 mr/reg',   ),
     'MR_MEM':       ( 'ModR/M',     [ 'rm', 'reg' ],                    '!11 mr/reg',  ),
