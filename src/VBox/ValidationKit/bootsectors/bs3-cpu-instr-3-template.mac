@@ -2182,6 +2182,24 @@ EMIT_INSTR_PLUS_ICEBP_C64  vpextrb, R9D,   XMM8, 000h
 EMIT_INSTR_PLUS_ICEBP_C64  vpextrb, FSxBX, XMM8, 0FFh
 EMIT_INSTR_PLUS_ICEBP_C64  vpextrb, FSxBX, XMM8, 000h
 
+%ifnmacro vpextrb_w1b_edx_xmm1 1
+ ; special encoding to prove that VEX.W is effectively ignored everywhere and that VEX.B only matter in 64-bit code.
+ %macro vpextrb_w1b_edx_xmm1 1
+        db      X86_OP_VEX3, 3 | X86_OP_VEX3_BYTE1_X | X86_OP_VEX3_BYTE1_R
+        db      X86_OP_VEX3_BYTE2_P_066H | (X86_OP_VEX3_BYTE2_VVVV_NONE << X86_OP_VEX3_BYTE2_VVVV_SHIFT) | X86_OP_VEX3_BYTE2_W
+        db      14h, X86_MODRM_MAKE(X86_MOD_REG, 1, X86_GREG_xDX), %1
+ %endmacro
+
+ ; invalid coding where VEX.L=1.
+ %macro vpextrb_l1_edx_xmm1 1
+        db      X86_OP_VEX3, 3 | X86_OP_VEX3_BYTE1_X | X86_OP_VEX3_BYTE1_R | X86_OP_VEX3_BYTE1_B
+        db      X86_OP_VEX3_BYTE2_P_066H | (X86_OP_VEX3_BYTE2_VVVV_NONE << X86_OP_VEX3_BYTE2_VVVV_SHIFT) | X86_OP_VEX3_BYTE2_L
+        db      14h, X86_MODRM_MAKE(X86_MOD_REG, 1, X86_GREG_xDX), %1
+ %endmacro
+%endif
+EMIT_INSTR_PLUS_ICEBP      vpextrb_w1b_edx_xmm1, 0FFh
+EMIT_INSTR_PLUS_ICEBP      vpextrb_l1_edx_xmm1, 0FFh
+
 ;
 ; [V]PEXTRD
 ;

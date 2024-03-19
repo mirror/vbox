@@ -541,7 +541,7 @@ FNIEMOP_DEF(iemOp_vpalignr_Vx_Hx_Wx_Ib)
 /** Opcode VEX.66.0F3A 0x14 - vpextrb Eb, Vdq, Ib */
 FNIEMOP_DEF(iemOp_vpextrb_Eb_Vdq_Ib)
 {
-    IEMOP_MNEMONIC3(VEX_MRI, VPEXTRB, vpextrb, Eb, Vdq, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO | IEMOPHINT_VEX_V_ZERO); /** @todo */
+    IEMOP_MNEMONIC3(VEX_MRI, VPEXTRB, vpextrb, Eb, Vdq, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO | IEMOPHINT_VEX_V_ZERO | IEMOPHINT_IGNORES_REXW);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -550,12 +550,11 @@ FNIEMOP_DEF(iemOp_vpextrb_Eb_Vdq_Ib)
          */
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_LOCAL(uint8_t,   uValue);
-
         IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
         IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
         IEM_MC_PREPARE_AVX_USAGE();
 
+        IEM_MC_LOCAL(uint8_t, uValue);
         IEM_MC_FETCH_XREG_U8(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 15 /*a_iByte*/);
         IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), uValue);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -568,7 +567,6 @@ FNIEMOP_DEF(iemOp_vpextrb_Eb_Vdq_Ib)
          */
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_BEGIN(0, 2, IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_LOCAL(uint8_t,   uValue);
         IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
 
@@ -576,6 +574,7 @@ FNIEMOP_DEF(iemOp_vpextrb_Eb_Vdq_Ib)
         IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
         IEM_MC_PREPARE_AVX_USAGE();
 
+        IEM_MC_LOCAL(uint8_t, uValue);
         IEM_MC_FETCH_XREG_U8(uValue, IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 15 /*a_iByte*/);
         IEM_MC_STORE_MEM_U8(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uValue);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
