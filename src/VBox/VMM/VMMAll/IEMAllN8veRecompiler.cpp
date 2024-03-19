@@ -7017,7 +7017,7 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNativ
         AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
         pReNative->Core.bmStack |= RT_BIT_32(iSlot);
         pVar->idxStackSlot       = (uint8_t)iSlot;
-        Log11(("iemNativeVarSetKindToStack: idxVar=%#x iSlot=%#x\n", idxVar, iSlot));
+        Log11(("iemNativeVarGetStackSlot: idxVar=%#x iSlot=%#x\n", idxVar, iSlot));
         return (uint8_t)iSlot;
     }
 
@@ -7030,24 +7030,22 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNativ
     Assert(pVar->cbVar <= 64);
     uint32_t const fBitAlignMask = RT_BIT_32(ASMBitLastSetU32(pVar->cbVar) - 4) - 1;
     uint32_t       fBitAllocMask = RT_BIT_32((pVar->cbVar + 7) >> 3) - 1;
-    uint32_t       bmStack       = ~pReNative->Core.bmStack;
-    while (bmStack != 0)
+    uint32_t       bmStack       = pReNative->Core.bmStack;
+    while (bmStack != UINT32_MAX)
     {
-/** @todo allocate from the top to reduce BP displacement. */
-        unsigned const iSlot = ASMBitFirstSetU32(bmStack) - 1;
-        AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
-        if (!(iSlot & fBitAlignMask))
+        unsigned iSlot = ASMBitLastSetU32(~bmStack);
+        AssertStmt(iSlot, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
+        iSlot = (iSlot - 1) & ~fBitAlignMask;
+        if ((bmStack & ~(fBitAllocMask << iSlot)) == bmStack)
         {
-            if ((bmStack & (fBitAllocMask << iSlot)) == (fBitAllocMask << iSlot))
-            {
-                pReNative->Core.bmStack |= (fBitAllocMask << iSlot);
-                pVar->idxStackSlot       = (uint8_t)iSlot;
-                Log11(("iemNativeVarSetKindToStack: idxVar=%#x iSlot=%#x/%#x (cbVar=%#x)\n",
-                       idxVar, iSlot, fBitAllocMask, pVar->cbVar));
-                return (uint8_t)iSlot;
-            }
+            pReNative->Core.bmStack |= (fBitAllocMask << iSlot);
+            pVar->idxStackSlot       = (uint8_t)iSlot;
+            Log11(("iemNativeVarGetStackSlot: idxVar=%#x iSlot=%#x/%#x (cbVar=%#x)\n",
+                   idxVar, iSlot, fBitAllocMask, pVar->cbVar));
+            return (uint8_t)iSlot;
         }
-        bmStack &= ~(fBitAlignMask << (iSlot & ~fBitAlignMask));
+
+        bmStack |= (fBitAllocMask << iSlot);
     }
     AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
 }
@@ -7844,7 +7842,7 @@ iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32
                 continue;
             Assert(pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_Var);
 
-            uint8_t const idxVar = pReNative->Core.aHstRegs[idxHstReg].idxVar;
+            uint8_t const idxVar = pReNative->Core.aHstSimdRegs[idxHstReg].idxVar;
             IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
             AssertStmt(   IEMNATIVE_VAR_IDX_UNPACK(idxVar) < RT_ELEMENTS(pReNative->Core.aVars)
                        && (pReNative->Core.bmVars & RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(idxVar)))
