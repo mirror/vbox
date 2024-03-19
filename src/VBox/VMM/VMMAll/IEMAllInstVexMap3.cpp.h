@@ -1116,7 +1116,6 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
 
             IEM_MC_FETCH_MEM_U256_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_YREG_U256(uSrc1,      IEM_GET_EFFECTIVE_VVVV(pVCpu));
-            IEM_MC_FETCH_YREG_U256(uSrc3,      IEM_GET_EFFECTIVE_VVVV(pVCpu));
             IEM_MC_FETCH_YREG_U256(uSrc3,      bOp4 >> 4); /** @todo Ignore MSB in 32-bit mode. */
             IEM_MC_CALL_VOID_AIMPL_4(pImpl->pfnU256, puDst, puSrc1, puSrc2, puSrc3);
             IEM_MC_STORE_YREG_U256_ZX_VLMAX(   IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
@@ -1159,8 +1158,10 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
  * AVX, AVX  */
 FNIEMOP_DEF(iemOp_vblendvps_Vx_Hx_Wx_Lx)
 {
-    //IEMOP_MNEMONIC4(VEX_RVM, VBLENDVPS, vpblendvps, Vx, Hx, Wx, Lx, DISOPTYPE_HARMLESS, 0); @todo
+    IEMOP_MNEMONIC4(VEX_RVMR, VBLENDVPS, vblendvps, Vx, Hx, Wx, Lx, DISOPTYPE_HARMLESS, 0);
     IEMOPBLENDOP_INIT_VARS(vblendvps);
+/** @todo should \#UD on VEX.W=1!   */
+/** @todo docs says AVX, not AVX2! */
     return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Lx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
@@ -1169,8 +1170,10 @@ FNIEMOP_DEF(iemOp_vblendvps_Vx_Hx_Wx_Lx)
  * AVX, AVX  */
 FNIEMOP_DEF(iemOp_vblendvpd_Vx_Hx_Wx_Lx)
 {
-    //IEMOP_MNEMONIC4(VEX_RVM, VPBLENDVPD, blendvpd, Vx, Hx, Wx, Lx, DISOPTYPE_HARMLESS, 0); @todo
+    IEMOP_MNEMONIC4(VEX_RVMR, VBLENDVPD, vblendvpd, Vx, Hx, Wx, Lx, DISOPTYPE_HARMLESS, 0);
     IEMOPBLENDOP_INIT_VARS(vblendvpd);
+/** @todo should \#UD on VEX.W=1!   */
+/** @todo docs says AVX, not AVX2! */
     return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Lx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
