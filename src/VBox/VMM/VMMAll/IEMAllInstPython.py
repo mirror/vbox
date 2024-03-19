@@ -3095,6 +3095,7 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_MEM_YMM_NO_AC':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FETCH_MEM16_U8':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_FETCH_MEM32_U8':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_FETCH_MREG_U16':                                     (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_MREG_U32':                                     (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_MREG_U64':                                     (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_SREG_BASE_U32':                                (McBlock.parseMcGeneric,           False, False, False, ),

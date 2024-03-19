@@ -1761,6 +1761,7 @@ class ThreadedFunction(object):
 
         'IEM_MC_FETCH_MREG_U64':                    '__mreg64',
         'IEM_MC_FETCH_MREG_U32':                    '__mreg32',
+        'IEM_MC_FETCH_MREG_U16':                    '__mreg16',
         'IEM_MC_STORE_MREG_U64':                    '__mreg64',
         'IEM_MC_STORE_MREG_U32_ZX_U64':             '__mreg32zx64',
         'IEM_MC_REF_MREG_U64':                      '__mreg64',

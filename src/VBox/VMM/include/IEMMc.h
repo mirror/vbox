@@ -432,8 +432,10 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg) \
     do { (a_u64Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx; } while (0)
-#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg) \
-    do { (a_u32Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[0]; } while (0)
+#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg, a_iDWord) \
+    do { (a_u32Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[a_iDWord]; } while (0)
+#define IEM_MC_FETCH_MREG_U16(a_u16Value, a_iMReg, a_iWord) \
+    do { (a_u16Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au16[a_iWord]; } while (0)
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) do { \
         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx = (a_u64Value); \
         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \

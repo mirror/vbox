@@ -662,7 +662,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FPU_FROM_MMX_MODE()                                  IEM_LIVENESS_FCW_MODIFY()
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg)                  NOP()
-#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg)                  NOP()
+#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg, a_iDWord)        NOP()
+#define IEM_MC_FETCH_MREG_U16(a_u16Value, a_iMReg, a_iWord)         NOP()
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value)                  NOP()
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value)           NOP()
 #define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)                     NOP()
