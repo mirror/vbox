@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #if defined(RT_OS_SOLARIS)
@@ -42,6 +43,7 @@
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UISearchLineEdit.h"
+#include "UITranslationEventListener.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerSearchWidget.h"
 #include "UIVMLogViewerWidget.h"
@@ -64,7 +66,9 @@ UIVMLogViewerSearchWidget::UIVMLogViewerSearchWidget(QWidget *pParent, UIVMLogVi
     /* Prepare: */
     prepareWidgets();
     prepareConnections();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMLogViewerSearchWidget::sltRetranslateUI);
 }
 
 void UIVMLogViewerSearchWidget::refreshSearch()
@@ -261,10 +265,8 @@ void UIVMLogViewerSearchWidget::prepareConnections()
             this, &UIVMLogViewerSearchWidget::sltMatchWholeWordCheckBox);
 }
 
-void UIVMLogViewerSearchWidget::retranslateUi()
+void UIVMLogViewerSearchWidget::sltRetranslateUI()
 {
-    UIVMLogViewerPane::retranslateUi();
-
     m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
     m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the next occurrence of the string (F3)"));
     m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string (Shift+F3)"));

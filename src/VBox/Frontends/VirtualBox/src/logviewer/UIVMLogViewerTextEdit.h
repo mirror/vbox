@@ -34,7 +34,6 @@
 class UILogScrollLabel;
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIVMLogBookmark.h"
 
 /* Qt includes: */
@@ -43,7 +42,7 @@ class UILogScrollLabel;
 /* QPlainTextEdit extension with some addtional context menu items,
    a special scrollbar, line number area, bookmarking support,
    background watermarking etc.: */
-class UIVMLogViewerTextEdit : public QIWithRetranslateUI<QPlainTextEdit>
+class UIVMLogViewerTextEdit : public QPlainTextEdit
 {
     Q_OBJECT;
 
@@ -87,12 +86,11 @@ public:
 
 protected:
 
-    virtual void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
-    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
-    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE;
-    virtual void leaveEvent(QEvent * pEvent) RT_OVERRIDE;
-    virtual void retranslateUi() RT_OVERRIDE;
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+    virtual void contextMenuEvent(QContextMenuEvent *pEvent) override;
+    virtual void resizeEvent(QResizeEvent *pEvent) override;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) override;
+    virtual void leaveEvent(QEvent * pEvent) override;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
 private slots:
 
@@ -100,6 +98,7 @@ private slots:
     void sltUpdateLineNumberAreaWidth(int newBlockCount);
     void sltHandleUpdateRequest(const QRect &, int);
     int  visibleLineCount();
+    void sltRetranslateUI();
 
 private:
 

@@ -71,9 +71,6 @@ protected:
     virtual void prepareWidgets() RT_OVERRIDE;
     virtual void prepareConnections() RT_OVERRIDE;
 
-    /** Handles the translation event. */
-    void retranslateUi();
-
 private slots:
 
     void sltDeleteCurrentBookmark();
@@ -81,6 +78,8 @@ private slots:
     void sltGotoNextBookmark();
     void sltGotoPreviousBookmark();
     void sltGotoSelectedBookmark();
+    /** Handles the translation event. */
+    void sltRetranslateUI();
 
 private:
 

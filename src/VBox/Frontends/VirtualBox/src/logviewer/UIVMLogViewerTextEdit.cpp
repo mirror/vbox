@@ -26,11 +26,13 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
 #include <QMenu>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPlainTextEdit>
 #include <QLabel>
 #include <QScrollBar>
@@ -39,6 +41,7 @@
 
 /* GUI includes: */
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVMLogViewerTextEdit.h"
 #include "UIVMLogViewerWidget.h"
 
@@ -249,7 +252,7 @@ void UILineNumberArea::mousePressEvent(QMouseEvent *pEvent)
 *********************************************************************************************************************************/
 
 UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
-    : QIWithRetranslateUI<QPlainTextEdit>(parent)
+    : QPlainTextEdit(parent)
     , m_pLineNumberArea(0)
     , m_mouseCursorLine(-1)
     , m_bShownTextIsFiltered(false)
@@ -283,7 +286,9 @@ void UIVMLogViewerTextEdit::configure()
 void UIVMLogViewerTextEdit::prepare()
 {
     prepareWidgets();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMLogViewerTextEdit::sltRetranslateUI);
 }
 
 void UIVMLogViewerTextEdit::prepareWidgets()
@@ -406,7 +411,7 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     }
 }
 
-void UIVMLogViewerTextEdit::retranslateUi()
+void UIVMLogViewerTextEdit::sltRetranslateUI()
 {
     m_strBackgroungText = QString(UIVMLogViewerWidget::tr("Filtered"));
 }
@@ -445,7 +450,7 @@ bool UIVMLogViewerTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
             }
         }
     }
-    return QIWithRetranslateUI<QPlainTextEdit>::eventFilter(pObject, pEvent);
+    return QPlainTextEdit::eventFilter(pObject, pEvent);
 }
 
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)

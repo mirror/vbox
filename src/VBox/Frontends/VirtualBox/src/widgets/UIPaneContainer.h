@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -45,7 +44,7 @@ class QHBoxLayout;
 class QIDialogButtonBox;
 
 /** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */
-class SHARED_LIBRARY_STUFF UIPaneContainer : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIPaneContainer : public QWidget
 {
     Q_OBJECT;
 
@@ -66,13 +65,12 @@ protected:
     virtual void prepare();
     void insertTab(int iIndex, QWidget *pPage, const QString &strLabel = QString());
     void setTabText(int iIndex, const QString &strText);
-    void retranslateUi() override;
 
 private slots:
 
     void sltHide();
-
     void sltHandleButtonBoxClick(QAbstractButton *pButton);
+    void sltRetranslateUI();
 
 private:
 

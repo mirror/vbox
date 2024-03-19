@@ -45,6 +45,7 @@
 #include "UIFileManagerPaneContainer.h"
 #include "UIFileManager.h"
 #include "UIProgressEventHandler.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -54,7 +55,7 @@
 *   UIFileOperationProgressWidget definition.                                                                                    *
 *********************************************************************************************************************************/
 
-class UIFileOperationProgressWidget : public QIWithRetranslateUI<QFrame>
+class UIFileOperationProgressWidget : public QFrame
 {
 
     Q_OBJECT;
@@ -75,7 +76,6 @@ public:
 
 protected:
 
-    virtual void retranslateUi() RT_OVERRIDE;
     virtual void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE;
     virtual void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE;
 
@@ -84,6 +84,7 @@ private slots:
     void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
     void sltHandleProgressComplete(const QUuid &uProgressId);
     void sltCancelProgress();
+    void sltRetranslateUI();
 
 private:
     enum OperationStatus
@@ -121,7 +122,7 @@ private:
 *********************************************************************************************************************************/
 
 UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &comProgress, const QString &strSourceTableName, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QFrame>(pParent)
+    : QFrame(pParent)
     , m_eStatus(OperationStatus_NotStarted)
     , m_comProgress(comProgress)
     , m_pEventHandler(0)
@@ -156,7 +157,7 @@ bool UIFileOperationProgressWidget::isCanceled() const
     return m_comProgress.GetCanceled();
 }
 
-void UIFileOperationProgressWidget::retranslateUi()
+void UIFileOperationProgressWidget::sltRetranslateUI()
 {
     if (m_pCancelButton)
         m_pCancelButton->setToolTip(UIFileManager::tr("Cancel"));
@@ -205,7 +206,9 @@ void UIFileOperationProgressWidget::prepare()
 {
     prepareWidgets();
     prepareEventHandler();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFileOperationProgressWidget::sltRetranslateUI);
 }
 
 void UIFileOperationProgressWidget::prepareWidgets()
@@ -251,7 +254,7 @@ void UIFileOperationProgressWidget::prepareWidgets()
     }
 
     setLayout(m_pMainLayout);
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFileOperationProgressWidget::prepareEventHandler()
@@ -264,7 +267,7 @@ void UIFileOperationProgressWidget::prepareEventHandler()
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
             this, &UIFileOperationProgressWidget::sltHandleProgressComplete);
     m_eStatus = OperationStatus_Working;
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFileOperationProgressWidget::cleanupEventHandler()
@@ -299,7 +302,7 @@ void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProg
         m_pProgressBar->setValue(100);
 
     cleanupEventHandler();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFileOperationProgressWidget::sltCancelProgress()
@@ -312,7 +315,7 @@ void UIFileOperationProgressWidget::sltCancelProgress()
         m_pProgressBar->setEnabled(false);
     m_eStatus = OperationStatus_Canceled;
     cleanupEventHandler();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 /*********************************************************************************************************************************
@@ -382,7 +385,9 @@ UIFileManagerPaneContainer::UIFileManagerPaneContainer(QWidget *pParent, UIFileM
     , m_pWidgetInFocus(0)
 {
     prepare();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFileManagerPaneContainer::sltRetranslateUI);
 }
 
 
@@ -514,7 +519,7 @@ void UIFileManagerPaneContainer::sltShowHiddenObjectsCheckBoxToggled(bool bCheck
     emit sigOptionsChanged();
 }
 
-void UIFileManagerPaneContainer::retranslateUi()
+void UIFileManagerPaneContainer::sltRetranslateUI()
 {
     if (m_pListDirectoriesOnTopCheckBox)
     {

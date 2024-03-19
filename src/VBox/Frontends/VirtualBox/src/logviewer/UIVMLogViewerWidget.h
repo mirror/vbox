@@ -41,7 +41,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QVBoxLayout;
@@ -63,7 +62,7 @@ class CMachine;
 /** QWidget extension providing GUI for VirtualBox LogViewer. It
  *  encapsulates log pages, toolbar, a tab widget and manages
  *  interaction between these classes. */
-class SHARED_LIBRARY_STUFF UIVMLogViewerWidget  : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIVMLogViewerWidget  : public QWidget
 {
     Q_OBJECT;
 
@@ -150,6 +149,7 @@ private slots:
     void sltPanelContainerHidden();
     void sltPanelCurrentTabChanged(int iIndex);
     void sltShowSearchPane();
+    void sltRetranslateUI();
 
 private:
 
@@ -170,9 +170,6 @@ private:
 
     /** @name Event handling stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles Qt show @a pEvent. */
         virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
         /** Handles Qt key-press @a pEvent. */

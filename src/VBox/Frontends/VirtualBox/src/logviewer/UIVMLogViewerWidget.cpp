@@ -56,6 +56,7 @@
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualMachineItem.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerWidget.h"
@@ -108,9 +109,6 @@ public:
 
     UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
 
-protected:
-
-    void retranslateUi();
 };
 
 /*********************************************************************************************************************************
@@ -152,10 +150,6 @@ public:
 
 UILabelTab::UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName)
     : UIVMLogTab(pParent, uMachineId, strMachineName)
-{
-}
-
-void UILabelTab::retranslateUi()
 {
 }
 
@@ -204,7 +198,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          bool fShowToolbar /* = true */,
                                          const QList<QUuid> &machineIDs /* = QList<QUuid>() */,
                                          QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -693,7 +687,10 @@ void UIVMLogViewerWidget::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMLogViewerWidget::sltRetranslateUI);
 
     uiCommon().setHelpKeyword(this, "log-viewer");
 }
@@ -850,7 +847,7 @@ void UIVMLogViewerWidget::loadOptions()
         m_font = loadedFont;
 }
 
-void UIVMLogViewerWidget::retranslateUi()
+void UIVMLogViewerWidget::sltRetranslateUI()
 {
     if (m_pCornerButton)
         m_pCornerButton->setToolTip(tr("Select machines to show their log"));

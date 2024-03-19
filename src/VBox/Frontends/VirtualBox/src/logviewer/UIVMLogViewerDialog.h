@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -72,7 +71,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog displaying machine logs. */
-class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIWithRetranslateUI<QIManagerDialog>
+class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -93,7 +92,6 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
         virtual bool event(QEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
@@ -127,6 +125,7 @@ private slots:
 
     /** Handles button-box button click. */
     void sltHandleButtonBoxClick(QAbstractButton *pButton);
+    void sltRetranslateUI();
 
 private:
 

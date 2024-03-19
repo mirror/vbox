@@ -39,6 +39,7 @@
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
 #include "UIPaneContainer.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -47,17 +48,19 @@
 #include <iprt/assert.h>
 
 UIPaneContainer::UIPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo /* = EmbedTo_Stack */, bool fDetachAllowed /* = false */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedTo(enmEmbedTo)
     , m_fDetachAllowed(fDetachAllowed)
     , m_pTabWidget(0)
     , m_pButtonBox(0)
 {
     prepare();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIPaneContainer::sltRetranslateUI);
 }
 
-void UIPaneContainer::retranslateUi()
+void UIPaneContainer::sltRetranslateUI()
 {
     if (m_pButtonBox)
     {

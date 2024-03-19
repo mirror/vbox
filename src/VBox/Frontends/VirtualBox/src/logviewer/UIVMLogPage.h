@@ -36,12 +36,12 @@
 #include <QUuid>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIVMLogBookmark.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
 class QPlainTextEdit;
+class QTextDocument;
 class UIVMLogViewerTextEdit;
 
 class UIVMLogBookmarkManager
@@ -112,7 +112,7 @@ private:
 };
 
 
-class UIVMLogTab : public QIWithRetranslateUI<QWidget>
+class UIVMLogTab : public QWidget
 {
 
     Q_OBJECT;
@@ -201,7 +201,6 @@ private:
     void prepare();
     void prepareWidgets();
     void cleanup();
-    void retranslateUi();
     void updateTextEditBookmarkLineSet();
 
     /** Set plaintextEdit's text. Note that the text we

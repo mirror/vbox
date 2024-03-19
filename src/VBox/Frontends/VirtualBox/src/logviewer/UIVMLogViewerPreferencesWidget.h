@@ -70,12 +70,11 @@ protected:
     virtual void prepareWidgets();
     virtual void prepareConnections();
 
-    /** Handles the translation event. */
-    void retranslateUi();
-
 private slots:
 
     void sltOpenFontDialog();
+    /** Handles the translation event. */
+    void sltRetranslateUI();
 
 private:
 

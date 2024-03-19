@@ -110,9 +110,12 @@ protected:
 
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
+private slots:
+
+    void sltRetranslateUI();
+
 private:
 
-    void retranslateUi() override;
     void prepare() override;
 
     UIVMLogViewerWidget             *m_pViewer;
@@ -123,7 +126,7 @@ private:
 };
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIVMLogViewerPane : public QIWithRetranslateUI<QWidget>
+class UIVMLogViewerPane : public QWidget
 {
     Q_OBJECT;
 
@@ -132,8 +135,6 @@ public:
     UIVMLogViewerPane(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
 protected:
-
-    virtual void retranslateUi() RT_OVERRIDE;
 
     virtual void prepareWidgets() = 0;
     virtual void prepareConnections()  = 0;

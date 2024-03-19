@@ -38,7 +38,6 @@
 /* GUI includes: */
 #include "UIPaneContainer.h"
 #include "UIGuestControlDefs.h"
-#include "QIWithRetranslateUI.h"
 
 #include "CProgress.h"
 
@@ -79,10 +78,8 @@ public:
         Page_Max
     };
 
-
 protected:
 
-    virtual void retranslateUi() final override;
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) final override;
 
 private slots:
@@ -104,6 +101,7 @@ private slots:
         void sltHandleWidgetFocusOut(QWidget *pWidget);
         void sltScrollToBottom(int iMin, int iMax);
     /** @} */
+    void sltRetranslateUI();
 
 private:
 

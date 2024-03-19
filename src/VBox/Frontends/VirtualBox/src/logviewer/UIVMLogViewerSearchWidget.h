@@ -75,7 +75,6 @@ protected:
 
     virtual void prepareWidgets() RT_OVERRIDE;
     virtual void prepareConnections() RT_OVERRIDE;
-    virtual void retranslateUi() RT_OVERRIDE;
     /** Handles Qt key-press @a pEevent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
@@ -90,6 +89,7 @@ private slots:
     void sltCaseSentitiveCheckBox();
     void sltMatchWholeWordCheckBox();
     void sltSelectNextPreviousMatch();
+    void sltRetranslateUI();
 
 private:
 

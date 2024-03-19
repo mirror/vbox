@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QButtonGroup>
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -42,6 +43,7 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerFilterWidget.h"
 #include "UIVMLogViewerWidget.h"
@@ -285,7 +287,7 @@ void UIVMLogViewerFilterWidget::applyFilter()
         filter();
     else
         resetFiltering();
-    retranslateUi();
+    sltRetranslateUI();
     emit sigFilterApplied();
 }
 
@@ -566,13 +568,12 @@ void UIVMLogViewerFilterWidget::prepareConnections()
             this, &UIVMLogViewerFilterWidget::sltRemoveFilterTerm);
     connect(m_pFilterTermsLineEdit, &UIVMFilterLineEdit::sigClearAll,
             this, &UIVMLogViewerFilterWidget::sltClearFilterTerms);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMLogViewerFilterWidget::sltRetranslateUI);
 }
 
-
-void UIVMLogViewerFilterWidget::retranslateUi()
+void UIVMLogViewerFilterWidget::sltRetranslateUI()
 {
-    UIVMLogViewerPane::retranslateUi();
-
     m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Select or enter a term which will be used in filtering the log text"));
     m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add the filter term to the set of filter terms"));
     m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));

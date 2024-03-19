@@ -37,6 +37,7 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVMLogViewerPreferencesWidget.h"
 #include "UIVMLogViewerWidget.h"
 
@@ -56,7 +57,9 @@ UIVMLogViewerPreferencesWidget::UIVMLogViewerPreferencesWidget(QWidget *pParent,
 {
     prepareWidgets();
     prepareConnections();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMLogViewerPreferencesWidget::sltRetranslateUI);
 }
 
 void UIVMLogViewerPreferencesWidget::setShowLineNumbers(bool bShowLineNumbers)
@@ -169,10 +172,8 @@ void UIVMLogViewerPreferencesWidget::prepareConnections()
         connect(m_pResetToDefaultsButton, &QIToolButton::clicked, this, &UIVMLogViewerPreferencesWidget::sigResetToDefaults);
 }
 
-void UIVMLogViewerPreferencesWidget::retranslateUi()
+void UIVMLogViewerPreferencesWidget::sltRetranslateUI()
 {
-    UIVMLogViewerPane::retranslateUi();
-
     m_pLineNumberCheckBox->setText(UIVMLogViewerWidget::tr("Show Line Numbers"));
     m_pLineNumberCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, show line numbers"));
 
