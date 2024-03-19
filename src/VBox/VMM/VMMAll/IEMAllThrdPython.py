@@ -1153,6 +1153,7 @@ class ThreadedFunctionVariation(object):
             elif sName.startswith('IEM_GET_MODRM_REG_8'):       sName = 'bModRmReg8P';
             elif sName.startswith('IEM_GET_MODRM_RM_8'):        sName = 'bModRmRm8P';
             elif sName.startswith('IEM_GET_EFFECTIVE_VVVV'):    sName = 'bEffVvvvP';
+            elif sName.startswith('IEM_GET_IMM8_REG'):          sName = 'bImm8Reg';
             elif sName.find('.') >= 0 or sName.find('->') >= 0:
                 sName = sName[max(sName.rfind('.'), sName.rfind('>')) + 1 : ] + 'P';
             else:
@@ -1336,7 +1337,8 @@ class ThreadedFunctionVariation(object):
                             # threaded function will be more efficient if we just pass the register index
                             # as a 4-bit param.
                             if (   sRef.startswith('IEM_GET_MODRM')
-                                or sRef.startswith('IEM_GET_EFFECTIVE_VVVV') ):
+                                or sRef.startswith('IEM_GET_EFFECTIVE_VVVV')
+                                or sRef.startswith('IEM_GET_IMM8_REG') ):
                                 offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
                                 if sParam[offParam] != '(':
                                     self.raiseProblem('Expected "(" following %s in "%s"' % (sRef, oStmt.renderCode(),));

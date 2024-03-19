@@ -4983,6 +4983,16 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(26));
 
 
 /**
+ * Gets the register (reg) part of a the special 4th register byte used by
+ * vblendvps and vblendvpd.
+ *
+ * For use during decoding.
+ */
+#define IEM_GET_IMM8_REG(a_pVCpu, a_bRegImm8) \
+    (IEM_IS_64BIT_CODE(a_pVCpu) ? (a_bRegImm8) >> 4 : ((a_bRegImm8) >> 4) & 7)
+
+
+/**
  * Checks if we're executing inside an AMD-V or VT-x guest.
  */
 #if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
