@@ -1042,7 +1042,6 @@ FNIEMOP_STUB(iemOp_vperlmilzz2pd_Vx_Hx_Wp_Lx);
 FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    uint8_t const fOp4Mask = IEM_IS_64BIT_CODE(pVCpu) ? 15 : 7;
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
