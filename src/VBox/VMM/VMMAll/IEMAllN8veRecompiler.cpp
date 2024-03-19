@@ -6115,49 +6115,25 @@ iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 
 
 # ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-/**
- * Emitting code that checks that the content of SIMD register @a idxSimdReg is the same
- * as what's in the guest register @a enmGstSimdReg, resulting in a breakpoint
- * instruction if that's not the case.
- *
- * @note May of course trash IEMNATIVE_SIMD_REG_FIXED_TMP0 and IEMNATIVE_REG_FIXED_TMP0.
- *       Trashes EFLAGS on AMD64.
- */
-DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSimdReg,
-                                    IEMNATIVEGSTSIMDREG enmGstSimdReg, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz)
-{
-    /* We can't check the value against whats in CPUMCTX if the register is already marked as dirty, so skip the check. */
-    if (   (   enmLoadSz == kIemNativeGstSimdRegLdStSz_256
-            && (   IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg)
-                || IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg)))
-        || (   enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128
-            && IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg))
-        || (   enmLoadSz == kIemNativeGstSimdRegLdStSz_High128
-            && IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg)))
-        return off;
-
 #  ifdef RT_ARCH_AMD64
-    Assert(enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128); /** @todo 256-bit variant. */
-
-    /* movdqa vectmp0, idxSimdReg */
-    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdReg);
-
-    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 44);
-
+/**
+ * Helper for AMD64 to emit code which checks the low 128-bits of the given SIMD register against the given vCPU offset.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t) iemNativeEmitGuestSimdRegValueCheckVCpuU128(uint8_t * const pbCodeBuf, uint32_t off, uint8_t idxSimdReg, uint32_t offVCpu)
+{
     /* pcmpeqq vectmp0, [gstreg] (ASSUMES SSE4.1) */
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8)
+    if (idxSimdReg >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0x38;
     pbCodeBuf[off++] = 0x29;
-    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxSimdReg, offVCpu);
 
     /* pextrq tmp0, vectmp0, #0 (ASSUMES SSE4.1). */
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     pbCodeBuf[off++] =   X86_OP_REX_W
-                       | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                       | (idxSimdReg < 8 ? 0 : X86_OP_REX_R)
                        | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0x3a;
@@ -6181,7 +6157,7 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /* pextrq tmp0, vectmp0, #1 (ASSUMES SSE4.1). */
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     pbCodeBuf[off++] =   X86_OP_REX_W
-                       | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                       | (idxSimdReg < 8 ? 0 : X86_OP_REX_R)
                        | (IEMNATIVE_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_B);
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0x3a;
@@ -6202,6 +6178,64 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /* int3 */
     pbCodeBuf[off++] = 0xcc;
 
+    return off;
+}
+#  endif
+
+
+/**
+ * Emitting code that checks that the content of SIMD register @a idxSimdReg is the same
+ * as what's in the guest register @a enmGstSimdReg, resulting in a breakpoint
+ * instruction if that's not the case.
+ *
+ * @note May of course trash IEMNATIVE_SIMD_REG_FIXED_TMP0 and IEMNATIVE_REG_FIXED_TMP0.
+ *       Trashes EFLAGS on AMD64.
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSimdReg,
+                                    IEMNATIVEGSTSIMDREG enmGstSimdReg, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSz)
+{
+    /* We can't check the value against whats in CPUMCTX if the register is already marked as dirty, so skip the check. */
+    if (   (   enmLoadSz == kIemNativeGstSimdRegLdStSz_256
+            && (   IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg)
+                || IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg)))
+        || (   enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128
+            && IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_LO_U128(pReNative, enmGstSimdReg))
+        || (   enmLoadSz == kIemNativeGstSimdRegLdStSz_High128
+            && IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_HI_U128(pReNative, enmGstSimdReg)))
+        return off;
+
+#  ifdef RT_ARCH_AMD64
+    if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
+    {
+        /* movdqa vectmp0, idxSimdReg */
+        off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdReg);
+
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 44);
+
+        off = iemNativeEmitGuestSimdRegValueCheckVCpuU128(pbCodeBuf, off, IEMNATIVE_SIMD_REG_FIXED_TMP0,
+                                                          g_aGstSimdShadowInfo[enmGstSimdReg].offXmm);
+    }
+
+    if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
+    {
+        /* Due to the fact that CPUMCTX stores the high 128-bit separately we need to do this all over again for the high part. */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 50);
+
+        /* vextracti128 vectmp0, idxSimdReg, 1 */
+        pbCodeBuf[off++] = X86_OP_VEX3;
+        pbCodeBuf[off++] =   (idxSimdReg < 8 ? X86_OP_VEX3_BYTE1_R : 0)
+                           | X86_OP_VEX3_BYTE1_X
+                           | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? X86_OP_VEX3_BYTE1_B : 0)
+                           | 0x03; /* Opcode map */
+        pbCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false /*f64BitOpSz*/, true /*f256BitAvx*/, X86_OP_VEX3_BYTE2_P_066H);
+        pbCodeBuf[off++] = 0x39;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdReg & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pbCodeBuf[off++] = 0x01;
+
+        off = iemNativeEmitGuestSimdRegValueCheckVCpuU128(pbCodeBuf, off, IEMNATIVE_SIMD_REG_FIXED_TMP0,
+                                                          g_aGstSimdShadowInfo[enmGstSimdReg].offYmm);
+    }
 #  elif defined(RT_ARCH_ARM64)
     /* mov vectmp0, [gstreg] */
     off = iemNativeEmitLoadSimdRegWithGstShadowSimdReg(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, enmGstSimdReg, enmLoadSz);
