@@ -4105,6 +4105,15 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 #undef  TMPL_MEM_NO_MAPPING
 
+#define TMPL_MEM_NO_MAPPING
+#define TMPL_MEM_TYPE       RTUINT256U
+#define TMPL_MEM_TYPE_ALIGN 0
+#define TMPL_MEM_TYPE_SIZE  32
+#define TMPL_MEM_FN_SUFF    U256NoAc
+#define TMPL_MEM_FMT_TYPE   "%.32Rhxs"
+#define TMPL_MEM_FMT_DESC   "qqword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+#undef TMPL_MEM_NO_MAPPING
 
 #undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
 

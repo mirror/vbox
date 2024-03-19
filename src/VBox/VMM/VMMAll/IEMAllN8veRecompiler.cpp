@@ -1895,6 +1895,19 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFetchDataU128NoAc,(PVMCPUCC pVCpu, 
     iemMemFetchDataU128NoAcJmp(pVCpu, pu128Dst, iSegReg, GCPtrMem);
 #endif
 }
+
+
+/**
+ * Used by TB code to load 256-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFetchDataU256NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PRTUINT256U pu256Dst))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
+    iemMemFetchDataU256NoAcSafeJmp(pVCpu, pu256Dst, iSegReg, GCPtrMem);
+#else
+    iemMemFetchDataU256NoAcJmp(pVCpu, pu256Dst, iSegReg, GCPtrMem);
+#endif
+}
 #endif
 
 
@@ -2216,6 +2229,19 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU128NoAc,(PVMCPUCC pVC
     return iemMemFetchDataU128NoAcSafeJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
 #else
     return iemMemFlatFetchDataU128NoAcJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
+#endif
+}
+
+
+/**
+ * Used by TB code to load unsigned 256-bit data w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU256NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PRTUINT256U pu256Dst))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
+    return iemMemFetchDataU256NoAcSafeJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
+#else
+    return iemMemFlatFetchDataU256NoAcJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
 #endif
 }
 #endif
