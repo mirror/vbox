@@ -77,7 +77,7 @@ namespace UIWizardDiskEditors
                                                       const QStringList &formatExtensions);
 };
 
-class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -101,11 +101,11 @@ public:
 private slots:
 
     void sltVariantChanged();
+    void sltRetranslateUI();
 
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
 
     QCheckBox *m_pFixedCheckBox;
     QCheckBox *m_pSplitBox;
@@ -115,7 +115,7 @@ private:
 };
 
 
-class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
+class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public QGroupBox
 {
     Q_OBJECT;
 
@@ -142,10 +142,13 @@ public:
 
     bool isComplete() const;
 
+private slots:
+
+    void sltRetranslateUI();
+
 private:
 
     void prepare(qulonglong uMinimumMediumSize);
-    virtual void retranslateUi() /* override final */;
 
     QILineEdit *m_pLocationEditor;
     QIToolButton *m_pLocationOpenButton;
@@ -196,7 +199,7 @@ private:
     bool m_fExpertMode;
 };
 
-class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public QIWithRetranslateUI<QWidget>, public UIDiskFormatBase
+class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public QWidget, public UIDiskFormatBase
 {
     Q_OBJECT;
 
@@ -210,17 +213,20 @@ public:
     virtual CMediumFormat mediumFormat() const /* override final */;
     virtual void setMediumFormat(const CMediumFormat &mediumFormat) /* override final */;
 
+private slots:
+
+    void sltRetranslateUI();
+
 private:
 
     void prepare();
     void createFormatWidgets();
-    virtual void retranslateUi() /* override final */;
 
     QButtonGroup *m_pFormatButtonGroup;
     QVBoxLayout *m_pMainLayout;
 };
 
-class SHARED_LIBRARY_STUFF UIDiskFormatsComboBox : public QIWithRetranslateUI<QIComboBox>, public UIDiskFormatBase
+class SHARED_LIBRARY_STUFF UIDiskFormatsComboBox : public QIComboBox, public UIDiskFormatBase
 {
     Q_OBJECT;
 
@@ -234,10 +240,13 @@ public:
     virtual CMediumFormat mediumFormat() const /* override final */;
     virtual void setMediumFormat(const CMediumFormat &mediumFormat) /* override final */;
 
+private slots:
+
+    void sltRetranslateUI();
+
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardDiskEditors_h */

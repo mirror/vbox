@@ -44,6 +44,7 @@
 #include "UIHostnameDomainNameEditor.h"
 #include "UIIconPool.h"
 #include "UIMediumSizeEditor.h"
+#include "UITranslationEventListener.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVMDiskPage.h"
@@ -185,7 +186,7 @@ QString UIWizardDiskEditors::stripFormatExtension(const QString &strFileName, co
 
 
 UIDiskVariantWidget::UIDiskVariantWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pFixedCheckBox(0)
     , m_pSplitBox(0)
 {
@@ -203,10 +204,12 @@ void UIDiskVariantWidget::prepare()
     pVariantLayout->addWidget(m_pFixedCheckBox);
     pVariantLayout->addWidget(m_pSplitBox);
     pVariantLayout->addStretch();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDiskVariantWidget::sltRetranslateUI);
 }
 
-void UIDiskVariantWidget::retranslateUi()
+void UIDiskVariantWidget::sltRetranslateUI()
 {
     if (m_pFixedCheckBox)
     {
@@ -314,7 +317,7 @@ void UIDiskVariantWidget::sltVariantChanged()
 *********************************************************************************************************************************/
 
 UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent, qulonglong uMinimumMediumSize)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
     , m_pMediumSizeEditor(0)
@@ -380,9 +383,11 @@ void UIMediumSizeAndPathGroupBox::prepare(qulonglong uMinimumMediumSize)
     connect(m_pLocationOpenButton, &QIToolButton::clicked,
             this, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumSizeAndPathGroupBox::sltRetranslateUI);
 }
-void UIMediumSizeAndPathGroupBox::retranslateUi()
+void UIMediumSizeAndPathGroupBox::sltRetranslateUI()
 {
     if (m_fExpertMode)
         setTitle(tr("Hard Disk File Location and Size"));
@@ -554,7 +559,7 @@ bool UIDiskFormatBase::isExpertMode() const
 *********************************************************************************************************************************/
 
 UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , UIDiskFormatBase(enmDeviceType, fExpertMode)
     , m_pFormatButtonGroup(0)
     , m_pMainLayout(0)
@@ -592,10 +597,12 @@ void UIDiskFormatsGroupBox::prepare()
     m_pMainLayout = new QVBoxLayout(this);
     populateFormats();
     createFormatWidgets();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDiskFormatsGroupBox::sltRetranslateUI);
 }
 
-void UIDiskFormatsGroupBox::retranslateUi()
+void UIDiskFormatsGroupBox::sltRetranslateUI()
 {
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup ? m_pFormatButtonGroup->buttons() : QList<QAbstractButton*>();
     for (int i = 0; i < buttons.size(); ++i)
@@ -644,7 +651,7 @@ void UIDiskFormatsGroupBox::createFormatWidgets()
 *********************************************************************************************************************************/
 
 UIDiskFormatsComboBox::UIDiskFormatsComboBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QIComboBox>(pParent)
+    : QIComboBox(pParent)
     , UIDiskFormatBase(enmDeviceType, fExpertMode)
 {
     prepare();
@@ -661,7 +668,9 @@ void UIDiskFormatsComboBox::prepare()
     connect(this, &QIComboBox::currentIndexChanged,
             this, &UIDiskFormatsComboBox::sigMediumFormatChanged);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDiskFormatsComboBox::sltRetranslateUI);
 }
 
 CMediumFormat UIDiskFormatsComboBox::mediumFormat() const
@@ -684,7 +693,7 @@ void UIDiskFormatsComboBox::setMediumFormat(const CMediumFormat &mediumFormat)
         setCurrentIndex(iPosition);
 }
 
-void UIDiskFormatsComboBox::retranslateUi()
+void UIDiskFormatsComboBox::sltRetranslateUI()
 {
     for (int i = 0; i < count(); ++i)
     {

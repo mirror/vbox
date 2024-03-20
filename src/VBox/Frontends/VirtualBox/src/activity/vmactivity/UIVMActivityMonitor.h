@@ -290,7 +290,7 @@ private:
     void updateDiskIOChart(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
-    virtual void resetCPUInfoLabel();
+    virtual void resetCPUInfoLabel() override;
     void resetNetworkInfoLabel();
     void resetDiskIOInfoLabel();
     virtual void prepareWidgets() override;
@@ -350,7 +350,7 @@ private:
         void updateDiskIOWrittenChart(quint64 uWriteRate, const QString &strLabel);
         void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
     /** @} */
-    virtual void resetCPUInfoLabel();
+    virtual void resetCPUInfoLabel() override;
     void resetNetworkInInfoLabel();
     void resetNetworkOutInfoLabel();
     void resetDiskIOWrittenInfoLabel();
