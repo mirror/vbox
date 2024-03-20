@@ -4120,6 +4120,11 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
         {
             uint32_t const idxVar = ASMBitFirstSetU32(fVars) - 1;
             uint8_t const  idxReg = pReNative->Core.aVars[idxVar].idxReg;
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+            if (pReNative->Core.aVars[idxVar].fSimdReg) /* Need to ignore SIMD variables here or we end up freeing random registers. */
+                continue;
+#endif
+
             if (   idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs)
                 && (RT_BIT_32(idxReg) & fRegMask)
                 && (  iLoop == 0
@@ -5333,7 +5338,7 @@ iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, I
 static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile,
                                              uint32_t fRegMask = IEMNATIVE_HST_SIMD_REG_MASK & ~IEMNATIVE_SIMD_REG_FIXED_MASK)
 {
-    //STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFree);
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeSimdRegFindFree);
     Assert(!(fRegMask & ~IEMNATIVE_HST_SIMD_REG_MASK));
     Assert(!(fRegMask & IEMNATIVE_SIMD_REG_FIXED_MASK));
 
@@ -5343,7 +5348,7 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
     uint32_t fRegs = ~pReNative->Core.bmHstSimdRegs & fRegMask;
     if (fRegs)
     {
-        //STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeNoVar);
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeSimdRegFindFreeNoVar);
 
 #if 0 /** @todo def IEMNATIVE_WITH_LIVENESS_ANALYSIS */
         /*
@@ -5376,7 +5381,7 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
             /* If it matches any shadowed registers. */
             if (pReNative->Core.bmGstRegShadows & fToFreeMask)
             {
-                STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeLivenessUnshadowed);
+                STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeSimdRegFindFreeLivenessUnshadowed);
                 iemNativeRegFlushGuestShadows(pReNative, fToFreeMask);
                 Assert(fRegs == (~pReNative->Core.bmHstRegs & fRegMask)); /* this shall not change. */
 
@@ -5384,7 +5389,7 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
                 uint32_t const fUnshadowedRegs = fRegs & ~pReNative->Core.bmHstRegsWithGstShadow;
                 if (fUnshadowedRegs)
                 {
-                    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeLivenessHelped);
+                    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeSimdRegFindFreeLivenessHelped);
                     return (fPreferVolatile
                             ? ASMBitFirstSetU32(fUnshadowedRegs)
                             : ASMBitLastSetU32(  fUnshadowedRegs & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK
@@ -5427,54 +5432,56 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
         return idxReg;
     }
 
+    AssertFailed(); /** @todo The following needs testing when it actually gets hit. */
+
     /*
      * Try free up a variable that's in a register.
      *
      * We do two rounds here, first evacuating variables we don't need to be
      * saved on the stack, then in the second round move things to the stack.
      */
-    //STAM_REL_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeVar);
-    AssertReleaseFailed(); /** @todo No variable support right now. */
-#if 0
+    STAM_REL_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeSimdRegFindFreeVar);
     for (uint32_t iLoop = 0; iLoop < 2; iLoop++)
     {
-        uint32_t fVars = pReNative->Core.bmSimdVars;
+        uint32_t fVars = pReNative->Core.bmVars;
         while (fVars)
         {
             uint32_t const idxVar = ASMBitFirstSetU32(fVars) - 1;
-            uint8_t const  idxReg = pReNative->Core.aSimdVars[idxVar].idxReg;
+            uint8_t const  idxReg = pReNative->Core.aVars[idxVar].idxReg;
+            if (!pReNative->Core.aVars[idxVar].fSimdReg) /* Ignore non SIMD variables here. */
+                continue;
+
             if (   idxReg < RT_ELEMENTS(pReNative->Core.aHstSimdRegs)
                 && (RT_BIT_32(idxReg) & fRegMask)
                 && (  iLoop == 0
-                    ? pReNative->Core.aSimdVars[idxVar].enmKind != kIemNativeVarKind_Stack
-                    : pReNative->Core.aSimdVars[idxVar].enmKind == kIemNativeVarKind_Stack)
-                && !pReNative->Core.aSimdVars[idxVar].fRegAcquired)
+                    ? pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack
+                    : pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack)
+                && !pReNative->Core.aVars[idxVar].fRegAcquired)
             {
-                Assert(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg));
+                Assert(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxReg));
                 Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows)
                        == pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows);
-                Assert(pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstReg_End));
-                Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg))
+                Assert(pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstSimdReg_End));
+                Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxReg))
                        == RT_BOOL(pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows));
 
-                if (pReNative->Core.aSimdVars[idxVar].enmKind == kIemNativeVarKind_Stack)
+                if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack)
                 {
                     uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, IEMNATIVE_VAR_IDX_PACK(idxVar));
                     *poff = iemNativeEmitStoreGprByBp(pReNative, *poff, iemNativeStackCalcBpDisp(idxStackSlot), idxReg);
                 }
 
-                pReNative->Core.aSimdVars[idxVar].idxReg    = UINT8_MAX;
+                pReNative->Core.aVars[idxVar].idxReg        = UINT8_MAX;
                 pReNative->Core.bmHstSimdRegs              &= ~RT_BIT_32(idxReg);
 
                 pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxReg);
-                pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
+                pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstRegs[idxReg].fGstRegShadows;
                 pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows = 0;
                 return idxReg;
             }
             fVars &= ~RT_BIT_32(idxVar);
         }
     }
-#endif
 
     AssertFailed();
     return UINT8_MAX;

@@ -1900,6 +1900,21 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativePcUpdateDelayed;
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /** Native recompiler: Number of calls to iemNativeSimdRegAllocFindFree. */
+    STAMCOUNTER             StatNativeSimdRegFindFree;
+    /** Native recompiler: Number of times iemNativeSimdRegAllocFindFree needed
+     *  to free a variable. */
+    STAMCOUNTER             StatNativeSimdRegFindFreeVar;
+    /** Native recompiler: Number of times iemNativeSimdRegAllocFindFree did
+     *  not need to free any variables. */
+    STAMCOUNTER             StatNativeSimdRegFindFreeNoVar;
+    /** Native recompiler: Liveness info freed shadowed guest registers in
+     * iemNativeSimdRegAllocFindFree. */
+    STAMCOUNTER             StatNativeSimdRegFindFreeLivenessUnshadowed;
+    /** Native recompiler: Liveness info helped with the allocation in
+     *  iemNativeSimdRegAllocFindFree. */
+    STAMCOUNTER             StatNativeSimdRegFindFreeLivenessHelped;
+
     /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks. */
     STAMCOUNTER             StatNativeMaybeDeviceNotAvailXcptCheckPotential;
     /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks. */
@@ -1915,7 +1930,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 #endif
 
-    uint64_t                au64Padding[2];
+    uint64_t                au64Padding[5];
     /** @} */
 
     /** Data TLB.

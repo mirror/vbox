@@ -542,6 +542,22 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativePcUpdateDelayed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Delayed RIP updates", "/IEM/CPU%u/re/NativePcUpdateDelayed", idCpu);
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFree, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of calls to iemNativeSimdRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeSimdRegFindFree", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFreeVar, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times iemNativeSimdRegAllocFindFree needed to free a variable.",
+                        "/IEM/CPU%u/re/NativeSimdRegFindFreeVar", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFreeNoVar, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times iemNativeSimdRegAllocFindFree did not needed to free any variables.",
+                        "/IEM/CPU%u/re/NativeSimdRegFindFreeNoVar", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFreeLivenessUnshadowed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Times liveness info freeed up shadowed guest registers in iemNativeSimdRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeSimdRegFindFreeLivenessUnshadowed", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFreeLivenessHelped,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Times liveness info helped finding the return register in iemNativeSimdRegAllocFindFree.",
+                        "/IEM/CPU%u/re/NativeSimdRegFindFreeLivenessHelped", idCpu);
+
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeMaybeDeviceNotAvailXcptCheckPotential, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Potential IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks", "/IEM/CPU%u/re/NativeMaybeDeviceNotAvailXcptCheckPotential", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeMaybeSseXcptCheckPotential,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Potential IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks",     "/IEM/CPU%u/re/NativeMaybeSseXcptCheckPotential", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeMaybeAvxXcptCheckPotential,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Potential IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks",     "/IEM/CPU%u/re/NativeMaybeAvxXcptCheckPotential", idCpu);
