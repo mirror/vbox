@@ -4717,7 +4717,8 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                 break;
             case sizeof(RTUINT256U):
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
-                           && (pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU256NoAc))
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU256NoAc
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU256AlignedAvx))
                        || (   enmOp == kIemNativeEmitMemOp_Store
                            && (pfnFunction == (uintptr_t)iemNativeHlpMemFlatStoreDataU256NoAc)));
                 break;
@@ -4777,7 +4778,8 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                 break;
             case sizeof(RTUINT256U):
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
-                           && (pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU256NoAc))
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU256NoAc
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU256AlignedAvx))
                        || (   enmOp == kIemNativeEmitMemOp_Store
                            && (pfnFunction == (uintptr_t)iemNativeHlpMemStoreDataU256NoAc)));
                 break;
@@ -5435,11 +5437,22 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                                                sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFetchDataU256NoAc, pCallEntry->idxInstr)
 
+#define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, a_iSeg, a_GCPtrMem, \
+                                               sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU256AlignedAvx, pCallEntry->idxInstr)
+
+
 /* 256-bit flat: */
 #define IEM_MC_FETCH_MEM_FLAT_U256_NO_AC(a_u256Dst, a_GCPtrMem) \
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, UINT8_MAX, a_GCPtrMem, \
                                                sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFlatFetchDataU256NoAc, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_FLAT_U256_ALIGN_AVX(a_u256Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU256AlignedAvx, pCallEntry->idxInstr)
 #endif
 
 

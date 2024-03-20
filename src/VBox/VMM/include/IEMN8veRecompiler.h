@@ -1649,6 +1649,7 @@ IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFetchDataU128,(PVMCPUCC pVCpu
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFetchDataU128AlignedSse,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PRTUINT128U pu128Dst));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFetchDataU128NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PRTUINT128U pu128Dst));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFetchDataU256NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PRTUINT256U pu256Dst));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFetchDataU256AlignedAvx,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PRTUINT256U pu256Dst));
 #endif
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint8_t u8Value));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint16_t u16Value));
@@ -1682,6 +1683,7 @@ IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatFetchDataU128,(PVMCPUCC p
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatFetchDataU128AlignedSse,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PRTUINT128U pu128Dst));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatFetchDataU128NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PRTUINT128U pu128Dst));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatFetchDataU256NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PRTUINT256U pu256Dst));
+IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatFetchDataU256AlignedAvx,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PRTUINT256U pu256Dst));
 #endif
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t u8Value));
 IEM_DECL_NATIVE_HLP_PROTO(void,     iemNativeHlpMemFlatStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value));
