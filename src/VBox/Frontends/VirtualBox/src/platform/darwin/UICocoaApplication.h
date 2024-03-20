@@ -67,11 +67,17 @@ class SHARED_LIBRARY_STUFF UICocoaApplication
 {
 public:
 
+    /** Creates singleton instance.
+      * @param  fPreventAppNap  Brings whether we should prevent AppNap. */
+    static void create(bool fPreventAppNap);
     /** Returns singleton instance. */
     static UICocoaApplication *instance();
 
     /** Destructs cocoa application. */
     virtual ~UICocoaApplication();
+
+    /** Returns whether we should prevent AppNap. */
+    bool isPreventAppNap() const { return m_fPreventAppNap; }
 
     /** Returns whether application is currently active. */
     bool isActive() const;
@@ -114,11 +120,15 @@ public:
 
 private:
 
-    /** Constructs cocoa application. */
-    UICocoaApplication();
+    /** Constructs cocoa application.
+      * @param  fPreventAppNap  Brings whether we should prevent AppNap. */
+    UICocoaApplication(bool fPreventAppNap);
 
     /** Holds the singleton access instance. */
     static UICocoaApplication *s_pInstance;
+
+    /** Holds whether we should prevent AppNap. */
+    const bool  m_fPreventAppNap;
 
     /** Holds the private NSApplication instance. */
     NativeUICocoaApplicationPrivateRef  m_pNative;

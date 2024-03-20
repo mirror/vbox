@@ -446,8 +446,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* VBOX_WITH_HARDENING */
 
 #ifdef VBOX_WS_MAC
+        /* Prevent AppNap for Runtime UI only: */
+        bool fPreventAppNap = false;
+# ifdef VBOX_RUNTIME_UI
+        fPreventAppNap = true;
+# endif
         /* Instantiate own NSApplication before QApplication do it for us: */
-        UICocoaApplication::instance();
+        UICocoaApplication::create(fPreventAppNap);
 
 # ifdef VBOX_RUNTIME_UI
         /* If we're a helper app inside Resources in the main application bundle,
