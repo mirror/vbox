@@ -7232,6 +7232,14 @@ void iemMemRollback(PVMCPUCC pVCpu) RT_NOEXCEPT
 #define TMPL_MEM_FMT_DESC   "qqword"
 #include "IEMAllMemRWTmpl.cpp.h"
 
+#define TMPL_MEM_TYPE           RTUINT256U
+#define TMPL_MEM_TYPE_ALIGN     (sizeof(RTUINT256U) - 1)
+#define TMPL_MEM_MAP_FLAGS_ADD  IEM_MEMMAP_F_ALIGN_GP
+#define TMPL_MEM_FN_SUFF        U256AlignedAvx
+#define TMPL_MEM_FMT_TYPE       "%.32Rhxs"
+#define TMPL_MEM_FMT_DESC       "qqword"
+#include "IEMAllMemRWTmpl.cpp.h"
+
 /**
  * Fetches a data dword and zero extends it to a qword.
  *
@@ -7290,70 +7298,6 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
     return rc;
 }
 #endif
-
-
-/**
- * Fetches a data oword (octo word) at an aligned address, generally AVX
- * related.
- *
- * Raises \#GP(0) if not aligned.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pu256Dst            Where to return the qword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-VBOXSTRICTRC iemMemFetchDataU256AlignedSse(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
-{
-    /* The lazy approach for now... */
-    uint8_t      bUnmapInfo;
-    PCRTUINT256U pu256Src;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu256Src, &bUnmapInfo, sizeof(*pu256Src), iSegReg, GCPtrMem,
-                                IEM_ACCESS_DATA_R, (sizeof(*pu256Src) - 1) | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE);
-    if (rc == VINF_SUCCESS)
-    {
-        pu256Dst->au64[0] = pu256Src->au64[0];
-        pu256Dst->au64[1] = pu256Src->au64[1];
-        pu256Dst->au64[2] = pu256Src->au64[2];
-        pu256Dst->au64[3] = pu256Src->au64[3];
-        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
-        Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
-    }
-    return rc;
-}
-
-
-#ifdef IEM_WITH_SETJMP
-/**
- * Fetches a data oword (octo word) at an aligned address, generally AVX
- * related, longjmp on error.
- *
- * Raises \#GP(0) if not aligned.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pu256Dst            Where to return the qword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-void iemMemFetchDataU256AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegReg,
-                                      RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    /* The lazy approach for now... */
-    uint8_t      bUnmapInfo;
-    PCRTUINT256U pu256Src = (PCRTUINT256U)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pu256Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R,
-                                                       (sizeof(*pu256Src) - 1) | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE);
-    pu256Dst->au64[0] = pu256Src->au64[0];
-    pu256Dst->au64[1] = pu256Src->au64[1];
-    pu256Dst->au64[2] = pu256Src->au64[2];
-    pu256Dst->au64[3] = pu256Src->au64[3];
-    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
-    Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
-}
-#endif
-
 
 
 /**
@@ -7527,64 +7471,6 @@ void iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, P
     uint8_t     bUnmapInfo;
     PRTUINT256U pu256Dst = (PRTUINT256U)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pu256Dst), iSegReg, GCPtrMem,
                                                      IEM_ACCESS_DATA_W, 0 /* NO_AC variant */);
-    pu256Dst->au64[0] = pu256Value->au64[0];
-    pu256Dst->au64[1] = pu256Value->au64[1];
-    pu256Dst->au64[2] = pu256Value->au64[2];
-    pu256Dst->au64[3] = pu256Value->au64[3];
-    iemMemCommitAndUnmapJmp(pVCpu, bUnmapInfo);
-    Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
-}
-#endif
-
-
-/**
- * Stores a data dqword, AVX \#GP(0) aligned.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- * @param   pu256Value          Pointer to the value to store.
- */
-VBOXSTRICTRC iemMemStoreDataU256AlignedAvx(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) RT_NOEXCEPT
-{
-    /* The lazy approach for now... */
-    uint8_t      bUnmapInfo;
-    PRTUINT256U  pu256Dst;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu256Dst, &bUnmapInfo, sizeof(*pu256Dst), iSegReg, GCPtrMem,
-                                IEM_ACCESS_DATA_W, (sizeof(*pu256Dst) - 1) | IEM_MEMMAP_F_ALIGN_GP);
-    if (rc == VINF_SUCCESS)
-    {
-        pu256Dst->au64[0] = pu256Value->au64[0];
-        pu256Dst->au64[1] = pu256Value->au64[1];
-        pu256Dst->au64[2] = pu256Value->au64[2];
-        pu256Dst->au64[3] = pu256Value->au64[3];
-        rc = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
-        Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
-    }
-    return rc;
-}
-
-
-#ifdef IEM_WITH_SETJMP
-/**
- * Stores a data dqword, AVX aligned.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- * @param   pu256Value          Pointer to the value to store.
- */
-void iemMemStoreDataU256AlignedAvxJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem,
-                                      PCRTUINT256U pu256Value) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    /* The lazy approach for now... */
-    uint8_t     bUnmapInfo;
-    PRTUINT256U pu256Dst = (PRTUINT256U)iemMemMapJmp(pVCpu, &bUnmapInfo, sizeof(*pu256Dst), iSegReg, GCPtrMem,
-                                                     IEM_ACCESS_DATA_W, (sizeof(*pu256Dst) - 1) | IEM_MEMMAP_F_ALIGN_GP);
     pu256Dst->au64[0] = pu256Value->au64[0];
     pu256Dst->au64[1] = pu256Value->au64[1];
     pu256Dst->au64[2] = pu256Value->au64[2];

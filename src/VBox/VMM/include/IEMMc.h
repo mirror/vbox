@@ -1178,42 +1178,42 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_U256_NO_AC(a_u256Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256NoAc(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedSse(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedAvx(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_YMM(a_YmmDst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256NoAc(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_YMM_NO_AC(a_YmmDst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256NoAc(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_YMM_ALIGN_AVX(a_YmmDst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedSse(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedAvx(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_U256_NO_AC(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
-    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
+    iemMemFetchDataU256AlignedAvxJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_YMM(a_YmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_YMM_NO_AC(a_YmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_YMM_ALIGN_AVX(a_YmmDst, a_iSeg, a_GCPtrMem) \
-    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
+    iemMemFetchDataU256AlignedAvxJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_U256(a_u256Dst, a_GCPtrMem) \
-    iemMemFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U256_NO_AC(a_u256Dst, a_GCPtrMem) \
-    iemMemFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U256_ALIGN_AVX(a_u256Dst, a_GCPtrMem) \
-    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256AlignedAvxJmp(pVCpu, &(a_u256Dst), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_YMM(a_YmmDst, a_GCPtrMem) \
-    iemMemFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_YMM_NO_AC(a_YmmDst, a_GCPtrMem) \
-    iemMemFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256NoAcJmp(pVCpu, &(a_YmmDst).ymm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_YMM_ALIGN_AVX(a_YmmDst, a_GCPtrMem) \
-    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataU256AlignedAvxJmp(pVCpu, &(a_YmmDst).ymm, (a_GCPtrMem))
 #endif
 
 
