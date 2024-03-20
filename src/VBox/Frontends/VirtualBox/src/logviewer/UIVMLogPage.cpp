@@ -38,6 +38,93 @@
 
 
 /*********************************************************************************************************************************
+*   UIVMLogBookmarkManager definition.                                                                                           *
+*********************************************************************************************************************************/
+
+class UIVMLogBookmarkManager
+{
+public:
+    void addBookmark(const UIVMLogBookmark& newBookmark);
+    void addBookmark(int iCursorPosition, int iLineNumber, QString strBlockText);
+    void deleteBookmark(const UIVMLogBookmark& bookmark);
+    void deleteBookmarkByIndex(int iIndex);
+    void deleteAllBookmarks();
+    int cursorPosition(int bookmarkIndex);
+    QSet<int> lineSet() const;
+    const QVector<UIVMLogBookmark>& bookmarkList() const;
+
+private:
+
+    QVector<UIVMLogBookmark> m_bookmarks;
+};
+
+
+/*********************************************************************************************************************************
+*   UIVMLogBookmarkManager implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+
+void UIVMLogBookmarkManager::addBookmark(const UIVMLogBookmark& newBookmark)
+{
+    foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
+        if (bookmark == newBookmark)
+            return;
+    m_bookmarks << newBookmark;
+}
+
+void UIVMLogBookmarkManager::addBookmark(int iCursorPosition, int iLineNumber, QString strBlockText)
+{
+    foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
+        if (bookmark.m_iLineNumber == iLineNumber)
+            return;
+    m_bookmarks << UIVMLogBookmark(iCursorPosition, iLineNumber, strBlockText);
+}
+
+void UIVMLogBookmarkManager::deleteBookmark(const UIVMLogBookmark& bookmark)
+{
+    int index = -1;
+    for (int i = 0; i < m_bookmarks.size() && index == -1; ++i)
+    {
+        if (bookmark == m_bookmarks[i])
+            index = i;
+    }
+    deleteBookmarkByIndex(index);
+}
+
+void UIVMLogBookmarkManager::deleteBookmarkByIndex(int iIndex)
+{
+    if (iIndex >= m_bookmarks.size() || iIndex < 0)
+        return;
+    m_bookmarks.removeAt(iIndex);
+}
+
+void UIVMLogBookmarkManager::deleteAllBookmarks()
+{
+    m_bookmarks.clear();
+}
+
+int UIVMLogBookmarkManager::cursorPosition(int bookmarkIndex)
+{
+    if (bookmarkIndex >= m_bookmarks.size())
+        return 0;
+    return m_bookmarks[bookmarkIndex].m_iCursorPosition;
+}
+
+QSet<int> UIVMLogBookmarkManager::lineSet() const
+{
+    QSet<int> lines;
+    foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
+        lines << bookmark.m_iLineNumber;
+    return lines;
+}
+
+const QVector<UIVMLogBookmark>& UIVMLogBookmarkManager::bookmarkList() const
+{
+    return m_bookmarks;
+}
+
+
+/*********************************************************************************************************************************
 *   UIVMLogTab implementation.                                                                                                   *
 *********************************************************************************************************************************/
 
@@ -66,6 +153,7 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent, const QUuid &uMachineId, const QStrin
     : UIVMLogTab(pParent, uMachineId, strMachineName)
     , m_pMainLayout(0)
     , m_pTextEdit(0)
+    , m_pBookmarkManager(new UIVMLogBookmarkManager)
     , m_iSelectedBookmarkIndex(-1)
     , m_bFiltered(false)
     , m_iLogFileId(-1)
@@ -129,6 +217,7 @@ QTextDocument* UIVMLogPage::document()
 
 void UIVMLogPage::cleanup()
 {
+    delete m_pBookmarkManager;
 }
 
 void UIVMLogPage::setLogContent(const QString &strLogContent, bool fError)
@@ -217,7 +306,8 @@ void UIVMLogPage::documentUndo()
 
 void UIVMLogPage::deleteAllBookmarks()
 {
-    m_bookmarkManager.deleteAllBookmarks();
+    if (m_pBookmarkManager)
+        m_pBookmarkManager->deleteAllBookmarks();
     updateTextEditBookmarkLineSet();
 }
 
@@ -225,31 +315,37 @@ void UIVMLogPage::scrollToBookmark(int bookmarkIndex)
 {
     if (!m_pTextEdit)
         return;
-    m_pTextEdit->setCursorPosition(m_bookmarkManager.cursorPosition(bookmarkIndex));
+    if (m_pBookmarkManager)
+        m_pTextEdit->setCursorPosition(m_pBookmarkManager->cursorPosition(bookmarkIndex));
 }
 
-const QVector<UIVMLogBookmark>& UIVMLogPage::bookmarkList() const
+QVector<UIVMLogBookmark> UIVMLogPage::bookmarkList() const
 {
-    return m_bookmarkManager.bookmarkList();
+    if (!m_pBookmarkManager)
+        return QVector<UIVMLogBookmark>();
+    return m_pBookmarkManager->bookmarkList();
 }
 
 void UIVMLogPage::sltAddBookmark(const UIVMLogBookmark& bookmark)
 {
-    m_bookmarkManager.addBookmark(bookmark);
+    if (m_pBookmarkManager)
+        m_pBookmarkManager->addBookmark(bookmark);
     updateTextEditBookmarkLineSet();
     emit sigBookmarksUpdated();
 }
 
 void UIVMLogPage::sltDeleteBookmark(const UIVMLogBookmark& bookmark)
 {
-    m_bookmarkManager.deleteBookmark(bookmark);
+    if (m_pBookmarkManager)
+        m_pBookmarkManager->deleteBookmark(bookmark);
     updateTextEditBookmarkLineSet();
     emit sigBookmarksUpdated();
 }
 
 void UIVMLogPage::deleteBookmarkByIndex(int iIndex)
 {
-    m_bookmarkManager.deleteBookmarkByIndex(iIndex);
+    if (m_pBookmarkManager)
+        m_pBookmarkManager->deleteBookmarkByIndex(iIndex);
     updateTextEditBookmarkLineSet();
     emit sigBookmarksUpdated();
 }
@@ -258,7 +354,8 @@ void UIVMLogPage::updateTextEditBookmarkLineSet()
 {
     if (!m_pTextEdit)
         return;
-    m_pTextEdit->setBookmarkLineSet(m_bookmarkManager.lineSet());
+    if (m_pBookmarkManager)
+        m_pTextEdit->setBookmarkLineSet(m_pBookmarkManager->lineSet());
 }
 
 bool UIVMLogPage::isFiltered() const

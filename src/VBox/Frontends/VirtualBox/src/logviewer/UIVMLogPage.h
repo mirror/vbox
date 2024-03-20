@@ -44,74 +44,7 @@ class QHBoxLayout;
 class QPlainTextEdit;
 class QTextDocument;
 class UIVMLogViewerTextEdit;
-
-class UIVMLogBookmarkManager
-{
-public:
-    void addBookmark(const UIVMLogBookmark& newBookmark)
-    {
-        foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
-            if (bookmark == newBookmark)
-                return;
-        m_bookmarks << newBookmark;
-    }
-
-    void addBookmark(int iCursorPosition, int iLineNumber, QString strBlockText)
-    {
-        foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
-            if (bookmark.m_iLineNumber == iLineNumber)
-                return;
-        m_bookmarks << UIVMLogBookmark(iCursorPosition, iLineNumber, strBlockText);
-    }
-
-    void deleteBookmark(const UIVMLogBookmark& bookmark)
-    {
-        int index = -1;
-        for (int i = 0; i < m_bookmarks.size() && index == -1; ++i)
-        {
-            if (bookmark == m_bookmarks[i])
-                index = i;
-        }
-        deleteBookmarkByIndex(index);
-    }
-
-    void deleteBookmarkByIndex(int iIndex)
-    {
-        if (iIndex >= m_bookmarks.size() || iIndex < 0)
-            return;
-        m_bookmarks.removeAt(iIndex);
-    }
-
-    void deleteAllBookmarks()
-    {
-        m_bookmarks.clear();
-    }
-
-    int cursorPosition(int bookmarkIndex)
-    {
-        if (bookmarkIndex >= m_bookmarks.size())
-            return 0;
-        return m_bookmarks[bookmarkIndex].m_iCursorPosition;
-    }
-
-    QSet<int> lineSet() const
-    {
-        QSet<int> lines;
-        foreach (const UIVMLogBookmark& bookmark, m_bookmarks)
-            lines << bookmark.m_iLineNumber;
-        return lines;
-    }
-
-    const QVector<UIVMLogBookmark>& bookmarkList() const
-    {
-        return m_bookmarks;
-    }
-
-private:
-
-    QVector<UIVMLogBookmark> m_bookmarks;
-};
-
+class UIVMLogBookmarkManager;
 
 class UIVMLogTab : public QWidget
 {
@@ -167,7 +100,7 @@ public:
     /** Undos the changes done to textDocument */
     void documentUndo();
 
-    const QVector<UIVMLogBookmark>& bookmarkList() const;
+    QVector<UIVMLogBookmark> bookmarkList() const;
 
     void deleteAllBookmarks();
     /** Scrolls the plain text edit to the bookmark with index @a bookmarkIndex. */
@@ -217,7 +150,7 @@ private:
     /** Stores full path and name of the log file. */
     QString         m_strLogFileName;
     /** Stores the bookmarks of the logpage. All other bookmark related containers are updated wrt. this one. */
-    UIVMLogBookmarkManager m_bookmarkManager;
+    UIVMLogBookmarkManager *m_pBookmarkManager;
 
     /** Keeps the index of the selected bookmark. Used especially when moving from one tab to another. */
     int                  m_iSelectedBookmarkIndex;
