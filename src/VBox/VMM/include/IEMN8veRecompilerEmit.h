@@ -2501,6 +2501,40 @@ iemNativeEmitVecRegByGprLdStEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t i
 }
 # endif
 
+
+/**
+ * Common bit of iemNativeEmitLoadVecRegByGprU128 and friends.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitVecRegByGprLdSt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecReg,
+                             uint8_t iGprBase, int32_t offDisp, ARMV8A64INSTRLDSTTYPE enmOperation, unsigned cbData)
+{
+    /*
+     * There are a couple of ldr variants that takes an immediate offset, so
+     * try use those if we can, otherwise we have to use the temporary register
+     * help with the addressing.
+     */
+    if ((uint32_t)offDisp < _4K * cbData && !((uint32_t)offDisp & (cbData - 1)))
+    {
+        /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(enmOperation, iVecReg, iGprBase, (uint32_t)offDisp / cbData);
+    }
+    else
+    {
+        /* The offset is too large, so we must load it into a register and use
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>)]. */
+        /** @todo reduce by offVCpu by >> 3 or >> 2? if it saves instructions? */
+        uint8_t const idxTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (int64_t)offDisp);
+
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(enmOperation, iVecReg, iGprBase, idxTmpReg);
+
+        iemNativeRegFreeTmpImm(pReNative, idxTmpReg);
+    }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
 #endif /* RT_ARCH_ARM64 */
 
 /**
@@ -2936,7 +2970,7 @@ iemNativeEmitLoadVecRegByGprU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitGprByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp, kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
 
 #else
 # error "port me"
@@ -2994,10 +3028,10 @@ iemNativeEmitLoadVecRegByGprU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
 
 #elif defined(RT_ARCH_ARM64)
     Assert(!(iVecRegDst & 0x1));
-    off = iemNativeEmitGprByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp,
-                                    kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
-    off = iemNativeEmitGprByGprLdSt(pReNative, off, iVecRegDst + 1, iGprBase, offDisp + sizeof(RTUINT128U),
-                                    kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp,
+                                       kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst + 1, iGprBase, offDisp + sizeof(RTUINT128U),
+                                       kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U));
 
 #else
 # error "port me"
@@ -3318,6 +3352,123 @@ iemNativeEmitStoreImm8ByGprEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t uI
 #endif
     return off;
 }
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Emits a 128-bit vector register store via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x7ff8...0x7ff8 range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByGprU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase,
+                                   int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* movdqu mem128, reg128 */
+    pCodeBuf[off++] = 0xf3;
+    if (iVecRegDst >= 8 || iGprBase >= 8)
+        pCodeBuf[off++] = (iVecRegDst < 8 ? 0 : X86_OP_REX_R) | (iGprBase < 8 ? 0 : X86_OP_REX_B);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0x7f;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iVecRegDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitVecRegByGprLdStEx(pCodeBuf, off, iVecRegDst, iGprBase, offDisp,
+                                         kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U), iGprTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 128-bit vector register store via a GPR base address with a displacement.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByGprU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitStoreVecRegByGprU128Ex(iemNativeInstrBufEnsure(pReNative, off, 8), off, iVecRegDst, iGprBase, offDisp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp, kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 256-bit vector register store via a GPR base address with a displacement.
+ *
+ * @note ARM64: Misaligned @a offDisp values and values not in the
+ *       -0x7ff8...0x7ff8 range will require a temporary register (@a iGprTmp) if
+ *       @a iGprReg and @a iGprBase are the same. Will assert / throw if caller
+ *       does not heed this.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByGprU256Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase,
+                                    int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
+{
+#ifdef RT_ARCH_AMD64
+    /* vmovdqu reg256, mem256 */
+    AssertFailed();
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] =   (iVecRegDst < 8 ? X86_OP_VEX3_BYTE1_R : 0)
+                      | X86_OP_VEX3_BYTE1_X
+                      | (iGprBase < 8 ? X86_OP_VEX3_BYTE1_B : 0)
+                      | UINT8_C(0x01);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false /*f64BitOpSz*/, true /*f256BitAvx*/, X86_OP_VEX2_BYTE1_P_0F3H);
+    pCodeBuf[off++] = 0x7f;
+    off = iemNativeEmitGprByGprDisp(pCodeBuf, off, iVecRegDst, iGprBase, offDisp);
+    RT_NOREF(iGprTmp);
+
+#elif defined(RT_ARCH_ARM64)
+    Assert(!(iVecRegDst & 0x1));
+    off = iemNativeEmitVecRegByGprLdStEx(pCodeBuf, off, iVecRegDst, iGprBase, offDisp,
+                                         kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U), iGprTmp);
+    off = iemNativeEmitVecRegByGprLdStEx(pCodeBuf, off, iVecRegDst + 1, iGprBase, offDisp + sizeof(RTUINT128U),
+                                         kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U), iGprTmp);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 256-bit GPR load via a GPR base address with a displacement.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreVecRegByGprU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprBase, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitStoreVecRegByGprU256Ex(iemNativeInstrBufEnsure(pReNative, off, 8), off, iVecRegDst, iGprBase, offDisp);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#elif defined(RT_ARCH_ARM64)
+    Assert(!(iVecRegDst & 0x1));
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst, iGprBase, offDisp,
+                                       kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
+    off = iemNativeEmitVecRegByGprLdSt(pReNative, off, iVecRegDst + 1, iGprBase, offDisp + sizeof(RTUINT128U),
+                                       kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+#endif
 
 
 

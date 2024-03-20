@@ -194,7 +194,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_MEM_FLAT_MAP_U128_RW':                                       (None, True,  True,  True,  ),
     'IEM_MC_STORE_MEM_FLAT_U128':                                        (None, True,  True,  False, ),
     'IEM_MC_STORE_MEM_FLAT_U128_NO_AC':                                  (None, True,  True,  False, ),
-    'IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE':                              (None, True,  True,  False, ),
+    'IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE':                              (None, True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_MEM_FLAT_U16':                                         (None, True,  True,  True,  ),
     'IEM_MC_STORE_MEM_FLAT_U16_CONST':                                   (None, True,  True,  True,  ),
     'IEM_MC_STORE_MEM_FLAT_U256':                                        (None, True,  True,  False, ),

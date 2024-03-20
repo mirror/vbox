@@ -1976,6 +1976,34 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU64,(PVMCPUCC pVCpu, RTGCP
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Used by TB code to store unsigned 128-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU128AlignedSse,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PCRTUINT128U pu128Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU128AlignedSseSafeJmp(pVCpu, iSegReg, GCPtrMem, pu128Src);
+#else
+    iemMemStoreDataU128AlignedSseJmp(pVCpu, iSegReg, GCPtrMem, pu128Src);
+#endif
+}
+
+
+/**
+ * Used by TB code to store unsigned 128-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU128NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PCRTUINT128U pu128Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU128NoAcSafeJmp(pVCpu, iSegReg, GCPtrMem, pu128Src);
+#else
+    iemMemStoreDataU128NoAcJmp(pVCpu, iSegReg, GCPtrMem, pu128Src);
+#endif
+}
+#endif
+
+
 
 /**
  * Used by TB code to store an unsigned 16-bit value onto a generic stack.
@@ -2323,6 +2351,34 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, R
     iemMemFlatStoreDataU64Jmp(pVCpu, GCPtrMem, u64Value);
 #endif
 }
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/**
+ * Used by TB code to store unsigned 128-bit data w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU128AlignedSse,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PCRTUINT128U pu128Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU128AlignedSseSafeJmp(pVCpu, UINT8_MAX, GCPtrMem, pu128Src);
+#else
+    iemMemFlatStoreDataU128AlignedSseJmp(pVCpu, GCPtrMem, pu128Src);
+#endif
+}
+
+
+/**
+ * Used by TB code to store unsigned 128-bit data w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU128NoAc,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PCRTUINT128U pu128Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU128NoAcSafeJmp(pVCpu, UINT8_MAX, GCPtrMem, pu128Src);
+#else
+    iemMemFlatStoreDataU128NoAcJmp(pVCpu, GCPtrMem, pu128Src);
+#endif
+}
+#endif
 
 
 
