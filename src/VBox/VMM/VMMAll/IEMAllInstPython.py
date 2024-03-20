@@ -3125,7 +3125,7 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_XREG_PAIR_U128_AND_RAX_RDX_U64':               (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_XREG_PAIR_U128_AND_EAX_EDX_U32_SX_U64':        (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_FETCH_XREG_PAIR_XMM':                                (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_FETCH_YREG_U128':                                    (McBlock.parseMcGeneric,           False, False, False, ),
+    'IEM_MC_FETCH_YREG_U128':                                    (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
     'IEM_MC_FETCH_YREG_U256':                                    (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
     'IEM_MC_FETCH_YREG_U32':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
     'IEM_MC_FETCH_YREG_U64':                                     (McBlock.parseMcGeneric,           False, False, g_fNativeSimd),
