@@ -4719,7 +4719,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
                            && (pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU256NoAc))
                        || (   enmOp == kIemNativeEmitMemOp_Store
-                           && (pfnFunction == UINT64_C(0xc000b000a0009000))));
+                           && (pfnFunction == (uintptr_t)iemNativeHlpMemFlatStoreDataU256NoAc)));
                 break;
 #endif
         }
@@ -4779,7 +4779,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
                            && (pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU256NoAc))
                        || (   enmOp == kIemNativeEmitMemOp_Store
-                           && (pfnFunction == UINT64_C(0xc000b000a0009000))));
+                           && (pfnFunction == (uintptr_t)iemNativeHlpMemStoreDataU256NoAc)));
                 break;
 #endif
         }
@@ -5552,6 +5552,11 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
                                                sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Store, \
                                                (uintptr_t)iemNativeHlpMemStoreDataU128NoAc, pCallEntry->idxInstr)
 
+# define IEM_MC_STORE_MEM_U256_NO_AC(a_iSeg, a_GCPtrMem, a_u256Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Value, a_iSeg, a_GCPtrMem, \
+                                               sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Store, \
+                                               (uintptr_t)iemNativeHlpMemStoreDataU256NoAc, pCallEntry->idxInstr)
+
 
 # define IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE(a_GCPtrMem, a_u128Value) \
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Value, UINT8_MAX, a_GCPtrMem, \
@@ -5562,6 +5567,11 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Value, UINT8_MAX, a_GCPtrMem, \
                                                sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Store, \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU128NoAc, pCallEntry->idxInstr)
+
+# define IEM_MC_STORE_MEM_FLAT_U256_NO_AC(a_GCPtrMem, a_u256Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Value, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(RTUINT256U), sizeof(RTUINT256U) - 1, kIemNativeEmitMemOp_Store, \
+                                               (uintptr_t)iemNativeHlpMemFlatStoreDataU256NoAc, pCallEntry->idxInstr)
 
 #endif
 

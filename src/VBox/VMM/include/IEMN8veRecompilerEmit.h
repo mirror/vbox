@@ -3421,8 +3421,7 @@ iemNativeEmitStoreVecRegByGprU256Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint
                                     int32_t offDisp = 0, uint8_t iGprTmp = UINT8_MAX)
 {
 #ifdef RT_ARCH_AMD64
-    /* vmovdqu reg256, mem256 */
-    AssertFailed();
+    /* vmovdqu mem256, reg256 */
     pCodeBuf[off++] = X86_OP_VEX3;
     pCodeBuf[off++] =   (iVecRegDst < 8 ? X86_OP_VEX3_BYTE1_R : 0)
                       | X86_OP_VEX3_BYTE1_X
@@ -3436,9 +3435,9 @@ iemNativeEmitStoreVecRegByGprU256Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint
 #elif defined(RT_ARCH_ARM64)
     Assert(!(iVecRegDst & 0x1));
     off = iemNativeEmitVecRegByGprLdStEx(pCodeBuf, off, iVecRegDst, iGprBase, offDisp,
-                                         kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U), iGprTmp);
+                                         kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U), iGprTmp);
     off = iemNativeEmitVecRegByGprLdStEx(pCodeBuf, off, iVecRegDst + 1, iGprBase, offDisp + sizeof(RTUINT128U),
-                                         kArmv8A64InstrLdStType_Ld_Vr_128, sizeof(RTUINT128U), iGprTmp);
+                                         kArmv8A64InstrLdStType_St_Vr_128, sizeof(RTUINT128U), iGprTmp);
 #else
 # error "port me"
 #endif
