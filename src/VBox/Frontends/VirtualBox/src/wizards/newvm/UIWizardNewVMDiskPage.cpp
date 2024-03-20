@@ -215,7 +215,7 @@ void UIWizardNewVMDiskPage::sltGetWithFileOpenDialog()
     }
 }
 
-void UIWizardNewVMDiskPage::retranslateUi()
+void UIWizardNewVMDiskPage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Virtual Hard disk"));
 
@@ -257,7 +257,7 @@ void UIWizardNewVMDiskPage::retranslateUi()
 
 void UIWizardNewVMDiskPage::initializePage()
 {
-    retranslateUi();
+    sltRetranslateUI();
 
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);

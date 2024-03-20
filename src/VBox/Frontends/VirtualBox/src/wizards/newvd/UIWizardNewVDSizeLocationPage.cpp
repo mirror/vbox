@@ -64,7 +64,7 @@ void UIWizardNewVDSizeLocationPage::prepare()
             this, &UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked);
     pMainLayout->addWidget(m_pMediumSizePathGroup);
     pMainLayout->addStretch();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked()
@@ -104,7 +104,7 @@ void UIWizardNewVDSizeLocationPage::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardNewVDSizeLocationPage::retranslateUi()
+void UIWizardNewVDSizeLocationPage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVD::tr("File location and size"));
 }
@@ -139,7 +139,7 @@ void UIWizardNewVDSizeLocationPage::initializePage()
         m_pMediumSizePathGroup->blockSignals(false);
         pWizard->setMediumSize(m_pMediumSizePathGroup->mediumSize());
     }
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardNewVDSizeLocationPage::isComplete() const

@@ -80,7 +80,7 @@ void UIWizardNewVDExpertPage::prepare()
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
             this, &UIWizardNewVDExpertPage::sltMediumPathChanged);
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIWizardNewVDExpertPage::sltMediumSizeChanged(qulonglong uSize)
@@ -135,7 +135,7 @@ void UIWizardNewVDExpertPage::sltSelectLocationButtonClicked()
     emit completeChanged();
 }
 
-void UIWizardNewVDExpertPage::retranslateUi()
+void UIWizardNewVDExpertPage::sltRetranslateUI()
 {
     if (m_pFormatVariantGroupBox)
         m_pFormatVariantGroupBox->setTitle(UIWizardNewVD::tr("Hard Disk File &Type and Variant"));
@@ -171,7 +171,7 @@ void UIWizardNewVDExpertPage::initializePage()
 
     pWizard->setMediumVariant(m_pVariantWidget->mediumVariant());
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardNewVDExpertPage::isComplete() const

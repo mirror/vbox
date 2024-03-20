@@ -61,10 +61,10 @@ void UIWizardCloneVMModePage::prepare()
     }
     pMainLayout->addStretch();
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIWizardCloneVMModePage::retranslateUi()
+void UIWizardCloneVMModePage::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVM::tr("Snapshots"));
@@ -104,7 +104,7 @@ void UIWizardCloneVMModePage::initializePage()
     if (m_pCloneModeGroupBox && !m_userModifiedParameters.contains("CloneMode"))
         wizardWindow<UIWizardCloneVM>()->setCloneMode(m_pCloneModeGroupBox->cloneMode());
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardCloneVMModePage::validatePage()

@@ -58,10 +58,10 @@ void UIWizardCloneVDFormatPage::prepare(KDeviceType enmDeviceType)
                 this, &UIWizardCloneVDFormatPage::sltMediumFormatChanged);
     }
     pMainLayout->addStretch();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIWizardCloneVDFormatPage::retranslateUi()
+void UIWizardCloneVDFormatPage::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Virtual Hard disk file type"));
@@ -76,7 +76,7 @@ void UIWizardCloneVDFormatPage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
     if (!m_userModifiedParameters.contains("MediumFormat"))
     {
         if (m_pFormatGroupBox)

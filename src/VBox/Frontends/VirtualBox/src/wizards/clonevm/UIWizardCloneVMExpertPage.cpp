@@ -92,10 +92,10 @@ void UIWizardCloneVMExpertPage::prepare(const QString &strOriginalName, const QS
         connect(m_pCloneTypeGroupBox, &UICloneVMCloneTypeGroupBox::sigFullCloneSelected,
                 this, &UIWizardCloneVMExpertPage::sltCloneTypeChanged);
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIWizardCloneVMExpertPage::retranslateUi()
+void UIWizardCloneVMExpertPage::sltRetranslateUI()
 {
     /* Translate widgets: */
     if (m_pNamePathGroupBox)
@@ -132,7 +132,7 @@ void UIWizardCloneVMExpertPage::initializePage()
 
     setCloneModeGroupBoxEnabled();
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIWizardCloneVMExpertPage::setCloneModeGroupBoxEnabled()

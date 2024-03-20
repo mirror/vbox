@@ -164,7 +164,7 @@ UIWizardAddCloudVM *UIWizardAddCloudVMPageExpert::wizard() const
     return qobject_cast<UIWizardAddCloudVM*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardAddCloudVMPageExpert::retranslateUi()
+void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
 {
     /* Translate tool-box: */
     if (m_pToolBox)
@@ -197,7 +197,7 @@ void UIWizardAddCloudVMPageExpert::initializePage()
     /* Populate providers: */
     populateProviders(m_pProviderComboBox, wizard()->notificationCenter());
     /* Translate providers: */
-    retranslateUi();
+    sltRetranslateUI();
     /* Fetch it, asynchronously: */
     QMetaObject::invokeMethod(this, "sltHandleProviderComboChange", Qt::QueuedConnection);
     /* Make image list focused by default: */

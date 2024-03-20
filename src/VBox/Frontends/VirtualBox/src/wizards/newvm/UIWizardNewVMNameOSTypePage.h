@@ -69,7 +69,7 @@ public:
 
 protected:
 
-    virtual bool isComplete() const; /* override final */
+    virtual bool isComplete() const override final;
     /** Validation stuff. */
     virtual bool validatePage() RT_OVERRIDE;
 
@@ -82,11 +82,10 @@ private slots:
     void sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId);
     void sltSkipUnattendedInstallChanged(bool fSkip);
     void sltSelectedEditionChanged(ulong uEditionIndex);
+    /** Translation stuff. */
+    virtual void sltRetranslateUI() override final;
 
 private:
-
-    /** Translation stuff. */
-    void retranslateUi();
 
     /** Prepare stuff. */
     void prepare();

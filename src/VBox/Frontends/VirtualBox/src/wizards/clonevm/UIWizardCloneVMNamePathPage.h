@@ -63,10 +63,10 @@ private slots:
     void sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy);
     void sltKeepDiskNamesToggled(bool fKeepDiskNames);
     void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     void initializePage();
     void prepare(const QString &strDefaultClonePath);
     /** Validation stuff */

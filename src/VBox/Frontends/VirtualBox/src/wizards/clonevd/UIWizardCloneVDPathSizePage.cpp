@@ -56,10 +56,10 @@ void UIWizardCloneVDPathSizePage::prepare(qulonglong uSourceDiskLogicaSize)
                 this, &UIWizardCloneVDPathSizePage::sltMediumSizeChanged);
     }
     pMainLayout->addStretch();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIWizardCloneVDPathSizePage::retranslateUi()
+void UIWizardCloneVDPathSizePage::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Location and size of the disk image"));
@@ -69,7 +69,7 @@ void UIWizardCloneVDPathSizePage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>() && m_pMediumSizePathGroupBox);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     m_pMediumSizePathGroupBox->blockSignals(true);
 

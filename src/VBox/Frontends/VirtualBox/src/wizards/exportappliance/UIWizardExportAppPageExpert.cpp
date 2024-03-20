@@ -431,7 +431,7 @@ UIWizardExportApp *UIWizardExportAppPageExpert::wizard() const
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageExpert::retranslateUi()
+void UIWizardExportAppPageExpert::sltRetranslateUI()
 {
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
@@ -553,7 +553,7 @@ void UIWizardExportAppPageExpert::initializePage()
     /* Populate MAC address policies: */
     populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Fetch it, asynchronously: */
     QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);

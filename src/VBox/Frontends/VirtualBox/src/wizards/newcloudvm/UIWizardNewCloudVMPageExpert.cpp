@@ -202,7 +202,7 @@ UIWizardNewCloudVM *UIWizardNewCloudVMPageExpert::wizard() const
     return qobject_cast<UIWizardNewCloudVM*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardNewCloudVMPageExpert::retranslateUi()
+void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 {
     /* Translate tool-box: */
     if (m_pToolBox)
@@ -245,7 +245,7 @@ void UIWizardNewCloudVMPageExpert::initializePage()
     /* Populate providers: */
     populateProviders(m_pProviderComboBox, wizard()->notificationCenter());
     /* Translate providers: */
-    retranslateUi();
+    sltRetranslateUI();
     /* Make image list focused by default: */
     m_pSourceImageList->setFocus();
     /* Fetch it, asynchronously: */

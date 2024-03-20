@@ -135,7 +135,7 @@ void UIWizardCloneVDExpertPage::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardCloneVDExpertPage::retranslateUi()
+void UIWizardCloneVDExpertPage::sltRetranslateUI()
 {
     if (m_pFormatVariantGroupBox)
         m_pFormatVariantGroupBox->setTitle(UIWizardCloneVD::tr("Hard Disk File &Type and Variant"));
@@ -167,7 +167,7 @@ void UIWizardCloneVDExpertPage::initializePage()
     m_pMediumSizePathGroupBox->blockSignals(false);
 
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardCloneVDExpertPage::isComplete() const

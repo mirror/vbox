@@ -31,15 +31,17 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class UINativeWizard;
 
 /** QWidget extension with advanced functionality emulating QWizardPage behavior. */
-class SHARED_LIBRARY_STUFF UINativeWizardPage : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UINativeWizardPage : public QWidget
 {
     Q_OBJECT;
 
@@ -54,7 +56,7 @@ public:
     UINativeWizardPage();
 
     /** Redirects the translation call to actual handler. */
-    void retranslate() { retranslateUi(); }
+    void retranslate() { sltRetranslateUI(); }
 
     /** Defines page @a strTitle. */
     void setTitle(const QString &strTitle);
@@ -69,6 +71,10 @@ public:
     /** Tests the page for validity, tranfers to the Next page is Ok.
       * @returns whether page state to go to next page is bearable. */
     virtual bool validatePage() { return true; }
+
+protected slots:
+
+    virtual void sltRetranslateUI() = 0;
 
 protected:
 

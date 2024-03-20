@@ -54,9 +54,6 @@ protected:
     /** Returns wizard this page belongs to. */
     UIWizardAddCloudVM *wizard() const;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
-
     /** Performs page initialization. */
     virtual void initializePage() /* override final */;
 
@@ -78,6 +75,9 @@ private slots:
 
     /** Handles change in instance list. */
     void sltHandleSourceInstanceChange();
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() override final;
 
 private:
 

@@ -449,7 +449,7 @@ void UIWizardNewVMSummaryPage::createConnections()
 {
 }
 
-void UIWizardNewVMSummaryPage::retranslateUi()
+void UIWizardNewVMSummaryPage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Summary"));
     if (m_pLabel)
@@ -461,7 +461,7 @@ void UIWizardNewVMSummaryPage::retranslateUi()
 
 void UIWizardNewVMSummaryPage::initializePage()
 {
-    retranslateUi();
+    sltRetranslateUI();
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard && m_pModel);
     m_pModel->populateData(pWizard);

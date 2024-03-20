@@ -65,13 +65,12 @@ private slots:
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
     void sltSelectedWindowsImageChanged(ulong uImageIndex);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
     void prepare();
     void createConnections();
-
-    void retranslateUi();
     void initializePage();
     bool isComplete() const;
     /** Returns true if we show the widgets for guest os product key. */

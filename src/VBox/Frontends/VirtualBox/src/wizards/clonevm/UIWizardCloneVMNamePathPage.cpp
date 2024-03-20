@@ -53,7 +53,7 @@ UIWizardCloneVMNamePathPage::UIWizardCloneVMNamePathPage(const QString &strOrigi
     prepare(strDefaultPath);
 }
 
-void UIWizardCloneVMNamePathPage::retranslateUi()
+void UIWizardCloneVMNamePathPage::sltRetranslateUI()
 {
     setTitle(UIWizardCloneVM::tr("New machine name and path"));
 
@@ -78,7 +78,7 @@ void UIWizardCloneVMNamePathPage::initializePage()
 {
     UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
     AssertReturnVoid(pWizard);
-    retranslateUi();
+    sltRetranslateUI();
     if (m_pNamePathEditor)
     {
         m_pNamePathEditor->setFocus();
@@ -137,7 +137,7 @@ void UIWizardCloneVMNamePathPage::prepare(const QString &strDefaultClonePath)
 
     pMainLayout->addStretch();
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardCloneVMNamePathPage::isComplete() const

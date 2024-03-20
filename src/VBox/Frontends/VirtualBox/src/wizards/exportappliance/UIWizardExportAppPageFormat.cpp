@@ -900,7 +900,7 @@ UIWizardExportApp *UIWizardExportAppPageFormat::wizard() const
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageFormat::retranslateUi()
+void UIWizardExportAppPageFormat::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardExportApp::tr("Format settings"));
@@ -1036,7 +1036,7 @@ void UIWizardExportAppPageFormat::initializePage()
     /* Populate MAC address policies: */
     populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Choose initially focused widget: */
     if (wizard()->isFormatCloudOne())

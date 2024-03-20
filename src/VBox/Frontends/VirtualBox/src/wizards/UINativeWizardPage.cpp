@@ -28,10 +28,12 @@
 /* GUI includes: */
 #include "UINativeWizard.h"
 #include "UINativeWizardPage.h"
-
+#include "UITranslationEventListener.h"
 
 UINativeWizardPage::UINativeWizardPage()
 {
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINativeWizardPage::sltRetranslateUI);
 }
 
 void UINativeWizardPage::setTitle(const QString &strTitle)

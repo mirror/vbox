@@ -446,7 +446,7 @@ UIWizardImportApp *UIWizardImportAppPageSettings::wizard() const
     return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardImportAppPageSettings::retranslateUi()
+void UIWizardImportAppPageSettings::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance settings"));
@@ -498,7 +498,7 @@ void UIWizardImportAppPageSettings::initializePage()
     /* Make sure form-editor knows notification-center: */
     m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Choose initially focused widget: */
     if (wizard()->isSourceCloudOne())
@@ -630,7 +630,7 @@ void UIWizardImportAppPageSettings::handleApplianceCertificate()
             m_enmCertText = comCertificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
 
             /* Translate page early: */
-            retranslateUi();
+            sltRetranslateUI();
 
             /* Instantiate the dialog: */
             QPointer<UIApplianceUnverifiedCertificateViewer> pDialog =

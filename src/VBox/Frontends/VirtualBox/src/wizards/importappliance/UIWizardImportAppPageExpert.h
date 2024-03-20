@@ -67,17 +67,14 @@ protected:
     /** Returns wizard this page belongs to. */
     UIWizardImportApp *wizard() const;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
-
     /** Performs page initialization. */
-    virtual void initializePage() /* override final */;
+    virtual void initializePage() override final;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override final */;
+    virtual bool isComplete() const override final;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override final */;
+    virtual bool validatePage() override final;
 
 private slots:
 
@@ -102,6 +99,8 @@ private slots:
     void sltHandleMACImportPolicyComboChange();
     /** Handles import HDs as VDI check-box change. */
     void sltHandleImportHDsAsVDICheckBoxChange();
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() override final;
 
 private:
 

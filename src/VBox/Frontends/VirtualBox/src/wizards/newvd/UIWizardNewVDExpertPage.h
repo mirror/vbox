@@ -56,11 +56,10 @@ private slots:
     void sltMediumVariantChanged(qulonglong uVariant);
     void sltMediumPathChanged(const QString &strPath);
     void sltMediumSizeChanged(qulonglong uSize);
+    /** Translation stuff. */
+    virtual void sltRetranslateUI() override final;
 
 private:
-
-    /** Translation stuff. */
-    void retranslateUi();
 
     /** Prepare stuff. */
     void prepare();

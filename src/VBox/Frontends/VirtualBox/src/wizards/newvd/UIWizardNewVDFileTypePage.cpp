@@ -52,7 +52,7 @@ void UIWizardNewVDFileTypePage::prepare()
     pMainLayout->addStretch();
     connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
             this, &UIWizardNewVDFileTypePage::sltMediumFormatChanged);
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIWizardNewVDFileTypePage::sltMediumFormatChanged()
@@ -62,7 +62,7 @@ void UIWizardNewVDFileTypePage::sltMediumFormatChanged()
     emit completeChanged();
 }
 
-void UIWizardNewVDFileTypePage::retranslateUi()
+void UIWizardNewVDFileTypePage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
@@ -73,7 +73,7 @@ void UIWizardNewVDFileTypePage::retranslateUi()
 void UIWizardNewVDFileTypePage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
-    retranslateUi();
+    sltRetranslateUI();
     if (m_pFormatButtonGroup)
         wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
 }

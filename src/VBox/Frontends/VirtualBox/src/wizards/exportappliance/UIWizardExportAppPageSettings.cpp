@@ -165,7 +165,7 @@ UIWizardExportApp *UIWizardExportAppPageSettings::wizard() const
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageSettings::retranslateUi()
+void UIWizardExportAppPageSettings::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardExportApp::tr("Appliance settings"));
@@ -185,7 +185,7 @@ void UIWizardExportAppPageSettings::initializePage()
     /* Make sure form-editor knows notification-center: */
     m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Refresh settings widget state: */
     refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());

@@ -95,7 +95,7 @@ UIWizardNewCloudVM *UIWizardNewCloudVMPageProperties::wizard() const
     return qobject_cast<UIWizardNewCloudVM*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardNewCloudVMPageProperties::retranslateUi()
+void UIWizardNewCloudVMPageProperties::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardNewCloudVM::tr("Cloud Virtual Machine settings"));

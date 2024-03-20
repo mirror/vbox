@@ -108,7 +108,7 @@ void UIWizardNewVMUnattendedPage::createConnections()
 }
 
 
-void UIWizardNewVMUnattendedPage::retranslateUi()
+void UIWizardNewVMUnattendedPage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
     if (m_pLabel)
@@ -124,7 +124,7 @@ void UIWizardNewVMUnattendedPage::initializePage()
 {
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
-    retranslateUi();
+    sltRetranslateUI();
 
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);

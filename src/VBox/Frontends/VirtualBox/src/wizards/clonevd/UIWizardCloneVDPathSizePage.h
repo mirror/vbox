@@ -59,11 +59,11 @@ private slots:
     void sltSelectLocationButtonClicked();
     void sltMediumPathChanged(const QString &strPath);
     void sltMediumSizeChanged(qulonglong uSize);
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE;
 
 private:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     void prepare(qulonglong uSourceDiskLogicaSize);
 
     /** Prepares the page. */

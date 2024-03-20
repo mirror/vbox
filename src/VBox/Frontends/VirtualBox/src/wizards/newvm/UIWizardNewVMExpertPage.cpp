@@ -216,7 +216,7 @@ void UIWizardNewVMExpertPage::sltOSFamilyTypeChanged(const QString &strGuestOSFa
     wizardWindow<UIWizardNewVM>()->setGuestOSFamilyId(strGuestOSFamilyType);
 }
 
-void UIWizardNewVMExpertPage::retranslateUi()
+void UIWizardNewVMExpertPage::sltRetranslateUI()
 {
     if (m_pSkipUnattendedCheckBox)
     {
@@ -454,7 +454,7 @@ void UIWizardNewVMExpertPage::initializePage()
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateDiskWidgetsAfterMediumFormatChange();
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Focus on the name field (rather than the help button): */
     if (m_pNameAndSystemEditor)

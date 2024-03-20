@@ -93,6 +93,8 @@ private slots:
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
     void sltSelectedEditionChanged(ulong uEditionIndex);
+    /** Translation stuff. */
+    virtual void sltRetranslateUI() override final;
 
 private:
 
@@ -103,9 +105,6 @@ private:
         ExpertToolboxItems_Hardware,
         ExpertToolboxItems_Disk
     };
-
-    /** Translation stuff. */
-    void retranslateUi();
 
     /** Prepare stuff. */
     void createConnections();

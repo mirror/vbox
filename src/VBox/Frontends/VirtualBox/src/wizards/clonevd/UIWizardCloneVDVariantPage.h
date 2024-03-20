@@ -51,11 +51,11 @@ public:
 private slots:
 
     void sltMediumVariantChanged(qulonglong uVariant);
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE;
 
 private:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     void prepare();
 
     /** Prepares the page. */

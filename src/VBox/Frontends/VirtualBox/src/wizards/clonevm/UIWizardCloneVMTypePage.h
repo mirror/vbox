@@ -52,10 +52,10 @@ public:
 private slots:
 
     void sltCloneTypeChanged(bool fIsFullClone);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     void initializePage();
     void prepare();
     bool validatePage();

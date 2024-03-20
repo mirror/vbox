@@ -80,14 +80,16 @@ protected:
     /** Returns wizard this page belongs to. */
     UIWizardExportApp *wizard() const;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
-
     /** Performs page initialization. */
-    virtual void initializePage() /* override final */;
+    virtual void initializePage() override final;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override final */;
+    virtual bool validatePage() override final;
+
+private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() override final;
 
 private:
 

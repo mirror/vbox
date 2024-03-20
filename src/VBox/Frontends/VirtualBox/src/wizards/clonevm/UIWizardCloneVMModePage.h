@@ -57,11 +57,10 @@ public:
 private slots:
 
     void sltCloneModeChanged(KCloneMode enmCloneMode);
+    /** Translation stuff. */
+    virtual void sltRetranslateUI() override final;
 
 private:
-
-    /** Translation stuff. */
-    void retranslateUi();
 
     /** Prepare stuff. */
     void initializePage();

@@ -50,10 +50,10 @@ private slots:
     void sltSelectLocationButtonClicked();
     void sltMediumSizeChanged(qulonglong uSize);
     void sltMediumPathChanged(const QString &strPath);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     void initializePage();
     bool isComplete() const;
     bool validatePage();

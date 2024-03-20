@@ -51,10 +51,10 @@ public:
 private slots:
 
     void sltMediumFormatChanged();
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     void prepare();
     void initializePage();
 

@@ -78,6 +78,7 @@ private slots:
     void sltGetWithFileOpenDialog();
     void sltHandleSizeEditorChange(qulonglong uSize);
     void sltFixedCheckBoxToggled(bool fChecked);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
@@ -88,9 +89,8 @@ private:
     QWidget *createDiskWidgets();
     QWidget *createMediumVariantWidgets(bool fWithLabels);
 
-    virtual void retranslateUi() /* override final */;
-    virtual void initializePage() /* override final */;
-    virtual bool isComplete() const /* override final */;
+    virtual void initializePage() override final;
+    virtual bool isComplete() const override final;
 
     void setEnableDiskSelectionWidgets(bool fEnabled);
     void setWidgetVisibility(const CMediumFormat &mediumFormat);

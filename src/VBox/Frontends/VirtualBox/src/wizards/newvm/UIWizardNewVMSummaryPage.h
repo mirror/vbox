@@ -47,14 +47,17 @@ public:
 
     UIWizardNewVMSummaryPage();
 
+private slots:
+
+    virtual void sltRetranslateUI() override final;
+
 private:
 
     void prepare();
     void createConnections();
-    virtual void retranslateUi() /* override final */;
-    virtual void initializePage() /* override final */;
-    virtual bool isComplete() const /* override final */;
-    virtual bool validatePage() /* override final */;
+    virtual void initializePage() override final;
+    virtual bool isComplete() const override final;
+    virtual bool validatePage() override final;
     /** @name Widgets
      * @{ */
        QIRichTextLabel *m_pLabel;

@@ -75,11 +75,11 @@ void UIWizardCloneVDVariantPage::prepare()
                 this, &UIWizardCloneVDVariantPage::sltMediumVariantChanged);
 
     }
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 
-void UIWizardCloneVDVariantPage::retranslateUi()
+void UIWizardCloneVDVariantPage::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
@@ -102,7 +102,7 @@ void UIWizardCloneVDVariantPage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     setWidgetVisibility(wizardWindow<UIWizardCloneVD>()->mediumFormat());
     if (m_pVariantWidget)

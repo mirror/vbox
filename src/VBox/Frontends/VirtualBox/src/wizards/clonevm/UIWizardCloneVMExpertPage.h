@@ -60,11 +60,10 @@ private slots:
     void sltKeepDiskNamesToggled(bool fKeepDiskNames);
     void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
     void sltCloneTypeChanged(bool fIsFullClone);
+    /** Translation stuff. */
+    virtual void sltRetranslateUI() override final;
 
 private:
-
-    /** Translation stuff. */
-    void retranslateUi();
 
     /** Prepare stuff. */
     void initializePage();

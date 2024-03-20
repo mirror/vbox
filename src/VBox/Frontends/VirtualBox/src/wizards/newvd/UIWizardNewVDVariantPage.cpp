@@ -68,10 +68,10 @@ void UIWizardNewVDVariantPage::prepare()
 
     connect(m_pVariantWidget, &UIDiskVariantWidget::sigMediumVariantChanged,
             this, &UIWizardNewVDVariantPage::sltMediumVariantChanged);
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIWizardNewVDVariantPage::retranslateUi()
+void UIWizardNewVDVariantPage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
 
@@ -98,7 +98,7 @@ void UIWizardNewVDVariantPage::initializePage()
     AssertReturnVoid(pWizard && m_pVariantWidget);
     setWidgetVisibility(pWizard->mediumFormat());
     pWizard->setMediumVariant(m_pVariantWidget->mediumVariant());
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIWizardNewVDVariantPage::isComplete() const

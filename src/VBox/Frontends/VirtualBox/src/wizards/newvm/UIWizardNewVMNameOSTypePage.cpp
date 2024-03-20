@@ -507,7 +507,7 @@ void UIWizardNewVMNameOSTypePage::sltOsTypeChanged()
         wizardWindow<UIWizardNewVM>()->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
 }
 
-void UIWizardNewVMNameOSTypePage::retranslateUi()
+void UIWizardNewVMNameOSTypePage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Virtual machine Name and Operating System"));
 
@@ -582,7 +582,7 @@ void UIWizardNewVMNameOSTypePage::initializePage()
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Initialize this page's widgets etc: */
     {

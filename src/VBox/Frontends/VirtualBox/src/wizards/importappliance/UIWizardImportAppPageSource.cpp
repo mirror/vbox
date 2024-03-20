@@ -650,7 +650,7 @@ UIWizardImportApp *UIWizardImportAppPageSource::wizard() const
     return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardImportAppPageSource::retranslateUi()
+void UIWizardImportAppPageSource::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance to import"));
@@ -749,7 +749,7 @@ void UIWizardImportAppPageSource::initializePage()
                     m_fImportFromOCIByDefault,
                     m_strSource);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Choose initially focused widget: */
     if (wizard()->isSourceCloudOne())

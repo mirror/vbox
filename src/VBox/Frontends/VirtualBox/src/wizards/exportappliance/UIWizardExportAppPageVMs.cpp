@@ -201,7 +201,7 @@ UIWizardExportApp *UIWizardExportAppPageVMs::wizard() const
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageVMs::retranslateUi()
+void UIWizardExportAppPageVMs::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardExportApp::tr("Virtual machines"));
@@ -217,7 +217,7 @@ void UIWizardExportAppPageVMs::initializePage()
     /* Populate VM items: */
     populateVMItems(m_pVMSelector, m_selectedVMNames);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Now, when we are ready, we can
      * fast traver to page 2 if requested: */

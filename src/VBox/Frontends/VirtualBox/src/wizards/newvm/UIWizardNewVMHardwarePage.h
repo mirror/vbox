@@ -54,15 +54,15 @@ private slots:
     void sltMemorySizeChanged(int iValue);
     void sltCPUCountChanged(int iCount);
     void sltEFIEnabledChanged(bool fEnabled);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
     /** Prepare stuff. */
     void prepare();
     void createConnections();
-    virtual void retranslateUi() /* override final */;
-    virtual void initializePage() /* override final */;
-    virtual bool isComplete() const /* override final */;
+    virtual void initializePage() override final;
+    virtual bool isComplete() const override final;
 
     /** @name Widgets
       * @{ */

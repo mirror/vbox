@@ -58,11 +58,11 @@ public:
 private slots:
 
     void sltMediumFormatChanged();
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE;
 
 private:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     void prepare(KDeviceType enmDeviceType);
 
     /** Prepares the page. */

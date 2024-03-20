@@ -72,7 +72,7 @@ void UIWizardCloneVMTypePage::sltCloneTypeChanged(bool fIsFullClone)
     pWizard->setCloneModePageVisible(fIsFullClone);
 }
 
-void UIWizardCloneVMTypePage::retranslateUi()
+void UIWizardCloneVMTypePage::sltRetranslateUI()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVM::tr("Clone type"));
@@ -97,7 +97,7 @@ void UIWizardCloneVMTypePage::retranslateUi()
 void UIWizardCloneVMTypePage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
-    retranslateUi();
+    sltRetranslateUI();
     if (m_pCloneTypeGroupBox && !m_userModifiedParameters.contains("LinkedClone"))
         wizardWindow<UIWizardCloneVM>()->setLinkedClone(!m_pCloneTypeGroupBox->isFullClone());
 }

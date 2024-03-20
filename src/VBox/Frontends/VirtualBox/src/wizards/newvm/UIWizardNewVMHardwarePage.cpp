@@ -74,7 +74,7 @@ void UIWizardNewVMHardwarePage::createConnections()
     }
 }
 
-void UIWizardNewVMHardwarePage::retranslateUi()
+void UIWizardNewVMHardwarePage::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Hardware"));
 
@@ -85,7 +85,7 @@ void UIWizardNewVMHardwarePage::retranslateUi()
 
 void UIWizardNewVMHardwarePage::initializePage()
 {
-    retranslateUi();
+    sltRetranslateUI();
 
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && m_pHardwareWidgetContainer)

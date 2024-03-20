@@ -50,10 +50,10 @@ public:
 private slots:
 
     void sltMediumVariantChanged(qulonglong uVariant);
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     void initializePage();
     bool isComplete() const;
     void prepare();

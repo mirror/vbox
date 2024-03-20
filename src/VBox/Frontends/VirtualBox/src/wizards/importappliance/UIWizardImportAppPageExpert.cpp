@@ -359,7 +359,7 @@ UIWizardImportApp *UIWizardImportAppPageExpert::wizard() const
     return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardImportAppPageExpert::retranslateUi()
+void UIWizardImportAppPageExpert::sltRetranslateUI()
 {
     /* Translate tool-box: */
     if (m_pToolBox)
@@ -438,7 +438,7 @@ void UIWizardImportAppPageExpert::initializePage()
                     m_fImportFromOCIByDefault,
                     m_strSource);
     /* Translate page: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Choose initially focused widget: */
     if (wizard()->isSourceCloudOne())
