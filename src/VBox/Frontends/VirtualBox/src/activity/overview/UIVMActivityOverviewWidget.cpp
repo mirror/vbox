@@ -53,6 +53,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVMActivityMonitor.h"
@@ -136,7 +137,7 @@ public:
 *   Class UIVMActivityOverviewHostStatsWidget definition.                                                                        *
 *********************************************************************************************************************************/
 /** A container QWidget to layout host stats. related widgets. */
-class UIVMActivityOverviewHostStatsWidget : public QIWithRetranslateUI<QWidget>
+class UIVMActivityOverviewHostStatsWidget : public QWidget
 {
 
     Q_OBJECT;
@@ -146,9 +147,9 @@ public:
     UIVMActivityOverviewHostStatsWidget(QWidget *pParent = 0);
     void setHostStats(const UIVMActivityOverviewHostStats &hostStats);
 
-protected:
+private slots:
 
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
 
 private:
 
@@ -510,7 +511,7 @@ void UIVMActivityOverviewDoughnutChart::paintEvent(QPaintEvent *pEvent)
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewHostStatsWidget::UIVMActivityOverviewHostStatsWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pHostCPUChart(0)
     , m_pHostRAMChart(0)
     , m_pHostFSChart(0)
@@ -532,7 +533,9 @@ UIVMActivityOverviewHostStatsWidget::UIVMActivityOverviewHostStatsWidget(QWidget
     , m_RAMUsedColor(Qt::red)
 {
     prepare();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMActivityOverviewHostStatsWidget::sltRetranslateUI);
 }
 
 void UIVMActivityOverviewHostStatsWidget::setHostStats(const UIVMActivityOverviewHostStats &hostStats)
@@ -572,7 +575,7 @@ void UIVMActivityOverviewHostStatsWidget::setHostStats(const UIVMActivityOvervie
     updateLabels();
 }
 
-void UIVMActivityOverviewHostStatsWidget::retranslateUi()
+void UIVMActivityOverviewHostStatsWidget::sltRetranslateUI()
 {
     updateLabels();
 }
@@ -1724,7 +1727,7 @@ bool UIActivityOverviewModel::columnVisible(int iColumnId) const
 
 UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                  bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -1770,7 +1773,7 @@ void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachi
         m_pModel->setCloudMachineItems(cloudItems);
 }
 
-void UIVMActivityOverviewWidget::retranslateUi()
+void UIVMActivityOverviewWidget::sltRetranslateUI()
 {
     m_columnTitles[VMActivityOverviewColumn_Name] = UIVMActivityOverviewWidget::tr("VM Name");
     m_columnTitles[VMActivityOverviewColumn_CPUGuestLoad] = UIVMActivityOverviewWidget::tr("CPU Guest");
@@ -1800,7 +1803,7 @@ void UIVMActivityOverviewWidget::showEvent(QShowEvent *pEvent)
     if (m_pVMActivityMonitorAction && m_pTableView)
         m_pVMActivityMonitorAction->setEnabled(m_pTableView->hasSelection());
 
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 }
 
 void UIVMActivityOverviewWidget::prepare()
@@ -1818,13 +1821,15 @@ void UIVMActivityOverviewWidget::prepare()
     prepareWidgets();
     loadSettings();
     prepareActions();
-    retranslateUi();
+    sltRetranslateUI();
     updateModelColumVisibilityCache();
     uiCommon().setHelpKeyword(this, "vm-activity-overview-widget");
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIVMActivityOverviewWidget::sltSaveSettings);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
             this, &UIVMActivityOverviewWidget::sltClearCOMData);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMActivityOverviewWidget::sltRetranslateUI);
     sltCloudVMVisibility(m_fShowCloudVMs);
 }
 

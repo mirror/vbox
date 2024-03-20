@@ -45,6 +45,7 @@
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -72,7 +73,7 @@ const quint64 uInvalidValueSentinel = ~0U;
 *   UIChart definition.                                                                                                          *
 *********************************************************************************************************************************/
 
-class UIChart : public QIWithRetranslateUI<QWidget>
+class UIChart : public QWidget
 {
 
     Q_OBJECT;
@@ -119,7 +120,6 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
     virtual QSize sizeHint() const  RT_OVERRIDE;
-    virtual void retranslateUi()  RT_OVERRIDE;
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
@@ -128,6 +128,7 @@ private slots:
     void sltResetMetric();
     void sltSetShowPieChart(bool fShowPieChart);
     void sltSetUseAreaChart(bool fUseAreaChart);
+    void sltRetranslateUI();
 
 private:
 
@@ -189,7 +190,7 @@ private:
 *********************************************************************************************************************************/
 
 UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
-    :QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
     , m_iOverlayAlpha(80)
@@ -238,7 +239,9 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     m_pMouseOverLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_pMouseOverLabel->setAutoFillBackground(true);
     m_pMouseOverLabel->setMargin(0.1 * QStyle::PM_HeaderMargin);
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChart::sltRetranslateUI);
 }
 
 bool UIChart::isPieChartAllowed() const
@@ -356,7 +359,7 @@ QSize UIChart::sizeHint() const
     return m_size;
 }
 
-void UIChart::retranslateUi()
+void UIChart::sltRetranslateUI()
 {
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "This metric requires guest additions to work.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
@@ -396,7 +399,7 @@ bool UIChart::event(QEvent *pEvent)
 
 
     }
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+    return QWidget::event(pEvent);
 }
 
 void UIChart::resizeEvent(QResizeEvent *pEvent)
@@ -404,7 +407,7 @@ void UIChart::resizeEvent(QResizeEvent *pEvent)
     int iWidth = width() - m_iMarginLeft - m_iMarginRight;
     if (m_iMaximumQueueSize > 0)
         m_fPixelPerDataPoint = iWidth / (float)m_iMaximumQueueSize;
-    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+    QWidget::resizeEvent(pEvent);
 }
 
 void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
@@ -421,7 +424,7 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
     }
 
     update();
-    QIWithRetranslateUI<QWidget>::mouseMoveEvent(pEvent);
+    QWidget::mouseMoveEvent(pEvent);
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
@@ -1031,7 +1034,7 @@ bool UIMetric::autoUpdateMaximum() const
 *********************************************************************************************************************************/
 
 UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, int iMaximumQueueSize)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pContainerLayout(0)
     , m_pTimer(0)
     , m_iTimeStep(0)
@@ -1045,7 +1048,7 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
             this, &UIVMActivityMonitor::sltCreateContextMenu);
 }
 
-void UIVMActivityMonitor::retranslateUi()
+void UIVMActivityMonitor::sltRetranslateUI()
 {
     /* Translate the chart info labels: */
     m_iMaximumLabelLength = 0;
@@ -1206,10 +1209,11 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
 {
     prepareMetrics();
     prepareWidgets();
-    retranslateUi();
+    sltRetranslateUI();
     prepareActions();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI, this, &UIVMActivityMonitorLocal::sltRetranslateUI);
     setMachine(machine);
 
     /* Configure charts: */
@@ -1243,9 +1247,9 @@ QUuid UIVMActivityMonitorLocal::machineId() const
     return m_comMachine.GetId();
 }
 
-void UIVMActivityMonitorLocal::retranslateUi()
+void UIVMActivityMonitorLocal::sltRetranslateUI()
 {
-    UIVMActivityMonitor::retranslateUi();
+    UIVMActivityMonitor::sltRetranslateUI();
 
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
@@ -1778,7 +1782,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
 
     prepareMetrics();
     prepareWidgets();
-    retranslateUi();
+    sltRetranslateUI();
     prepareActions();
     resetCPUInfoLabel();
     resetNetworkInInfoLabel();
@@ -1786,7 +1790,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetDiskIOWrittenInfoLabel();
     resetDiskIOReadInfoLabel();
     resetRAMInfoLabel();
-
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI, this, &UIVMActivityMonitorCloud::sltRetranslateUI);
     /* Start the timer: */
     start();
 }
@@ -1951,9 +1955,9 @@ QString UIVMActivityMonitorCloud::machineName() const
     return QString();
 }
 
-void UIVMActivityMonitorCloud::retranslateUi()
+void UIVMActivityMonitorCloud::sltRetranslateUI()
 {
-    UIVMActivityMonitor::retranslateUi();
+    UIVMActivityMonitor::sltRetranslateUI();
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
 

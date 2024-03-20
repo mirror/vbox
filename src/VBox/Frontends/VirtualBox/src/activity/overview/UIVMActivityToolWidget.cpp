@@ -50,7 +50,7 @@
 
 UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                  bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QTabWidget>(pParent)
+    : QTabWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -77,15 +77,6 @@ bool UIVMActivityToolWidget::isCurrentTool() const
 void UIVMActivityToolWidget::setIsCurrentTool(bool fIsCurrentTool)
 {
     m_fIsCurrentTool = fIsCurrentTool;
-}
-
-void UIVMActivityToolWidget::retranslateUi()
-{
-}
-
-void UIVMActivityToolWidget::showEvent(QShowEvent *pEvent)
-{
-    QIWithRetranslateUI<QTabWidget>::showEvent(pEvent);
 }
 
 void UIVMActivityToolWidget::prepare()

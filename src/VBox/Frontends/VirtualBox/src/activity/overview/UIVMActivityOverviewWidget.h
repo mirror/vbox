@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -56,7 +55,7 @@ class UIVMActivityOverviewHostStatsWidget;
 class UIVMActivityOverviewTableView;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
-class UIVMActivityOverviewWidget : public QIWithRetranslateUI<QWidget>
+class UIVMActivityOverviewWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -83,7 +82,6 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        virtual void retranslateUi() RT_OVERRIDE;
         virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
@@ -100,6 +98,7 @@ private slots:
     void sltCloudVMVisibility(bool fShow);
     void sltSaveSettings();
     void sltClearCOMData();
+    void sltRetranslateUI();
 
 private:
 

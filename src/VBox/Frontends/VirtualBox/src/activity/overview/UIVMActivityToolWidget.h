@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class UIActionPool;
@@ -46,7 +45,7 @@ class UIVirtualMachineItem;
 class CMachine;
 
 /** QTabWidget extension host machine activity widget(s) in the Manager UI. */
-class UIVMActivityToolWidget : public QIWithRetranslateUI<QTabWidget>
+class UIVMActivityToolWidget : public QTabWidget
 {
     Q_OBJECT;
 
@@ -68,14 +67,6 @@ public:
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
-
-protected:
-
-    /** @name Event-handling stuff.
-      * @{ */
-        virtual void retranslateUi() RT_OVERRIDE;
-        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
-    /** @} */
 
 private slots:
 

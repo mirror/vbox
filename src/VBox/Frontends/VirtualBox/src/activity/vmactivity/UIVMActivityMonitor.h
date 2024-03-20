@@ -48,7 +48,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIMonitorCommon.h"
 
 /* Forward declarations: */
@@ -147,7 +146,7 @@ private:
   * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
   * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much
   * special casing etc.*/
-class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QIWithRetranslateUI<QWidget>
+class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QWidget
 {
 
     Q_OBJECT;
@@ -162,9 +161,12 @@ public slots:
 
         void sltExportMetricsToFile();
 
+protected slots:
+
+        virtual void sltRetranslateUI();
+
 protected:
 
-    virtual void retranslateUi() RT_OVERRIDE;
     //virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
     virtual void obtainDataAndUpdate() = 0;
     virtual QString defaultMachineFolder() const = 0;
@@ -258,9 +260,12 @@ public slots:
         void sltGuestAdditionsStateChange();
     /** @} */
 
+protected slots:
+
+        virtual void sltRetranslateUI() override;
+
 protected:
 
-    virtual void retranslateUi() RT_OVERRIDE;
     virtual void obtainDataAndUpdate() RT_OVERRIDE;
     virtual QString defaultMachineFolder() const RT_OVERRIDE;
     virtual void reset() RT_OVERRIDE;
@@ -317,6 +322,10 @@ public:
     /** According to OCI docs returned time stamp is in RFC3339 format. */
     static QString formatCloudTimeStamp(const QString &strInput);
 
+protected slots:
+
+        virtual void sltRetranslateUI() override;
+
 private slots:
 
     void sltMetricNameListingComplete(QVector<QString> metricNameList);
@@ -326,7 +335,6 @@ private slots:
 
 private:
     void setMachine(const CCloudMachine &comMachine);
-    virtual void retranslateUi() RT_OVERRIDE;
     virtual void obtainDataAndUpdate() RT_OVERRIDE;
 
     virtual QString defaultMachineFolder() const RT_OVERRIDE;
