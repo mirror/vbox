@@ -173,8 +173,8 @@ public:
 protected:
 
     /** Populates pages. */
-    virtual void populatePages() /* final override */;
-    virtual void cleanWizard() /* final override */;
+    virtual void populatePages() final override;
+    virtual void cleanWizard() final override;
     bool attachDefaultDevices();
 
 private slots:

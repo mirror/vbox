@@ -81,7 +81,7 @@ public:
 
 protected:
 
-    virtual void populatePages() /* final override */;
+    virtual void populatePages() final override;
 
 private slots:
 
