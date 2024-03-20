@@ -2027,6 +2027,19 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU256NoAc,(PVMCPUCC pVCpu, 
     iemMemStoreDataU256NoAcJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
 #endif
 }
+
+
+/**
+ * Used by TB code to store unsigned 256-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU256AlignedAvx,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, PCRTUINT256U pu256Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU256AlignedAvxSafeJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
+#else
+    iemMemStoreDataU256AlignedAvxcJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
+#endif
+}
 #endif
 
 
@@ -2428,6 +2441,19 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU256NoAc,(PVMCPUCC pVC
     iemMemStoreDataU256NoAcSafeJmp(pVCpu, UINT8_MAX, GCPtrMem, pu256Src);
 #else
     iemMemFlatStoreDataU256NoAcJmp(pVCpu, GCPtrMem, pu256Src);
+#endif
+}
+
+
+/**
+ * Used by TB code to store unsigned 256-bit data w/ flat address.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU256AlignedAvx,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, PCRTUINT256U pu256Src))
+{
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
+    iemMemStoreDataU256AlignedAvxSafeJmp(pVCpu, UINT8_MAX, GCPtrMem, pu256Src);
+#else
+    iemMemFlatStoreDataU256AlignedAvxJmp(pVCpu, GCPtrMem, pu256Src);
 #endif
 }
 #endif

@@ -3343,7 +3343,7 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_MEM_U16_CONST':                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_STORE_MEM_U256':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_MEM_U256_NO_AC':                               (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
-    'IEM_MC_STORE_MEM_U256_ALIGN_AVX':                           (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_STORE_MEM_U256_ALIGN_AVX':                           (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_MEM_U32':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_STORE_MEM_U32_CONST':                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_STORE_MEM_U64':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
