@@ -74,10 +74,12 @@ RT_C_DECLS_BEGIN
 typedef int CGSConnection;
 typedef enum
 {
+    kCGSGlobalHotKeyInvalid = -1 /* bird */,
     kCGSGlobalHotKeyEnable = 0,
-    kCGSGlobalHotKeyDisable,
-    kCGSGlobalHotKeyDisableExceptUniversalAccess,
-    kCGSGlobalHotKeyInvalid = -1 /* bird */
+    kCGSGlobalHotKeyDisable = 1,
+    kCGSGlobalHotKeyDisableExceptUniversalAccess = 2,
+    kCGSGlobalHotKeySleep = 4 /* dsen */,
+    kCGSGlobalHotKeyScreenSaver = 6 /* dsen */,
 } CGSGlobalHotKeyOperatingMode;
 extern CGSConnection _CGSDefaultConnection(void);
 extern CGError CGSGetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode *enmMode);
@@ -515,6 +517,7 @@ UInt32 DarwinKeyCodeToDarwinModifierMask(unsigned uKeyCode)
 
 void DarwinDisableGlobalHotKeys(bool fDisable)
 {
+    /* Prevent LogRel clogging: */
     static unsigned s_cComplaints = 0;
 
     /* Lazy connect to the core graphics service. */
@@ -531,7 +534,14 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
         &&  enmMode != kCGSGlobalHotKeyDisable
         &&  enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
     {
-        AssertMsgFailed(("%d\n", enmMode));
+        /* We are silently ignoring case when
+         * host is in sleep or screensaver mode: */
+        if (   enmMode != kCGSGlobalHotKeySleep
+            && enmMode != kCGSGlobalHotKeyScreenSaver)
+        {
+            /* Otherwise we should warn about the unknown mode we met: */
+            AssertMsgFailed(("%d\n", enmMode));
+        }
         if (s_cComplaints++ < 32)
             LogRel(("DarwinDisableGlobalHotKeys: Unexpected enmMode=%d\n", enmMode));
         return;
@@ -557,8 +567,14 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
     if (enmNewMode != enmMode)
     {
-        /* If the screensaver kicks in we should ignore failure here. */
-        AssertMsg(enmMode == kCGSGlobalHotKeyEnable, ("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
+        /* We are silently ignoring case when
+         * host is in sleep or screensaver mode: */
+        if (   enmNewMode != kCGSGlobalHotKeySleep
+            && enmNewMode != kCGSGlobalHotKeyScreenSaver)
+        {
+            /* Otherwise we should warn about the unknown mode we met while trying to enable hot keys: */
+            AssertMsg(enmMode == kCGSGlobalHotKeyEnable, ("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
+        }
         if (s_cComplaints++ < 32)
             LogRel(("DarwinDisableGlobalHotKeys: Failed to change mode; enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
     }
