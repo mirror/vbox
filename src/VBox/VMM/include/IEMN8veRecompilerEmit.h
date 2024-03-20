@@ -8815,7 +8815,7 @@ iemNativeEmitSimdBroadcastVecRegU128ToVecRegEx(PIEMNATIVEINSTR pCodeBuf, uint32_
     /* vinserti128 ymm, ymm, xmm, 1. */ /* ASSUMES AVX2 support */
     pCodeBuf[off++] = X86_OP_VEX3;
     pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, iVecRegSrc >= 8, false, iVecRegDst >= 8);
-    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegSrc, true, X86_OP_VEX3_BYTE2_P_0F3H);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegDst, true, X86_OP_VEX3_BYTE2_P_066H);
     pCodeBuf[off++] = 0x38;
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
     pCodeBuf[off++] = 0x01; /* Immediate */
