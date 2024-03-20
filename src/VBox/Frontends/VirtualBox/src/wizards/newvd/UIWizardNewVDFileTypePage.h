@@ -59,7 +59,7 @@ private:
     void initializePage() override final;
 
     /** Validation stuff. */
-    bool isComplete() const;
+    bool isComplete() const override final;
 
     QIRichTextLabel *m_pLabel;
     UIDiskFormatsGroupBox *m_pFormatButtonGroup;

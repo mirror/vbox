@@ -61,7 +61,7 @@ public:
 protected slots:
 
     /** Handles button-click. */
-    virtual void sltButtonClicked();
+    virtual void sltButtonClicked() override;
 
 protected:
 
