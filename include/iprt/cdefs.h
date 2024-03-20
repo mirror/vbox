@@ -1344,9 +1344,9 @@
  *          when used without officially enabling the C++11 features.
  */
 #ifdef __cplusplus
-# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2012, 0)
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2012, 0) || RT_CLANG_HAS_FEATURE(cxx_override_control)
 #  define RT_OVERRIDE           override
-# elif RT_GNUC_PREREQ(4, 7)
+# elif RT_GNUC_PREREQ(4, 7) || RT_CLANG_PREREQ(7, 1) /** @todo possibly clang supports this earlier. found no __has_feature check. */
 #  if __cplusplus >= 201100
 #   define RT_OVERRIDE          override
 #  else
@@ -1357,6 +1357,28 @@
 # endif
 #else
 # define RT_OVERRIDE
+#endif
+
+/** @def RT_FINAL
+ * Wrapper for the C++11 final keyword.
+ *
+ * @remarks Recognized by g++ starting 4.7. Assumes it triggers warnings just
+ *          like override does when C++11 isn't officially enabled.
+ */
+#ifdef __cplusplus
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0) /** @todo not sure since when this is supported, probably 2012 like override. */
+#  define RT_FINAL              final
+# elif RT_GNUC_PREREQ(4, 7) /** @todo clang and final */
+#  if __cplusplus >= 201100
+#   define RT_FINAL             final
+#  else
+#   define RT_FINAL
+#  endif
+# else
+#  define RT_FINAL
+# endif
+#else
+# define RT_FINAL
 #endif
 
 /** @def RT_NOEXCEPT
