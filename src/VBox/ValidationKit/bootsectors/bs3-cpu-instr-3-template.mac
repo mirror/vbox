@@ -2276,6 +2276,9 @@ EMIT_INSTR_PLUS_ICEBP_C64  vpextrw, FSxBX, XMM8, 0FFh
 ;
 ; [v]pextrw alternate encodings (SSE4.1 & AVX 0f3a variants)
 ;
+; These default to 0f38 / VEX map 1 entry 0c5h in the assembler, this exercises
+; the 0f3a / VEX map 3 entry 15h variants.
+;
 %ifndef EMIT_V_PEXTRW_ALT_INSTR_DEFINED
  %define EMIT_V_PEXTRW_ALT_INSTR_DEFINED
  ;; @param 1    imm8 byte
