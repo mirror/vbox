@@ -2388,6 +2388,12 @@ typedef struct IEM
 #define IEMOPHINT_VEX_L_ONE         RT_BIT_32(14)
 /** The VEX.V value must be zero. */
 #define IEMOPHINT_VEX_V_ZERO        RT_BIT_32(15)
+/** The REX.W/VEX.V value must be zero. */
+#define IEMOPHINT_REX_W_ZERO        RT_BIT_32(16)
+#define IEMOPHINT_VEX_W_ZERO        IEMOPHINT_REX_W_ZERO
+/** The REX.W/VEX.V value must be one. */
+#define IEMOPHINT_REX_W_ONE         RT_BIT_32(17)
+#define IEMOPHINT_VEX_W_ONE         IEMOPHINT_REX_W_ONE
 
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)

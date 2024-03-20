@@ -242,6 +242,7 @@ g_kdOpTypes = {
     'Ew_WO':        ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      'RM',    ),
     'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      'RM',    ),
     'Ey':           ( 'IDX_UseModRM',       'rm',     '%Ey',  'Ey',      'RM',    ),
+    'Ey_WO':        ( 'IDX_UseModRM',       'rm',     '%Ey',  'Ey',      'RM',    ),
     'Qd':           ( 'IDX_UseModRM',       'rm',     '%Qd',  'Qd',      'RM',    ),
     'Qq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
     'Qq_WO':        ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
@@ -612,6 +613,10 @@ g_kdHints = {
     'vex_l_one':             '',                                        ##< VEX.L must be 1.
     'vex_l_ignored':         '',                                        ##< VEX.L is ignored.
     'vex_v_zero':            '',                                        ##< VEX.V must be 0. (generate sub-table?)
+    'vex_w_zero':            '',                                        ##< REX.W/VEX.W must be 0.
+    'vex_w_one':             '',                                        ##< REX.W/VEX.W must be 1.
+    'rex_w_zero':            '',                                        ##< REX.W/VEX.W must be 0.
+    'rex_w_one':             '',                                        ##< REX.W/VEX.W must be 1.
     'lock_allowed':          '',                                        ##< Lock prefix allowed.
 };
 # pylint: enable=line-too-long
