@@ -365,9 +365,9 @@ void UIWizardNewVM::sltHandleWizardCancel()
     cleanWizard();
 }
 
-void UIWizardNewVM::retranslateUi()
+void UIWizardNewVM::sltRetranslateUI()
 {
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
     setWindowTitle(tr("Create Virtual Machine"));
 }
 

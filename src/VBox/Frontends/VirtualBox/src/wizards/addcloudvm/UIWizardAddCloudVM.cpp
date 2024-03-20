@@ -114,10 +114,10 @@ void UIWizardAddCloudVM::populatePages()
     }
 }
 
-void UIWizardAddCloudVM::retranslateUi()
+void UIWizardAddCloudVM::sltRetranslateUI()
 {
     /* Call to base-class: */
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
 
     /* Translate wizard: */
     setWindowTitle(tr("Add Cloud Virtual Machine"));

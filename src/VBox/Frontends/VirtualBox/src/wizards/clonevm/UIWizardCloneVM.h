@@ -82,9 +82,12 @@ protected:
 
     virtual void populatePages() /* final override */;
 
+private slots:
+
+    virtual void sltRetranslateUI() override final;
+
 private:
 
-    void retranslateUi();
     void prepare();
 
     CMachine  m_machine;

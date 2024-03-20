@@ -32,11 +32,11 @@
 #endif
 
 /* Qt includes: */
+#include <QDialog>
 #include <QMap>
 #include <QPointer>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 #include "UILibraryDefs.h"
 
@@ -82,7 +82,7 @@ protected:
 #endif /* VBOX_WS_MAC */
 
 /** QDialog extension with advanced functionality emulating QWizard behavior. */
-class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI2<QDialog>
+class SHARED_LIBRARY_STUFF UINativeWizard : public QDialog
 {
     Q_OBJECT;
 
@@ -146,9 +146,6 @@ protected:
       *       pages via addPage declared above. */
     virtual void populatePages() = 0;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles key-press @a pEvent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     /** Handles close @a pEvent. */
@@ -157,6 +154,10 @@ protected:
     /** Performs wizard-specific cleanup in case of wizard-mode change
       * such as folder deletion in New VM wizard etc. */
     virtual void cleanWizard() {}
+
+protected slots:
+    /** Handles translation event. */
+    virtual void sltRetranslateUI();
 
 private slots:
 

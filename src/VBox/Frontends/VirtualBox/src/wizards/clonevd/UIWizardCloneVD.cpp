@@ -108,11 +108,11 @@ bool UIWizardCloneVD::copyVirtualDisk()
     return true;
 }
 
-void UIWizardCloneVD::retranslateUi()
+void UIWizardCloneVD::sltRetranslateUI()
 {
     /* Translate wizard: */
     setWindowTitle(tr("Copy Virtual Disk"));
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
 }
 
 void UIWizardCloneVD::populatePages()

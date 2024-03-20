@@ -83,10 +83,13 @@ protected:
 
     virtual void populatePages() /* final override */;
 
-private:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void sltRetranslateUI() RT_OVERRIDE;
+
+private:
+
     void setMediumVariantPageVisibility();
 
     /** @name Parameters needed during medium cloning

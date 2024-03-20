@@ -46,7 +46,7 @@
 #include "UINativeWizardPage.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
-
+#include "UITranslationEventListener.h"
 
 #ifdef VBOX_WS_MAC
 UIFrame::UIFrame(QWidget *pParent)
@@ -93,7 +93,7 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
                                WizardType enmType,
                                WizardMode enmMode /* = WizardMode_Auto */,
                                const QString &strHelpKeyword /* = QString() */)
-    : QIWithRetranslateUI2<QDialog>(pParent, Qt::Window)
+    : QDialog(pParent, Qt::Window)
     , m_enmType(enmType)
     , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
     , m_strHelpKeyword(strHelpKeyword)
@@ -137,7 +137,7 @@ int UINativeWizard::exec()
     init();
 
     /* Call to base-class: */
-    return QIWithRetranslateUI2<QDialog>::exec();
+    return QDialog::exec();
 }
 
 void UINativeWizard::show()
@@ -146,7 +146,7 @@ void UINativeWizard::show()
     init();
 
     /* Call to base-class: */
-    return QIWithRetranslateUI2<QDialog>::show();
+    return QDialog::show();
 }
 
 void UINativeWizard::setPixmapName(const QString &strName)
@@ -167,7 +167,7 @@ void UINativeWizard::setPageVisible(int iIndex, bool fVisible)
     else
         m_invisiblePages.insert(iIndex);
     /* Update the button labels since the last visible page might have changed. Thus 'Next' <-> 'Finish' might be needed: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 int UINativeWizard::addPage(UINativeWizardPage *pPage)
@@ -196,7 +196,7 @@ int UINativeWizard::addPage(UINativeWizardPage *pPage)
     return iIndex;
 }
 
-void UINativeWizard::retranslateUi()
+void UINativeWizard::sltRetranslateUI()
 {
     /* Translate Help button: */
     QPushButton *pButtonHelp = wizardButton(WizardButtonType_Help);
@@ -275,7 +275,7 @@ void UINativeWizard::keyPressEvent(QKeyEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI2<QDialog>::keyPressEvent(pEvent);
+    return QDialog::keyPressEvent(pEvent);
 }
 
 void UINativeWizard::closeEvent(QCloseEvent *pEvent)
@@ -304,13 +304,13 @@ void UINativeWizard::closeEvent(QCloseEvent *pEvent)
     }
 
     /* Call to base-class: */
-    QIWithRetranslateUI2<QDialog>::closeEvent(pEvent);
+    QDialog::closeEvent(pEvent);
 }
 
 void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
 {
     /* Update translation: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Sanity check: */
     AssertPtrReturnVoid(m_pWidgetStack);
@@ -601,6 +601,9 @@ void UINativeWizard::prepare()
     if (m_pNotificationCenter)
         connect(m_pNotificationCenter, &UINotificationCenter::sigOperationsAborted,
                 this, &UINativeWizard::close, Qt::QueuedConnection);
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINativeWizard::sltRetranslateUI);
 }
 
 void UINativeWizard::cleanup()
@@ -616,7 +619,7 @@ void UINativeWizard::init()
     populatePages();
 
     /* Translate wizard: */
-    retranslateUi();
+    sltRetranslateUI();
     /* Translate wizard pages: */
     retranslatePages();
 

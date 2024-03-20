@@ -74,10 +74,10 @@ public:
 protected:
 
     /** Populates pages. */
-    virtual void populatePages() /* override final */;
+    virtual void populatePages() override final;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
+    virtual void sltRetranslateUI() override final;
 
 private:
 

@@ -76,7 +76,7 @@ public:
         pMainLayout->addWidget(m_pButtonBox);
 
         /* Translate */
-        retranslateUi();
+        sltRetranslateUI();
 
         /* Setup connections: */
         connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIImportLicenseViewer::reject);
@@ -90,7 +90,7 @@ public:
     {
         m_strName = strName;
         m_strText = strText;
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 private slots:
@@ -123,7 +123,7 @@ private slots:
 private:
 
     /* Translation stuff: */
-    void retranslateUi()
+    void sltRetranslateUI()
     {
         /* Translate dialog: */
         setWindowTitle(tr("Software License Agreement"));
@@ -290,10 +290,10 @@ void UIWizardImportApp::populatePages()
     }
 }
 
-void UIWizardImportApp::retranslateUi()
+void UIWizardImportApp::sltRetranslateUI()
 {
     /* Call to base-class: */
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
 
     /* Translate wizard: */
     setWindowTitle(tr("Import Virtual Appliance"));

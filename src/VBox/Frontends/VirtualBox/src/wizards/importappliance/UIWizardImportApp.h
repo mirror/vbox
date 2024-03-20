@@ -112,11 +112,13 @@ protected:
     /** @name Inherited stuff.
       * @{ */
         /** Populates pages. */
-        virtual void populatePages() /* override final */;
-
-        /** Handles translation event. */
-        virtual void retranslateUi() /* override final */;
+        virtual void populatePages() override final;
     /** @} */
+
+private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() override final;
 
 private:
 

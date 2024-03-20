@@ -84,9 +84,12 @@ protected:
 
     virtual void populatePages() /* final override */;
 
+private slots:
+
+    virtual void sltRetranslateUI() override final;
+
 private:
 
-    void retranslateUi();
     /** Check medium capabilities and decide if medium variant page should be hidden. */
     void setMediumVariantPageVisibility();
     qulonglong m_uMediumVariant;

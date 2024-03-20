@@ -233,10 +233,10 @@ bool UIWizardCloneVM::cloneVM()
     return true;
 }
 
-void UIWizardCloneVM::retranslateUi()
+void UIWizardCloneVM::sltRetranslateUI()
 {
     /* Call to base-class: */
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
 
     /* Translate wizard: */
     setWindowTitle(tr("Clone Virtual Machine"));

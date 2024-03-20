@@ -251,10 +251,10 @@ void UIWizardExportApp::populatePages()
     }
 }
 
-void UIWizardExportApp::retranslateUi()
+void UIWizardExportApp::sltRetranslateUI()
 {
     /* Call to base-class: */
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
 
     /* Translate wizard: */
     setWindowTitle(tr("Export Virtual Appliance"));

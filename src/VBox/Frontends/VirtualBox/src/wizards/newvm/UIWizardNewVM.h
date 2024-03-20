@@ -180,10 +180,10 @@ protected:
 private slots:
 
     void sltHandleWizardCancel();
+    virtual void sltRetranslateUI() override final;
 
 private:
 
-    void retranslateUi();
     QString getNextControllerName(KStorageBus type);
     void setUnattendedPageVisible(bool fVisible);
     void deleteVirtualDisk();

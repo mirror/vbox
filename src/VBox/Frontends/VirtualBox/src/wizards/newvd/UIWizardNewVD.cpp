@@ -207,9 +207,9 @@ QUuid UIWizardNewVD::createVDWithWizard(QWidget *pParent,
     return uMediumId;
 }
 
-void UIWizardNewVD::retranslateUi()
+void UIWizardNewVD::sltRetranslateUI()
 {
-    UINativeWizard::retranslateUi();
+    UINativeWizard::sltRetranslateUI();
     setWindowTitle(tr("Create Virtual Hard Disk"));
 }
 
