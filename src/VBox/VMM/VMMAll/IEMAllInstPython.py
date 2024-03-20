@@ -3337,7 +3337,7 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF':                      (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF':                      (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_MEM_U128':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_STORE_MEM_U128_NO_AC':                               (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_STORE_MEM_U128_NO_AC':                               (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_MEM_U128_ALIGN_SSE':                           (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_MEM_U16':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_STORE_MEM_U16_CONST':                                (McBlock.parseMcGeneric,           True,  True,  True,  ),
