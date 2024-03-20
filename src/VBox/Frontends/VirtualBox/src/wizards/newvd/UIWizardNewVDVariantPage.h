@@ -54,8 +54,8 @@ private slots:
 
 private:
 
-    void initializePage();
-    bool isComplete() const;
+    void initializePage() override final;
+    bool isComplete() const override final;
     void prepare();
     void setWidgetVisibility(const CMediumFormat &mediumFormat);
 
