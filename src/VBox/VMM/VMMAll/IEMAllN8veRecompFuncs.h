@@ -4709,7 +4709,8 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
             case sizeof(RTUINT128U):
                 Assert(enmOp == kIemNativeEmitMemOp_Store || enmOp == kIemNativeEmitMemOp_Fetch);
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
-                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128AlignedSse
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128AlignedSse
                                || pfnFunction == (uintptr_t)iemNativeHlpMemFlatFetchDataU128NoAc))
                        || (   enmOp == kIemNativeEmitMemOp_Store
                            && (pfnFunction == UINT64_C(0xc000b000a0009000))));
@@ -4769,7 +4770,8 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
             case sizeof(RTUINT128U):
                 Assert(enmOp == kIemNativeEmitMemOp_Store || enmOp == kIemNativeEmitMemOp_Fetch);
                 Assert(   (   enmOp == kIemNativeEmitMemOp_Fetch
-                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128AlignedSse
+                           && (   pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128
+                               || pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128AlignedSse
                                || pfnFunction == (uintptr_t)iemNativeHlpMemFetchDataU128NoAc))
                        || (   enmOp == kIemNativeEmitMemOp_Store
                            && (pfnFunction == UINT64_C(0xc000b000a0009000))));
