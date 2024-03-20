@@ -8802,6 +8802,54 @@ iemNativeEmitSimdBroadcastGprToVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t
     return off;
 }
 
+
+/**
+ * Emits a vecdst[0:127] = vecdst[128:255] = vecsrc[0:127] broadcast, 128-bit.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdBroadcastVecRegU128ToVecRegEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(pCodeBuf, off, iVecRegDst, iVecRegSrc);
+
+    /* vinserti128 ymm, ymm, xmm, 1. */ /* ASSUMES AVX2 support */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, iVecRegSrc >= 8, false, iVecRegDst >= 8);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegSrc, true, X86_OP_VEX3_BYTE2_P_0F3H);
+    pCodeBuf[off++] = 0x38;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
+    pCodeBuf[off++] = 0x01; /* Immediate */
+#elif defined(RT_ARCH_ARM64)
+    /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
+    Assert(!(iVecRegDst & 0x1));
+
+    /* mov dst, src;   alias for: orr dst, src, src */
+    pCodeBuf[off++] = Armv8A64MkVecInstrOrr(iVecRegDst,     iVecRegSrc, iVecRegSrc);
+    pCodeBuf[off++] = Armv8A64MkVecInstrOrr(iVecRegDst + 1, iVecRegSrc, iVecRegSrc);
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[0:127] = vecdst[128:255] = vecsrc[0:127] broadcast, 128-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdBroadcastVecRegU128ToVecReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdBroadcastVecRegU128ToVecRegEx(iemNativeInstrBufEnsure(pReNative, off, 11), off, iVecRegDst, iVecRegSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdBroadcastVecRegU128ToVecRegEx(iemNativeInstrBufEnsure(pReNative, off, 2), off, iVecRegDst, iVecRegSrc);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 /** @} */
