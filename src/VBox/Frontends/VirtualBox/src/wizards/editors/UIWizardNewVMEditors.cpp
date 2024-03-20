@@ -34,8 +34,9 @@
 #include "QILineEdit.h"
 #include "UIBaseMemoryEditor.h"
 #include "UICommon.h"
-#include "UIHostnameDomainNameEditor.h"
 #include "UIFilePathSelector.h"
+#include "UIHostnameDomainNameEditor.h"
+#include "UITranslationEventListener.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
@@ -51,7 +52,7 @@
 *********************************************************************************************************************************/
 
 UIUserNamePasswordGroupBox::UIUserNamePasswordGroupBox(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pUserNamePasswordEditor(0)
 {
     prepare();
@@ -70,10 +71,12 @@ void UIUserNamePasswordGroupBox::prepare()
             this, &UIUserNamePasswordGroupBox::sigPasswordChanged);
     connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigUserNameChanged,
             this, &UIUserNamePasswordGroupBox::sigUserNameChanged);
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIUserNamePasswordGroupBox::sltRetranslateUI);
 }
 
-void UIUserNamePasswordGroupBox::retranslateUi()
+void UIUserNamePasswordGroupBox::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Username and Password"));
 }
@@ -123,7 +126,7 @@ void UIUserNamePasswordGroupBox::setLabelsVisible(bool fVisible)
 *********************************************************************************************************************************/
 
 UIGAInstallationGroupBox::UIGAInstallationGroupBox(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pGAISOPathLabel(0)
     , m_pGAISOFilePathSelector(0)
 
@@ -162,10 +165,12 @@ void UIGAInstallationGroupBox::prepare()
             this, &UIGAInstallationGroupBox::sigPathChanged);
     connect(this, &UIGAInstallationGroupBox::toggled,
             this, &UIGAInstallationGroupBox::sltToggleWidgetsEnabled);
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIGAInstallationGroupBox::sltRetranslateUI);
 }
 
-void UIGAInstallationGroupBox::retranslateUi()
+void UIGAInstallationGroupBox::sltRetranslateUI()
 {
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Selects an installation medium (ISO file) for the Guest Additions."));
@@ -217,7 +222,7 @@ void UIGAInstallationGroupBox::sltToggleWidgetsEnabled(bool fEnabled)
 *********************************************************************************************************************************/
 
 UIAdditionalUnattendedOptions::UIAdditionalUnattendedOptions(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pProductKeyLabel(0)
     , m_pProductKeyLineEdit(0)
     , m_pHostnameDomainNameEditor(0)
@@ -265,10 +270,12 @@ void UIAdditionalUnattendedOptions::prepare()
         connect(m_pStartHeadlessCheckBox, &QCheckBox::toggled,
                 this, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIAdditionalUnattendedOptions::sltRetranslateUI);
 }
 
-void UIAdditionalUnattendedOptions::retranslateUi()
+void UIAdditionalUnattendedOptions::sltRetranslateUI()
 {
     setTitle(UIWizardNewVM::tr("Additional Options"));
 
@@ -361,7 +368,7 @@ void UIAdditionalUnattendedOptions::disableEnableProductKeyWidgets(bool fEnabled
 *********************************************************************************************************************************/
 
 UINewVMHardwareContainer::UINewVMHardwareContainer(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
     , m_pEFICheckBox(0)
@@ -410,11 +417,12 @@ void UINewVMHardwareContainer::prepare()
         connect(m_pEFICheckBox, &QCheckBox::toggled,
                 this, &UINewVMHardwareContainer::sigEFIEnabledChanged);
 
-
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINewVMHardwareContainer::sltRetranslateUI);
 }
 
-void UINewVMHardwareContainer::retranslateUi()
+void UINewVMHardwareContainer::sltRetranslateUI()
 {
     if (m_pEFICheckBox)
     {

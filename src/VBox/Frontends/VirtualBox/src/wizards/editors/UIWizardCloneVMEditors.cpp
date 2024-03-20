@@ -38,6 +38,7 @@
 #include "QILineEdit.h"
 #include "UIFilePathSelector.h"
 #include "UIGlobalSession.h"
+#include "UITranslationEventListener.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMEditors.h"
 
@@ -51,7 +52,7 @@
 *********************************************************************************************************************************/
 
 UICloneVMNamePathEditor::UICloneVMNamePathEditor(const QString &strOriginalName, const QString &strDefaultPath, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pContainerLayout(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
@@ -181,10 +182,12 @@ void UICloneVMNamePathEditor::prepare()
 
     }
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloneVMNamePathEditor::sltRetranslateUI);
 }
 
-void UICloneVMNamePathEditor::retranslateUi()
+void UICloneVMNamePathEditor::sltRetranslateUI()
 {
     if (m_pNameLabel)
         m_pNameLabel->setText(UIWizardCloneVM::tr("&Name:"));
@@ -203,7 +206,7 @@ void UICloneVMNamePathEditor::retranslateUi()
 
 
 UICloneVMAdditionalOptionsEditor::UICloneVMAdditionalOptionsEditor(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pContainerLayout(0)
     , m_pMACComboBoxLabel(0)
     , m_pMACComboBox(0)
@@ -323,11 +326,12 @@ void UICloneVMAdditionalOptionsEditor::prepare()
         }
     }
 
-
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloneVMAdditionalOptionsEditor::sltRetranslateUI);
 }
 
-void UICloneVMAdditionalOptionsEditor::retranslateUi()
+void UICloneVMAdditionalOptionsEditor::sltRetranslateUI()
 {
     m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address P&olicy:"));
     m_pMACComboBox->setToolTip(UIWizardCloneVM::tr("Determines MAC address policy for clonning:"));
@@ -430,7 +434,7 @@ void UICloneVMAdditionalOptionsEditor::populateMACAddressClonePolicies()
 *********************************************************************************************************************************/
 
 UICloneVMCloneTypeGroupBox::UICloneVMCloneTypeGroupBox(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_pButtonGroup(0)
     , m_pFullCloneRadio(0)
     , m_pLinkedCloneRadio(0)
@@ -483,10 +487,12 @@ void UICloneVMCloneTypeGroupBox::prepare()
     connect(m_pButtonGroup, &QButtonGroup::buttonClicked,
             this, &UICloneVMCloneTypeGroupBox::sltButtonClicked);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloneVMCloneTypeGroupBox::sltRetranslateUI);
 }
 
-void UICloneVMCloneTypeGroupBox::retranslateUi()
+void UICloneVMCloneTypeGroupBox::sltRetranslateUI()
 {
     if (m_pFullCloneRadio)
     {
@@ -511,7 +517,7 @@ void UICloneVMCloneTypeGroupBox::sltButtonClicked(QAbstractButton *)
 *********************************************************************************************************************************/
 
 UICloneVMCloneModeGroupBox::UICloneVMCloneModeGroupBox(bool fShowChildsOption, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QGroupBox>(pParent)
+    : QGroupBox(pParent)
     , m_fShowChildsOption(fShowChildsOption)
     , m_pMachineRadio(0)
     , m_pMachineAndChildsRadio(0)
@@ -552,10 +558,12 @@ void UICloneVMCloneModeGroupBox::prepare()
     connect(pButtonGroup, &QButtonGroup::buttonClicked,
             this, &UICloneVMCloneModeGroupBox::sltButtonClicked);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloneVMCloneModeGroupBox::sltRetranslateUI);
 }
 
-void UICloneVMCloneModeGroupBox::retranslateUi()
+void UICloneVMCloneModeGroupBox::sltRetranslateUI()
 {
     if (m_pMachineRadio)
     {

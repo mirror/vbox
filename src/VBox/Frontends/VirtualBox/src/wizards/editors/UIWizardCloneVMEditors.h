@@ -34,9 +34,6 @@
 /* Qt includes: */
 #include <QGroupBox>
 
-/* Local includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Other VBox includes: */
 #include "KCloneMode.h"
 
@@ -62,7 +59,7 @@ enum MACAddressClonePolicy
 };
 Q_DECLARE_METATYPE(MACAddressClonePolicy);
 
-class UICloneVMNamePathEditor : public QIWithRetranslateUI<QGroupBox>
+class UICloneVMNamePathEditor : public QGroupBox
 {
     Q_OBJECT;
 
@@ -88,10 +85,13 @@ public:
 
     bool isComplete(const QString &strMachineGroup);
 
+private slots:
+
+    void sltRetranslateUI();
+
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
 
     QGridLayout *m_pContainerLayout;
     UIMarkableLineEdit  *m_pNameLineEdit;
@@ -104,7 +104,7 @@ private:
 };
 
 
-class UICloneVMAdditionalOptionsEditor : public QIWithRetranslateUI<QGroupBox>
+class UICloneVMAdditionalOptionsEditor : public QGroupBox
 {
     Q_OBJECT;
 
@@ -134,11 +134,11 @@ public:
 private slots:
 
     void sltMACAddressClonePolicyChanged();
+    void sltRetranslateUI();
 
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
     void populateMACAddressClonePolicies();
     void updateMACAddressClonePolicyComboToolTip();
 
@@ -150,7 +150,7 @@ private:
     QCheckBox   *m_pKeepHWUUIDsCheckBox;
 };
 
-class UICloneVMCloneTypeGroupBox : public QIWithRetranslateUI<QGroupBox>
+class UICloneVMCloneTypeGroupBox : public QGroupBox
 {
     Q_OBJECT;
 
@@ -166,11 +166,11 @@ public:
 private slots:
 
     void sltButtonClicked(QAbstractButton *);
+    void sltRetranslateUI();
 
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
 
     QButtonGroup *m_pButtonGroup;
     QRadioButton *m_pFullCloneRadio;
@@ -178,7 +178,7 @@ private:
 };
 
 
-class UICloneVMCloneModeGroupBox : public QIWithRetranslateUI<QGroupBox>
+class UICloneVMCloneModeGroupBox : public QGroupBox
 {
     Q_OBJECT;
 
@@ -194,11 +194,11 @@ public:
 private slots:
 
     void sltButtonClicked();
+    void sltRetranslateUI();
 
 private:
 
     void prepare();
-    virtual void retranslateUi() /* override final */;
 
     bool m_fShowChildsOption;
     QRadioButton *m_pMachineRadio;

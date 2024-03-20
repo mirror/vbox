@@ -38,8 +38,6 @@
 
 /* Local includes: */
 #include "QIComboBox.h"
-#include "QIWithRetranslateUI.h"
-
 
 /* Forward declarations: */
 class CMediumFormat;
