@@ -3311,7 +3311,7 @@ g_dMcStmtParsers = {
     'IEM_MC_SHL_LOCAL_S32':                                      (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_SHL_LOCAL_S64':                                      (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_SHR_LOCAL_U8':                                       (McBlock.parseMcGeneric,           False, False, False, ),
-    'IEM_MC_SSE_UPDATE_MXCSR':                                   (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_SSE_UPDATE_MXCSR':                                   (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_FPU_RESULT':                                   (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_FPU_RESULT_MEM_OP':                            (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_FPU_RESULT_THEN_POP':                          (McBlock.parseMcGeneric,           True,  True,  False, ),
