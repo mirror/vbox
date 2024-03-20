@@ -1193,7 +1193,7 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
         if (pVCpu->iem.s.uVexLength)
         {
             IEM_MC_BEGIN(4, 4, IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
+            IEMOP_HLP_DONE_VEX_DECODING_W0_EX(fAvx2);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
@@ -1221,7 +1221,7 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
         else
         {
             IEM_MC_BEGIN(4, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEMOP_HLP_DONE_VEX_DECODING_W0_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
             IEM_MC_ARG(PRTUINT128U,             puDst,  0);
@@ -1251,7 +1251,7 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             uint8_t bOp4; IEM_OPCODE_GET_NEXT_U8(&bOp4);
 
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
+            IEMOP_HLP_DONE_VEX_DECODING_W0_EX(fAvx2);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
@@ -1283,7 +1283,7 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             uint8_t bOp4; IEM_OPCODE_GET_NEXT_U8(&bOp4);
 
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEMOP_HLP_DONE_VEX_DECODING_W0_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
@@ -1311,7 +1311,9 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, PCIEMOPBLENDOP, pImpl)
  * AVX, AVX2  */
 FNIEMOP_DEF(iemOp_vpblendvb_Vx_Hx_Wx_Lx)
 {
-    IEMOP_MNEMONIC4(VEX_RVMR, VPBLENDVB, vpblendvb, Vx_WO, Hx, Wx, Lx, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO | IEMOPHINT_VEX_W_ZERO);
+    /** @todo testcase: cover VEX.W=1 and check that it triggers \#UD on both real
+     *        and emulated hardware. */
+    IEMOP_MNEMONIC4(VEX_RVMR, VPBLENDVB, vpblendvb, Vx_WO, Hx, Wx, Lx, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_W_ZERO);
     IEMOPBLENDOP_INIT_VARS(vpblendvb);
     return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Lx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }

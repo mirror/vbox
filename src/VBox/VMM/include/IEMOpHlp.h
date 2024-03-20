@@ -600,6 +600,27 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
             IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
+/**
+ * Done decoding VEX, L=0 and W=0.
+ * Raises \#UD exception if rex, rep, opsize or lock prefixes are present,
+ * if we're in real or v8086 mode, if VEX.L!=0, if VEX.W!=0, or if the
+ * a_fFeature is not present in the guest CPU.
+ */
+#define IEMOP_HLP_DONE_VEX_DECODING_L0_AND_W0_EX(a_fFeature) \
+    do \
+    { \
+        if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
+                           & (IEM_OP_PRF_LOCK | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REX \
+                              | IEM_OP_PRF_SIZE_REX_W /*VEX.W*/)) \
+                      && pVCpu->iem.s.uVexLength == 0 \
+                      && !IEM_IS_REAL_OR_V86_MODE(pVCpu) \
+                      && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature )) \
+        { /* likely */ } \
+        else \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
+    } while (0)
+
+
 #define IEMOP_HLP_DECODED_NL_1(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_fDisOpType) \
     do \
     { \
