@@ -56,7 +56,7 @@ private slots:
 private:
 
     void prepare();
-    void initializePage();
+    void initializePage() override final;
 
     /** Validation stuff. */
     bool isComplete() const;
