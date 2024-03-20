@@ -63,11 +63,11 @@ private:
 
     /** Prepare stuff. */
     void prepare();
-    void initializePage();
+    virtual void initializePage() override final;
 
     /** Validation stuff. */
-    bool isComplete() const;
-    bool validatePage();
+    virtual bool isComplete() const override final;
+    virtual bool validatePage() override final;
     void updateDiskWidgetsAfterMediumFormatChange();
 
    /** @name Widgets

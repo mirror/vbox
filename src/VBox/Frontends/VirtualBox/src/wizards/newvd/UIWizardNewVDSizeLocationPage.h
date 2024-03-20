@@ -54,9 +54,9 @@ private slots:
 
 private:
 
-    void initializePage();
-    bool isComplete() const;
-    bool validatePage();
+    virtual void initializePage() override final;
+    virtual bool isComplete() const override final;
+    virtual bool validatePage() override final;
     void prepare();
 
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroup;
