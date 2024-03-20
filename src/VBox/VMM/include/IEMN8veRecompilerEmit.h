@@ -8019,6 +8019,51 @@ iemNativeEmitSimdLoadVecRegFromVecRegU256(PIEMRECOMPILERSTATE pReNative, uint32_
 
 
 /**
+ * Emits a vecdst = vecsrc load.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitSimdLoadVecRegHighU128FromVecRegLowU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* vinserti128 dst, dst, src, 1. */ /* ASSUMES AVX2 support */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, iVecRegSrc >= 8, false, iVecRegDst >= 8);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegDst, true, X86_OP_VEX3_BYTE2_P_066H);
+    pCodeBuf[off++] = 0x38;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iVecRegSrc & 7);
+    pCodeBuf[off++] = 0x01; /* Immediate */
+
+#elif defined(RT_ARCH_ARM64)
+    Assert(!(iVecRegDst & 0x1) && !(iVecRegSrc & 0x1));
+    /* mov dst, src;   alias for: orr dst, src, src */
+    pCodeBuf[off++] = Armv8A64MkVecInstrOrr(iVecRegDst + 1, iVecRegSrc, iVecRegSrc);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[128:255] = vecsrc[0:127] load, 128-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegHighU128FromVecRegLowU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegHighU128FromVecRegLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 6), off, iVecRegDst, iVecRegSrc);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitSimdLoadVecRegHighU128FromVecRegLowU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iVecRegSrc);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a gprdst = vecsrc[x] load, 64-bit.
  */
 DECL_FORCE_INLINE(uint32_t)

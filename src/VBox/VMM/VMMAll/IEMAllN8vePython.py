@@ -636,31 +636,31 @@ def analyzeVariantForNativeRecomp(oVariation,
             else:
                 g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
 
-    #if (    len(dUnsupportedStmts) in (1,2)
-    #    and iai.McStmt.findStmtByNames(aoStmts,
-    #                                   { 'IEM_MC_CALL_AIMPL_3': 1,
-    #                                     'IEM_MC_CALL_AIMPL_4': 1,
-    #                                     #'IEM_MC_CALL_VOID_AIMPL_0': 1, - can't test results... ?
-    #                                     'IEM_MC_CALL_VOID_AIMPL_1': 1,
-    #                                     'IEM_MC_CALL_VOID_AIMPL_2': 1,
-    #                                     'IEM_MC_CALL_VOID_AIMPL_3': 1,
-    #                                     'IEM_MC_CALL_VOID_AIMPL_4': 1,
-    #                                     #'IEM_MC_CALL_FPU_AIMPL_1': 1,
-    #                                     #'IEM_MC_CALL_FPU_AIMPL_2': 1,
-    #                                     #'IEM_MC_CALL_FPU_AIMPL_3': 1,
-    #                                     #'IEM_MC_CALL_MMX_AIMPL_2': 1,
-    #                                     #'IEM_MC_CALL_MMX_AIMPL_3': 1,
-    #                                     #'IEM_MC_CALL_SSE_AIMPL_2': 1,
-    #                                     #'IEM_MC_CALL_SSE_AIMPL_3': 1,
-    #                                     #'IEM_MC_CALL_AVX_AIMPL_2': 1,
-    #                                     #'IEM_MC_CALL_AVX_AIMPL_3': 1,
-    #                                     #'IEM_MC_CALL_AVX_AIMPL_4': 1,
-    #                                    })):
-    #    for sStmt in dUnsupportedStmts:
-    #        if sStmt in g_dUnsupportedMcStmtLastOneAImplStats:
-    #            g_dUnsupportedMcStmtLastOneAImplStats[sStmt].append(oVariation);
-    #        else:
-    #            g_dUnsupportedMcStmtLastOneAImplStats[sStmt] = [oVariation,];
+    if (    len(dUnsupportedStmts) in (1,2)
+        and iai.McStmt.findStmtByNames(aoStmts,
+                                       { 'IEM_MC_CALL_AIMPL_3': 1,
+                                         'IEM_MC_CALL_AIMPL_4': 1,
+                                         #'IEM_MC_CALL_VOID_AIMPL_0': 1, - can't test results... ?
+                                         'IEM_MC_CALL_VOID_AIMPL_1': 1,
+                                         'IEM_MC_CALL_VOID_AIMPL_2': 1,
+                                         'IEM_MC_CALL_VOID_AIMPL_3': 1,
+                                         'IEM_MC_CALL_VOID_AIMPL_4': 1,
+                                         'IEM_MC_CALL_FPU_AIMPL_1': 1,
+                                         'IEM_MC_CALL_FPU_AIMPL_2': 1,
+                                         'IEM_MC_CALL_FPU_AIMPL_3': 1,
+                                         'IEM_MC_CALL_MMX_AIMPL_2': 1,
+                                         'IEM_MC_CALL_MMX_AIMPL_3': 1,
+                                         'IEM_MC_CALL_SSE_AIMPL_2': 1,
+                                         'IEM_MC_CALL_SSE_AIMPL_3': 1,
+                                         'IEM_MC_CALL_AVX_AIMPL_2': 1,
+                                         'IEM_MC_CALL_AVX_AIMPL_3': 1,
+                                         'IEM_MC_CALL_AVX_AIMPL_4': 1,
+                                        })):
+        for sStmt in dUnsupportedStmts:
+            if sStmt in g_dUnsupportedMcStmtLastOneAImplStats:
+                g_dUnsupportedMcStmtLastOneAImplStats[sStmt].append(oVariation);
+            else:
+                g_dUnsupportedMcStmtLastOneAImplStats[sStmt] = [oVariation,];
 
     return None;
 
@@ -727,18 +727,18 @@ def analyzeThreadedFunctionsForNativeRecomp(aoThreadedFuncs, sHostArch): # type 
                   file = sys.stderr);
         print('todo:', file = sys.stderr);
 
-    #if g_dUnsupportedMcStmtLastOneAImplStats:
-    #    asTopKeys = sorted(g_dUnsupportedMcStmtLastOneAImplStats, reverse = True,
-    #                       key = lambda sSortKey: len(g_dUnsupportedMcStmtLastOneAImplStats[sSortKey]))[:16];
-    #    print('todo:', file = sys.stderr);
-    #    print('todo: Top %s variations with AIMPL call and 1-2 unsupported statement dependencies:' % (len(asTopKeys),),
-    #          file = sys.stderr);
-    #    cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
-    #    for sKey in asTopKeys:
-    #        print('todo: %*s = %s (%s%s)'
-    #              % (cchMaxKey, sKey, len(g_dUnsupportedMcStmtLastOneAImplStats[sKey]),
-    #                 ', '.join([oVar.getShortName() for oVar in g_dUnsupportedMcStmtLastOneAImplStats[sKey][:5]]),
-    #                 ',...' if len(g_dUnsupportedMcStmtLastOneAImplStats[sKey]) >= 5 else '', )
-    #                 , file = sys.stderr);
+    if g_dUnsupportedMcStmtLastOneAImplStats:
+        asTopKeys = sorted(g_dUnsupportedMcStmtLastOneAImplStats, reverse = True,
+                           key = lambda sSortKey: len(g_dUnsupportedMcStmtLastOneAImplStats[sSortKey]))[:16];
+        print('todo:', file = sys.stderr);
+        print('todo: Top %s variations with AIMPL call and 1-2 unsupported statement dependencies:' % (len(asTopKeys),),
+              file = sys.stderr);
+        cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
+        for sKey in asTopKeys:
+            print('todo: %*s = %s (%s%s)'
+                  % (cchMaxKey, sKey, len(g_dUnsupportedMcStmtLastOneAImplStats[sKey]),
+                     ', '.join([oVar.getShortName() for oVar in g_dUnsupportedMcStmtLastOneAImplStats[sKey][:5]]),
+                     ',...' if len(g_dUnsupportedMcStmtLastOneAImplStats[sKey]) >= 5 else '', )
+                     , file = sys.stderr);
 
     return True;
