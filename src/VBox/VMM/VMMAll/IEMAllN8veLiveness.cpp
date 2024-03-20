@@ -908,9 +908,11 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Value)                                  IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value)                        IEM_LIVENESS_MEM(a_iSeg)
+#define IEM_MC_STORE_MEM_U128_NO_AC(a_iSeg, a_GCPtrMem, a_u128Value)                            IEM_LIVENESS_MEM(a_iSeg)
 
 #define IEM_MC_STORE_MEM_FLAT_U128(a_GCPtrMem, a_u128Value)                                     IEM_LIVENESS_MEM_FLAT()
 #define IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE(a_GCPtrMem, a_u128Value)                           IEM_LIVENESS_MEM_FLAT()
+#define IEM_MC_STORE_MEM_FLAT_U128_NO_AC(a_GCPtrMem, a_u128Value)                               IEM_LIVENESS_MEM_FLAT()
 
 #define IEM_MC_STORE_MEM_U256(a_iSeg, a_GCPtrMem, a_u256Value)                                  IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_STORE_MEM_U256_ALIGN_AVX(a_iSeg, a_GCPtrMem, a_u256Value)                        IEM_LIVENESS_MEM(a_iSeg)
