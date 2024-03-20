@@ -205,6 +205,7 @@ HandleStatusCode (
   // Print the message to the console.
   //
   if ((Value == mLoadPrep) || (Value == mStartPrep)) {
+#ifndef VBOX /* This gets written everywhere even on the serial console, so get rid of it. */
     Print (
       L"%a: %a %s \"%s\" from %s\n",
       gEfiCallerBaseName,
@@ -213,6 +214,7 @@ HandleStatusCode (
       BmBootOption.Description,
       DevPathString
       );
+#endif
   } else {
     Print (
       L"%a: failed to %a %s \"%s\" from %s: %r\n",
