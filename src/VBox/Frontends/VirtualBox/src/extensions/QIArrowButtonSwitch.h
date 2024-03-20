@@ -66,7 +66,7 @@ protected slots:
 protected:
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+    virtual void keyPressEvent(QKeyEvent *pEvent) override;
 
 private:
 
