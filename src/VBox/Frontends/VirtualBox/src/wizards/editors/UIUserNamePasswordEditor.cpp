@@ -38,6 +38,7 @@
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -180,7 +181,7 @@ void UIPasswordLineEdit::sltHandleTextVisibilityChange()
 *********************************************************************************************************************************/
 
 UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pUserNameLineEdit(0)
     , m_pPasswordLineEdit(0)
     , m_pPasswordRepeatLineEdit(0)
@@ -256,7 +257,7 @@ void UIUserNamePasswordEditor::setPlaceholderTextEnabled(bool fEnabled)
     if (m_fShowPlaceholderText == fEnabled)
         return;
     m_fShowPlaceholderText = fEnabled;
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
@@ -270,7 +271,7 @@ void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
 
 }
 
-void UIUserNamePasswordEditor::retranslateUi()
+void UIUserNamePasswordEditor::sltRetranslateUI()
 {
     QString strPassword = tr("Pass&word");
     QString strRepeatPassword = tr("&Repeat Password");
@@ -358,7 +359,9 @@ void UIUserNamePasswordEditor::prepare()
     connect(m_pUserNameLineEdit, &UIMarkableLineEdit::textChanged,
             this, &UIUserNamePasswordEditor::sltUserNameChanged);
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIUserNamePasswordEditor::sltRetranslateUI);
 }
 
 void UIUserNamePasswordEditor::sltHandlePasswordVisibility(bool fPasswordVisible)

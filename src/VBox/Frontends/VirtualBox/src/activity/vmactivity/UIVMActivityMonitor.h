@@ -167,7 +167,7 @@ protected slots:
 
 protected:
 
-    //virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
+    //virtual bool eventFilter(QObject *pObj, QEvent *pEvent) override;
     virtual void obtainDataAndUpdate() = 0;
     virtual QString defaultMachineFolder() const = 0;
     virtual void reset() = 0;
@@ -250,8 +250,8 @@ public:
       * @param machine is machine reference. */
     UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
     ~UIVMActivityMonitorLocal();
-    virtual QUuid machineId() const RT_OVERRIDE;
-    virtual QString machineName() const RT_OVERRIDE;
+    virtual QUuid machineId() const override;
+    virtual QString machineName() const override;
 
 public slots:
 
@@ -266,10 +266,10 @@ protected slots:
 
 protected:
 
-    virtual void obtainDataAndUpdate() RT_OVERRIDE;
-    virtual QString defaultMachineFolder() const RT_OVERRIDE;
-    virtual void reset() RT_OVERRIDE;
-    virtual void start() RT_OVERRIDE;
+    virtual void obtainDataAndUpdate() override;
+    virtual QString defaultMachineFolder() const override;
+    virtual void reset() override;
+    virtual void start() override;
 
 private slots:
 
@@ -293,7 +293,7 @@ private:
     virtual void resetCPUInfoLabel();
     void resetNetworkInfoLabel();
     void resetDiskIOInfoLabel();
-    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareWidgets() override;
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
@@ -317,8 +317,8 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonito
 public:
 
     UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
-    virtual QUuid machineId() const RT_OVERRIDE;
-    virtual QString machineName() const RT_OVERRIDE;
+    virtual QUuid machineId() const override;
+    virtual QString machineName() const override;
     /** According to OCI docs returned time stamp is in RFC3339 format. */
     static QString formatCloudTimeStamp(const QString &strInput);
 
@@ -335,12 +335,12 @@ private slots:
 
 private:
     void setMachine(const CCloudMachine &comMachine);
-    virtual void obtainDataAndUpdate() RT_OVERRIDE;
+    virtual void obtainDataAndUpdate() override;
 
-    virtual QString defaultMachineFolder() const RT_OVERRIDE;
-    virtual void reset() RT_OVERRIDE;
-    virtual void start() RT_OVERRIDE;
-    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual QString defaultMachineFolder() const override;
+    virtual void reset() override;
+    virtual void start() override;
+    virtual void prepareWidgets() override;
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
         void updateCPUChart(quint64 iLoadPercentage, const QString &strLabel);

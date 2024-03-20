@@ -36,8 +36,8 @@
 #include <QLineEdit>
 #include <QWidget>
 
-/* Local includes: */
-#include "QIWithRetranslateUI.h"
+/* GUI includes: */
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QGridLayout;
@@ -82,7 +82,7 @@ private:
     bool m_fMarkForError;
 };
 
-class SHARED_LIBRARY_STUFF UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIUserNamePasswordEditor : public QWidget
 {
 
     Q_OBJECT;
@@ -109,15 +109,12 @@ public:
     void setPlaceholderTextEnabled(bool fEnabled);
     void setLabelsVisible(bool fVisible);
 
-protected:
-
-    void retranslateUi();
-
 private slots:
 
     void sltHandlePasswordVisibility(bool fPasswordVisible);
     void sltUserNameChanged();
     void sltPasswordChanged();
+    void sltRetranslateUI();
 
 private:
 
