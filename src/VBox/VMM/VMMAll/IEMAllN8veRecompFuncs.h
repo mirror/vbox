@@ -7229,6 +7229,33 @@ iemNativeEmitSimdStoreXregU32ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+#define IEM_MC_STORE_XREG_U32_U128(a_iXReg, a_iDwDst, a_u128Value, a_iDwSrc) \
+    off = iemNativeEmitSimdStoreXregU32U128(pReNative, off, a_iXReg, a_iDwDst, a_u128Value, a_iDwSrc)
+
+/** Emits code for IEM_MC_STORE_XREG_U32_U128. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdStoreXregU32U128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t iDwDst, uint8_t idxSrcVar, uint8_t iDwSrc)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSrcVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSrcVar, sizeof(RTUINT128U));
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
+
+    uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxSrcVar, &off);
+
+    off = iemNativeEmitSimdLoadGprFromVecRegU32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, idxVarReg, iDwSrc);
+    off = iemNativeEmitSimdStoreGprToVecRegU32(pReNative,  off, idxSimdRegDst, IEMNATIVE_REG_FIXED_TMP0, iDwDst);
+    IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXReg);
+
+    /* Free but don't flush the destination register. */
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeVarSimdRegisterRelease(pReNative, idxSrcVar);
+
+    return off;
+}
+
+
 #define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord) \
     off = iemNativeEmitSimdFetchYregU64(pReNative, off, a_u64Dst, a_iYRegSrc, a_iQWord)
 
