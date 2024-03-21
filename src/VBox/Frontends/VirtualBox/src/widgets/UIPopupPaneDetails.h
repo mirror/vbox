@@ -70,7 +70,7 @@ public:
     void setText(const QString &strText);
 
     /** Returns the details minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const RT_OVERRIDE RT_FINAL;
     /** Defines the details @a minimumSizeHint. */
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     /** Lays the content out. */
@@ -147,4 +147,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupPaneDetails_h */
-

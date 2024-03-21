@@ -154,9 +154,9 @@ private slots:
 private:
 
     /** Move @a pEvent handler. */
-    void moveEvent(QMoveEvent *pEvent);
+    void moveEvent(QMoveEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Resize @a pEvent handler. */
-    void resizeEvent(QResizeEvent *pEvent);
+    void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Holds the index of the host-screen this window created for. */
     const int m_iHostScreenIndex;

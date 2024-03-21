@@ -145,7 +145,7 @@ public:
     virtual ~QIULongValidator() {}
 
     /** Performs validation for @a strInput at @a iPosition. */
-    State validate(QString &strInput, int &iPosition) const;
+    State validate(QString &strInput, int &iPosition) const RT_OVERRIDE RT_FINAL;
 
     /** Defines @a uBottom. */
     void setBottom(ulong uBottom) { setRange(uBottom, m_uTop); }

@@ -195,7 +195,7 @@ public:
 private:
 
     /** Paints @a index item with specified @a option using specified @a pPainter. */
-    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 };
 
 

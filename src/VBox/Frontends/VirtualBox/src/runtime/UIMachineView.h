@@ -268,7 +268,7 @@ protected:
 
     /* Protected getters: */
     UIActionPool* actionPool() const;
-    QSize sizeHint() const;
+    QSize sizeHint() const RT_OVERRIDE;
 
     /** Retrieves the last guest-screen size-hint from extra-data. */
     QSize storedGuestScreenSizeHint() const;
@@ -304,7 +304,7 @@ protected:
     virtual QSize calculateMaxGuestSize() const = 0;
     virtual void updateSliders();
     static void dimImage(QImage &img);
-    void scrollContentsBy(int dx, int dy);
+    void scrollContentsBy(int dx, int dy) RT_OVERRIDE RT_FINAL;
 #ifdef VBOX_WS_MAC
     void updateDockIcon();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
@@ -313,18 +313,18 @@ protected:
     bool isFullscreenOrSeamless() const;
 
     /* Cross-platforms event processors: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
-    void resizeEvent(QResizeEvent *pEvent);
-    void moveEvent(QMoveEvent *pEvent);
-    void paintEvent(QPaintEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
+    void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    void moveEvent(QMoveEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles focus-in @a pEvent. */
-    void focusInEvent(QFocusEvent *pEvent);
+    void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles focus-out @a pEvent. */
-    void focusOutEvent(QFocusEvent *pEvent);
+    void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
 #ifdef VBOX_WS_NIX
-    virtual void keyPressEvent(QKeyEvent *pEvent) override;
-    virtual void keyReleaseEvent(QKeyEvent *pEvent) override;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    virtual void keyReleaseEvent(QKeyEvent *pEvent) RT_OVERRIDE RT_FINAL;
 #endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -347,7 +347,7 @@ protected:
      *
      * @param pEvent                Related enter event.
      */
-    void dragEnterEvent(QDragEnterEvent *pEvent);
+    void dragEnterEvent(QDragEnterEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /**
      * Host -> Guest: Issued when the host cursor moves inside (over) the guest (VM) window.
@@ -356,7 +356,7 @@ protected:
      *
      * @param pEvent                Related move event.
      */
-    void dragLeaveEvent(QDragLeaveEvent *pEvent);
+    void dragLeaveEvent(QDragLeaveEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /**
      * Host -> Guest: Issued when the host cursor leaves the guest (VM) window again.
@@ -364,14 +364,14 @@ protected:
      *
      * @param pEvent                Related leave event.
      */
-    void dragMoveEvent(QDragMoveEvent *pEvent);
+    void dragMoveEvent(QDragMoveEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /**
      * Host -> Guest: Issued when the host drops data into the guest (VM) window.
      *
      * @param pEvent                Related drop event.
      */
-    void dropEvent(QDropEvent *pEvent);
+    void dropEvent(QDropEvent *pEvent) RT_OVERRIDE RT_FINAL;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
     /** Scales passed size forward. */
@@ -464,7 +464,7 @@ public:
 
 protected:
 
-    void timerEvent(QTimerEvent *pEvent)
+    void timerEvent(QTimerEvent *pEvent) RT_OVERRIDE RT_FINAL
     {
         /* If that timer event occurs => it seems
          * guest resize event doesn't comes in time,

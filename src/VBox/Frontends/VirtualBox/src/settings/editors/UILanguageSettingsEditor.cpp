@@ -72,7 +72,7 @@ public:
     bool isBuiltIn() const { return m_fBuiltIn; }
 
     /** Returns whether this item is less than @a another one. */
-    bool operator<(const QTreeWidgetItem &another) const;
+    bool operator<(const QTreeWidgetItem &another) const RT_OVERRIDE RT_FINAL;
 
 private:
 

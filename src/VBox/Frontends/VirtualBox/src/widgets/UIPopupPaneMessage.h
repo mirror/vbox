@@ -70,7 +70,7 @@ public:
     void setText(const QString &strText);
 
     /** Returns the message minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const RT_OVERRIDE RT_FINAL;
     /** Defines the message @a minimumSizeHint. */
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     /** Lays the content out. */

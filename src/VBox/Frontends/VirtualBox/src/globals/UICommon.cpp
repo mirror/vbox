@@ -2651,7 +2651,7 @@ bool UICommon::openURL(const QString &strUrl) const
     private:
 
         /** Handles any Qt @a pEvent. */
-        bool event(QEvent *pEvent)
+        bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL
         {
             /* Handle service event: */
             if (pEvent->type() == QEvent::User)
@@ -2680,7 +2680,7 @@ bool UICommon::openURL(const QString &strUrl) const
     private:
 
         /** Executes thread task. */
-        void run()
+        void run() RT_OVERRIDE RT_FINAL
         {
             QApplication::postEvent(&m_client, new ServiceEvent(QDesktopServices::openUrl(m_strUrl)));
         }

@@ -112,7 +112,7 @@ public:
     {}
 
     /** Redirects all the native events to parent. */
-    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr*)
+    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr*) RT_OVERRIDE RT_FINAL
     {
         return m_pParent->nativeEventPreprocessor(eventType, pMessage);
     }

@@ -148,7 +148,7 @@ protected:
     UIMachine *uimachine() const;
 
     /* Event handler for registered machine-view(s): */
-    bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
+    bool eventFilter(QObject *pWatchedObject, QEvent *pEvent) RT_OVERRIDE;
 
 #if defined(VBOX_WS_MAC)
     /** Mac: Performs initial pre-processing of all the native keyboard events. */

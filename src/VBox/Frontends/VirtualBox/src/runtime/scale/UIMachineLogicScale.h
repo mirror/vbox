@@ -73,12 +73,12 @@ private:
     void prepareActionConnections() RT_OVERRIDE;
     void prepareMachineWindows() RT_OVERRIDE;
 #ifndef RT_OS_DARWIN
-    void prepareMenu();
+    void prepareMenu() RT_OVERRIDE RT_FINAL;
 #endif /* !RT_OS_DARWIN */
 
     /* Cleanup helpers: */
 #ifndef RT_OS_DARWIN
-    void cleanupMenu();
+    void cleanupMenu() RT_OVERRIDE RT_FINAL;
 #endif /* !RT_OS_DARWIN */
     void cleanupMachineWindows() RT_OVERRIDE;
     void cleanupActionConnections() RT_OVERRIDE;

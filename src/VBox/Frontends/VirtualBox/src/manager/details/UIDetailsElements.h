@@ -173,7 +173,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral m_fOptions;
@@ -193,7 +193,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral m_fOptions;
@@ -232,7 +232,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeSystem m_fOptions;
@@ -271,7 +271,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay m_fOptions;
@@ -310,7 +310,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeStorage m_fOptions;
@@ -349,7 +349,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeAudio m_fOptions;
@@ -388,7 +388,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_fOptions;
@@ -427,7 +427,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeSerial m_fOptions;
@@ -466,7 +466,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeUsb m_fOptions;
@@ -505,7 +505,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders m_fOptions;
@@ -544,7 +544,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface m_fOptions;
@@ -583,7 +583,7 @@ public:
 private:
 
     /** Contains update task body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeDescription m_fOptions;
@@ -608,4 +608,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h */
-

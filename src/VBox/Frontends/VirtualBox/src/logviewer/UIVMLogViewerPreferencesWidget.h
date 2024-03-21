@@ -67,8 +67,8 @@ public slots:
 
 protected:
 
-    virtual void prepareWidgets();
-    virtual void prepareConnections();
+    virtual void prepareWidgets() RT_OVERRIDE RT_FINAL;
+    virtual void prepareConnections() RT_OVERRIDE RT_FINAL;
 
 private slots:
 

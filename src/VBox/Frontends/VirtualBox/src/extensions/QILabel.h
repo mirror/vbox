@@ -62,9 +62,9 @@ public:
     /** Defines whether label should use size-hint based on passed @a iWidthHint. */
     void useSizeHintForWidth(int iWidthHint) const;
     /** Returns size-hint. */
-    QSize sizeHint() const;
+    QSize sizeHint() const RT_OVERRIDE RT_FINAL;
     /** Returns minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const  RT_OVERRIDE RT_FINAL;
 
     /** Returns text. */
     QString text() const { return m_strText; }
@@ -81,25 +81,25 @@ public slots:
 protected:
 
     /** Handles resize @a pEvent. */
-    void resizeEvent(QResizeEvent *pEvent);
+    void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles mouse-press @a pEvent. */
-    void mousePressEvent(QMouseEvent *pEvent);
+    void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-release @a pEvent. */
-    void mouseReleaseEvent(QMouseEvent *pEvent);
+    void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-move @a pEvent. */
-    void mouseMoveEvent(QMouseEvent *pEvent);
+    void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles context-menu @a pEvent. */
-    void contextMenuEvent(QContextMenuEvent *pEvent);
+    void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles focus-in @a pEvent. */
-    void focusInEvent(QFocusEvent *pEvent);
+    void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles focus-out @a pEvent. */
-    void focusOutEvent(QFocusEvent *pEvent);
+    void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles paint @a pEvent. */
-    void paintEvent(QPaintEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 

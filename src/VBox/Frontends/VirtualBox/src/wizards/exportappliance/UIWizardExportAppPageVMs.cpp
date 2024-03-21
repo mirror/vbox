@@ -60,7 +60,7 @@ public:
     {}
 
     /** Returns whether this item is less than @a other. */
-    bool operator<(const QListWidgetItem &other) const
+    bool operator<(const QListWidgetItem &other) const RT_OVERRIDE RT_FINAL
     {
         return text().toLower() < other.text().toLower();
     }

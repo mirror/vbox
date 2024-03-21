@@ -51,7 +51,7 @@ private:
 
 #ifndef VBOX_WS_MAC
     /** General event-filter. */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 #endif /* !VBOX_WS_MAC */
 };
 

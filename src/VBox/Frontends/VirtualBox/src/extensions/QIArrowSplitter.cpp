@@ -56,9 +56,9 @@ public:
     QIDetailsBrowser(QWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const RT_OVERRIDE RT_FINAL;
     /** Returns size-hint. */
-    QSize sizeHint() const;
+    QSize sizeHint() const RT_OVERRIDE RT_FINAL;
 
     /** Update scroll-bars. */
     void updateScrollBars();

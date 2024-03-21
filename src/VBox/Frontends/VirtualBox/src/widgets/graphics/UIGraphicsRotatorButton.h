@@ -91,7 +91,7 @@ protected slots:
 protected:
 
     /* Helpers: Update stuff: */
-    void refresh();
+    void refresh() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -114,4 +114,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsRotatorButton_h */
-

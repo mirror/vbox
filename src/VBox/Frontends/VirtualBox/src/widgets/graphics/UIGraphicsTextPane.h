@@ -60,7 +60,7 @@ public:
     ~UIGraphicsTextPane();
 
     /** Returns whether contained text is empty. */
-    bool isEmpty() const { return m_text.isEmpty(); }
+    bool isEmpty() const  RT_OVERRIDE RT_FINAL{ return m_text.isEmpty(); }
     /** Returns contained text. */
     UITextTable &text() { return m_text; }
     /** Defines contained text. */
@@ -75,27 +75,27 @@ private:
     void updateTextLayout(bool fFull = false);
 
     /** Notifies listeners about size-hint changes. */
-    void updateGeometry();
+    void updateGeometry() RT_OVERRIDE RT_FINAL;
     /** Returns the size-hint to constrain the content. */
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const RT_OVERRIDE RT_FINAL;
 
     /** This event handler is delivered after the widget has been resized. */
-    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+    void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** This event handler called when mouse hovers widget. */
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** This event handler called when mouse leaves widget. */
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Summarize two hover-event handlers above. */
     void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
     /** Update hover stuff. */
     void updateHoverStuff();
 
     /** This event handler called when mouse press widget. */
-    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
+    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Paints the contents in local coordinates. */
-    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
+    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0) RT_OVERRIDE RT_FINAL;
 
     /** Builds new text-layout. */
     static QTextLayout* buildTextLayout(const QFont &font, QPaintDevice *pPaintDevice,

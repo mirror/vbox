@@ -63,7 +63,7 @@ public:
 
 private:
 
-    virtual void createFileViewContextMenu(const QWidget *pWidget, const QPoint &point);// RT_OVERRIDE RT_FINAL;
+    virtual void createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) RT_OVERRIDE RT_FINAL;
     virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
     QPointer<QMenu>        m_pSubMenu;
 };

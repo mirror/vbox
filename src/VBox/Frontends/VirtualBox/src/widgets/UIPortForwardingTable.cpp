@@ -461,24 +461,24 @@ public:
     void setGuestAddressHint(const QString &strHint);
 
     /** Returns flags for item with certain @a index. */
-    Qt::ItemFlags flags(const QModelIndex &index) const;
+    Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
     /** Returns row count of certain @a parent. */
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
 
     /** Returns column count of certain @a parent. */
-    int columnCount(const QModelIndex &parent = QModelIndex()) const;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
 
     /** Returns header data.
       * @param  iSection        Brings the number of section we aquire data for.
       * @param  enmOrientation  Brings the orientation of header we aquire data for.
       * @param  iRole           Brings the role we aquire data for. */
-    QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const;
+    QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
 
     /** Defines the @a iRole data for item with @a index as @a value. */
-    bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole);
+    bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
     /** Returns the @a iRole data for item with @a index. */
-    QVariant data(const QModelIndex &index, int iRole) const;
+    QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE RT_FINAL;
 
 private:
 

@@ -64,7 +64,7 @@ public:
 private:
 
     /** Contains the worker-thread body. */
-    void run();
+    void run() RT_OVERRIDE RT_FINAL;
 
     /** Holds the worker-thread pool reference. */
     UIThreadPool *m_pPool;

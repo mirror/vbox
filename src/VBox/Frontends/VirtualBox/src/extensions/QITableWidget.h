@@ -88,9 +88,9 @@ public:
 protected:
 
     /** Handles paint @a pEvent. */
-    void paintEvent(QPaintEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles resize @a pEvent. */
-    void resizeEvent(QResizeEvent *pEvent);
+    void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE RT_FINAL;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QITableWidget_h */

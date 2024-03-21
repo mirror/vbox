@@ -196,13 +196,13 @@ class UILineNumberArea : public QWidget
 {
 public:
     UILineNumberArea(UIVMLogViewerTextEdit *textEdit);
-    QSize sizeHint() const;
+    QSize sizeHint() const RT_OVERRIDE RT_FINAL;
 
 protected:
 
-    void paintEvent(QPaintEvent *event);
-    void mouseMoveEvent(QMouseEvent *pEvent);
-    void mousePressEvent(QMouseEvent *pEvent);
+    void paintEvent(QPaintEvent *event) RT_OVERRIDE RT_FINAL;
+    void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
     UIVMLogViewerTextEdit *m_pTextEdit;

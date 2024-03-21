@@ -162,7 +162,7 @@ public:
       * We assume that cache object was updated if current and
       * initial data were both set and not equal to each other.
       * Takes into account all the children. */
-    bool wasUpdated() const
+    bool wasUpdated() const RT_OVERRIDE RT_FINAL
     {
         /* First of all, cache object is considered to be updated if parent data was updated: */
         bool fWasUpdated = UISettingsCache<ParentCacheData>::wasUpdated();

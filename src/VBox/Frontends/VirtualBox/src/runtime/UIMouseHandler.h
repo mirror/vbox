@@ -108,7 +108,7 @@ protected:
     UIMachine *uimachine() const;
 
     /* Event handler for registered machine-view(s): */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /* Separate function to handle most of existing mouse-events: */
     bool mouseEvent(int iEventType, ulong uScreenId,
@@ -154,4 +154,3 @@ protected:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIMouseHandler_h */
-

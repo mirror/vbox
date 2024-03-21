@@ -99,12 +99,12 @@ private:
     void prepareActionConnections() RT_OVERRIDE;
     void prepareMachineWindows() RT_OVERRIDE;
 #ifndef VBOX_WS_MAC
-    void prepareMenu();
+    void prepareMenu() RT_OVERRIDE RT_FINAL;
 #endif /* !VBOX_WS_MAC */
 
     /* Cleanup helpers: */
 #ifndef VBOX_WS_MAC
-    void cleanupMenu();
+    void cleanupMenu() RT_OVERRIDE RT_FINAL;
 #endif /* !VBOX_WS_MAC */
     void cleanupMachineWindows() RT_OVERRIDE;
     void cleanupActionConnections() RT_OVERRIDE;

@@ -61,7 +61,7 @@ public:
 protected:
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE
     {
         /* If translation is NOT currently in progress handle
          * LanguageChange events for qApp or this object: */
@@ -105,7 +105,7 @@ public:
 protected:
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE
     {
         /* If translation is NOT currently in progress handle
          * LanguageChange events for qApp or this object: */
@@ -139,7 +139,7 @@ public:
 protected:
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE
     {
         /* If translation is NOT currently in progress handle
          * LanguageChange events for qApp or this object: */
@@ -182,7 +182,7 @@ public:
 protected:
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE RT_FINAL
     {
         /* If translation is NOT currently in progress handle
          * LanguageChange events for qApp or this object: */
@@ -201,4 +201,3 @@ protected:
 
 
 #endif /* !FEQT_INCLUDED_SRC_globals_QIWithRetranslateUI_h */
-

@@ -52,17 +52,17 @@ private slots:
     void sltAdditionsStateChanged();
 
     /* Handler: Frame-buffer SetVisibleRegion stuff: */
-    virtual void sltHandleSetVisibleRegion(QRegion region);
+    virtual void sltHandleSetVisibleRegion(QRegion region) RT_OVERRIDE RT_FINAL;
 
 private:
 
     /* Event handlers: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /* Prepare helpers: */
-    void prepareCommon();
-    void prepareFilters();
-    void prepareConsoleConnections();
+    void prepareCommon() RT_OVERRIDE RT_FINAL;
+    void prepareFilters() RT_OVERRIDE RT_FINAL;
+    void prepareConsoleConnections() RT_OVERRIDE RT_FINAL;
     void prepareSeamless();
 
     /* Cleanup helpers: */
@@ -72,11 +72,11 @@ private:
     //void cleanupCommon() {}
 
     /** Adjusts guest-screen size to correspond current <i>working area</i> size. */
-    void adjustGuestScreenSize();
+    void adjustGuestScreenSize() RT_OVERRIDE RT_FINAL;
 
     /* Helpers: Geometry stuff: */
-    QRect workingArea() const;
-    QSize calculateMaxGuestSize() const;
+    QRect workingArea() const RT_OVERRIDE RT_FINAL;
+    QSize calculateMaxGuestSize() const RT_OVERRIDE RT_FINAL;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_seamless_UIMachineViewSeamless_h */

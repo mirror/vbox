@@ -82,7 +82,7 @@ private:
 
 #ifndef VBOX_WS_MAC
     /** Prepare menu routine. */
-    void prepareMenu();
+    void prepareMenu()  RT_OVERRIDE RT_FINAL;
 #endif /* !VBOX_WS_MAC */
     /** Prepare status-bar routine. */
     void prepareStatusBar() RT_OVERRIDE;

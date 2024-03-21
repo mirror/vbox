@@ -81,7 +81,7 @@ public:
     void recallPopupPane(const QString &strID);
 
     /** Returns minimum size-hint. */
-    QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    QSize minimumSizeHint() const RT_OVERRIDE RT_FINAL { return m_minimumSizeHint; }
 
 public slots:
 
@@ -116,4 +116,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupStackViewport_h */
-

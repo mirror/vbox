@@ -127,20 +127,20 @@ public:
     EncryptionPasswordMap encryptionPasswords() const { return m_encryptionPasswords; }
 
     /** Returns the row count, taking optional @a parent instead of root if necessary. */
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     /** Returns the column count, taking optional @a parent instead of root if necessary. */
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the @a index flags. */
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the header data for the @a iSection, @a orientation and @a iRole. */
-    virtual QVariant headerData(int iSection, Qt::Orientation orientation, int iRole) const;
+    virtual QVariant headerData(int iSection, Qt::Orientation orientation, int iRole) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the @a index data for the @a iRole. */
-    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const RT_OVERRIDE RT_FINAL;
     /** Defines the @a index data for the @a iRole as @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole);
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
 
 private:
 

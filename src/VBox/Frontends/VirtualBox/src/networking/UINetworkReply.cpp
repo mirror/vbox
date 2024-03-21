@@ -111,7 +111,7 @@ private:
         int performMainRequest();
 
         /** Performs whole thread functionality. */
-        void run();
+        void run() RT_OVERRIDE RT_FINAL;
 
         /** Handles download progress callback.
           * @param  cbDownloadTotal  Brings the total amount of bytes to be received.

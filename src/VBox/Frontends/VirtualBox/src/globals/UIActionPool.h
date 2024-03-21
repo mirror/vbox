@@ -219,7 +219,7 @@ public:
 protected:
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent);
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 

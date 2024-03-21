@@ -72,7 +72,7 @@ public:
 protected:
 
     /** Draws effect with passed @a pPainter. */
-    virtual void draw(QPainter *pPainter);
+    virtual void draw(QPainter *pPainter) RT_OVERRIDE RT_FINAL;;
 
 private:
 

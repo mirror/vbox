@@ -76,7 +76,7 @@ private slots:
 
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Handles machine state change event. */
-    void sltMachineStateChanged();
+    void sltMachineStateChanged() RT_OVERRIDE RT_FINAL;
 
     /** Revokes window activation. */
     void sltRevokeWindowActivation();
@@ -99,9 +99,9 @@ private slots:
 private:
 
     /** Prepare notification-center routine. */
-    void prepareNotificationCenter();
+    void prepareNotificationCenter()  RT_OVERRIDE RT_FINAL;
     /** Prepare visual-state routine. */
-    void prepareVisualState();
+    void prepareVisualState() RT_OVERRIDE RT_FINAL;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Prepare mini-toolbar routine. */
     void prepareMiniToolbar();
@@ -112,23 +112,23 @@ private:
     void cleanupMiniToolbar();
 #endif /* VBOX_WS_WIN || VBOX_WS_NIX */
     /** Cleanup visual-state routine. */
-    void cleanupVisualState();
+    void cleanupVisualState() RT_OVERRIDE RT_FINAL;
     /** Cleanup notification-center routine. */
-    void cleanupNotificationCenter();
+    void cleanupNotificationCenter() RT_OVERRIDE RT_FINAL;
 
     /** Updates geometry according to visual-state. */
     void placeOnScreen();
     /** Updates visibility according to visual-state. */
-    void showInNecessaryMode();
+    void showInNecessaryMode() RT_OVERRIDE RT_FINAL;
 
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Common update routine. */
-    void updateAppearanceOf(int iElement);
+    void updateAppearanceOf(int iElement) RT_OVERRIDE RT_FINAL;
 #endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 #ifdef VBOX_WS_NIX
     /** X11: Handles @a pEvent about state change. */
-    void changeEvent(QEvent *pEvent);
+    void changeEvent(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 #endif
 
 #ifdef VBOX_WS_WIN

@@ -59,7 +59,7 @@ public:
         : m_enmSearchType(enmSearchType)
         , m_strSearchTerm(strSearchTerm){}
     virtual ~FilterByNameUUID(){}
-    virtual bool operator()(QTreeWidgetItem *pItem) const
+    virtual bool operator()(QTreeWidgetItem *pItem) const RT_OVERRIDE RT_FINAL
     {
         if (!pItem || m_strSearchTerm.isEmpty())
             return false;

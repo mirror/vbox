@@ -72,7 +72,7 @@ public:
 protected:
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent);
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 
