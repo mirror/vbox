@@ -1903,6 +1903,29 @@ iemNativeEmitIfLocalIsZ(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 }
 
 
+#define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo) \
+    off = iemNativeEmitIfGregBitSet(pReNative, off, a_iGReg, a_iBitNo); \
+    do {
+
+/** Emits code for IEM_MC_IF_GREG_BIT_SET. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t iBitNo)
+{
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    Assert(iGReg < 16);
+
+    uint8_t const idxGstFullReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstFullReg, RT_BIT_64(iBitNo), pEntry->idxLabelElse);
+
+    iemNativeRegFreeTmp(pReNative, idxGstFullReg);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 
 #define IEM_MC_IF_MXCSR_XCPT_PENDING() \
@@ -3302,6 +3325,114 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxGstTmpReg, idxGstTmpReg, uSubtrahend, f64Bit);
 
 #endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+#define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Mask) \
+    off = iemNativeEmitAndGReg(pReNative, off, a_iGReg, a_u8Mask, sizeof(uint8_t))
+
+#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Mask) \
+    off = iemNativeEmitAndGReg(pReNative, off, a_iGReg, a_u16Mask, sizeof(uint16_t))
+
+#define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Mask) \
+    off = iemNativeEmitAndGReg(pReNative, off, a_iGReg, a_u32Mask, sizeof(uint32_t))
+
+#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Mask) \
+    off = iemNativeEmitAndGReg(pReNative, off, a_iGReg, a_u64Mask, sizeof(uint64_t))
+
+/** Emits code for IEM_MC_AND_GREG_U8, IEM_MC_AND_GREG_U16, IEM_MC_AND_GREG_U32 and IEM_MC_AND_GREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAndGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint64_t uMask, uint8_t cbMask)
+{
+#ifdef VBOX_STRICT
+    switch (cbMask)
+    {
+        case sizeof(uint8_t):  Assert((uint8_t)uMask  == uMask); break;
+        case sizeof(uint16_t): Assert((uint16_t)uMask == uMask); break;
+        case sizeof(uint32_t): Assert((uint32_t)uMask == uMask); break;
+        case sizeof(uint64_t): break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+
+    switch (cbMask)
+    {
+        case sizeof(uint8_t): /* Leaves the higher bits untouched. */
+            off = iemNativeEmitAndGprByImm(pReNative, off, idxGstTmpReg, uMask | UINT64_C(0xffffffffffffff00));
+            break;
+        case sizeof(uint16_t): /* Leaves the higher bits untouched. */
+            off = iemNativeEmitAndGprByImm(pReNative, off, idxGstTmpReg, uMask | UINT64_C(0xffffffffffff0000));
+            break;
+        case sizeof(uint32_t): /* Zeroes the high 32 bits of the guest register. */
+                off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxGstTmpReg, uMask);
+                break;
+        case sizeof(uint64_t):
+                off = iemNativeEmitAndGprByImm(pReNative, off, idxGstTmpReg, uMask);
+                break;
+        default: AssertFailedBreak();
+    }
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
+#define IEM_MC_OR_GREG_U8(a_iGReg, a_u8Mask) \
+    off = iemNativeEmitOrGReg(pReNative, off, a_iGReg, a_u8Mask, sizeof(uint8_t))
+
+#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Mask) \
+    off = iemNativeEmitOrGReg(pReNative, off, a_iGReg, a_u16Mask, sizeof(uint16_t))
+
+#define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Mask) \
+    off = iemNativeEmitOrGReg(pReNative, off, a_iGReg, a_u32Mask, sizeof(uint32_t))
+
+#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Mask) \
+    off = iemNativeEmitOrGReg(pReNative, off, a_iGReg, a_u64Mask, sizeof(uint64_t))
+
+/** Emits code for IEM_MC_OR_GREG_U8, IEM_MC_OR_GREG_U16, IEM_MC_OR_GREG_U32 and IEM_MC_OR_GREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitOrGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint64_t uMask, uint8_t cbMask)
+{
+#ifdef VBOX_STRICT
+    switch (cbMask)
+    {
+        case sizeof(uint8_t):  Assert((uint8_t)uMask  == uMask); break;
+        case sizeof(uint16_t): Assert((uint16_t)uMask == uMask); break;
+        case sizeof(uint32_t): Assert((uint32_t)uMask == uMask); break;
+        case sizeof(uint64_t): break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+
+    switch (cbMask)
+    {
+        case sizeof(uint8_t): /* Leaves the higher bits untouched. */
+        case sizeof(uint16_t):
+        case sizeof(uint64_t):
+            off = iemNativeEmitOrGprByImm(pReNative, off, idxGstTmpReg, uMask);
+            break;
+        case sizeof(uint32_t): /* Zeroes the high 32 bits of the guest register. */
+            off = iemNativeEmitOrGpr32ByImm(pReNative, off, idxGstTmpReg, uMask);
+            break;
+        default: AssertFailedBreak();
+    }
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
