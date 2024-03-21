@@ -8207,7 +8207,7 @@ iemNativeEmitSimdSseUpdateMxcsr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 
     /* Free but don't flush the MXCSR register. */
     iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
-    iemNativeVarRegisterRelease(pReNative, idxVarRegMxCsr);
+    iemNativeVarRegisterRelease(pReNative, idxMxCsrVar);
     iemNativeRegFreeTmp(pReNative, idxVarRegTmp);
 
     return off;
