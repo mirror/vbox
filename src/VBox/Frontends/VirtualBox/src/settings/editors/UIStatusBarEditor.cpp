@@ -93,24 +93,24 @@ public:
 protected:
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles mouse-press @a pEvent. */
-    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-release @a pEvent. */
-    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-enter @a pEvent. */
-    virtual void enterEvent(QEnterEvent *pEvent) RT_OVERRIDE;
+    virtual void enterEvent(QEnterEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-leave @a pEvent. */
-    virtual void leaveEvent(QEvent *pEvent) RT_OVERRIDE;
+    virtual void leaveEvent(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-move @a pEvent. */
-    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -149,10 +149,10 @@ public:
     UIAccessibilityInterfaceForUIStatusBarEditorButton(QWidget *pWidget);
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the state. */
-    virtual QAccessible::State state() const RT_OVERRIDE;
+    virtual QAccessible::State state() const RT_OVERRIDE RT_FINAL;
 
 private:
 

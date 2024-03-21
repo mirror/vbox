@@ -161,7 +161,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -175,7 +175,7 @@ private:
     /** Constructs shortcut pool. */
     UIShortcutPool(UIType enmType);
     /** Destructs shortcut pool. */
-    virtual ~UIShortcutPool() RT_OVERRIDE;
+    virtual ~UIShortcutPool() RT_OVERRIDE RT_FINAL;
 
     /** Prepares all. */
     void prepare();

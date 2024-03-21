@@ -144,7 +144,7 @@ private slots:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -189,7 +189,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 

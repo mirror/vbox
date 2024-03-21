@@ -866,7 +866,7 @@ private:
     /** Constructs machine UI singleton. */
     UIMachine();
     /** Destructs machine UI singleton. */
-    virtual ~UIMachine() RT_OVERRIDE;
+    virtual ~UIMachine() RT_OVERRIDE RT_FINAL;
 
     /** Prepare routine. */
     bool prepare();

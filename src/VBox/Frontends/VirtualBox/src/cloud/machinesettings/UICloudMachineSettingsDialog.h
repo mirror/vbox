@@ -73,13 +73,13 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
     /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles first show @a pEvent. */
     virtual void polishEvent(QShowEvent*);
     /** Handles close @a pEvent. */
-    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private slots:
 

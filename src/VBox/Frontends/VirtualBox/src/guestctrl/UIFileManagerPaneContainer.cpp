@@ -76,8 +76,8 @@ public:
 
 protected:
 
-    virtual void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE;
-    virtual void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE;
+    virtual void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    virtual void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private slots:
 

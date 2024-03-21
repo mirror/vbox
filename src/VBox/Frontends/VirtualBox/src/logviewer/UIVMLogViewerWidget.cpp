@@ -126,7 +126,7 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 };
 
 /*********************************************************************************************************************************

@@ -58,7 +58,7 @@ public:
     {}
 
     /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE RT_FINAL;
 
     /** Returns the number of children. */
     virtual int childCount() const RT_OVERRIDE { return 0; }
@@ -68,14 +68,14 @@ public:
     virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const RT_OVERRIDE { return -1; }
 
     /** Returns the rect. */
-    virtual QRect rect() const RT_OVERRIDE;
+    virtual QRect rect() const RT_OVERRIDE RT_FINAL;
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const RT_OVERRIDE;
+    virtual QAccessible::Role role() const RT_OVERRIDE RT_FINAL;
     /** Returns the state. */
-    virtual QAccessible::State state() const RT_OVERRIDE;
+    virtual QAccessible::State state() const RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -106,24 +106,24 @@ public:
     {}
 
     /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE RT_FINAL;
 
     /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
+    virtual int childCount() const RT_OVERRIDE RT_FINAL;
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE RT_FINAL;
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE;
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the rect. */
-    virtual QRect rect() const RT_OVERRIDE;
+    virtual QRect rect() const RT_OVERRIDE RT_FINAL;
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const RT_OVERRIDE;
+    virtual QAccessible::Role role() const RT_OVERRIDE RT_FINAL;
     /** Returns the state. */
-    virtual QAccessible::State state() const RT_OVERRIDE;
+    virtual QAccessible::State state() const RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -154,14 +154,14 @@ public:
     {}
 
     /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
+    virtual int childCount() const RT_OVERRIDE RT_FINAL;
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE RT_FINAL;
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE;
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE RT_FINAL;
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE RT_FINAL;
 
 private:
 
