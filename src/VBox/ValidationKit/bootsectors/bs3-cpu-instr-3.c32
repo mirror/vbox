@@ -863,6 +863,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                             /*
                              * Execute.
                              */
+                            g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                             Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                             /*
@@ -9378,6 +9379,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                             /*
                              * Execute.
                              */
+                            g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                             Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                             /*
@@ -10200,6 +10202,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                             /*
                              * Execute.
                              */
+                            g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                             Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                             /*
@@ -12431,6 +12434,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType4(uint8_t bMode, BS3CPUINSTR3_TEST4_T 
                                 /*
                                  * Execute.
                                  */
+                                g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                                 Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                                 /*
@@ -12793,6 +12797,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                             /*
                              * Execute.
                              */
+                            g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                             Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                             /*
@@ -13336,6 +13341,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType6(uint8_t bMode, BS3CPUINSTR3_TEST6_T 
                             /*
                              * Execute.
                              */
+                            g_uBs3TrapEipHint = Ctx.rip.u32 + (bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0);
                             Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(&Ctx, pExtCtx, &TrapFrame, pExtCtxOut);
 
                             /*
