@@ -7198,11 +7198,17 @@ iemNativeEmitFetchFpuFsw(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXRegDst, uint8_t iXRegSrc)
 {
-    /* Allocate destination and source register. */
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
+    /* 
+     * Allocate destination and source register.
+     *
+     * @note The order is important here when iXRegSrc == iXRegDst, because if iXRegDst gets allocated first for the full write
+     *       it won't load the actual value from CPUMCTX. When allocating iXRegSrc afterwards it will get duplicated from the already
+     *       allocated host register for iXRegDst containing garbage. This will be catched by the guest register value checking.
+     */
     uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXRegSrc),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
 
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegSrc);
     IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iXRegDst);
@@ -7513,11 +7519,17 @@ iemNativeEmitSimdStoreXregU32U128(PIEMRECOMPILERSTATE pReNative, uint32_t off, u
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyYregU128ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t iYRegSrc)
 {
-    /* Allocate destination and source register. */
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
+    /* 
+     * Allocate destination and source register.
+     *
+     * @note The order is important here when iYRegSrc == iYRegDst, because if iYRegDst gets allocated first for the full write
+     *       it won't load the actual value from CPUMCTX. When allocating iYRegSrc afterwards it will get duplicated from the already
+     *       allocated host register for iYRegDst containing garbage. This will be catched by the guest register value checking.
+     */
     uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrc),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
 
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegSrc);
     off = iemNativeEmitSimdZeroVecRegHighU128(pReNative, off, idxSimdRegDst);
@@ -7539,11 +7551,17 @@ iemNativeEmitSimdCopyYregU128ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t iYRegSrc)
 {
-    /* Allocate destination and source register. */
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
+    /* 
+     * Allocate destination and source register.
+     *
+     * @note The order is important here when iYRegSrc == iYRegDst, because if iYRegDst gets allocated first for the full write
+     *       it won't load the actual value from CPUMCTX. When allocating iYRegSrc afterwards it will get duplicated from the already
+     *       allocated host register for iYRegDst containing garbage. This will be catched by the guest register value checking.
+     */
     uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrc),
                                                                           kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
 
     off = iemNativeEmitSimdLoadVecRegFromVecRegU256(pReNative, off, idxSimdRegDst, idxSimdRegSrc);
     IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, iYRegDst);

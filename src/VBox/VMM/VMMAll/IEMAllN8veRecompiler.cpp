@@ -5593,6 +5593,8 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmp(PIEMRECOMPILERSTATE pReNativ
                                                     ? fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
         Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows == 0);
         Assert(!(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdReg)));
+
+        pReNative->Core.aHstSimdRegs[idxSimdReg].enmLoaded = kIemNativeGstSimdRegLdStSz_Invalid;
         Log12(("iemNativeSimdRegAllocTmp: %s\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
     }
     else
@@ -5646,6 +5648,8 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeSimdRegAllocTmpEx(PIEMRECOMPILERSTATE pReNat
                                                     ? fRegs & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK : fRegs) - 1;
         Assert(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows == 0);
         Assert(!(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxSimdReg)));
+
+        pReNative->Core.aHstSimdRegs[idxSimdReg].enmLoaded = kIemNativeGstSimdRegLdStSz_Invalid;
         Log12(("iemNativeSimdRegAllocTmpEx: %s\n", g_apszIemNativeHstSimdRegNames[idxSimdReg]));
     }
     else
@@ -6435,14 +6439,14 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
     {
-        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
         /* eor vectmp0, vectmp0, idxSimdReg */
         pu32CodeBuf[off++] = Armv8A64MkVecInstrEor(IEMNATIVE_SIMD_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdReg);
-        /* cnt vectmp0, vectmp0, #0*/
-        pu32CodeBuf[off++] = Armv8A64MkVecInstrCnt(IEMNATIVE_SIMD_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0);
-        /* umov tmp0, vectmp0.D[0] */
+        /* uaddlv vectmp0, vectmp0.16B */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrUAddLV(IEMNATIVE_SIMD_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0, kArmv8InstrUAddLVSz_16B);
+        /* umov tmp0, vectmp0.H[0] */
         pu32CodeBuf[off++] = Armv8A64MkVecInstrUmov(IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0,
-                                                    0 /*idxElem*/, kArmv8InstrUmovInsSz_U64);
+                                                    0 /*idxElem*/, kArmv8InstrUmovInsSz_U16, false /*f64Bit*/);
         /* cbz tmp0, +1 */
         pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
         /* brk #0x1000+enmGstReg */
@@ -6451,14 +6455,14 @@ iemNativeEmitGuestSimdRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128 || enmLoadSz == kIemNativeGstSimdRegLdStSz_256)
     {
-        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
         /* eor vectmp0 + 1, vectmp0 + 1, idxSimdReg */
         pu32CodeBuf[off++] = Armv8A64MkVecInstrEor(IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, idxSimdReg + 1);
-        /* cnt vectmp0 + 1, vectmp0 + 1, #0*/
-        pu32CodeBuf[off++] = Armv8A64MkVecInstrCnt(IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1);
-        /* umov tmp0, (vectmp0 + 1).D[0] */
+        /* uaddlv vectmp0 + 1, (vectmp0 + 1).16B */
+        pu32CodeBuf[off++] = Armv8A64MkVecInstrUAddLV(IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1, kArmv8InstrUAddLVSz_16B);
+        /* umov tmp0, (vectmp0 + 1).H[0] */
         pu32CodeBuf[off++] = Armv8A64MkVecInstrUmov(IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_SIMD_REG_FIXED_TMP0 + 1,
-                                                    0 /*idxElem*/, kArmv8InstrUmovInsSz_U64);
+                                                    0 /*idxElem*/, kArmv8InstrUmovInsSz_U16, false /*f64Bit*/);
         /* cbz tmp0, +1 */
         pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
         /* brk #0x1000+enmGstReg */

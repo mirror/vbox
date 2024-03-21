@@ -4243,6 +4243,36 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCnt(uint32_t iVecRegDst, uint32_t 
 }
 
 
+/** Armv8 vector unsigned sum long across vector element size.    */
+typedef enum ARMV8INSTRVECUADDLVSZ
+{
+    kArmv8InstrUAddLVSz_8B  = 0,                 /**<  8 x 8-bit. */
+    kArmv8InstrUAddLVSz_16B = RT_BIT_32(30),     /**< 16 x 8-bit. */
+    kArmv8InstrUAddLVSz_4H  = 1,                 /**<  4 x 16-bit. */
+    kArmv8InstrUAddLVSz_8H  = RT_BIT_32(30) | 1, /**<  8 x 16-bit. */
+    kArmv8InstrUAddLVSz_4S  = RT_BIT_32(30) | 2, /**<  4 x 32-bit. */
+} ARMV8INSTRVECUADDLVSZ;
+
+
+/**
+ * A64: Encodes UADDLV (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   enmSz       Element size.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUAddLV(uint32_t iVecRegDst, uint32_t iVecRegSrc, ARMV8INSTRVECUADDLVSZ enmSz)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+
+    return UINT32_C(0x2e303800)
+         | ((uint32_t)enmSz)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
+
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
