@@ -135,8 +135,8 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_MEM_FLAT_I16':                                         (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_I32':                                         (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_I64':                                         (None, True,  True,  False, ),
-    'IEM_MC_FETCH_MEM_FLAT_R32':                                         (None, True,  True,  False, ),
-    'IEM_MC_FETCH_MEM_FLAT_R64':                                         (None, True,  True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_R32':                                         (None, True,  True,  g_fNativeSimd),
+    'IEM_MC_FETCH_MEM_FLAT_R64':                                         (None, True,  True,  g_fNativeSimd),
     'IEM_MC_FETCH_MEM_FLAT_R80':                                         (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE':                              (None, True,  True,  g_fNativeSimd),
     'IEM_MC_FETCH_MEM_FLAT_U128_NO_AC':                                  (None, True,  True,  g_fNativeSimd),
@@ -162,7 +162,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U16':                                   (None, True,  True,  True,  ),
     'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U32':                                   (None, True,  True,  True,  ),
     'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U64':                                   (None, True,  True,  True,  ),
-    'IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE':                               (None, True,  True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE':                               (None, True,  True,  g_fNativeSimd),
     'IEM_MC_FETCH_MEM_FLAT_XMM_U32':                                     (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_XMM_U64':                                     (None, True,  True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128':                          (None, True,  True,  False, ),
@@ -720,10 +720,15 @@ def analyzeThreadedFunctionsForNativeRecomp(aoThreadedFuncs, sHostArch): # type 
         print('todo:', file = sys.stderr);
         print('todo: Top %d most used unimplemented statements:' % (len(asTopKeys),), file = sys.stderr);
         cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
-        for i in range(0, len(asTopKeys), 2):
+        cTopKeys = len(asTopKeys);
+        for i in range(0, cTopKeys & ~1, 2):
             print('todo:  %*s = %4d  %*s = %4d'
                   % ( cchMaxKey, asTopKeys[i],     g_dUnsupportedMcStmtStats[asTopKeys[i]],
                       cchMaxKey, asTopKeys[i + 1], g_dUnsupportedMcStmtStats[asTopKeys[i + 1]],),
+                  file = sys.stderr);
+        if cTopKeys & 1:
+            print('todo:  %*s = %4d'
+                  % ( cchMaxKey, asTopKeys[i],     g_dUnsupportedMcStmtStats[asTopKeys[i]],),
                   file = sys.stderr);
         print('todo:', file = sys.stderr);
 
