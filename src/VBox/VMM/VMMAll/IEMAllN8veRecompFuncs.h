@@ -1917,7 +1917,7 @@ iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     uint8_t const idxGstFullReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
                                                                   kIemNativeGstRegUse_ReadOnly);
 
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstFullReg, RT_BIT_64(iBitNo), pEntry->idxLabelElse);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxGstFullReg, iBitNo, pEntry->idxLabelElse);
 
     iemNativeRegFreeTmp(pReNative, idxGstFullReg);
 
