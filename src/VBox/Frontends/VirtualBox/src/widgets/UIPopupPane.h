@@ -116,7 +116,7 @@ public:
     void setDetails(const QString &strDetails);
 
     /** Returns minimum size-hint. */
-    QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    QSize minimumSizeHint() const RT_OVERRIDE { return m_minimumSizeHint; }
     /** Defines @a minimumSizeHint. */
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     /** Lays the content out. */

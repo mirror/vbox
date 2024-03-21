@@ -110,15 +110,15 @@ protected:
     /** Returns whether object is done. */
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Returns object internal name. */
-    virtual QString internalName() const /* override final */;
+    virtual QString internalName() const RT_OVERRIDE RT_FINAL;
     /** Returns object help keyword. */
-    virtual QString helpKeyword() const /* override final */;
+    virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL;
     /** Handles notification-object being added. */
-    virtual void handle() /* override final */;
+    virtual void handle() RT_OVERRIDE RT_FINAL;
 
     /** Returns whether message with passed @a strInternalName is suppressed. */
     static bool isSuppressed(const QString &strInternalName);
@@ -174,16 +174,16 @@ public:
     /** Returns whether object is done. */
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
-    virtual QString internalName() const /* override final */;
+    virtual QString internalName() const RT_OVERRIDE RT_FINAL;
     /** Returns object help keyword. */
-    virtual QString helpKeyword() const /* override final */;
+    virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL;
     /** Handles notification-object being added. */
-    virtual void handle() /* override final */;
+    virtual void handle() RT_OVERRIDE RT_FINAL;
 
 public slots:
 
     /** Stops the progress and notifies model about closing. */
-    virtual void close() /* override final */;
+    virtual void close() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -244,16 +244,16 @@ public:
     /** Returns whether object is done. */
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
-    virtual QString internalName() const /* override final */;
+    virtual QString internalName() const RT_OVERRIDE RT_FINAL;
     /** Returns object help keyword. */
-    virtual QString helpKeyword() const /* override final */;
+    virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL;
     /** Handles notification-object being added. */
-    virtual void handle() /* override final */;
+    virtual void handle() RT_OVERRIDE RT_FINAL;
 
 public slots:
 
     /** Stops the downloader and notifies model about closing. */
-    virtual void close() /* override final */;
+    virtual void close() RT_OVERRIDE RT_FINAL;
 
 private slots:
 

@@ -56,12 +56,12 @@ public:
     NS_DECL_NSICLASSINFO
     
     /* nsIGenericFactory methods */
-    NS_IMETHOD SetComponentInfo(const nsModuleComponentInfo *info);
-    NS_IMETHOD GetComponentInfo(const nsModuleComponentInfo **infop);
+    NS_IMETHOD SetComponentInfo(const nsModuleComponentInfo *info) RT_OVERRIDE;
+    NS_IMETHOD GetComponentInfo(const nsModuleComponentInfo **infop) RT_OVERRIDE;
 
-    NS_IMETHOD CreateInstance(nsISupports *aOuter, REFNSIID aIID, void **aResult);
+    NS_IMETHOD CreateInstance(nsISupports *aOuter, REFNSIID aIID, void **aResult) RT_OVERRIDE;
 
-    NS_IMETHOD LockFactory(PRBool aLock);
+    NS_IMETHOD LockFactory(PRBool aLock) RT_OVERRIDE;
 
     static NS_METHOD Create(nsISupports* outer, const nsIID& aIID, void* *aInstancePtr);
 private:

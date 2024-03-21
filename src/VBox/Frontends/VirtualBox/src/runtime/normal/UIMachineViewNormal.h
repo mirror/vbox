@@ -54,12 +54,12 @@ private slots:
 private:
 
     /* Event handlers: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
 
     /* Prepare helpers: */
-    void prepareCommon();
-    void prepareFilters();
-    void prepareConsoleConnections();
+    void prepareCommon() RT_OVERRIDE;
+    void prepareFilters() RT_OVERRIDE;
+    void prepareConsoleConnections() RT_OVERRIDE;
 
     /* Cleanup helpers: */
     //void cleanupConsoleConnections() {}
@@ -72,15 +72,15 @@ private:
     virtual void setGuestAutoresizeEnabled(bool bEnabled) RT_OVERRIDE;
 
     /** Resends guest size-hint. */
-    void resendSizeHint();
+    void resendSizeHint() RT_OVERRIDE;
 
     /** Adjusts guest-screen size to correspond current <i>machine-window</i> size. */
-    void adjustGuestScreenSize();
+    void adjustGuestScreenSize() RT_OVERRIDE;
 
     /* Private helpers: */
-    QSize sizeHint() const;
-    QRect workingArea() const;
-    QSize calculateMaxGuestSize() const;
+    QSize sizeHint() const RT_OVERRIDE;
+    QRect workingArea() const RT_OVERRIDE;
+    QSize calculateMaxGuestSize() const RT_OVERRIDE;
 
     /* Private members: */
     bool m_fGuestAutoresizeEnabled : 1;

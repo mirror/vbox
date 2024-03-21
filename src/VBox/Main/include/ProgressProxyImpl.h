@@ -75,29 +75,29 @@ public:
                  Utf8Str strFirstOperationDescription,
                  ULONG uFirstOperationWeight,
                  ULONG cOtherProgressObjectOperations);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
 
     // IProgress properties
-    STDMETHOD(COMGETTER(Cancelable))(BOOL *aCancelable);
-    STDMETHOD(COMGETTER(Percent))(ULONG *aPercent);
-    STDMETHOD(COMGETTER(TimeRemaining))(LONG *aTimeRemaining);
-    STDMETHOD(COMGETTER(Completed))(BOOL *aCompleted);
-    STDMETHOD(COMGETTER(Canceled))(BOOL *aCanceled);
-    STDMETHOD(COMGETTER(ResultCode))(LONG *aResultCode);
-    STDMETHOD(COMGETTER(ErrorInfo))(IVirtualBoxErrorInfo **aErrorInfo);
+    STDMETHOD(COMGETTER(Cancelable))(BOOL *aCancelable) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Percent))(ULONG *aPercent) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(TimeRemaining))(LONG *aTimeRemaining) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Completed))(BOOL *aCompleted) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Canceled))(BOOL *aCanceled) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(ResultCode))(LONG *aResultCode) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(ErrorInfo))(IVirtualBoxErrorInfo **aErrorInfo) RT_OVERRIDE;
     //STDMETHOD(COMGETTER(OperationCount))(ULONG *aOperationCount); - not necessary
-    STDMETHOD(COMGETTER(Operation))(ULONG *aOperation);
-    STDMETHOD(COMGETTER(OperationDescription))(BSTR *aOperationDescription);
-    STDMETHOD(COMGETTER(OperationPercent))(ULONG *aOperationPercent);
-    STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
-    STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
+    STDMETHOD(COMGETTER(Operation))(ULONG *aOperation) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(OperationDescription))(BSTR *aOperationDescription) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(OperationPercent))(ULONG *aOperationPercent) RT_OVERRIDE;
+    STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout) RT_OVERRIDE;
 
     // IProgress methods
-    STDMETHOD(WaitForCompletion)(LONG aTimeout);
-    STDMETHOD(WaitForOperationCompletion)(ULONG aOperation, LONG aTimeout);
-    STDMETHOD(Cancel)();
-    STDMETHOD(SetCurrentOperationProgress)(ULONG aPercent);
-    STDMETHOD(SetNextOperation)(IN_BSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight);
+    STDMETHOD(WaitForCompletion)(LONG aTimeout) RT_OVERRIDE;
+    STDMETHOD(WaitForOperationCompletion)(ULONG aOperation, LONG aTimeout) RT_OVERRIDE;
+    STDMETHOD(Cancel)() RT_OVERRIDE;
+    STDMETHOD(SetCurrentOperationProgress)(ULONG aPercent) RT_OVERRIDE;
+    STDMETHOD(SetNextOperation)(IN_BSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight) RT_OVERRIDE;
 
     // public methods only for internal purposes
 

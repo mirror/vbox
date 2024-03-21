@@ -72,7 +72,7 @@ public:
 
     HRESULT init(VirtualBox *aVirtualBox, const com::Utf8Str &aName);
     HRESULT init(VirtualBox *aVirtualBox, const settings::DHCPServer &data);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     /** @name Public internal methods.
@@ -96,7 +96,7 @@ private:
                              const com::Utf8Str &aFromIPAddress, const com::Utf8Str &aToIPAddress) RT_OVERRIDE;
     HRESULT getGlobalConfig(ComPtr<IDHCPGlobalConfig> &aGlobalConfig) RT_OVERRIDE;
     HRESULT getGroupConfigs(std::vector<ComPtr<IDHCPGroupConfig> > &aGroupConfigs) RT_OVERRIDE;
-    HRESULT getIndividualConfigs(std::vector<ComPtr<IDHCPIndividualConfig> > &aIndividualConfigs) ;
+    HRESULT getIndividualConfigs(std::vector<ComPtr<IDHCPIndividualConfig> > &aIndividualConfigs) RT_OVERRIDE;
     /** @} */
 
     /** @name IDHCPServer Methods

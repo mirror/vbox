@@ -56,10 +56,10 @@ public:
     QString text() const;
 
 protected:
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
-    void open();
+    void open() RT_OVERRIDE;
 
 private:
     /* Private member vars */
@@ -87,7 +87,7 @@ public:
     QString text() const { return m_strText; }
 
 protected:
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
     void edit();

@@ -46,15 +46,15 @@ public:
     UIMachineLogicScale(UIMachine *pMachine);
 
     /** Returns visual state type. */
-    virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Scale; }
+    virtual UIVisualStateType visualStateType() const RT_OVERRIDE { return UIVisualStateType_Scale; }
 
 protected:
 
     /* Check if this logic is available: */
-    bool checkAvailability();
+    bool checkAvailability() RT_OVERRIDE;
 
     /** Returns machine-window flags for 'Scale' machine-logic and passed @a uScreenId. */
-    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::Window; }
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const RT_OVERRIDE { Q_UNUSED(uScreenId); return Qt::Window; }
 
 private slots:
 
@@ -69,9 +69,9 @@ private slots:
 private:
 
     /* Prepare helpers: */
-    void prepareActionGroups();
-    void prepareActionConnections();
-    void prepareMachineWindows();
+    void prepareActionGroups() RT_OVERRIDE;
+    void prepareActionConnections() RT_OVERRIDE;
+    void prepareMachineWindows() RT_OVERRIDE;
 #ifndef RT_OS_DARWIN
     void prepareMenu();
 #endif /* !RT_OS_DARWIN */
@@ -80,9 +80,9 @@ private:
 #ifndef RT_OS_DARWIN
     void cleanupMenu();
 #endif /* !RT_OS_DARWIN */
-    void cleanupMachineWindows();
-    void cleanupActionConnections();
-    void cleanupActionGroups();
+    void cleanupMachineWindows() RT_OVERRIDE;
+    void cleanupActionConnections() RT_OVERRIDE;
+    void cleanupActionGroups() RT_OVERRIDE;
 
 #ifndef RT_OS_DARWIN
     /** Holds the popup-menu instance. */

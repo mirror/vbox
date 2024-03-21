@@ -71,7 +71,7 @@ protected:
 private slots:
 
     /** Executes the dialog. */
-    int exec();
+    int exec() RT_OVERRIDE;
 
     /** Handles scroll-bar moving by a certain @a iValue. */
     void sltHandleScrollBarMoved(int iValue);

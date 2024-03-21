@@ -65,7 +65,7 @@ public:
     QIStatusBarIndicator(QWidget *pParent = 0);
 
     /** Returns size-hint. */
-    virtual QSize sizeHint() const { return m_size.isValid() ? m_size : QWidget::sizeHint(); }
+    virtual QSize sizeHint() const RT_OVERRIDE { return m_size.isValid() ? m_size : QWidget::sizeHint(); }
 
 protected:
 

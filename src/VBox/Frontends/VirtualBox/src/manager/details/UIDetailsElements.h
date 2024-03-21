@@ -100,10 +100,10 @@ public:
 protected:
 
     /** Performs translation. */
-    virtual void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Updates appearance. */
-    virtual void updateAppearance();
+    virtual void updateAppearance() RT_OVERRIDE;
 
     /** Creates update task. */
     virtual UITask *createUpdateTask() = 0;
@@ -142,17 +142,17 @@ private slots:
 private:
 
     /** Performs translation. */
-    virtual void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Returns minimum width hint. */
-    int minimumWidthHint() const;
+    int minimumWidthHint() const RT_OVERRIDE;
     /** Returns minimum height hint.
       * @param fClosed allows to specify whether the hint should
       *                be calculated for the closed element. */
-    int minimumHeightHintForElement(bool fClosed) const;
+    int minimumHeightHintForElement(bool fClosed) const RT_OVERRIDE;
 
     /** Updates appearance. */
-    void updateAppearance();
+    void updateAppearance() RT_OVERRIDE;
 
     /** Holds the instance of VM preview. */
     UIMachinePreview *m_pPreview;

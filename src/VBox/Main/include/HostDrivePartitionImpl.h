@@ -47,7 +47,7 @@ public:
     /** @name Public initializer/uninitializer for internal purposes only.
      * @{ */
     HRESULT initFromDvmVol(RTDVMVOLUME hVol);
-    void uninit();
+    void uninit() RT_OVERRIDE;
     /** @} */
 
 private:

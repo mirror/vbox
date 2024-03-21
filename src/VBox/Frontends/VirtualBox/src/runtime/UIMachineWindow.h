@@ -134,7 +134,7 @@ protected:
     UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
     /* Translate stuff: */
-    void retranslateUi();
+    void retranslateUi() RT_OVERRIDE;
 
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
@@ -145,7 +145,7 @@ protected:
     virtual void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
 
     /** Close event handler. */
-    void closeEvent(QCloseEvent *pCloseEvent);
+    void closeEvent(QCloseEvent *pCloseEvent) RT_OVERRIDE;
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Handles native notifications.

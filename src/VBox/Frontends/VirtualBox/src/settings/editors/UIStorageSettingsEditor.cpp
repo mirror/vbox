@@ -237,7 +237,7 @@ public:
     virtual ItemType rtti() const = 0;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem *childItem(int iIndex) const = 0;
+    virtual AbstractItem *childItem(int iIndex) const RT_OVERRIDE = 0;
     /** Returns child item with specified @a uId. */
     virtual AbstractItem *childItemById(const QUuid &uId) const = 0;
     /** Returns position of specified child @a pItem. */
@@ -742,7 +742,7 @@ public:
 private:
 
     /** Returns model flags for @a specifiedIndex. */
-    Qt::ItemFlags flags(const QModelIndex &specifiedIndex) const;
+    Qt::ItemFlags flags(const QModelIndex &specifiedIndex) const RT_OVERRIDE;
 
     /** Holds the parent editor this model belongs to. */
     UIStorageSettingsEditor *m_pParentEditor;

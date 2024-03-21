@@ -120,9 +120,9 @@ class nsAutoRefCnt {
 #define NS_DECL_ISUPPORTS                                                     \
 public:                                                                       \
   NS_IMETHOD QueryInterface(REFNSIID aIID,                                    \
-                            void** aInstancePtr);                             \
-  NS_IMETHOD_(nsrefcnt) AddRef(void);                                         \
-  NS_IMETHOD_(nsrefcnt) Release(void);                                        \
+                            void** aInstancePtr) NS_OVERRIDE;                 \
+  NS_IMETHOD_(nsrefcnt) AddRef(void) NS_OVERRIDE;                             \
+  NS_IMETHOD_(nsrefcnt) Release(void) NS_OVERRIDE;                            \
 protected:                                                                    \
   nsAutoRefCnt mRefCnt;                                                       \
   NS_DECL_OWNINGTHREAD                                                        \
@@ -505,9 +505,9 @@ NS_IMETHODIMP _class::QueryInterface(REFNSIID aIID, void** aInstancePtr)      \
 #define NS_DECL_ISUPPORTS_INHERITED                                           \
 public:                                                                       \
   NS_IMETHOD QueryInterface(REFNSIID aIID,                                    \
-                            void** aInstancePtr);                             \
-  NS_IMETHOD_(nsrefcnt) AddRef(void);                                         \
-  NS_IMETHOD_(nsrefcnt) Release(void);                                        \
+                            void** aInstancePtr) NS_OVERRIDE;                 \
+  NS_IMETHOD_(nsrefcnt) AddRef(void) NS_OVERRIDE;                             \
+  NS_IMETHOD_(nsrefcnt) Release(void) NS_OVERRIDE;                            \
 
 /**
  * These macros can be used in conjunction with NS_DECL_ISUPPORTS_INHERITED

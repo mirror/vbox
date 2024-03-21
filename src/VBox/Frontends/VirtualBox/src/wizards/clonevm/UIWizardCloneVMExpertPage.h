@@ -66,12 +66,12 @@ private slots:
 private:
 
     /** Prepare stuff. */
-    void initializePage();
+    void initializePage() RT_OVERRIDE;
     void prepare(const QString &strOriginalName, const QString &strDefaultPath, bool fShowChildsOption);
 
     /** Validation stuff. */
-    bool isComplete() const;
-    bool validatePage();
+    bool isComplete() const RT_OVERRIDE;
+    bool validatePage() RT_OVERRIDE;
     void setCloneModeGroupBoxEnabled();
 
     UICloneVMNamePathEditor *m_pNamePathGroupBox;

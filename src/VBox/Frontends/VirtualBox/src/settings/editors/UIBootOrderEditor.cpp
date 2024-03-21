@@ -60,7 +60,7 @@ public:
     KDeviceType deviceType() const;
 
     /** Performs item translation. */
-    void retranslateUi();
+    virtual void retranslateUi();
 
 private:
 
@@ -99,9 +99,9 @@ public slots:
 protected:
 
     /** Return size hint. */
-    virtual QSize sizeHint() const;
+    virtual QSize sizeHint() const RT_OVERRIDE;
     /** Return minimum size hint. */
-    virtual QSize minimumSizeHint() const;
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;

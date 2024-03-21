@@ -207,7 +207,7 @@ protected:
         FileOperationType_Max
     };
 
-    void retranslateUi();
+    void retranslateUi() RT_OVERRIDE;
     void updateCurrentLocationEdit(const QString& strLocation);
     /* @p index is for model not for 'proxy' model */
     void changeLocation(const QModelIndex &index);

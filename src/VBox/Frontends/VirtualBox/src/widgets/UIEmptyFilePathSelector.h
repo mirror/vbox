@@ -107,7 +107,7 @@ public slots:
     void setPath (const QString& aPath);
 
 protected:
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
     void choose();

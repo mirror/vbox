@@ -141,7 +141,7 @@ public:
     void setText(const QString &strText);
 
     /** Returns the minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const RT_OVERRIDE;
 
 protected:
 

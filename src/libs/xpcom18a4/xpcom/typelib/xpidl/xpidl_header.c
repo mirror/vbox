@@ -308,7 +308,7 @@ interface(TreeState *state)
             if (!write_attr_accessor(data, state->file, TRUE, AS_DECL, NULL))
                 FAIL;
             if (!IDL_ATTR_DCL(data).f_readonly) {
-                fputs("; \\\n", state->file); /* Terminate the previous one. */
+                fputs(" NS_OVERRIDE; \\\n", state->file); /* Terminate the previous one. */
                 write_indent(state->file);
                 if (!write_attr_accessor(data, state->file,
                                          FALSE, AS_DECL, NULL))
@@ -339,9 +339,9 @@ interface(TreeState *state)
         }
 
         if (IDL_LIST(iter).next != NULL) {
-            fprintf(state->file, "; \\\n");
+            fprintf(state->file, " NS_OVERRIDE; \\\n");
         } else {
-            fprintf(state->file, "; \n");
+            fprintf(state->file, " NS_OVERRIDE; \n");
         }
     }
     fputc('\n', state->file);

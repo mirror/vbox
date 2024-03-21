@@ -80,7 +80,7 @@ private slots:
     /** Performs passwords validation.
       * If all passwords are valid,
       * this slot calls to base-class. */
-    void accept();
+    void accept() RT_OVERRIDE;
 
 private:
 

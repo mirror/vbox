@@ -1352,16 +1352,16 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aMachine);
-    void uninit() { uninit(Uninit::Unexpected); }
+    void uninit() RT_OVERRIDE { uninit(Uninit::Unexpected); }
     void uninit(Uninit::Reason aReason);
 
 
     // util::Lockable interface
-    RWLockHandle *lockHandle() const;
+    RWLockHandle *lockHandle() const RT_OVERRIDE;
 
     // public methods only for internal purposes
 
-    virtual bool i_isSessionMachine() const
+    virtual bool i_isSessionMachine() const RT_OVERRIDE
     {
         return true;
     }
@@ -1377,35 +1377,36 @@ public:
     // the object cannot be deleted in the mean time, i.e. have a caller/lock.
     ClientToken *i_getClientToken();
 
-    HRESULT i_onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter);
+    HRESULT i_onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter) RT_OVERRIDE;
     HRESULT i_onNATRedirectRuleChanged(ULONG ulSlot, BOOL aNatRuleRemove, const Utf8Str &aRuleName,
                                        NATProtocol_T aProto, const Utf8Str &aHostIp, LONG aHostPort,
                                        const Utf8Str &aGuestIp, LONG aGuestPort) RT_OVERRIDE;
-    HRESULT i_onStorageControllerChange(const com::Guid &aMachineId, const com::Utf8Str &aControllerName);
-    HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
-    HRESULT i_onVMProcessPriorityChange(VMProcPriority_T aPriority);
-    HRESULT i_onAudioAdapterChange(IAudioAdapter *audioAdapter);
-    HRESULT i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState, IVirtualBoxErrorInfo *aErrInfo);
-    HRESULT i_onSerialPortChange(ISerialPort *serialPort);
-    HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
-    HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
-    HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onRecordingChange(BOOL aEnable);
-    HRESULT i_onUSBControllerChange();
+    HRESULT i_onStorageControllerChange(const com::Guid &aMachineId, const com::Utf8Str &aControllerName) RT_OVERRIDE;
+    HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce) RT_OVERRIDE;
+    HRESULT i_onVMProcessPriorityChange(VMProcPriority_T aPriority) RT_OVERRIDE;
+    HRESULT i_onAudioAdapterChange(IAudioAdapter *audioAdapter) RT_OVERRIDE;
+    HRESULT i_onHostAudioDeviceChange(IHostAudioDevice *aDevice, BOOL aNew, AudioDeviceState_T aState,
+                                      IVirtualBoxErrorInfo *aErrInfo) RT_OVERRIDE;
+    HRESULT i_onSerialPortChange(ISerialPort *serialPort) RT_OVERRIDE;
+    HRESULT i_onParallelPortChange(IParallelPort *parallelPort) RT_OVERRIDE;
+    HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove) RT_OVERRIDE;
+    HRESULT i_onVRDEServerChange(BOOL aRestart) RT_OVERRIDE;
+    HRESULT i_onRecordingChange(BOOL aEnable) RT_OVERRIDE;
+    HRESULT i_onUSBControllerChange() RT_OVERRIDE;
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,
                                 ULONG aMaskedIfs,
                                 const com::Utf8Str &aCaptureFilename);
     HRESULT i_onUSBDeviceDetach(IN_BSTR aId,
                                 IVirtualBoxErrorInfo *aError);
-    HRESULT i_onSharedFolderChange();
-    HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
-    HRESULT i_onClipboardFileTransferModeChange(BOOL aEnable);
-    HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
-    HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
-    HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
-    HRESULT i_onCPUExecutionCapChange(ULONG aCpuExecutionCap);
-    HRESULT i_onGuestDebugControlChange(IGuestDebugControl *guestDebugControl);
+    HRESULT i_onSharedFolderChange() RT_OVERRIDE;
+    HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode) RT_OVERRIDE;
+    HRESULT i_onClipboardFileTransferModeChange(BOOL aEnable) RT_OVERRIDE;
+    HRESULT i_onDnDModeChange(DnDMode_T aDnDMode) RT_OVERRIDE;
+    HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup) RT_OVERRIDE;
+    HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent) RT_OVERRIDE;
+    HRESULT i_onCPUExecutionCapChange(ULONG aCpuExecutionCap) RT_OVERRIDE;
+    HRESULT i_onGuestDebugControlChange(IGuestDebugControl *guestDebugControl) RT_OVERRIDE;
 
     bool i_hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 
@@ -1420,36 +1421,36 @@ private:
 
     // wrapped IInternalMachineControl methods
     HRESULT setRemoveSavedStateFile(BOOL aRemove);
-    HRESULT updateState(MachineState_T aState);
-    HRESULT beginPowerUp(const ComPtr<IProgress> &aProgress);
-    HRESULT endPowerUp(LONG aResult);
-    HRESULT beginPoweringDown(ComPtr<IProgress> &aProgress);
+    HRESULT updateState(MachineState_T aState) RT_OVERRIDE;
+    HRESULT beginPowerUp(const ComPtr<IProgress> &aProgress) RT_OVERRIDE;
+    HRESULT endPowerUp(LONG aResult) RT_OVERRIDE;
+    HRESULT beginPoweringDown(ComPtr<IProgress> &aProgress) RT_OVERRIDE;
     HRESULT endPoweringDown(LONG aResult,
-                            const com::Utf8Str &aErrMsg);
+                            const com::Utf8Str &aErrMsg) RT_OVERRIDE;
     HRESULT runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
                                 BOOL *aMatched,
-                                ULONG *aMaskedInterfaces);
-    HRESULT captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
+                                ULONG *aMaskedInterfaces) RT_OVERRIDE;
+    HRESULT captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename) RT_OVERRIDE;
     HRESULT detachUSBDevice(const com::Guid &aId,
-                            BOOL aDone);
-    HRESULT autoCaptureUSBDevices();
-    HRESULT detachAllUSBDevices(BOOL aDone);
+                            BOOL aDone) RT_OVERRIDE;
+    HRESULT autoCaptureUSBDevices() RT_OVERRIDE;
+    HRESULT detachAllUSBDevices(BOOL aDone) RT_OVERRIDE;
     HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
-                         ComPtr<IProgress> &aProgress);
-    HRESULT finishOnlineMergeMedium();
+                         ComPtr<IProgress> &aProgress) RT_OVERRIDE;
+    HRESULT finishOnlineMergeMedium() RT_OVERRIDE;
     HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                 std::vector<com::Utf8Str> &aValues,
                                 std::vector<LONG64> &aTimestamps,
-                                std::vector<com::Utf8Str> &aFlags);
+                                std::vector<com::Utf8Str> &aFlags) RT_OVERRIDE;
     HRESULT pushGuestProperty(const com::Utf8Str &aName,
                               const com::Utf8Str &aValue,
                               LONG64 aTimestamp,
                               const com::Utf8Str &aFlags,
-                              BOOL fWasDeleted);
-    HRESULT lockMedia();
-    HRESULT unlockMedia();
+                              BOOL fWasDeleted) RT_OVERRIDE;
+    HRESULT lockMedia() RT_OVERRIDE;
+    HRESULT unlockMedia() RT_OVERRIDE;
     HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
-                        ComPtr<IMediumAttachment> &aNewAttachment);
+                        ComPtr<IMediumAttachment> &aNewAttachment) RT_OVERRIDE;
     HRESULT reportVmStatistics(ULONG aValidStats,
                                ULONG aCpuUser,
                                ULONG aCpuKernel,
@@ -1465,9 +1466,9 @@ private:
                                ULONG aMemBalloonTotal,
                                ULONG aMemSharedTotal,
                                ULONG aVmNetRx,
-                               ULONG aVmNetTx);
+                               ULONG aVmNetTx) RT_OVERRIDE;
     HRESULT authenticateExternal(const std::vector<com::Utf8Str> &aAuthParams,
-                                 com::Utf8Str &aResult);
+                                 com::Utf8Str &aResult) RT_OVERRIDE;
 
 
     struct ConsoleTaskData
@@ -1494,23 +1495,23 @@ private:
 
     // Override some functionality for SessionMachine, this is where the
     // real action happens (the Machine methods are just dummies).
-    HRESULT saveState(ComPtr<IProgress> &aProgress);
-    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
-    HRESULT discardSavedState(BOOL aFRemoveFile);
+    HRESULT saveState(ComPtr<IProgress> &aProgress) RT_OVERRIDE;
+    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile) RT_OVERRIDE;
+    HRESULT discardSavedState(BOOL aFRemoveFile) RT_OVERRIDE;
     HRESULT takeSnapshot(const com::Utf8Str &aName,
                          const com::Utf8Str &aDescription,
                          BOOL aPause,
                          com::Guid &aId,
-                         ComPtr<IProgress> &aProgress);
+                         ComPtr<IProgress> &aProgress) RT_OVERRIDE;
     HRESULT deleteSnapshot(const com::Guid &aId,
-                           ComPtr<IProgress> &aProgress);
+                           ComPtr<IProgress> &aProgress) RT_OVERRIDE;
     HRESULT deleteSnapshotAndAllChildren(const com::Guid &aId,
-                                         ComPtr<IProgress> &aProgress);
+                                         ComPtr<IProgress> &aProgress) RT_OVERRIDE;
     HRESULT deleteSnapshotRange(const com::Guid &aStartId,
                                 const com::Guid &aEndId,
-                                ComPtr<IProgress> &aProgress);
+                                ComPtr<IProgress> &aProgress) RT_OVERRIDE;
     HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
-                            ComPtr<IProgress> &aProgress);
+                            ComPtr<IProgress> &aProgress) RT_OVERRIDE;
 
     void i_releaseSavedStateFile(const Utf8Str &strSavedStateFile, Snapshot *pSnapshotToIgnore);
 
@@ -1555,7 +1556,7 @@ private:
                                 ComObjPtr<Progress> &aProgress,
                                 bool *pfNeedsMachineSaveSettings);
 
-    HRESULT i_setMachineState(MachineState_T aMachineState);
+    HRESULT i_setMachineState(MachineState_T aMachineState) RT_OVERRIDE;
     HRESULT i_updateMachineStateOnClient();
 
     bool mRemoveSavedState;
@@ -1614,14 +1615,14 @@ public:
                              const settings::RecordingSettings &recording,
                              IN_GUID aSnapshotId,
                              const Utf8Str &aStateFilePath);
-    void uninit();
+    void uninit() RT_OVERRIDE;
 
     // util::Lockable interface
-    RWLockHandle *lockHandle() const;
+    RWLockHandle *lockHandle() const RT_OVERRIDE;
 
     // public methods only for internal purposes
 
-    virtual bool i_isSnapshotMachine() const
+    virtual bool i_isSnapshotMachine() const RT_OVERRIDE
     {
         return true;
     }

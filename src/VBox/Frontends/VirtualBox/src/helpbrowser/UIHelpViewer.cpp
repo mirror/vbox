@@ -130,7 +130,7 @@ protected:
 private:
 
     void prepare();
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
     UISearchLineEdit  *m_pSearchLineEdit;
     QIToolButton      *m_pNextButton;
     QIToolButton      *m_pPreviousButton;

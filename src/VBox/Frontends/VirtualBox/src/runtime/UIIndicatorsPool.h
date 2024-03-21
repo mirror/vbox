@@ -110,7 +110,7 @@ private:
     void cleanup();
 
     /** Context-menu event handler. */
-    void contextMenuEvent(QContextMenuEvent *pEvent);
+    void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
 
     /** Returns position for passed @a indicatorType. */
     int indicatorPosition(IndicatorType indicatorType) const;

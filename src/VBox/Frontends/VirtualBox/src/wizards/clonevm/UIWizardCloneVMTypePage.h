@@ -56,9 +56,9 @@ private slots:
 
 private:
 
-    void initializePage();
+    void initializePage() RT_OVERRIDE;
     void prepare();
-    bool validatePage();
+    bool validatePage() RT_OVERRIDE;
 
     QIRichTextLabel *m_pLabel;
     bool m_fAdditionalInfo;

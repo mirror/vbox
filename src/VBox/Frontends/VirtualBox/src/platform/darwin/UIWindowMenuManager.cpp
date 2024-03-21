@@ -59,7 +59,7 @@ public:
     void removeWindow(QWidget *pWindow);
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi();
 
     /** Updates toggle action states according to passed @a pActiveWindow. */
     void updateStatus(QWidget *pActiveWindow);

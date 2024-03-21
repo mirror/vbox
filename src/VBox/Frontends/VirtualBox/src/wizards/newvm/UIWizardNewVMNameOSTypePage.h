@@ -90,7 +90,7 @@ private:
     /** Prepare stuff. */
     void prepare();
     void createConnections();
-    void initializePage();
+    void initializePage() RT_OVERRIDE;
     QWidget *createNameOSTypeWidgets();
     void markWidgets() const;
     void setSkipCheckBoxEnable();

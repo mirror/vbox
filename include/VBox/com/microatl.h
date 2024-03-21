@@ -129,9 +129,9 @@ public: \
         }; \
         return _aInterfaces; \
     } \
-    virtual ULONG STDMETHODCALLTYPE AddRef(void) throw() = 0; \
-    virtual ULONG STDMETHODCALLTYPE Release(void) throw() = 0; \
-    STDMETHOD(QueryInterface)(REFIID, void **) throw() = 0;
+    virtual ULONG STDMETHODCALLTYPE AddRef(void) throw() RT_OVERRIDE = 0; \
+    virtual ULONG STDMETHODCALLTYPE Release(void) throw() RT_OVERRIDE = 0; \
+    STDMETHOD(QueryInterface)(REFIID, void **) throw() RT_OVERRIDE = 0;
 
 struct _ATL_OBJMAP_ENTRY
 {

@@ -67,10 +67,10 @@ private slots:
 
 private:
 
-    void initializePage();
+    void initializePage() RT_OVERRIDE;
     void prepare(const QString &strDefaultClonePath);
     /** Validation stuff */
-    bool isComplete() const;
+    bool isComplete() const RT_OVERRIDE;
 
     QIRichTextLabel *m_pMainLabel;
     UICloneVMNamePathEditor *m_pNamePathEditor;

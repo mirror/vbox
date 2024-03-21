@@ -198,7 +198,7 @@ public:
     ~UIFileSystemModel();
 
     QVariant       data(const QModelIndex &index, int role) const RT_OVERRIDE;
-    bool           setData(const QModelIndex &index, const QVariant &value, int role);
+    bool           setData(const QModelIndex &index, const QVariant &value, int role) RT_OVERRIDE;
 
     Qt::ItemFlags  flags(const QModelIndex &index) const RT_OVERRIDE;
     QVariant       headerData(int section, Qt::Orientation orientation,

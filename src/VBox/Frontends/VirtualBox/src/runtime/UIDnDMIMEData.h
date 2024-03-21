@@ -99,9 +99,9 @@ public slots:
 protected:
     /** @name Overridden functions of QMimeData.
      * @{ */
-    virtual QStringList formats(void) const;
+    virtual QStringList formats(void) const RT_OVERRIDE;
 
-    virtual bool hasFormat(const QString &mimeType) const;
+    virtual bool hasFormat(const QString &mimeType) const RT_OVERRIDE;
 
     virtual QVariant retrieveData(const QString &strMIMEType, QMetaType metaType) const RT_OVERRIDE;
     /** @}  */

@@ -48,7 +48,7 @@ public:
     HRESULT FinalConstruct();
     void    FinalRelease();
     HRESULT initFromDbEntry(struct CPUMDBENTRY const *a_pDbEntry) RT_NOEXCEPT;
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     bool    i_match(CPUArchitecture_T a_enmArchitecture, CPUArchitecture_T a_enmSecondaryArch,

@@ -85,7 +85,7 @@ private slots:
 
 private:
 
-    void prepare();
+    void prepare() RT_OVERRIDE;
     void prepareConnections();
 
     QILabel      *m_pVisoNameLabel;

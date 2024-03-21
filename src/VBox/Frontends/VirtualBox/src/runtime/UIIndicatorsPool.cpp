@@ -685,7 +685,7 @@ protected slots:
 private slots:
 
     /** Handles state change. */
-    void setState(int iState)
+    void setState(int iState) RT_OVERRIDE
     {
         /* Update animation state: */
         switch (iState)
@@ -918,7 +918,7 @@ protected slots:
 private slots:
 
     /** Handles state change. */
-    void setState(int iState)
+    void setState(int iState) RT_OVERRIDE
     {
         if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
             (iState & UIMouseStateType_MouseAbsolute) &&
@@ -1011,7 +1011,7 @@ public slots:
 private:
 
     /** Retranslation routine. */
-    void retranslateUi()
+    virtual void retranslateUi() RT_OVERRIDE
     {
         sltUpdateAppearance();
         setToolTip(QApplication::translate("UIMachineWindowNormal",

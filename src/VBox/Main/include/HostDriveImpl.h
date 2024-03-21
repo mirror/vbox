@@ -45,7 +45,7 @@ public:
     /** @name Public initializer/uninitializer for internal purposes only.
      * @{ */
     HRESULT initFromPathAndModel(const com::Utf8Str &drivePath, const com::Utf8Str &driveModel);
-    void uninit();
+    void uninit() RT_OVERRIDE;
     /** @} */
 
     com::Utf8Str i_getDrivePath() { return m.drivePath; }

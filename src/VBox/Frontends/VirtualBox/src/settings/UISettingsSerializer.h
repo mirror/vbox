@@ -137,7 +137,7 @@ protected slots:
 protected:
 
     /** Worker-thread serialization rutine. */
-    void run();
+    void run() RT_OVERRIDE;
 
     /** Holds the load/save direction. */
     const SerializationDirection  m_enmDirection;
@@ -181,7 +181,7 @@ public:
                                  const QVariant &data, const UISettingsPageList &pages);
 
     /** Executes the dialog. */
-    int exec();
+    int exec() RT_OVERRIDE;
 
     /** Returns the instance of wrapper(s) to load/save the data from/to. */
     QVariant &data();
@@ -195,15 +195,15 @@ protected:
     void prepare();
 
     /** Translate routine: */
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Close event-handler called with the given window system @a pEvent. */
-    virtual void closeEvent(QCloseEvent *pEvent);
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
     /** Hides the modal dialog and sets the result code to <i>Rejected</i>. */
-    virtual void reject();
+    virtual void reject() RT_OVERRIDE;
 
     /** Starts the process. */
     void sltStartProcess();

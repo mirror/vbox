@@ -65,7 +65,7 @@ public:
     QIArrowSplitter(QWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
-    QSize minimumSizeHint() const;
+    QSize minimumSizeHint() const RT_OVERRIDE;
 
     /** Defines the @a strName for the switch-button. */
     void setName(const QString &strName);

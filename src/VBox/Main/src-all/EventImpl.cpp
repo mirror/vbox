@@ -1341,7 +1341,7 @@ public:
     }
 
     // IEventListener methods
-    STDMETHOD(HandleEvent)(IEvent *)
+    STDMETHOD(HandleEvent)(IEvent *) RT_OVERRIDE
     {
         ComAssertMsgRet(false, (tr("HandleEvent() of wrapper shall never be called")),
                         E_FAIL);
@@ -1390,7 +1390,7 @@ public:
     }
 
     // IEventListener methods
-    STDMETHOD(HandleEvent)(IEvent *aEvent)
+    STDMETHOD(HandleEvent)(IEvent *aEvent) RT_OVERRIDE
     {
         BOOL fProcessed = FALSE;
         if (mSource)
@@ -1448,21 +1448,21 @@ public:
     HRESULT init(const std::vector<ComPtr<IEventSource> >  aSourcesIn);
 
     // IEventSource methods
-    STDMETHOD(CreateListener)(IEventListener **aListener);
+    STDMETHOD(CreateListener)(IEventListener **aListener) RT_OVERRIDE;
     STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource *, aSubordinates),
-                                IEventSource **aAggregator);
+                                IEventSource **aAggregator) RT_OVERRIDE;
     STDMETHOD(RegisterListener)(IEventListener *aListener,
                                 ComSafeArrayIn(VBoxEventType_T, aInterested),
-                                BOOL aActive);
-    STDMETHOD(UnregisterListener)(IEventListener *aListener);
+                                BOOL aActive) RT_OVERRIDE;
+    STDMETHOD(UnregisterListener)(IEventListener *aListener) RT_OVERRIDE;
     STDMETHOD(FireEvent)(IEvent *aEvent,
                          LONG aTimeout,
-                         BOOL *aProcessed);
+                         BOOL *aProcessed) RT_OVERRIDE;
     STDMETHOD(GetEvent)(IEventListener *aListener,
                         LONG aTimeout,
-                        IEvent **aEvent);
+                        IEvent **aEvent) RT_OVERRIDE;
     STDMETHOD(EventProcessed)(IEventListener *aListener,
-                              IEvent *aEvent);
+                              IEvent *aEvent) RT_OVERRIDE;
 
   protected:
     HRESULT createProxyListener(IEventListener *aListener,

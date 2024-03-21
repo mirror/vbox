@@ -65,7 +65,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override final */;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 

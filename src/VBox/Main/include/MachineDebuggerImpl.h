@@ -51,7 +51,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Console *aParent);
-    void uninit();
+    void uninit() RT_OVERRIDE;
 
     // "public-private methods"
     void i_flushQueuedSettings();
@@ -59,83 +59,83 @@ public:
 private:
 
     // wrapped IMachineDeugger properties
-    HRESULT getSingleStep(BOOL *aSingleStep);
-    HRESULT setSingleStep(BOOL aSingleStep);
-    HRESULT getExecuteAllInIEM(BOOL *aExecuteAllInIEM);
-    HRESULT setExecuteAllInIEM(BOOL aExecuteAllInIEM);
-    HRESULT getLogEnabled(BOOL *aLogEnabled);
-    HRESULT setLogEnabled(BOOL aLogEnabled);
-    HRESULT getLogDbgFlags(com::Utf8Str &aLogDbgFlags);
-    HRESULT getLogDbgGroups(com::Utf8Str &aLogDbgGroups);
-    HRESULT getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations);
-    HRESULT getLogRelFlags(com::Utf8Str &aLogRelFlags);
-    HRESULT getLogRelGroups(com::Utf8Str &aLogRelGroups);
-    HRESULT getLogRelDestinations(com::Utf8Str &aLogRelDestinations);
-    HRESULT getExecutionEngine(VMExecutionEngine_T *apenmEngine);
-    HRESULT getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled);
-    HRESULT getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled);
-    HRESULT getHWVirtExUXEnabled(BOOL *aHWVirtExUXEnabled);
-    HRESULT getOSName(com::Utf8Str &aOSName);
-    HRESULT getOSVersion(com::Utf8Str &aOSVersion);
-    HRESULT getPAEEnabled(BOOL *aPAEEnabled);
-    HRESULT getVirtualTimeRate(ULONG *aVirtualTimeRate);
-    HRESULT setVirtualTimeRate(ULONG aVirtualTimeRate);
-    HRESULT getUptime(LONG64 *aUptime);
+    HRESULT getSingleStep(BOOL *aSingleStep) RT_OVERRIDE;
+    HRESULT setSingleStep(BOOL aSingleStep) RT_OVERRIDE;
+    HRESULT getExecuteAllInIEM(BOOL *aExecuteAllInIEM) RT_OVERRIDE;
+    HRESULT setExecuteAllInIEM(BOOL aExecuteAllInIEM) RT_OVERRIDE;
+    HRESULT getLogEnabled(BOOL *aLogEnabled) RT_OVERRIDE;
+    HRESULT setLogEnabled(BOOL aLogEnabled) RT_OVERRIDE;
+    HRESULT getLogDbgFlags(com::Utf8Str &aLogDbgFlags) RT_OVERRIDE;
+    HRESULT getLogDbgGroups(com::Utf8Str &aLogDbgGroups) RT_OVERRIDE;
+    HRESULT getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations) RT_OVERRIDE;
+    HRESULT getLogRelFlags(com::Utf8Str &aLogRelFlags) RT_OVERRIDE;
+    HRESULT getLogRelGroups(com::Utf8Str &aLogRelGroups) RT_OVERRIDE;
+    HRESULT getLogRelDestinations(com::Utf8Str &aLogRelDestinations) RT_OVERRIDE;
+    HRESULT getExecutionEngine(VMExecutionEngine_T *apenmEngine) RT_OVERRIDE;
+    HRESULT getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled) RT_OVERRIDE;
+    HRESULT getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled) RT_OVERRIDE;
+    HRESULT getHWVirtExUXEnabled(BOOL *aHWVirtExUXEnabled) RT_OVERRIDE;
+    HRESULT getOSName(com::Utf8Str &aOSName) RT_OVERRIDE;
+    HRESULT getOSVersion(com::Utf8Str &aOSVersion) RT_OVERRIDE;
+    HRESULT getPAEEnabled(BOOL *aPAEEnabled) RT_OVERRIDE;
+    HRESULT getVirtualTimeRate(ULONG *aVirtualTimeRate) RT_OVERRIDE;
+    HRESULT setVirtualTimeRate(ULONG aVirtualTimeRate) RT_OVERRIDE;
+    HRESULT getUptime(LONG64 *aUptime) RT_OVERRIDE;
 
     // wrapped IMachineDeugger methods
     HRESULT dumpGuestCore(const com::Utf8Str &aFilename,
-                          const com::Utf8Str &aCompression);
+                          const com::Utf8Str &aCompression) RT_OVERRIDE;
     HRESULT dumpHostProcessCore(const com::Utf8Str &aFilename,
-                                const com::Utf8Str &aCompression);
+                                const com::Utf8Str &aCompression) RT_OVERRIDE;
     HRESULT info(const com::Utf8Str &aName,
                  const com::Utf8Str &aArgs,
-                 com::Utf8Str &aInfo);
-    HRESULT injectNMI();
-    HRESULT modifyLogGroups(const com::Utf8Str &aSettings);
-    HRESULT modifyLogFlags(const com::Utf8Str &aSettings);
-    HRESULT modifyLogDestinations(const com::Utf8Str &aSettings);
+                 com::Utf8Str &aInfo) RT_OVERRIDE;
+    HRESULT injectNMI() RT_OVERRIDE;
+    HRESULT modifyLogGroups(const com::Utf8Str &aSettings) RT_OVERRIDE;
+    HRESULT modifyLogFlags(const com::Utf8Str &aSettings) RT_OVERRIDE;
+    HRESULT modifyLogDestinations(const com::Utf8Str &aSettings) RT_OVERRIDE;
     HRESULT readPhysicalMemory(LONG64 aAddress,
                                ULONG aSize,
-                               std::vector<BYTE> &aBytes);
+                               std::vector<BYTE> &aBytes) RT_OVERRIDE;
     HRESULT writePhysicalMemory(LONG64 aAddress,
                                 ULONG aSize,
-                                const std::vector<BYTE> &aBytes);
+                                const std::vector<BYTE> &aBytes) RT_OVERRIDE;
     HRESULT readVirtualMemory(ULONG aCpuId,
                               LONG64 aAddress,
                               ULONG aSize,
-                              std::vector<BYTE> &aBytes);
+                              std::vector<BYTE> &aBytes) RT_OVERRIDE;
     HRESULT writeVirtualMemory(ULONG aCpuId,
                                LONG64 aAddress,
                                ULONG aSize,
-                               const std::vector<BYTE> &aBytes);
+                               const std::vector<BYTE> &aBytes) RT_OVERRIDE;
     HRESULT loadPlugIn(const com::Utf8Str &aName,
-                       com::Utf8Str &aPlugInName);
-    HRESULT unloadPlugIn(const com::Utf8Str &aName);
-    HRESULT detectOS(com::Utf8Str &aOs);
+                       com::Utf8Str &aPlugInName) RT_OVERRIDE;
+    HRESULT unloadPlugIn(const com::Utf8Str &aName) RT_OVERRIDE;
+    HRESULT detectOS(com::Utf8Str &aOs) RT_OVERRIDE;
     HRESULT queryOSKernelLog(ULONG aMaxMessages,
-                             com::Utf8Str &aDmesg);
+                             com::Utf8Str &aDmesg) RT_OVERRIDE;
     HRESULT getRegister(ULONG aCpuId,
                         const com::Utf8Str &aName,
-                        com::Utf8Str &aValue);
+                        com::Utf8Str &aValue) RT_OVERRIDE;
     HRESULT getRegisters(ULONG aCpuId,
                          std::vector<com::Utf8Str> &aNames,
-                         std::vector<com::Utf8Str> &aValues);
+                         std::vector<com::Utf8Str> &aValues) RT_OVERRIDE;
     HRESULT setRegister(ULONG aCpuId,
                         const com::Utf8Str &aName,
-                        const com::Utf8Str &aValue);
+                        const com::Utf8Str &aValue) RT_OVERRIDE;
     HRESULT setRegisters(ULONG aCpuId,
                          const std::vector<com::Utf8Str> &aNames,
-                         const std::vector<com::Utf8Str> &aValues);
+                         const std::vector<com::Utf8Str> &aValues) RT_OVERRIDE;
     HRESULT dumpGuestStack(ULONG aCpuId,
-                           com::Utf8Str &aStack);
-    HRESULT resetStats(const com::Utf8Str &aPattern);
-    HRESULT dumpStats(const com::Utf8Str &aPattern);
+                           com::Utf8Str &aStack) RT_OVERRIDE;
+    HRESULT resetStats(const com::Utf8Str &aPattern) RT_OVERRIDE;
+    HRESULT dumpStats(const com::Utf8Str &aPattern) RT_OVERRIDE;
     HRESULT getStats(const com::Utf8Str &aPattern,
                      BOOL aWithDescriptions,
-                     com::Utf8Str &aStats);
+                     com::Utf8Str &aStats) RT_OVERRIDE;
     HRESULT getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *aPctHalted, ULONG *aPctOther, LONG64 *aMsInterval) RT_OVERRIDE;
-    HRESULT takeGuestSample(const com::Utf8Str &aFilename, ULONG aUsInterval, LONG64 aUsSampleTime, ComPtr<IProgress> &pProgress);
-    HRESULT getUVMAndVMMFunctionTable(LONG64 aMagicVersion, LONG64 *aVMMFunctionTable, LONG64 *aUVM);
+    HRESULT takeGuestSample(const com::Utf8Str &aFilename, ULONG aUsInterval, LONG64 aUsSampleTime, ComPtr<IProgress> &pProgress) RT_OVERRIDE;
+    HRESULT getUVMAndVMMFunctionTable(LONG64 aMagicVersion, LONG64 *aVMMFunctionTable, LONG64 *aUVM) RT_OVERRIDE;
 
     // private methods
     bool i_queueSettings() const;

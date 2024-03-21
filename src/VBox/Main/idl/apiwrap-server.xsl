@@ -1121,7 +1121,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:call-template name="emitPublicParameter">
         <xsl:with-param name="dir">out</xsl:with-param>
     </xsl:call-template>
-    <xsl:text>);
+    <xsl:text>) RT_OVERRIDE;
 </xsl:text>
 
     <xsl:if test="not(@readonly) or @readonly!='yes'">
@@ -1129,7 +1129,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:call-template name="emitPublicParameter">
             <xsl:with-param name="dir">in</xsl:with-param>
         </xsl:call-template>
-        <xsl:text>);
+        <xsl:text>) RT_OVERRIDE;
 </xsl:text>
     </xsl:if>
 
@@ -1597,7 +1597,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
                     <xsl:text>    STDMETHOD(COMGETTER(InternalAndReservedAttribute</xsl:text>
                     <xsl:value-of select="concat(position(), $name)"/>
-                    <xsl:text>))(ULONG *aReserved);&#x0A;</xsl:text>
+                    <xsl:text>))(ULONG *aReserved) RT_OVERRIDE;&#x0A;</xsl:text>
                 </xsl:for-each>
             </xsl:if>
         </xsl:when>
@@ -1710,7 +1710,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:value-of select="$methodindent"/>
         </xsl:if>
     </xsl:for-each>
-    <xsl:text>);
+    <xsl:text>) RT_OVERRIDE;
 </xsl:text>
 
     <xsl:call-template name="emitTargetEnd">
@@ -2240,7 +2240,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
                     <xsl:text>    STDMETHOD(InternalAndReservedMethod</xsl:text>
                     <xsl:value-of select="concat(position(), $name)"/>
-                    <xsl:text>)();&#x0A;</xsl:text>
+                    <xsl:text>)() RT_OVERRIDE;&#x0A;</xsl:text>
                 </xsl:for-each>
             </xsl:if>
         </xsl:when>

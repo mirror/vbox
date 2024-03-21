@@ -53,7 +53,7 @@ public:
     QIDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
 
     /** Defines whether the dialog is @a fVisible. */
-    void setVisible(bool fVisible);
+    void setVisible(bool fVisible) RT_OVERRIDE;
 
 public slots:
 

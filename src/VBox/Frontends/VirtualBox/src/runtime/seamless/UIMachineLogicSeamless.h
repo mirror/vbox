@@ -51,7 +51,7 @@ public:
     virtual ~UIMachineLogicSeamless() RT_OVERRIDE;
 
     /** Returns visual state type. */
-    virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Seamless; }
+    virtual UIVisualStateType visualStateType() const RT_OVERRIDE { return UIVisualStateType_Seamless; }
 
     /** Returns an index of host-screen for guest-screen with @a iScreenId specified. */
     int hostScreenForGuestScreen(int iScreenId) const;
@@ -61,31 +61,31 @@ public:
 protected:
 
     /* Check if this logic is available: */
-    bool checkAvailability();
+    bool checkAvailability() RT_OVERRIDE;
 
     /** Returns machine-window flags for 'Seamless' machine-logic and passed @a uScreenId. */
-    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::FramelessWindowHint; }
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const RT_OVERRIDE { Q_UNUSED(uScreenId); return Qt::FramelessWindowHint; }
 
     /** Adjusts machine-window geometry if necessary for 'Seamless'. */
-    virtual void adjustMachineWindowsGeometry();
+    virtual void adjustMachineWindowsGeometry() RT_OVERRIDE;
 
 private slots:
 
     /** Checks if some visual-state type was requested. */
-    void sltCheckForRequestedVisualStateType();
+    void sltCheckForRequestedVisualStateType() RT_OVERRIDE;
 
     /* Handler: Console callback stuff: */
-    void sltMachineStateChanged();
+    void sltMachineStateChanged() RT_OVERRIDE;
 
     /** Updates machine-window(s) location/size on screen-layout changes. */
     void sltScreenLayoutChanged();
 
     /** Handles guest-screen count change. */
-    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo) RT_OVERRIDE;
     /** Handles host-screen count change. */
-    virtual void sltHostScreenCountChange();
+    virtual void sltHostScreenCountChange() RT_OVERRIDE;
     /** Handles additions-state change. */
-    virtual void sltAdditionsStateChanged();
+    virtual void sltAdditionsStateChanged() RT_OVERRIDE;
 
 #ifndef RT_OS_DARWIN
     /** Invokes popup-menu. */
@@ -95,9 +95,9 @@ private slots:
 private:
 
     /* Prepare helpers: */
-    void prepareActionGroups();
-    void prepareActionConnections();
-    void prepareMachineWindows();
+    void prepareActionGroups() RT_OVERRIDE;
+    void prepareActionConnections() RT_OVERRIDE;
+    void prepareMachineWindows() RT_OVERRIDE;
 #ifndef VBOX_WS_MAC
     void prepareMenu();
 #endif /* !VBOX_WS_MAC */
@@ -106,9 +106,9 @@ private:
 #ifndef VBOX_WS_MAC
     void cleanupMenu();
 #endif /* !VBOX_WS_MAC */
-    void cleanupMachineWindows();
-    void cleanupActionConnections();
-    void cleanupActionGroups();
+    void cleanupMachineWindows() RT_OVERRIDE;
+    void cleanupActionConnections() RT_OVERRIDE;
+    void cleanupActionGroups() RT_OVERRIDE;
 
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;

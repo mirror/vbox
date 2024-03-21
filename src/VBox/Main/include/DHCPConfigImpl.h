@@ -156,7 +156,7 @@ public:
     }
     HRESULT initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent);
     HRESULT initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const settings::DHCPConfig &rConfig);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     HRESULT i_saveSettings(settings::DHCPConfig &a_rDst);
@@ -257,7 +257,7 @@ public:
     HRESULT initWithDefaults(DHCPGroupConfig *a_pParent, bool a_fInclusive, DHCPGroupConditionType_T a_enmType,
                              const com::Utf8Str a_strValue);
     HRESULT initWithSettings(DHCPGroupConfig *a_pParent, const settings::DHCPGroupCondition &a_rSrc);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     HRESULT i_saveSettings(settings::DHCPGroupCondition &a_rDst);
@@ -321,7 +321,7 @@ public:
     }
     HRESULT initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const com::Utf8Str &a_rName);
     HRESULT initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const settings::DHCPGroupConfig &a_rSrc);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     HRESULT i_saveSettings(settings::DHCPGroupConfig &a_rDst);
@@ -445,7 +445,7 @@ public:
                                                 ULONG a_uSlot, uint32_t a_uMACAddressVersion);
     HRESULT initWithSettingsAndMACAddress(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent,
                                           const settings::DHCPIndividualConfig &rData, PCRTMAC a_pMACAddress);
-    void    uninit();
+    void    uninit() RT_OVERRIDE;
     /** @} */
 
     /** @name Internal methods that are public for various reasons

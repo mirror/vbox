@@ -71,8 +71,8 @@ private:
 
     void prepare();
     void createConnections();
-    void initializePage();
-    bool isComplete() const;
+    void initializePage() RT_OVERRIDE;
+    bool isComplete() const RT_OVERRIDE;
     /** Returns true if we show the widgets for guest os product key. */
     bool isProductKeyWidgetEnabled() const;
     void markWidgets() const;

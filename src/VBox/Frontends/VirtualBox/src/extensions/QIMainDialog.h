@@ -77,7 +77,7 @@ public:
 public slots:
 
     /** Defines whether the dialog is @a fVisible. */
-    virtual void setVisible(bool fVisible);
+    virtual void setVisible(bool fVisible) RT_OVERRIDE;
 
 protected:
 

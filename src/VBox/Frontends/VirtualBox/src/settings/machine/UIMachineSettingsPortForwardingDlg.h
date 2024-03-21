@@ -55,13 +55,13 @@ public:
 private slots:
 
     /* Handlers: Dialog stuff: */
-    void accept();
-    void reject();
+    void accept() RT_OVERRIDE;
+    void reject() RT_OVERRIDE;
 
 private:
 
     /* Handler: Translation stuff: */
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /* Widgets: */
     UIPortForwardingTable *m_pTable;

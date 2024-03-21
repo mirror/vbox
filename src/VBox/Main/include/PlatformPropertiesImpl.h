@@ -50,7 +50,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(VirtualBox *aParent, bool fIsHost = false);
-    void uninit();
+    void uninit() RT_OVERRIDE;
 
     // public internal methods
     //HRESULT i_loadSettings(const settings::PlatformProperties &data);
@@ -79,13 +79,13 @@ private:
     HRESULT getSupportedParavirtProviders(std::vector<ParavirtProvider_T> &aSupportedParavirtProviders) RT_OVERRIDE;
     HRESULT getSupportedFirmwareTypes(std::vector<FirmwareType_T> &aSupportedFirmwareTypes) RT_OVERRIDE;
     HRESULT getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes) RT_OVERRIDE;
-    HRESULT getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aSupportedGuestOSTypes);
-    HRESULT getSupportedNetAdpPromiscModePols(std::vector<NetworkAdapterPromiscModePolicy_T> &aSupportedNetworkAdapterPromiscModePolicies);
+    HRESULT getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aSupportedGuestOSTypes) RT_OVERRIDE;
+    HRESULT getSupportedNetAdpPromiscModePols(std::vector<NetworkAdapterPromiscModePolicy_T> &aSupportedNetworkAdapterPromiscModePolicies) RT_OVERRIDE;
     HRESULT getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes) RT_OVERRIDE;
     HRESULT getSupportedUartTypes(std::vector<UartType_T> &aSupportedUartTypes) RT_OVERRIDE;
     HRESULT getSupportedUSBControllerTypes(std::vector<USBControllerType_T> &aSupportedUSBControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedAudioControllerTypes(std::vector<AudioControllerType_T> &aSupportedAudioControllerTypes) RT_OVERRIDE;
-    HRESULT getSupportedBootDevices(std::vector<DeviceType_T> &aSupportedBootDevices);
+    HRESULT getSupportedBootDevices(std::vector<DeviceType_T> &aSupportedBootDevices) RT_OVERRIDE;
     HRESULT getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses) RT_OVERRIDE;
     HRESULT getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes) RT_OVERRIDE;

@@ -799,7 +799,7 @@
     {
         return mEvent->WaitProcessed(aTimeout, aResult);
     }
-    void uninit()
+    void uninit() RT_OVERRIDE
     {
         if (!mEvent.isNull())
         {

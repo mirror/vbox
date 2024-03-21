@@ -71,7 +71,7 @@ public:
     SFTreeViewItem(SFTreeViewItem *pParent, FormatType enmFormat);
 
     /** Returns whether this item is less than the @a other one. */
-    bool operator<(const QTreeWidgetItem &other) const;
+    bool operator<(const QTreeWidgetItem &other) const RT_OVERRIDE;
 
     /** Returns child item number @a iIndex. */
     SFTreeViewItem *child(int iIndex) const;

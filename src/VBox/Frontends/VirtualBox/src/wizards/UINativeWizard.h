@@ -116,7 +116,7 @@ public slots:
 
     /** Executes wizard in window modal mode.
       * @note You shouldn't have to override it! */
-    virtual int exec() /* final */;
+    virtual int exec() RT_OVERRIDE RT_FINAL;
     /** Shows wizard in non-mode.
       * @note You shouldn't have to override it! */
     virtual void show() /* final */;

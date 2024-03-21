@@ -88,7 +88,7 @@ private slots:
     void sltUpdateWidgetAvailability();
 
     /** Accepts the dialog. */
-    void accept();
+    void accept() RT_OVERRIDE;
 
 private:
 

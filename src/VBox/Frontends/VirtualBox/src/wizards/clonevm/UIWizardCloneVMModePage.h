@@ -63,11 +63,11 @@ private slots:
 private:
 
     /** Prepare stuff. */
-    void initializePage();
+    void initializePage() RT_OVERRIDE;
     void prepare();
 
     /** Validation stuff. */
-    bool validatePage();
+    bool validatePage() RT_OVERRIDE;
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;

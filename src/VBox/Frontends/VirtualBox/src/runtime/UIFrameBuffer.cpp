@@ -170,15 +170,15 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    STDMETHOD(COMGETTER(Width))(ULONG *puWidth);
-    STDMETHOD(COMGETTER(Height))(ULONG *puHeight);
-    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel);
-    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine);
-    STDMETHOD(COMGETTER(PixelFormat))(BitmapFormat_T *puPixelFormat);
-    STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
-    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
-    STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
-    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities));
+    STDMETHOD(COMGETTER(Width))(ULONG *puWidth) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Height))(ULONG *puHeight) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(PixelFormat))(BitmapFormat_T *puPixelFormat) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId) RT_OVERRIDE;
+    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities)) RT_OVERRIDE;
 
     /** EMT callback: Notifies frame-buffer about guest-screen size change.
       * @param        uScreenId Guest screen number.
@@ -188,7 +188,7 @@ public:
       * @param        uHeight   Height of the guest display, in pixels.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(NotifyChange)(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
+    STDMETHOD(NotifyChange)(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight) RT_OVERRIDE;
 
     /** EMT callback: Notifies frame-buffer about guest-screen update.
       * @param        uX      Horizontal origin of the update rectangle, in pixels.
@@ -197,7 +197,7 @@ public:
       * @param        uHeight Height of the update rectangle, in pixels.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
+    STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight) RT_OVERRIDE;
 
     /** EMT callback: Notifies frame-buffer about guest-screen update.
       * @param        uX      Horizontal origin of the update rectangle, in pixels.
@@ -207,7 +207,7 @@ public:
       * @param        image   Brings image container which can be used to copy data from.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(NotifyUpdateImage)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight, ComSafeArrayIn(BYTE, image));
+    STDMETHOD(NotifyUpdateImage)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight, ComSafeArrayIn(BYTE, image)) RT_OVERRIDE;
 
     /** EMT callback: Returns whether the frame-buffer implementation is willing to support a given video-mode.
       * @param        uWidth      Width of the guest display, in pixels.
@@ -216,26 +216,26 @@ public:
       * @param        pfSupported Is frame-buffer able/willing to render the video mode or not.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(VideoModeSupported)(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pbSupported);
+    STDMETHOD(VideoModeSupported)(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pbSupported) RT_OVERRIDE;
 
     /** EMT callback which is not used in current implementation. */
-    STDMETHOD(GetVisibleRegion)(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied);
+    STDMETHOD(GetVisibleRegion)(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied) RT_OVERRIDE;
     /** EMT callback: Suggests new visible-region to this frame-buffer.
       * @param        pRectangles Pointer to the RTRECT array.
       * @param        uCount      Number of RTRECT elements in the rectangles array.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(SetVisibleRegion)(BYTE *pRectangles, ULONG uCount);
+    STDMETHOD(SetVisibleRegion)(BYTE *pRectangles, ULONG uCount) RT_OVERRIDE;
 
     /** EMT callback which is not used in current implementation. */
-    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand, LONG enmCmd, BOOL fGuestCmd);
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand, LONG enmCmd, BOOL fGuestCmd) RT_OVERRIDE;
 
     /** EMT callback: Notifies frame-buffer about 3D backend event.
       * @param        uType Event type. VBOX3D_NOTIFY_TYPE_*.
       * @param        aData Event-specific data, depends on the supplied event type.
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
-    STDMETHOD(Notify3DEvent)(ULONG uType, ComSafeArrayIn(BYTE, data));
+    STDMETHOD(Notify3DEvent)(ULONG uType, ComSafeArrayIn(BYTE, data)) RT_OVERRIDE;
 
     /** Locks frame-buffer access. */
     void lock() const { RTCritSectEnter(&m_critSect); }

@@ -83,7 +83,7 @@ public:
     IndicatorType type() const { return m_enmType; }
 
     /** Returns button size-hint. */
-    QSize sizeHint() const { return m_size; }
+    QSize sizeHint() const RT_OVERRIDE { return m_size; }
 
     /** Returns whether button is checked. */
     bool isChecked() const;

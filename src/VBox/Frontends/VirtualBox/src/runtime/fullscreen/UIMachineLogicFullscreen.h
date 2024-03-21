@@ -65,7 +65,7 @@ public:
     virtual ~UIMachineLogicFullscreen() RT_OVERRIDE;
 
     /** Returns visual state type. */
-    virtual UIVisualStateType visualStateType() const { return UIVisualStateType_Fullscreen; }
+    virtual UIVisualStateType visualStateType() const RT_OVERRIDE { return UIVisualStateType_Fullscreen; }
 
     /** Returns an index of host-screen for guest-screen with @a iScreenId specified. */
     int hostScreenForGuestScreen(int iScreenId) const;
@@ -80,13 +80,13 @@ public:
 protected:
 
     /* Check if this logic is available: */
-    bool checkAvailability();
+    bool checkAvailability() RT_OVERRIDE;
 
     /** Returns machine-window flags for 'Fullscreen' machine-logic and passed @a uScreenId. */
-    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const;
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const RT_OVERRIDE;
 
     /** Adjusts machine-window geometry if necessary for 'Fullscreen'. */
-    virtual void adjustMachineWindowsGeometry();
+    virtual void adjustMachineWindowsGeometry() RT_OVERRIDE;
 
 private slots:
 
@@ -103,18 +103,18 @@ private slots:
     void sltHandleNativeFullscreenFailToEnter();
 
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'normal' (window). */
-    void sltChangeVisualStateToNormal();
+    void sltChangeVisualStateToNormal() RT_OVERRIDE;
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'seamless'. */
-    void sltChangeVisualStateToSeamless();
+    void sltChangeVisualStateToSeamless() RT_OVERRIDE;
     /** Mac OS X: Requests visual-state change from 'fullscreen' to 'scale'. */
-    void sltChangeVisualStateToScale();
+    void sltChangeVisualStateToScale() RT_OVERRIDE;
 
     /** Mac OS X: Checks if some visual-state type was requested. */
-    void sltCheckForRequestedVisualStateType();
+    void sltCheckForRequestedVisualStateType() RT_OVERRIDE;
 #endif /* RT_OS_DARWIN */
 
     /* Handler: Console callback stuff: */
-    void sltMachineStateChanged();
+    void sltMachineStateChanged() RT_OVERRIDE;
 
     /** Invokes popup-menu. */
     void sltInvokePopupMenu();
@@ -123,27 +123,27 @@ private slots:
     void sltScreenLayoutChanged();
 
     /** Handles guest-screen count change. */
-    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo) RT_OVERRIDE;
     /** Handles host-screen count change. */
-    virtual void sltHostScreenCountChange();
+    virtual void sltHostScreenCountChange() RT_OVERRIDE;
     /** Handles host-screen available-area change. */
-    virtual void sltHostScreenAvailableAreaChange();
+    virtual void sltHostScreenAvailableAreaChange() RT_OVERRIDE;
     /** Handles additions-state change. */
-    virtual void sltAdditionsStateChanged();
+    virtual void sltAdditionsStateChanged() RT_OVERRIDE;
 
 private:
 
     /* Prepare helpers: */
-    void prepareActionGroups();
-    void prepareActionConnections();
-    void prepareMachineWindows();
-    void prepareMenu();
+    void prepareActionGroups() RT_OVERRIDE;
+    void prepareActionConnections() RT_OVERRIDE;
+    void prepareMachineWindows() RT_OVERRIDE;
+    void prepareMenu() RT_OVERRIDE;
 
     /* Cleanup helpers: */
-    void cleanupMenu();
-    void cleanupMachineWindows();
-    void cleanupActionConnections();
-    void cleanupActionGroups();
+    void cleanupMenu() RT_OVERRIDE;
+    void cleanupMachineWindows() RT_OVERRIDE;
+    void cleanupActionConnections() RT_OVERRIDE;
+    void cleanupActionGroups() RT_OVERRIDE;
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */

@@ -147,18 +147,18 @@ public slots:
 protected:
 
     /** Preprocesses every @a pEvent sent to @a pObject. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
+    bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles resize @a pEvent. */
-    void resizeEvent(QResizeEvent *pEvent);
+    void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
     /** Handles focus-in @a pEvent. */
-    void focusInEvent(QFocusEvent *pEvent);
+    void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE;
     /** Handles focus-out @a pEvent. */
-    void focusOutEvent(QFocusEvent *pEvent);
+    void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE;
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
