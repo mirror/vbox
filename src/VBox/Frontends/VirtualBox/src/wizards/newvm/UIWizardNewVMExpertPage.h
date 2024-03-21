@@ -94,7 +94,7 @@ private slots:
     void sltStartHeadlessChanged(bool fStartHeadless);
     void sltSelectedEditionChanged(ulong uEditionIndex);
     /** Translation stuff. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

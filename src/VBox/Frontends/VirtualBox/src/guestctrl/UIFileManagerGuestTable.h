@@ -75,29 +75,29 @@ public:
     QUuid machineId();
     bool isGuestSessionRunning() const;
     void setIsCurrent(bool fIsCurrent);
-    virtual bool  isWindowsFileSystem() const override final;
+    virtual bool  isWindowsFileSystem() const RT_OVERRIDE RT_FINAL;
 
 protected:
 
-    void            retranslateUi() override final;
-    virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) override final;
-    virtual void    deleteByItem(UIFileSystemItem *item) override final;
-    virtual void    goToHomeDirectory() override final;
-    virtual bool    renameItem(UIFileSystemItem *item, const QString &strOldPath) override final;
-    virtual bool    createDirectory(const QString &path, const QString &directoryName) override final;
-    virtual QString fsObjectPropertyString() override final;
-    virtual void    showProperties() override final;
-    virtual void    determineDriveLetters() override final;
-    virtual void    determinePathSeparator() override final;
-    virtual void    prepareToolbar() override final;
-    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
+    void            retranslateUi() RT_OVERRIDE RT_FINAL;
+    virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) RT_OVERRIDE RT_FINAL;
+    virtual void    deleteByItem(UIFileSystemItem *item) RT_OVERRIDE RT_FINAL;
+    virtual void    goToHomeDirectory() RT_OVERRIDE RT_FINAL;
+    virtual bool    renameItem(UIFileSystemItem *item, const QString &strOldPath) RT_OVERRIDE RT_FINAL;
+    virtual bool    createDirectory(const QString &path, const QString &directoryName) RT_OVERRIDE RT_FINAL;
+    virtual QString fsObjectPropertyString() RT_OVERRIDE RT_FINAL;
+    virtual void    showProperties() RT_OVERRIDE RT_FINAL;
+    virtual void    determineDriveLetters() RT_OVERRIDE RT_FINAL;
+    virtual void    determinePathSeparator() RT_OVERRIDE RT_FINAL;
+    virtual void    prepareToolbar() RT_OVERRIDE RT_FINAL;
+    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) RT_OVERRIDE RT_FINAL;
     /** @name Copy/Cut guest-to-guest stuff.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */
-        virtual void  setPasteActionEnabled(bool fEnabled) override final;
-        virtual void  pasteCutCopiedObjects() override final;
+        virtual void  setPasteActionEnabled(bool fEnabled) RT_OVERRIDE RT_FINAL;
+        virtual void  pasteCutCopiedObjects() RT_OVERRIDE RT_FINAL;
     /** @} */
-    virtual void  toggleForwardBackwardActions() override final;
+    virtual void  toggleForwardBackwardActions() RT_OVERRIDE RT_FINAL;
     virtual void  setState();
     virtual void  setSessionDependentWidgetsEnabled();
 

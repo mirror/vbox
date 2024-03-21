@@ -173,14 +173,14 @@ public:
 protected:
 
     /** Populates pages. */
-    virtual void populatePages() final override;
-    virtual void cleanWizard() final override;
+    virtual void populatePages() RT_OVERRIDE RT_FINAL;
+    virtual void cleanWizard() RT_OVERRIDE RT_FINAL;
     bool attachDefaultDevices();
 
 private slots:
 
     void sltHandleWizardCancel();
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

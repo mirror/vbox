@@ -109,7 +109,7 @@ public slots:
 
 protected:
 
-    void retranslateUi() final override;
+    void retranslateUi() RT_OVERRIDE RT_FINAL;
     void tableViewItemDoubleClick(const QModelIndex &index);
     void setPathFromNavigationWidget(const QString &strPath);
     void setTableRootIndex(QModelIndex index = QModelIndex());

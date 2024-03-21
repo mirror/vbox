@@ -49,15 +49,15 @@ public:
 
 private slots:
 
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 
     void prepare();
     void createConnections();
-    virtual void initializePage() override final;
-    virtual bool isComplete() const override final;
-    virtual bool validatePage() override final;
+    virtual void initializePage() RT_OVERRIDE RT_FINAL;
+    virtual bool isComplete() const RT_OVERRIDE RT_FINAL;
+    virtual bool validatePage() RT_OVERRIDE RT_FINAL;
     /** @name Widgets
      * @{ */
        QIRichTextLabel *m_pLabel;

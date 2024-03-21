@@ -56,13 +56,13 @@ protected:
     UIWizardNewCloudVM *wizard() const;
 
     /** Performs page initialization. */
-    virtual void initializePage() override final;
+    virtual void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const override final;
+    virtual bool isComplete() const RT_OVERRIDE RT_FINAL;
 
     /** Performs page validation. */
-    virtual bool validatePage() override final;
+    virtual bool validatePage() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -81,7 +81,7 @@ private slots:
     void sltHandleSourceImageChange();
 
     /** Handles translation event. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

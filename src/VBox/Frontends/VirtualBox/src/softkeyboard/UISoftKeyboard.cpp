@@ -2341,7 +2341,7 @@ QSize UISoftKeyboardWidget::sizeHint() const
     return QSize(fScale * m_minimumSize.width(), fScale * m_minimumSize.height());
 }
 
-void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
+void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* RT_OVERRIDE */
 {
     Q_UNUSED(pEvent);
     if (!m_layouts.contains(m_uCurrentLayoutId))

@@ -81,15 +81,15 @@ protected:
     UIWizardExportApp *wizard() const;
 
     /** Performs page initialization. */
-    virtual void initializePage() override final;
+    virtual void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Performs page validation. */
-    virtual bool validatePage() override final;
+    virtual bool validatePage() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
     /** Handles translation event. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

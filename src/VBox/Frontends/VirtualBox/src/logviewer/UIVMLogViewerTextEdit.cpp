@@ -171,7 +171,7 @@ void UIIndicatorScrollBar::clearMarkingsVector()
     m_markingsVector.clear();
 }
 
-void UIIndicatorScrollBar::paintEvent(QPaintEvent *pEvent) /* override */
+void UIIndicatorScrollBar::paintEvent(QPaintEvent *pEvent) /* RT_OVERRIDE */
 {
     QScrollBar::paintEvent(pEvent);
     /* Put a red line to mark the bookmark positions: */

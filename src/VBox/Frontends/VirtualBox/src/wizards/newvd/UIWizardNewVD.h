@@ -82,11 +82,11 @@ public:
 
 protected:
 
-    virtual void populatePages() final override;
+    virtual void populatePages() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

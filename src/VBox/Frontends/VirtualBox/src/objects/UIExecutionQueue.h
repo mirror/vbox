@@ -35,6 +35,9 @@
 #include <QObject>
 #include <QQueue>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QObject subclass providing GUI with
   * interface for an execution step. */
 class UIExecutionStep : public QObject
@@ -74,7 +77,7 @@ public:
     /** Constructs execution queue passing @a pParent to the base-class. */
     UIExecutionQueue(QObject *pParent = 0);
     /** Destructs execution queue. */
-    virtual ~UIExecutionQueue() /* override final */;
+    virtual ~UIExecutionQueue() RT_OVERRIDE RT_FINAL;
 
     /** Enqueues pStep into queue. */
     void enqueue(UIExecutionStep *pStep);

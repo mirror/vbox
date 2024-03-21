@@ -157,7 +157,7 @@ public:
     /** Constructs notification-progress. */
     UINotificationProgress();
     /** Destructs notification-progress. */
-    virtual ~UINotificationProgress() /* override final */;
+    virtual ~UINotificationProgress() RT_OVERRIDE;
 
     /** Creates and returns started progress-wrapper. */
     virtual CProgress createProgress(COMResult &comResult) = 0;
@@ -229,7 +229,7 @@ public:
     /** Constructs notification-downloader. */
     UINotificationDownloader();
     /** Destructs notification-downloader. */
-    virtual ~UINotificationDownloader() /* override final */;
+    virtual ~UINotificationDownloader() RT_OVERRIDE;
 
     /** Creates and returns started downloader-wrapper. */
     virtual UIDownloader *createDownloader() = 0;

@@ -73,7 +73,7 @@ public:
                      const QString &strTarget,
                      const UserDictionary &requestHeaders);
     /** Destructs network-request. */
-    virtual ~UINetworkRequest() /* override final */;
+    virtual ~UINetworkRequest() RT_OVERRIDE RT_FINAL;
 
     /** Returns the request reply. */
     UINetworkReply *reply() { return m_pReply; }

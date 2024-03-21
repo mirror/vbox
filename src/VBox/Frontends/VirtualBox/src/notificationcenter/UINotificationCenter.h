@@ -81,7 +81,7 @@ public:
     /** Constructs notification-center passing @a pParent to the base-class. */
     UINotificationCenter(QWidget *pParent);
     /** Destructs notification-center. */
-    virtual ~UINotificationCenter() /* override final */;
+    virtual ~UINotificationCenter() RT_OVERRIDE RT_FINAL;
 
     /** Defines notification-center @a pParent. */
     void setParent(QWidget *pParent);
@@ -105,16 +105,16 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
+    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override final */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override final */;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override final */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private slots:
 

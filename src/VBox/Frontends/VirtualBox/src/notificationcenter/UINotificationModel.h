@@ -60,7 +60,7 @@ public:
     /** Constructs notification-center model passing @a pParent to the base-class. */
     UINotificationModel(QObject *pParent);
     /** Destructs notification-center model. */
-    virtual ~UINotificationModel() /* override final */;
+    virtual ~UINotificationModel() RT_OVERRIDE RT_FINAL;
 
     /** Appens a notification @a pObject to internal storage. */
     QUuid appendObject(UINotificationObject *pObject);

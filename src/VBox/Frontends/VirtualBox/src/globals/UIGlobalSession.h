@@ -108,7 +108,7 @@ private:
     /** Construcs global COM session object. */
     UIGlobalSession();
     /** Destrucs global COM session object. */
-    virtual ~UIGlobalSession() override final;
+    virtual ~UIGlobalSession() RT_OVERRIDE RT_FINAL;
 
     /** @name General COM stuff.
      * @{ */

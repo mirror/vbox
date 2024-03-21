@@ -61,7 +61,7 @@ private slots:
     void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
     void sltCloneTypeChanged(bool fIsFullClone);
     /** Translation stuff. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

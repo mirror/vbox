@@ -279,10 +279,10 @@ public:
     void resetDebugger();
     void updateColumnData();
 
-    virtual bool isRunning() const override;
-    virtual bool isCloudVM() const override;
-    virtual QString machineStateString() const override;
-    virtual void setMachineState(int iState) override;
+    virtual bool isRunning() const RT_OVERRIDE;
+    virtual bool isCloudVM() const RT_OVERRIDE;
+    virtual QString machineStateString() const RT_OVERRIDE;
+    virtual void setMachineState(int iState) RT_OVERRIDE;
 
 private:
 
@@ -311,10 +311,10 @@ public:
     UIActivityOverviewItemCloud();
     ~UIActivityOverviewItemCloud();
     void updateMachineState();
-    virtual bool isRunning() const override;
-    virtual bool isCloudVM() const override;
-    virtual QString machineStateString() const override;
-    virtual void setMachineState(int iState) override;
+    virtual bool isRunning() const RT_OVERRIDE;
+    virtual bool isCloudVM() const RT_OVERRIDE;
+    virtual QString machineStateString() const RT_OVERRIDE;
+    virtual void setMachineState(int iState) RT_OVERRIDE;
 
 protected:
 
@@ -353,8 +353,8 @@ public:
 
 protected:
 
-    virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const /* override*/;
-    bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const /* override*/;
+    virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const RT_OVERRIDE;
+    bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE;
 
 private:
 

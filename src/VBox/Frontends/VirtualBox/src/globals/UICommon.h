@@ -525,7 +525,7 @@ private:
     /** Construcs global VirtualBox object of passed @a enmType. */
     UICommon(UIType enmType);
     /** Destrucs global VirtualBox object. */
-    virtual ~UICommon() /* override final */;
+    virtual ~UICommon() RT_OVERRIDE RT_FINAL;
 
     /** Prepares all. */
     void prepare();

@@ -179,7 +179,7 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::child(int iInde
     return QAccessible::queryAccessibleInterface(pItem);
 }
 
-int QIAccessibilityInterfaceForQITreeViewItem::indexOfChild(const QAccessibleInterface *pChild) const /* override */
+int QIAccessibilityInterfaceForQITreeViewItem::indexOfChild(const QAccessibleInterface *pChild) const
 {
     /* Search for corresponding child: */
     for (int i = 0; i < childCount(); ++i)

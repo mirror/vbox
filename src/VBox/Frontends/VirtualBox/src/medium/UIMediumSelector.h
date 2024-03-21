@@ -99,9 +99,9 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() final override;
-        void showEvent(QShowEvent *pEvent) final override;
-        bool event(QEvent *pEvent) final override;
+        virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
+        void showEvent(QShowEvent *pEvent) RT_OVERRIDE RT_FINAL;
+        bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** @} */
 
 private slots:

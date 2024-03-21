@@ -58,7 +58,7 @@ private slots:
 
     void sltCloneModeChanged(KCloneMode enmCloneMode);
     /** Translation stuff. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

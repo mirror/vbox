@@ -108,7 +108,7 @@ public:
 
 protected:
 
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -116,7 +116,7 @@ private slots:
 
 private:
 
-    void prepare() override;
+    void prepare() RT_OVERRIDE;
 
     UIVMLogViewerWidget             *m_pViewer;
     UIVMLogViewerSearchWidget        *m_pSearchWidget;

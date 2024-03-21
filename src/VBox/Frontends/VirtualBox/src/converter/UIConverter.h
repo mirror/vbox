@@ -83,7 +83,7 @@ private:
     /** Constructs converter. */
     UIConverter() { s_pInstance = this; }
     /** Destructs converter. */
-    virtual ~UIConverter() /* override final */ { s_pInstance = 0; }
+    virtual ~UIConverter() { s_pInstance = 0; }
 
     /** Holds the static instance. */
     static UIConverter *s_pInstance;

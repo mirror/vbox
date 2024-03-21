@@ -63,7 +63,7 @@ private slots:
     void sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy);
     void sltKeepDiskNamesToggled(bool fKeepDiskNames);
     void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

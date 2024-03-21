@@ -57,9 +57,9 @@ public:
     UIWizardNewVMSummaryItem(QITreeView *pParentTree, const QString &strText,
                              const QVariant &data = QVariant(), const QIcon &icon = QIcon());
     ~UIWizardNewVMSummaryItem();
-    virtual UIWizardNewVMSummaryItem *childItem(int iIndex) const /* override final */;
-    virtual int childCount() const /* override final */;
-    virtual QString text() const /* override final */;
+    virtual UIWizardNewVMSummaryItem *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
+    virtual int childCount() const RT_OVERRIDE RT_FINAL;
+    virtual QString text() const RT_OVERRIDE RT_FINAL;
     const QVariant &data() const;
     const QIcon &icon() const;
 
@@ -100,13 +100,13 @@ public:
 
     UIWizardNewVMSummaryModel(QITreeView *pParentTree);
     ~UIWizardNewVMSummaryModel();
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const /* override final */;
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const RT_OVERRIDE RT_FINAL;
 
     QModelIndex index(int row, int column,
-                      const QModelIndex &parent = QModelIndex()) const  /* override final */;
-    QModelIndex parent(const QModelIndex &index) const  /* override final */;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const  /* override final */;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const  /* override final */;
+                      const QModelIndex &parent = QModelIndex()) const  RT_OVERRIDE RT_FINAL;
+    QModelIndex parent(const QModelIndex &index) const  RT_OVERRIDE RT_FINAL;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const  RT_OVERRIDE RT_FINAL;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const  RT_OVERRIDE RT_FINAL;
 
     void populateData(UIWizardNewVM *pWizard);
 

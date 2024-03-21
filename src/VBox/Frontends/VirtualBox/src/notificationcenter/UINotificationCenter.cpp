@@ -63,7 +63,7 @@ public:
     UINotificationScrollArea(QWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
-    virtual QSize minimumSizeHint() const /* override final */;
+    virtual QSize minimumSizeHint() const RT_OVERRIDE RT_FINAL;
 
     /** Assigns scrollable @a pWidget.
       * @note  Keep in mind that's an override, but NOT a virtual method. */
@@ -72,7 +72,7 @@ public:
 protected:
 
     /** Preprocesses @a pEvent for registered @a pWatched object. */
-    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override final */;
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 };
 
 

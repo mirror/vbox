@@ -53,7 +53,7 @@ public:
 
 protected:
 
-    bool eventFilter(QObject *pObject, QEvent *pEvent) override final;
+    bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 

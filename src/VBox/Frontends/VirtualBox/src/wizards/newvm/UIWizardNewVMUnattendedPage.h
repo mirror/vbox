@@ -65,7 +65,7 @@ private slots:
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
     void sltSelectedWindowsImageChanged(ulong uImageIndex);
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

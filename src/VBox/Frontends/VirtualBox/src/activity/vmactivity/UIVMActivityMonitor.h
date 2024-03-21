@@ -167,7 +167,6 @@ protected slots:
 
 protected:
 
-    //virtual bool eventFilter(QObject *pObj, QEvent *pEvent) override;
     virtual void obtainDataAndUpdate() = 0;
     virtual QString defaultMachineFolder() const = 0;
     virtual void reset() = 0;
@@ -250,8 +249,8 @@ public:
       * @param machine is machine reference. */
     UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
     ~UIVMActivityMonitorLocal();
-    virtual QUuid machineId() const override;
-    virtual QString machineName() const override;
+    virtual QUuid machineId() const RT_OVERRIDE;
+    virtual QString machineName() const RT_OVERRIDE;
 
 public slots:
 
@@ -262,14 +261,14 @@ public slots:
 
 protected slots:
 
-        virtual void sltRetranslateUI() override;
+        virtual void sltRetranslateUI() RT_OVERRIDE;
 
 protected:
 
-    virtual void obtainDataAndUpdate() override;
-    virtual QString defaultMachineFolder() const override;
-    virtual void reset() override;
-    virtual void start() override;
+    virtual void obtainDataAndUpdate() RT_OVERRIDE;
+    virtual QString defaultMachineFolder() const RT_OVERRIDE;
+    virtual void reset() RT_OVERRIDE;
+    virtual void start() RT_OVERRIDE;
 
 private slots:
 
@@ -290,10 +289,10 @@ private:
     void updateDiskIOChart(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
     void updateVMExitMetric(quint64 uTotalVMExits);
     void resetVMExitInfoLabel();
-    virtual void resetCPUInfoLabel() override;
+    virtual void resetCPUInfoLabel() RT_OVERRIDE;
     void resetNetworkInfoLabel();
     void resetDiskIOInfoLabel();
-    virtual void prepareWidgets() override;
+    virtual void prepareWidgets() RT_OVERRIDE;
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
@@ -317,14 +316,14 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonito
 public:
 
     UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
-    virtual QUuid machineId() const override;
-    virtual QString machineName() const override;
+    virtual QUuid machineId() const RT_OVERRIDE;
+    virtual QString machineName() const RT_OVERRIDE;
     /** According to OCI docs returned time stamp is in RFC3339 format. */
     static QString formatCloudTimeStamp(const QString &strInput);
 
 protected slots:
 
-        virtual void sltRetranslateUI() override;
+        virtual void sltRetranslateUI() RT_OVERRIDE;
 
 private slots:
 
@@ -335,12 +334,12 @@ private slots:
 
 private:
     void setMachine(const CCloudMachine &comMachine);
-    virtual void obtainDataAndUpdate() override;
+    virtual void obtainDataAndUpdate() RT_OVERRIDE;
 
-    virtual QString defaultMachineFolder() const override;
-    virtual void reset() override;
-    virtual void start() override;
-    virtual void prepareWidgets() override;
+    virtual QString defaultMachineFolder() const RT_OVERRIDE;
+    virtual void reset() RT_OVERRIDE;
+    virtual void start() RT_OVERRIDE;
+    virtual void prepareWidgets() RT_OVERRIDE;
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
         void updateCPUChart(quint64 iLoadPercentage, const QString &strLabel);
@@ -350,7 +349,7 @@ private:
         void updateDiskIOWrittenChart(quint64 uWriteRate, const QString &strLabel);
         void updateRAMChart(quint64 iUsagePercentage, const QString &strLabel);
     /** @} */
-    virtual void resetCPUInfoLabel() override;
+    virtual void resetCPUInfoLabel() RT_OVERRIDE;
     void resetNetworkInInfoLabel();
     void resetNetworkOutInfoLabel();
     void resetDiskIOWrittenInfoLabel();

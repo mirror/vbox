@@ -140,7 +140,7 @@ private slots:
     void sltHandleSourceImageChange();
 
     /** Handles translation event. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

@@ -61,12 +61,12 @@ public:
 protected slots:
 
     /** Handles button-click. */
-    virtual void sltButtonClicked() override;
+    virtual void sltButtonClicked() RT_OVERRIDE RT_FINAL;
 
 protected:
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) override;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private:
 

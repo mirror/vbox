@@ -51,15 +51,15 @@ public:
 private slots:
 
     void sltMediumFormatChanged();
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 
     void prepare();
-    void initializePage() override final;
+    void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Validation stuff. */
-    bool isComplete() const override final;
+    bool isComplete() const RT_OVERRIDE RT_FINAL;
 
     QIRichTextLabel *m_pLabel;
     UIDiskFormatsGroupBox *m_pFormatButtonGroup;

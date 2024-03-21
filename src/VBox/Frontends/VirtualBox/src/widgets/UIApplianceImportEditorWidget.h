@@ -48,7 +48,7 @@ public:
     UIApplianceImportEditorWidget(QWidget *pParent = 0);
 
     /** Assigns @a comAppliance and populates widget contents. */
-    virtual void setAppliance(const CAppliance &comAppliance) /* override final */;
+    virtual void setAppliance(const CAppliance &comAppliance) RT_OVERRIDE RT_FINAL;
 
     /** Prepares import by pushing edited data back to appliance. */
     void prepareImport();

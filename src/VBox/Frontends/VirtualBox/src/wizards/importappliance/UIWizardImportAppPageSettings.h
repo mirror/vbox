@@ -110,10 +110,10 @@ protected:
     UIWizardImportApp *wizard() const;
 
     /** Performs page initialization. */
-    virtual void initializePage() override final;
+    virtual void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Performs page validation. */
-    virtual bool validatePage() override final;
+    virtual bool validatePage() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -127,7 +127,7 @@ private slots:
     /** Handles import HDs as VDI check-box change. */
     void sltHandleImportHDsAsVDICheckBoxChange();
     /** Handles translation event. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

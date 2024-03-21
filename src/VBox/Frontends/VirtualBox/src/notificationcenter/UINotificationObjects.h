@@ -730,7 +730,7 @@ protected:
                           const QString &strInternalName,
                           const QString &strHelpKeyword);
     /** Destructs message notification-object. */
-    virtual ~UINotificationMessage() /* override final */;
+    virtual ~UINotificationMessage() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -785,11 +785,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -831,11 +831,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -872,11 +872,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -904,11 +904,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -939,11 +939,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -983,11 +983,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1028,11 +1028,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1067,11 +1067,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1110,11 +1110,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1156,11 +1156,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1197,11 +1197,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1227,11 +1227,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1257,11 +1257,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1299,11 +1299,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1350,11 +1350,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1397,11 +1397,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1440,11 +1440,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1484,11 +1484,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1528,11 +1528,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1570,11 +1570,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1612,11 +1612,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1664,11 +1664,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1720,11 +1720,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1775,11 +1775,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -1814,11 +1814,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1846,11 +1846,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1880,11 +1880,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1908,11 +1908,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1936,11 +1936,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1964,11 +1964,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2000,11 +2000,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2037,11 +2037,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2067,11 +2067,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2097,11 +2097,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2130,11 +2130,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2174,11 +2174,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2228,11 +2228,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2271,11 +2271,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2316,11 +2316,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2350,11 +2350,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2380,11 +2380,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2414,11 +2414,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2450,11 +2450,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2488,11 +2488,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2529,11 +2529,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2570,11 +2570,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -2626,11 +2626,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2678,7 +2678,7 @@ public:
 
     /** Destructs extension pack downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
-    virtual ~UINotificationDownloaderExtensionPack() /* override final */;
+    virtual ~UINotificationDownloaderExtensionPack() RT_OVERRIDE RT_FINAL;
 
 protected:
 
@@ -2687,11 +2687,11 @@ protected:
     UINotificationDownloaderExtensionPack(const QString &strPackName);
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started downloader. */
-    virtual UIDownloader *createDownloader() /* override final */;
+    virtual UIDownloader *createDownloader() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2723,7 +2723,7 @@ public:
 
     /** Destructs guest additions downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
-    virtual ~UINotificationDownloaderGuestAdditions() /* override final */;
+    virtual ~UINotificationDownloaderGuestAdditions() RT_OVERRIDE RT_FINAL;
 
 protected:
 
@@ -2732,11 +2732,11 @@ protected:
     UINotificationDownloaderGuestAdditions(const QString &strFileName);
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started downloader. */
-    virtual UIDownloader *createDownloader() /* override final */;
+    virtual UIDownloader *createDownloader() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2768,7 +2768,7 @@ public:
 
     /** Destructs user manual downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
-    virtual ~UINotificationDownloaderUserManual() /* override final */;
+    virtual ~UINotificationDownloaderUserManual() RT_OVERRIDE RT_FINAL;
 
 protected:
 
@@ -2777,11 +2777,11 @@ protected:
     UINotificationDownloaderUserManual(const QString &strFileName);
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started downloader. */
-    virtual UIDownloader *createDownloader() /* override final */;
+    virtual UIDownloader *createDownloader() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -2806,11 +2806,11 @@ public:
 protected:
 
     /** Returns object name. */
-    virtual QString name() const /* override final */;
+    virtual QString name() const RT_OVERRIDE RT_FINAL;
     /** Returns object details. */
-    virtual QString details() const /* override final */;
+    virtual QString details() const RT_OVERRIDE RT_FINAL;
     /** Creates and returns started progress-wrapper. */
-    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+    virtual CProgress createProgress(COMResult &comResult) RT_OVERRIDE RT_FINAL;
 
 private slots:
 

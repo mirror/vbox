@@ -69,7 +69,7 @@ public:
 
 protected:
 
-    virtual bool isComplete() const override final;
+    virtual bool isComplete() const RT_OVERRIDE RT_FINAL;
     /** Validation stuff. */
     virtual bool validatePage() RT_OVERRIDE;
 
@@ -83,7 +83,7 @@ private slots:
     void sltSkipUnattendedInstallChanged(bool fSkip);
     void sltSelectedEditionChanged(ulong uEditionIndex);
     /** Translation stuff. */
-    virtual void sltRetranslateUI() override final;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

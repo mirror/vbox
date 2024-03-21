@@ -79,7 +79,7 @@ protected:
     /** Constructs network manager. */
     UINetworkRequestManager();
     /** Destructs network manager. */
-    virtual ~UINetworkRequestManager() /* override final */;
+    virtual ~UINetworkRequestManager() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
