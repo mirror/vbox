@@ -31,7 +31,7 @@
 # pragma once
 #endif
 
-#include <d3d11.h>
+#include <d3d11_1.h>
 
 #include <iprt/asm.h>
 #include <iprt/cdefs.h>
@@ -86,9 +86,12 @@ public:
     virtual HRESULT DoRender(D3D11DeviceProvider *pDP) = 0;
     virtual void TimeAdvance(float dt) { (void)dt; return; }
     virtual bool IsDepthStencilBufferRequired(D3D11DeviceProvider *pDP) { (void)pDP; return true; }
+    virtual bool IsDirectOutputRequired(D3D11DeviceProvider *pDP) { (void)pDP; return false; }
 };
 
 D3D11Render *CreateRender(int iRenderId);
 void DeleteRender(D3D11Render *pRender);
+
+uint8_t *readBmpFile(char const *pszFilename, uint32_t cbPixel, uint32_t *pWidth, uint32_t *pHeight, uint32_t *pcbData);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_test_d3d11render_h */

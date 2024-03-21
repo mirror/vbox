@@ -27,7 +27,92 @@
 
 #include "d3d11render.h"
 
+#include <iprt/file.h>
+#include <iprt/formats/bmp.h>
 #include <iprt/string.h>
+
+/*
+ * Utilities.
+ */
+uint8_t *readBmpFile(char const *pszFilename, uint32_t cbPixel, uint32_t *pWidth, uint32_t *pHeight, uint32_t *pcbData)
+{
+    uint8_t *pu8Data = NULL;
+    uint32_t cbFileData = 0;
+
+    RTFILE f = NIL_RTFILE;
+    int rc = RTFileOpen(&f, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        BMPFILEHDR fileHdr;
+        rc = RTFileRead(f, &fileHdr, sizeof(fileHdr), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t const cbHdr = fileHdr.offBits - sizeof(fileHdr);
+            if (cbHdr == sizeof(BITMAPV4HEADER))
+            {
+                BITMAPV4HEADER hdrV4;
+                rc = RTFileRead(f, &hdrV4, sizeof(hdrV4), NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    *pWidth = hdrV4.bV4Width;
+                    *pHeight = (uint32_t)-hdrV4.bV4Height;
+                }
+            }
+            else if (cbHdr == sizeof(BMPWIN3XINFOHDR))
+            {
+                BMPWIN3XINFOHDR coreHdr;
+                rc = RTFileRead(f, &coreHdr, sizeof(coreHdr), NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    *pWidth = coreHdr.uWidth;
+                    *pHeight = (uint32_t)(-(int32_t)coreHdr.uHeight);
+                }
+            }
+            else
+                rc = VERR_NOT_SUPPORTED;
+
+            if (RT_SUCCESS(rc))
+            {
+                cbFileData = fileHdr.cbFileSize - fileHdr.offBits;
+                pu8Data = (uint8_t *)RTMemAlloc(cbFileData);
+                if (pu8Data)
+                    rc = RTFileRead(f, pu8Data, cbFileData, NULL);
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+
+        RTFileClose(f);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /* If the actual data has less bits than 32, then convert the pixels. */
+        uint32_t const *s = (uint32_t *)pu8Data;
+        if (cbPixel == 2)
+        {
+            uint16_t *d = (uint16_t *)pu8Data;
+            for (unsigned i = 0 ; i < cbFileData / 4; ++i)
+                *d++ = (uint16_t)*s++;
+        }
+        else if (cbPixel == 1)
+        {
+            uint8_t *d = (uint8_t *)pu8Data;
+            for (unsigned i = 0 ; i < cbFileData / 4; ++i)
+                *d++ = (uint8_t)*s++;
+        }
+
+        *pcbData = (cbFileData / 4) * cbPixel;
+    }
+    else
+    {
+        RTMemFree(pu8Data);
+        pu8Data = NULL;
+    }
+
+    return pu8Data;
+}
+
 
 class D3D11Test : public D3D11DeviceProvider
 {
@@ -288,6 +373,8 @@ HRESULT D3D11Test::initDirect3D11()
     mRTWidth = clientRect.right;
     mRTHeight = clientRect.bottom;
 
+    bool const fDirectOutput = mpRender->IsDirectOutputRequired(this);
+
     /*
      * Render.
      */
@@ -296,28 +383,31 @@ HRESULT D3D11Test::initDirect3D11()
                           &mRender.pDxgiFactory);
     if (mRender.pDevice)
     {
-        D3D11_TEXTURE2D_DESC texDesc;
-        RT_ZERO(texDesc);
-        texDesc.Width     = mRTWidth;
-        texDesc.Height    = mRTHeight;
-        texDesc.MipLevels = 1;
-        texDesc.ArraySize = 1;
-        texDesc.Format    = DXGI_FORMAT_B8G8R8A8_UNORM;
-        texDesc.SampleDesc.Count   = 1;
-        texDesc.SampleDesc.Quality = 0;
-        texDesc.Usage          = D3D11_USAGE_DEFAULT;
-        texDesc.BindFlags      = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-        texDesc.CPUAccessFlags = 0;
-        texDesc.MiscFlags      = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+        if (!fDirectOutput)
+        {
+            D3D11_TEXTURE2D_DESC texDesc;
+            RT_ZERO(texDesc);
+            texDesc.Width     = mRTWidth;
+            texDesc.Height    = mRTHeight;
+            texDesc.MipLevels = 1;
+            texDesc.ArraySize = 1;
+            texDesc.Format    = DXGI_FORMAT_B8G8R8A8_UNORM;
+            texDesc.SampleDesc.Count   = 1;
+            texDesc.SampleDesc.Quality = 0;
+            texDesc.Usage          = D3D11_USAGE_DEFAULT;
+            texDesc.BindFlags      = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            texDesc.CPUAccessFlags = 0;
+            texDesc.MiscFlags      = fDirectOutput ? 0 : D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
-        HTEST(mRender.pDevice->CreateTexture2D(&texDesc, 0, &mRender.pRenderTarget));
-        HTEST(mRender.pDevice->CreateRenderTargetView(mRender.pRenderTarget, 0, &mRender.pRenderTargetView));
+            HTEST(mRender.pDevice->CreateTexture2D(&texDesc, 0, &mRender.pRenderTarget));
+            HTEST(mRender.pDevice->CreateRenderTargetView(mRender.pRenderTarget, 0, &mRender.pRenderTargetView));
 
-        /* Get the shared handle. */
-        HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIResource), (void**)&mRender.pDxgiResource));
-        HTEST(mRender.pDxgiResource->GetSharedHandle(&mSharedHandle));
+            /* Get the shared handle. */
+            HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIResource), (void**)&mRender.pDxgiResource));
+            HTEST(mRender.pDxgiResource->GetSharedHandle(&mSharedHandle));
 
-        HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mRender.pDXGIKeyedMutex));
+            HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mRender.pDXGIKeyedMutex));
+        }
 
         if (mpRender->IsDepthStencilBufferRequired(this))
         {
@@ -356,35 +446,65 @@ HRESULT D3D11Test::initDirect3D11()
     /*
      * Output.
      */
-    d3d11TestCreateDevice(&mOutput.pDevice,
-                          &mOutput.pImmediateContext,
-                          &mOutput.pDxgiFactory);
-    if (mOutput.pDxgiFactory)
+    if (fDirectOutput)
     {
-        DXGI_SWAP_CHAIN_DESC sd;
-        RT_ZERO(sd);
-        sd.BufferDesc.Width  = mRTWidth;
-        sd.BufferDesc.Height = mRTHeight;
-        sd.BufferDesc.RefreshRate.Numerator = 60;
-        sd.BufferDesc.RefreshRate.Denominator = 1;
-        sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-        sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-        sd.SampleDesc.Count   = 1;
-        sd.SampleDesc.Quality = 0;
-        sd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        sd.BufferCount  = 1;
-        sd.OutputWindow = mHwnd;
-        sd.Windowed     = true;
-        sd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
-        sd.Flags        = 0;
+        if (mRender.pDxgiFactory)
+        {
+            DXGI_SWAP_CHAIN_DESC sd;
+            RT_ZERO(sd);
+            sd.BufferDesc.Width  = mRTWidth;
+            sd.BufferDesc.Height = mRTHeight;
+            sd.BufferDesc.RefreshRate.Numerator = 60;
+            sd.BufferDesc.RefreshRate.Denominator = 1;
+            sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            sd.SampleDesc.Count   = 1;
+            sd.SampleDesc.Quality = 0;
+            sd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            sd.BufferCount  = 1;
+            sd.OutputWindow = mHwnd;
+            sd.Windowed     = true;
+            sd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
+            sd.Flags        = 0;
 
-        HTEST(mOutput.pDxgiFactory->CreateSwapChain(mOutput.pDevice, &sd, &mOutput.pSwapChain));
+            HTEST(mRender.pDxgiFactory->CreateSwapChain(mRender.pDevice, &sd, &mOutput.pSwapChain));
 
-        HTEST(mOutput.pSwapChain->ResizeBuffers(1, mRTWidth, mRTHeight, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            HTEST(mOutput.pSwapChain->ResizeBuffers(1, mRTWidth, mRTHeight, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+        }
+    }
+    else
+    {
+        d3d11TestCreateDevice(&mOutput.pDevice,
+                              &mOutput.pImmediateContext,
+                              &mOutput.pDxgiFactory);
+        if (mOutput.pDxgiFactory)
+        {
+            DXGI_SWAP_CHAIN_DESC sd;
+            RT_ZERO(sd);
+            sd.BufferDesc.Width  = mRTWidth;
+            sd.BufferDesc.Height = mRTHeight;
+            sd.BufferDesc.RefreshRate.Numerator = 60;
+            sd.BufferDesc.RefreshRate.Denominator = 1;
+            sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            sd.SampleDesc.Count   = 1;
+            sd.SampleDesc.Quality = 0;
+            sd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            sd.BufferCount  = 1;
+            sd.OutputWindow = mHwnd;
+            sd.Windowed     = true;
+            sd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
+            sd.Flags        = 0;
 
-        HTEST(mOutput.pDevice->OpenSharedResource(mSharedHandle, __uuidof(ID3D11Texture2D), (void**)&mOutput.pSharedTexture));
-        HTEST(mOutput.pSharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mOutput.pDXGIKeyedMutex));
+            HTEST(mOutput.pDxgiFactory->CreateSwapChain(mOutput.pDevice, &sd, &mOutput.pSwapChain));
+
+            HTEST(mOutput.pSwapChain->ResizeBuffers(1, mRTWidth, mRTHeight, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+
+            HTEST(mOutput.pDevice->OpenSharedResource(mSharedHandle, __uuidof(ID3D11Texture2D), (void**)&mOutput.pSharedTexture));
+            HTEST(mOutput.pSharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mOutput.pDXGIKeyedMutex));
+        }
     }
 
     return hr;
@@ -692,8 +812,13 @@ int D3D11Test::Run()
     int cFrames = 0;
     float elapsed = 0;
 
+    bool const fDirectOutput = mpRender->IsDirectOutputRequired(this);
+
     D3D11BLITTER Blitter;
-    BlitInit(&Blitter, mOutput.pDevice, mOutput.pImmediateContext);
+    if (fDirectOutput)
+        RT_ZERO(Blitter);
+    else
+        BlitInit(&Blitter, mOutput.pDevice, mOutput.pImmediateContext);
 
     do
     {
@@ -743,65 +868,89 @@ int D3D11Test::Run()
                  */
                 mpRender->TimeAdvance(dt);
 
-                DWORD result = mRender.pDXGIKeyedMutex->AcquireSync(0, 1000);
-                if (result == WAIT_OBJECT_0)
+                if (fDirectOutput)
                 {
-                    /*
-                     * Use the shared texture from the render device.
-                     */
-                    mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, mRender.pDepthStencilView);
-                    mpRender->DoRender(this);
+                    ID3D11Texture2D *pBackBuffer = NULL;
+                    HTEST(mOutput.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)));
+                    if (pBackBuffer)
+                    {
+                        ID3D11RenderTargetView *pRenderTargetView = 0;
+                        HTEST(mRender.pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView));
+
+                        mRender.pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, mRender.pDepthStencilView);
+
+                        mRender.pRenderTargetView = pRenderTargetView;
+                        mpRender->DoRender(this);
+                        mRender.pRenderTargetView = NULL;
+
+                        D3D_RELEASE(pRenderTargetView);
+                        D3D_RELEASE(pBackBuffer);
+                    }
+                    else
+                        D3DTestShowError(hr, "pSwapChain->GetBuffer (DirectOutput)");
                 }
                 else
-                    D3DTestShowError(hr, "Render.AcquireSync(0)");
-                result = mRender.pDXGIKeyedMutex->ReleaseSync(1);
-                if (result == WAIT_OBJECT_0)
-                { }
-                else
-                    D3DTestShowError(hr, "Render.ReleaseSync(1)");
-
-                /*
-                 * Copy the rendered scene to the backbuffer and present.
-                 */
-                ID3D11Texture2D *pBackBuffer = NULL;
-                HTEST(mOutput.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)));
-                if (pBackBuffer)
                 {
-                    result = mOutput.pDXGIKeyedMutex->AcquireSync(1, 1000);
+                    DWORD result = mRender.pDXGIKeyedMutex->AcquireSync(0, 1000);
                     if (result == WAIT_OBJECT_0)
                     {
                         /*
-                         * Use the shared texture from the output device.
+                         * Use the shared texture from the render device.
                          */
-                        float cDstWidth = static_cast<float>(mRTWidth);
-                        float cDstHeight = static_cast<float>(mRTHeight);
-
-                        D3D11_RECT rectDst;
-                        rectDst.left   = 0;
-                        rectDst.top    = 0;
-                        rectDst.right  = mRTWidth;
-                        rectDst.bottom = mRTHeight;
-
-                        ID3D11ShaderResourceView *pShaderResourceView = 0;
-                        HTEST(Blitter.pDevice->CreateShaderResourceView(mOutput.pSharedTexture, NULL, &pShaderResourceView));
-
-                        ID3D11RenderTargetView *pRenderTargetView = 0;
-                        HTEST(Blitter.pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView));
-
-                        BlitFromTexture(&Blitter, pRenderTargetView, cDstWidth, cDstHeight, rectDst, pShaderResourceView);
-
-                        D3D_RELEASE(pRenderTargetView);
-                        D3D_RELEASE(pShaderResourceView);
+                        mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, mRender.pDepthStencilView);
+                        mpRender->DoRender(this);
                     }
                     else
-                        D3DTestShowError(hr, "Output.AcquireSync(1)");
-                    result = mOutput.pDXGIKeyedMutex->ReleaseSync(0);
+                        D3DTestShowError(hr, "Render.AcquireSync(0)");
+                    result = mRender.pDXGIKeyedMutex->ReleaseSync(1);
                     if (result == WAIT_OBJECT_0)
                     { }
                     else
-                        D3DTestShowError(hr, "Output.ReleaseSync(0)");
+                        D3DTestShowError(hr, "Render.ReleaseSync(1)");
 
-                    D3D_RELEASE(pBackBuffer);
+                    /*
+                     * Copy the rendered scene to the backbuffer and present.
+                     */
+                    ID3D11Texture2D *pBackBuffer = NULL;
+                    HTEST(mOutput.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)));
+                    if (pBackBuffer)
+                    {
+                        result = mOutput.pDXGIKeyedMutex->AcquireSync(1, 1000);
+                        if (result == WAIT_OBJECT_0)
+                        {
+                            /*
+                             * Use the shared texture from the output device.
+                             */
+                            float cDstWidth = static_cast<float>(mRTWidth);
+                            float cDstHeight = static_cast<float>(mRTHeight);
+
+                            D3D11_RECT rectDst;
+                            rectDst.left   = 0;
+                            rectDst.top    = 0;
+                            rectDst.right  = mRTWidth;
+                            rectDst.bottom = mRTHeight;
+
+                            ID3D11ShaderResourceView *pShaderResourceView = 0;
+                            HTEST(Blitter.pDevice->CreateShaderResourceView(mOutput.pSharedTexture, NULL, &pShaderResourceView));
+
+                            ID3D11RenderTargetView *pRenderTargetView = 0;
+                            HTEST(Blitter.pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView));
+
+                            BlitFromTexture(&Blitter, pRenderTargetView, cDstWidth, cDstHeight, rectDst, pShaderResourceView);
+
+                            D3D_RELEASE(pRenderTargetView);
+                            D3D_RELEASE(pShaderResourceView);
+                        }
+                        else
+                            D3DTestShowError(hr, "Output.AcquireSync(1)");
+                        result = mOutput.pDXGIKeyedMutex->ReleaseSync(0);
+                        if (result == WAIT_OBJECT_0)
+                        { }
+                        else
+                            D3DTestShowError(hr, "Output.ReleaseSync(0)");
+
+                        D3D_RELEASE(pBackBuffer);
+                    }
                 }
 
                 HTEST(mOutput.pSwapChain->Present(0, 0));
