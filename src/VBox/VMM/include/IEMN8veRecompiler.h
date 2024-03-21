@@ -403,14 +403,15 @@ typedef enum
      *       the max TB length.
      */
     /* Simple labels comes first for indexing reasons. RaiseXx is order by the exception's numerical value(s). */
-    kIemNativeLabelType_RaiseDe,            /**< Raise (throw) X86_XCPT_DE (00h). */
-    kIemNativeLabelType_RaiseUd,            /**< Raise (throw) X86_XCPT_UD (06h). */
-    kIemNativeLabelType_RaiseSseRelated,    /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to cr0 & cr4. */
-    kIemNativeLabelType_RaiseAvxRelated,    /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to xcr0, cr0 & cr4. */
-    kIemNativeLabelType_RaiseNm,            /**< Raise (throw) X86_XCPT_NM (07h). */
-    kIemNativeLabelType_RaiseGp0,           /**< Raise (throw) X86_XCPT_GP (0dh) w/ errcd=0. */
-    kIemNativeLabelType_RaiseMf,            /**< Raise (throw) X86_XCPT_MF (10h). */
-    kIemNativeLabelType_RaiseXf,            /**< Raise (throw) X86_XCPT_XF (13h). */
+    kIemNativeLabelType_RaiseDe,                /**< Raise (throw) X86_XCPT_DE (00h). */
+    kIemNativeLabelType_RaiseUd,                /**< Raise (throw) X86_XCPT_UD (06h). */
+    kIemNativeLabelType_RaiseSseRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to cr0 & cr4. */
+    kIemNativeLabelType_RaiseAvxRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to xcr0, cr0 & cr4. */
+    kIemNativeLabelType_RaiseSseAvxFpRelated,   /**< Raise (throw) X86_XCPT_UD or X86_XCPT_XF according to c4. */
+    kIemNativeLabelType_RaiseNm,                /**< Raise (throw) X86_XCPT_NM (07h). */
+    kIemNativeLabelType_RaiseGp0,               /**< Raise (throw) X86_XCPT_GP (0dh) w/ errcd=0. */
+    kIemNativeLabelType_RaiseMf,                /**< Raise (throw) X86_XCPT_MF (10h). */
+    kIemNativeLabelType_RaiseXf,                /**< Raise (throw) X86_XCPT_XF (13h). */
     kIemNativeLabelType_ObsoleteTb,
     kIemNativeLabelType_NeedCsLimChecking,
     kIemNativeLabelType_CheckBranchMiss,

@@ -1639,6 +1639,23 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu))
 
 
 /**
+ * Used by TB code when it wants to raise an SSE/AVX floating point exception related \#UD or \#XF.
+ *
+ * See IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT.
+ */
+IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseAvxFpRelated,(PVMCPUCC pVCpu))
+{
+    if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)
+        iemRaiseSimdFpExceptionJmp(pVCpu);
+    else
+        iemRaiseUndefinedOpcodeJmp(pVCpu);
+#ifndef _MSC_VER
+    return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
+}
+
+
+/**
  * Used by TB code when it wants to raise a \#NM.
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu))
@@ -3244,7 +3261,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 16);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 17);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -3261,6 +3278,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[13]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[14]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[15]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[16]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -9242,6 +9260,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_RaiseUd:               pszName = "RaiseUd"; break;
                                 case kIemNativeLabelType_RaiseSseRelated:       pszName = "RaiseSseRelated"; break;
                                 case kIemNativeLabelType_RaiseAvxRelated:       pszName = "RaiseAvxRelated"; break;
+                                case kIemNativeLabelType_RaiseSseAvxFpRelated:  pszName = "RaiseSseAvxFpRelated"; break;
                                 case kIemNativeLabelType_RaiseNm:               pszName = "RaiseNm"; break;
                                 case kIemNativeLabelType_RaiseGp0:              pszName = "RaiseGp0"; break;
                                 case kIemNativeLabelType_RaiseMf:               pszName = "RaiseMf"; break;
@@ -9854,6 +9873,7 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
             {   kIemNativeLabelType_RaiseUd,                iemNativeHlpExecRaiseUd },
             {   kIemNativeLabelType_RaiseSseRelated,        iemNativeHlpExecRaiseSseRelated },
             {   kIemNativeLabelType_RaiseAvxRelated,        iemNativeHlpExecRaiseAvxRelated },
+            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   iemNativeHlpExecRaiseSseAvxFpRelated },
             {   kIemNativeLabelType_RaiseNm,                iemNativeHlpExecRaiseNm },
             {   kIemNativeLabelType_RaiseGp0,               iemNativeHlpExecRaiseGp0 },
             {   kIemNativeLabelType_RaiseMf,                iemNativeHlpExecRaiseMf },
