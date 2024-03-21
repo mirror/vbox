@@ -139,6 +139,13 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
   	--path "$(VBOX_PATH_MANUAL_OUTBASE)"
   VBOX_XMLLINT_WITH_CAT    = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
  endif
+ # Workaround for a security (?) fix in libxml (xsltproc doesn't have a way of setting the max amp level):
+ #     utilitiesDomain.mod:135: parser error : Maximum entity amplification factor exceeded, see xmlCtxtSetMaxAmplification.
+ if $(firstword $(VBOX_XSLTPROC_LIBXML_VERSION) 0) >= 21206 ## @todo not sure which version introduced this issue.
+  VBOX_XSLTPROC_WORKAROUND := --novalid
+ else
+  VBOX_XSLTPROC_WORKAROUND :=
+ endif
 
 
  # File name of the generated stylesheet for transforming xref elements into

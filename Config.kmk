@@ -3632,6 +3632,9 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
  if defined(VBOX_JAVAC)
 	$(QUIET)$(APPEND) '$@' 'VBOX_JAVA_VERSION    := $(call VBOX_JAVA_FIGURE_VERSION, $(VBOX_JAVAC))'
  endif
+	$(QUIET)$(APPEND) '$@' '#$(which $(VBOX_XSLTPROC))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_XSLTPROC_VERSION        := $$(firstword $(shell $(VBOX_XSLTPROC) --version | $(SED) -e /libxslt/q | $(SED) -e 's/^.*libxslt \([0-9][0-9]*\)[^0-9]*.*/\1/' ) 0)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_XSLTPROC_LIBXML_VERSION := $$(firstword $(shell $(VBOX_XSLTPROC) --version | $(SED) -e /libxml/q  | $(SED) -e 's/^.*libxml \([0-9][0-9]*\)[^0-9]*.*/\1/'  ) 0)'
 
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
