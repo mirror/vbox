@@ -7606,14 +7606,14 @@ iemNativeEmitSimdStoreXregU32U128(PIEMRECOMPILERSTATE pReNative, uint32_t off, u
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyYregU128ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t iYRegSrc)
 {
-    /* 
+    /*
      * The iYRegSrc == iYRegDst case needs to be treated differently here, because if iYRegDst gets allocated first for the full write
      * it won't load the actual value from CPUMCTX. When allocating iYRegSrc afterwards it will get duplicated from the already
      * allocated host register for iYRegDst containing garbage. This will be catched by the guest register value checking in debug builds.
      */
     if (iYRegDst != iYRegSrc)
     {
-        /* Allocate destination and source register. */ 
+        /* Allocate destination and source register. */
         uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
                                                                               kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
         uint8_t const idxSimdRegSrc =  iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrc),
@@ -7652,7 +7652,7 @@ iemNativeEmitSimdCopyYregU128ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdCopyYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t iYRegSrc)
 {
-    /* 
+    /*
      * The iYRegSrc == iYRegDst case needs to be treated differently here, because if iYRegDst gets allocated first for the full write
      * it won't load the actual value from CPUMCTX. When allocating iYRegSrc afterwards it will get duplicated from the already
      * allocated host register for iYRegDst containing garbage. This will be catched by the guest register value checking in debug builds.
@@ -7660,7 +7660,7 @@ iemNativeEmitSimdCopyYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
      */
     if (iYRegDst != iYRegSrc)
     {
-        /* Allocate destination and source register. */ 
+        /* Allocate destination and source register. */
         uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrc),
                                                                               kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ReadOnly);
         uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
