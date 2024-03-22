@@ -504,7 +504,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
 int GuestSessionTask::fileClose(const ComObjPtr<GuestFile> &file)
 {
     int vrcGuest;
-    int vrc = file->i_closeFile(&vrcGuest);
+    int vrc = file->i_close(&vrcGuest);
     if (RT_FAILURE(vrc))
     {
         Utf8Str strFilename;

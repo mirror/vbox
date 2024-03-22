@@ -1989,7 +1989,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     if (RT_SUCCESS(vrc))
     {
         int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        vrc = pFile->i_openFile(30 * 1000 /* 30s timeout */, &vrcGuest);
+        vrc = pFile->i_open(30 * 1000 /* 30s timeout */, &vrcGuest);
         if (   vrc == VERR_GSTCTL_GUEST_ERROR
             && pvrcGuest)
             *pvrcGuest = vrcGuest;

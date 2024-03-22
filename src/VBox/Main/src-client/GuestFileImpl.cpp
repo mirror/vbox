@@ -367,7 +367,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
             break;
 
         case GUEST_MSG_FILE_NOTIFY:
-            vrc = i_onFileNotify(pCbCtx, pSvcCb);
+            vrc = i_onNotify(pCbCtx, pSvcCb);
             break;
 
         default:
@@ -390,7 +390,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned.
  */
-int GuestFile::i_closeFile(int *prcGuest)
+int GuestFile::i_close(int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFilename.c_str()));
 
@@ -472,7 +472,7 @@ Utf8Str GuestFile::i_guestErrorToString(int rcGuest, const char *pcszWhat)
  * @param   pCbCtx              Host callback context.
  * @param   pSvcCbData          Host callback data.
  */
-int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+int GuestFile::i_onNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
@@ -791,7 +791,7 @@ int GuestFile::i_onSessionStatusChange(GuestSessionStatus_T enmSessionStatus)
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
  */
-int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
+int GuestFile::i_open(uint32_t uTimeoutMS, int *prcGuest)
 {
     AssertReturn(mData.mOpenInfo.mFilename.isNotEmpty(), VERR_INVALID_PARAMETER);
 
@@ -1527,7 +1527,7 @@ HRESULT GuestFile::close()
 
     /* Close file on guest. */
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_closeFile(&vrcGuest);
+    int vrc = i_close(&vrcGuest);
     if (RT_FAILURE(vrc))
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
