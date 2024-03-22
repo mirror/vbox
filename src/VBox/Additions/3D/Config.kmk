@@ -32,7 +32,7 @@ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/Config.kmk
 endif
 
-#NEW_MESA := 1
+NEW_MESA := 1
 
 ifdef NEW_MESA
  VBOX_MESA_VERSION    := 24.0.2
