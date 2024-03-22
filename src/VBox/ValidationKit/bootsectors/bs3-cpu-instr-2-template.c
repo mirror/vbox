@@ -1097,18 +1097,31 @@ BS3CPUINSTR2_COMMON_SHIFT_U(64, uint64_t, "RX64")
         static const BS3CPUINSTR2CMNSHIFTTEST s_aTests16[] = { BS3CPUINSTR2CMNSHIFTTEST_ENTRIES_16(a_Ins) }; \
         static const BS3CPUINSTR2CMNSHIFTTEST s_aTests32[] = { BS3CPUINSTR2CMNSHIFTTEST_ENTRIES_32(a_Ins) }; \
         uint16_t const fEflUndefIntel = bs3CpuInstr2_UndefEflByCpuVendor(BS3CPUVENDOR_INTEL, a_fEflUndef); \
+        uint16_t const fEflUndefAmd   = bs3CpuInstr2_UndefEflByCpuVendor(BS3CPUVENDOR_AMD, a_fEflUndef); \
         bs3CpuInstr2_CommonShiftU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), \
                                    g_aBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU8, \
                                    g_cBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU8, \
                                    fEflUndefIntel, a_fIntelIbProblem); \
+        bs3CpuInstr2_CommonShiftU8(bMode, s_aTests8, RT_ELEMENTS(s_aTests8), \
+                                   g_aBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU8, \
+                                   g_cBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU8, \
+                                   fEflUndefAmd, false); \
         bs3CpuInstr2_CommonShiftU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), \
                                     g_aBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU16, \
                                     g_cBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU16, \
                                     fEflUndefIntel, a_fIntelIbProblem); \
+        bs3CpuInstr2_CommonShiftU16(bMode, s_aTests16, RT_ELEMENTS(s_aTests16), \
+                                    g_aBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU16, \
+                                    g_cBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU16, \
+                                    fEflUndefAmd, false); \
         bs3CpuInstr2_CommonShiftU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), \
                                     g_aBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU32, \
                                     g_cBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU32, \
                                     fEflUndefIntel, a_fIntelIbProblem); \
+        bs3CpuInstr2_CommonShiftU32(bMode, s_aTests32, RT_ELEMENTS(s_aTests32), \
+                                    g_aBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU32, \
+                                    g_cBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU32, \
+                                    fEflUndefAmd, false); \
     } (void)0
 #if ARCH_BITS == 64
 # define BS3CPUINSTR2_SHIFT_INSTR_ONLY64(a_Ins, a_fEflUndef, a_fIntelIbProblem) \
@@ -1118,6 +1131,10 @@ BS3CPUINSTR2_COMMON_SHIFT_U(64, uint64_t, "RX64")
                                     g_aBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU64, \
                                     g_cBs3CpuInstr2_ ## a_Ins ## _intel_TestDataU64, \
                                     bs3CpuInstr2_UndefEflByCpuVendor(BS3CPUVENDOR_INTEL, a_fEflUndef), a_fIntelIbProblem); \
+        bs3CpuInstr2_CommonShiftU64(bMode, s_aTests64, RT_ELEMENTS(s_aTests64), \
+                                    g_aBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU64, \
+                                    g_cBs3CpuInstr2_ ## a_Ins ## _amd_TestDataU64, \
+                                    bs3CpuInstr2_UndefEflByCpuVendor(BS3CPUVENDOR_AMD, a_fEflUndef), false); \
     } (void)0
 #else
 # define BS3CPUINSTR2_SHIFT_INSTR_ONLY64(a_Ins, a_fEflUndef, a_fIntelIbProblem) (void)0
