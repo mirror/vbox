@@ -911,7 +911,7 @@ public:
     GuestSessionStartupInfo(void)
         : mID(UINT32_MAX)
         , mIsInternal(false /* Non-internal session */)
-        , mOpenTimeoutMS(30 * 1000 /* 30s opening timeout */)
+        , mOpenTimeoutMS(GSTCTL_DEFAULT_TIMEOUT_MS)
         , mOpenFlags(0 /* No opening flags set */) { }
 
     /** The session's friendly name. Optional. */

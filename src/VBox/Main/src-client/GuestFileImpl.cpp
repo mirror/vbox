@@ -420,8 +420,7 @@ int GuestFile::i_close(int *prcGuest)
 
     vrc = sendMessage(HOST_MSG_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
-                                    NULL /* FileStatus */, prcGuest);
+        vrc = i_waitForStatusChange(pEvent, GSTCTL_DEFAULT_TIMEOUT_MS, NULL /* FileStatus */, prcGuest);
     unregisterWaitEvent(pEvent);
 
     /* Unregister the file object from the guest session. */
@@ -1757,8 +1756,7 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
     LogFlowThisFuncEnter();
 
     uint64_t uNewOffset;
-    int vrc = i_seekAt(aOffset, eSeekType,
-                       30 * 1000 /* 30s timeout */, &uNewOffset);
+    int vrc = i_seekAt(aOffset, eSeekType, GSTCTL_DEFAULT_TIMEOUT_MS, &uNewOffset);
     if (RT_SUCCESS(vrc))
         *aNewOffset = RT_MIN(uNewOffset, (uint64_t)INT64_MAX);
     else

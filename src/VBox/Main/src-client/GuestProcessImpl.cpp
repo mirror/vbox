@@ -1383,7 +1383,7 @@ int GuestProcess::i_startProcessThreadTask(GuestProcessStartTask *pTask)
     if (FAILED(autoCaller.hrc()))
         return VERR_COM_UNEXPECTED;
 
-    int vrc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */, NULL /* pvrcGuest, ignored */);
+    int vrc = pProcess->i_startProcess(GSTCTL_DEFAULT_TIMEOUT_MS, NULL /* pvrcGuest, ignored */);
     /* Nothing to do here anymore. */
 
     LogFlowFunc(("pProcess=%p, vrc=%Rrc\n", (GuestProcess *)pProcess, vrc));
@@ -2089,7 +2089,7 @@ HRESULT GuestProcess::terminate()
     HRESULT hrc = S_OK;
 
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_terminateProcess(30 * 1000 /* Timeout in ms */, &vrcGuest);
+    int vrc = i_terminateProcess(GSTCTL_DEFAULT_TIMEOUT_MS, &vrcGuest);
 
     switch (vrc)
     {
@@ -2311,7 +2311,7 @@ int GuestProcessToolbox::init(GuestSession *pGuestSession, const GuestProcessSta
         int vrcGuest = VINF_SUCCESS;
         vrc = fAsync
             ? pProcess->i_startProcessAsync()
-            : pProcess->i_startProcess(30 * 1000 /* 30s timeout */, &vrcGuest);
+            : pProcess->i_startProcess(GSTCTL_DEFAULT_TIMEOUT_MS, &vrcGuest);
 
         if (   RT_SUCCESS(vrc)
             && !fAsync
@@ -2336,7 +2336,7 @@ void GuestProcessToolbox::uninit(void)
 {
     /* Make sure the process is terminated and unregistered from the guest session. */
     int vrcGuestIgnored;
-    terminate(30 * 1000 /* 30s timeout */, &vrcGuestIgnored);
+    terminate(GSTCTL_DEFAULT_TIMEOUT_MS, &vrcGuestIgnored);
 
     /* Unregister the process from the process (and the session's object) list. */
     if (   pSession

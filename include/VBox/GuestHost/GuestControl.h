@@ -49,6 +49,9 @@
 /* Everything defined in this file lives in this namespace. */
 namespace guestControl {
 
+/** Default timeout (in ms) for guest control operations. */
+#define GSTCTL_DEFAULT_TIMEOUT_MS   RT_MS_30SEC
+
 /**
  * Process status when executed in the guest.
  */

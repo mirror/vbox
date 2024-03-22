@@ -366,7 +366,7 @@ int GuestDirectory::i_open(int *pvrcGuest)
 
         vrc = sendMessage(HOST_MSG_DIR_OPEN, i, paParms);
         if (RT_SUCCESS(vrc))
-            vrc = i_waitForStatusChange(pEvent, 30 * 1000, NULL /* FileStatus */, pvrcGuest);
+            vrc = i_waitForStatusChange(pEvent, GSTCTL_DEFAULT_TIMEOUT_MS, NULL /* FileStatus */, pvrcGuest);
     }
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -834,7 +834,7 @@ int GuestDirectory::i_close(int *pvrcGuest)
         vrc = sendMessage(HOST_MSG_DIR_CLOSE, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 // Nothing to do here.
@@ -869,7 +869,7 @@ int GuestDirectory::i_close(int *pvrcGuest)
  */
 int GuestDirectory::i_closeViaToolbox(int *pvrcGuest)
 {
-    return mData.mProcessTool.terminate(30 * 1000 /* 30s timeout */, pvrcGuest);
+    return mData.mProcessTool.terminate(GSTCTL_DEFAULT_TIMEOUT_MS, pvrcGuest);
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
@@ -913,7 +913,7 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
         vrc = sendMessage(HOST_MSG_DIR_READ, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 PCALLBACKDATA_DIR_NOTIFY const pDirNotify = (PCALLBACKDATA_DIR_NOTIFY)pEvent->Payload().Raw();
@@ -1045,7 +1045,7 @@ int GuestDirectory::i_listInternal(uint32_t cMaxEntries, uint32_t fFlags, std::v
         vrc = sendMessage(HOST_MSG_DIR_LIST, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 PCALLBACKDATA_DIR_NOTIFY const pDirNotify = (PCALLBACKDATA_DIR_NOTIFY)pEvent->Payload().Raw();
@@ -1566,7 +1566,7 @@ HRESULT GuestDirectory::rewind(void)
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_rewind(30 * 1000 /* Timeout in ms */, &vrcGuest);
+    int vrc = i_rewind(GSTCTL_DEFAULT_TIMEOUT_MS, &vrcGuest);
     if (RT_SUCCESS(vrc))
         return S_OK;
 

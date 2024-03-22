@@ -402,14 +402,12 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
     uint64_t cbWrittenTotal = 0;
     uint64_t cbToRead       = cbSize;
 
-    uint32_t uTimeoutMs = 30 * 1000; /* 30s timeout. */
-
     int vrc = VINF_SUCCESS;
 
     if (offCopy)
     {
         uint64_t offActual;
-        vrc = srcFile->i_seekAt(offCopy, GUEST_FILE_SEEKTYPE_BEGIN, uTimeoutMs, &offActual);
+        vrc = srcFile->i_seekAt(offCopy, GUEST_FILE_SEEKTYPE_BEGIN, GSTCTL_DEFAULT_TIMEOUT_MS, &offActual);
         if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -424,7 +422,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
     {
         uint32_t cbRead;
         const uint32_t cbChunk = RT_MIN(cbToRead, sizeof(byBuf));
-        vrc = srcFile->i_readData(cbChunk, uTimeoutMs, byBuf, sizeof(byBuf), &cbRead);
+        vrc = srcFile->i_readData(cbChunk, GSTCTL_DEFAULT_TIMEOUT_MS, byBuf, sizeof(byBuf), &cbRead);
         if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -735,8 +733,6 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
     uint64_t cbWrittenTotal = 0;
     uint64_t cbToRead       = cbSize;
 
-    uint32_t uTimeoutMs = 30 * 1000; /* 30s timeout. */
-
     int vrc = VINF_SUCCESS;
 
     if (offCopy)
@@ -766,7 +762,7 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
             break;
         }
 
-        vrc = fileDst->i_writeData(uTimeoutMs, byBuf, (uint32_t)cbRead, NULL /* No partial writes */);
+        vrc = fileDst->i_writeData(GSTCTL_DEFAULT_TIMEOUT_MS, byBuf, (uint32_t)cbRead, NULL /* No partial writes */);
         if (RT_FAILURE(vrc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -2820,7 +2816,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
            && (    addsRunLevel != AdditionsRunLevelType_Userland
                 && addsRunLevel != AdditionsRunLevelType_Desktop))
     {
-        if ((RTTimeSystemMilliTS() - tsStart) > 30 * 1000)
+        if ((RTTimeSystemMilliTS() - tsStart) > GSTCTL_DEFAULT_TIMEOUT_MS)
         {
             vrc = VERR_TIMEOUT;
             break;

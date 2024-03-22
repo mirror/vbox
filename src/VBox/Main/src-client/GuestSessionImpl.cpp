@@ -1078,7 +1078,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
         vrc = i_sendMessage(HOST_MSG_DIR_CREATE, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 // Nothing to do here.
@@ -1243,7 +1243,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
     vrc = i_sendMessage(HOST_MSG_DIR_REMOVE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (pEvent->HasGuestError() && pvrcGuest)
             *pvrcGuest = pEvent->GuestResult();
     }
@@ -1399,7 +1399,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         vrc = i_sendMessage(HOST_MSG_FS_CREATE_TEMP, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
@@ -1858,7 +1858,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
         vrc = i_sendMessage(HOST_MSG_FILE_REMOVE, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 // Nothing to do here.
@@ -1989,7 +1989,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     if (RT_SUCCESS(vrc))
     {
         int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        vrc = pFile->i_open(30 * 1000 /* 30s timeout */, &vrcGuest);
+        vrc = pFile->i_open(GSTCTL_DEFAULT_TIMEOUT_MS, &vrcGuest);
         if (   vrc == VERR_GSTCTL_GUEST_ERROR
             && pvrcGuest)
             *pvrcGuest = vrcGuest;
@@ -2140,7 +2140,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, PGSTCTLFSINFO pFsInfo, i
         vrc = i_sendMessage(HOST_MSG_FS_QUERY_INFO, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
@@ -2217,7 +2217,7 @@ int GuestSession::i_fsObjQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
         vrc = i_sendMessage(HOST_MSG_FS_OBJ_QUERY_INFO, i, paParms);
         if (RT_SUCCESS(vrc))
         {
-            vrc = pEvent->Wait(30 * 1000);
+            vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
             if (RT_SUCCESS(vrc))
             {
                 PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
@@ -2795,8 +2795,7 @@ int GuestSession::i_startSession(int *pvrcGuest)
     if (RT_SUCCESS(vrc))
     {
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
-                                    30 * 1000 /* 30s timeout */,
-                                    NULL /* Session status */, pvrcGuest);
+                                    GSTCTL_DEFAULT_TIMEOUT_MS, NULL /* Session status */, pvrcGuest);
     }
     else
     {
@@ -3090,7 +3089,7 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
     vrc = i_sendMessage(HOST_MSG_PATH_RENAME, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (pEvent->HasGuestError() && pvrcGuest)
             *pvrcGuest = pEvent->GuestResult();
     }
@@ -3133,7 +3132,7 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest)
     vrc = i_sendMessage(HOST_MSG_PATH_USER_DOCUMENTS, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (RT_SUCCESS(vrc))
         {
             strPath = pEvent->Payload().ToString();
@@ -3186,7 +3185,7 @@ int GuestSession::i_getMountPoints(std::vector<com::Utf8Str> &vecMountPoints, in
     vrc = i_sendMessage(HOST_MSG_MOUNT_POINTS, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (RT_SUCCESS(vrc))
         {
             vrc = pEvent->Payload().ToStringVector(vecMountPoints);
@@ -3236,7 +3235,7 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *pvrcGuest)
     vrc = i_sendMessage(HOST_MSG_PATH_USER_HOME, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (RT_SUCCESS(vrc))
         {
             strPath = pEvent->Payload().ToString();
@@ -3620,7 +3619,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *pvrcGuest)
     vrc = i_sendMessage(HOST_MSG_SHUTDOWN, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        vrc = pEvent->Wait(30 * 1000);
+        vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
         if (RT_FAILURE(vrc))
         {
             if (pEvent->HasGuestError())
