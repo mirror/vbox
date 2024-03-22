@@ -1517,6 +1517,11 @@ VBoxMesaNineLib_INCS       = \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir \
 	include/D3D9
+VBoxMesaNineLib_DEPS       = \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_intrinsics.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_intrinsics_indices.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_opcodes.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/builtin_types.h
 VBoxMesaNineLib_DEFS.win   = COBJMACROS INC_OLE2
 # -wd4028: formal parameter 4 different from declaration
 #    'nine_context_set_vertex_shader_constant_f' parameter is declared 'const unsigned pConstantData_size'
@@ -1598,6 +1603,12 @@ VBoxMesaSVGALib_INCS     = \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler \
 	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir \
 	src/gallium/drivers/svga/include
+
+VBoxMesaSVGALib_DEPS     = \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_intrinsics.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_intrinsics_indices.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/nir/nir_opcodes.h \
+	$(VBoxMesaLib_0_OUTDIR)/$(VBOX_MESA)/src/compiler/builtin_types.h
 
 VBoxMesaSVGALib_SOURCES.debug  += \
 	src/gallium/drivers/svga/svgadump/svga_dump.c \
