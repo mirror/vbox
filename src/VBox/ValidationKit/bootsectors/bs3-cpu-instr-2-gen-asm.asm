@@ -45,10 +45,8 @@ BEGINCODE
 
 %ifdef ASM_CALL64_MSC
  %define EFLAGS_PARAM_REG   r8d
- %define EFLAGS_PARAM_REG64 r8
 %else
- %define EFLAGS_PARAM_REG   ecx
- %define EFLAGS_PARAM_REG64 rcx
+ %define EFLAGS_PARAM_REG   edx
 %endif
 
 
@@ -60,20 +58,21 @@ BEGINCODE
 
  %if %3 != 0
 BEGINPROC   GenU8_ %+ %1
+  %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+  %endif
   %if %2 != 0
         lahf
         and     ah, 0xfe
-        shl     EFLAGS_PARAM_REG, 8
-        or      eax, EFLAGS_PARAM_REG
+        shl     r8d, 8
+        or      eax, r8d
         sahf
   %endif
-  %ifdef ASM_CALL64_MSC
         %1      cl, dl
         mov     [r9], cl
-  %else
-        %1      sil, dil
-        mov     [rdx], sil
-  %endif
         pushf
         pop     rax
         ret
@@ -81,60 +80,63 @@ ENDPROC     GenU8_ %+ %1
  %endif
 
 BEGINPROC   GenU16_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
  %if %2 != 0
         lahf
         and     ah, 0xfe
-        shl     EFLAGS_PARAM_REG, 8
-        or      eax, EFLAGS_PARAM_REG
+        shl     r8d, 8
+        or      eax, r8d
         sahf
  %endif
- %ifdef ASM_CALL64_MSC
         %1      cx, dx
         mov     [r9], cx
- %else
-        %1      si, di
-        mov     [rdx], si
- %endif
         pushf
         pop     rax
         ret
 ENDPROC     GenU16_ %+ %1
 
 BEGINPROC   GenU32_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
  %if %2 != 0
         lahf
         and     ah, 0xfe
-        shl     EFLAGS_PARAM_REG, 8
-        or      eax, EFLAGS_PARAM_REG
+        shl     r8d, 8
+        or      eax, r8d
         sahf
  %endif
- %ifdef ASM_CALL64_MSC
         %1      ecx, edx
         mov     [r9], ecx
- %else
-        %1      esi, edi
-        mov     [rdx], esi
- %endif
         pushf
         pop     rax
         ret
 ENDPROC     GenU32_ %+ %1
 
 BEGINPROC   GenU64_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
  %if %2 != 0
         lahf
         and     ah, 0xfe
-        shl     EFLAGS_PARAM_REG, 8
-        or      eax, EFLAGS_PARAM_REG
+        shl     r8d, 8
+        or      eax, r8d
         sahf
  %endif
- %ifdef ASM_CALL64_MSC
         %1      rcx, rdx
         mov     [r9], rcx
- %else
-        %1      rsi, rdi
-        mov     [rdx], rsi
- %endif
         pushf
         pop     rax
         ret
@@ -165,76 +167,76 @@ DO_BINARY bts,  0, 0
 %macro DO_SHIFT 2
 
 BEGINPROC   GenU8_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
- %ifdef ASM_CALL64_MSC
-        xchg    cl, dl
+        xchg    rcx, rdx
         %1      dl, cl
         mov     [r9], dl
- %else
-        mov     cl, dil
-        %1      sil, cl
-        mov     [rdx], sil
- %endif
         pushf
         pop     rax
         ret
 ENDPROC     GenU8_ %+ %1
 
 BEGINPROC   GenU16_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
- %ifdef ASM_CALL64_MSC
         xchg    cx, dx
         %1      dx, cl
         mov     [r9], dx
- %else
-        mov     cl, dil
-        %1      si, cl
-        mov     [rdx], si
- %endif
         pushf
         pop     rax
         ret
 ENDPROC     GenU16_ %+ %1
 
 BEGINPROC   GenU32_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
- %ifdef ASM_CALL64_MSC
-        xchg    ecx, edx
+        xchg    rcx, rdx
         %1      edx, cl
         mov     [r9], edx
- %else
-        mov     cl, dil
-        %1      esi, cl
-        mov     [rdx], esi
- %endif
         pushf
         pop     rax
         ret
 ENDPROC     GenU32_ %+ %1
 
 BEGINPROC   GenU64_ %+ %1
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
- %ifdef ASM_CALL64_MSC
         xchg    rcx, rdx
         %1      rdx, cl
         mov     [r9], rdx
- %else
-        mov     cl, dil
-        %1      rsi, cl
-        mov     [rdx], rsi
- %endif
         pushf
         pop     rax
         ret
@@ -242,20 +244,21 @@ ENDPROC     GenU64_ %+ %1
 
 
 BEGINPROC   GenU8_ %+ %1 %+ _Ib
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
 
- %ifdef ASM_CALL64_MSC
         movzx   r11d, dl
         mov     al, cl
         mov     rdx, r9
- %else
-        movzx   r11d, sil
-        mov     al, dil
-        ;mov     rdx, rdx
- %endif
+
         lea     r10, [.first_imm wrt rip]
         lea     r10, [r10 + r11 * 8]        ;; @todo assert that the entry size is 8 bytes
         jmp     r10
@@ -279,20 +282,21 @@ BEGINPROC   GenU8_ %+ %1 %+ _Ib
 ENDPROC     GenU8_ %+ %1 %+ _Ib
 
 BEGINPROC   GenU16_ %+ %1 %+ _Ib
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
 
- %ifdef ASM_CALL64_MSC
         movzx   r11d, dl
         mov     ax, cx
         mov     rdx, r9
- %else
-        movzx   r11d, sil
-        mov     ax, di
-        ;mov     rdx, rdx
- %endif
+
         lea     r10, [.first_imm wrt rip]
         lea     r10, [r10 + r11]            ;; @todo assert that the entry size is 9 bytes
         lea     r10, [r10 + r11 * 8]
@@ -317,20 +321,21 @@ BEGINPROC   GenU16_ %+ %1 %+ _Ib
 ENDPROC     GenU16_ %+ %1 %+ _Ib
 
 BEGINPROC   GenU32_ %+ %1 %+ _Ib
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
 
- %ifdef ASM_CALL64_MSC
         movzx   r11d, dl
         mov     eax, ecx
         mov     rdx, r9
- %else
-        movzx   r11d, sil
-        mov     eax, edi
-        ;mov     rdx, rdx
- %endif
+
         lea     r10, [.first_imm wrt rip]
         lea     r10, [r10 + r11 * 8]        ;; @todo assert that the entry size is 8 bytes
         jmp     r10
@@ -354,20 +359,21 @@ BEGINPROC   GenU32_ %+ %1 %+ _Ib
 ENDPROC     GenU32_ %+ %1 %+ _Ib
 
 BEGINPROC   GenU64_ %+ %1 %+ _Ib
+ %ifdef ASM_CALL64_GCC
+        mov     r9, rcx
+        mov     r8, rdx
+        mov     rdx, rsi
+        mov     rcx, rdi
+ %endif
         pushf
         and     dword [rsp], ~X86_EFL_STATUS_BITS
-        or      dword [rsp], EFLAGS_PARAM_REG
+        or      dword [rsp], r8d
         popf
 
- %ifdef ASM_CALL64_MSC
         movzx   r11d, dl
         mov     rax, rcx
         mov     rdx, r9
- %else
-        movzx   r11d, sil
-        mov     rax, rdi
-        ;mov     rdx, rdx
- %endif
+
         lea     r10, [.first_imm wrt rip]
         lea     r10, [r10 + r11]            ;; @todo assert that the entry size is 9 bytes
         lea     r10, [r10 + r11 * 8]
