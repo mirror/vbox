@@ -46,6 +46,7 @@
 #include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/x86.h>
+#include <VBox/disopcode-x86-amd64.h>
 #include "bs3-cpu-instr-2.h"
 
 
@@ -151,9 +152,9 @@ static uint8_t RandU8Shift(unsigned i, unsigned cTests, uint32_t *puTracker, uns
 }
 
 
-static uint8_t RandU8(unsigned i, unsigned iOp, unsigned iOuter = 0)
+static uint8_t RandU8(unsigned i, unsigned iOp, unsigned iOuter = 0, enum OPCODESX86 enmOp = OP_INVALID)
 {
-    RT_NOREF_PV(iOuter);
+    RT_NOREF(iOuter, enmOp);
     if (i == 0)
         return 0;
     if (i == 1)
@@ -164,8 +165,9 @@ static uint8_t RandU8(unsigned i, unsigned iOp, unsigned iOuter = 0)
 }
 
 
-static uint16_t RandU16(unsigned i, unsigned iOp, unsigned iOuter = 0)
+static uint16_t RandU16(unsigned i, unsigned iOp, unsigned iOuter, enum OPCODESX86 enmOp)
 {
+    RT_NOREF(enmOp);
     Assert(iOuter <= 1);
     if (i == 0)
         return 0;
@@ -173,7 +175,7 @@ static uint16_t RandU16(unsigned i, unsigned iOp, unsigned iOuter = 0)
         return UINT16_MAX;
     if (i == 2)
         return iOp == 1 ? 0 : UINT16_MAX;
-    if (iOuter == 1)
+    if (iOuter == 1 && iOp == 2)
         return (uint16_t)(int16_t)(int8_t)RandU8(i, iOp);
     if ((i % 3) == 0)
         return (uint16_t)RTRandU32Ex(0, UINT16_MAX >> RTRandU32Ex(1, 11));
@@ -181,8 +183,9 @@ static uint16_t RandU16(unsigned i, unsigned iOp, unsigned iOuter = 0)
 }
 
 
-static uint32_t RandU32(unsigned i, unsigned iOp, unsigned iOuter = 0)
+static uint32_t RandU32(unsigned i, unsigned iOp, unsigned iOuter, enum OPCODESX86 enmOp)
 {
+    RT_NOREF(enmOp);
     Assert(iOuter <= 1);
     if (i == 0)
         return 0;
@@ -190,17 +193,105 @@ static uint32_t RandU32(unsigned i, unsigned iOp, unsigned iOuter = 0)
         return UINT32_MAX;
     if (i == 2)
         return iOp == 1 ? 0 : UINT32_MAX;
-    if (iOuter == 1)
+    if (i == 3)
+    {
+        /* Triggering OF with an 8-bit immediate operand is seriously difficult with pure
+           randomness, so cheat. */
+        switch (enmOp)
+        {
+            /* Both ops must have the same sign and the sign change. Pick positive to negative */
+            case OP_ADD:
+            case OP_ADC:
+            {
+                if (iOuter == 0)
+                    return RTRandU32Ex(UINT32_C(0x40000000),  UINT32_C(0x7fffffff));
+                if (iOp != 2)
+                    return RTRandU32Ex(UINT32_C(0x7ffffff0),  UINT32_C(0x7fffffff));
+                return RTRandU32Ex(0x10, 0x7f);
+            }
+
+            /* Pick positive left, negative right. */
+            case OP_SUB:
+            case OP_SBB:
+            case OP_CMP:
+            {
+                if (iOuter == 0)
+                    return iOp != 2
+                         ? RTRandU32Ex(UINT32_C(0x40000000),  UINT32_C(0x7fffffff))
+                         : RTRandU32Ex(UINT32_C(0x80000002),  UINT32_C(0xc0000000));
+                if (iOp != 2)
+                    return RTRandU32Ex(UINT32_C(0x7ffffff0),  UINT32_C(0x7fffffff));
+                return RTRandU32Ex(UINT32_C(0xffffff81), UINT32_C(0xffffffef));
+            }
+
+            default:
+                break;
+        }
+    }
+    if (iOuter == 1 && iOp == 2)
         return (uint32_t)(int32_t)(int8_t)RandU8(i, iOp);
-    if ((i % 3) == 0)
+
+    if ((i % 5) == 0)
         return RTRandU32Ex(0, UINT32_MAX >> RTRandU32Ex(1, 23));
     return RTRandU32();
 }
 
 
-static uint64_t RandU64(unsigned i, unsigned iOp, unsigned iOuter = 0)
+static uint64_t RandU64(unsigned i, unsigned iOp, unsigned iOuter, enum OPCODESX86 enmOp)
 {
-    if (iOuter != 0)
+    RT_NOREF(enmOp);
+    if (i == 0)
+        return 0;
+    if (i == 1)
+        return UINT64_MAX;
+    if (i == 2)
+        return iOp == 1 ? 0 : UINT64_MAX;
+    if (i == 3)
+    {
+        /* Triggering OF with an 8-bit immediate operand is seriously difficult with pure
+           randomness, so cheat. */
+        switch (enmOp)
+        {
+            /* Both ops must have the same sign and the sign change. Pick positive to negative */
+            case OP_ADD:
+            case OP_ADC:
+            {
+                if (iOuter == 0)
+                    return RTRandU64Ex(UINT64_C(0x4000000000000000), UINT64_C(0x7fffffffffffffff));
+                if (iOuter == 2) /* signed 32-bit immediate */
+                    return iOp != 2
+                         ? RTRandU64Ex(UINT64_C(0x7fffffffc0000000), UINT64_C(0x7fffffffffffffff))
+                         : RTRandU64Ex(UINT64_C(0x0000000040000000), UINT64_C(0x000000007f000000));
+                /* signed 8-bit immediate */
+                return iOp != 2
+                     ? RTRandU64Ex(UINT64_C(0x7ffffffffffffff0), UINT64_C(0x7fffffffffffffff))
+                     : RTRandU64Ex(UINT64_C(0x0000000000000010), UINT64_C(0x000000000000007f));
+            }
+
+            /* Pick positive left, negative right. */
+            case OP_SUB:
+            case OP_SBB:
+            case OP_CMP:
+            {
+                if (iOuter == 0)
+                    return iOp != 2
+                         ? RTRandU64Ex(UINT64_C(0x4000000000000000), UINT64_C(0x7fffffffffffffff))
+                         : RTRandU64Ex(UINT64_C(0x8000000000000002), UINT64_C(0xc000000000000000));
+                if (iOuter == 2) /* signed 32-bit immediate */
+                    return iOp != 2
+                         ? RTRandU64Ex(UINT64_C(0x7fffffffc0000002), UINT64_C(0x7fffffffffffffff))
+                         : RTRandU64Ex(UINT64_C(0xffffffff80000002), UINT64_C(0xffffffffc0000000));
+                /* signed 8-bit immediate */
+                return iOp != 2
+                     ? RTRandU64Ex(UINT64_C(0x7ffffffffffffff0), UINT64_C(0x7fffffffffffffff))
+                     : RTRandU64Ex(UINT64_C(0xffffffffffffff81), UINT64_C(0xffffffffffffffef));
+            }
+
+            default:
+                break;
+        }
+    }
+    if (iOuter != 0 && iOp == 2)
     {
         Assert(iOuter <= 2);
         if (iOuter == 1)
@@ -212,13 +303,7 @@ static uint64_t RandU64(unsigned i, unsigned iOp, unsigned iOuter = 0)
             i32 = -i32;
         return (uint64_t)(int64_t)i32;
     }
-    if (i == 0)
-        return 0;
-    if (i == 1)
-        return UINT64_MAX;
-    if (i == 2)
-        return iOp == 1 ? 0 : UINT64_MAX;
-    if ((i % 3) == 0)
+    if ((i % 5) == 0)
         return RTRandU64Ex(0, UINT64_MAX >> RTRandU32Ex(1, 55));
     return RTRandU64();
 }
@@ -342,6 +427,7 @@ int main(int argc, char **argv)
     static struct
     {
         const char *pszName;
+        enum OPCODESX86 enmOp;
         DECLCALLBACKMEMBER(uint32_t, pfnU8, ( uint8_t uSrc1,  uint8_t uSrc2, uint32_t fCarry,  uint8_t *puResult));
         DECLCALLBACKMEMBER(uint32_t, pfnU16,(uint16_t uSrc1, uint16_t uSrc2, uint32_t fCarry, uint16_t *puResult));
         DECLCALLBACKMEMBER(uint32_t, pfnU32,(uint32_t uSrc1, uint32_t uSrc2, uint32_t fCarry, uint32_t *puResult));
@@ -352,26 +438,27 @@ int main(int argc, char **argv)
         bool        fImmVars;
     } const s_aBinary[] =
     {
-        { "and",    GenU8_and,  GenU16_and,  GenU32_and,  GenU64_and,   3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
-        { "or",     GenU8_or,   GenU16_or,   GenU32_or,   GenU64_or,    3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
-        { "xor",    GenU8_xor,  GenU16_xor,  GenU32_xor,  GenU64_xor,   3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
-        { "test",   GenU8_test, GenU16_test, GenU32_test, GenU64_test,  3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
+        { "and",    OP_AND,  GenU8_and,  GenU16_and,  GenU32_and,  GenU64_and,   3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
+        { "or",     OP_OR,   GenU8_or,   GenU16_or,   GenU32_or,   GenU64_or,    3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
+        { "xor",    OP_XOR,  GenU8_xor,  GenU16_xor,  GenU32_xor,  GenU64_xor,   3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
+        { "test",   OP_TEST, GenU8_test, GenU16_test, GenU32_test, GenU64_test,  3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
 
-        { "add",    GenU8_add,  GenU16_add,  GenU32_add,  GenU64_add,   6, X86_EFL_STATUS_BITS,                  false, true  },
-        { "adc",    GenU8_adc,  GenU16_adc,  GenU32_adc,  GenU64_adc,   6, X86_EFL_STATUS_BITS,                  true,  true  },
-        { "sub",    GenU8_sub,  GenU16_sub,  GenU32_sub,  GenU64_sub,   6, X86_EFL_STATUS_BITS,                  false, true  },
-        { "sbb",    GenU8_sbb,  GenU16_sbb,  GenU32_sbb,  GenU64_sbb,   6, X86_EFL_STATUS_BITS,                  true,  true  },
-        { "cmp",    GenU8_cmp,  GenU16_cmp,  GenU32_cmp,  GenU64_cmp,   6, X86_EFL_STATUS_BITS,                  false, true  },
+        { "add",    OP_ADD,  GenU8_add,  GenU16_add,  GenU32_add,  GenU64_add,   6, X86_EFL_STATUS_BITS,                  false, true  },
+        { "adc",    OP_ADC,  GenU8_adc,  GenU16_adc,  GenU32_adc,  GenU64_adc,   6, X86_EFL_STATUS_BITS,                  true,  true  },
+        { "sub",    OP_SUB,  GenU8_sub,  GenU16_sub,  GenU32_sub,  GenU64_sub,   6, X86_EFL_STATUS_BITS,                  false, true  },
+        { "sbb",    OP_SBB,  GenU8_sbb,  GenU16_sbb,  GenU32_sbb,  GenU64_sbb,   6, X86_EFL_STATUS_BITS,                  true,  true  },
+        { "cmp",    OP_CMP,  GenU8_cmp,  GenU16_cmp,  GenU32_cmp,  GenU64_cmp,   6, X86_EFL_STATUS_BITS,                  false, true  },
 
-        { "bt",     NULL,       GenU16_bt,   GenU32_bt,   GenU64_bt,    1, X86_EFL_CF,                           false, false },
-        { "btc",    NULL,       GenU16_btc,  GenU32_btc,  GenU64_btc,   1, X86_EFL_CF,                           false, false },
-        { "btr",    NULL,       GenU16_btr,  GenU32_btr,  GenU64_btr,   1, X86_EFL_CF,                           false, false },
-        { "bts",    NULL,       GenU16_bts,  GenU32_bts,  GenU64_bts,   1, X86_EFL_CF,                           false, false },
+        { "bt",     OP_BT,   NULL,       GenU16_bt,   GenU32_bt,   GenU64_bt,    1, X86_EFL_CF,                           false, false },
+        { "btc",    OP_BTC,  NULL,       GenU16_btc,  GenU32_btc,  GenU64_btc,   1, X86_EFL_CF,                           false, false },
+        { "btr",    OP_BTR,  NULL,       GenU16_btr,  GenU32_btr,  GenU64_btr,   1, X86_EFL_CF,                           false, false },
+        { "bts",    OP_BTS,  NULL,       GenU16_bts,  GenU32_bts,  GenU64_bts,   1, X86_EFL_CF,                           false, false },
     };
 
     static struct
     {
         const char *pszName;
+        enum OPCODESX86 enmOp;
         DECLCALLBACKMEMBER(uint32_t, pfnU8, ( uint8_t uSrc1, uint8_t uSrc2, uint32_t fCarry,  uint8_t *puResult));
         DECLCALLBACKMEMBER(uint32_t, pfnU16,(uint16_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint16_t *puResult));
         DECLCALLBACKMEMBER(uint32_t, pfnU32,(uint32_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint32_t *puResult));
@@ -385,13 +472,13 @@ int main(int argc, char **argv)
         bool        fCarryIn;
     } const s_aShifters[] =
     {
-        { "shl", GenU8_shl, GenU16_shl, GenU32_shl, GenU64_shl,   GenU8_shl_Ib, GenU16_shl_Ib, GenU32_shl_Ib, GenU64_shl_Ib,   6, X86_EFL_STATUS_BITS,     false  },
-        { "shr", GenU8_shr, GenU16_shr, GenU32_shr, GenU64_shr,   GenU8_shr_Ib, GenU16_shr_Ib, GenU32_shr_Ib, GenU64_shr_Ib,   6, X86_EFL_STATUS_BITS,     false  },
-        { "sar", GenU8_sar, GenU16_sar, GenU32_sar, GenU64_sar,   GenU8_sar_Ib, GenU16_sar_Ib, GenU32_sar_Ib, GenU64_sar_Ib,   6, X86_EFL_STATUS_BITS,     false  },
-        { "rol", GenU8_rol, GenU16_rol, GenU32_rol, GenU64_rol,   GenU8_rol_Ib, GenU16_rol_Ib, GenU32_rol_Ib, GenU64_rol_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
-        { "ror", GenU8_ror, GenU16_ror, GenU32_ror, GenU64_ror,   GenU8_ror_Ib, GenU16_ror_Ib, GenU32_ror_Ib, GenU64_ror_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
-        { "rcl", GenU8_rcl, GenU16_rcl, GenU32_rcl, GenU64_rcl,   GenU8_rcl_Ib, GenU16_rcl_Ib, GenU32_rcl_Ib, GenU64_rcl_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
-        { "rcr", GenU8_rcr, GenU16_rcr, GenU32_rcr, GenU64_rcr,   GenU8_rcr_Ib, GenU16_rcr_Ib, GenU32_rcr_Ib, GenU64_rcr_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
+        { "shl", OP_SHL, GenU8_shl, GenU16_shl, GenU32_shl, GenU64_shl,   GenU8_shl_Ib, GenU16_shl_Ib, GenU32_shl_Ib, GenU64_shl_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "shr", OP_SHR, GenU8_shr, GenU16_shr, GenU32_shr, GenU64_shr,   GenU8_shr_Ib, GenU16_shr_Ib, GenU32_shr_Ib, GenU64_shr_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "sar", OP_SAR, GenU8_sar, GenU16_sar, GenU32_sar, GenU64_sar,   GenU8_sar_Ib, GenU16_sar_Ib, GenU32_sar_Ib, GenU64_sar_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "rol", OP_ROL, GenU8_rol, GenU16_rol, GenU32_rol, GenU64_rol,   GenU8_rol_Ib, GenU16_rol_Ib, GenU32_rol_Ib, GenU64_rol_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
+        { "ror", OP_ROR, GenU8_ror, GenU16_ror, GenU32_ror, GenU64_ror,   GenU8_ror_Ib, GenU16_ror_Ib, GenU32_ror_Ib, GenU64_ror_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
+        { "rcl", OP_RCL, GenU8_rcl, GenU16_rcl, GenU32_rcl, GenU64_rcl,   GenU8_rcl_Ib, GenU16_rcl_Ib, GenU32_rcl_Ib, GenU64_rcl_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
+        { "rcr", OP_RCR, GenU8_rcr, GenU16_rcr, GenU32_rcr, GenU64_rcr,   GenU8_rcr_Ib, GenU16_rcr_Ib, GenU32_rcr_Ib, GenU64_rcr_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
     };
 
     RTStrmPrintf(pOut, "\n"); /* filesplitter requires this. */
@@ -437,6 +524,7 @@ int main(int argc, char **argv)
 #define DO_ONE_TYPE(a_Entry, a_pszExtraNm, a_szTypeBaseNm, a_ValueType, a_cBits, a_szFmt, a_pfnMember, a_cTests, a_fImmVars, a_fShift, a_pfnMemberIb) do { \
                 unsigned const cOuterLoops =  1 + a_fImmVars * (a_cBits == 64 ? 2 : a_cBits != 8 ? 1 : 0); \
                 unsigned const cTestFactor = !a_Entry.fCarryIn ? 1 : 2; \
+                unsigned       cFunnyImm   = 0; \
                 RTStrmPrintf(pOut, \
                              "\n" \
                              "const uint16_t g_cBs3CpuInstr2_%s_%sTestDataU" #a_cBits " = %u;\n" \
@@ -458,16 +546,21 @@ int main(int argc, char **argv)
                                                                   a_Entry.fActiveEfls, fSet, fClear, &fMustBeClear); \
                         for (unsigned iTry = 0;; iTry++) \
                         { \
-                            a_ValueType const uSrc1     = RandU##a_cBits(iTest + iTry, 1); \
-                            a_ValueType const uSrc2     = !(a_fShift) ? RandU##a_cBits(iTest + iTry, 2, iOuter) \
+                            a_ValueType const uSrc1     = RandU##a_cBits(iTest + iTry, 1, iOuter, a_Entry.enmOp); \
+                            a_ValueType const uSrc2     = !(a_fShift) ? RandU##a_cBits(iTest + iTry, 2, iOuter, a_Entry.enmOp) \
                                                         : RandU8Shift(iTest + iTry, a_cTests, &uShiftTracker, a_cBits); \
                             a_ValueType       uResult   = 0; \
                             uint32_t const    fEflIn    = !(a_fShift) ? 0 /*fCarry*/ : a_Entry.fCarryIn \
                                                         ? RandEflStatus() & ~(uint32_t)X86_EFL_CF : RandEflStatus(); \
                             uint32_t          fEflOut   = a_Entry.a_pfnMember(uSrc1, uSrc2, fEflIn, &uResult) \
                                                         & X86_EFL_STATUS_BITS; \
-                            if (iTry < _1M && ((fEflOut & fMustBeClear) || (~fEflOut & fMustBeSet))) \
-                                continue; \
+                            if ((fEflOut & fMustBeClear) || (~fEflOut & fMustBeSet)) \
+                            { \
+                                if (iTry < _1M) \
+                                    continue; \
+                                RTMsgWarning("Giving up: " #a_cBits "-bit %s - fMustBeClear=%#x fMustBeSet=%#x iTest=%#x iTry=%#x iOuter=%d\n", \
+                                             a_Entry.pszName, fMustBeClear, fMustBeSet, iTest, iTry, iOuter); \
+                            } \
                             fSet   |= fEflOut; \
                             fClear |= ~fEflOut; \
                             if (!(a_fShift)) \
@@ -475,9 +568,10 @@ int main(int argc, char **argv)
                                              uSrc1, uSrc2, uResult, fEflOut); \
                             else \
                             {   /* Seems that 'rol reg,Ib' (and possibly others) produces different OF results on intel. */ \
-                                a_ValueType uResultIb = 0; \
-                                uint32_t    fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn, &uResultIb) \
-                                                      & X86_EFL_STATUS_BITS; \
+                                a_ValueType    uResultIb = 0; \
+                                uint32_t const fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn, &uResultIb) \
+                                                         & X86_EFL_STATUS_BITS; \
+                                if ((fEflOutIb & X86_EFL_OF) != (fEflOut & X86_EFL_OF)) cFunnyImm += 1; \
                                 if (uResultIb != uResult) RT_BREAKPOINT(); \
                                 if ((fEflOutIb ^ fEflOut) & (X86_EFL_STATUS_BITS & ~X86_EFL_OF)) RT_BREAKPOINT(); \
                                 if (fEflOutIb & X86_EFL_OF) fEflOut |= RT_BIT_32(BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT); \
@@ -496,9 +590,10 @@ int main(int argc, char **argv)
                                                  uResult, (uint16_t)(fEflOut | RT_BIT_32(BS3CPUINSTR2BIN_EFL_CARRY_IN_BIT))); \
                                 else \
                                 {   /* Seems that 'rol reg,Ib' (and possibly others) produces different OF results on intel. */ \
-                                    a_ValueType uResultIb = 0; \
-                                    uint32_t    fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn | X86_EFL_CF, &uResultIb) \
-                                                          & X86_EFL_STATUS_BITS; \
+                                    a_ValueType    uResultIb = 0; \
+                                    uint32_t const fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn | X86_EFL_CF, &uResultIb) \
+                                                             & X86_EFL_STATUS_BITS; \
+                                    if ((fEflOutIb & X86_EFL_OF) != (fEflOut & X86_EFL_OF)) cFunnyImm += 1; \
                                     if (uResultIb != uResult) RT_BREAKPOINT(); \
                                     if ((fEflOutIb ^ fEflOut) & (X86_EFL_STATUS_BITS & ~X86_EFL_OF)) RT_BREAKPOINT(); \
                                     if (fEflOutIb & X86_EFL_OF) fEflOut |= RT_BIT_32(BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT); \
@@ -511,8 +606,11 @@ int main(int argc, char **argv)
                         } \
                     } \
                 } \
-                RTStrmPrintf(pOut, \
-                             "};\n"); \
+                if (cFunnyImm == 0) \
+                    RTStrmPrintf(pOut, "};\n"); \
+                else \
+                    RTStrmPrintf(pOut, "}; /* Note! " #a_cBits "-bit %s reg,imm8 results differed %u times from the other form */\n", \
+                                 a_Entry.pszName, cFunnyImm); \
             } while (0)
 
     /*
