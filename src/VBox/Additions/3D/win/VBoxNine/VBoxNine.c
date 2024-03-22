@@ -29,6 +29,9 @@
 #include <iprt/win/d3d9.h>
 //#include <d3dumddi.h>
 
+#if VBOX_MESA_V_MAJOR >= 24
+#include <VBoxGaDriver.h>
+#endif
 #include <VBoxWddmUmHlp.h>
 
 //#include <windef.h>
@@ -40,7 +43,7 @@
 //#include <stdio.h>
 
 //#include <iprt/alloc.h>
-//#include <iprt/initterm.h>
+#include <iprt/initterm.h>
 //#include <iprt/string.h>
 //#include <iprt/log.h>
 //#include <VBox/version.h>
@@ -55,6 +58,15 @@
 // #include <iprt/asm.h>
 
 // #include "VBoxNine.h"
+
+#if VBOX_MESA_V_MAJOR >= 24
+struct pipe_screen * WINAPI GaDrvScreenCreate(const WDDMGalliumDriverEnv *pEnv);
+void WINAPI GaDrvScreenDestroy(struct pipe_screen *s);
+uint32_t WINAPI GaDrvGetSurfaceId(struct pipe_screen *pScreen, struct pipe_resource *pResource);
+const WDDMGalliumDriverEnv *WINAPI GaDrvGetWDDMEnv(struct pipe_screen *pScreen);
+uint32_t WINAPI GaDrvGetContextId(struct pipe_context *pPipeContext);
+void WINAPI GaDrvContextFlush(struct pipe_context *pPipeContext);
+#endif
 
 struct d3dadapter9_context_wddm
 {
@@ -110,6 +122,7 @@ d3dadapter9_context_wddm_create(struct d3dadapter9_context_wddm **ppCtx, struct 
     return D3D_OK;
 }
 
+#if VBOX_MESA_V_MAJOR < 24
 HRESULT WINAPI
 GaNineD3DAdapter9Create(struct pipe_screen *s, ID3DAdapter9 **ppOut)
 {
@@ -148,6 +161,79 @@ GaNinePipeContextFromDevice(IDirect3DDevice9 *pDevice)
     return pPipeContext;
 }
 
+#else /* VBOX_MESA_V_MAJOR >= 24 */
+
+HRESULT WINAPI
+GaNineD3DAdapter9Create(const WDDMGalliumDriverEnv *pEnv, ID3DAdapter9 **ppOut)
+{
+    HRESULT hr;
+    struct pipe_screen *s = GaDrvScreenCreate(pEnv);
+    if (s)
+    {
+        struct d3dadapter9_context_wddm *ctx = NULL;
+        hr = d3dadapter9_context_wddm_create(&ctx, s);
+        if (SUCCEEDED(hr))
+        {
+            hr = NineAdapter9_new(&ctx->base, (struct NineAdapter9 **)ppOut);
+            if (FAILED(hr))
+            {
+                /// @todo NineAdapter9_new calls this as ctx->base.destroy,
+                //       and will not call if memory allocation fails.
+                // wddm_destroy(&pCtx->base);
+            }
+        }
+        Assert(SUCCEEDED(hr));
+    }
+    else
+    {
+        hr = E_FAIL;
+        AssertFailed();
+    }
+    return hr;
+}
+
+uint32_t WINAPI
+GaNineGetSurfaceId(IUnknown *pSurface)
+{
+    uint32_t sid = SVGA_ID_INVALID;
+
+    /// @todo QueryInterface?
+    struct NineResource9 *pNineResource = (struct NineResource9 *)pSurface;
+    struct pipe_resource *r = pNineResource->resource;
+    if (r)
+    {
+        struct pipe_screen *s = r->screen;
+        sid = GaDrvGetSurfaceId(s, r);
+    }
+
+    return sid;
+}
+
+extern struct pipe_context *
+NineDevice9_GetPipe( struct NineDevice9 *This );
+
+uint32_t WINAPI
+GaNineGetContextId(IDirect3DDevice9 *pDevice)
+{
+    uint32_t cid = SVGA_ID_INVALID;
+
+    /// @todo Verify that this is a NineDevice?
+    struct pipe_context *pipe = NineDevice9_GetPipe((struct NineDevice9 *)pDevice);
+    if (pipe)
+        cid = GaDrvGetContextId(pipe);
+
+    return cid;
+}
+
+void WINAPI
+GaNineFlush(IDirect3DDevice9 *pDevice)
+{
+    struct pipe_context *pipe = NineDevice9_GetPipe((struct NineDevice9 *)pDevice);
+    if (pipe)
+        GaDrvContextFlush(pipe);
+}
+#endif /* VBOX_MESA_V_MAJOR >= 24 */
+
 BOOL WINAPI DllMain(HINSTANCE hDLLInst,
                     DWORD fdwReason,
                     LPVOID lpvReserved)
@@ -159,7 +245,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst,
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
-            //RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+            RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             D3DKMTLoad();
             break;
 

@@ -37,11 +37,14 @@
 extern "C" {
 #endif
 
+#if VBOX_MESA_V_MAJOR < 24
 struct pipe_screen;
 struct pipe_resource;
 struct pipe_context;
+#endif
 typedef struct ID3DAdapter9 ID3DAdapter9;
 
+#if VBOX_MESA_V_MAJOR < 24
 typedef HRESULT WINAPI FNGaNineD3DAdapter9Create(struct pipe_screen *s, ID3DAdapter9 **ppOut);
 typedef FNGaNineD3DAdapter9Create *PFNGaNineD3DAdapter9Create;
 
@@ -50,6 +53,19 @@ typedef FNGaNinePipeResourceFromSurface *PFNGaNinePipeResourceFromSurface;
 
 typedef struct pipe_context * WINAPI FNGaNinePipeContextFromDevice(IDirect3DDevice9 *pDevice);
 typedef FNGaNinePipeContextFromDevice *PFNGaNinePipeContextFromDevice;
+#else
+typedef HRESULT WINAPI FNGaNineD3DAdapter9Create(const WDDMGalliumDriverEnv *pEnv, ID3DAdapter9 **ppOut);
+typedef FNGaNineD3DAdapter9Create *PFNGaNineD3DAdapter9Create;
+
+typedef uint32_t WINAPI FNGaNineGetSurfaceId(IUnknown *pSurface);
+typedef FNGaNineGetSurfaceId *PFNGaNineGetSurfaceId;
+
+typedef uint32_t WINAPI FNGaNineGetContextId(IDirect3DDevice9 *pDevice);
+typedef FNGaNineGetContextId *PFNGaNineGetContextId;
+
+typedef void WINAPI FNGaNineFlush(IDirect3DDevice9 *pDevice);
+typedef FNGaNineFlush *PFNGaNineFlush;
+#endif
 
 #ifdef __cplusplus
 }

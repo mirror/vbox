@@ -62,7 +62,11 @@ class IGaDirect3D9Ex: public IDirect3D9Ex
     public:
         STDMETHOD_(IGalliumStack *, GetGalliumStack)(THIS) PURE;
         STDMETHOD_(ID3DAdapter9 *, GetAdapter9)(THIS) PURE;
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD_(struct pipe_screen *, GetScreen)(THIS) PURE;
+#else
+        STDMETHOD_(const WDDMGalliumDriverEnv *, GetWDDMEnv)(THIS) PURE;
+#endif
 };
 
 /* Top interface to access Gallium API. */
@@ -84,16 +88,25 @@ class IGalliumStack: public IUnknown
                                     const VBOXGAHWINFO *pHWInfo,
                                     IDirect3DDevice9Ex** ppReturnedDeviceInterface) PURE;
 
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD(GaNineD3DAdapter9Create)(struct pipe_screen *s, ID3DAdapter9 **ppOut) PURE;
         STDMETHOD_(struct pipe_resource *, GaNinePipeResourceFromSurface)(IUnknown *pSurface) PURE;
         STDMETHOD_(struct pipe_context *, GaNinePipeContextFromDevice)(IDirect3DDevice9 *pDevice) PURE;
+#else
+        STDMETHOD(GaNineD3DAdapter9Create)(const WDDMGalliumDriverEnv *pEnv, ID3DAdapter9 **ppOut) PURE;
+        STDMETHOD_(uint32_t, GaNineGetSurfaceId)(IUnknown *pSurface) PURE;
+        STDMETHOD_(uint32_t, GaNineGetContextId)(IDirect3DDevice9 *pDevice) PURE;
+        STDMETHOD_(void, GaNineFlush)(IDirect3DDevice9 *pDevice) PURE;
+#endif
 
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD_(struct pipe_screen *, GaDrvScreenCreate)(const WDDMGalliumDriverEnv *pEnv) PURE;
         STDMETHOD_(void, GaDrvScreenDestroy)(struct pipe_screen *s) PURE;
         STDMETHOD_(WDDMGalliumDriverEnv const *, GaDrvGetWDDMEnv)(struct pipe_screen *pScreen) PURE;
         STDMETHOD_(uint32_t, GaDrvGetContextId)(struct pipe_context *pPipeContext) PURE;
         STDMETHOD_(uint32_t, GaDrvGetSurfaceId)(struct pipe_screen *pScreen, struct pipe_resource *pResource) PURE;
         STDMETHOD_(void, GaDrvContextFlush)(struct pipe_context *pPipeContext) PURE;
+#endif
 };
 
 #pragma warning(pop)

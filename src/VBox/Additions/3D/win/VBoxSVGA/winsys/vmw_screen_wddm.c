@@ -46,7 +46,11 @@
  **********************************************************/
 
 
+#if VBOX_MESA_V_MAJOR < 24
 #include "pipe/p_compiler.h"
+#else
+#include "util/compiler.h"
+#endif
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
 
@@ -74,7 +78,11 @@ static struct svga_winsys_surface *
 vmw_drm_gb_surface_from_handle(struct svga_winsys_screen *sws,
                                struct winsys_handle *whandle,
                                SVGA3dSurfaceFormat *format);
+#if VBOX_MESA_V_MAJOR < 24
 static boolean
+#else
+static bool
+#endif
 vmw_drm_surface_get_handle(struct svga_winsys_screen *sws,
 			   struct svga_winsys_surface *surface,
 			   unsigned stride,
@@ -115,6 +123,7 @@ vmw_drm_gb_surface_from_handle(struct svga_winsys_screen *sws,
                                SVGA3dSurfaceFormat *format)
 {
     RT_NOREF3(sws, whandle, format);
+    AssertFailed();
     return 0;
 }
 
@@ -124,6 +133,7 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
 			    SVGA3dSurfaceFormat *format)
 {
     RT_NOREF3(sws, whandle, format);
+    AssertFailed();
     return 0;
 }
 
@@ -133,7 +143,11 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
  * This function is supposed to convert the sid to a handle (file descriptor)
  * which can be used to access the surface.
  */
+#if VBOX_MESA_V_MAJOR < 24
 static boolean
+#else
+static bool
+#endif
 vmw_drm_surface_get_handle(struct svga_winsys_screen *sws,
 			   struct svga_winsys_surface *surface,
 			   unsigned stride,
@@ -145,28 +159,30 @@ vmw_drm_surface_get_handle(struct svga_winsys_screen *sws,
     RT_NOREF(vws);
 
     if (!surface)
-	return FALSE;
+	return false;
 
     vsrf = vmw_svga_winsys_surface(surface);
+#if VBOX_MESA_V_MAJOR < 24
     whandle->handle = vsrf->sid;
+#else
+    whandle->handle = (HANDLE)(uintptr_t)vsrf->sid;
+#endif
     whandle->stride = stride;
     whandle->offset = 0;
 
     switch (whandle->type) {
     case WINSYS_HANDLE_TYPE_SHARED:
     case WINSYS_HANDLE_TYPE_KMS:
-       whandle->handle = vsrf->sid;
        break;
     case WINSYS_HANDLE_TYPE_FD:
-       whandle->handle = vsrf->sid; /// @todo will this be enough for WDDM?
        break;
     default:
        vmw_error("Attempt to export unsupported handle type %d.\n",
 		 whandle->type);
-       return FALSE;
+       return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 void

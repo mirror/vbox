@@ -38,6 +38,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
+#if VBOX_MESA_V_MAJOR < 24
 /*
  * Loading Gallium state tracker and driver:
  *   1) load the hardware driver VBoxVMSVGA or VBoxVirGL:
@@ -65,6 +66,25 @@ static const char *gpszSvgaDll =
     "VBoxSVGA.dll"
 #endif
 ;
+#else /* VBOX_MESA_V_MAJOR >= 24 */
+/*
+ * Loading Gallium D3D9 state tracker and driver:
+ *   1) load the state tracker DLL (VBoxNine) which contains the driver code too
+ *      (they have to be in the same dll because both use and compare adresses of global constant
+ *       glsl_type glsl_type_builtin_* structures from Mesa code).
+ *     a) get an entry point to create the ID3DAdapter interface (GaNineD3DAdapter9Create);
+ *     b) create ID3DAdapter, which will create the pipe_screen to access the driver internally.
+ *   3) create GaDirect3D9Ex to have IDirect3DEx or GaDirect3DDevice9Ex to have IDirect3DDevice9Ex,
+ *      which is returned to WDDM user mode driver to substitute wine's IDirect3DDevice9Ex.
+ */
+static const char *gpszNineDll =
+#ifdef VBOX_WDDM_WOW64
+    "VBoxNine-x86.dll"
+#else
+    "VBoxNine.dll"
+#endif
+;
+#endif /* VBOX_MESA_V_MAJOR >= 24 */
 
 /**
  * Loads a system DLL.
@@ -158,16 +178,25 @@ class VBoxGalliumStack: public IGalliumStack
                                     const VBOXGAHWINFO *pHWInfo,
                                     IDirect3DDevice9Ex** ppReturnedDeviceInterface);
 
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD(GaNineD3DAdapter9Create)(struct pipe_screen *s, ID3DAdapter9 **ppOut);
         STDMETHOD_(struct pipe_resource *, GaNinePipeResourceFromSurface)(IUnknown *pSurface);
         STDMETHOD_(struct pipe_context *, GaNinePipeContextFromDevice)(IDirect3DDevice9 *pDevice);
+#else
+        STDMETHOD(GaNineD3DAdapter9Create)(const WDDMGalliumDriverEnv *pEnv, ID3DAdapter9 **ppOut);
+        STDMETHOD_(uint32_t, GaNineGetSurfaceId)(IUnknown *pSurface);
+        STDMETHOD_(uint32_t, GaNineGetContextId)(IDirect3DDevice9 *pDevice);
+        STDMETHOD_(void, GaNineFlush)(IDirect3DDevice9 *pDevice);
+#endif
 
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD_(struct pipe_screen *, GaDrvScreenCreate)(const WDDMGalliumDriverEnv *pEnv);
         STDMETHOD_(void, GaDrvScreenDestroy)(struct pipe_screen *s);
         STDMETHOD_(WDDMGalliumDriverEnv const *, GaDrvGetWDDMEnv)(struct pipe_screen *pScreen);
         STDMETHOD_(uint32_t, GaDrvGetContextId)(struct pipe_context *pPipeContext);
         STDMETHOD_(uint32_t, GaDrvGetSurfaceId)(struct pipe_screen *pScreen, struct pipe_resource *pResource);
         STDMETHOD_(void, GaDrvContextFlush)(struct pipe_context *pPipeContext);
+#endif
 
     private:
         void unload();
@@ -175,15 +204,25 @@ class VBoxGalliumStack: public IGalliumStack
         volatile ULONG mcRefs;
 
         HMODULE mhmodStateTracker;
+#if VBOX_MESA_V_MAJOR < 24
         HMODULE mhmodDriver;
+#endif
 
         struct GaNineFunctions
         {
+#if VBOX_MESA_V_MAJOR < 24
             PFNGaNineD3DAdapter9Create       pfnGaNineD3DAdapter9Create;
             PFNGaNinePipeResourceFromSurface pfnGaNinePipeResourceFromSurface;
             PFNGaNinePipeContextFromDevice   pfnGaNinePipeContextFromDevice;
+#else
+            PFNGaNineD3DAdapter9Create pfnGaNineD3DAdapter9Create;
+            PFNGaNineGetSurfaceId      pfnGaNineGetSurfaceId;
+            PFNGaNineGetContextId      pfnGaNineGetContextId;
+            PFNGaNineFlush             pfnGaNineFlush;
+#endif
         } mNine;
 
+#if VBOX_MESA_V_MAJOR < 24
         struct GaDrvFunctions
         {
             PFNGaDrvScreenCreate  pfnGaDrvScreenCreate;
@@ -193,6 +232,7 @@ class VBoxGalliumStack: public IGalliumStack
             PFNGaDrvGetSurfaceId  pfnGaDrvGetSurfaceId;
             PFNGaDrvContextFlush  pfnGaDrvContextFlush;
         } mDrv;
+#endif
 };
 
 
@@ -252,7 +292,11 @@ class GaDirect3D9Ex: public IGaDirect3D9Ex
         /* IGaDirect3D9Ex methods */
         STDMETHOD_(IGalliumStack *, GetGalliumStack)(THIS);
         STDMETHOD_(ID3DAdapter9 *, GetAdapter9)(THIS);
+#if VBOX_MESA_V_MAJOR < 24
         STDMETHOD_(struct pipe_screen *, GetScreen)(THIS);
+#else
+        STDMETHOD_(const WDDMGalliumDriverEnv *, GetWDDMEnv)(THIS);
+#endif
 
     private:
         void cleanup();
@@ -260,7 +304,9 @@ class GaDirect3D9Ex: public IGaDirect3D9Ex
         volatile ULONG mcRefs;
 
         VBoxGalliumStack *mpStack;
+#if VBOX_MESA_V_MAJOR < 24
         struct pipe_screen *mpPipeScreen;
+#endif
         ID3DAdapter9 *mpD3DAdapter9;
 
         /* The Gallium driver environment helper object. */
@@ -274,12 +320,16 @@ class GaDirect3D9Ex: public IGaDirect3D9Ex
 
 VBoxGalliumStack::VBoxGalliumStack()
     :
-    mcRefs(0),
-    mhmodStateTracker(0),
-    mhmodDriver(0)
+    mcRefs(0)
+    , mhmodStateTracker(0)
+#if VBOX_MESA_V_MAJOR < 24
+    , mhmodDriver(0)
+#endif
 {
     RT_ZERO(mNine);
+#if VBOX_MESA_V_MAJOR < 24
     RT_ZERO(mDrv);
+#endif
 }
 
 VBoxGalliumStack::~VBoxGalliumStack()
@@ -326,12 +376,20 @@ HRESULT VBoxGalliumStack::Load()
 {
     struct VBOXGAPROC aNineProcs[] =
     {
+#if VBOX_MESA_V_MAJOR < 24
         { "GaNineD3DAdapter9Create",        (FARPROC *)&mNine.pfnGaNineD3DAdapter9Create },
         { "GaNinePipeResourceFromSurface",  (FARPROC *)&mNine.pfnGaNinePipeResourceFromSurface },
         { "GaNinePipeContextFromDevice",    (FARPROC *)&mNine.pfnGaNinePipeContextFromDevice },
+#else
+        { "GaNineD3DAdapter9Create", (FARPROC *)&mNine.pfnGaNineD3DAdapter9Create },
+        { "GaNineGetSurfaceId",      (FARPROC *)&mNine.pfnGaNineGetSurfaceId },
+        { "GaNineGetContextId",      (FARPROC *)&mNine.pfnGaNineGetContextId },
+        { "GaNineFlush",             (FARPROC *)&mNine.pfnGaNineFlush },
+#endif
         { NULL, NULL }
     };
 
+#if VBOX_MESA_V_MAJOR < 24
     struct VBOXGAPROC aDrvProcs[] =
     {
         { "GaDrvScreenCreate",  (FARPROC *)&mDrv.pfnGaDrvScreenCreate },
@@ -351,6 +409,9 @@ HRESULT VBoxGalliumStack::Load()
     {
         hr = loadDll(gpszNineDll, &mhmodStateTracker, aNineProcs);
     }
+#else
+    HRESULT hr = loadDll(gpszNineDll, &mhmodStateTracker, aNineProcs);
+#endif
 
     return hr;
 }
@@ -358,7 +419,9 @@ HRESULT VBoxGalliumStack::Load()
 void VBoxGalliumStack::unload()
 {
     RT_ZERO(mNine);
+#if VBOX_MESA_V_MAJOR < 24
     RT_ZERO(mDrv);
+#endif
 
     if (mhmodStateTracker)
     {
@@ -366,13 +429,16 @@ void VBoxGalliumStack::unload()
         mhmodStateTracker = 0;
     }
 
+#if VBOX_MESA_V_MAJOR < 24
     if (mhmodDriver)
     {
         FreeLibrary(mhmodDriver);
         mhmodDriver = 0;
     }
+#endif
 }
 
+#if VBOX_MESA_V_MAJOR < 24
 STDMETHODIMP VBoxGalliumStack::GaNineD3DAdapter9Create(struct pipe_screen *s,
                                                        ID3DAdapter9 **ppOut)
 {
@@ -388,7 +454,30 @@ STDMETHODIMP_(struct pipe_context *) VBoxGalliumStack::GaNinePipeContextFromDevi
 {
     return mNine.pfnGaNinePipeContextFromDevice(pDevice);
 }
+#else
+STDMETHODIMP VBoxGalliumStack::GaNineD3DAdapter9Create(const WDDMGalliumDriverEnv *pEnv,
+                                                       ID3DAdapter9 **ppOut)
+{
+    return mNine.pfnGaNineD3DAdapter9Create(pEnv, ppOut);
+}
 
+STDMETHODIMP_(uint32_t) VBoxGalliumStack::GaNineGetSurfaceId(IUnknown *pSurface)
+{
+    return mNine.pfnGaNineGetSurfaceId(pSurface);
+}
+
+STDMETHODIMP_(uint32_t) VBoxGalliumStack::GaNineGetContextId(IDirect3DDevice9 *pDevice)
+{
+    return mNine.pfnGaNineGetContextId(pDevice);
+}
+
+STDMETHODIMP_(void) VBoxGalliumStack::GaNineFlush(IDirect3DDevice9 *pDevice)
+{
+    return mNine.pfnGaNineFlush(pDevice);
+}
+#endif
+
+#if VBOX_MESA_V_MAJOR < 24
 STDMETHODIMP_(struct pipe_screen *) VBoxGalliumStack::GaDrvScreenCreate(const WDDMGalliumDriverEnv *pEnv)
 {
     return mDrv.pfnGaDrvScreenCreate(pEnv);
@@ -419,6 +508,7 @@ STDMETHODIMP_(void) VBoxGalliumStack::GaDrvContextFlush(struct pipe_context *pPi
 {
     mDrv.pfnGaDrvContextFlush(pPipeContext);
 }
+#endif
 
 STDMETHODIMP VBoxGalliumStack::CreateDirect3DEx(HANDLE hAdapter,
                                                 HANDLE hDevice,
@@ -521,7 +611,9 @@ GaDirect3D9Ex::GaDirect3D9Ex(VBoxGalliumStack *pStack)
     :
     mcRefs(0),
     mpStack(pStack),
+#if VBOX_MESA_V_MAJOR < 24
     mpPipeScreen(0),
+#endif
     mpD3DAdapter9(0)
 {
     mpStack->AddRef();
@@ -582,6 +674,7 @@ HRESULT GaDirect3D9Ex::Init(HANDLE hAdapter,
     mEnv.Init(hAdapter, hDevice, pDeviceCallbacks, pHWInfo);
     const WDDMGalliumDriverEnv *pEnv = mEnv.Env();
 
+#if VBOX_MESA_V_MAJOR < 24
     mpPipeScreen = mpStack->GaDrvScreenCreate(pEnv);
     if (mpPipeScreen)
     {
@@ -593,6 +686,10 @@ HRESULT GaDirect3D9Ex::Init(HANDLE hAdapter,
         hr = E_FAIL;
         AssertFailed();
     }
+#else
+    hr = mpStack->GaNineD3DAdapter9Create(pEnv, &mpD3DAdapter9);
+    Assert(SUCCEEDED(hr));
+#endif
 
     return hr;
 }
@@ -605,11 +702,13 @@ void GaDirect3D9Ex::cleanup()
         mpD3DAdapter9 = NULL;
     }
 
+#if VBOX_MESA_V_MAJOR < 24
     if (mpPipeScreen)
     {
         mpStack->GaDrvScreenDestroy(mpPipeScreen);
         mpPipeScreen = NULL;
     }
+#endif
 
     if (mpStack)
     {
@@ -814,7 +913,14 @@ STDMETHODIMP_(ID3DAdapter9 *) GaDirect3D9Ex::GetAdapter9(void)
     return mpD3DAdapter9;
 }
 
+#if VBOX_MESA_V_MAJOR < 24
 STDMETHODIMP_(struct pipe_screen *) GaDirect3D9Ex::GetScreen(void)
 {
     return mpPipeScreen;
 }
+#else
+STDMETHODIMP_(const WDDMGalliumDriverEnv *) GaDirect3D9Ex::GetWDDMEnv(void)
+{
+    return mEnv.Env();
+}
+#endif

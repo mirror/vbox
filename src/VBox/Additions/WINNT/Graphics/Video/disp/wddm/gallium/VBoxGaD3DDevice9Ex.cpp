@@ -596,18 +596,23 @@ GADEVICE9WRAP(GetDisplayModeEx,
  */
 STDMETHODIMP GaDirect3DDevice9Ex::GaSurfaceId(IUnknown *pSurface, uint32_t *pu32Sid)
 {
+#if VBOX_MESA_V_MAJOR < 24
     struct pipe_resource *pResource = mpStack->GaNinePipeResourceFromSurface(pSurface);
     if (pResource)
     {
         struct pipe_screen *pScreen = mpD3D9Ex->GetScreen();
         *pu32Sid = mpStack->GaDrvGetSurfaceId(pScreen, pResource);
     }
+#else
+    *pu32Sid = mpStack->GaNineGetSurfaceId(pSurface);
+#endif
 
     return S_OK;
 }
 
 STDMETHODIMP GaDirect3DDevice9Ex::GaWDDMContextHandle(HANDLE *phContext)
 {
+#if VBOX_MESA_V_MAJOR < 24
     struct pipe_context *pPipeContext = mpStack->GaNinePipeContextFromDevice(this->mpDevice);
     if (pPipeContext)
     {
@@ -621,17 +626,30 @@ STDMETHODIMP GaDirect3DDevice9Ex::GaWDDMContextHandle(HANDLE *phContext)
             *phContext = pEnvWddm->GaDrvEnvWddmContextHandle(u32Cid);
         }
     }
+#else
+    uint32_t u32Cid = mpStack->GaNineGetContextId(mpDevice);
+    WDDMGalliumDriverEnv const *pEnv = mpD3D9Ex->GetWDDMEnv();
+    if (pEnv)
+    {
+        GaDrvEnvWddm *pEnvWddm = (GaDrvEnvWddm *)pEnv->pvEnv;
+        *phContext = pEnvWddm->GaDrvEnvWddmContextHandle(u32Cid);
+    }
+#endif
 
     return S_OK;
 }
 
 STDMETHODIMP GaDirect3DDevice9Ex::GaFlush()
 {
+#if VBOX_MESA_V_MAJOR < 24
     struct pipe_context *pPipeContext = mpStack->GaNinePipeContextFromDevice(this->mpDevice);
     if (pPipeContext)
     {
         mpStack->GaDrvContextFlush(pPipeContext);
     }
+#else
+    mpStack->GaNineFlush(this->mpDevice);
+#endif
 
     return S_OK;
 }

@@ -156,6 +156,7 @@ ifdef VBOX_WITH_WDDM
 
  ifdef VBOX_WITH_MESA3D
   VBoxDispD3D_DEFS   += VBOX_WITH_MESA3D
+  VBoxDispD3D_DEFS   += VBOX_MESA_V_MAJOR=$(VBOX_MESA_V_MAJOR)
   VBoxDispD3D_INCS   += \
   	$(VBOX_PATH_MESA)/src/gallium/include \
   	$(VBOX_PATH_MESA)/src \

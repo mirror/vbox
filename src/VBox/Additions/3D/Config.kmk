@@ -32,7 +32,16 @@ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/Config.kmk
 endif
 
-VBOX_MESA            := mesa-21.3.8
+#NEW_MESA := 1
+
+ifdef NEW_MESA
+ VBOX_MESA_VERSION    := 24.0.2
+ VBOX_MESA_V_MAJOR    := 24
+else
+ VBOX_MESA_VERSION    := 21.3.8
+ VBOX_MESA_V_MAJOR    := 21
+endif
+VBOX_MESA            := mesa-$(VBOX_MESA_VERSION)
 VBOX_PATH_3D         := $(PATH_ROOT)/src/VBox/Additions/3D
 VBOX_PATH_MESA       := $(PATH_ROOT)/src/VBox/Additions/3D/mesa/$(VBOX_MESA)
 VBOX_PATH_WDDM       := $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video
@@ -47,12 +56,13 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_EXTENDS  = NewerVccVBoxGuestR3Dll
 TEMPLATE_VBoxMesa3DGuestR3Dll_INST     = $(INST_ADDITIONS)
 TEMPLATE_VBoxMesa3DGuestR3Dll_SDKS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) $(VBOX_WINDDK_GST_W8)
 TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
-	VBOX_WITH_MESA3D
+	VBOX_WITH_MESA3D \
+	VBOX_MESA_V_MAJOR=$(VBOX_MESA_V_MAJOR)
 ifdef VBOX_WITH_VMSVGA
  TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS   += VBOX_WITH_VMSVGA
 endif
 # VirtualBox specific modifications of the Mesa3D code.
-# All modified places can be found by searching for VBOX
+# All modified places can be found by searching for VBOX or IPRT_NO_CRT
 #
 # Each define represents a group of related modifications.
 # The purpose of the separation is to document why each modification was necessary.
@@ -92,9 +102,19 @@ TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS.
 	_USE_MATH_DEFINES \
 	WINAPI=__stdcall \
 	_WIN32
+if $(VBOX_MESA_V_MAJOR) >= 24
+ TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS.win += \
+ 	WINDOWS_NO_FUTEX \
+ 	HAVE_STRUCT_TIMESPEC
+endif
+TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS.win)
+if $(VBOX_MESA_V_MAJOR) >= 24
+ # Mesa 24+ needs -std:c11 for 'alignas', etc
+ TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win += -std:c11
+endif
 ifdef VBOX_WITH_VMSVGA
  # treat as error: warning C4013: 'close' undefined; assuming extern returning int
- TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS  = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS) -we4013
+ TEMPLATE_VBoxMesa3DGuestR3Dll_CFLAGS.win += -we4013
 endif
 TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS) \
 	$(VBOX_PATH_MESA)/include \
