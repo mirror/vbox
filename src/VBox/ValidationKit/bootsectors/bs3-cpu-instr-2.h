@@ -42,6 +42,8 @@
 
 #pragma pack(1)
 
+/* binary: */
+
 typedef struct BS3CPUINSTR2BIN8
 {
     uint8_t uSrc1, uSrc2, uResult;
@@ -70,10 +72,56 @@ typedef struct BS3CPUINSTR2BIN64
 } BS3CPUINSTR2BIN64;
 typedef BS3CPUINSTR2BIN64 const RT_FAR *PCBS3CPUINSTR2BIN64;
 
-#pragma pack()
-
 /** Using unused EFLAGS bit 3 for CF input value for ADC, SBB and such. */
 #define BS3CPUINSTR2BIN_EFL_CARRY_IN_BIT    3
+
+
+/* shifting: */
+
+typedef struct BS3CPUINSTR2SHIFT8
+{
+    uint8_t  uSrc1;
+    uint8_t  uSrc2;
+    uint16_t fEflIn;
+    uint8_t  uResult;
+    uint16_t fEflOut;
+} BS3CPUINSTR2SHIFT8;
+typedef BS3CPUINSTR2SHIFT8 const RT_FAR *PCBS3CPUINSTR2SHIFT8;
+
+typedef struct BS3CPUINSTR2SHIFT16
+{
+    uint16_t uSrc1;
+    uint8_t  uSrc2;
+    uint16_t fEflIn;
+    uint16_t uResult;
+    uint16_t fEflOut;
+} BS3CPUINSTR2SHIFT16;
+typedef BS3CPUINSTR2SHIFT16 const RT_FAR *PCBS3CPUINSTR2SHIFT16;
+
+typedef struct BS3CPUINSTR2SHIFT32
+{
+    uint32_t uSrc1;
+    uint8_t  uSrc2;
+    uint16_t fEflIn;
+    uint32_t uResult;
+    uint16_t fEflOut;
+} BS3CPUINSTR2SHIFT32;
+typedef BS3CPUINSTR2SHIFT32 const RT_FAR *PCBS3CPUINSTR2SHIFT32;
+
+typedef struct BS3CPUINSTR2SHIFT64
+{
+    uint64_t uSrc1;
+    uint8_t  uSrc2;
+    uint16_t fEflIn;
+    uint64_t uResult;
+    uint16_t fEflOut;
+} BS3CPUINSTR2SHIFT64;
+typedef BS3CPUINSTR2SHIFT64 const RT_FAR *PCBS3CPUINSTR2SHIFT64;
+
+#pragma pack()
+
+/** Using unused EFLAGS bit 3 for alternative OF value for reg,Ib.  */
+#define BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT 3
 
 #endif /* !VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_instr_2_h */
 

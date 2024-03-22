@@ -40,148 +40,316 @@
 # pragma once
 #endif
 
-extern const unsigned g_cBs3CpuInstr2_and_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_and_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_and_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_and_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_and_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_and_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_and_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_and_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_and_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_and_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_and_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_and_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_or_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_or_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_or_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_or_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_or_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_or_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_or_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_or_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_or_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_or_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_or_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_or_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_xor_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_xor_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_xor_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_xor_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_xor_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_xor_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_xor_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_xor_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_xor_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_xor_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_xor_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_xor_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_test_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_test_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_test_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_test_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_test_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_test_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_test_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_test_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_test_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_test_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_test_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_test_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_add_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_add_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_add_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_add_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_add_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_add_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_add_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_add_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_add_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_add_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_add_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_add_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_adc_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_adc_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_adc_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_adc_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_adc_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_adc_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_adc_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_adc_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_adc_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_adc_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_adc_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_adc_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_sub_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_sub_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_sub_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_sub_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_sub_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_sub_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_sub_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_sub_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_sub_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_sub_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_sub_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_sub_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_sbb_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_sbb_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_sbb_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_sbb_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_sbb_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_sbb_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_sbb_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_sbb_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_sbb_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_sbb_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_sbb_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_sbb_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_cmp_TestDataU8;
+extern const uint16_t g_cBs3CpuInstr2_cmp_TestDataU8;
 extern const BS3CPUINSTR2BIN8 g_aBs3CpuInstr2_cmp_TestDataU8[];
 
-extern const unsigned g_cBs3CpuInstr2_cmp_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_cmp_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_cmp_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_cmp_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_cmp_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_cmp_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_cmp_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_cmp_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_cmp_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_bt_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_bt_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_bt_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_bt_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_bt_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_bt_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_bt_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_bt_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_bt_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_btc_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_btc_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_btc_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_btc_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_btc_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_btc_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_btc_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_btc_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_btc_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_btr_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_btr_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_btr_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_btr_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_btr_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_btr_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_btr_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_btr_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_btr_TestDataU64[];
 
-extern const unsigned g_cBs3CpuInstr2_bts_TestDataU16;
+extern const uint16_t g_cBs3CpuInstr2_bts_TestDataU16;
 extern const BS3CPUINSTR2BIN16 g_aBs3CpuInstr2_bts_TestDataU16[];
 
-extern const unsigned g_cBs3CpuInstr2_bts_TestDataU32;
+extern const uint16_t g_cBs3CpuInstr2_bts_TestDataU32;
 extern const BS3CPUINSTR2BIN32 g_aBs3CpuInstr2_bts_TestDataU32[];
 
-extern const unsigned g_cBs3CpuInstr2_bts_TestDataU64;
+extern const uint16_t g_cBs3CpuInstr2_bts_TestDataU64;
 extern const BS3CPUINSTR2BIN64 g_aBs3CpuInstr2_bts_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_shl_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_shl_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_shl_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_shl_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_shl_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_shl_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_shl_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_shl_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_shl_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_shr_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_shr_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_shr_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_shr_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_shr_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_shr_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_shr_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_shr_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_shr_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_sar_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_sar_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_sar_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_sar_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_sar_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_sar_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_sar_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_sar_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_sar_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rol_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rol_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rol_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rol_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rol_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rol_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rol_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rol_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rol_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_ror_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_ror_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_ror_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_ror_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_ror_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_ror_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_ror_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_ror_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_ror_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rcl_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rcl_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rcl_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rcl_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rcl_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rcl_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rcl_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcl_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rcl_amd_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_intel_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rcr_intel_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_intel_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rcr_intel_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_intel_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rcr_intel_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_intel_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rcr_intel_TestDataU64[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_amd_TestDataU8;
+extern const BS3CPUINSTR2SHIFT8 g_aBs3CpuInstr2_rcr_amd_TestDataU8[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_amd_TestDataU16;
+extern const BS3CPUINSTR2SHIFT16 g_aBs3CpuInstr2_rcr_amd_TestDataU16[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_amd_TestDataU32;
+extern const BS3CPUINSTR2SHIFT32 g_aBs3CpuInstr2_rcr_amd_TestDataU32[];
+
+extern const uint16_t g_cBs3CpuInstr2_rcr_amd_TestDataU64;
+extern const BS3CPUINSTR2SHIFT64 g_aBs3CpuInstr2_rcr_amd_TestDataU64[];
 
 #endif /* !VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_instr_2_data_h */

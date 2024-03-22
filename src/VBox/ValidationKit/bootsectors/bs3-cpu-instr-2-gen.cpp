@@ -40,6 +40,7 @@
 *********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/rand.h>
@@ -72,6 +73,82 @@ PROTOTYPE_BINARY(bt);
 PROTOTYPE_BINARY(btc);
 PROTOTYPE_BINARY(btr);
 PROTOTYPE_BINARY(bts);
+
+
+#define PROTOTYPE_SHIFT(a_Ins) \
+    DECLASM(uint32_t) RT_CONCAT(GenU8_,a_Ins)( uint8_t,  uint8_t, uint32_t, uint8_t *); \
+    DECLASM(uint32_t) RT_CONCAT(GenU16_,a_Ins)(uint16_t, uint8_t, uint32_t, uint16_t *); \
+    DECLASM(uint32_t) RT_CONCAT(GenU32_,a_Ins)(uint32_t, uint8_t, uint32_t, uint32_t *); \
+    DECLASM(uint32_t) RT_CONCAT(GenU64_,a_Ins)(uint64_t, uint8_t, uint32_t, uint64_t *); \
+    DECLASM(uint32_t) RT_CONCAT3(GenU8_,a_Ins,_Ib)( uint8_t,  uint8_t, uint32_t, uint8_t *); \
+    DECLASM(uint32_t) RT_CONCAT3(GenU16_,a_Ins,_Ib)(uint16_t, uint8_t, uint32_t, uint16_t *); \
+    DECLASM(uint32_t) RT_CONCAT3(GenU32_,a_Ins,_Ib)(uint32_t, uint8_t, uint32_t, uint32_t *); \
+    DECLASM(uint32_t) RT_CONCAT3(GenU64_,a_Ins,_Ib)(uint64_t, uint8_t, uint32_t, uint64_t *)
+
+PROTOTYPE_SHIFT(shl);
+PROTOTYPE_SHIFT(shr);
+PROTOTYPE_SHIFT(sar);
+PROTOTYPE_SHIFT(rol);
+PROTOTYPE_SHIFT(ror);
+PROTOTYPE_SHIFT(rcl);
+PROTOTYPE_SHIFT(rcr);
+
+
+static uint32_t RandEflStatus(void)
+{
+    return RTRandU32Ex(0, X86_EFL_STATUS_BITS) & X86_EFL_STATUS_BITS;
+}
+
+
+static uint8_t RandU8Shift(unsigned i, unsigned cTests, uint32_t *puTracker, unsigned cBits)
+{
+    uint8_t cShift = (uint8_t)RTRandU32Ex(0, 0xff);
+    if ((cShift % 11) != 0)
+    {
+        if ((cShift % 3) == 0)
+            cShift &= (cBits * 2) - 1;
+        else
+            cShift &= cBits - 1;
+    }
+
+    /* Make sure we've got the following counts: 0, 1, cBits, cBits + 1.
+       Note! Missing shift count 1 will cause the 'shl reg, 1' tests to spin forever. */
+    if (cShift == 0)
+        *puTracker |= RT_BIT_32(0);
+    else if (cShift == 1)
+        *puTracker |= RT_BIT_32(1);
+    else if (cShift == cBits)
+        *puTracker |= RT_BIT_32(2);
+    else if (cShift == cBits + 1)
+        *puTracker |= RT_BIT_32(3);
+    else if (*puTracker != 15 && i > cTests / 2)
+    {
+        if (!(*puTracker & RT_BIT_32(0)))
+        {
+            *puTracker |= RT_BIT_32(0);
+            cShift = 0;
+        }
+        else if (!(*puTracker & RT_BIT_32(1)))
+        {
+            *puTracker |= RT_BIT_32(1);
+            cShift = 1;
+        }
+        else if (!(*puTracker & RT_BIT_32(2)))
+        {
+            *puTracker |= RT_BIT_32(2);
+            cShift = cBits;
+        }
+        else if (!(*puTracker & RT_BIT_32(3)))
+        {
+            *puTracker |= RT_BIT_32(2);
+            cShift = cBits + 1;
+        }
+        else
+            RT_BREAKPOINT();
+    }
+
+    return cShift;
+}
 
 
 static uint8_t RandU8(unsigned i, unsigned iOp, unsigned iOuter = 0)
@@ -236,13 +313,20 @@ int main(int argc, char **argv)
     RTR3InitExe(argc,  &argv, 0);
 
     /*
+     * Constants.
+     */
+    enum { kEflBeaviour_Intel = 0, kEflBeaviour_Amd }
+        const                   enmEflBehaviour = ASMIsAmdCpu() || ASMIsHygonCpu() ? kEflBeaviour_Amd : kEflBeaviour_Intel;
+    static const char * const   s_apszEflBehaviourTabNm[] = { "intel_", "amd_" };
+
+    /*
      * Parse arguments.
      */
     PRTSTREAM   pOut        = g_pStdOut;
-    unsigned    cTestsU8    = 48;
-    unsigned    cTestsU16   = 48;
-    unsigned    cTestsU32   = 48;
-    unsigned    cTestsU64   = 64;
+    unsigned    cTestsU8    = 32;
+    unsigned    cTestsU16   = 32;
+    unsigned    cTestsU32   = 36;
+    unsigned    cTestsU64   = 48;
 
     /** @todo  */
     if (argc != 1)
@@ -266,7 +350,7 @@ int main(int argc, char **argv)
         uint16_t    fActiveEfls;
         bool        fCarryIn;
         bool        fImmVars;
-    } const s_aInstr[] =
+    } const s_aBinary[] =
     {
         { "and",    GenU8_and,  GenU16_and,  GenU32_and,  GenU64_and,   3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
         { "or",     GenU8_or,   GenU16_or,   GenU32_or,   GenU64_or,    3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, false, true  },
@@ -285,76 +369,143 @@ int main(int argc, char **argv)
         { "bts",    NULL,       GenU16_bts,  GenU32_bts,  GenU64_bts,   1, X86_EFL_CF,                           false, false },
     };
 
+    static struct
+    {
+        const char *pszName;
+        DECLCALLBACKMEMBER(uint32_t, pfnU8, ( uint8_t uSrc1, uint8_t uSrc2, uint32_t fCarry,  uint8_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU16,(uint16_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint16_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU32,(uint32_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint32_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU64,(uint64_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint64_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU8Ib, ( uint8_t uSrc1, uint8_t uSrc2, uint32_t fCarry,  uint8_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU16Ib,(uint16_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint16_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU32Ib,(uint32_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint32_t *puResult));
+        DECLCALLBACKMEMBER(uint32_t, pfnU64Ib,(uint64_t uSrc1, uint8_t uSrc2, uint32_t fCarry, uint64_t *puResult));
+        uint8_t     cActiveEfls;
+        uint16_t    fActiveEfls;
+        bool        fCarryIn;
+    } const s_aShifters[] =
+    {
+        { "shl", GenU8_shl, GenU16_shl, GenU32_shl, GenU64_shl,   GenU8_shl_Ib, GenU16_shl_Ib, GenU32_shl_Ib, GenU64_shl_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "shr", GenU8_shr, GenU16_shr, GenU32_shr, GenU64_shr,   GenU8_shr_Ib, GenU16_shr_Ib, GenU32_shr_Ib, GenU64_shr_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "sar", GenU8_sar, GenU16_sar, GenU32_sar, GenU64_sar,   GenU8_sar_Ib, GenU16_sar_Ib, GenU32_sar_Ib, GenU64_sar_Ib,   6, X86_EFL_STATUS_BITS,     false  },
+        { "rol", GenU8_rol, GenU16_rol, GenU32_rol, GenU64_rol,   GenU8_rol_Ib, GenU16_rol_Ib, GenU32_rol_Ib, GenU64_rol_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
+        { "ror", GenU8_ror, GenU16_ror, GenU32_ror, GenU64_ror,   GenU8_ror_Ib, GenU16_ror_Ib, GenU32_ror_Ib, GenU64_ror_Ib,   2, X86_EFL_CF | X86_EFL_OF, false  },
+        { "rcl", GenU8_rcl, GenU16_rcl, GenU32_rcl, GenU64_rcl,   GenU8_rcl_Ib, GenU16_rcl_Ib, GenU32_rcl_Ib, GenU64_rcl_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
+        { "rcr", GenU8_rcr, GenU16_rcr, GenU32_rcr, GenU64_rcr,   GenU8_rcr_Ib, GenU16_rcr_Ib, GenU32_rcr_Ib, GenU64_rcr_Ib,   2, X86_EFL_CF | X86_EFL_OF, true   },
+    };
+
     RTStrmPrintf(pOut, "\n"); /* filesplitter requires this. */
 
-    /* Header: */
+    /*
+     * Header:
+     */
     FileHeader(pOut, "bs3-cpu-instr-2-data.h", "VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_instr_2_data_h");
-    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aInstr); iInstr++)
-    {
-#define DO_ONE_TYPE(a_ValueType, a_cBits, a_szFmt, a_pfnMember, a_cTests) do { \
+#define DO_ONE_TYPE(a_Entry, a_pszExtraNm, a_szTypeBaseNm, a_cBits) do { \
                 RTStrmPrintf(pOut, \
                              "\n" \
-                             "extern const unsigned g_cBs3CpuInstr2_%s_TestDataU" #a_cBits ";\n" \
-                             "extern const BS3CPUINSTR2BIN" #a_cBits " g_aBs3CpuInstr2_%s_TestDataU" #a_cBits "[];\n", \
-                             s_aInstr[iInstr].pszName, s_aInstr[iInstr].pszName); \
+                             "extern const uint16_t g_cBs3CpuInstr2_%s_%sTestDataU" #a_cBits ";\n" \
+                             "extern const " a_szTypeBaseNm #a_cBits " g_aBs3CpuInstr2_%s_%sTestDataU" #a_cBits "[];\n", \
+                             a_Entry.pszName, a_pszExtraNm, a_Entry.pszName, a_pszExtraNm); \
             } while (0)
-        if (s_aInstr[iInstr].pfnU8)
-            DO_ONE_TYPE(uint8_t,  8,   "%#04RX8",  pfnU8,  cTestsU8);
-        if (s_aInstr[iInstr].pfnU16)
-            DO_ONE_TYPE(uint16_t, 16, "%#06RX16",  pfnU16, cTestsU16);
-        if (s_aInstr[iInstr].pfnU32)
-            DO_ONE_TYPE(uint32_t, 32, "%#010RX32", pfnU32, cTestsU32);
-        if (s_aInstr[iInstr].pfnU64)
-            DO_ONE_TYPE(uint64_t, 64, "%#018RX64", pfnU64, cTestsU64);
-#undef DO_ONE_TYPE
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aBinary); iInstr++)
+    {
+        if (s_aBinary[iInstr].pfnU8)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", 8);
+        if (s_aBinary[iInstr].pfnU16)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", 16);
+        if (s_aBinary[iInstr].pfnU32)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", 32);
+        if (s_aBinary[iInstr].pfnU64)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", 64);
     }
+
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aShifters); iInstr++)
+        for (unsigned iEflBehaviour = 0; iEflBehaviour < RT_ELEMENTS(s_apszEflBehaviourTabNm); iEflBehaviour++)
+        {
+            DO_ONE_TYPE(s_aShifters[iInstr], s_apszEflBehaviourTabNm[iEflBehaviour], "BS3CPUINSTR2SHIFT", 8);
+            DO_ONE_TYPE(s_aShifters[iInstr], s_apszEflBehaviourTabNm[iEflBehaviour], "BS3CPUINSTR2SHIFT", 16);
+            DO_ONE_TYPE(s_aShifters[iInstr], s_apszEflBehaviourTabNm[iEflBehaviour], "BS3CPUINSTR2SHIFT", 32);
+            DO_ONE_TYPE(s_aShifters[iInstr], s_apszEflBehaviourTabNm[iEflBehaviour], "BS3CPUINSTR2SHIFT", 64);
+        }
+#undef DO_ONE_TYPE
+
     RTStrmPrintf(pOut,
                  "\n"
                  "#endif /* !VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_instr_2_data_h */\n"
                  "\n// ##### ENDFILE\n");
 
-#define DO_ONE_TYPE(a_ValueType, a_cBits, a_szFmt, a_pfnMember, a_cTests) do { \
-                unsigned const cOuterLoops =  1 + s_aInstr[iInstr].fImmVars * (a_cBits == 64 ? 2 : a_cBits != 8 ? 1 : 0); \
-                unsigned const cTestFactor = !s_aInstr[iInstr].fCarryIn ? 1 : 2; \
+#define DO_ONE_TYPE(a_Entry, a_pszExtraNm, a_szTypeBaseNm, a_ValueType, a_cBits, a_szFmt, a_pfnMember, a_cTests, a_fImmVars, a_fShift, a_pfnMemberIb) do { \
+                unsigned const cOuterLoops =  1 + a_fImmVars * (a_cBits == 64 ? 2 : a_cBits != 8 ? 1 : 0); \
+                unsigned const cTestFactor = !a_Entry.fCarryIn ? 1 : 2; \
                 RTStrmPrintf(pOut, \
                              "\n" \
-                             "const unsigned g_cBs3CpuInstr2_%s_TestDataU" #a_cBits " = %u;\n" \
-                             "const BS3CPUINSTR2BIN" #a_cBits " g_aBs3CpuInstr2_%s_TestDataU" #a_cBits "[%u] =\n" \
+                             "const uint16_t g_cBs3CpuInstr2_%s_%sTestDataU" #a_cBits " = %u;\n" \
+                             "const " a_szTypeBaseNm #a_cBits " g_aBs3CpuInstr2_%s_%sTestDataU" #a_cBits "[%u] =\n" \
                              "{\n", \
-                             s_aInstr[iInstr].pszName, a_cTests * cTestFactor * cOuterLoops, \
-                             s_aInstr[iInstr].pszName, a_cTests * cTestFactor * cOuterLoops); \
+                             a_Entry.pszName, a_pszExtraNm, a_cTests * cTestFactor * cOuterLoops, \
+                             a_Entry.pszName, a_pszExtraNm, a_cTests * cTestFactor * cOuterLoops); \
                 for (unsigned iOuter = 0; iOuter < cOuterLoops; iOuter++) \
                 { \
                     if (iOuter != 0) \
                         RTStrmPrintf(pOut, "    /* r/m" #a_cBits", imm%u: */\n", iOuter == 1 ? 8 : 32); \
                     uint32_t fSet   = 0; \
                     uint32_t fClear = 0; \
+                    uint32_t uShiftTracker = 0; \
                     for (unsigned iTest = 0; iTest < a_cTests; iTest++) \
                     { \
                         uint32_t fMustBeClear = 0; \
-                        uint32_t fMustBeSet   = EnsureEflCoverage(iTest, a_cTests, s_aInstr[iInstr].cActiveEfls, \
-                                                                  s_aInstr[iInstr].fActiveEfls, fSet, fClear, &fMustBeClear); \
+                        uint32_t fMustBeSet   = EnsureEflCoverage(iTest, a_cTests, a_Entry.cActiveEfls, \
+                                                                  a_Entry.fActiveEfls, fSet, fClear, &fMustBeClear); \
                         for (unsigned iTry = 0;; iTry++) \
                         { \
-                            a_ValueType const uSrc1   = RandU##a_cBits(iTest + iTry, 1); \
-                            a_ValueType const uSrc2   = RandU##a_cBits(iTest + iTry, 2, iOuter); \
-                            a_ValueType       uResult = 0; \
-                            uint32_t          fEflOut = s_aInstr[iInstr].a_pfnMember(uSrc1, uSrc2, 0 /*fCarry*/, &uResult) \
-                                                      & X86_EFL_STATUS_BITS; \
+                            a_ValueType const uSrc1     = RandU##a_cBits(iTest + iTry, 1); \
+                            a_ValueType const uSrc2     = !(a_fShift) ? RandU##a_cBits(iTest + iTry, 2, iOuter) \
+                                                        : RandU8Shift(iTest + iTry, a_cTests, &uShiftTracker, a_cBits); \
+                            a_ValueType       uResult   = 0; \
+                            uint32_t const    fEflIn    = !(a_fShift) ? 0 /*fCarry*/ : a_Entry.fCarryIn \
+                                                        ? RandEflStatus() & ~(uint32_t)X86_EFL_CF : RandEflStatus(); \
+                            uint32_t          fEflOut   = a_Entry.a_pfnMember(uSrc1, uSrc2, fEflIn, &uResult) \
+                                                        & X86_EFL_STATUS_BITS; \
                             if (iTry < _1M && ((fEflOut & fMustBeClear) || (~fEflOut & fMustBeSet))) \
                                 continue; \
                             fSet   |= fEflOut; \
                             fClear |= ~fEflOut; \
-                            RTStrmPrintf(pOut,  "    { " a_szFmt ", " a_szFmt ", " a_szFmt ", %#05RX16 },\n", \
-                                         uSrc1, uSrc2, uResult, fEflOut); \
-                            if (s_aInstr[iInstr].fCarryIn) \
+                            if (!(a_fShift)) \
+                                RTStrmPrintf(pOut,  "    { " a_szFmt ", " a_szFmt ", " a_szFmt ", %#05RX16 },\n", \
+                                             uSrc1, uSrc2, uResult, fEflOut); \
+                            else \
+                            {   /* Seems that 'rol reg,Ib' (and possibly others) produces different OF results on intel. */ \
+                                a_ValueType uResultIb = 0; \
+                                uint32_t    fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn, &uResultIb) \
+                                                      & X86_EFL_STATUS_BITS; \
+                                if (uResultIb != uResult) RT_BREAKPOINT(); \
+                                if ((fEflOutIb ^ fEflOut) & (X86_EFL_STATUS_BITS & ~X86_EFL_OF)) RT_BREAKPOINT(); \
+                                if (fEflOutIb & X86_EFL_OF) fEflOut |= RT_BIT_32(BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT); \
+                                RTStrmPrintf(pOut,  "    { " a_szFmt ", %#04RX8, %#05RX16, " a_szFmt ", %#05RX16 },%s\n", \
+                                             uSrc1, (uint8_t)uSrc2, (uint16_t)fEflIn, uResult, (uint16_t)fEflOut, \
+                                             (fEflOut ^ fEflOutIb) & X86_EFL_OF ? " /* OF/Ib */" : ""); \
+                            } \
+                            if (a_Entry.fCarryIn) \
                             { \
                                 uResult = 0; \
-                                fEflOut = s_aInstr[iInstr].a_pfnMember(uSrc1, uSrc2, X86_EFL_CF, &uResult) & X86_EFL_STATUS_BITS; \
+                                fEflOut = a_Entry.a_pfnMember(uSrc1, uSrc2, fEflIn | X86_EFL_CF, &uResult) & X86_EFL_STATUS_BITS; \
                                 fSet   |= fEflOut; \
                                 fClear |= ~fEflOut; \
-                                RTStrmPrintf(pOut,  "    { " a_szFmt ", " a_szFmt ", " a_szFmt ", %#05RX16 },\n", \
-                                             uSrc1, uSrc2, uResult, (fEflOut | RT_BIT_32(BS3CPUINSTR2BIN_EFL_CARRY_IN_BIT))); \
+                                if (!(a_fShift)) \
+                                    RTStrmPrintf(pOut,  "    { " a_szFmt ", " a_szFmt ", " a_szFmt ", %#05RX16 },\n", uSrc1, uSrc2, \
+                                                 uResult, (uint16_t)(fEflOut | RT_BIT_32(BS3CPUINSTR2BIN_EFL_CARRY_IN_BIT))); \
+                                else \
+                                {   /* Seems that 'rol reg,Ib' (and possibly others) produces different OF results on intel. */ \
+                                    a_ValueType uResultIb = 0; \
+                                    uint32_t    fEflOutIb = a_Entry.a_pfnMemberIb(uSrc1, uSrc2, fEflIn | X86_EFL_CF, &uResultIb) \
+                                                          & X86_EFL_STATUS_BITS; \
+                                    if (uResultIb != uResult) RT_BREAKPOINT(); \
+                                    if ((fEflOutIb ^ fEflOut) & (X86_EFL_STATUS_BITS & ~X86_EFL_OF)) RT_BREAKPOINT(); \
+                                    if (fEflOutIb & X86_EFL_OF) fEflOut |= RT_BIT_32(BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT); \
+                                    RTStrmPrintf(pOut,  "    { " a_szFmt ", %#04RX8, %#05RX16, " a_szFmt ", %#05RX16 },%s\n", \
+                                                 uSrc1, (uint8_t)uSrc2, (uint16_t)(fEflIn | X86_EFL_CF), uResult, \
+                                                 (uint16_t)fEflOut, (fEflOut ^ fEflOutIb) & X86_EFL_OF ? " /* OF/Ib */" : ""); \
+                                } \
                             } \
                             break; \
                         } \
@@ -364,25 +515,52 @@ int main(int argc, char **argv)
                              "};\n"); \
             } while (0)
 
-    /* Source: 8, 16 & 32 bit data. */
+    /*
+     * Source: 8, 16 & 32 bit data.
+     */
     FileHeader(pOut, "bs3-cpu-instr-2-data16.c16", NULL);
-    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aInstr); iInstr++)
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aBinary); iInstr++)
     {
-        if (s_aInstr[iInstr].pfnU8)
-            DO_ONE_TYPE(uint8_t,  8,   "%#04RX8",  pfnU8,  cTestsU8);
-        if (s_aInstr[iInstr].pfnU16)
-            DO_ONE_TYPE(uint16_t, 16, "%#06RX16",  pfnU16, cTestsU16);
-        if (s_aInstr[iInstr].pfnU32)
-            DO_ONE_TYPE(uint32_t, 32, "%#010RX32", pfnU32, cTestsU32);
+        if (s_aBinary[iInstr].pfnU8)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", uint8_t,  8,   "%#04RX8",  pfnU8,  cTestsU8,  s_aBinary[iInstr].fImmVars, 0, pfnU8);
+        if (s_aBinary[iInstr].pfnU16)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", uint16_t, 16, "%#06RX16",  pfnU16, cTestsU16, s_aBinary[iInstr].fImmVars, 0, pfnU16);
+        if (s_aBinary[iInstr].pfnU32)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", uint32_t, 32, "%#010RX32", pfnU32, cTestsU32, s_aBinary[iInstr].fImmVars, 0, pfnU32);
     }
     RTStrmPrintf(pOut, "\n// ##### ENDFILE\n");
 
-    /* Source: 64 bit data (goes in different data segment). */
+    /*
+     * Source: 64 bit data (goes in different data segment).
+     */
     FileHeader(pOut, "bs3-cpu-instr-2-data64.c64", NULL);
-    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aInstr); iInstr++)
-        if (s_aInstr[iInstr].pfnU64)
-            DO_ONE_TYPE(uint64_t, 64, "%#018RX64", pfnU64, cTestsU64);
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aBinary); iInstr++)
+        if (s_aBinary[iInstr].pfnU64)
+            DO_ONE_TYPE(s_aBinary[iInstr], "", "BS3CPUINSTR2BIN", uint64_t, 64, "%#018RX64", pfnU64, cTestsU64, s_aBinary[iInstr].fImmVars, 0, pfnU64);
     RTStrmPrintf(pOut, "\n// ##### ENDFILE\n");
+
+
+    /*
+     * Source: 8, 16 & 32 bit data for the host CPU.
+     */
+    const char * const pszEflTabNm = s_apszEflBehaviourTabNm[enmEflBehaviour];
+    FileHeader(pOut, enmEflBehaviour == kEflBeaviour_Amd ? "bs3-cpu-instr-2-data16-amd.c16" : "bs3-cpu-instr-2-data16-intel.c16", NULL);
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aShifters); iInstr++)
+    {
+        DO_ONE_TYPE(s_aShifters[iInstr], pszEflTabNm, "BS3CPUINSTR2SHIFT", uint8_t,  8,   "%#04RX8",  pfnU8,  cTestsU8,  0, 1, pfnU8Ib);
+        DO_ONE_TYPE(s_aShifters[iInstr], pszEflTabNm, "BS3CPUINSTR2SHIFT", uint16_t, 16, "%#06RX16",  pfnU16, cTestsU16, 0, 1, pfnU16Ib);
+        DO_ONE_TYPE(s_aShifters[iInstr], pszEflTabNm, "BS3CPUINSTR2SHIFT", uint32_t, 32, "%#010RX32", pfnU32, cTestsU32, 0, 1, pfnU32Ib);
+    }
+    RTStrmPrintf(pOut, "\n// ##### ENDFILE\n");
+
+    /*
+     * Source: 64 bit data for the host CPU (goes in different data segment).
+     */
+    FileHeader(pOut, enmEflBehaviour == kEflBeaviour_Amd ? "bs3-cpu-instr-2-data64-amd.c64" : "bs3-cpu-instr-2-data64-intel.c64", NULL);
+    for (unsigned iInstr = 0; iInstr < RT_ELEMENTS(s_aShifters); iInstr++)
+        DO_ONE_TYPE(s_aShifters[iInstr], pszEflTabNm, "BS3CPUINSTR2SHIFT", uint64_t, 64, "%#018RX64", pfnU64, cTestsU64, 0, 1, pfnU64Ib);
+    RTStrmPrintf(pOut, "\n// ##### ENDFILE\n");
+
 #undef DO_ONE_TYPE
 
     return 0;

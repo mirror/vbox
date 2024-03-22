@@ -80,9 +80,8 @@ BS3_PROC_END_CMN            %1
 ; @param 3      Mask describing the immediate forms. Bit 0 = imm8; Bit 2 = immV.
 ; @param 4      Whether there are alternative forms of the instruction.
 ; @param
-%ifndef  BS3CPUINSTR2_BINARY_OP_DEFINED
- %define BS3CPUINSTR2_BINARY_OP_DEFINED
- %macro  BS3CPUINSTR2_BINARY_OP 4
+%ifnmacro BS3CPUINSTR2_BINARY_OP 4
+ %macro   BS3CPUINSTR2_BINARY_OP 4
   %if %2 != 0
         ; 8-bit
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al  %+ _dl,     %1 al, dl
@@ -229,8 +228,77 @@ BS3_PROC_END_CMN            %1
         BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_alt_ %+ %1 %+ _rbx %+ _r14, ALT_INSTRUCTION64_ %+ %1 rbx, r14
     %endif
   %endif
- %endmacro
+ %endmacro ; BS3CPUINSTR2_BINARY_OP
 %endif
+
+
+;;
+; @param 1      The instruction menmonic.
+%ifnmacro BS3CPUINSTR2_SHIFT_OP 1
+ %macro   BS3CPUINSTR2_SHIFT_OP 1
+        ; 8-bit
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _al  %+ _1,      %1 al, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dl  %+ _Ib,     %1 dl, 7
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ch  %+ _cl,     %1 ch, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSxBX %+ _1,   %1 byte [xBX], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSxDI %+ _Ib,  %1 byte [xDI], 6
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSxSI %+ _cl,  %1 byte [xSI], cl
+  %ifdef TMPL_64BIT
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _sil  %+ _1,     %1 sil, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9b  %+ _Ib,    %1 r9b, 5
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13b %+ _cl,    %1 r13b, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSx14 %+ _1,   %1 byte [r14], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSxAX %+ _Ib,  %1 byte [rax], 4
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bDSx9 %+ _cl,   %1 byte [r9], cl
+  %endif
+        ; 16-bit
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _di  %+ _1,      %1 di, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _cx  %+ _Ib,     %1 cx, 15
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _bp  %+ _cl,     %1 bp, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSxSI %+ _1,   %1 word [xSI], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSxDI %+ _Ib,  %1 word [xDI], 14
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSxBX %+ _cl,  %1 word [xBX], cl
+  %ifdef TMPL_64BIT
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8w  %+ _1,     %1 r8w, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9w  %+ _Ib,    %1 r9w, 5
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13w %+ _cl,    %1 r13w, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSx14 %+ _1,   %1 word [r14], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSxBP %+ _Ib,  %1 word [rbp], 4
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _wDSx9 %+ _cl,   %1 word [r9], cl
+  %endif
+        ; 32-bit
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _edi  %+ _1,     %1 edi, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ecx  %+ _Ib,    %1 ecx, 25
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _ebp  %+ _cl,    %1 ebp, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSxSI %+ _1,  %1 dword [xSI], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSxBX %+ _Ib, %1 dword [xBX], 24
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSxDI %+ _cl, %1 dword [xDI], cl
+  %ifdef TMPL_64BIT
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8d  %+ _1,     %1 r8d, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9d  %+ _Ib,    %1 r9d, 23
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13d %+ _cl,    %1 r13d, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSx14 %+ _1,  %1 dword [r14], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSxBP %+ _Ib, %1 dword [rbp], 22
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _dwDSx9 %+ _cl,  %1 dword [r9], cl
+  %endif
+        ; 64-bit
+  %ifdef TMPL_64BIT
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rdi  %+ _1,     %1 rdi, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rcx  %+ _Ib,    %1 rcx, 35
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _rbp  %+ _cl,    %1 rbp, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSxSI %+ _1,  %1 qword [xSI], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSxBX %+ _Ib, %1 qword [xBX], 24
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSxDI %+ _cl, %1 qword [xDI], cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r8   %+ _1,     %1 r8, 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r9   %+ _Ib,    %1 r9, 48
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _r13  %+ _cl,    %1 r13, cl
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSx14 %+ _1,  %1 qword [r14], 1
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSxBP %+ _Ib, %1 qword [rbp], 56
+        BS3CPUINSTR2_EMIT_INSTR_UD2 bs3CpuInstr2_ %+ %1 %+ _qwDSx9 %+ _cl,  %1 qword [r9], cl
+  %endif
+ %endmacro ; BS3CPUINSTR2_SHIFT_OP
+%endif
+
 
 
 ;*********************************************************************************************************************************
@@ -407,6 +475,14 @@ BS3CPUINSTR2_BINARY_OP btc,  0, 1, 0
 BS3CPUINSTR2_BINARY_OP btr,  0, 1, 0
 BS3CPUINSTR2_BINARY_OP bts,  0, 1, 0
 
+
+BS3CPUINSTR2_SHIFT_OP  shl
+BS3CPUINSTR2_SHIFT_OP  shr
+BS3CPUINSTR2_SHIFT_OP  sar
+BS3CPUINSTR2_SHIFT_OP  rol
+BS3CPUINSTR2_SHIFT_OP  ror
+BS3CPUINSTR2_SHIFT_OP  rcl
+BS3CPUINSTR2_SHIFT_OP  rcr
 
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_mul_xBX_ud2, BS3_PBC_NEAR
         mul     xBX
