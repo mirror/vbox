@@ -664,7 +664,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     AssertCompile((a_iArg) < cArgs); \
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     int RT_CONCAT(iVarCheck_,a_pName) = 0; \
-    uint32_t a_Name; \
+    uint32_t  a_Name  = 0; \
     uint32_t *a_pName = &a_Name; \
     NOREF(a_pName)
 

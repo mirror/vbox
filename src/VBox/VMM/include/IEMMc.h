@@ -204,7 +204,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg)   a_Type const a_Name = &(a_Local)
 /** @note IEMAllInstPython.py duplicates the expansion. */
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
-    uint32_t a_Name; \
+    uint32_t  a_Name  = pVCpu->cpum.GstCtx.eflags.u; \
     uint32_t *a_pName = &a_Name
 /** @note IEMAllInstPython.py duplicates the expansion. */
 #define IEM_MC_LOCAL_EFLAGS(a_Name)                     uint32_t a_Name = pVCpu->cpum.GstCtx.eflags.u
