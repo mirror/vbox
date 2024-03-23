@@ -206,6 +206,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
+/** @note IEMAllInstPython.py duplicates the expansion. */
 #define IEM_MC_LOCAL_EFLAGS(a_Name)                     uint32_t a_Name = pVCpu->cpum.GstCtx.eflags.u
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
    do { pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); } while (0)

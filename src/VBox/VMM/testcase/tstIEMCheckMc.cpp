@@ -631,6 +631,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     a_Type a_Name = (a_Value); \
     NOREF(a_Name)
+#define IEM_MC_LOCAL_EFLAGS(a_Name)                     IEM_MC_LOCAL(uint32_t, a_Name); IEM_MC_FETCH_EFLAGS(a_Name)
 #define IEM_MC_NOREF(a_Name)                            RT_NOREF_PV(a_Name)
 
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg) (void)fMcBegin; \

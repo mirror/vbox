@@ -2318,9 +2318,11 @@ class McBlock(object):
     def parseMcLocalEFlags(oSelf, sName, asParams):
         """ IEM_MC_LOCAL_EFLAGS"""
         oSelf.checkStmtParamCount(sName, asParams, 1);
-        oStmt = McStmtVar(sName, asParams, 'uint32_t', asParams[0]);
-        oSelf.aoLocals.append(oStmt);
-        return oStmt;
+        # Note! We split this one up into IEM_MC_LOCAL_VAR and IEM_MC_FETCH_EFLAGS just like with IEM_MC_ARG_LOCAL_EFLAGS.
+        oStmtLocal = McStmtVar('IEM_MC_LOCAL', ['uint32_t', asParams[0]], 'uint32_t', asParams[0]);
+        oSelf.aoLocals.append(oStmtLocal);
+        oStmtFetch = McStmt('IEM_MC_FETCH_EFLAGS', [asParams[0]]);
+        return (oStmtLocal, oStmtFetch,);
 
     @staticmethod
     def parseMcCallAImpl(oSelf, sName, asParams):

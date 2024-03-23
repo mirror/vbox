@@ -70,8 +70,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_BEGIN(0, 1, 0, 0); \
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_STORE_GREG_U8_CONST(IEM_GET_MODRM_REG(pVCpu, a_bRm), 0); \
-        IEM_MC_LOCAL(uint32_t, fEFlags); \
-        IEM_MC_FETCH_EFLAGS(fEFlags); \
+        IEM_MC_LOCAL_EFLAGS(fEFlags); \
         IEM_MC_AND_LOCAL_U32(fEFlags, ~(uint32_t)X86_EFL_STATUS_BITS); \
         IEM_MC_OR_LOCAL_U32(fEFlags, X86_EFL_PF | X86_EFL_ZF); \
         IEM_MC_COMMIT_EFLAGS(fEFlags); \
@@ -96,9 +95,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fRegRegNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_RM(pVCpu, a_bRm), u8Dst); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -181,9 +178,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_EmitterBasename,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
         } IEM_MC_NATIVE_ELSE() { \
@@ -214,9 +209,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_FETCH_MEM_U8(u8Dst, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                 IEM_MC_LOCAL(uint8_t,       u8SrcEmit); \
                 IEM_MC_FETCH_GREG_U8(u8SrcEmit, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-                /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                IEM_MC_LOCAL(uint32_t,      uEFlags); \
-                IEM_MC_FETCH_EFLAGS(uEFlags); \
+                IEM_MC_LOCAL_EFLAGS(uEFlags); \
                 IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_EmitterBasename,_r_r_efl), u8Dst, u8SrcEmit, uEFlags, 8); \
                 IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
             } IEM_MC_NATIVE_ELSE() { \
@@ -260,9 +253,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_REG(pVCpu, a_bRm), u8Dst); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -290,9 +281,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_REG(pVCpu, a_bRm), u8Dst); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -324,9 +313,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
         } IEM_MC_NATIVE_ELSE() { \
@@ -353,9 +340,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         IEM_MC_NATIVE_IF(a_fNativeArchs) { \
             IEM_MC_LOCAL(uint8_t,   u8Dst); \
             IEM_MC_FETCH_GREG_U8(u8Dst, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-            IEM_MC_LOCAL(uint32_t,  uEFlags); \
-            IEM_MC_FETCH_EFLAGS(uEFlags); \
+            IEM_MC_LOCAL_EFLAGS(uEFlags); \
             IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u8Dst, u8Src, uEFlags, 8); \
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
         } IEM_MC_NATIVE_ELSE() { \
@@ -391,9 +376,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fRegRegNativeArchs) { \
                     IEM_MC_LOCAL(uint16_t,   u16Dst); \
                     IEM_MC_FETCH_GREG_U16(u16Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u16Dst, u16Src, uEFlags, 16); \
                     IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_RM(pVCpu, a_bRm), u16Dst); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -416,9 +399,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fRegRegNativeArchs) { \
                     IEM_MC_LOCAL(uint32_t,   u32Dst); \
                     IEM_MC_FETCH_GREG_U32(u32Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u32Dst, u32Src, uEFlags, 32); \
                     IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, a_bRm), u32Dst); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -442,9 +423,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fRegRegNativeArchs) { \
                     IEM_MC_LOCAL(uint64_t,  u64Dst); \
                     IEM_MC_FETCH_GREG_U64(u64Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u64Dst, u64Src, uEFlags, 64); \
                     IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, a_bRm), u64Dst); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
@@ -635,9 +614,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fNativeArchs) { \
                     IEM_MC_LOCAL(uint16_t,   u16Dst); \
                     IEM_MC_FETCH_GREG_U16(u16Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u16Dst, u16Src, uEFlags, 16); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                 } IEM_MC_NATIVE_ELSE() { \
@@ -659,9 +636,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fNativeArchs) { \
                     IEM_MC_LOCAL(uint32_t,   u32Dst); \
                     IEM_MC_FETCH_GREG_U32(u32Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u32Dst, u32Src, uEFlags, 32); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                 } IEM_MC_NATIVE_ELSE() { \
@@ -683,9 +658,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_NATIVE_IF(a_fNativeArchs) { \
                     IEM_MC_LOCAL(uint64_t,  u64Dst); \
                     IEM_MC_FETCH_GREG_U64(u64Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                    IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                    IEM_MC_FETCH_EFLAGS(uEFlags); \
+                    IEM_MC_LOCAL_EFLAGS(uEFlags); \
                     IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u64Dst, u64Src, uEFlags, 64); \
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                 } IEM_MC_NATIVE_ELSE() { \
@@ -723,9 +696,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                         IEM_MC_FETCH_MEM_U16(u16Dst, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_LOCAL(uint16_t,      u16SrcEmit); \
                         IEM_MC_FETCH_GREG_U16(u16SrcEmit, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-                        /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                        IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                        IEM_MC_FETCH_EFLAGS(uEFlags); \
+                        IEM_MC_LOCAL_EFLAGS(uEFlags); \
                         IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u16Dst, u16SrcEmit, uEFlags, 16); \
                         IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                     } IEM_MC_NATIVE_ELSE() { \
@@ -754,9 +725,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                         IEM_MC_FETCH_MEM_U32(u32Dst, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_LOCAL(uint32_t,      u32SrcEmit); \
                         IEM_MC_FETCH_GREG_U32(u32SrcEmit, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-                        /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                        IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                        IEM_MC_FETCH_EFLAGS(uEFlags); \
+                        IEM_MC_LOCAL_EFLAGS(uEFlags); \
                         IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u32Dst, u32SrcEmit, uEFlags, 32); \
                         IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                     } IEM_MC_NATIVE_ELSE() { \
@@ -785,9 +754,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                         IEM_MC_FETCH_MEM_U64(u64Dst, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
                         IEM_MC_LOCAL(uint64_t,      u64SrcEmit); \
                         IEM_MC_FETCH_GREG_U64(u64SrcEmit, IEM_GET_MODRM_REG(pVCpu, a_bRm)); \
-                        /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */ \
-                        IEM_MC_LOCAL(uint32_t,  uEFlags); \
-                        IEM_MC_FETCH_EFLAGS(uEFlags); \
+                        IEM_MC_LOCAL_EFLAGS(uEFlags); \
                         IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_InsNm,_r_r_efl), u64Dst, u64SrcEmit, uEFlags, 64); \
                         IEM_MC_COMMIT_EFLAGS_OPT(uEFlags); \
                     } IEM_MC_NATIVE_ELSE() { \
@@ -5645,9 +5612,7 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
         IEM_MC_ARG(uint8_t,         u8Src,   1);
         IEM_MC_FETCH_GREG_U8(u8Src, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
-            /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
-            IEM_MC_LOCAL(uint32_t,  uEFlags);
-            IEM_MC_FETCH_EFLAGS(uEFlags);
+            IEM_MC_LOCAL_EFLAGS(uEFlags);
             IEM_MC_NATIVE_EMIT_4(iemNativeEmit_test_r_r_efl, u8Src, u8Src, uEFlags, 8);
             IEM_MC_COMMIT_EFLAGS_OPT(uEFlags);
         } IEM_MC_NATIVE_ELSE() {
@@ -5691,9 +5656,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEM_MC_ARG(uint16_t,   u16Src,  1);
                 IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
-                    IEM_MC_LOCAL(uint32_t,  uEFlags);
-                    IEM_MC_FETCH_EFLAGS(uEFlags);
+                    IEM_MC_LOCAL_EFLAGS(uEFlags);
                     IEM_MC_NATIVE_EMIT_4(iemNativeEmit_test_r_r_efl, u16Src, u16Src, uEFlags, 16);
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
@@ -5713,9 +5676,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEM_MC_ARG(uint32_t,   u32Src,  1);
                 IEM_MC_FETCH_GREG_U32(u32Src, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
-                    IEM_MC_LOCAL(uint32_t,  uEFlags);
-                    IEM_MC_FETCH_EFLAGS(uEFlags);
+                    IEM_MC_LOCAL_EFLAGS(uEFlags);
                     IEM_MC_NATIVE_EMIT_4(iemNativeEmit_test_r_r_efl, u32Src, u32Src, uEFlags, 32);
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
@@ -5735,9 +5696,7 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
                 IEM_MC_ARG(uint64_t,        u64Src,  1);
                 IEM_MC_FETCH_GREG_U64(u64Src, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
-                    /** @todo IEM_MC_LOCAL_EFLAGS(uEFlags); */
-                    IEM_MC_LOCAL(uint32_t,  uEFlags);
-                    IEM_MC_FETCH_EFLAGS(uEFlags);
+                    IEM_MC_LOCAL_EFLAGS(uEFlags);
                     IEM_MC_NATIVE_EMIT_4(iemNativeEmit_test_r_r_efl, u64Src, u64Src, uEFlags, 64);
                     IEM_MC_COMMIT_EFLAGS_OPT(uEFlags);
                 } IEM_MC_NATIVE_ELSE() {
@@ -10067,7 +10026,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
 
 /* Need to use a body macro here since the EFLAGS behaviour differs between
    the shifts, rotates and rotate w/ carry. Sigh. */
-#define GRP2_BODY_Ev_CL(a_pImplExpr) \
+#define GRP2_BODY_Ev_CL(a_Ins, a_pImplExpr, a_fRegNativeArchs, a_fMemNativeArchs) \
         PCIEMOPSHIFTSIZES const pImpl = (a_pImplExpr); \
         if (IEM_IS_MODRM_REG_MODE(bRm)) \
         { \
@@ -10077,13 +10036,18 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
                 case IEMMODE_16BIT: \
                     IEM_MC_BEGIN(3, 0, 0, 0); \
                     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
-                    IEM_MC_ARG(uint16_t *,      pu16Dst,    0); \
                     IEM_MC_ARG(uint8_t,         cShiftArg,  1); \
-                    IEM_MC_ARG(uint32_t *,      pEFlags,    2); \
                     IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
-                    IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
-                    IEM_MC_REF_EFLAGS(pEFlags); \
-                    IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, cShiftArg, pEFlags); \
+                    /*IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                        IEM_MC_LOCAL(uint16_t,      u16Dst); \
+                        IEM_MC_FETCH_GREG_U16(u16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                    } IEM_MC_NATIVE_ELSE() { */ \
+                        IEM_MC_ARG(uint16_t *,      pu16Dst,    0); \
+                        IEM_MC_ARG(uint32_t *,      pEFlags,    2); \
+                        IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_REF_EFLAGS(pEFlags); \
+                        IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, cShiftArg, pEFlags); \
+                    /*}*/ \
                     IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                     IEM_MC_END(); \
                     break; \
@@ -10201,7 +10165,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
 FNIEMOP_DEF_1(iemOp_grp2_rol_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(rol_Ev_CL, "rol Ev,CL", M_CL, ROL, rol, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags));
+    GRP2_BODY_Ev_CL(rol, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags), 0, 0);
 }
 
 
@@ -10213,7 +10177,7 @@ FNIEMOP_DEF_1(iemOp_grp2_rol_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_ror_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(ror_Ev_CL, "ror Ev,CL", M_CL, ROR, ror, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags));
+    GRP2_BODY_Ev_CL(ror, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags), 0, 0);
 }
 
 
@@ -10225,7 +10189,7 @@ FNIEMOP_DEF_1(iemOp_grp2_ror_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_rcl_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(rcl_Ev_CL, "rcl Ev,CL", M_CL, RCL, rcl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags));
+    GRP2_BODY_Ev_CL(rcl, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags), 0, 0);
 }
 
 
@@ -10237,7 +10201,7 @@ FNIEMOP_DEF_1(iemOp_grp2_rcl_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(rcr_Ev_CL, "rcr Ev,CL", M_CL, RCR, rcr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags));
+    GRP2_BODY_Ev_CL(rcr, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags), 0, 0);
 }
 
 
@@ -10249,7 +10213,7 @@ FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(shl_Ev_CL, "shl Ev,CL", M_CL, SHL, shl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags));
+    GRP2_BODY_Ev_CL(shl, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags), 0, 0);
 }
 
 
@@ -10261,7 +10225,7 @@ FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_shr_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(shr_Ev_CL, "shr Ev,CL", M_CL, SHR, shr, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags));
+    GRP2_BODY_Ev_CL(shr, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags), 0, 0);
 }
 
 
@@ -10273,7 +10237,7 @@ FNIEMOP_DEF_1(iemOp_grp2_shr_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_sar_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(sar_Ev_CL, "sar Ev,CL", M_CL, SAR, sar, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags));
+    GRP2_BODY_Ev_CL(sar, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags), 0, 0);
 }
 
 #undef GRP2_BODY_Ev_CL
