@@ -1235,9 +1235,9 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
         return NULL;
 #   if RTLNX_VER_MIN(5,6,0)
     if (p4d_leaf(u.Four))
-#   else        
+#   else
     if (p4d_large(u.Four))
-#   endif    
+#   endif
     {
         pPage = p4d_page(u.Four);
         AssertReturn(pPage, NULL);
@@ -1257,7 +1257,7 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
     if (pud_leaf(u.Upper))
 #   else
     if (pud_large(u.Upper))
-#   endif    
+#   endif
     {
         pPage = pud_page(u.Upper);
         AssertReturn(pPage, NULL);
@@ -1277,7 +1277,7 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
     if (pmd_leaf(u.Middle))
 #  else
     if (pmd_large(u.Middle))
-#  endif    
+#  endif
     {
         pPage = pmd_page(u.Middle);
         AssertReturn(pPage, NULL);
