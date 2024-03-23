@@ -3950,18 +3950,24 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 /* Just being paranoid here. */
+# ifndef _MSC_VER /* MSC can't compile this, doesn't like [0]. Added reduced version afterwards. */
 AssertCompile2MemberOffsets(CPUMCTX, XState.x87.aXMM[0], XState.x87.aXMM[0].au64[0]);
 AssertCompile2MemberOffsets(CPUMCTX, XState.x87.aXMM[0], XState.x87.aXMM[0].au32[0]);
 AssertCompile2MemberOffsets(CPUMCTX, XState.x87.aXMM[0], XState.x87.aXMM[0].ar64[0]);
 AssertCompile2MemberOffsets(CPUMCTX, XState.x87.aXMM[0], XState.x87.aXMM[0].ar32[0]);
+# endif
+AssertCompileMemberOffset(X86XMMREG, au64, 0);
+AssertCompileMemberOffset(X86XMMREG, au32, 0);
+AssertCompileMemberOffset(X86XMMREG, ar64, 0);
+AssertCompileMemberOffset(X86XMMREG, ar32, 0);
 
-#define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg) \
+# define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pu32Dst, a_iXReg, true /*fConst*/)
-#define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
+# define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pu64Dst, a_iXReg, true /*fConst*/)
-#define IEM_MC_REF_XREG_R32_CONST(a_pr32Dst, a_iXReg) \
+# define IEM_MC_REF_XREG_R32_CONST(a_pr32Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pr32Dst, a_iXReg, true /*fConst*/)
-#define IEM_MC_REF_XREG_R64_CONST(a_pr64Dst, a_iXReg) \
+# define IEM_MC_REF_XREG_R64_CONST(a_pr64Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pr64Dst, a_iXReg, true /*fConst*/)
 #endif
 
