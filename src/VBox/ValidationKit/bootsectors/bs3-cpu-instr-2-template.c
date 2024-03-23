@@ -1020,9 +1020,11 @@ RT_CONCAT(bs3CpuInstr2_CommonShiftU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNSHI
                 Ctx.rflags.u16       |= paTestData[iTestData].fEflIn  & X86_EFL_STATUS_BITS; \
                 CtxExpect.rflags.u16 &= ~X86_EFL_STATUS_BITS; \
                 CtxExpect.rflags.u16 |= paTestData[iTestData].fEflOut & X86_EFL_STATUS_BITS; \
+                /* Intel: 'ROL reg,imm8' and 'ROR reg,imm8' produces different OF values. \
+                          stored in bit 3 of the output.  Observed on 8700B, 9980HK, 10980xe, \
+                          1260p, ++. */ \
                 if (fIntelIbProblem && cBitsImm == 8 && !paTests[iTest].fDstMem) \
-                {   /* Intel 10890xe: 'ROL reg,imm8' and 'ROR reg,imm8' produces different OF values. \
-                                      stored in bit 3 of the output. */ \
+                { \
                     CtxExpect.rflags.u16 &= ~X86_EFL_OF; \
                     CtxExpect.rflags.u16 |= (paTestData[iTestData].fEflOut & RT_BIT_32(BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT)) \
                                          << (X86_EFL_OF_BIT - BS3CPUINSTR2SHIFT_EFL_IB_OVERFLOW_OUT_BIT); \
@@ -1039,11 +1041,6 @@ RT_CONCAT(bs3CpuInstr2_CommonShiftU,a_cBits)(uint8_t bMode, PCBS3CPUINSTR2CMNSHI
                     \
                     if (fUndefEfl) /* When executing tests for the other CPU vendor. */ \
                         CtxExpect.rflags.u16 = (CtxExpect.rflags.u16 & ~fUndefEfl) | (TrapFrame.Ctx.rflags.u16 & fUndefEfl); \
-                    /* Alternative overflow flag workaround: else if (fIntelIbProblem && cBitsImm == 8 && !paTests[iTest].fDstMem) \
-                    { \
-                        Bs3TestPrintf("tweaked in=%#x out=%#x exp=%#x\n", Ctx.rflags.u16, TrapFrame.Ctx.rflags.u16, CtxExpect.rflags.u16); \
-                        CtxExpect.rflags.u16 = (CtxExpect.rflags.u16 & ~X86_EFL_OF) | (TrapFrame.Ctx.rflags.u16 & X86_EFL_OF); \
-                    } else if (cBitsImm == 8) Bs3TestPrintf("as is\n"); */\
                     \
                     if (TrapFrame.bXcpt != X86_XCPT_UD) \
                     { \
