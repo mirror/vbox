@@ -4250,7 +4250,7 @@ typedef enum ARMV8INSTRVECUADDLVSZ
     kArmv8InstrUAddLVSz_16B = RT_BIT_32(30),     /**< 16 x 8-bit. */
     kArmv8InstrUAddLVSz_4H  = 1,                 /**<  4 x 16-bit. */
     kArmv8InstrUAddLVSz_8H  = RT_BIT_32(30) | 1, /**<  8 x 16-bit. */
-    kArmv8InstrUAddLVSz_4S  = RT_BIT_32(30) | 2, /**<  4 x 32-bit. */
+    kArmv8InstrUAddLVSz_4S  = RT_BIT_32(30) | 2  /**<  4 x 32-bit. */
 } ARMV8INSTRVECUADDLVSZ;
 
 
