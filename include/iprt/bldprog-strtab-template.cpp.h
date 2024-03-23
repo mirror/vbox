@@ -251,12 +251,12 @@ static bool BldProgStrTab_Init(PBLDPROGSTRTAB pThis, size_t cMaxStrings)
     cMaxStrings += RT_ELEMENTS(pThis->aCompDict);
 #endif
     cMaxStrings *= 2;
-    pThis->papStrHash = (PBLDPROGSTRING *)calloc(sizeof(pThis->papStrHash[0]), cMaxStrings);
+    pThis->papStrHash = (PBLDPROGSTRING *)calloc(cMaxStrings, sizeof(pThis->papStrHash[0]));
     if (pThis->papStrHash)
     {
         pThis->cStrHash = cMaxStrings;
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
-        pThis->papPendingStrings = (PBLDPROGSTRING *)calloc(sizeof(pThis->papPendingStrings[0]), pThis->cMaxPendingStrings);
+        pThis->papPendingStrings = (PBLDPROGSTRING *)calloc(pThis->cMaxPendingStrings, sizeof(pThis->papPendingStrings[0]));
         if (pThis->papPendingStrings)
 #endif
             return true;

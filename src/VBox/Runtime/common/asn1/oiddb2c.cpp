@@ -246,7 +246,7 @@ static RTEXITCODE addOidToTree(uint32_t const *pauComponents, unsigned cComponen
      */
     if (!g_pOidRoot)
     {
-        g_pOidRoot = (PRAWOIDNODE)calloc(sizeof(*g_pOidRoot), 1);
+        g_pOidRoot = (PRAWOIDNODE)calloc(1, sizeof(*g_pOidRoot));
         if (!g_pOidRoot)
             return error("Out of memory!\n");
     }
