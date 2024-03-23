@@ -361,7 +361,7 @@ pxdns_create_resolver_sockaddrs(struct pxdns *pxdns, const char **nameservers)
         goto update_resolvers;
     }
 
-    resolvers = (union sockaddr_inet *)calloc(sizeof(resolvers[0]), nnames);
+    resolvers = (union sockaddr_inet *)calloc(nnames, sizeof(resolvers[0]));
     if (resolvers == NULL) {
         nresolvers = 0;
         goto update_resolvers;
