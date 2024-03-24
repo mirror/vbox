@@ -162,7 +162,7 @@ static Status MakeSureMultiThreadingIsSafe()
     return rc;
 }
 
-# if defined(RT_OS_LINUX) && defined(DEBUG)
+# if (defined(RT_OS_LINUX) && !defined(RT_ARCH_ARM64)) && defined(DEBUG)
 /** X11, Linux, Debug: The signal handler that prints out a backtrace of the call stack.
   * @remarks The code is taken from http://www.linuxjournal.com/article/6391. */
 static void BackTraceSignalHandler(int sig, siginfo_t *pInfo, void *pSecret)
@@ -471,7 +471,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_NIX
-# if defined(RT_OS_LINUX) && defined(DEBUG)
+# if (defined(RT_OS_LINUX) && !defined(RT_ARCH_ARM64)) && defined(DEBUG)
         /* Install signal handler to backtrace the call stack: */
         InstallSignalHandler();
 # endif /* RT_OS_LINUX && DEBUG */
