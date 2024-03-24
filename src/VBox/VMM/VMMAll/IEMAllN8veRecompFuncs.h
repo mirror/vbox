@@ -136,14 +136,14 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
 *********************************************************************************************************************************/
 
 #undef  IEM_MC_BEGIN /* unused */
-#define IEM_MC_BEGIN_EX(a_fMcFlags, a_fCImplFlags, a_cArgs) \
+#define IEM_MC_BEGIN_EX(a_fMcFlags, a_fCImplFlags, a_cArgsIncludingHidden) \
     { \
         Assert(pReNative->Core.bmVars     == 0); \
         Assert(pReNative->Core.u64ArgVars == UINT64_MAX); \
         Assert(pReNative->Core.bmStack    == 0); \
         pReNative->fMc    = (a_fMcFlags); \
         pReNative->fCImpl = (a_fCImplFlags); \
-        pReNative->cArgs  = ((a_cArgs) + iemNativeArgGetHiddenArgCount(pReNative))
+        pReNative->cArgsX = (a_cArgsIncludingHidden)
 
 /** We have to get to the end in recompilation mode, as otherwise we won't
  * generate code for all the IEM_MC_IF_XXX branches. */

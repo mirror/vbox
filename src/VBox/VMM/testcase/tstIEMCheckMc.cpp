@@ -1067,13 +1067,12 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { (void)fSseHost; (void)fSseWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { (void)fSseHost; (void)fSseWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
-#define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, &pVCpu->cpum.GstCtx.XState, 0); do { (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2) \
-    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(pXState, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3) \
-    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(pXState, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AVX_AIMPL_4(a_pfnAImpl, a1, a2, a3, a4) \
-    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(pXState, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4); (void)fMcBegin; } while (0)
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; } while (0)
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
+#define IEM_MC_CALL_AVX_AIMPL_4(a_pfnAImpl, a0, a1, a2, a3) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   (void)fMcBegin; if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               (void)fMcBegin; if (g_fRandom) {

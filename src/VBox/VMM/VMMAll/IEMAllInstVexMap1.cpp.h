@@ -52,18 +52,22 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, PCIEMOPMEDIAF3, pImpl)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
-            IEM_MC_LOCAL(RTUINT256U,            uDst);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,  uDst,  1);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 2);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 3);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 1);
             IEM_MC_FETCH_YREG_U256(uSrc1,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 2);
             IEM_MC_FETCH_YREG_U256(uSrc2,   IEM_GET_MODRM_RM(pVCpu, bRm));
+
+            IEM_MC_LOCAL(RTUINT256U,            uDst);
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,  uDst,  0);
+
             IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU256, puDst, puSrc1, puSrc2);
+
             IEM_MC_STORE_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -72,14 +76,14 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, PCIEMOPMEDIAF3, pImpl)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG(PRTUINT128U,          puDst,  1);
-            IEM_MC_ARG(PCRTUINT128U,         puSrc1, 2);
-            IEM_MC_ARG(PCRTUINT128U,         puSrc2, 3);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_ARG(PRTUINT128U,          puDst,  0);
             IEM_MC_REF_XREG_U128(puDst,        IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(PCRTUINT128U,         puSrc1, 1);
             IEM_MC_REF_XREG_U128_CONST(puSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_ARG(PCRTUINT128U,         puSrc2, 2);
             IEM_MC_REF_XREG_U128_CONST(puSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU128, puDst, puSrc1, puSrc2);
             IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
@@ -95,46 +99,47 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, PCIEMOPMEDIAF3, pImpl)
         if (pVCpu->iem.s.uVexLength)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_LOCAL(RTUINT256U,            uDst);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,  uDst,  1);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 2);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 3);
-
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 2);
             IEM_MC_FETCH_MEM_U256_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-            IEM_MC_FETCH_YREG_U256(uSrc1,      IEM_GET_EFFECTIVE_VVVV(pVCpu));
-            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU256, puDst, puSrc1, puSrc2);
-            IEM_MC_STORE_YREG_U256_ZX_VLMAX(   IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
 
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 1);
+            IEM_MC_FETCH_YREG_U256(uSrc1,      IEM_GET_EFFECTIVE_VVVV(pVCpu));
+
+            IEM_MC_LOCAL(RTUINT256U,            uDst);
+            IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst,  uDst,  0);
+
+            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU256, puDst, puSrc1, puSrc2);
+
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(   IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
         else
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_LOCAL(RTUINT128U,                uSrc2);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG(PRTUINT128U,                 puDst,         1);
-            IEM_MC_ARG(PCRTUINT128U,                puSrc1,        2);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc2, uSrc2, 3);
-
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
+            IEM_MC_LOCAL(RTUINT128U,                uSrc2);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc2, uSrc2, 2);
             IEM_MC_FETCH_MEM_U128_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+            IEM_MC_ARG(PRTUINT128U,                 puDst,         0);
             IEM_MC_REF_XREG_U128(puDst,         IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(PCRTUINT128U,                puSrc1,        1);
             IEM_MC_REF_XREG_U128_CONST(puSrc1,  IEM_GET_EFFECTIVE_VVVV(pVCpu));
+
             IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU128, puDst, puSrc1, puSrc2);
             IEM_MC_CLEAR_YREG_128_UP(           IEM_GET_MODRM_REG(pVCpu, bRm));
 
@@ -1132,12 +1137,11 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 2);
-
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
+            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm),  1);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovsldup_256_rr, iYRegDst, iYRegSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -1173,18 +1177,17 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
         else
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc);
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 2);
-
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
+            IEM_MC_LOCAL(RTUINT256U,            uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc,                             1);
             IEM_MC_FETCH_MEM_U256_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+            IEM_MC_ARG_CONST(uint8_t,           iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovsldup_256_rm, iYRegDst, puSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -1235,12 +1238,11 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 2);
-
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
+            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm),  1);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovddup_256_rr, iYRegDst, iYRegSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -1274,18 +1276,18 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
         else
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc);
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 2);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
+            IEM_MC_LOCAL(RTUINT256U,            uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 1);
             IEM_MC_FETCH_MEM_U256(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovddup_256_rm, iYRegDst, puSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -1586,12 +1588,10 @@ FNIEMOP_DEF(iemOp_vmovshdup_Vx_Wx)
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 2);
-
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
+            IEM_MC_ARG_CONST(uint8_t,   iYRegSrc, IEM_GET_MODRM_RM(pVCpu, bRm),  1);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovshdup_256_rr, iYRegDst, iYRegSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -1627,18 +1627,17 @@ FNIEMOP_DEF(iemOp_vmovshdup_Vx_Wx)
         else
         {
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_LOCAL(RTUINT256U,            uSrc);
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-            IEM_MC_IMPLICIT_AVX_AIMPL_ARGS();
-            IEM_MC_ARG_CONST(uint8_t,   iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 1);
-            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc, 2);
-
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
 
+            IEM_MC_LOCAL(RTUINT256U,            uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc, uSrc,                             1);
             IEM_MC_FETCH_MEM_U256_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+            IEM_MC_ARG_CONST(uint8_t,           iYRegDst, IEM_GET_MODRM_REG(pVCpu, bRm), 0);
             IEM_MC_CALL_AVX_AIMPL_2(iemAImpl_vmovshdup_256_rm, iYRegDst, puSrc);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();

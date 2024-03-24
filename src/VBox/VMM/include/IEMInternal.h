@@ -681,18 +681,26 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** The block calls a C-implementation instruction function with two implicit arguments.
  * Mutually exclusive with IEM_CIMPL_F_CALLS_AIMPL and
  * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
- * @note The python scripts will add this is missing.  */
+ * @note The python scripts will add this if missing.  */
 #define IEM_CIMPL_F_CALLS_CIMPL                 RT_BIT_32(18)
 /** The block calls an ASM-implementation instruction function.
  * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and
  * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
- * @note The python scripts will add this is missing.  */
+ * @note The python scripts will add this if missing.  */
 #define IEM_CIMPL_F_CALLS_AIMPL                 RT_BIT_32(19)
 /** The block calls an ASM-implementation instruction function with an implicit
  * X86FXSTATE pointer argument.
- * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and IEM_CIMPL_F_CALLS_AIMPL.
- * @note The python scripts will add this is missing.  */
+ * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL, IEM_CIMPL_F_CALLS_AIMPL and
+ * IEM_CIMPL_F_CALLS_AIMPL_WITH_XSTATE.
+ * @note The python scripts will add this if missing.  */
 #define IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE    RT_BIT_32(20)
+/** The block calls an ASM-implementation instruction function with an implicit
+ * X86XSAVEAREA pointer argument.
+ * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL, IEM_CIMPL_F_CALLS_AIMPL and
+ * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
+ * @note No different from IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE, so same value.
+ * @note The python scripts will add this if missing.  */
+#define IEM_CIMPL_F_CALLS_AIMPL_WITH_XSTATE     IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE
 /** @} */
 
 

@@ -1089,9 +1089,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         NOP()
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1)                                             NOP()
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         NOP()
-#define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS()                                                        NOP()
-#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2)                                             NOP()
-#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3)                                         NOP()
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1)                                             NOP()
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         NOP()
 
 #define IEM_LIVENESS_ONE_STATUS_EFLAG_INPUT(a_fBit) \
     do { if (     (a_fBit) == X86_EFL_CF) IEM_LIVENESS_ONE_EFLAG_INPUT(fEflCf); \

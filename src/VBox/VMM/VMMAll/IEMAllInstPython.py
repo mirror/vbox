@@ -2276,16 +2276,6 @@ class McBlock(object):
         return (oStmtLocal, oStmtArg, oStmtFetch,);
 
     @staticmethod
-    def parseMcImplicitAvxAArgs(oSelf, sName, asParams):
-        """ IEM_MC_IMPLICIT_AVX_AIMPL_ARGS """
-        oSelf.checkStmtParamCount(sName, asParams, 0);
-        # Note! Translate to IEM_MC_ARG_CONST
-        oStmt = McStmtArg('IEM_MC_ARG_CONST', ['PX86XSAVEAREA', 'pXState', '&pVCpu->cpum.GstCtx.XState', '0'],
-                          'PX86XSAVEAREA', 'pXState', 0,  '&pVCpu->cpum.GstCtx.XState');
-        oSelf.aoArgs.append(oStmt);
-        return oStmt;
-
-    @staticmethod
     def parseMcLocal(oSelf, sName, asParams):
         """ IEM_MC_LOCAL """
         oSelf.checkStmtParamCount(sName, asParams, 2);
@@ -3176,7 +3166,6 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_RCX_IS_NOT_ONE_AND_EFL_BIT_SET':                  (McBlock.parseMcGenericCond,       True,  False, True,  ),
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80':                   (McBlock.parseMcGenericCond,       True,  True,  False, ),
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST':             (McBlock.parseMcGenericCond,       True,  True,  False, ),
-    'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            (McBlock.parseMcImplicitAvxAArgs,  False, False, False, ),
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, False, True,  ),
     'IEM_MC_LOCAL_ASSIGN':                                       (McBlock.parseMcLocalAssign,       False, False, True,  ),

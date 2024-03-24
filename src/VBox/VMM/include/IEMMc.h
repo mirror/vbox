@@ -3015,12 +3015,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 
 
-/** Declares implicit arguments for IEM_MC_CALL_AVX_AIMPL_2,
- *  IEM_MC_CALL_AVX_AIMPL_3, IEM_MC_CALL_AVX_AIMPL_4, ...
- * @note IEMAllInstPython.py duplicates the expansion.  */
-#define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() \
-    IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, &pVCpu->cpum.GstCtx.XState, 0)
-
 /**
  * Calls a AVX assembly implementation taking two visible arguments.
  *
@@ -3033,7 +3027,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        a_pfnAImpl(pXState, (a1), (a2)); \
+        a_pfnAImpl(&pVCpu->cpum.GstCtx.XState, (a1), (a2)); \
     } while (0)
 
 /**
@@ -3049,7 +3043,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        a_pfnAImpl(pXState, (a1), (a2), (a3)); \
+        a_pfnAImpl(&pVCpu->cpum.GstCtx.XState, (a1), (a2), (a3)); \
     } while (0)
 
 /** @note Not for IOPL or IF testing. */

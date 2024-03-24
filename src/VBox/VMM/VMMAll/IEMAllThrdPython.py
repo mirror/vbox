@@ -594,6 +594,7 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_CALLS_CIMPL':                  False,
         'IEM_CIMPL_F_CALLS_AIMPL':                  False,
         'IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE':     False,
+        'IEM_CIMPL_F_CALLS_AIMPL_WITH_XSTATE':      False,
     };
 
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
@@ -1979,6 +1980,8 @@ class ThreadedFunction(object):
                       or oStmt.sName.startswith('IEM_MC_CALL_MMX_AIMPL_')
                       or oStmt.sName.startswith('IEM_MC_CALL_FPU_AIMPL_')):
                     self.dsCImplFlags['IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE'] = True;
+                elif oStmt.sName.startswith('IEM_MC_CALL_AVX_AIMPL_'):
+                    self.dsCImplFlags['IEM_CIMPL_F_CALLS_AIMPL_WITH_XSTATE'] = True;
                 else:
                     raise Exception('Unknown IEM_MC_CALL_* statement: %s' % (oStmt.sName,));
 
@@ -2050,8 +2053,9 @@ class ThreadedFunction(object):
         self.analyzeCodeOperation(aoStmts, dEflStmts);
         if (   ('IEM_CIMPL_F_CALLS_CIMPL' in self.dsCImplFlags)
              + ('IEM_CIMPL_F_CALLS_AIMPL' in self.dsCImplFlags)
-             + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE' in self.dsCImplFlags) > 1):
-            self.error('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE calls', oGenerator);
+             + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE' in self.dsCImplFlags)
+             + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_XSTATE' in self.dsCImplFlags) > 1):
+            self.error('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE/AIMPL_WITH_XSTATE calls', oGenerator);
 
         #
         # Analyse EFLAGS related MCs and @opflmodify and friends.
