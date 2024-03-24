@@ -8463,6 +8463,67 @@ iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallSseAImplCommon(pReNative, off, pfnAImpl, 3);
 }
+
+
+/*********************************************************************************************************************************
+*   Emitters for IEM_MC_CALL_AVX_AIMPL_XXX                                                                                       *
+*********************************************************************************************************************************/
+
+/**
+ * Common worker for IEM_MC_CALL_AVX_AIMPL_XXX.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
+{
+    /*
+     * Need to do the FPU preparation.
+     */
+    off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/);
+
+    /*
+     * Do all the call setup and cleanup.
+     */
+    off = iemNativeEmitCallCommon(pReNative, off, cArgs + IEM_AVX_AIMPL_HIDDEN_ARGS, IEM_AVX_AIMPL_HIDDEN_ARGS);
+
+    /*
+     * Load the XState pointer.
+     */
+    off = iemNativeEmitLeaGprByGstRegRef(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, kIemNativeGstRegRef_XState, 0 /*idxRegInClass*/);
+
+    /*
+     * Make the call.
+     */
+    off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
+
+    return off;
+}
+
+
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
+    off = iemNativeEmitCallAvxAImpl2(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1))
+
+/** Emits code for IEM_MC_CALL_AVX_AIMPL_2. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallAvxAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
+{
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
+    return iemNativeEmitCallAvxAImplCommon(pReNative, off, pfnAImpl, 2);
+}
+
+
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    off = iemNativeEmitCallAvxAImpl3(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
+
+/** Emits code for IEM_MC_CALL_AVX_AIMPL_3. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCallAvxAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
+{
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_AVX_AIMPL_HIDDEN_ARGS);
+    return iemNativeEmitCallAvxAImplCommon(pReNative, off, pfnAImpl, 3);
+}
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 

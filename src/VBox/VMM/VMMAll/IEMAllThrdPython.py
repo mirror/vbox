@@ -1973,8 +1973,7 @@ class ThreadedFunction(object):
                 if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
                     self.dsCImplFlags['IEM_CIMPL_F_CALLS_CIMPL'] = True;
                 elif (   oStmt.sName.startswith('IEM_MC_CALL_VOID_AIMPL_')
-                      or oStmt.sName.startswith('IEM_MC_CALL_AIMPL_')
-                      or oStmt.sName.startswith('IEM_MC_CALL_AVX_AIMPL_')):
+                      or oStmt.sName.startswith('IEM_MC_CALL_AIMPL_')):
                     self.dsCImplFlags['IEM_CIMPL_F_CALLS_AIMPL'] = True;
                 elif (   oStmt.sName.startswith('IEM_MC_CALL_SSE_AIMPL_')
                       or oStmt.sName.startswith('IEM_MC_CALL_MMX_AIMPL_')

@@ -387,8 +387,6 @@ class NativeRecompFunctionVariation(object):
                     # references).
                     #
                     asCallParams = oStmt.asParams[oStmt.idxParams:];
-                    if oStmt.sName.startswith('IEM_MC_CALL_AVX_AIMPL_'):
-                        asCallParams.insert(0, 'pXState');
                     for sParam in asCallParams:
                         oVarInfo = dVars.get(sParam);
                         if oVarInfo:

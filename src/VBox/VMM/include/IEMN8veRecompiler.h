@@ -1942,6 +1942,8 @@ DECL_FORCE_INLINE(uint64_t) iemNativeCImplFlagsToGuestShadowFlushMask(uint32_t f
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 /** Number of hidden arguments for SSE_AIMPL calls. */
 # define IEM_SSE_AIMPL_HIDDEN_ARGS 1
+/** Number of hidden arguments for AVX_AIMPL calls. */
+# define IEM_AVX_AIMPL_HIDDEN_ARGS 1
 #endif
 
 
