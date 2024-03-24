@@ -118,7 +118,7 @@
  * Override IEM_MC_BEGIN to take down the IEM_CIMPL_F_XXX flags.
  */
 #undef IEM_MC_BEGIN
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+#define IEM_MC_BEGIN(a_fMcFlags, a_fCImplFlags) \
     { \
         pVCpu->iem.s.fTbCurInstr = (a_fCImplFlags) /*| ((a_fMcFlags) << 20*/
 

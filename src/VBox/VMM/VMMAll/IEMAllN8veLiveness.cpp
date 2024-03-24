@@ -51,7 +51,7 @@
  * BEGIN & END as well as internal workers.
  */
 #ifndef IEMLIVENESS_EXTENDED_LAYOUT
-# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+# define IEM_MC_BEGIN_EX(a_fMcFlags, a_fCImplFlags, a_cArgs) \
     { \
         /* Define local variables that we use to accumulate the liveness state changes in. */ \
         IEMLIVENESSBIT  LiveStateBit0   = { 0 }; \
@@ -59,7 +59,7 @@
         IEMLIVENESSBIT  LiveMask        = { 0 }; \
         bool            fDoneXpctOrCall = false
 #else
-# define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+# define IEM_MC_BEGIN_EX(a_fMcFlags, a_fCImplFlags, a_cArgs) \
     { \
         /* Define local variables that we use to accumulate the liveness state changes in. */ \
         IEMLIVENESSENTRY LiveState       = { { 0, 0, 0, 0 } }; \

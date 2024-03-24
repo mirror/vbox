@@ -565,12 +565,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
  * @{  */
 
 #define IEM_ARG_CHECK_CALLBACK(a_idx, a_User) int RT_CONCAT(iArgCheck_,a_idx); NOREF(RT_CONCAT(iArgCheck_,a_idx))
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+#define IEM_MC_BEGIN(a_fMcFlags, a_fCImplFlags) \
     { \
-        const uint8_t  cArgs    = (a_cArgs); NOREF(cArgs); \
-        const uint8_t  cLocals  = (a_cLocals); NOREF(cLocals); \
-        const uint32_t fMcBegin = (((a_cArgs) + (a_cLocals)) << 23) + (a_fMcFlags) + (a_fCImplFlags); \
-        IEM_REPEAT(a_cArgs, IEM_ARG_CHECK, 0); \
+        const uint32_t fMcBegin = ((a_fMcFlags) + (a_fCImplFlags))
 
 #define IEM_MC_END() \
     }
@@ -635,16 +632,14 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_NOREF(a_Name)                            RT_NOREF_PV(a_Name)
 
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg) (void)fMcBegin; \
-    RT_CONCAT(iArgCheck_,a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT(iArgCheck_,a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); \
-    AssertCompile((a_iArg) < cArgs); \
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     a_Type a_Name; \
     NOREF(a_Name)
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg) (void)fMcBegin; \
-    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); \
-    AssertCompile((a_iArg) < cArgs); \
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     a_Type const a_Name = (a_Value); \
     NOREF(a_Name)
@@ -652,16 +647,14 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     IEM_MC_ARG_CONST(PX86XSAVEAREA, a_Name, NULL, a_iArg)
 
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg) (void)fMcBegin; \
-    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); \
-    AssertCompile((a_iArg) < cArgs); \
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     a_Type const a_Name = &(a_Local); \
     NOREF(a_Name)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) (void)fMcBegin; \
-    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_pName); \
-    AssertCompile((a_iArg) < cArgs); \
     int RT_CONCAT(iVarCheck_,a_Name) = 0; \
     int RT_CONCAT(iVarCheck_,a_pName) = 0; \
     uint32_t  a_Name  = 0; \

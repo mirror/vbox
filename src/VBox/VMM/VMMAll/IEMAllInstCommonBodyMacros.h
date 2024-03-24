@@ -46,7 +46,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(1, 0, 0, 0); \
+                IEM_MC_BEGIN(0, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_STORE_GREG_U16_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
                 IEM_MC_LOCAL_EFLAGS(fEFlags); \
@@ -58,7 +58,7 @@
                 break; \
                 \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(1, 0, IEM_MC_F_MIN_386, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_STORE_GREG_U32_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
                 IEM_MC_LOCAL_EFLAGS(fEFlags); \
@@ -70,7 +70,7 @@
                 break; \
                 \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_STORE_GREG_U64_CONST(IEM_GET_MODRM_RM(pVCpu, a_bRm), 0); \
                 IEM_MC_LOCAL_EFLAGS(fEFlags); \
@@ -100,7 +100,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 0, a_f16BitMcFlag, 0); \
+                IEM_MC_BEGIN(a_f16BitMcFlag, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t,        u16Src,  1); \
                 IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -123,7 +123,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 0, IEM_MC_F_MIN_386, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t,        u32Src,  1); \
                 IEM_MC_FETCH_GREG_U32(u32Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -147,7 +147,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t,        u64Src,  1); \
                 IEM_MC_FETCH_GREG_U64(u64Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -180,7 +180,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 1, a_f16BitMcFlag, 0); \
+                IEM_MC_BEGIN(a_f16BitMcFlag, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
@@ -205,7 +205,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_386, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
@@ -231,7 +231,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 1, IEM_MC_F_64BIT, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
@@ -275,7 +275,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 0, 0, 0); \
+                IEM_MC_BEGIN(0, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t,        u16Src,  1); \
                 IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -297,7 +297,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 0, IEM_MC_F_MIN_386, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t,        u32Src,  1); \
                 IEM_MC_FETCH_GREG_U32(u32Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -319,7 +319,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t,        u64Src,  1); \
                 IEM_MC_FETCH_GREG_U64(u64Src, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -351,7 +351,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 1, 0, 0); \
+                IEM_MC_BEGIN(0, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
@@ -375,7 +375,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_386, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
@@ -399,7 +399,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 1, IEM_MC_F_64BIT, 0); \
+                IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst); \
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \

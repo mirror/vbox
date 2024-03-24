@@ -2144,12 +2144,8 @@ class McBlock(object):
         ## Indicates whether the block includes macro expansion parts (kiMacroExp_None,
         ## kiMacroExp_Entrie, kiMacroExp_Partial).
         self.iMacroExp    = self.kiMacroExp_None;
-        ## IEM_MC_BEGIN: Argument count.
-        self.cArgs        = -1;
         ## IEM_MC_ARG, IEM_MC_ARG_CONST, IEM_MC_ARG_LOCAL_REF, IEM_MC_ARG_LOCAL_EFLAGS.
         self.aoArgs       = []              # type: List[McStmtArg]
-        ## IEM_MC_BEGIN: Locals count.
-        self.cLocals      = -1;
         ## IEM_MC_LOCAL, IEM_MC_LOCAL_CONST, IEM_MC_ARG_LOCAL_EFLAGS.
         self.aoLocals     = []              # type: List[McStmtVar]
         ## IEM_MC_BEGIN: IEM_MC_F_XXX dictionary
@@ -2224,14 +2220,12 @@ class McBlock(object):
     @staticmethod
     def parseMcBegin(oSelf, sName, asParams):
         """ IEM_MC_BEGIN """
-        oSelf.checkStmtParamCount(sName, asParams, 4);
-        if oSelf.cArgs != -1  or  oSelf.cLocals != -1  or  oSelf.dsMcFlags:
+        oSelf.checkStmtParamCount(sName, asParams, 2);
+        if oSelf.dsMcFlags:
             oSelf.raiseStmtError(sName, 'Used more than once!');
-        oSelf.cArgs   = int(asParams[0]);
-        oSelf.cLocals = int(asParams[1]);
 
-        if asParams[2] != '0':
-            for sFlag in asParams[2].split('|'):
+        if asParams[0] != '0':
+            for sFlag in asParams[0].split('|'):
                 sFlag = sFlag.strip();
                 if sFlag not in g_kdMcFlags:
                     oSelf.raiseStmtError(sName, 'Unknown flag: %s' % (sFlag, ));
@@ -2239,8 +2233,8 @@ class McBlock(object):
                 for sFlag2 in g_kdMcFlags[sFlag]:
                     oSelf.dsMcFlags[sFlag2] = True;
 
-        if asParams[3] != '0':
-            oSelf.parseCImplFlags(sName, asParams[3]);
+        if asParams[1] != '0':
+            oSelf.parseCImplFlags(sName, asParams[1]);
 
         return McBlock.parseMcGeneric(oSelf, sName, asParams);
 
@@ -5598,7 +5592,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         if not self.oCurFunction:
             self.raiseError('%s w/o current function (%s)' % (sStmt, sCode,));
         if self.oCurMcBlock:
-            self.raiseError('%s inside IEM_MC_BEGIN blocki starting at line %u' % (sStmt, self.oCurMcBlock.iBeginLine,));
+            self.raiseError('%s inside IEM_MC_BEGIN block starting at line %u' % (sStmt, self.oCurMcBlock.iBeginLine,));
 
         # Figure out the indent level the block starts at, adjusting for expanded multiline macros.
         cchIndent = offBeginStatementInCodeStr;

@@ -40,8 +40,8 @@
  * @{
  */
 
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) {
-#define IEM_MC_END()                                                }
+#define IEM_MC_BEGIN(a_fMcFlags, a_fCImplFlags) {
+#define IEM_MC_END()                            }
 
 /** Internal macro. */
 #define IEM_MC_RETURN_ON_FAILURE(a_Expr) \

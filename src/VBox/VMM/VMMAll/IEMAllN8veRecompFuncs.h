@@ -132,10 +132,11 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 
 /*********************************************************************************************************************************
-*   Emitters for IEM_MC_BEGIN and IEM_MC_END.                                                                                    *
+*   Emitters for IEM_MC_BEGIN_EX and IEM_MC_END.                                                                                    *
 *********************************************************************************************************************************/
 
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+#undef  IEM_MC_BEGIN /* unused */
+#define IEM_MC_BEGIN_EX(a_fMcFlags, a_fCImplFlags, a_cArgs) \
     { \
         Assert(pReNative->Core.bmVars     == 0); \
         Assert(pReNative->Core.u64ArgVars == UINT64_MAX); \

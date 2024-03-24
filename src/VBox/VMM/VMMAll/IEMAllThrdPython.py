@@ -2470,7 +2470,7 @@ class ThreadedFunction(object):
             aoDecoderStmts.append(oNewStmt);
             #print('oNewStmt %s %s' % (oNewStmt.sName, len(oNewStmt.asParams),));
             if oNewStmt.sName == 'IEM_MC_BEGIN' and self.dsCImplFlags:
-                oNewStmt.asParams[3] = ' | '.join(sorted(self.dsCImplFlags.keys()));
+                oNewStmt.asParams[1] = ' | '.join(sorted(self.dsCImplFlags.keys()));
 
             # If we haven't emitted the threaded function call yet, look for
             # statements which it would naturally follow or preceed.
@@ -2662,16 +2662,16 @@ class IEMThreadedGenerator(object):
         cbMaxVars        = 0;
         cbMaxVarsAndArgs = 0;
         for oThreadedFunction in self.aoThreadedFuncs:
-            if oThreadedFunction.oMcBlock.cLocals >= 0:
+            if oThreadedFunction.oMcBlock.aoLocals or oThreadedFunction.oMcBlock.aoArgs:
                 # Counts.
-                assert oThreadedFunction.oMcBlock.cArgs >= 0;
-                cMaxVars        = max(cMaxVars, oThreadedFunction.oMcBlock.cLocals);
-                cMaxArgs        = max(cMaxArgs, oThreadedFunction.oMcBlock.cArgs);
-                cMaxVarsAndArgs = max(cMaxVarsAndArgs, oThreadedFunction.oMcBlock.cLocals + oThreadedFunction.oMcBlock.cArgs);
+                cMaxVars        = max(cMaxVars, len(oThreadedFunction.oMcBlock.aoLocals));
+                cMaxArgs        = max(cMaxArgs, len(oThreadedFunction.oMcBlock.aoArgs));
+                cMaxVarsAndArgs = max(cMaxVarsAndArgs,
+                                      len(oThreadedFunction.oMcBlock.aoLocals) + len(oThreadedFunction.oMcBlock.aoArgs));
                 if cMaxVarsAndArgs > 9:
                     raise Exception('%s potentially uses too many variables / args: %u, max 10 - %u vars and %u args'
                                     % (oThreadedFunction.oMcBlock.oFunction.sName, cMaxVarsAndArgs,
-                                       oThreadedFunction.oMcBlock.cLocals, oThreadedFunction.oMcBlock.cArgs));
+                                       len(oThreadedFunction.oMcBlock.aoLocals), len(oThreadedFunction.oMcBlock.aoArgs),));
                 # Calc stack allocation size:
                 cbArgs = 0;
                 for oArg in oThreadedFunction.oMcBlock.aoArgs:

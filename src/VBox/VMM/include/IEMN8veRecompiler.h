@@ -1336,7 +1336,7 @@ typedef struct IEMRECOMPILERSTATE
     /** The current condition stack depth (aCondStack). */
     uint8_t                     cCondDepth;
 
-    /** The argument count + hidden regs from the IEM_MC_BEGIN statement. */
+    /** The argument count + hidden regs from the IEM_MC_BEGIN_EX statement. */
     uint8_t                     cArgs;
     /** The IEM_CIMPL_F_XXX flags from the IEM_MC_BEGIN statement. */
     uint32_t                    fCImpl;

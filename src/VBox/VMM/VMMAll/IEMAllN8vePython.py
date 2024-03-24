@@ -498,21 +498,25 @@ class NativeRecompFunctionVariation(object):
         # Second, eliminate IEM_MC_NATIVE_IF statements.
         #
         iConvArgToLocal = 0;
-        cStmts = len(aoStmts);
-        iStmt  = 0;
+        oNewBeginExStmt = None;
+        cStmts          = len(aoStmts);
+        iStmt           = 0;
         while iStmt < cStmts:
             oStmt = aoStmts[iStmt];
             if oStmt.sName == 'IEM_MC_BEGIN':
+                oNewStmt = copy.deepcopy(oStmt);
+                oNewStmt.sName = 'IEM_MC_BEGIN_EX';
                 fWithoutFlags = (    self.oVariation.isWithFlagsCheckingAndClearingVariation()
                                  and self.oVariation.oParent.hasWithFlagsCheckingAndClearingVariation());
                 if fWithoutFlags or self.oVariation.oParent.dsCImplFlags:
-                    oNewStmt = copy.deepcopy(oStmt);
                     if fWithoutFlags:
-                        oNewStmt.asParams[2] = ' | '.join(sorted(  list(self.oVariation.oParent.oMcBlock.dsMcFlags.keys())
+                        oNewStmt.asParams[0] = ' | '.join(sorted(  list(self.oVariation.oParent.oMcBlock.dsMcFlags.keys())
                                                                  + ['IEM_MC_F_WITHOUT_FLAGS',] ));
                     if self.oVariation.oParent.dsCImplFlags:
-                        oNewStmt.asParams[3] = ' | '.join(sorted(self.oVariation.oParent.dsCImplFlags.keys()));
-                    aoStmts[iStmt] = oNewStmt;
+                        oNewStmt.asParams[1] = ' | '.join(sorted(self.oVariation.oParent.dsCImplFlags.keys()));
+                oNewStmt.asParams.append('%s' % (len(self.oVariation.oParent.oMcBlock.aoArgs),));
+                aoStmts[iStmt]  = oNewStmt;
+                oNewBeginExStmt = oNewStmt;
             elif isinstance(oStmt, iai.McStmtNativeIf):
                 if self.kdOptionArchToVal[self.sHostArch] in oStmt.asArchitectures:
                     iConvArgToLocal += 1;
@@ -525,6 +529,8 @@ class NativeRecompFunctionVariation(object):
                 continue;
 
             iStmt += 1;
+        if iConvArgToLocal > 0:
+            oNewBeginExStmt.asParams[2] = '0';
 
         #
         # If we encountered a IEM_MC_NATIVE_IF and took the native branch,
