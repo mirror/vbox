@@ -891,7 +891,8 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
                 pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc1Ptr, idxRegSrc1Ptr, 0x20);
                 pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc2Ptr, idxRegSrc2Ptr, 0x20);
                 pu32CodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegLoop, idxRegLoop, 1, false /*f64Bit*/, true /*fSetFlags*/);
-                pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, (int32_t)offLoopStart - (int32_t)off);
+                pu32CodeBuf[off]   = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, (int32_t)offLoopStart - (int32_t)off);
+                off++;
 
                 iemNativeRegFreeTmp(pReNative, idxRegLoop);
             }

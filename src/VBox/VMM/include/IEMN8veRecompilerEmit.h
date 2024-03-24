@@ -6214,7 +6214,10 @@ iemNativeEmitJmpToLabelEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBu
 
 #elif defined(RT_ARCH_ARM64)
     if (pReNative->paLabels[idxLabel].off != UINT32_MAX)
-        pCodeBuf[off++] = Armv8A64MkInstrB(pReNative->paLabels[idxLabel].off - off);
+    {
+        pCodeBuf[off] = Armv8A64MkInstrB(pReNative->paLabels[idxLabel].off - off);
+        off++;
+    }
     else
     {
         iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm26At0);
@@ -6353,7 +6356,8 @@ iemNativeEmitJccToLabelEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBu
     else
     {
         Assert(off - offLabel <= 0x3ffffU);
-        pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, offLabel - off);
+        pCodeBuf[off] = Armv8A64MkInstrBCond(enmCond, offLabel - off);
+        off++;
     }
 
 #else
@@ -6579,8 +6583,8 @@ iemNativeEmitJccToFixedEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint32_t offTa
     }
 
 #elif defined(RT_ARCH_ARM64)
-    pCodeBuf[off++] = Armv8A64MkInstrBCond(enmCond, (int32_t)(offTarget - off));
-
+    pCodeBuf[off] = Armv8A64MkInstrBCond(enmCond, (int32_t)(offTarget - off));
+    off++;
 #else
 # error "Port me!"
 #endif
@@ -6710,7 +6714,8 @@ DECL_FORCE_INLINE(uint32_t) iemNativeEmitJmpToFixedEx(PIEMNATIVEINSTR pCodeBuf, 
     }
 
 #elif defined(RT_ARCH_ARM64)
-    pCodeBuf[off++] = Armv8A64MkInstrB((int32_t)(offTarget - off));
+    pCodeBuf[off] = Armv8A64MkInstrB((int32_t)(offTarget - off));
+    off++;
 
 #else
 # error "Port me!"
@@ -7187,8 +7192,11 @@ iemNativeEmitTestIfGprIsZeroOrNotZeroAndJmpToLabelEx(PIEMRECOMPILERSTATE pReNati
 
 #elif defined(RT_ARCH_ARM64)
     if (pReNative->paLabels[idxLabel].off != UINT32_MAX)
-        pCodeBuf[off++] = Armv8A64MkInstrCbzCbnz(fJmpIfNotZero, (int32_t)(pReNative->paLabels[idxLabel].off - off),
-                                                 iGprSrc, f64Bit);
+    {
+        pCodeBuf[off] = Armv8A64MkInstrCbzCbnz(fJmpIfNotZero, (int32_t)(pReNative->paLabels[idxLabel].off - off),
+                                               iGprSrc, f64Bit);
+        off++;
+    }
     else
     {
         iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
