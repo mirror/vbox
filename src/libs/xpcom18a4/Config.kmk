@@ -60,7 +60,6 @@ ifndef VBOX_GCC_Wno-delete-non-virtual-dtor
 endif
 TEMPLATE_XPComDll_CXXFLAGS.x86        = -m32
 TEMPLATE_XPComDll_CXXFLAGS.amd64      = -m64
-TEMPLATE_XPComDll_CXXFLAGS.arm64      = -m64
 TEMPLATE_XPComDll_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_XPComDll_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPComDll_CXXFLAGS.linux      = -pthread
@@ -69,7 +68,6 @@ TEMPLATE_XPComDll_CFLAGS              = -g -pipe -Wall -Wno-unused -Wno-parenthe
 	$(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_OPT) $(VBOX_GCC_FP)
 TEMPLATE_XPComDll_CFLAGS.x86          = -m32
 TEMPLATE_XPComDll_CFLAGS.amd64        = -m64
-TEMPLATE_XPComDll_CFLAGS.arm64        = -m64
 TEMPLATE_XPComDll_CFLAGS.freebsd      = -pthread
 TEMPLATE_XPComDll_CFLAGS.linux        = -pthread -ansi
 TEMPLATE_XPComDll_CFLAGS.solaris      = -fno-omit-frame-pointer # for now anyway.
@@ -130,7 +128,6 @@ else ifdef VBOX_WITH_RELATIVE_RUNPATH
 endif
 TEMPLATE_XPComDll_LDFLAGS.x86         = -m32
 TEMPLATE_XPComDll_LDFLAGS.amd64       = -m64
-TEMPLATE_XPComDll_LDFLAGS.arm64       = -m64
 TEMPLATE_XPComDll_LDFLAGS.darwin      = $(TEMPLATE_VBoxR3DllNonPedantic_LDFLAGS.darwin) \
 	-fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
