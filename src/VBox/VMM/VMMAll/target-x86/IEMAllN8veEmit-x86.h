@@ -567,7 +567,7 @@ iemNativeEmit_and_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst, cOpBits >= 32 /*fNativeFlags*/);
-    RT_NOREF_PV(cImmBits)
+    RT_NOREF_PV(cImmBits);
 
 #else
 # error "Port me"
@@ -671,7 +671,7 @@ iemNativeEmit_test_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegResult, cOpBits >= 32 /*fNativeFlags*/);
 
     iemNativeRegFreeTmp(pReNative, idxRegResult);
-    RT_NOREF_PV(cImmBits)
+    RT_NOREF_PV(cImmBits);
 
 #else
 # error "Port me"
@@ -753,7 +753,7 @@ iemNativeEmit_or_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
-    RT_NOREF_PV(cImmBits)
+    RT_NOREF_PV(cImmBits);
 
 #else
 # error "Port me"
@@ -836,7 +836,7 @@ iemNativeEmit_xor_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     off = iemNativeEmitEFlagsForLogical(pReNative, off, idxVarEfl, cOpBits, idxRegDst);
-    RT_NOREF_PV(cImmBits)
+    RT_NOREF_PV(cImmBits);
 
 #else
 # error "Port me"
