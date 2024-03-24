@@ -32,9 +32,13 @@
 #define NAME(a_Name) a_Name
 #endif
 
+#ifdef RT_OS_DARWIN
 .section __TEXT,__const
+#else
+.section .text
+#endif
 
-; 32-bit firmware:
+/* 32-bit firmware: */
 .p2align 6
 .globl NAME(g_abEfiFirmware32)
 NAME(g_abEfiFirmware32):
@@ -47,7 +51,7 @@ NAME(g_cbEfiFirmware32):
         .long end_32_firmware - NAME(g_abEfiFirmware32)
 
 
-; 64-bit firmware:
+/* 64-bit firmware: */
 .p2align 6
 .globl NAME(g_abEfiFirmware64)
 NAME(g_abEfiFirmware64):
@@ -60,23 +64,23 @@ NAME(g_cbEfiFirmware64):
         .long  end_64_firmware - NAME(g_abEfiFirmware64)
 
 #ifdef ASM_FORMAT_ELF
-.size g_abEfiFirmware32 end_32_firmware - NAME(g_abEfiFirmware32)
+.size g_abEfiFirmware32, end_32_firmware - NAME(g_abEfiFirmware32)
 .type g_abEfiFirmware32 object
-.size g_cbEfiFirmware32 4
+.size g_cbEfiFirmware32, 4
 .type g_cbEfiFirmware32 object
 
-.size g_abEfiFirmware64 end_64_firmware - NAME(g_abEfiFirmware64)
+.size g_abEfiFirmware64, end_64_firmware - NAME(g_abEfiFirmware64)
 .type g_abEfiFirmware64 object
-.size g_cbEfiFirmware64 4
+.size g_cbEfiFirmware64, 4
 .type g_cbEfiFirmware64 object
 #endif
 
 #ifdef VBOX_WITH_VIRT_ARMV8
-;
-; The ARMv8 bits
-;
+/*
+ * The ARMv8 bits
+ */
 
-; 32-bit firmware:
+/* 32-bit firmware: */
 .p2align 6
 .globl NAME(g_abEfiFirmwareAArch32)
 NAME(g_abEfiFirmwareAArch32):
@@ -89,7 +93,7 @@ NAME(g_cbEfiFirmwareAArch32):
         .long end_aarch32_firmware - NAME(g_abEfiFirmwareAArch32)
 
 
-; 64-bit firmware:
+/* 64-bit firmware: */
 .p2align 6
 .globl NAME(g_abEfiFirmwareAArch64)
 NAME(g_abEfiFirmwareAArch64):
@@ -102,14 +106,14 @@ NAME(g_cbEfiFirmwareAArch64):
         .long  end_aarch64_firmware - NAME(g_abEfiFirmwareAArch64)
 
 # ifdef ASM_FORMAT_ELF
-.size g_abEfiFirmwareAArch32 end_aarch32_firmware - NAME(g_abEfiFirmwareAArch32)
+.size g_abEfiFirmwareAArch32, end_aarch32_firmware - NAME(g_abEfiFirmwareAArch32)
 .type g_abEfiFirmwareAArch32 object
-.size g_cbEfiFirmwareAArch32 4
+.size g_cbEfiFirmwareAArch32, 4
 .type g_cbEfiFirmwareAArch32 object
 
-.size g_abEfiFirmwareAArch64 end_aarch64_firmware - NAME(g_abEfiFirmwareAArch64)
+.size g_abEfiFirmwareAArch64, end_aarch64_firmware - NAME(g_abEfiFirmwareAArch64)
 .type g_abEfiFirmwareAArch64 object
-.size g_cbEfiFirmwareAArch64 4
+.size g_cbEfiFirmwareAArch64, 4
 .type g_cbEfiFirmwareAArch64 object
 # endif
 #endif

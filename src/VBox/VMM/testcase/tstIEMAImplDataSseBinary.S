@@ -157,10 +157,10 @@ IEM_TEST_DATA pcmpestri_u128,    "tstIEMAImplDataSsePcmpxstrx-pcmpestri_u128.bin
 IEM_TEST_DATA pcmpestrm_u128,    "tstIEMAImplDataSsePcmpxstrx-pcmpestrm_u128.bin.gz"
 
 
-;
-; Integer stuff.
-; dir tstIEMAImplDataInt*bin.gz /b | sed -e 's/tstIEMAImplDataInt-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \1, "tstIEMAImplDataInt-\1.bin.gz"/'
-;
+/*
+ * Integer stuff.
+ * dir tstIEMAImplDataInt*bin.gz /b | sed -e 's/tstIEMAImplDataInt-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \1, "tstIEMAImplDataInt-\1.bin.gz"/'
+ */
 IEM_TEST_DATA adcx_u32, "tstIEMAImplDataInt-adcx_u32.bin.gz"
 IEM_TEST_DATA adcx_u64, "tstIEMAImplDataInt-adcx_u64.bin.gz"
 IEM_TEST_DATA adc_u8, "tstIEMAImplDataInt-adc_u8.bin.gz"
@@ -402,10 +402,10 @@ IEM_TEST_DATA xor_u32_locked, "tstIEMAImplDataInt-xor_u32_locked.bin.gz"
 IEM_TEST_DATA xor_u64, "tstIEMAImplDataInt-xor_u64.bin.gz"
 IEM_TEST_DATA xor_u64_locked, "tstIEMAImplDataInt-xor_u64_locked.bin.gz"
 
-;
-; Floating point stuff.
-; dir tstIEMAImplDataFpu*bin.gz /b | sed -e 's/tstIEMAImplDataFpu\([^-]*\)-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \2, "tstIEMAImplDataFpu\1-\2.bin.gz"/'
-;
+/*
+ * Floating point stuff.
+ * dir tstIEMAImplDataFpu*bin.gz /b | sed -e 's/tstIEMAImplDataFpu\([^-]*\)-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \2, "tstIEMAImplDataFpu\1-\2.bin.gz"/'
+ */
 IEM_TEST_DATA fadd_r80_by_r80, "tstIEMAImplDataFpuBinary1-fadd_r80_by_r80.bin.gz"
 IEM_TEST_DATA fcomi_r80_by_r80, "tstIEMAImplDataFpuBinary1-fcomi_r80_by_r80.bin.gz"
 IEM_TEST_DATA fcom_r80_by_r80, "tstIEMAImplDataFpuBinary1-fcom_r80_by_r80.bin.gz"
