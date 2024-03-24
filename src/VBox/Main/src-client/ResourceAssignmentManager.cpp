@@ -65,14 +65,14 @@ struct ResourceAssignmentManager::State
     struct MemoryRange
     {
         char          szDevName[32];
-        RTGCPHYS      GCPhysStart;
-        RTGCPHYS      GCPhysEnd;
+        RTGCPHYS      mGCPhysStart;
+        RTGCPHYS      mGCPhysEnd;
 
         MemoryRange(const char *pszName, RTGCPHYS GCPhysStart, RTGCPHYS GCPhysEnd)
         {
             RTStrCopy(this->szDevName, sizeof(szDevName), pszName);
-            this->GCPhysStart = GCPhysStart;
-            this->GCPhysEnd   = GCPhysEnd;
+            this->mGCPhysStart = GCPhysStart;
+            this->mGCPhysEnd   = GCPhysEnd;
         }
 
         bool operator==(const MemoryRange &a) const
