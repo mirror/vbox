@@ -53,7 +53,7 @@
  * struct inotify_event (char name __flexarr). */
 #include <sys/cdefs.h>
 #undef __flexarr
-#define __flexarr [0]
+#define __flexarr [RT_FLEXIBLE_ARRAY]
 #include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/socket.h>
