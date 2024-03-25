@@ -4789,6 +4789,31 @@ DECLINLINE(void) pgmPoolTrackDerefNestedPDEpt(PPGMPOOL pPool, PPGMPOOLPAGE pPage
     }
 }
 
+
+/**
+ * Clear references to shadowed pages in a SLAT EPT PML4 table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPml4    The shadow PML4 table.
+ */
+DECLINLINE(void) pgmPoolTrackDerefNestedPML4(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPML4 pShwPml4)
+{
+    Assert(PGMPOOL_PAGE_IS_NESTED(pPage));
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPml4->a); i++)
+    {
+        X86PGPAEUINT const uPml4e = pShwPml4->a[i].u;
+        AssertMsg((uPml4e & (EPT_PML4E_MBZ_MASK | 0xfff0000000000f00)) == 0, ("uPml4e=%RX64\n", uPml4e));
+        if (uPml4e & EPT_PRESENT_MASK)
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, uPml4e & EPT_PML4E_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", uPml4e & X86_PML4E_PG_MASK));
+        }
+    }
+}
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
@@ -5136,6 +5161,10 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_EPT_PDPT_FOR_EPT_PDPT:
             pgmPoolTrackDerefPDPTEPT(pPool, pPage, (PEPTPDPT)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PML4_FOR_EPT_PML4:
+            pgmPoolTrackDerefNestedPML4(pPool, pPage, (PEPTPML4)pvShw);
             break;
 #endif
 
