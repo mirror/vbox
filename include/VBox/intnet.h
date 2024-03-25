@@ -355,8 +355,7 @@ typedef struct INTNETSG
     /** The number of segments actually used. */
     uint16_t            cSegsUsed;
     /** Variable sized list of segments. */
-    RT_FLEXIBLE_ARRAY_EXTENSION
-    INTNETSEG           aSegs[RT_FLEXIBLE_ARRAY];
+    INTNETSEG           aSegs[1];
 } INTNETSG;
 AssertCompileSizeAlignment(INTNETSG, 8);
 /** Pointer to a scatter / gather list. */
