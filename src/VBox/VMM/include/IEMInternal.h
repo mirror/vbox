@@ -99,6 +99,12 @@ RT_C_DECLS_BEGIN
 /** Enables access to even callee saved registers. */
 //# define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
 
+#if defined(DOXYGEN_RUNNING) || defined(DEBUG_aeichner)
+/** @def IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+ * Delay the writeback or dirty registers as long as possible. */
+# define IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+#endif
+
 /** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
  * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
  * executing native translation blocks.
@@ -986,6 +992,12 @@ typedef enum IEMTBDBGENTRYTYPE
     /** Info about a delayed RIP update. */
     kIemTbDbgEntryType_DelayedPcUpdate,
 #endif
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /** Info about a shadowed guest register becoming dirty. */
+    kIemTbDbgEntryType_GuestRegDirty,
+    /** Info about register writeback/flush oepration. */
+    kIemTbDbgEntryType_GuestRegWriteback,
+#endif
     kIemTbDbgEntryType_End
 } IEMTBDBGENTRYTYPE;
 
@@ -1049,9 +1061,7 @@ typedef union IEMTBDBGENTRY
     {
         /* kIemTbDbgEntryType_GuestRegShadowing. */
         uint32_t    uType         : 4;
-        /** Flag whether the register is marked as dirty. */
-        uint32_t    fDirty        : 1;
-        uint32_t    uUnused       : 3;
+        uint32_t    uUnused       : 4;
         /** The guest register being shadowed (IEMNATIVEGSTREG). */
         uint32_t    idxGstReg     : 8;
         /** The host new register number, UINT8_MAX if dropped. */
@@ -1085,6 +1095,31 @@ typedef union IEMTBDBGENTRY
         /** Number of instructions skipped. */
         uint32_t    cInstrSkipped : 14;
     } DelayedPcUpdate;
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    struct
+    {
+        /* kIemTbDbgEntryType_GuestRegDirty. */
+        uint32_t    uType         : 4;
+        uint32_t    uUnused       : 11;
+        /** Flag whether this is about a SIMD (true) or general (false) register. */
+        uint32_t    fSimdReg      : 1;
+        /** The guest register index being marked as dirty. */
+        uint32_t    idxGstReg     : 8;
+        /** The host register number this register is shadowed in .*/
+        uint32_t    idxHstReg     : 8;
+    } GuestRegDirty;
+
+    struct
+    {
+        /* kIemTbDbgEntryType_GuestRegWriteback. */
+        uint32_t    uType         : 4;
+        /** Flag whether this is about a SIMD (true) or general (false) register flush. */
+        uint32_t    fSimdReg      : 1;
+        /** The guest register mask being written back. */
+        uint32_t    fGstReg       : 27;
+    } GuestRegWriteback;
 #endif
 
 } IEMTBDBGENTRY;

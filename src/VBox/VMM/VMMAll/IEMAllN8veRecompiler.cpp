@@ -3727,7 +3727,7 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReN
      * Search backwards to see if we've got a similar record already.
      */
     uint32_t idx     = pDbgInfo->cEntries;
-    uint32_t idxStop = idx > 8 ? idx - 8 : 0;
+    uint32_t idxStop = idx > 16 ? idx - 16 : 0;
     while (idx-- > idxStop)
         if (pDbgInfo->aEntries[idx].Gen.uType == kIemTbDbgEntryType_NativeOffset)
         {
@@ -3794,9 +3794,6 @@ iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGST
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     pEntry->GuestRegShadowing.uType         = kIemTbDbgEntryType_GuestRegShadowing;
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    pEntry->GuestRegShadowing.fDirty        = (pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg)) ? 1 : 0;
-#endif
     pEntry->GuestRegShadowing.uUnused       = 0;
     pEntry->GuestRegShadowing.idxGstReg     = enmGstReg;
     pEntry->GuestRegShadowing.idxHstReg     = idxHstReg;
@@ -3836,6 +3833,36 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE p
     pEntry->DelayedPcUpdate.uType         = kIemTbDbgEntryType_DelayedPcUpdate;
     pEntry->DelayedPcUpdate.offPc         = offPc;
     pEntry->DelayedPcUpdate.cInstrSkipped = cInstrSkipped;
+}
+# endif
+
+
+# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+/**
+ * Debug Info: Record info about a dirty guest register.
+ */
+DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
+                                                         uint8_t idxGstReg, uint8_t idxHstReg)
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    pEntry->GuestRegDirty.uType         = kIemTbDbgEntryType_GuestRegDirty;
+    pEntry->GuestRegDirty.fSimdReg      = fSimdReg ? 1 : 0;
+    pEntry->GuestRegDirty.idxGstReg     = idxGstReg;
+    pEntry->GuestRegDirty.idxHstReg     = idxHstReg;
+}
+
+
+/**
+ * Debug Info: Record info about a dirty guest register writeback operation.
+ */
+DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg, uint64_t fGstReg)
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    pEntry->GuestRegWriteback.uType         = kIemTbDbgEntryType_GuestRegWriteback;
+    pEntry->GuestRegWriteback.fSimdReg      = fSimdReg ? 1 : 0;
+    pEntry->GuestRegWriteback.fGstReg       = (uint32_t)fGstReg;
+    /** @todo r=aeichner Can't fit the whole register mask in the debug info entry, deal with it when it becomes necessary. */
+    Assert((uint64_t)pEntry->GuestRegWriteback.fGstReg == fGstReg);
 }
 # endif
 
@@ -4104,6 +4131,11 @@ iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_
 {
     if (pReNative->Core.bmGstRegShadowDirty & fFlushGstReg)
     {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fFlushGstReg);
+# endif
+
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fFlushGstReg;
         uint32_t idxGstReg = 0;
 
@@ -4139,6 +4171,11 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOM
     uint64_t fGstRegShadows = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
     if (pReNative->Core.bmGstRegShadowDirty & fGstRegShadows)
     {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fGstRegShadows);
+# endif
+
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fGstRegShadows;
         uint32_t idxGstReg = 0;
         do
@@ -4635,16 +4672,6 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
                             ? IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK
                             : IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK;
 
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    /** @todo r=aeichner Implement for registers other than GPR as well. */
-    if (   (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
-            || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
-        && enmGstReg >= kIemNativeGstReg_GprFirst
-        && enmGstReg <= kIemNativeGstReg_GprLast
-        )
-        pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
-#endif
-
     /*
      * First check if the guest register value is already in a host register.
      */
@@ -4762,6 +4789,23 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
         *poff = iemNativeEmitGuestRegValueCheck(pReNative, *poff, idxReg, enmGstReg);
 #endif
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        /** @todo r=aeichner Implement for registers other than GPR as well. */
+        if (   (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+                || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
+            && enmGstReg >= kIemNativeGstReg_GprFirst
+            && enmGstReg <= kIemNativeGstReg_GprLast
+            )
+        {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+            iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
+            iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
+# endif
+
+            pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
+        }
+#endif
+
         return idxReg;
     }
 
@@ -4777,6 +4821,23 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
         iemNativeRegMarkAsGstRegShadow(pReNative, idxRegNew, enmGstReg, *poff);
     Log12(("iemNativeRegAllocTmpForGuestReg: Allocated %s for guest %s %s\n",
            g_apszIemNativeHstRegNames[idxRegNew], g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /** @todo r=aeichner Implement for registers other than GPR as well. */
+    if (   (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+            || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
+        && enmGstReg >= kIemNativeGstReg_GprFirst
+        && enmGstReg <= kIemNativeGstReg_GprLast
+        )
+    {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
+        iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxRegNew);
+# endif
+
+        pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
+    }
+#endif
 
     return idxRegNew;
 }
@@ -6246,6 +6307,15 @@ iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 #endif
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    if (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+    {
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/,
+                                               pReNative->Core.bmGstSimdRegShadowDirtyLo128
+                                             | pReNative->Core.bmGstSimdRegShadowDirtyHi128);
+    }
+# endif
     /** @todo r=bird: There must be a quicker way to check if anything needs
      *        doing and then call simd function to do the flushing */
     /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
@@ -8090,7 +8160,14 @@ iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t id
     {
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
         if (enmGstReg >= kIemNativeGstReg_GprFirst && enmGstReg <= kIemNativeGstReg_GprLast)
+        {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+            iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
+            iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
+# endif
+
             pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
+        }
 #endif
 
         if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
@@ -9445,18 +9522,15 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                             PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
                             const char * const    pszGstReg = g_aGstShadowInfo[pEntry->GuestRegShadowing.idxGstReg].pszName;
                             if (pEntry->GuestRegShadowing.idxHstReg == UINT8_MAX)
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s != host register %s (Dirty: %RTbool)\n", pszGstReg,
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev],
-                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s != host register %s\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
                             else if (pEntry->GuestRegShadowing.idxHstRegPrev == UINT8_MAX)
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (Dirty: %RTbool)\n", pszGstReg,
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg],
-                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s \n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg]);
                             else
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (previously in %s, Dirty: %RTbool)\n", pszGstReg,
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (previously in %s)\n", pszGstReg,
                                                 g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg],
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev],
-                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
                             continue;
                         }
 
@@ -9553,6 +9627,30 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                             "  Updating guest PC value by %u (cInstrSkipped=%u)\n",
                                             pDbgInfo->aEntries[iDbgEntry].DelayedPcUpdate.offPc,
                                             pDbgInfo->aEntries[iDbgEntry].DelayedPcUpdate.cInstrSkipped);
+                            continue;
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                        case kIemTbDbgEntryType_GuestRegDirty:
+                        {
+                            PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
+                            const char * const    pszGstReg =   pEntry->GuestRegDirty.fSimdReg
+                                                              ? g_aGstSimdShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName
+                                                              : g_aGstShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName;
+                            const char * const    pszHstReg =   pEntry->GuestRegDirty.fSimdReg
+                                                              ? g_apszIemNativeHstSimdRegNames[pEntry->GuestRegDirty.idxHstReg]
+                                                              : g_apszIemNativeHstRegNames[pEntry->GuestRegDirty.idxHstReg];
+                            pHlp->pfnPrintf(pHlp,
+                                            "  Guest register %s (shadowed by %s) is now dirty\n",
+                                            pszGstReg, pszHstReg);
+                            continue;
+                        }
+
+                        case kIemTbDbgEntryType_GuestRegWriteback:
+                            pHlp->pfnPrintf(pHlp,
+                                            "  Writing dirty %s registers (gst %#RX64)\n",
+                                            pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fSimdReg ? "SIMD" : "general",
+                                            pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fGstReg);
                             continue;
 #endif
 
