@@ -69,9 +69,9 @@
 # define IEMNATIVE_WITH_INSTRUCTION_COUNTING
 #endif
 
+#ifdef DEBUG_aeichner
 /** @def IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
  * Delay the writeback or dirty registers as long as possible. */
-#ifdef DEBUG_aeichner
 # define IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
 #endif
 
