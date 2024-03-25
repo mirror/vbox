@@ -183,44 +183,44 @@ void UIUSBFilterDetailsEditor::retranslateUi()
     if (m_pLabelVendorID)
         m_pLabelVendorID->setText(tr("&Vendor ID:"));
     if (m_pEditorVendorID)
-        m_pEditorVendorID->setToolTip(tr("Holds the vendor ID filter. The <i>exact match</i> string format is <tt>XXXX</tt> "
-                                         "where <tt>X</tt> is a hexadecimal digit. An empty string will match any value."));
+        m_pEditorVendorID->setToolTip(tr("Holds the vendor ID filter. The exact match string format is 'XXXX' "
+                                         "where 'X' is a hexadecimal digit. An empty string will match any value."));
 
     if (m_pLabelProductID)
         m_pLabelProductID->setText(tr("&Product ID:"));
     if (m_pEditorProductID)
-        m_pEditorProductID->setToolTip(tr("Holds the product ID filter. The <i>exact match</i> string format is <tt>XXXX</tt> "
-                                          "where <tt>X</tt> is a hexadecimal digit. An empty string will match any value."));
+        m_pEditorProductID->setToolTip(tr("Holds the product ID filter. The exact match string format is 'XXXX' "
+                                          "where 'X' is a hexadecimal digit. An empty string will match any value."));
 
     if (m_pLabelRevision)
         m_pLabelRevision->setText(tr("&Revision:"));
     if (m_pEditorRevision)
-        m_pEditorRevision->setToolTip(tr("Holds the revision number filter. The <i>exact match</i> string format is "
-                                         "<tt>IIFF</tt> where <tt>I</tt> is a decimal digit of the integer part and <tt>F</tt> "
+        m_pEditorRevision->setToolTip(tr("Holds the revision number filter. The exact match string format is "
+                                         "'IIFF' where 'I' is a decimal digit of the integer part and 'F' "
                                          "is a decimal digit of the fractional part. An empty string will match any value."));
 
     if (m_pLabelManufacturer)
         m_pLabelManufacturer->setText(tr("&Manufacturer:"));
     if (m_pEditorManufacturer)
-        m_pEditorManufacturer->setToolTip(tr("Holds the manufacturer filter as an <i>exact match</i> string. An empty string "
+        m_pEditorManufacturer->setToolTip(tr("Holds the manufacturer filter as an exact match string. An empty string "
                                              "will match any value."));
 
     if (m_pLabelProduct)
         m_pLabelProduct->setText(tr("Pro&duct:"));
     if (m_pEditorProduct)
-        m_pEditorProduct->setToolTip(tr("Holds the product name filter as an <i>exact match</i> string. An empty string will "
+        m_pEditorProduct->setToolTip(tr("Holds the product name filter as an exact match string. An empty string will "
                                         "match any value."));
 
     if (m_pLabelSerialNo)
         m_pLabelSerialNo->setText(tr("&Serial No.:"));
     if (m_pEditorSerialNo)
-        m_pEditorSerialNo->setToolTip(tr("Holds the serial number filter as an <i>exact match</i> string. An empty string will "
+        m_pEditorSerialNo->setToolTip(tr("Holds the serial number filter as an exact match string. An empty string will "
                                          "match any value."));
 
     if (m_pLabelPort)
         m_pLabelPort->setText(tr("Por&t:"));
     if (m_pEditorPort)
-        m_pEditorPort->setToolTip(tr("Holds the host USB port filter as an <i>exact match</i> string. An empty string will match "
+        m_pEditorPort->setToolTip(tr("Holds the host USB port filter as an exact match string. An empty string will match "
                                      "any value."));
 
     if (m_pLabelRemote)
