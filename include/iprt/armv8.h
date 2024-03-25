@@ -2805,7 +2805,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
 
 
 /** A64: Encodes an SUBP instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSubP(uint32_t iRegResult, uint32_t iRegMinuend, uint32_t iRegSubtrahend)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubP(uint32_t iRegResult, uint32_t iRegMinuend, uint32_t iRegSubtrahend)
 {
     Assert(iRegResult < 32);  Assert(iRegMinuend < 32); Assert(iRegSubtrahend < 32);
     return UINT32_C(0x80000000)
@@ -2818,7 +2818,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSubP(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an SUBPS instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSubPS(uint32_t iRegResult, uint32_t iRegMinuend, uint32_t iRegSubtrahend)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSubPS(uint32_t iRegResult, uint32_t iRegMinuend, uint32_t iRegSubtrahend)
 {
     Assert(iRegResult < 32);  Assert(iRegMinuend < 32); Assert(iRegSubtrahend < 32);
     return UINT32_C(0x80000000)
@@ -2832,7 +2832,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSubPS(uint32_t iRegResult, uint32_t iR
 
 
 /** A64: Encodes an UDIV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrUDiv(uint32_t iRegResult, uint32_t iRegDividend, uint32_t iRegDivisor, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUDiv(uint32_t iRegResult, uint32_t iRegDividend, uint32_t iRegDivisor, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegDividend < 32); Assert(iRegDivisor < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2845,7 +2845,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrUDiv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an SDIV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSDiv(uint32_t iRegResult, uint32_t iRegDividend, uint32_t iRegDivisor, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSDiv(uint32_t iRegResult, uint32_t iRegDividend, uint32_t iRegDivisor, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegDividend < 32); Assert(iRegDivisor < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2858,7 +2858,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSDiv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an IRG instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrIrg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrIrg(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return UINT32_C(0x80000000)
@@ -2871,7 +2871,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrIrg(uint32_t iRegResult, uint32_t iReg
 
 
 /** A64: Encodes a GMI instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrGmi(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrGmi(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return UINT32_C(0x80000000)
@@ -2884,7 +2884,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrGmi(uint32_t iRegResult, uint32_t iReg
 
 
 /** A64: Encodes an LSLV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrLslv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLslv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc < 32); Assert(iRegCount < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2897,7 +2897,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrLslv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an LSRV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrLsrv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLsrv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc < 32); Assert(iRegCount < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2910,7 +2910,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrLsrv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an ASRV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrAsrv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAsrv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc < 32); Assert(iRegCount < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2923,7 +2923,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrAsrv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes a RORV instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrRorv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrRorv(uint32_t iRegResult, uint32_t iRegSrc, uint32_t iRegCount, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc < 32); Assert(iRegCount < 32);
     return ((uint32_t)f64Bit << 31)
@@ -2936,7 +2936,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrRorv(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes a PACGA instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrPacga(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrPacga(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return UINT32_C(0x80000000)
@@ -2949,7 +2949,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrPacga(uint32_t iRegResult, uint32_t iR
 
 
 /** A64: Encodes a CRC32* instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue, uint32_t uSize)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue, uint32_t uSize)
 {
     Assert(iRegResult < 32);  Assert(iRegCrc < 32); Assert(iRegValue < 32); Assert(uSize < 4);
     return ((uint32_t)(uSize == 3) << 31)
@@ -2963,35 +2963,35 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32(uint32_t iRegResult, uint32_t iR
 
 
 /** A64: Encodes a CRC32B instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32B(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32B(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 0);
+    return Armv8A64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 0);
 }
 
 
 /** A64: Encodes a CRC32H instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32H(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32H(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 1);
+    return Armv8A64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 1);
 }
 
 
 /** A64: Encodes a CRC32W instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32W(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32W(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 2);
+    return Armv8A64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 2);
 }
 
 
 /** A64: Encodes a CRC32X instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32X(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32X(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 3);
+    return Armv8A64MkInstrCrc32(iRegResult, iRegCrc, iRegValue, 3);
 }
 
 
 /** A64: Encodes a CRC32C* instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32c(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue, uint32_t uSize)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32c(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue, uint32_t uSize)
 {
     Assert(iRegResult < 32);  Assert(iRegCrc < 32); Assert(iRegValue < 32); Assert(uSize < 4);
     return ((uint32_t)(uSize == 3) << 31)
@@ -3005,35 +3005,35 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32c(uint32_t iRegResult, uint32_t i
 
 
 /** A64: Encodes a CRC32B instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32cB(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32cB(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 0);
+    return Armv8A64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 0);
 }
 
 
 /** A64: Encodes a CRC32CH instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32cH(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32cH(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 1);
+    return Armv8A64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 1);
 }
 
 
 /** A64: Encodes a CRC32CW instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32cW(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32cW(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 2);
+    return Armv8A64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 2);
 }
 
 
 /** A64: Encodes a CRC32CX instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrCrc32cX(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCrc32cX(uint32_t iRegResult, uint32_t iRegCrc, uint32_t iRegValue)
 {
-    return ArmvA64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 3);
+    return Armv8A64MkInstrCrc32c(iRegResult, iRegCrc, iRegValue, 3);
 }
 
 
 /** A64: Encodes an SMAX instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSMax(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSMax(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return ((uint32_t)f64Bit << 31)
@@ -3046,7 +3046,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSMax(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an UMAX instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrUMax(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUMax(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return ((uint32_t)f64Bit << 31)
@@ -3059,7 +3059,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrUMax(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an SMIN instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSMin(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSMin(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return ((uint32_t)f64Bit << 31)
@@ -3072,7 +3072,7 @@ DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrSMin(uint32_t iRegResult, uint32_t iRe
 
 
 /** A64: Encodes an UMIN instruction. */
-DECL_FORCE_INLINE(uint32_t) ArmvA64MkInstrUMin(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUMin(uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2, bool f64Bit = true)
 {
     Assert(iRegResult < 32);  Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
     return ((uint32_t)f64Bit << 31)
