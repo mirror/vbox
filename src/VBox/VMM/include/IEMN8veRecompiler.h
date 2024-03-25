@@ -222,9 +222,33 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS)
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK   RT_BIT_32(ARMV8_A64_REG_Q30)
 #  else
-/** arm64 declares the low 64-bit of v8-v15 as callee saved. */
+/*
+ * ARM64 has 32 128-bit registers only, in order to support emulating 256-bit registers we pair
+ * two real registers statically to one virtual for now, leaving us with only 16 256-bit registers.
+ * We always pair v0 with v1, v2 with v3, etc. so we mark the higher register as fixed
+ * and the register allocator assumes that it will be always free when the lower is picked.
+ *
+ * Also ARM64 declares the low 64-bit of v8-v15 as callee saved, so we don't touch them in order to avoid
+ * having to save and restore them in the prologue/epilogue.
+ */
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xff00) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q30))
+                                            | RT_BIT_32(ARMV8_A64_REG_Q31) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q30) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q29) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q27) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q25) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q23) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q21) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q19) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q17) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q15) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q13) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q11) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q9) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q7) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q5) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q3) \
+                                            | RT_BIT_32(ARMV8_A64_REG_Q1))
 #  endif
 # endif
 
@@ -1535,6 +1559,10 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, 
 #if (defined(IPRT_INCLUDED_x86_h) && defined(RT_ARCH_AMD64)) || (defined(IPRT_INCLUDED_armv8_h) && defined(RT_ARCH_ARM64))
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar,
                                                             uint32_t fForbiddenRegs = IEMNATIVE_CALL_VOLATILE_GREG_MASK);
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar,
+                                                                uint32_t fForbiddenRegs = IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK);
+# endif
 #endif
 DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
 DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
@@ -1553,8 +1581,8 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegRestoreGuestShadowsInVolatileRegs(PIEMRE
 #ifdef VBOX_STRICT
 DECLHIDDEN(void)            iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNative);
 #endif
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                               uint64_t fGstShwExcept, bool fFlushShadows);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept,
+                                                               uint64_t fGstSimdShwExcept);
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off);
 #endif
@@ -2273,25 +2301,33 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
  *
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
+ *
+ * @note This function does not flush any shadowing information for guest registers. This needs to be done by
+ *       the caller if it wishes to do so.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0, bool fFlushShadows = true)
+iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0, uint64_t fGstSimdShwExcept = 0)
 {
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    uint64_t const bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & ~fGstShwExcept;
+#else
+    uint64_t const bmGstRegShadowDirty = 0;
+#endif
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    uint64_t const bmGstSimdRegShadowDirty =   (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                                             & ~fGstSimdShwExcept;
+#else
+    uint64_t const bmGstSimdRegShadowDirty = 0;
+#endif
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    if (!(fGstShwExcept & kIemNativeGstReg_Pc))
-        return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fFlushShadows);
+    uint64_t const fWritebackPc = ~(fGstShwExcept & kIemNativeGstReg_Pc);
 #else
-    RT_NOREF(pReNative, fGstShwExcept);
+    uint64_t const fWritebackPc = 0;
 #endif
+    if (bmGstRegShadowDirty | bmGstSimdRegShadowDirty | fWritebackPc)
+        return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fGstSimdShwExcept);
 
-#if defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR) || defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
-    /** @todo r=bird: There must be a quicker way to check if anything needs doing here!  */
-    /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
-    return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fFlushShadows);
-#else
-    RT_NOREF(pReNative, fGstShwExcept, fFlushShadows);
     return off;
-#endif
 }
 
 

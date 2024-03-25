@@ -3327,20 +3327,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
 #endif
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-# ifdef RT_ARCH_ARM64
-    /*
-     * Arm64 has 32 128-bit registers only, in order to support emulating 256-bit registers we pair
-     * two real registers statically to one virtual for now, leaving us with only 16 256-bit registers.
-     * We always pair v0 with v1, v2 with v3, etc. so we mark the higher register as fixed here during init
-     * and the register allocator assumes that it will be always free when the lower is picked.
-     */
-    uint32_t const fFixedAdditional = UINT32_C(0xaaaaaaaa);
-# else
-    uint32_t const fFixedAdditional = 0;
-# endif
-
     pReNative->Core.bmHstSimdRegs          = IEMNATIVE_SIMD_REG_FIXED_MASK
-                                           | fFixedAdditional
 # if IEMNATIVE_HST_SIMD_REG_COUNT < 32
                                            | ~(RT_BIT(IEMNATIVE_HST_SIMD_REG_COUNT) - 1U)
 # endif
@@ -3359,7 +3346,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
         pReNative->Core.aHstSimdRegs[i].enmLoaded      = kIemNativeGstSimdRegLdStSz_Invalid;
     }
 
-    fRegs = IEMNATIVE_SIMD_REG_FIXED_MASK | fFixedAdditional;
+    fRegs = IEMNATIVE_SIMD_REG_FIXED_MASK;
     for (uint32_t idxReg = ASMBitFirstSetU32(fRegs) - 1; fRegs != 0; idxReg = ASMBitFirstSetU32(fRegs) - 1)
     {
         fRegs &= ~RT_BIT_32(idxReg);
@@ -5173,6 +5160,272 @@ DECLHIDDEN(void) iemNativeSimdRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t 
                g_apszIemNativeHstSimdRegNames[idxHstReg], fGstRegShadowsOld, idxVar));
     }
 }
+
+
+/**
+ * Reassigns a variable to a different SIMD register specified by the caller.
+ *
+ * @returns The new code buffer position.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The current code buffer position.
+ * @param   idxVar          The variable index.
+ * @param   idxRegOld       The old host register number.
+ * @param   idxRegNew       The new host register number.
+ * @param   pszCaller       The caller for logging.
+ */
+static uint32_t iemNativeSimdRegMoveVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar,
+                                        uint8_t idxRegOld, uint8_t idxRegNew, const char *pszCaller)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].idxReg == idxRegOld);
+    Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fSimdReg);
+    RT_NOREF(pszCaller);
+
+    iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxRegNew, off);
+
+    uint64_t fGstRegShadows = pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows;
+    Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+             & pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows));
+
+    Log12(("%s: moving idxVar=%#x from %s to %s (fGstRegShadows=%RX64)\n",
+           pszCaller, idxVar, g_apszIemNativeHstSimdRegNames[idxRegOld], g_apszIemNativeHstSimdRegNames[idxRegNew], fGstRegShadows));
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegNew, idxRegOld);
+
+    if (pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].cbVar == sizeof(RTUINT128U))
+        off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxRegNew, idxRegOld);
+    else
+    {
+        Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].cbVar == sizeof(RTUINT256U));
+        off = iemNativeEmitSimdLoadVecRegFromVecRegU256(pReNative, off, idxRegNew, idxRegOld);
+    }
+
+    pReNative->Core.aHstSimdRegs[idxRegNew].fGstRegShadows = fGstRegShadows;
+    pReNative->Core.aHstSimdRegs[idxRegNew].enmWhat        = kIemNativeWhat_Var;
+    pReNative->Core.aHstSimdRegs[idxRegNew].idxVar         = idxVar;
+    if (fGstRegShadows)
+    {
+        pReNative->Core.bmHstSimdRegsWithGstShadow = (pReNative->Core.bmHstSimdRegsWithGstShadow & ~RT_BIT_32(idxRegOld))
+                                                   | RT_BIT_32(idxRegNew);
+        while (fGstRegShadows)
+        {
+            unsigned const idxGstReg = ASMBitFirstSetU64(fGstRegShadows) - 1;
+            fGstRegShadows &= ~RT_BIT_64(idxGstReg);
+
+            Assert(pReNative->Core.aidxGstSimdRegShadows[idxGstReg] == idxRegOld);
+            pReNative->Core.aidxGstSimdRegShadows[idxGstReg] = idxRegNew;
+        }
+    }
+
+    pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].idxReg = (uint8_t)idxRegNew;
+    pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows = 0;
+    pReNative->Core.bmHstSimdRegs = RT_BIT_32(idxRegNew) | (pReNative->Core.bmHstSimdRegs & ~RT_BIT_32(idxRegOld));
+    return off;
+}
+
+
+/**
+ * Moves a variable to a different register or spills it onto the stack.
+ *
+ * This must be a stack variable (kIemNativeVarKind_Stack) because the other
+ * kinds can easily be recreated if needed later.
+ *
+ * @returns The new code buffer position.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The current code buffer position.
+ * @param   idxVar          The variable index.
+ * @param   fForbiddenRegs  Mask of the forbidden registers.  Defaults to
+ *                          call-volatile registers.
+ */
+DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar,
+                                                                uint32_t fForbiddenRegs /*= IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK*/)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+    Assert(pVar->enmKind == kIemNativeVarKind_Stack);
+    Assert(!pVar->fRegAcquired);
+    Assert(!pVar->fSimdReg);
+
+    uint8_t const idxRegOld = pVar->idxReg;
+    Assert(idxRegOld < RT_ELEMENTS(pReNative->Core.aHstSimdRegs));
+    Assert(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxRegOld));
+    Assert(pReNative->Core.aHstSimdRegs[idxRegOld].enmWhat == kIemNativeWhat_Var);
+    Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows)
+           == pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows);
+    Assert(pReNative->Core.bmGstSimdRegShadows < RT_BIT_64(kIemNativeGstReg_End));
+    Assert(   RT_BOOL(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxRegOld))
+           == RT_BOOL(pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows));
+    Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+             & pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows));
+
+    /** @todo Add statistics on this.*/
+    /** @todo Implement basic variable liveness analysis (python) so variables
+     * can be freed immediately once no longer used.  This has the potential to
+     * be trashing registers and stack for dead variables.
+     * Update: This is mostly done. (Not IEMNATIVE_WITH_LIVENESS_ANALYSIS.) */
+
+    /*
+     * First try move it to a different register, as that's cheaper.
+     */
+    fForbiddenRegs |= RT_BIT_32(idxRegOld);
+    fForbiddenRegs |= IEMNATIVE_SIMD_REG_FIXED_MASK;
+    uint32_t fRegs = ~pReNative->Core.bmHstSimdRegs & ~fForbiddenRegs;
+    if (fRegs)
+    {
+        /* Avoid using shadow registers, if possible. */
+        if (fRegs & ~pReNative->Core.bmHstSimdRegsWithGstShadow)
+            fRegs &= ~pReNative->Core.bmHstSimdRegsWithGstShadow;
+        unsigned const idxRegNew = ASMBitFirstSetU32(fRegs) - 1;
+        return iemNativeSimdRegMoveVar(pReNative, off, idxVar, idxRegOld, idxRegNew, "iemNativeSimdRegMoveOrSpillStackVar");
+    }
+
+    /*
+     * Otherwise we must spill the register onto the stack.
+     */
+    uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, idxVar);
+    Log12(("iemNativeSimdRegMoveOrSpillStackVar: spilling idxVar=%#x/idxReg=%d onto the stack (slot %#x bp+%d, off=%#x)\n",
+           idxVar, idxRegOld, idxStackSlot, iemNativeStackCalcBpDisp(idxStackSlot), off));
+
+    if (pVar->cbVar == sizeof(RTUINT128U))
+        off = iemNativeEmitStoreVecRegByBpU128(pReNative, off, iemNativeStackCalcBpDisp(idxStackSlot), idxRegOld);
+    else
+    {
+        Assert(pVar->cbVar == sizeof(RTUINT256U));
+        off = iemNativeEmitStoreVecRegByBpU256(pReNative, off, iemNativeStackCalcBpDisp(idxStackSlot), idxRegOld);
+    }
+
+    pVar->idxReg                                = UINT8_MAX;
+    pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxRegOld);
+    pReNative->Core.bmHstSimdRegs              &= ~RT_BIT_32(idxRegOld);
+    pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows;
+    pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows = 0;
+    return off;
+}
+
+
+/**
+ * Called right before emitting a call instruction to move anything important
+ * out of call-volatile SIMD registers, free and flush the call-volatile SIMD registers,
+ * optionally freeing argument variables.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   cArgs           The number of arguments the function call takes.
+ *                          It is presumed that the host register part of these have
+ *                          been allocated as such already and won't need moving,
+ *                          just freeing.
+ * @param   fKeepVars       Mask of variables that should keep their register
+ *                          assignments.  Caller must take care to handle these.
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeSimdRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint32_t fKeepVars /*= 0*/)
+{
+    Assert(!cArgs); RT_NOREF(cArgs);
+
+    /* fKeepVars will reduce this mask. */
+    uint32_t fSimdRegsToFree = IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK;
+
+    /*
+     * Move anything important out of volatile registers.
+     */
+    uint32_t fSimdRegsToMove = IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK
+#ifdef IEMNATIVE_SIMD_REG_FIXED_TMP0
+                             & ~RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0)
+#endif
+                             ;
+
+    fSimdRegsToMove &= pReNative->Core.bmHstSimdRegs;
+    if (!fSimdRegsToMove)
+    { /* likely */ }
+    else
+    {
+        Log12(("iemNativeSimdRegMoveAndFreeAndFlushAtCall: fSimdRegsToMove=%#x\n", fSimdRegsToMove));
+        while (fSimdRegsToMove != 0)
+        {
+            unsigned const idxSimdReg = ASMBitFirstSetU32(fSimdRegsToMove) - 1;
+            fSimdRegsToMove &= ~RT_BIT_32(idxSimdReg);
+
+            switch (pReNative->Core.aHstSimdRegs[idxSimdReg].enmWhat)
+            {
+                case kIemNativeWhat_Var:
+                {
+                    uint8_t const       idxVar = pReNative->Core.aHstRegs[idxSimdReg].idxVar;
+                    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+                    PIEMNATIVEVAR const pVar   = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
+                    Assert(pVar->idxReg == idxSimdReg);
+                    Assert(pVar->fSimdReg);
+                    if (!(RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(idxVar)) & fKeepVars))
+                    {
+                        Log12(("iemNativeSimdRegMoveAndFreeAndFlushAtCall: idxVar=%#x enmKind=%d idxSimdReg=%d\n",
+                               idxVar, pVar->enmKind, pVar->idxReg));
+                        if (pVar->enmKind != kIemNativeVarKind_Stack)
+                            pVar->idxReg = UINT8_MAX;
+                        else
+                            off = iemNativeSimdRegMoveOrSpillStackVar(pReNative, off, idxVar);
+                    }
+                    else
+                        fSimdRegsToFree &= ~RT_BIT_32(idxSimdReg);
+                    continue;
+                }
+
+                case kIemNativeWhat_Arg:
+                    AssertMsgFailed(("What?!?: %u\n", idxSimdReg));
+                    continue;
+
+                case kIemNativeWhat_rc:
+                case kIemNativeWhat_Tmp:
+                    AssertMsgFailed(("Missing free: %u\n", idxSimdReg));
+                    continue;
+
+                case kIemNativeWhat_FixedReserved:
+#ifdef RT_ARCH_ARM64
+                    continue; /* On ARM the upper half of the virtual 256-bit register. */
+#endif
+
+                case kIemNativeWhat_FixedTmp:
+                case kIemNativeWhat_pVCpuFixed:
+                case kIemNativeWhat_pCtxFixed:
+                case kIemNativeWhat_PcShadow:
+                case kIemNativeWhat_Invalid:
+                case kIemNativeWhat_End:
+                    AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_1));
+            }
+            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_2));
+        }
+    }
+
+    /*
+     * Do the actual freeing.
+     */
+    if (pReNative->Core.bmHstSimdRegs & fSimdRegsToFree)
+        Log12(("iemNativeSimdRegMoveAndFreeAndFlushAtCall: bmHstSimdRegs %#x -> %#x\n",
+               pReNative->Core.bmHstSimdRegs, pReNative->Core.bmHstSimdRegs & ~fSimdRegsToFree));
+    pReNative->Core.bmHstSimdRegs &= ~fSimdRegsToFree;
+
+    /* If there are guest register shadows in any call-volatile register, we
+       have to clear the corrsponding guest register masks for each register. */
+    uint32_t fHstSimdRegsWithGstShadow = pReNative->Core.bmHstSimdRegsWithGstShadow & fSimdRegsToFree;
+    if (fHstSimdRegsWithGstShadow)
+    {
+        Log12(("iemNativeSimdRegMoveAndFreeAndFlushAtCall: bmHstSimdRegsWithGstShadow %#RX32 -> %#RX32; removed %#RX32\n",
+               pReNative->Core.bmHstSimdRegsWithGstShadow, pReNative->Core.bmHstSimdRegsWithGstShadow & ~IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK, fHstSimdRegsWithGstShadow));
+        pReNative->Core.bmHstSimdRegsWithGstShadow &= ~fHstSimdRegsWithGstShadow;
+        do
+        {
+            unsigned const idxSimdReg = ASMBitFirstSetU32(fHstSimdRegsWithGstShadow) - 1;
+            fHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxSimdReg);
+
+            AssertMsg(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows != 0, ("idxSimdReg=%#x\n", idxSimdReg));
+            Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                     & pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows));
+
+            pReNative->Core.bmGstSimdRegShadows &= ~pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows;
+            pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows = 0;
+        } while (fHstSimdRegsWithGstShadow != 0);
+    }
+
+    return off;
+}
 #endif
 
 
@@ -5235,6 +5488,9 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
                     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
                     PIEMNATIVEVAR const pVar   = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
                     Assert(pVar->idxReg == idxReg);
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+                    Assert(!pVar->fSimdReg);
+#endif
                     if (!(RT_BIT_32(IEMNATIVE_VAR_IDX_UNPACK(idxVar)) & fKeepVars))
                     {
                         Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: idxVar=%#x enmKind=%d idxReg=%d\n",
@@ -5300,6 +5556,11 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
             pReNative->Core.aHstRegs[idxReg].fGstRegShadows = 0;
         } while (fHstRegsWithGstShadow != 0);
     }
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    /* Now for the SIMD registers, no argument support for now. */
+    off = iemNativeSimdRegMoveAndFreeAndFlushAtCall(pReNative, off, 0 /*cArgs*/, fKeepVars);
+#endif
 
     return off;
 }
@@ -5586,6 +5847,41 @@ iemNativeSimdRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, I
     }
 
     IEMNATIVE_SIMD_REG_STATE_CLR_DIRTY(pReNative, enmGstSimdReg);
+    return off;
+}
+
+
+/**
+ * Flush the given set of guest SIMD registers if marked as dirty.
+ *
+ * @returns New code buffer offset.
+ * @param   pReNative           The native recompile state.
+ * @param   off                 Current code buffer position.
+ * @param   fFlushGstSimdReg    The guest SIMD register set to flush (default is flush everything).
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeSimdRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fFlushGstSimdReg /*= UINT64_MAX*/)
+{
+    uint64_t bmGstSimdRegShadowDirty =   (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                                       & fFlushGstSimdReg;
+    if (bmGstSimdRegShadowDirty)
+    {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
+# endif
+
+        uint32_t idxGstSimdReg = 0;
+        do
+        {
+            if (bmGstSimdRegShadowDirty & 0x1)
+                off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
+
+            idxGstSimdReg++;
+            bmGstSimdRegShadowDirty >>= 1;
+        } while (bmGstSimdRegShadowDirty);
+    }
+
     return off;
 }
 
@@ -6196,6 +6492,71 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
     return idxRegNew;
 }
 
+
+/**
+ * Flushes guest SIMD register shadow copies held by a set of host registers.
+ *
+ * This is used whenever calling an external helper for ensuring that we don't carry on
+ * with any guest shadows in volatile registers, as these will get corrupted by the caller.
+ *
+ * @param   pReNative       The native recompile state.
+ * @param   fHstSimdRegs    Set of host SIMD registers to flush guest shadows for.
+ */
+DECLHIDDEN(void) iemNativeSimdRegFlushGuestShadowsByHostMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstSimdRegs) RT_NOEXCEPT
+{
+    /*
+     * Reduce the mask by what's currently shadowed.
+     */
+    uint32_t const bmHstSimdRegsWithGstShadowOld = pReNative->Core.bmHstSimdRegsWithGstShadow;
+    fHstSimdRegs &= bmHstSimdRegsWithGstShadowOld;
+    if (fHstSimdRegs)
+    {
+        uint32_t const bmHstSimdRegsWithGstShadowNew = bmHstSimdRegsWithGstShadowOld & ~fHstSimdRegs;
+        Log12(("iemNativeSimdRegFlushGuestShadowsByHostMask: flushing %#RX32 (%#RX32 -> %#RX32)\n",
+               fHstSimdRegs, bmHstSimdRegsWithGstShadowOld, bmHstSimdRegsWithGstShadowNew));
+        pReNative->Core.bmHstSimdRegsWithGstShadow = bmHstSimdRegsWithGstShadowNew;
+        if (bmHstSimdRegsWithGstShadowNew)
+        {
+            /*
+             * Partial (likely).
+             */
+            uint64_t fGstShadows = 0;
+            do
+            {
+                unsigned const idxHstSimdReg = ASMBitFirstSetU32(fHstSimdRegs) - 1;
+                Assert(!(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxHstSimdReg)));
+                Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows)
+                       == pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows);
+                Assert(!((  pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                          & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows));
+
+                fGstShadows |= pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+                pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows = 0;
+                fHstSimdRegs &= ~RT_BIT_32(idxHstSimdReg);
+            } while (fHstSimdRegs != 0);
+            pReNative->Core.bmGstSimdRegShadows &= ~fGstShadows;
+        }
+        else
+        {
+            /*
+             * Clear all.
+             */
+            do
+            {
+                unsigned const idxHstSimdReg = ASMBitFirstSetU32(fHstSimdRegs) - 1;
+                Assert(!(pReNative->Core.bmHstSimdRegs & RT_BIT_32(idxHstSimdReg)));
+                Assert(   (pReNative->Core.bmGstSimdRegShadows & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows)
+                       == pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows);
+                Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                         & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows));
+
+                pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows = 0;
+                fHstSimdRegs &= ~RT_BIT_32(idxHstSimdReg);
+            } while (fHstSimdRegs != 0);
+            pReNative->Core.bmGstSimdRegShadows = 0;
+        }
+    }
+}
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 
@@ -6273,9 +6634,12 @@ DECLHIDDEN(void) iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNative)
  *
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
+ *
+ * @note This function does not flush any shadowing information for guest registers. This needs to be done by
+ *       the caller if it wishes to do so.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept, bool fFlushShadows)
+iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept, uint64_t fGstSimdShwExcept)
 {
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     if (!(fGstShwExcept & kIemNativeGstReg_Pc))
@@ -6286,58 +6650,10 @@ iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     off = iemNativeRegFlushDirtyGuest(pReNative, off, ~fGstShwExcept);
-    if (   fFlushShadows
-        && (pReNative->Core.bmGstRegShadows & ~fGstShwExcept))
-    {
-        uint64_t bmGstRegShadows = pReNative->Core.bmGstRegShadows & ~fGstShwExcept;
-        uint8_t idxGstReg = 0;
-        do
-        {
-            if (bmGstRegShadows & 0x1)
-            {
-                uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[idxGstReg];
-
-                iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
-                iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(idxGstReg));
-            }
-            idxGstReg++;
-            bmGstRegShadows >>= 1;
-        } while (bmGstRegShadows);
-    }
 #endif
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
-    if (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
-    {
-        iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/,
-                                               pReNative->Core.bmGstSimdRegShadowDirtyLo128
-                                             | pReNative->Core.bmGstSimdRegShadowDirtyHi128);
-    }
-# endif
-    /** @todo r=bird: There must be a quicker way to check if anything needs
-     *        doing and then call simd function to do the flushing */
-    /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
-    for (uint8_t idxGstSimdReg = 0; idxGstSimdReg < RT_ELEMENTS(g_aGstSimdShadowInfo); idxGstSimdReg++)
-    {
-        Assert(   (pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxGstSimdReg)
-               || !IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg)));
-
-        if (IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg))
-            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
-
-        if (   fFlushShadows
-            && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxGstSimdReg))
-        {
-            uint8_t const idxHstSimdReg = pReNative->Core.aidxGstSimdRegShadows[idxGstSimdReg];
-
-            iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxHstSimdReg, off);
-            iemNativeSimdRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg)));
-        }
-    }
-#else
-    RT_NOREF(pReNative, fGstShwExcept, fFlushShadows);
+    off = iemNativeSimdRegFlushDirtyGuest(pReNative, off, ~fGstSimdShwExcept);
 #endif
 
     return off;
@@ -8309,6 +8625,17 @@ iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t o
         } while (fHstRegs);
     }
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+
+    /*
+     * Guest register shadows are flushed to CPUMCTX at the moment and don't need allocating a stack slot
+     * which would be more difficult due to spanning multiple stack slots and different sizes
+     * (besides we only have a limited amount of slots at the moment).
+     *
+     * However the shadows need to be flushed out as the guest SIMD register might get corrupted by
+     * the callee. This asserts that the registers were written back earlier and are not in the dirty state.
+     */
+    iemNativeSimdRegFlushGuestShadowsByHostMask(pReNative, IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK);
+
     fHstRegs = pReNative->Core.bmHstSimdRegs & IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK;
     if (fHstRegs)
     {
@@ -8317,14 +8644,9 @@ iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t o
             unsigned int const idxHstReg = ASMBitFirstSetU32(fHstRegs) - 1;
             fHstRegs &= ~RT_BIT_32(idxHstReg);
 
-            /*
-             * Guest registers are flushed to CPUMCTX at the moment and don't need allocating a stack slot
-             * which would be more difficult due to spanning multiple stack slots and different sizes
-             * (besides we only have a limited amount of slots at the moment). Fixed temporary registers
-             * don't need saving.
-             */
-            if (   pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_FixedTmp
-                || pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_FixedReserved)
+            /* Fixed reserved and temporary registers don't need saving. */
+            if (   pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_FixedReserved
+                || pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_FixedTmp)
                 continue;
 
             Assert(pReNative->Core.aHstSimdRegs[idxHstReg].enmWhat == kIemNativeWhat_Var);

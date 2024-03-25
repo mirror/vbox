@@ -937,7 +937,7 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
          * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
          */
         /** @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path? */
-        off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
@@ -1033,7 +1033,7 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
          * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
          */
         /** @todo r=aeichner Can we postpone this to the RaiseNm/RaiseUd path? */
-        off = iemNativeRegFlushPendingWrites(pReNative, off, false /*fFlushShadows*/);
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
