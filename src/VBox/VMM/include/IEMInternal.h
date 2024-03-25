@@ -99,7 +99,7 @@ RT_C_DECLS_BEGIN
 /** Enables access to even callee saved registers. */
 //# define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
 
-#if defined(DOXYGEN_RUNNING) || defined(DEBUG_aeichner)
+#if defined(DOXYGEN_RUNNING) || 1
 /** @def IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
  * Delay the writeback or dirty registers as long as possible. */
 # define IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
