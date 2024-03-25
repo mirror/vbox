@@ -6470,6 +6470,26 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
             *poff = iemNativeEmitGuestSimdRegValueCheck(pReNative, *poff, idxSimdReg, enmGstSimdReg, enmLoadSz);
 #endif
 
+        if (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+            || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
+        {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+            iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
+            iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxSimdReg);
+# endif
+
+            if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128)
+                IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, enmGstSimdReg);
+            else if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128)
+                IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, enmGstSimdReg);
+            else
+            {
+                Assert(enmLoadSz == kIemNativeGstSimdRegLdStSz_256);
+                IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, enmGstSimdReg);
+                IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, enmGstSimdReg);
+            }
+        }
+
         return idxSimdReg;
     }
 
@@ -6485,6 +6505,26 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
 
     if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
         iemNativeSimdRegMarkAsGstSimdRegShadow(pReNative, idxRegNew, enmGstSimdReg, *poff);
+
+    if (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+        || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
+    {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
+        iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxRegNew);
+# endif
+
+        if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128)
+            IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, enmGstSimdReg);
+        else if (enmLoadSz == kIemNativeGstSimdRegLdStSz_High128)
+            IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, enmGstSimdReg);
+        else
+        {
+            Assert(enmLoadSz == kIemNativeGstSimdRegLdStSz_256);
+            IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_LO_U128(pReNative, enmGstSimdReg);
+            IEMNATIVE_SIMD_REG_STATE_SET_DIRTY_HI_U128(pReNative, enmGstSimdReg);
+        }
+    }
 
     Log12(("iemNativeRegAllocTmpForGuestSimdReg: Allocated %s for guest %s %s\n",
            g_apszIemNativeHstSimdRegNames[idxRegNew], g_aGstSimdShadowInfo[enmGstSimdReg].pszName, s_pszIntendedUse[enmIntendedUse]));
