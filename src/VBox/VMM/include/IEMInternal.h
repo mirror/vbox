@@ -1049,7 +1049,9 @@ typedef union IEMTBDBGENTRY
     {
         /* kIemTbDbgEntryType_GuestRegShadowing. */
         uint32_t    uType         : 4;
-        uint32_t    uUnused       : 4;
+        /** Flag whether the register is marked as dirty. */
+        uint32_t    fDirty        : 1;
+        uint32_t    uUnused       : 3;
         /** The guest register being shadowed (IEMNATIVEGSTREG). */
         uint32_t    idxGstReg     : 8;
         /** The host new register number, UINT8_MAX if dropped. */

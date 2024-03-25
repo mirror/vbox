@@ -3256,6 +3256,9 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
                                            ;
     pReNative->Core.bmHstRegsWithGstShadow = 0;
     pReNative->Core.bmGstRegShadows        = 0;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    pReNative->Core.bmGstRegShadowDirty    = 0;
+#endif
     pReNative->Core.bmVars                 = 0;
     pReNative->Core.bmStack                = 0;
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
@@ -3791,10 +3794,17 @@ iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGST
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     pEntry->GuestRegShadowing.uType         = kIemTbDbgEntryType_GuestRegShadowing;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    pEntry->GuestRegShadowing.fDirty        = (pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg)) ? 1 : 0;
+#endif
     pEntry->GuestRegShadowing.uUnused       = 0;
     pEntry->GuestRegShadowing.idxGstReg     = enmGstReg;
     pEntry->GuestRegShadowing.idxHstReg     = idxHstReg;
     pEntry->GuestRegShadowing.idxHstRegPrev = idxHstRegPrev;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(   idxHstReg != UINT8_MAX
+           || !(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg)));
+#endif
 }
 
 
@@ -4021,6 +4031,133 @@ static uint8_t iemNativeRegTryAllocFree(PIEMRECOMPILERSTATE pReNative, uint32_t 
 #endif /* unused */
 
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+/**
+ * Stores the host reg @a idxHstReg into guest shadow register @a enmGstReg.
+ *
+ * @returns New code buffer offset on success, UINT32_MAX on failure.
+ * @param   pReNative   .
+ * @param   off         The current code buffer position.
+ * @param   enmGstReg   The guest register to store to.
+ * @param   idxHstReg   The host register to store from.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTREG enmGstReg, uint8_t idxHstReg)
+{
+    Assert((unsigned)enmGstReg < (unsigned)kIemNativeGstReg_End);
+    Assert(g_aGstShadowInfo[enmGstReg].cb != 0);
+
+    switch (g_aGstShadowInfo[enmGstReg].cb)
+    {
+        case sizeof(uint64_t):
+            return iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+        case sizeof(uint32_t):
+            return iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+        case sizeof(uint16_t):
+            return iemNativeEmitStoreGprToVCpuU16(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+#if 0 /* not present in the table. */
+        case sizeof(uint8_t):
+            return iemNativeEmitStoreGprToVCpuU8(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+#endif
+        default:
+            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
+    }
+}
+
+
+/**
+ * Emits code to flush a pending write of the given guest register if any.
+ *
+ * @returns New code buffer offset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   enmGstReg       The guest register to flush.
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTREG enmGstReg)
+{
+    uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[enmGstReg];
+
+    Assert(enmGstReg >= kIemNativeGstReg_GprFirst && enmGstReg <= kIemNativeGstReg_GprLast);
+    Assert(   idxHstReg != UINT8_MAX
+           && pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg));
+    Log12(("iemNativeRegFlushPendingWrite: Clearing guest register %s shadowed by host %s\n",
+           g_aGstShadowInfo[enmGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
+
+    off = iemNativeEmitStoreGprWithGstShadowReg(pReNative, off, enmGstReg, idxHstReg);
+
+    pReNative->Core.bmGstRegShadowDirty &= ~RT_BIT_64(enmGstReg);
+    return off;
+}
+
+
+/**
+ * Flush the given set of guest registers if marked as dirty.
+ *
+ * @returns New code buffer offset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   fFlushGstReg    The guest register set to flush (default is flush everything).
+ */
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fFlushGstReg /*= UINT64_MAX*/)
+{
+    if (pReNative->Core.bmGstRegShadowDirty & fFlushGstReg)
+    {
+        uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fFlushGstReg;
+        uint32_t idxGstReg = 0;
+
+        do
+        {
+            if (bmGstRegShadowDirty & 0x1)
+            {
+                off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
+            }
+            idxGstReg++;
+            bmGstRegShadowDirty >>= 1;
+        } while (bmGstRegShadowDirty);
+    }
+
+    return off;
+}
+
+
+/**
+ * Flush all shadowed guest registers marked as dirty for the given host register.
+ *
+ * @returns New code buffer offset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   idxHstReg       The host register.
+ *
+ * @note This doesn't do any unshadowing of guest registers from the host register.
+ */
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstReg)
+{
+    /* We need to flush any pending guest register writes this host register shadows. */
+    uint64_t fGstRegShadows = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
+    if (pReNative->Core.bmGstRegShadowDirty & fGstRegShadows)
+    {
+        uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fGstRegShadows;
+        uint32_t idxGstReg = 0;
+        do
+        {
+            if (bmGstRegShadowDirty & 0x1)
+            {
+                off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
+            }
+            idxGstReg++;
+            bmGstRegShadowDirty >>= 1;
+        } while (bmGstRegShadowDirty);
+    }
+
+    return off;
+}
+#endif
+
+
 /**
  * Locate a register, possibly freeing one up.
  *
@@ -4088,6 +4225,11 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
             /* If it matches any shadowed registers. */
             if (pReNative->Core.bmGstRegShadows & fToFreeMask)
             {
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                /* Writeback any dirty shadow registers we are about to unshadow. */
+                *poff = iemNativeRegFlushDirtyGuest(pReNative, *poff, fToFreeMask);
+#endif
+
                 STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeRegFindFreeLivenessUnshadowed);
                 iemNativeRegFlushGuestShadows(pReNative, fToFreeMask);
                 Assert(fRegs == (~pReNative->Core.bmHstRegs & fRegMask)); /* this shall not change. */
@@ -4117,6 +4259,11 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
         Assert(   (pReNative->Core.aHstRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstRegShadows)
                == pReNative->Core.aHstRegs[idxReg].fGstRegShadows);
         Assert(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        /* We need to flush any pending guest register writes this host register shadows. */
+        *poff = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, *poff, idxReg);
+#endif
 
         pReNative->Core.bmHstRegsWithGstShadow &= ~RT_BIT_32(idxReg);
         pReNative->Core.bmGstRegShadows        &= ~pReNative->Core.aHstRegs[idxReg].fGstRegShadows;
@@ -4156,6 +4303,9 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
                 Assert(pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
                 Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg))
                        == RT_BOOL(pReNative->Core.aHstRegs[idxReg].fGstRegShadows));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.aHstRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
 
                 if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack)
                 {
@@ -4203,6 +4353,9 @@ static uint32_t iemNativeRegMoveVar(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeRegClearGstRegShadowing(pReNative, idxRegNew, off);
 
     uint64_t fGstRegShadows = pReNative->Core.aHstRegs[idxRegOld].fGstRegShadows;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(!(fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
     Log12(("%s: moving idxVar=%#x from %s to %s (fGstRegShadows=%RX64)\n",
            pszCaller, idxVar, g_apszIemNativeHstRegNames[idxRegOld], g_apszIemNativeHstRegNames[idxRegNew], fGstRegShadows));
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegNew, idxRegOld);
@@ -4261,6 +4414,9 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE 
     Assert(pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
     Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxRegOld))
            == RT_BOOL(pReNative->Core.aHstRegs[idxRegOld].fGstRegShadows));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(!(pReNative->Core.aHstRegs[idxRegOld].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
 
 
     /** @todo Add statistics on this.*/
@@ -4478,6 +4634,16 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
     uint32_t const fRegMask = !fNoVolatileRegs
                             ? IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK
                             : IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK;
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /** @todo r=aeichner Implement for registers other than GPR as well. */
+    if (   (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
+            || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
+        && enmGstReg >= kIemNativeGstReg_GprFirst
+        && enmGstReg <= kIemNativeGstReg_GprLast
+        )
+        pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
+#endif
 
     /*
      * First check if the guest register value is already in a host register.
@@ -4762,6 +4928,9 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative,
                 Assert(pReNative->Core.aHstRegs[idxReg].fGstRegShadows != 0);
                 Assert(   (pReNative->Core.aHstRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstRegShadows)
                        == pReNative->Core.aHstRegs[idxReg].fGstRegShadows);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.aHstRegs[idxReg].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
                 pReNative->Core.bmHstRegsWithGstShadow &= ~RT_BIT_32(idxReg);
                 pReNative->Core.bmGstRegShadows        &= ~pReNative->Core.aHstRegs[idxReg].fGstRegShadows;
                 pReNative->Core.aHstRegs[idxReg].fGstRegShadows = 0;
@@ -4868,6 +5037,9 @@ DECLHIDDEN(void) iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxH
     {
         pReNative->Core.bmHstRegsWithGstShadow &= ~RT_BIT_32(idxHstReg);
         uint64_t const fGstRegShadowsOld        = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        Assert(!(pReNative->Core.bmGstRegShadowDirty & fGstRegShadowsOld));
+#endif
         pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = 0;
         pReNative->Core.bmGstRegShadows        &= ~fGstRegShadowsOld;
         uint64_t       fGstRegShadows           = fGstRegShadowsOld;
@@ -5060,6 +5232,9 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
             fHstRegsWithGstShadow &= ~RT_BIT_32(idxReg);
 
             AssertMsg(pReNative->Core.aHstRegs[idxReg].fGstRegShadows != 0, ("idxReg=%#x\n", idxReg));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            Assert(!(pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxReg].fGstRegShadows));
+#endif
             pReNative->Core.bmGstRegShadows &= ~pReNative->Core.aHstRegs[idxReg].fGstRegShadows;
             pReNative->Core.aHstRegs[idxReg].fGstRegShadows = 0;
         } while (fHstRegsWithGstShadow != 0);
@@ -5102,6 +5277,9 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, ui
                 Assert(idxHstReg < RT_ELEMENTS(pReNative->Core.aidxGstRegShadows));
                 Assert(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg));
                 Assert(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
+#endif
 
                 uint64_t const fInThisHstReg = (pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & fGstRegs) | RT_BIT_64(idxGstReg);
                 fGstRegs &= ~fInThisHstReg;
@@ -5123,6 +5301,9 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, ui
                 Assert(idxHstReg < RT_ELEMENTS(pReNative->Core.aidxGstRegShadows));
                 Assert(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg));
                 Assert(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
+#endif
 
                 fGstRegs &= ~(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows | RT_BIT_64(idxGstReg));
                 pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = 0;
@@ -5168,6 +5349,9 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadowsByHostMask(PIEMRECOMPILERSTATE pRe
                 Assert(!(pReNative->Core.bmHstRegs & RT_BIT_32(idxHstReg)));
                 Assert(   (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows)
                        == pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows));
+#endif
 
                 fGstShadows |= pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
                 pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = 0;
@@ -5186,6 +5370,9 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadowsByHostMask(PIEMRECOMPILERSTATE pRe
                 Assert(!(pReNative->Core.bmHstRegs & RT_BIT_32(idxHstReg)));
                 Assert(   (pReNative->Core.bmGstRegShadows & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows)
                        == pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(!(pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows));
+#endif
 
                 pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows = 0;
                 fHstRegs &= ~RT_BIT_32(idxHstReg);
@@ -5228,6 +5415,9 @@ iemNativeRegRestoreGuestShadowsInVolatileRegs(PIEMRECOMPILERSTATE pReNative, uin
             RT_NOREF(fHstRegsActiveShadows);
 
             uint64_t const fGstRegShadows = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            Assert(!(pReNative->Core.bmGstRegShadowDirty & fGstRegShadows));
+#endif
             Assert((pReNative->Core.bmGstRegShadows & fGstRegShadows) == fGstRegShadows);
             AssertStmt(fGstRegShadows != 0 && fGstRegShadows < RT_BIT_64(kIemNativeGstReg_End),
                        IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_12));
@@ -6033,6 +6223,28 @@ iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     RT_NOREF(pReNative, fGstShwExcept);
 #endif
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    off = iemNativeRegFlushDirtyGuest(pReNative, off, ~fGstShwExcept);
+    if (   fFlushShadows
+        && (pReNative->Core.bmGstRegShadows & ~fGstShwExcept))
+    {
+        uint64_t bmGstRegShadows = pReNative->Core.bmGstRegShadows & ~fGstShwExcept;
+        uint8_t idxGstReg = 0;
+        do
+        {
+            if (bmGstRegShadows & 0x1)
+            {
+                uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[idxGstReg];
+
+                iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
+                iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(idxGstReg));
+            }
+            idxGstReg++;
+            bmGstRegShadows >>= 1;
+        } while (bmGstRegShadows);
+    }
+#endif
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /** @todo r=bird: There must be a quicker way to check if anything needs
      *        doing and then call simd function to do the flushing */
@@ -6247,6 +6459,12 @@ iemNativeEmitTop32BitsClearCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxReg, IEMNATIVEGSTREG enmGstReg)
 {
+#if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
+    /* We can't check the value against whats in CPUMCTX if the register is already marked as dirty, so skip the check. */
+    if (pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg))
+        return off;
+#endif
+
 # ifdef RT_ARCH_AMD64
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
 
@@ -7619,6 +7837,12 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarRegisterAcquire(PIEMRECOMPILERSTATE pReNa
         && !(pReNative->Core.bmHstRegs & RT_BIT_32(g_aidxIemNativeCallRegs[uArgNo])))
     {
         idxReg = g_aidxIemNativeCallRegs[uArgNo];
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        /* Writeback any dirty shadow registers we are about to unshadow. */
+        *poff = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, *poff, idxReg);
+#endif
+
         iemNativeRegClearGstRegShadowing(pReNative, idxReg, *poff);
         Log11(("iemNativeVarRegisterAcquire: idxVar=%#x idxReg=%u (matching arg %u)\n", idxVar, idxReg, uArgNo));
     }
@@ -7864,6 +8088,11 @@ iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t id
     uint8_t idxReg = pVar->idxReg;
     if (idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
     {
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        if (enmGstReg >= kIemNativeGstReg_GprFirst && enmGstReg <= kIemNativeGstReg_GprLast)
+            pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
+#endif
+
         if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
         {
             uint8_t const idxRegOld = pReNative->Core.aidxGstRegShadows[enmGstReg];
@@ -9216,15 +9445,18 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                             PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
                             const char * const    pszGstReg = g_aGstShadowInfo[pEntry->GuestRegShadowing.idxGstReg].pszName;
                             if (pEntry->GuestRegShadowing.idxHstReg == UINT8_MAX)
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s != host register %s\n", pszGstReg,
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s != host register %s (Dirty: %RTbool)\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev],
+                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
                             else if (pEntry->GuestRegShadowing.idxHstRegPrev == UINT8_MAX)
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s\n", pszGstReg,
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg]);
-                            else
-                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (previously in %s)\n", pszGstReg,
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (Dirty: %RTbool)\n", pszGstReg,
                                                 g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg],
-                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
+                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
+                            else
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (previously in %s, Dirty: %RTbool)\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg],
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev],
+                                                RT_BOOL(pEntry->GuestRegShadowing.fDirty));
                             continue;
                         }
 

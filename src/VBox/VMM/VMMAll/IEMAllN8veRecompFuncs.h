@@ -113,6 +113,20 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
     /* If for whatever reason it is possible to reference the PC register at some point we need to do the writeback here first. */
 #endif
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+#if 0 /** @todo r=aeichner EFLAGS writeback delay. */
+    if (   enmClass == kIemNativeGstRegRef_EFlags
+        && pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(kIemNativeGstReg_EFlags))
+        off = iemNativeRegFlushPendingWrite(pReNative, off, kIemNativeGstReg_EFlags);
+#else
+    Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(kIemNativeGstReg_EFlags)));
+#endif
+
+    if (   enmClass == kIemNativeGstRegRef_Gpr
+        && pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxReg))
+        off = iemNativeRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTREG_GPR(idxReg));
+#endif
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     if (   enmClass == kIemNativeGstRegRef_XReg
         && pReNative->Core.bmGstSimdRegShadows & RT_BIT_64(idxReg))
@@ -1290,6 +1304,14 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uin
     PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
     Assert(!pEntry->fInElse);
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /* Writeback any dirty shadow registers. */
+    /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
+     *                   in one of the branches and leave guest registers already dirty before the start of the if
+     *                   block alone. */
+    off = iemNativeRegFlushDirtyGuest(pReNative, off);
+#endif
+
     /* Jump to the endif */
     off = iemNativeEmitJmpToLabel(pReNative, off, pEntry->idxLabelEndIf);
 
@@ -1324,6 +1346,13 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
 #endif
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /* Writeback any dirty shadow registers (else branch). */
+    /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
+     *                   in one of the branches and leave guest registers already dirty before the start of the if
+     *                   block alone. */
+    off = iemNativeRegFlushDirtyGuest(pReNative, off);
+#endif
 
     /*
      * Now we have find common group with the core state at the end of the
@@ -1334,6 +1363,11 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
      *        which is why we're doing this at the end of the else-block.
      *        But we'd need more info about future for that to be worth the effort. */
     PCIEMNATIVECORESTATE const pOther = pEntry->fInElse ? &pEntry->IfFinalState : &pEntry->InitialState;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(   pOther->bmGstRegShadowDirty == 0
+           && pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+
     if (memcmp(&pReNative->Core, pOther, sizeof(*pOther)) != 0)
     {
         /* shadow guest stuff first. */
@@ -1352,12 +1386,22 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
                 {
                     Log12(("iemNativeEmitEndIf: dropping gst %s from hst %s\n",
                            g_aGstShadowInfo[idxGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                    /* Writeback any dirty shadow registers we are about to unshadow. */
+                    off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxHstReg);
+#endif
                     iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
                 }
             } while (fGstRegs);
         }
         else
+        {
             Assert(pReNative->Core.bmHstRegsWithGstShadow == 0);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            Assert(pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+        }
 
         /* Check variables next. For now we must require them to be identical
            or stuff we can recreate. */
@@ -2821,7 +2865,9 @@ iemNativeEmitStoreGregU8Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGRegEx & 15]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -2917,7 +2963,9 @@ iemNativeEmitStoreGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
 
     iemNativeVarRegisterRelease(pReNative, idxValueVar);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGRegEx & 15]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -2955,7 +3003,9 @@ iemNativeEmitStoreGregU16Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -3023,7 +3073,9 @@ iemNativeEmitStoreGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -3040,7 +3092,9 @@ iemNativeEmitStoreGregU32Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
                                                                  kIemNativeGstRegUse_ForFullWrite);
     off = iemNativeEmitLoadGprImm64(pReNative, off, idxGstTmpReg, uValue);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -3075,7 +3129,9 @@ iemNativeEmitStoreGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
      * it to the CPUMCTX structure.
      */
     uint8_t const idxVarReg = iemNativeVarRegisterAcquireForGuestReg(pReNative, idxValueVar, IEMNATIVEGSTREG_GPR(iGReg), &off);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxVarReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 #ifdef VBOX_STRICT
     off = iemNativeEmitTop32BitsClearCheck(pReNative, off, idxVarReg);
 #endif
@@ -3095,7 +3151,9 @@ iemNativeEmitStoreGregU64Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
                                                                  kIemNativeGstRegUse_ForFullWrite);
     off = iemNativeEmitLoadGprImm64(pReNative, off, idxGstTmpReg, uValue);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -3130,7 +3188,11 @@ iemNativeEmitStoreGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
      * it to the CPUMCTX structure.
      */
     uint8_t const idxVarReg = iemNativeVarRegisterAcquireForGuestReg(pReNative, idxValueVar, IEMNATIVEGSTREG_GPR(iGReg), &off);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxVarReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#else
+    RT_NOREF(idxVarReg);
+#endif
     iemNativeVarRegisterRelease(pReNative, idxValueVar);
     return off;
 }
@@ -3147,7 +3209,9 @@ iemNativeEmitClearHighGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
                                                                  kIemNativeGstRegUse_ForUpdate);
     off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxGstTmpReg, idxGstTmpReg);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
@@ -3200,7 +3264,9 @@ iemNativeEmitAddGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGR
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -3256,7 +3322,9 @@ iemNativeEmitAddGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -3307,7 +3375,9 @@ iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGR
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -3363,7 +3433,9 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -3419,7 +3491,9 @@ iemNativeEmitAndGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg,
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -3471,7 +3545,9 @@ iemNativeEmitOrGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, 
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
@@ -6194,7 +6270,9 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     }
 #endif /* IEMNATIVE_WITH_TLB_LOOKUP */
 
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.rsp));
+#endif
     iemNativeRegFreeTmp(pReNative, idxRegRsp);
     if (idxRegEffSp != idxRegRsp)
         iemNativeRegFreeTmp(pReNative, idxRegEffSp);
@@ -6495,8 +6573,13 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
                       ("%s - %u\n", g_aGstShadowInfo[idxGReg].pszName, iemNativeLivenessGetPrevStateByGstReg(pReNative, IEMNATIVEGSTREG_GPR(idxGReg))));
 #endif
             iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegMemResult,  IEMNATIVEGSTREG_GPR(idxGReg), off);
+#if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
+            pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(idxGReg);
+#endif
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
             off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegMemResult,
                                                  RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[idxGReg]));
+#endif
         }
         else
         {
@@ -6504,7 +6587,9 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
             uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGReg),
                                                                       kIemNativeGstRegUse_ForUpdate);
             off = iemNativeEmitGprMergeInGpr16(pReNative, off, idxRegDst, idxRegMemResult);
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
             off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegDst, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[idxGReg]));
+#endif
             iemNativeRegFreeTmp(pReNative, idxRegDst);
         }
 
@@ -6536,7 +6621,10 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
             off = iemNativeEmitGprMergeInGpr16(pReNative, off, idxRegRsp, idxRegMemResult);
         }
     }
+
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rsp));
+#endif
 
     iemNativeRegFreeTmp(pReNative, idxRegRsp);
     if (idxRegEffSp != idxRegRsp)

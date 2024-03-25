@@ -69,6 +69,11 @@
 # define IEMNATIVE_WITH_INSTRUCTION_COUNTING
 #endif
 
+/** @def IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+ * Delay the writeback or dirty registers as long as possible. */
+#ifdef DEBUG_aeichner
+# define IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+#endif
 
 /** @name Stack Frame Layout
  *
@@ -1136,6 +1141,10 @@ typedef struct IEMNATIVECORESTATE
     uint32_t                    bmHstRegsWithGstShadow;
     /** Bitmap marking valid entries in aidxGstRegShadows. */
     uint64_t                    bmGstRegShadows;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /** Bitmap marking the shadowed guest register as dirty and needing writeback when flushing. */
+    uint64_t                    bmGstRegShadowDirty;
+#endif
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /** Allocation bitmap for aHstSimdRegs. */
@@ -1547,6 +1556,11 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTA
                                                                uint64_t fGstShwExcept, bool fFlushShadows);
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+#endif
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTREG enmGstReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fFlushGstReg = UINT64_MAX);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstReg);
 #endif
 
 
@@ -2109,6 +2123,9 @@ iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstRe
            && pReNative->Core.bmGstRegShadows < RT_BIT_64(kIemNativeGstReg_End));
     Assert(   RT_BOOL(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg))
            == RT_BOOL(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(!(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
 
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     uint64_t fGstRegs = pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows;
@@ -2147,6 +2164,9 @@ iemNativeRegClearGstRegShadowingOne(PIEMRECOMPILERSTATE pReNative, uint8_t idxHs
     Assert(pReNative->Core.bmGstRegShadows                    & RT_BIT_64(enmGstReg));
     Assert(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(enmGstReg));
     Assert(pReNative->Core.bmHstRegsWithGstShadow             & RT_BIT_32(idxHstReg));
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(!(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
 
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     iemNativeDbgInfoAddNativeOffset(pReNative, off);
@@ -2263,7 +2283,7 @@ iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     RT_NOREF(pReNative, fGstShwExcept);
 #endif
 
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#if defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR) || defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     /** @todo r=bird: There must be a quicker way to check if anything needs doing here!  */
     /** @todo This doesn't mix well with fGstShwExcept but we ignore this for now and just flush everything. */
     return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fFlushShadows);
