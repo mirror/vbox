@@ -6473,7 +6473,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
         if (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
             || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
         {
-# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
             iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxSimdReg);
 # endif
@@ -6509,7 +6509,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
     if (   enmIntendedUse == kIemNativeGstRegUse_ForFullWrite
         || enmIntendedUse == kIemNativeGstRegUse_ForUpdate)
     {
-# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
         iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
         iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxRegNew);
 # endif
