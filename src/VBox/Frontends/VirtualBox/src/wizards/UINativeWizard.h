@@ -35,6 +35,7 @@
 #include <QDialog>
 #include <QMap>
 #include <QPointer>
+#include <QSet>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
