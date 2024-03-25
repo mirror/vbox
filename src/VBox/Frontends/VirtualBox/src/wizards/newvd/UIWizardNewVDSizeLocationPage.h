@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QSet>
+
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 

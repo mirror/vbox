@@ -31,7 +31,10 @@
 # pragma once
 #endif
 
-/* Local includes: */
+/* Qt includes: */
+#include <QSet>
+
+/* GUI includes: */
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
