@@ -5709,8 +5709,8 @@ DECL_FORCE_INLINE(void) iemNativeSimdRegSetValidLoadFlag(PIEMRECOMPILERSTATE pRe
 }
 
 
-static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstSimdRegDst,
-                                                            uint8_t idxHstSimdRegSrc, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSzDst)
+static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTSIMDREG enmGstSimdRegDst,
+                                                            uint8_t idxHstSimdRegDst, uint8_t idxHstSimdRegSrc, IEMNATIVEGSTSIMDREGLDSTSZ enmLoadSzDst)
 {
     /* Easy case first, either the destination loads the same range as what the source has already loaded or the source has loaded everything. */
     if (   pReNative->Core.aHstSimdRegs[idxHstSimdRegSrc].enmLoaded == enmLoadSzDst
@@ -5732,7 +5732,7 @@ static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE 
                     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
                     break;
                 case kIemNativeGstSimdRegLdStSz_High128:
-                    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxHstSimdRegDst + 1, idxHstSimdRegSrc + 1);
+                    off = iemNativeEmitSimdLoadVecRegHighU128FromVecRegHighU128(pReNative, off, idxHstSimdRegDst, idxHstSimdRegSrc);
                     break;
                 default:
                     AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
@@ -5743,8 +5743,9 @@ static uint32_t iemNativeSimdRegAllocLoadVecRegFromVecRegSz(PIEMRECOMPILERSTATE 
     }
     else
     {
-        /* Complicated stuff where the source is currently missing something, later. */
-        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
+        /* The source doesn't has the part loaded, so load the register from CPUMCTX. */
+        Assert(enmLoadSzDst == kIemNativeGstSimdRegLdStSz_Low128 || enmLoadSzDst == kIemNativeGstSimdRegLdStSz_High128);
+        off = iemNativeEmitLoadSimdRegWithGstShadowSimdReg(pReNative, off, idxHstSimdRegDst, enmGstSimdRegDst, enmLoadSzDst);
     }
 
     return off;
@@ -5825,7 +5826,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
             {
                 uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask);
 
-                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, enmGstSimdReg, idxRegNew, idxSimdReg, enmLoadSz);
 
                 Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Duplicated %s for guest %s into %s for destructive calc\n",
                        g_apszIemNativeHstSimdRegNames[idxSimdReg], g_aGstSimdShadowInfo[enmGstSimdReg].pszName,
@@ -5841,7 +5842,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
                 if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
                 {
                     if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
-                        *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxSimdReg, idxSimdReg, enmLoadSz);
+                        *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, enmGstSimdReg, idxSimdReg, idxSimdReg, enmLoadSz);
                     else
                         iemNativeSimdRegSetValidLoadFlag(pReNative, idxSimdReg, enmLoadSz);
                     Log12(("iemNativeSimdRegAllocTmpForGuestSimdReg: Reusing %s for guest %s %s\n",
@@ -5863,7 +5864,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
                 uint8_t const idxRegNew = iemNativeSimdRegAllocTmpEx(pReNative, poff, fRegMask & ~RT_BIT_32(idxSimdReg),
                                                                     !fNoVolatileRegs
                                                                  && enmIntendedUse == kIemNativeGstRegUse_Calculation);
-                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, enmGstSimdReg, idxRegNew, idxSimdReg, enmLoadSz);
                 if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
                 {
                     iemNativeSimdRegTransferGstSimdRegShadowing(pReNative, idxSimdReg, idxRegNew, enmGstSimdReg, *poff);
@@ -5896,7 +5897,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
                                                                  enmIntendedUse == kIemNativeGstRegUse_Calculation);
 
             if (enmIntendedUse != kIemNativeGstRegUse_ForFullWrite)
-                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, idxRegNew, idxSimdReg, enmLoadSz);
+                *poff = iemNativeSimdRegAllocLoadVecRegFromVecRegSz(pReNative, *poff, enmGstSimdReg, idxRegNew, idxSimdReg, enmLoadSz);
             else
                 iemNativeSimdRegSetValidLoadFlag(pReNative, idxRegNew, enmLoadSz);
 
