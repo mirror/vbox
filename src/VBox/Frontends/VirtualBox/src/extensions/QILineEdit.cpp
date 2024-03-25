@@ -213,6 +213,12 @@ void UIMarkableLineEdit::setText(const QString &strText)
         m_pLineEdit->setText(strText);
 }
 
+void UIMarkableLineEdit::setToolTip(const QString &strText)
+{
+    if (m_pLineEdit)
+        m_pLineEdit->setToolTip(strText);
+}
+
 QString UIMarkableLineEdit::text() const
 {
     if (!m_pLineEdit)

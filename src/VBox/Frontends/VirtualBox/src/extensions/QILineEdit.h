@@ -112,6 +112,7 @@ public:
     /** @name Pass through functions for QILineEdit.
       * @{ */
         void setText(const QString &strText);
+        void setToolTip(const QString &strText);
         QString text() const;
         void setValidator(const QValidator *pValidator);
         bool hasAcceptableInput() const;
