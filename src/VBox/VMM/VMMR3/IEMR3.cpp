@@ -181,6 +181,12 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                           "InitialExecMemSize value %'RU64 (%#RX64) is out of range (max %'RU64)",
                           cbInitialExec, cbInitialExec, cbMaxExec);
 
+    /** @cfgm{/IEM/NativeRecompileAtUsedCount, uint32_t, 16}
+     * The translation block use count value to do native recompilation at. */
+    uint32_t uTbNativeRecompileAtUsedCount = 16;
+    rc = CFGMR3QueryU32Def(pIem, "NativeRecompileAtUsedCount", &uTbNativeRecompileAtUsedCount, 16);
+    AssertLogRelRCReturn(rc, rc);
+
 #endif /* VBOX_WITH_IEM_RECOMPILER*/
 
     /*
@@ -259,6 +265,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         uint32_t iMemMap = RT_ELEMENTS(pVCpu->iem.s.aMemMappings);
         while (iMemMap-- > 0)
             pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
+
+#ifdef VBOX_WITH_IEM_RECOMPILER
+        /*
+         * Distribute recompiler configuration.
+         */
+        pVCpu->iem.s.uTbNativeRecompileAtUsedCount = uTbNativeRecompileAtUsedCount;
+#endif
     }
 
 

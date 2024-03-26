@@ -656,7 +656,7 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                     pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
                     pTb->cUsed++;
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
-                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != 16)
+                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != pVCpu->iem.s.uTbNativeRecompileAtUsedCount)
                     {
                         Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p (@ %d / %d)\n",
                                fFlags, GCPhysPc, idxHash, pTb, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - cLeft,

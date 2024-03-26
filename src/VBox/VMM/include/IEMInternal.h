@@ -1824,16 +1824,17 @@ typedef struct IEMCPU
     bool                    afRecompilerStuff1[3];
     /** The virtual sync time at the last timer poll call. */
     uint32_t                msRecompilerPollNow;
+    /** The IEMTB::cUsed value when to attempt native recompilation of a TB. */
+    uint32_t                uTbNativeRecompileAtUsedCount;
     /** The IEM_CIMPL_F_XXX mask for the current instruction. */
     uint32_t                fTbCurInstr;
     /** The IEM_CIMPL_F_XXX mask for the previous instruction. */
     uint32_t                fTbPrevInstr;
-    /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
-    RTGCPHYS                GCPhysInstrBufPrev;
     /** Strict: Tracking skipped EFLAGS calculations.  Any bits set here are
      *  currently not up to date in EFLAGS. */
     uint32_t                fSkippingEFlags;
-    uint32_t                au32Padding[1];
+    /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
+    RTGCPHYS                GCPhysInstrBufPrev;
     /** Pointer to the ring-3 TB allocator for this EMT. */
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /** Pointer to the ring-3 executable memory allocator for this EMT. */
