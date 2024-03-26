@@ -41,17 +41,17 @@ BS3_EXTERN_DATA16 g_fbBs3VMMDevTesting
 TMPL_BEGIN_TEXT
 
 ;;
-; @cproto   BS3_DECL(uint8_t) Bs3TestQueryCfgU8(uint16_t uCfg);
-; @cproto   BS3_DECL(bool)    Bs3TestQueryCfgBool(uint16_t uCfg);
+; @cproto   BS3_DECL(uint8_t) Bs3TestQueryCfgU8(uint16_t uCfg, uint8_t bDefault);
+; @cproto   BS3_DECL(bool)    Bs3TestQueryCfgBool(uint16_t uCfg, bool fDefault);
 ;
 BS3_GLOBAL_NAME_EX BS3_CMN_NM(Bs3TestQueryCfgBool), function, 3
 BS3_PROC_BEGIN_CMN Bs3TestQueryCfgU8, BS3_PBC_HYBRID
-        BS3_CALL_CONV_PROLOG 1
+        BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
         push    xDX
+        push    xCX
 
-        xor     al, al
         cmp     byte [BS3_DATA16_WRT(g_fbBs3VMMDevTesting)], 0
         je      .no_vmmdev
 
@@ -72,12 +72,34 @@ BS3_PROC_BEGIN_CMN Bs3TestQueryCfgU8, BS3_PBC_HYBRID
 
         ; Read back the result.
         in      al, dx
+%if TMPL_BITS == 16
+        mov     cl, al
+        in      ax, dx                      ; check the 'okay'
+        cmp     ax, VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL & 0xffff
+        mov     al, cl
+        mov     ah, 0
+%else
+        movzx   ecx, al
+        in      eax, dx                     ; check the 'okay'
+        cmp     eax, VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL
+        mov     eax, ecx
+%endif
+        jne     .no_vmmdev
 
-.no_vmmdev:
+.return:
+        pop     xCX
         pop     xDX
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
+        BS3_CALL_CONV_EPILOG 2
         BS3_HYBRID_RET
+
+.no_vmmdev:
+%if TMPL_BITS == 16
+        mov     al, [xBP + xCB + cbCurRetAddr + xCB]
+%else
+        movzx   eax, byte [xBP + xCB + cbCurRetAddr + xCB]
+%endif
+        jmp     .return
 BS3_PROC_END_CMN   Bs3TestQueryCfgU8
 
 %if TMPL_BITS == 16

@@ -65,15 +65,7 @@ BS3_CMN_DEF(void, Bs3TestInit,(const char BS3_FAR *pszTest))
     g_fbBs3VMMDevTesting        = bs3TestIsVmmDevTestingPresent();
     if (g_fbBs3VMMDevTesting)
     {
-        uint16_t uValue;
-#if ARCH_BITS == 16
-        ASMOutU16(VMMDEV_TESTING_IOPORT_CMD, (uint16_t)VMMDEV_TESTING_CMD_QUERY_CFG);
-#else
-        ASMOutU32(VMMDEV_TESTING_IOPORT_CMD, VMMDEV_TESTING_CMD_QUERY_CFG);
-#endif
-        ASMOutU16(VMMDEV_TESTING_IOPORT_DATA, VMMDEV_TESTING_CFG_THRESHOLD_NATIVE_RECOMPILER);
-        uValue = ASMInU16(VMMDEV_TESTING_IOPORT_DATA);
-Bs3TestPrintf("VMMDEV_TESTING_CFG_THRESHOLD_NATIVE_RECOMPILER=%RU16\n", uValue);
+        uint16_t uValue = Bs3TestQueryCfgU16(VMMDEV_TESTING_CFG_THRESHOLD_NATIVE_RECOMPILER, 0);
         if (uValue > 0 && uValue < 1024)
             g_cBs3ThresholdNativeRecompiler = uValue;
     }

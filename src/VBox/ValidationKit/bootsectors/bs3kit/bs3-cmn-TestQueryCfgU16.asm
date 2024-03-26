@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3TestQueryCfgU32.
+; BS3Kit - Bs3TestQueryCfgU16.
 ;
 
 ;
-; Copyright (C) 2007-2024 Oracle and/or its affiliates.
+; Copyright (C) 2007-2023 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -41,13 +41,13 @@ BS3_EXTERN_DATA16 g_fbBs3VMMDevTesting
 TMPL_BEGIN_TEXT
 
 ;;
-; @cproto   BS3_DECL(uint32_t) Bs3TestQueryCfgU32(uint16_t uCfg, uint32_t uDefault);
+; @cproto   BS3_DECL(uint16_t) Bs3TestQueryCfgU16(uint16_t uCfg, uint16_t uDefault);
 ;
-BS3_PROC_BEGIN_CMN Bs3TestQueryCfgU32, BS3_PBC_HYBRID
+BS3_PROC_BEGIN_CMN Bs3TestQueryCfgU16, BS3_PBC_HYBRID
         BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
-TNOT16  push    xDX
+        push    xDX
         push    xCX
 
         cmp     byte [BS3_DATA16_WRT(g_fbBs3VMMDevTesting)], 0
@@ -69,19 +69,15 @@ TNOT16  push    xDX
         out     dx, ax
 
         ; Read back the result.
+        in      ax, dx
 %if TMPL_BITS == 16
-        in      ax, dx                      ; first word
-        push    ax
-        in      ax, dx                      ; second word
         mov     cx, ax
-        in      ax, dx                      ; okay magic following the value.
+        in      ax, dx                      ; read okay magic.
         cmp     ax, VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL & 0xffff
-        mov     dx, cx
-        pop     ax
+        mov     ax, cx
 %else
-        in      eax, dx
-        mov     ecx, eax
-        in      eax, dx
+        movzx   ecx, ax
+        in      eax, dx                     ; read okay magic.
         cmp     eax, VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL
         mov     eax, ecx
 %endif
@@ -89,16 +85,17 @@ TNOT16  push    xDX
 
 .return:
         pop     xCX
-TNOT16  pop     xDX
+        pop     xDX
         pop     xBP
         BS3_CALL_CONV_EPILOG 2
         BS3_HYBRID_RET
 
 .no_vmmdev:
-        mov     xAX, [xBP + xCB + cbCurRetAddr + xCB]
 %if TMPL_BITS == 16
-        mov     xDX, [xBP + xCB + cbCurRetAddr + xCB + xCB]
+        mov     ax, [xBP + xCB + cbCurRetAddr + xCB]
+%else
+        movzx   eax, word [xBP + xCB + cbCurRetAddr + xCB]
 %endif
         jmp     .return
-BS3_PROC_END_CMN   Bs3TestQueryCfgU32
+BS3_PROC_END_CMN   Bs3TestQueryCfgU16
 

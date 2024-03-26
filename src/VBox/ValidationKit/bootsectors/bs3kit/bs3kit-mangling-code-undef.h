@@ -207,6 +207,7 @@
 #undef Bs3TestPrintf
 #undef Bs3TestPrintfV
 #undef Bs3TestQueryCfgBool
+#undef Bs3TestQueryCfgU16
 #undef Bs3TestQueryCfgU32
 #undef Bs3TestQueryCfgU8
 #undef Bs3TestSkipped

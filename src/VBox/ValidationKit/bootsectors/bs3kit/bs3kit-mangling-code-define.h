@@ -207,6 +207,7 @@
 #define Bs3TestPrintf BS3_CMN_MANGLER(Bs3TestPrintf)
 #define Bs3TestPrintfV BS3_CMN_MANGLER(Bs3TestPrintfV)
 #define Bs3TestQueryCfgBool BS3_CMN_MANGLER(Bs3TestQueryCfgBool)
+#define Bs3TestQueryCfgU16 BS3_CMN_MANGLER(Bs3TestQueryCfgU16)
 #define Bs3TestQueryCfgU32 BS3_CMN_MANGLER(Bs3TestQueryCfgU32)
 #define Bs3TestQueryCfgU8 BS3_CMN_MANGLER(Bs3TestQueryCfgU8)
 #define Bs3TestSkipped BS3_CMN_MANGLER(Bs3TestSkipped)

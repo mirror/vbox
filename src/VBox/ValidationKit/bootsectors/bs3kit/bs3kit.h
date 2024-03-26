@@ -3698,24 +3698,40 @@ BS3_CMN_PROTO_STUB(uint64_t, Bs3TestNow,(void));
  *
  * @returns Value.
  * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ * @param   bDefault    The default value to return if the VMMDev isn't
+ *                      available or the query failed.
  */
-BS3_CMN_PROTO_STUB(uint8_t, Bs3TestQueryCfgU8,(uint16_t uCfg));
+BS3_CMN_PROTO_STUB(uint8_t, Bs3TestQueryCfgU8,(uint16_t uCfg, uint8_t bDefault));
 
 /**
- * Queries an unsigned 8-bit configuration value.
+ * Queries a boolean configuration value.
  *
  * @returns Value.
  * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ * @param   fDefault    The default value to return if the VMMDev isn't
+ *                      available or the query failed.
  */
-BS3_CMN_PROTO_STUB(bool, Bs3TestQueryCfgBool,(uint16_t uCfg));
+BS3_CMN_PROTO_STUB(bool, Bs3TestQueryCfgBool,(uint16_t uCfg, bool fDefault));
+
+/**
+ * Queries an unsigned 16-bit configuration value.
+ *
+ * @returns Value.
+ * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ * @param   uDefault    The default value to return if the VMMDev isn't
+ *                      available or the query failed.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3TestQueryCfgU16,(uint16_t uCfg, uint16_t uDefault));
 
 /**
  * Queries an unsigned 32-bit configuration value.
  *
  * @returns Value.
  * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ * @param   uDefault    The default value to return if the VMMDev isn't
+ *                      available or the query failed.
  */
-BS3_CMN_PROTO_STUB(uint32_t, Bs3TestQueryCfgU32,(uint16_t uCfg));
+BS3_CMN_PROTO_STUB(uint32_t, Bs3TestQueryCfgU32,(uint16_t uCfg, uint32_t uDefault));
 
 /**
  * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
