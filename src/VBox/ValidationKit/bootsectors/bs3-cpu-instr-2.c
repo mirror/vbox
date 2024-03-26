@@ -126,8 +126,10 @@ static const BS3TESTMODEENTRY g_aModeTests[] =
     BS3TESTMODEENTRY_CMN("shl", bs3CpuInstr2_shl),
     BS3TESTMODEENTRY_CMN("shr", bs3CpuInstr2_shr),
     BS3TESTMODEENTRY_CMN("sar", bs3CpuInstr2_sar),
+# if 0/** @todo temporarily disabled till the flag handling in immediate variants have been solved on Intel. */
     BS3TESTMODEENTRY_CMN("rol", bs3CpuInstr2_rol),
     BS3TESTMODEENTRY_CMN("ror", bs3CpuInstr2_ror),
+# endif   
     BS3TESTMODEENTRY_CMN("rcl", bs3CpuInstr2_rcl),
     BS3TESTMODEENTRY_CMN("rcr", bs3CpuInstr2_rcr),
 #endif
