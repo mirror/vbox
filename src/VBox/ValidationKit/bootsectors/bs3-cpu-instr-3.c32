@@ -770,6 +770,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                                                 : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses (or #PF), skip register-only tests.  This
@@ -794,7 +795,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             uint16_t   cErrors;
@@ -9259,6 +9260,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                                                 : RT_BIT_64(paTests[iTest].cBitsGprValMask) - 1;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses (or #PFs), skip register-only tests.  This
@@ -9283,7 +9285,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType2(uint8_t bMode, BS3CPUINSTR3_TEST2_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             uint16_t   cErrors;
@@ -10127,6 +10129,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                                                 : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses (or #PF), skip register-only tests.  This
@@ -10151,7 +10154,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType3(uint8_t bMode, BS3CPUINSTR3_TEST3_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             uint16_t   cErrors;
@@ -12429,6 +12432,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType4(uint8_t bMode, BS3CPUINSTR3_TEST4_T 
                                                 : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues * 2;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses (or #PF), skip register-only tests.  This
@@ -12453,7 +12457,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType4(uint8_t bMode, BS3CPUINSTR3_TEST4_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues * 2)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             unsigned       iEflVariation;
@@ -12770,6 +12774,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                                                 : BS3_MODE_IS_RM_OR_V86(bMode) ? X86_XCPT_UD : paConfigs[iCfg].bXcptAvx;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses (or #PF), skip register-only tests.  This
@@ -12794,7 +12799,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             uint16_t   cErrors;
@@ -13349,6 +13354,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType6(uint8_t bMode, BS3CPUINSTR3_TEST6_T 
                                                 : RT_BIT_64(paTests[iTest].cBitsGprValMask) - 1;
                     uint16_t        idTestStep  = bRing * 10000 + iCfg * 100 + iTest * 10;
                     unsigned        cRecompRuns = 0;
+                    unsigned const  cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler + cValues;
                     unsigned        iVal;
 
                     /* If testing unaligned memory accesses, skip register-only tests.  This allows
@@ -13373,7 +13379,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType6(uint8_t bMode, BS3CPUINSTR3_TEST6_T 
                     /*
                      * Iterate the test values and do the actual testing.
                      */
-                    while (cRecompRuns < BS3_THRESHOLD_NATIVE_RECOMPILER + cValues)
+                    while (cRecompRuns < cMaxRecompRuns)
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
                             uint16_t   cErrors;
