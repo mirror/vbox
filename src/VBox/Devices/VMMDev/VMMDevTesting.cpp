@@ -651,6 +651,13 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
 #endif
                             break;
                         }
+
+                        case VMMDEV_TESTING_CFG_THRESHOLD_NATIVE_RECOMPILER:
+                        {
+                            pThis->cbReadableTestingData = sizeof(pThis->TestingData.u16);
+                            pThis->TestingData.u16       = pThis->cTestingThresholdNativeRecompiler;
+                            break;
+                        }
                     }
                     break;
                 }

@@ -4869,6 +4869,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "TestingCfgDword7|"
                                   "TestingCfgDword8|"
                                   "TestingCfgDword9|"
+                                  "TestingThresholdNativeRecompiler|"
                                   "HGCMHeapBudgetDefault|"
                                   "HGCMHeapBudgetLegacy|"
                                   "HGCMHeapBudgetVBoxGuest|"
@@ -4968,8 +4969,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         rc = pHlp->pfnCFGMQueryU32Def(pCfg, szName, &pThis->au32TestingCfgDwords[i], 0);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: Failed querying \"%s\" as a string"), szName);
+                                       N_("Configuration error: Failed querying \"%s\" as an 32-bit unsigned int"), szName);
     }
+
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TestingThresholdNativeRecompiler", &pThis->cTestingThresholdNativeRecompiler, 0);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Failed querying \"TestingThresholdNativeRecompiler\" as an 16-bit unsigned int"));
 
 
     /** @todo image-to-load-filename? */

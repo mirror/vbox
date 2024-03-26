@@ -348,6 +348,8 @@ typedef struct VMMDEV
 
         /** A 8-bit VMMDEV_TESTING_QUERY_CFG response. */
         uint8_t         b;
+        /** A 16-bit VMMDEV_TESTING_QUERY_CFG response. */
+        uint16_t        u16;
         /** A 32-bit VMMDEV_TESTING_QUERY_CFG response. */
         uint32_t        u32;
 
@@ -397,6 +399,9 @@ typedef struct VMMDEV
     IOMMMIOHANDLE       hMmioTesting;
     /** User defined configuration dwords. */
     uint32_t            au32TestingCfgDwords[10];
+    /** VMMDEV_TESTING_CFG_THRESHOLD_NATIVE_RECOMPILER value.   */
+    uint16_t            cTestingThresholdNativeRecompiler;
+    uint16_t            au16Padding[3];
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES || DOXYGEN_RUNNING */
     /** @} */
 
