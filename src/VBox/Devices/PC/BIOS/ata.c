@@ -627,15 +627,6 @@ void BIOSCALL ata_detect(void)
                 else
                     fdpt = ebda_seg :> &EbdaData->fdpt1;
 
-#if 0
-                /* Place the FDPT outside of conventional memory. Needed for
-                 * 286 XENIX 2.1.3/2.2.1 because it completely wipes out
-                 * the EBDA and low memory. Hack!
-                 */
-                fdpt = MK_FP(0xE200, 0xf00);
-                fdpt += device;
-#endif
-
                 /* Set the INT 41h or 46h pointer. */
                 int_vec  = MK_FP(0, (0x41 + device * 5) * sizeof(void __far *));
                 *int_vec = fdpt;
@@ -663,8 +654,11 @@ void BIOSCALL ata_detect(void)
                  * IBM compatible drive types (rather than Type 47 or so), point
                  * INT 41h/46h at the drive table in ROM.
                  * This is required for some old guests which look at INT 41h/46h,
-                 * but either insist that it point to a high segment (NetWare 2.x)
+                 * but either insist that it points well above 640K (NetWare 2.x)
                  * or wipe out all RAM (286 XENIX 2.1.3/2.2.1).
+                 *
+                 * NB: Writing into the F000 segment and storing the FDPT there
+                 * would also solve some of these problems.
                  */
                 i   = inb_cmos(0x12);
                 i >>= ((1 - device) * 4);
@@ -672,7 +666,7 @@ void BIOSCALL ata_detect(void)
                 if (i == 0xf)
                     i = inb_cmos(0x19 + device);
 
-                if (i <= 23) {  // Should be in sync with DevPcBios.cpp
+                if (i <= 23) {  // Should be in sync with DevPcBios.cpp and orgs.asm
                     fdpt = MK_FP(0xF000, 0xE401);
                     fdpt += i - 1;
                     *int_vec = fdpt;
