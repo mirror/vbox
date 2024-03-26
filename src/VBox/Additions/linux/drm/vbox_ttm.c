@@ -532,10 +532,15 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 #endif
 
 	bo->placement.placement = bo->placements;
+#if RTLNX_VER_MAX(6,9,0)
 	bo->placement.busy_placement = bo->placements;
+#endif
 
 	if (mem_type & VBOX_MEM_TYPE_VRAM) {
-#if RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
+#if RTLNX_VER_MIN(6,9,0)
+		bo->placements[c].mem_type = TTM_PL_VRAM;
+		PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_FLAG_DESIRED;
+#elif RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
 		bo->placements[c].mem_type = TTM_PL_VRAM;
 		PLACEMENT_FLAGS(bo->placements[c++]) = 0;
 #elif RTLNX_VER_MIN(5,10,0)
@@ -548,7 +553,11 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 #endif
 	}
 	if (mem_type & VBOX_MEM_TYPE_SYSTEM) {
-#if RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
+
+#if RTLNX_VER_MIN(6,9,0)
+		bo->placements[c].mem_type = TTM_PL_SYSTEM;
+		PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_FLAG_DESIRED;
+#elif RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
 		bo->placements[c].mem_type = TTM_PL_SYSTEM;
 		PLACEMENT_FLAGS(bo->placements[c++]) = 0;
 #elif RTLNX_VER_MIN(5,10,0)
@@ -561,7 +570,10 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 #endif
 	}
 	if (!c) {
-#if RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
+#if RTLNX_VER_MIN(6,9,0)
+		bo->placements[c].mem_type = TTM_PL_SYSTEM;
+		PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_FLAG_DESIRED;
+#elif RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
 		bo->placements[c].mem_type = TTM_PL_SYSTEM;
 		PLACEMENT_FLAGS(bo->placements[c++]) = 0;
 #elif RTLNX_VER_MIN(5,10,0)
@@ -575,7 +587,9 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 	}
 
 	bo->placement.num_placement = c;
+#if RTLNX_VER_MAX(6,9,0)
 	bo->placement.num_busy_placement = c;
+#endif
 
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
 	for (i = 0; i < c; ++i) {
