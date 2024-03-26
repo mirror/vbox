@@ -40,7 +40,7 @@
 #endif
 
 /* Number of S/G table entries in EDDS. */
-#define NUM_EDDS_SG         16
+#define NUM_EDDS_SG         17
 
 
 /**
@@ -351,6 +351,7 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     uint16_t        n_sect = bios_dsk->drqp.nsect;
     uint16_t        sectsz = bios_dsk->drqp.sect_sz;
     fis_d2h __far   *d2h;
+    int             i;
 
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
 
@@ -379,9 +380,12 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, (uint32_t)n_sect * sectsz);
 
     /* Set up the PRDT. */
-    ahci->aPrdt[ahci->cur_prd].len       = ahci->edds.u.sg[0].size - 1;
-    ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->edds.u.sg[0].phys_addr;
-    ++ahci->cur_prd;
+    for (i = 0; i < ahci->edds.num_used; ++i)
+    {
+        ahci->aPrdt[ahci->cur_prd].len       = ahci->edds.u.sg[i].size - 1;
+        ahci->aPrdt[ahci->cur_prd].phys_addr = ahci->edds.u.sg[i].phys_addr;
+        ++ahci->cur_prd;
+    }
 
 #if DEBUG_AHCI
     {
@@ -621,11 +625,6 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     high_bits_restore(ahci);
 
     return ahci->aCmdHdr[1] == 0 ? 4 : 0;
-}
-
-/* Wait for the specified number of BIOS timer ticks or data bytes. */
-void wait_ticks_device_init( unsigned wait_ticks, unsigned wait_bytes )
-{
 }
 
 void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
