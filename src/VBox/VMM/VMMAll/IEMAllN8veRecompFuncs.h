@@ -3164,6 +3164,9 @@ iemNativeEmitStoreGregU64Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value) \
     off = iemNativeEmitStoreGregU64(pReNative, off, a_iGReg, a_u64Value)
 
+#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value) \
+    off = iemNativeEmitStoreGregU64(pReNative, off, a_iGReg, a_i64Value)
+
 /** Emits code for IEM_MC_STORE_GREG_U64. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStoreGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t idxValueVar)
