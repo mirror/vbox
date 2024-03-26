@@ -2249,9 +2249,47 @@ static void CmpXchgTest(void)
 #endif
 }
 
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHG8B,(uint64_t *, PRTUINT64U, PRTUINT64U, uint32_t *));
+
+static uint64_t CmpXchg8bBench(uint32_t cIterations, FNIEMAIMPLCMPXCHG8B *pfn, uint64_t const uDstValue,
+                               uint64_t const uOldValue, uint64_t const uNewValue, uint32_t const fEflIn)
+{
+    cIterations /= 4;
+    RTThreadYield();
+    uint64_t const nsStart = RTTimeNanoTS();
+    for (uint32_t i = 0; i < cIterations; i++)
+    {
+        RTUINT64U uA, uB;
+        uint32_t fEfl    = fEflIn;
+        uint64_t uDst    = uDstValue;
+        uB.u             = uNewValue;
+        uA.u             = uOldValue;
+        pfn(&uDst, &uA, &uB, &fEfl);
+
+        fEfl = fEflIn;
+        uDst = uDstValue;
+        uB.u = uNewValue;
+        uA.u = uOldValue;
+        pfn(&uDst, &uA, &uB, &fEfl);
+
+        fEfl = fEflIn;
+        uDst = uDstValue;
+        uB.u = uNewValue;
+        uA.u = uOldValue;
+        pfn(&uDst, &uA, &uB, &fEfl);
+
+        fEfl = fEflIn;
+        uDst = uDstValue;
+        uB.u = uNewValue;
+        uA.u = uOldValue;
+        pfn(&uDst, &uA, &uB, &fEfl);
+    }
+    return RTTimeNanoTS() - nsStart;
+}
+
 static void CmpXchg8bTest(void)
 {
-    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHG8B,(uint64_t *, PRTUINT64U, PRTUINT64U, uint32_t *));
     static struct
     {
         const char           *pszName;
@@ -2302,6 +2340,21 @@ static void CmpXchg8bTest(void)
                              fEfl, *g_pu64, uA.u,
                              (fEflIn & ~X86_EFL_ZF), uExpect, uExpect, EFlagsDiff(fEfl, fEflIn & ~X86_EFL_ZF));
             RTTEST_CHECK(g_hTest, uB.u == uNewValue);
+
+            if (iTest == 2 && g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0)
+            {
+                uint32_t cIterations = EstimateIterations(_64K, CmpXchg8bBench(_64K, s_aFuncs[iFn].pfn,
+                                                                               uOldValue, uOldValue, uNewValue, fEflIn));
+                uint64_t cNsRealRun  = CmpXchg8bBench(cIterations, s_aFuncs[iFn].pfn, uOldValue, uOldValue, uNewValue, fEflIn);
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL,
+                             "%s-positive", s_aFuncs[iFn].pszName);
+
+                cIterations = EstimateIterations(_64K, CmpXchg8bBench(_64K, s_aFuncs[iFn].pfn,
+                                                                      ~uOldValue, uOldValue, uNewValue, fEflIn));
+                cNsRealRun  = CmpXchg8bBench(cIterations, s_aFuncs[iFn].pfn, ~uOldValue, uOldValue, uNewValue, fEflIn);
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL,
+                             "%s-negative", s_aFuncs[iFn].pszName);
+            }
         }
     }
 }
@@ -2422,7 +2475,7 @@ DUMP_ALL_FN(ShiftDblU ## a_cBits, a_aSubTests)
 # define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
 
-#define TEST_SHIFT_DBL(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
+#define TEST_SHIFT_DBL(a_cBits, a_uType, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTDBLU ## a_cBits); \
 \
 static a_SubTestType a_aSubTests[] = \
@@ -2434,6 +2487,36 @@ static a_SubTestType a_aSubTests[] = \
 }; \
 \
 GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
+\
+static uint64_t ShiftDblU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLSHIFTDBLU ## a_cBits pfn, a_TestType const *pEntry) \
+{ \
+    uint32_t const fEflIn = pEntry->fEflIn; \
+    a_uType  const uDstIn = pEntry->uDstIn; \
+    a_uType  const uSrcIn = pEntry->uSrcIn; \
+    a_uType  const cShift = pEntry->uMisc; \
+    cIterations /= 4; \
+    RTThreadYield(); \
+    uint64_t const nsStart     = RTTimeNanoTS(); \
+    for (uint32_t i = 0; i < cIterations; i++) \
+    { \
+        uint32_t fBenchEfl = fEflIn; \
+        a_uType  uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, uSrcIn, cShift, &fBenchEfl); \
+    } \
+    return RTTimeNanoTS() - nsStart; \
+} \
 \
 static void ShiftDblU ## a_cBits ## Test(void) \
 { \
@@ -2451,7 +2534,7 @@ static void ShiftDblU ## a_cBits ## Test(void) \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
                 uint32_t fEfl = paTests[iTest].fEflIn; \
-                a_Type   uDst = paTests[iTest].uDstIn; \
+                a_uType  uDst = paTests[iTest].uDstIn; \
                 pfn(&uDst, paTests[iTest].uSrcIn, paTests[iTest].uMisc, &fEfl); \
                 if (   uDst != paTests[iTest].uDstOut \
                     || fEfl != paTests[iTest].fEflOut) \
@@ -2469,6 +2552,18 @@ static void ShiftDblU ## a_cBits ## Test(void) \
                      RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
                 } \
             } \
+            \
+            /* Benchmark if all succeeded. */ \
+            if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0) \
+            { \
+                uint32_t const iTest       = cTests / 2; \
+                uint32_t const cIterations = EstimateIterations(_64K, ShiftDblU ## a_cBits ## Bench(_64K, pfn, &paTests[iTest])); \
+                uint64_t const cNsRealRun  = ShiftDblU ## a_cBits ## Bench(cIterations, pfn, &paTests[iTest]); \
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL, \
+                             "%s%s", a_aSubTests[iFn].pszName, iVar ? "-native" : ""); \
+            } \
+            \
+            /* Next variation is native. */ \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
         FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
@@ -2542,9 +2637,9 @@ DUMP_ALL_FN(UnaryU ## a_cBits, g_aUnaryU ## a_cBits)
 # define GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType)
 #endif
 
-#define TEST_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
+#define TEST_UNARY(a_cBits, a_uType, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLUNARYU ## a_cBits); \
-static a_SubTestType g_aUnaryU ## a_cBits [] = \
+static a_SubTestType a_aSubTests[] = \
 { \
     ENTRY_BIN(inc_u ## a_cBits), \
     ENTRY_BIN(inc_u ## a_cBits ## _locked), \
@@ -2556,22 +2651,51 @@ static a_SubTestType g_aUnaryU ## a_cBits [] = \
     ENTRY_BIN(neg_u ## a_cBits ## _locked), \
 }; \
 \
-GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
+GEN_UNARY(a_cBits, a_uType, a_Fmt, a_TestType, a_SubTestType) \
+\
+static uint64_t UnaryU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLUNARYU ## a_cBits pfn, a_TestType const *pEntry) \
+{ \
+    uint32_t const fEflIn  = pEntry->fEflIn; \
+    a_uType  const uDstIn  = pEntry->uDstIn; \
+    cIterations /= 4; \
+    RTThreadYield(); \
+    uint64_t const nsStart     = RTTimeNanoTS(); \
+    for (uint32_t i = 0; i < cIterations; i++) \
+    { \
+        uint32_t fBenchEfl = fEflIn; \
+        a_uType  uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, &fBenchEfl); \
+    } \
+    return RTTimeNanoTS() - nsStart; \
+} \
 \
 static void UnaryU ## a_cBits ## Test(void) \
 { \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aUnaryU ## a_cBits[iFn])) \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(a_aSubTests[iFn])) \
             continue; \
-        a_TestType const * const paTests = g_aUnaryU ## a_cBits[iFn].paTests; \
-        uint32_t const           cTests  = g_aUnaryU ## a_cBits[iFn].cTests; \
+        PFNIEMAIMPLUNARYU ## a_cBits const pfn     = a_aSubTests[iFn].pfn; \
+        a_TestType const * const           paTests = a_aSubTests[iFn].paTests; \
+        uint32_t const                     cTests  = a_aSubTests[iFn].cTests; \
         if (!cTests) RTTestSkipped(g_hTest, "no tests"); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             uint32_t fEfl = paTests[iTest].fEflIn; \
-            a_Type   uDst = paTests[iTest].uDstIn; \
-            g_aUnaryU ## a_cBits[iFn].pfn(&uDst, &fEfl); \
+            a_uType  uDst = paTests[iTest].uDstIn; \
+            pfn(&uDst, &fEfl); \
             if (   uDst != paTests[iTest].uDstOut \
                 || fEfl != paTests[iTest].fEflOut) \
                 RTTestFailed(g_hTest, "#%u: efl=%#08x dst=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
@@ -2582,18 +2706,27 @@ static void UnaryU ## a_cBits ## Test(void) \
             { \
                  *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
                  *g_pfEfl          = paTests[iTest].fEflIn; \
-                 g_aUnaryU ## a_cBits[iFn].pfn(g_pu ## a_cBits, g_pfEfl); \
+                 pfn(g_pu ## a_cBits, g_pfEfl); \
                  RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
                  RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
             } \
         } \
-        FREE_DECOMPRESSED_TESTS(g_aUnaryU ## a_cBits[iFn]); \
+        \
+        if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0) \
+        { \
+            uint32_t const iTest       = cTests / 2; \
+            uint32_t const cIterations = EstimateIterations(_64K, UnaryU ## a_cBits ## Bench(_64K, pfn, &paTests[iTest])); \
+            uint64_t const cNsRealRun  = UnaryU ## a_cBits ## Bench(cIterations, pfn, &paTests[iTest]); \
+            RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL, "%s", a_aSubTests[iFn].pszName); \
+        } \
+        \
+        FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
     } \
 }
-TEST_UNARY(8,  uint8_t,  "%#04RX8",   BINU8_TEST_T,  INT_UNARY_U8_T)
-TEST_UNARY(16, uint16_t, "%#06RX16",  BINU16_TEST_T, INT_UNARY_U16_T)
-TEST_UNARY(32, uint32_t, "%#010RX32", BINU32_TEST_T, INT_UNARY_U32_T)
-TEST_UNARY(64, uint64_t, "%#018RX64", BINU64_TEST_T, INT_UNARY_U64_T)
+TEST_UNARY(8,  uint8_t,  "%#04RX8",   BINU8_TEST_T,  INT_UNARY_U8_T,  g_aUnaryU8)
+TEST_UNARY(16, uint16_t, "%#06RX16",  BINU16_TEST_T, INT_UNARY_U16_T, g_aUnaryU16)
+TEST_UNARY(32, uint32_t, "%#010RX32", BINU32_TEST_T, INT_UNARY_U32_T, g_aUnaryU32)
+TEST_UNARY(64, uint64_t, "%#018RX64", BINU64_TEST_T, INT_UNARY_U64_T, g_aUnaryU64)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static RTEXITCODE UnaryGenerate(uint32_t cTests, const char * const * papszNameFmts)
@@ -2673,7 +2806,7 @@ DUMP_ALL_FN(ShiftU ## a_cBits, a_aSubTests)
 # define GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
 
-#define TEST_SHIFT(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
+#define TEST_SHIFT(a_cBits, a_uType, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLSHIFTU ## a_cBits); \
 static a_SubTestType a_aSubTests[] = \
 { \
@@ -2684,7 +2817,7 @@ static a_SubTestType a_aSubTests[] = \
     ENTRY_BIN_AMD(  rcl_u ## a_cBits, X86_EFL_OF), \
     ENTRY_BIN_INTEL(rcl_u ## a_cBits, X86_EFL_OF), \
     ENTRY_BIN_AMD(  rcr_u ## a_cBits, X86_EFL_OF), \
-    ENTRY_BIN_INTEL(rcr_u ## a_cBits, X86_EFL_OF), \
+    ENTRY_BIN_INTEL(rcr_u ## a_cBits, X86_EFL_OF),  \
     ENTRY_BIN_AMD(  shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
     ENTRY_BIN_INTEL(shl_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
     ENTRY_BIN_AMD(  shr_u ## a_cBits, X86_EFL_OF | X86_EFL_AF), \
@@ -2694,6 +2827,35 @@ static a_SubTestType a_aSubTests[] = \
 }; \
 \
 GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
+\
+static uint64_t ShiftU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLSHIFTU ## a_cBits pfn, a_TestType const *pEntry) \
+{ \
+    uint32_t const fEflIn = pEntry->fEflIn; \
+    a_uType  const uDstIn = pEntry->uDstIn; \
+    a_uType  const cShift = pEntry->uMisc; \
+    cIterations /= 4; \
+    RTThreadYield(); \
+    uint64_t const nsStart     = RTTimeNanoTS(); \
+    for (uint32_t i = 0; i < cIterations; i++) \
+    { \
+        uint32_t fBenchEfl = fEflIn; \
+        a_uType  uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, cShift, &fBenchEfl); \
+        \
+        fBenchEfl = fEflIn; \
+        uBenchDst = uDstIn;  \
+        pfn(&uBenchDst, cShift, &fBenchEfl); \
+    } \
+    return RTTimeNanoTS() - nsStart; \
+} \
 \
 static void ShiftU ## a_cBits ## Test(void) \
 { \
@@ -2711,7 +2873,7 @@ static void ShiftU ## a_cBits ## Test(void) \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
                 uint32_t fEfl = paTests[iTest].fEflIn; \
-                a_Type   uDst = paTests[iTest].uDstIn; \
+                a_uType  uDst = paTests[iTest].uDstIn; \
                 pfn(&uDst, paTests[iTest].uMisc, &fEfl); \
                 if (   uDst != paTests[iTest].uDstOut \
                     || fEfl != paTests[iTest].fEflOut ) \
@@ -2729,6 +2891,18 @@ static void ShiftU ## a_cBits ## Test(void) \
                      RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
                 } \
             } \
+            \
+            /* Benchmark if all succeeded. */ \
+            if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0) \
+            { \
+                uint32_t const iTest       = cTests / 2; \
+                uint32_t const cIterations = EstimateIterations(_64K, ShiftU ## a_cBits ## Bench(_64K, pfn, &paTests[iTest])); \
+                uint64_t const cNsRealRun  = ShiftU ## a_cBits ## Bench(cIterations, pfn, &paTests[iTest]); \
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL, \
+                             "%s%s", a_aSubTests[iFn].pszName, iVar ? "-native" : ""); \
+            } \
+            \
+            /* Next variation is native. */ \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
         FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
@@ -2852,17 +3026,46 @@ static RTEXITCODE MulDivU8Generate(uint32_t cTests, const char * const * papszNa
 }
 #endif
 
+static uint64_t MulDivU8Bench(uint32_t cIterations, PFNIEMAIMPLMULDIVU8 pfn, MULDIVU8_TEST_T const *pEntry)
+{
+    uint32_t const fEflIn = pEntry->fEflIn;
+    uint16_t const uDstIn = pEntry->uDstIn;
+    uint8_t  const uSrcIn  = pEntry->uSrcIn;
+    cIterations /= 4;
+    RTThreadYield();
+    uint64_t const nsStart     = RTTimeNanoTS();
+    for (uint32_t i = 0; i < cIterations; i++)
+    {
+        uint32_t fBenchEfl  = fEflIn;
+        uint16_t uBenchDst = uDstIn;
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl);
+
+        fBenchEfl = fEflIn;
+        uBenchDst = uDstIn;
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl);
+
+        fBenchEfl = fEflIn;
+        uBenchDst = uDstIn;
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl);
+
+        fBenchEfl = fEflIn;
+        uBenchDst = uDstIn;
+        pfn(&uBenchDst, uSrcIn, &fBenchEfl);
+    }
+    return RTTimeNanoTS() - nsStart;
+}
+
 static void MulDivU8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
-        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aMulDivU8[iFn])) \
-            continue; \
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aMulDivU8[iFn]))
+            continue;
         MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
         uint32_t const                cTests  = g_aMulDivU8[iFn].cTests;
         uint32_t const                fEflIgn = g_aMulDivU8[iFn].uExtra;
         PFNIEMAIMPLMULDIVU8           pfn     = g_aMulDivU8[iFn].pfn;
-        uint32_t const                cVars   = COUNT_VARIATIONS(g_aMulDivU8[iFn]); \
+        uint32_t const                cVars   = COUNT_VARIATIONS(g_aMulDivU8[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
@@ -2891,9 +3094,21 @@ static void MulDivU8Test(void)
                      RTTEST_CHECK(g_hTest, rc  == paTests[iTest].rc);
                 }
             }
+
+            /* Benchmark if all succeeded. */
+            if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0)
+            {
+                uint32_t const iTest       = cTests / 2;
+                uint32_t const cIterations = EstimateIterations(_64K, MulDivU8Bench(_64K, pfn, &paTests[iTest]));
+                uint64_t const cNsRealRun  = MulDivU8Bench(cIterations, pfn, &paTests[iTest]);
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL,
+                             "%s%s", g_aMulDivU8[iFn].pszName, iVar ? "-native" : "");
+            }
+
+            /* Next variation is native. */
             pfn = g_aMulDivU8[iFn].pfnNative;
         }
-        FREE_DECOMPRESSED_TESTS(g_aMulDivU8[iFn]); \
+        FREE_DECOMPRESSED_TESTS(g_aMulDivU8[iFn]);
     }
 }
 
@@ -2985,7 +3200,7 @@ static RTEXITCODE MulDivU ## a_cBits ## Generate(uint32_t cTests, const char * c
 # define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests)
 #endif
 
-#define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
+#define TEST_MULDIV(a_cBits, a_uType, a_Fmt, a_TestType, a_SubTestType, a_aSubTests) \
 TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLMULDIVU ## a_cBits); \
 static a_SubTestType a_aSubTests [] = \
 { \
@@ -3000,6 +3215,40 @@ static a_SubTestType a_aSubTests [] = \
 }; \
 \
 GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
+\
+static uint64_t MulDivU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLMULDIVU ## a_cBits pfn, a_TestType const *pEntry) \
+{ \
+    uint32_t const fEflIn  = pEntry->fEflIn; \
+    a_uType  const uDst1In = pEntry->uDst1In; \
+    a_uType  const uDst2In = pEntry->uDst2In; \
+    a_uType  const uSrcIn  = pEntry->uSrcIn; \
+    cIterations /= 4; \
+    RTThreadYield(); \
+    uint64_t const nsStart     = RTTimeNanoTS(); \
+    for (uint32_t i = 0; i < cIterations; i++) \
+    { \
+        uint32_t fBenchEfl  = fEflIn; \
+        a_uType  uBenchDst1 = uDst1In;  \
+        a_uType  uBenchDst2 = uDst2In;  \
+        pfn(&uBenchDst1, &uBenchDst2, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl  = fEflIn; \
+        uBenchDst1 = uDst1In; \
+        uBenchDst2 = uDst2In; \
+        pfn(&uBenchDst1, &uBenchDst2, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl  = fEflIn; \
+        uBenchDst1 = uDst1In; \
+        uBenchDst2 = uDst2In; \
+        pfn(&uBenchDst1, &uBenchDst2, uSrcIn, &fBenchEfl); \
+        \
+        fBenchEfl  = fEflIn; \
+        uBenchDst1 = uDst1In; \
+        uBenchDst2 = uDst2In; \
+        pfn(&uBenchDst1, &uBenchDst2, uSrcIn, &fBenchEfl); \
+    } \
+    return RTTimeNanoTS() - nsStart; \
+} \
 \
 static void MulDivU ## a_cBits ## Test(void) \
 { \
@@ -3018,8 +3267,8 @@ static void MulDivU ## a_cBits ## Test(void) \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
                 uint32_t fEfl  = paTests[iTest].fEflIn; \
-                a_Type   uDst1 = paTests[iTest].uDst1In; \
-                a_Type   uDst2 = paTests[iTest].uDst2In; \
+                a_uType  uDst1 = paTests[iTest].uDst1In; \
+                a_uType  uDst2 = paTests[iTest].uDst2In; \
                 int rc = pfn(&uDst1, &uDst2, paTests[iTest].uSrcIn, &fEfl); \
                 if (   uDst1 != paTests[iTest].uDst1Out \
                     || uDst2 != paTests[iTest].uDst2Out \
@@ -3047,6 +3296,18 @@ static void MulDivU ## a_cBits ## Test(void) \
                      RTTEST_CHECK(g_hTest, rc                      == paTests[iTest].rc); \
                 } \
             } \
+            \
+            /* Benchmark if all succeeded. */ \
+            if (g_cPicoSecBenchmark && RTTestSubErrorCount(g_hTest) == 0) \
+            { \
+                uint32_t const iTest       = cTests / 2; \
+                uint32_t const cIterations = EstimateIterations(_64K, MulDivU ## a_cBits ## Bench(_64K, pfn, &paTests[iTest])); \
+                uint64_t const cNsRealRun  = MulDivU ## a_cBits ## Bench(cIterations, pfn, &paTests[iTest]); \
+                RTTestValueF(g_hTest, cNsRealRun * 1000 / cIterations, RTTESTUNIT_PS_PER_CALL, \
+                             "%s%s", a_aSubTests[iFn].pszName, iVar ? "-native" : ""); \
+            } \
+            \
+            /* Next variation is native. */ \
             pfn = a_aSubTests[iFn].pfnNative; \
         } \
         FREE_DECOMPRESSED_TESTS(a_aSubTests[iFn]); \
