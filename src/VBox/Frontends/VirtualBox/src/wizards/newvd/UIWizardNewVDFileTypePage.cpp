@@ -64,7 +64,7 @@ void UIWizardNewVDFileTypePage::sltMediumFormatChanged()
 
 void UIWizardNewVDFileTypePage::sltRetranslateUI()
 {
-    setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
+    setTitle(UIWizardNewVD::tr("Virtual hard disk file type"));
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
                                         "for the new virtual hard disk. If you do not need to use it "
                                         "with other virtualization software you can leave this setting unchanged."));

@@ -64,7 +64,7 @@ void UIWizardCloneVDFormatPage::prepare(KDeviceType enmDeviceType)
 void UIWizardCloneVDFormatPage::sltRetranslateUI()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Virtual Hard disk file type"));
+    setTitle(UIWizardCloneVD::tr("Virtual hard disk file type"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like to use "

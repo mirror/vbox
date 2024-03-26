@@ -106,7 +106,7 @@ void UIWizardNewVDSizeLocationPage::sltMediumPathChanged(const QString &strPath)
 
 void UIWizardNewVDSizeLocationPage::sltRetranslateUI()
 {
-    setTitle(UIWizardNewVD::tr("File location and size"));
+    setTitle(UIWizardNewVD::tr("Location and size of the disk image"));
 }
 
 void UIWizardNewVDSizeLocationPage::initializePage()
