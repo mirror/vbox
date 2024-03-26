@@ -8141,6 +8141,56 @@ iemNativeEmitSimdLoadVecRegHighU128FromVecRegHighU128(PIEMRECOMPILERSTATE pReNat
 
 
 /**
+ * Emits a vecdst[0:127] = vecsrc[128:255] load.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* vextracti128 dst, src, 1. */ /* ASSUMES AVX2 support */
+    pCodeBuf[off++] = X86_OP_VEX3;
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, iVecRegDst >= 8, false, iVecRegSrc >= 8);
+    pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, true, X86_OP_VEX3_BYTE2_P_066H);
+    pCodeBuf[off++] = 0x39;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, iVecRegDst & 7);
+    pCodeBuf[off++] = 0x1;
+
+#elif defined(RT_ARCH_ARM64)
+    RT_NOREF(pCodeBuf, iVecRegDst, iVecRegSrc);
+
+    /* Should never be called because we can just use iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(). */
+# ifdef IEM_WITH_THROW_CATCH
+    AssertFailedStmt(IEMNATIVE_DO_LONGJMP(NULL, VERR_IEM_IPE_9));
+# else
+    AssertReleaseFailedStmt(off = UINT32_MAX);
+# endif
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a vecdst[0:127] = vecsrc[128:255] load, high 128-bit.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 5), off, iVecRegDst, iVecRegSrc);
+#elif defined(RT_ARCH_ARM64)
+    Assert(!(iVecRegDst & 0x1) && !(iVecRegSrc & 0x1));
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iVecRegSrc + 1);
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a vecdst = vecsrc load, 256-bit.
  */
 DECL_INLINE_THROW(uint32_t)

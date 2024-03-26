@@ -715,7 +715,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_FETCH_YREG_U32(a_u32Dst, a_iYRegSrc)                 NOP()
 #define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord)       NOP()
-#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc)               NOP()
+#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc, a_iDQWord)    NOP()
 #define IEM_MC_FETCH_YREG_U256(a_u256Dst, a_iYRegSrc)               NOP()
 
 #define IEM_MC_STORE_YREG_U128(a_iYRegDst, a_iDQword, a_u128Value)  NOP()

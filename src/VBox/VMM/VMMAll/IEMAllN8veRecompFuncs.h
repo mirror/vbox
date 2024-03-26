@@ -7899,8 +7899,8 @@ iemNativeEmitSimdCopyYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
 }
 
 
-#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc) \
-    off = iemNativeEmitSimdFetchYregU128(pReNative, off, a_u128Dst, a_iYRegSrc, 0)
+#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc, a_iDQWord) \
+    off = iemNativeEmitSimdFetchYregU128(pReNative, off, a_u128Dst, a_iYRegSrc, a_iDQWord)
 
 /** Emits code for IEM_MC_FETCH_YREG_U128. */
 DECL_INLINE_THROW(uint32_t)
@@ -7920,7 +7920,7 @@ iemNativeEmitSimdFetchYregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxDstVar, &off);
 
     if (iDQWord == 1)
-        AssertFailed(); /* Not used right now, implement and test when required. */
+        off = iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128(pReNative, off, idxVarReg, idxSimdRegSrc);
     else
         off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxVarReg, idxSimdRegSrc);
 

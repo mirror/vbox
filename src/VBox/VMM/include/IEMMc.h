@@ -619,10 +619,18 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
          (a_u64Dst) = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[(a_iQWord)]; \
     } while (0)
-#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc) \
+#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc, a_iDQword) \
     do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
-         (a_u128Dst).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[0]; \
-         (a_u128Dst).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[1]; \
+         if ((a_iDQword) == 0) \
+         { \
+            (a_u128Dst).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(iYRegSrcTmp)].au64[0]; \
+            (a_u128Dst).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[(iYRegSrcTmp)].au64[1]; \
+         } \
+         else \
+         { \
+            (a_u128Dst).au64[0] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(iYRegSrcTmp)].au64[0]; \
+            (a_u128Dst).au64[1] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(iYRegSrcTmp)].au64[1]; \
+         } \
     } while (0)
 #define IEM_MC_FETCH_YREG_U256(a_u256Dst, a_iYRegSrc) \
     do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
