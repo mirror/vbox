@@ -1616,6 +1616,7 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeArgAllocConst(PIEMRECOMPILERSTATE pReNative
 DECL_HIDDEN_THROW(uint8_t)  iemNativeArgAllocLocalRef(PIEMRECOMPILERSTATE pReNative, uint8_t iArgNo, uint8_t idxOtherVar);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAlloc(PIEMRECOMPILERSTATE pReNative, uint8_t cbType);
 DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative, uint8_t cbType, uint64_t uValue);
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocAssign(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t cbType, uint8_t idxVarOther);
 DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
 DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToConst(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint64_t uValue);
 DECL_HIDDEN_THROW(void)     iemNativeVarSetKindToGstRegRef(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,

@@ -3441,6 +3441,16 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSxtw(uint32_t iRegResult, uint32_t iR
 }
 
 
+/** A64: Encodes an ASR instruction w/ immediate shift value.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAsrImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cShift, bool f64Bit = true)
+{
+    uint32_t const cWidth = f64Bit ? 63 : 31;
+    Assert(cShift > 0); Assert(cShift <= cWidth);
+    return Armv8A64MkInstrBitfieldImm(0, iRegResult, iRegSrc, cShift, cWidth /*uImm6S*/, f64Bit, f64Bit);
+}
+
+
 /** A64: Encodes a BFM instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,

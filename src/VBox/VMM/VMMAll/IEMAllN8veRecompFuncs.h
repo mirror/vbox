@@ -2067,6 +2067,9 @@ iemNativeEmitIfMxcsrXcptPending(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value) \
     uint8_t const a_Name = iemNativeVarAllocConst(pReNative, sizeof(a_Type), (a_Value))
 
+#define IEM_MC_LOCAL_ASSIGN(a_Type, a_Name, a_Value) \
+    uint8_t const a_Name = iemNativeVarAllocAssign(pReNative, &off, sizeof(a_Type), (a_Value))
+
 
 /**
  * Sets the host register for @a idxVarRc to @a idxReg.
@@ -3560,7 +3563,7 @@ iemNativeEmitOrGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, 
 
 
 /*********************************************************************************************************************************
-*   Local variable manipulation (add, sub, and, or).                                                                             *
+*   Local/Argument variable manipulation (add, sub, and, or).                                                                             *
 *********************************************************************************************************************************/
 
 #define IEM_MC_AND_LOCAL_U8(a_u8Local, a_u8Mask) \
@@ -3574,6 +3577,16 @@ iemNativeEmitOrGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, 
 
 #define IEM_MC_AND_LOCAL_U64(a_u64Local, a_u64Mask) \
     off = iemNativeEmitAndLocal(pReNative, off, a_u64Local, a_u64Mask, sizeof(uint64_t))
+
+
+#define IEM_MC_AND_ARG_U16(a_u16Arg, a_u16Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u16Arg, a_u16Mask, sizeof(uint16_t))
+
+#define IEM_MC_AND_ARG_U32(a_u32Arg, a_u32Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u32Arg, a_u32Mask, sizeof(uint32_t))
+
+#define IEM_MC_AND_ARG_U64(a_u64Arg, a_u64Mask) \
+    off = iemNativeEmitAndLocal(pReNative, off, a_u64Arg, a_u64Mask, sizeof(uint64_t))
 
 /** Emits code for AND'ing a local and a constant value.   */
 DECL_INLINE_THROW(uint32_t)
@@ -3667,6 +3680,126 @@ iemNativeEmitBswapLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
         default: AssertFailedBreak();
     }
 
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
+
+#define IEM_MC_SHL_LOCAL_S16(a_i16Local, a_cShift) \
+    off = iemNativeEmitShlLocal(pReNative, off, a_i16Local, sizeof(int16_t), a_cShift)
+
+#define IEM_MC_SHL_LOCAL_S32(a_i32Local, a_cShift) \
+    off = iemNativeEmitShlLocal(pReNative, off, a_i32Local, sizeof(int32_t), a_cShift)
+
+#define IEM_MC_SHL_LOCAL_S64(a_i64Local, a_cShift) \
+    off = iemNativeEmitShlLocal(pReNative, off, a_i64Local, sizeof(int64_t), a_cShift)
+
+/** Emits code for shifting left a local value.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitShlLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint8_t cbLocal, uint8_t cShift)
+{
+#ifdef VBOX_STRICT
+    switch (cbLocal)
+    {
+        case sizeof(uint8_t):  Assert(cShift < 8); break;
+        case sizeof(uint16_t): Assert(cShift < 16); break;
+        case sizeof(uint32_t): Assert(cShift < 32); break;
+        case sizeof(uint64_t): Assert(cShift < 64); break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
+
+    if (cbLocal <= sizeof(uint32_t))
+        off = iemNativeEmitShiftGpr32Left(pReNative, off, idxVarReg, cShift);
+    else
+        off = iemNativeEmitShiftGprLeft(pReNative, off, idxVarReg, cShift);
+
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
+
+#define IEM_MC_SAR_LOCAL_S16(a_i16Local, a_cShift) \
+    off = iemNativeEmitSarLocal(pReNative, off, a_i16Local, sizeof(int16_t), a_cShift)
+
+#define IEM_MC_SAR_LOCAL_S32(a_i32Local, a_cShift) \
+    off = iemNativeEmitSarLocal(pReNative, off, a_i32Local, sizeof(int32_t), a_cShift)
+
+#define IEM_MC_SAR_LOCAL_S64(a_i64Local, a_cShift) \
+    off = iemNativeEmitSarLocal(pReNative, off, a_i64Local, sizeof(int64_t), a_cShift)
+
+/** Emits code for shifting left a local value.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSarLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint8_t cbLocal, uint8_t cShift)
+{
+#ifdef VBOX_STRICT
+    switch (cbLocal)
+    {
+        case sizeof(int8_t):  Assert(cShift < 8); break;
+        case sizeof(int16_t): Assert(cShift < 16); break;
+        case sizeof(int32_t): Assert(cShift < 32); break;
+        case sizeof(int64_t): Assert(cShift < 64); break;
+        default: AssertFailedBreak();
+    }
+#endif
+
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
+
+    if (cbLocal <= sizeof(uint32_t))
+        off = iemNativeEmitArithShiftGpr32Right(pReNative, off, idxVarReg, cShift);
+    else
+        off = iemNativeEmitArithShiftGprRight(pReNative, off, idxVarReg, cShift);
+
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return off;
+}
+
+
+#define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) \
+    off = iemNativeEmitAddLocalToEffAddr(pReNative, off, a_EffAddr, a_i16, sizeof(int16_t))
+
+#define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) \
+    off = iemNativeEmitAddLocalToEffAddr(pReNative, off, a_EffAddr, a_i32, sizeof(int32_t))
+
+#define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) \
+    off = iemNativeEmitAddLocalToEffAddr(pReNative, off, a_EffAddr, a_i64, sizeof(int64_t))
+
+/** Emits code for IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR/IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR/IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR.   */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddLocalToEffAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarEffAddr, uint8_t idxVar, uint8_t cbLocal)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarEffAddr);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarEffAddr, sizeof(RTGCPTR));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal); RT_NOREF(cbLocal);
+
+    uint8_t const idxVarReg        = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
+    uint8_t const idxVarRegEffAddr = iemNativeVarRegisterAcquire(pReNative, idxVarEffAddr, &off, true /*fInitialized*/);
+
+    /* Need to sign extend the value. */
+    if (cbLocal <= sizeof(uint32_t))
+    {
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off, idxVar);
+
+        switch (cbLocal)
+        {
+            case sizeof(int8_t):  off = iemNativeEmitLoadGprSignExtendedFromGpr8(pReNative, off, idxRegTmp, idxVarReg); break;
+            case sizeof(int16_t): off = iemNativeEmitLoadGprSignExtendedFromGpr16(pReNative, off, idxRegTmp, idxVarReg); break;
+            case sizeof(int32_t): off = iemNativeEmitLoadGprSignExtendedFromGpr32(pReNative, off, idxRegTmp, idxVarReg); break;
+            default: AssertFailed();
+        }
+
+        off = iemNativeEmitAddTwoGprs(pReNative, off, idxVarRegEffAddr, idxRegTmp);
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    }
+    else
+        off = iemNativeEmitAddTwoGprs(pReNative, off, idxVarRegEffAddr, idxVarReg);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarEffAddr);
     iemNativeVarRegisterRelease(pReNative, idxVar);
     return off;
 }

@@ -5669,6 +5669,109 @@ iemNativeEmitGpr32EqGprShiftRightImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, u
 
 
 /**
+ * Emits code for (signed) shifting a GPR a fixed number of bits to the right.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitArithShiftGprRightEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t cShift)
+{
+    Assert(cShift > 0 && cShift < 64);
+
+#if defined(RT_ARCH_AMD64)
+    /* sar dst, cShift */
+    pCodeBuf[off++] = iGprDst < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_B;
+    if (cShift != 1)
+    {
+        pCodeBuf[off++] = 0xc1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprDst & 7);
+        pCodeBuf[off++] = cShift;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0xd1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprDst & 7);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrAsrImm(iGprDst, iGprDst, cShift);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for (signed) shifting a GPR a fixed number of bits to the right.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitArithShiftGprRight(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t cShift)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitArithShiftGprRightEx(iemNativeInstrBufEnsure(pReNative, off, 4), off, iGprDst, cShift);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitArithShiftGprRightEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, cShift);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code for (signed) shifting a 32-bit GPR a fixed number of bits to the right.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitArithShiftGpr32RightEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, uint8_t cShift)
+{
+    Assert(cShift > 0 && cShift < 64);
+
+#if defined(RT_ARCH_AMD64)
+    /* sar dst, cShift */
+    if (iGprDst >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    if (cShift != 1)
+    {
+        pCodeBuf[off++] = 0xc1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprDst & 7);
+        pCodeBuf[off++] = cShift;
+    }
+    else
+    {
+        pCodeBuf[off++] = 0xd1;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprDst & 7);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrAsrImm(iGprDst, iGprDst, cShift, false /*f64Bit*/);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for (signed) shifting a GPR a fixed number of bits to the right.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitArithShiftGpr32Right(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t cShift)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitArithShiftGpr32RightEx(iemNativeInstrBufEnsure(pReNative, off, 4), off, iGprDst, cShift);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitArithShiftGpr32RightEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, cShift);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits code for rotating a GPR a fixed number of bits to the left.
  */
 DECL_FORCE_INLINE(uint32_t)

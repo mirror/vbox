@@ -8200,6 +8200,30 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative,
 }
 
 
+DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocAssign(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t cbType, uint8_t idxVarOther)
+{
+    uint8_t const idxVar = IEMNATIVE_VAR_IDX_PACK(iemNativeVarAllocInt(pReNative, cbType));
+    iemNativeVarSetKindToStack(pReNative, IEMNATIVE_VAR_IDX_PACK(idxVar));
+
+    uint8_t const idxVarOtherReg = iemNativeVarRegisterAcquire(pReNative, idxVarOther, poff, true /*fInitialized*/);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, poff);
+
+    *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxVarReg, idxVarOtherReg);
+
+    /* Truncate the value to this variables size. */
+    switch (cbType)
+    {
+        case sizeof(uint8_t):   *poff = iemNativeEmitAndGpr32ByImm(pReNative, *poff, idxVarReg, UINT64_C(0xff)); break;
+        case sizeof(uint16_t):  *poff = iemNativeEmitAndGpr32ByImm(pReNative, *poff, idxVarReg, UINT64_C(0xffff)); break;
+        case sizeof(uint32_t):  *poff = iemNativeEmitAndGpr32ByImm(pReNative, *poff, idxVarReg, UINT64_C(0xffffffff)); break;
+    }
+
+    iemNativeVarRegisterRelease(pReNative, idxVarOther);
+    iemNativeVarRegisterRelease(pReNative, idxVar);
+    return idxVar;
+}
+
+
 /**
  * Makes sure variable @a idxVar has a register assigned to it and that it stays
  * fixed till we call iemNativeVarRegisterRelease.
