@@ -221,7 +221,7 @@ bool UIVersionInfo::isBeta()
 bool UIVersionInfo::showBetaLabel()
 {
     return    isBeta()
-           && !gEDataManager->preventBetaBuildLavel();
+           && !gEDataManager->preventBetaBuildLabel();
 }
 
 /* static */

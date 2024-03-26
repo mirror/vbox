@@ -222,7 +222,7 @@ public:
         void setNotificationCenterOrder(Qt::SortOrder enmOrder);
 
         /** Returns whether BETA build label should be hidden. */
-        bool preventBetaBuildLavel();
+        bool preventBetaBuildLabel();
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Returns version for which user wants to prevent BETA build warning. */
         QString preventBetaBuildWarningForVersion();

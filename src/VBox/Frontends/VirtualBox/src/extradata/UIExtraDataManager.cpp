@@ -2402,7 +2402,7 @@ void UIExtraDataManager::setNotificationCenterOrder(Qt::SortOrder enmOrder)
     setExtraDataString(GUI_NotificationCenter_Order, strValue);
 }
 
-bool UIExtraDataManager::preventBetaBuildLavel()
+bool UIExtraDataManager::preventBetaBuildLabel()
 {
     return isFeatureAllowed(GUI_PreventBetaLabel);
 }
