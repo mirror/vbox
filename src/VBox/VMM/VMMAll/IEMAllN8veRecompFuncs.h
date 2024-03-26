@@ -3131,6 +3131,8 @@ iemNativeEmitStoreGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     uint8_t const idxVarReg = iemNativeVarRegisterAcquireForGuestReg(pReNative, idxValueVar, IEMNATIVEGSTREG_GPR(iGReg), &off);
 #if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxVarReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+#else
+    RT_NOREF(idxVarReg);
 #endif
 #ifdef VBOX_STRICT
     off = iemNativeEmitTop32BitsClearCheck(pReNative, off, idxVarReg);
