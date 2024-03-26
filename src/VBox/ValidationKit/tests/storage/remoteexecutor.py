@@ -283,8 +283,8 @@ class RemoteExecutor(object):
             fRc = self.oTxsSession.syncMkDir(sDir, fMode, cMsTimeout, fIgnoreErrors=False);
         elif not os.path.isdir(sDir):
             reporter.log("if no txs session found and os.path.isdir is False do os.mkdir for %s" % sDir)
-            fRc = os.mkdir(sDir, fMode);
-
+            os.mkdir(sDir, fMode)  # os.mkdir function returns nothing
+            fRc = os.path.isdir(sDir)
         return fRc;
 
     def rmDir(self, sDir, cMsTimeout = 30000):
