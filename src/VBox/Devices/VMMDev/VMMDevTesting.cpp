@@ -932,6 +932,11 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                             break;
                     }
                 }
+                else if (pThis->offTestingData == pThis->cbReadableTestingData)
+                {
+                    *pu32 = VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL;
+                    pThis->offTestingData += cb;
+                }
                 else
                     *pu32 = 0;
                 return VINF_SUCCESS;

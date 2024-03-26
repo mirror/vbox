@@ -210,6 +210,12 @@
 /** What the NOP accesses returns. */
 #define VMMDEV_TESTING_NOP_RET                  UINT32_C(0x64726962) /* bird */
 
+/** What follows the data provided by a VMMDEV_TESTING_CMD_QUERY_CFG.
+ * This can be used to verify that a config query was successful.  The value
+ * will not be split up if the read is 16-bit or 8-bit, subsequent reads (of
+ * any size) will return zero. */
+#define VMMDEV_TESTING_QUERY_CFG_OKAY_TAIL      UINT32_C(0x79616b4f) /* Okay */
+
 /** @name Low and High Locking Control Dwords
  * @{ */
 /** Low Locking Control: Thread lock hold interval in microseconds. */
