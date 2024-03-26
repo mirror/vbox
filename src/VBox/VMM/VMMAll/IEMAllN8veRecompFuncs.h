@@ -3712,7 +3712,7 @@ iemNativeEmitShlLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVa
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
 
-    if (cbLocal <= sizeof(uint32_t))
+    if (cbLocal <= sizeof(uint32_t)) /** @todo r=bird: for cbLocal < sizeof(uint32_t), this'll require a AND or something to restrict the result. */
         off = iemNativeEmitShiftGpr32Left(pReNative, off, idxVarReg, cShift);
     else
         off = iemNativeEmitShiftGprLeft(pReNative, off, idxVarReg, cShift);
@@ -3749,7 +3749,7 @@ iemNativeEmitSarLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVa
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
 
-    if (cbLocal <= sizeof(uint32_t))
+    if (cbLocal <= sizeof(uint32_t)) /** @todo r=bird: This is NOT working for cbLocal < sizeof(uint32_t) if negative! */
         off = iemNativeEmitArithShiftGpr32Right(pReNative, off, idxVarReg, cShift);
     else
         off = iemNativeEmitArithShiftGprRight(pReNative, off, idxVarReg, cShift);
@@ -3775,7 +3775,7 @@ iemNativeEmitAddLocalToEffAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarEffAddr);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarEffAddr, sizeof(RTGCPTR));
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal); RT_NOREF(cbLocal);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
 
     uint8_t const idxVarReg        = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
     uint8_t const idxVarRegEffAddr = iemNativeVarRegisterAcquire(pReNative, idxVarEffAddr, &off, true /*fInitialized*/);
@@ -3783,11 +3783,12 @@ iemNativeEmitAddLocalToEffAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     /* Need to sign extend the value. */
     if (cbLocal <= sizeof(uint32_t))
     {
-        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off, idxVar);
+/** @todo ARM64: In case of boredone, the extended add instruction can do the
+ * conversion directly: ADD idxVarRegEffAddr, idxVarRegEffAddr, [w]idxVarReg, SXTH/SXTW */
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
 
         switch (cbLocal)
         {
-            case sizeof(int8_t):  off = iemNativeEmitLoadGprSignExtendedFromGpr8(pReNative, off, idxRegTmp, idxVarReg); break;
             case sizeof(int16_t): off = iemNativeEmitLoadGprSignExtendedFromGpr16(pReNative, off, idxRegTmp, idxVarReg); break;
             case sizeof(int32_t): off = iemNativeEmitLoadGprSignExtendedFromGpr32(pReNative, off, idxRegTmp, idxVarReg); break;
             default: AssertFailed();
