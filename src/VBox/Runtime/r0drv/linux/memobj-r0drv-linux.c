@@ -1305,6 +1305,10 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
         return NULL;
     return pte_page(u.Entry);
 #else /* !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86) */
+
+    if (is_vmalloc_addr(pv))
+        return vmalloc_to_page(pv);
+
     return virt_to_page(pv);
 #endif
 }
