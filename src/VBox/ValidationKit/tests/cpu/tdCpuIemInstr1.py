@@ -71,6 +71,7 @@ class IemTestVm(vboxtestvms.BootSectorTestVm):
 
     def _childVmReconfig(self, oTestDrv, oVM, oSession):
         _ = oTestDrv;
+        _ = oVM;
 
         # Make sure the testcase runs in a sensible timeframe but we still excercise the recompiler.
         fRc =         oSession.setExtraData('VBoxInternal/Devices/VMMDev/0/Config/TestingThresholdNativeRecompiler', '2');
