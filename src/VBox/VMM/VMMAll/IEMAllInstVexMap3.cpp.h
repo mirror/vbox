@@ -911,7 +911,7 @@ FNIEMOP_DEF(iemOp_vpinsrd_q_Vdq_Hdq_Ey_Ib)
             IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
-    
+
             IEM_MC_FETCH_XREG_U128(uSrc1,  IEM_GET_EFFECTIVE_VVVV(pVCpu));
             IEM_MC_FETCH_GREG_U64(uValue,  IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_STORE_XREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), uSrc1);
