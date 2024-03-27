@@ -69,6 +69,15 @@ class IemTestVm(vboxtestvms.BootSectorTestVm):
                                               asVirtModesSup,
                                               f64BitRequired);
 
+    def _childVmReconfig(self, oTestDrv, oVM, oSession):
+        _ = oTestDrv;
+
+        # Make sure the testcase runs in a sensible timeframe but we still excercise the recompiler.
+        fRc =         oSession.setExtraData('VBoxInternal/Devices/VMMDev/0/Config/TestingThresholdNativeRecompiler', '2');
+        fRc = fRc and oSession.setExtraData('VBoxInternal/IEM/NativeRecompileAtUsedCount', '1');
+
+        return fRc;
+
 class tdCpuIemInstr1(vbox.TestDriver):
     """
     CPU IEM instruction testcase #1.
