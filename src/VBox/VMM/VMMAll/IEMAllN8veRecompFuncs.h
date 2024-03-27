@@ -3712,8 +3712,15 @@ iemNativeEmitShlLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVa
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
 
-    if (cbLocal <= sizeof(uint32_t)) /** @todo r=bird: for cbLocal < sizeof(uint32_t), this'll require a AND or something to restrict the result. */
+    if (cbLocal <= sizeof(uint32_t))
+    {
         off = iemNativeEmitShiftGpr32Left(pReNative, off, idxVarReg, cShift);
+        if (cbLocal < sizeof(uint32_t))
+            off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxVarReg,
+                                               cbLocal == sizeof(uint16_t)
+                                             ? UINT32_C(0xffff)
+                                             : UINT32_C(0xff));
+    }
     else
         off = iemNativeEmitShiftGprLeft(pReNative, off, idxVarReg, cShift);
 
@@ -3749,7 +3756,13 @@ iemNativeEmitSarLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVa
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, &off, true /*fInitialized*/);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVar, cbLocal);
 
-    if (cbLocal <= sizeof(uint32_t)) /** @todo r=bird: This is NOT working for cbLocal < sizeof(uint32_t) if negative! */
+    /* Need to sign extend the value first to make sure the sign is correct in the following arithmetic shift. */
+    if (cbLocal == sizeof(uint8_t))
+        off = iemNativeEmitLoadGpr32SignExtendedFromGpr8(pReNative, off, idxVarReg, idxVarReg);
+    else if (cbLocal == sizeof(uint16_t))
+        off = iemNativeEmitLoadGpr32SignExtendedFromGpr16(pReNative, off, idxVarReg, idxVarReg);
+
+    if (cbLocal <= sizeof(uint32_t))
         off = iemNativeEmitArithShiftGpr32Right(pReNative, off, idxVarReg, cShift);
     else
         off = iemNativeEmitArithShiftGprRight(pReNative, off, idxVarReg, cShift);
