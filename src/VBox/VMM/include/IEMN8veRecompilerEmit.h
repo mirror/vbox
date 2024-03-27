@@ -8178,7 +8178,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iVecRegSrc)
 {
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 5), off, iVecRegDst, iVecRegSrc);
+    off = iemNativeEmitSimdLoadVecRegLowU128FromVecRegHighU128Ex(iemNativeInstrBufEnsure(pReNative, off, 6), off, iVecRegDst, iVecRegSrc);
 #elif defined(RT_ARCH_ARM64)
     Assert(!(iVecRegDst & 0x1) && !(iVecRegSrc & 0x1));
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iVecRegSrc + 1);
