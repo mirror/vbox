@@ -848,16 +848,16 @@ FNIEMOP_DEF(iemOp_vpinsrb_Vdq_Hdq_RyMb_Ib)
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEM_MC_LOCAL(RTUINT128U,       uSrc1);
-        IEM_MC_LOCAL(uint16_t,         uValue);
+        IEM_MC_LOCAL(uint8_t,          uValue);
 
         IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
         IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
         IEM_MC_PREPARE_AVX_USAGE();
 
         IEM_MC_FETCH_XREG_U128(uSrc1,  IEM_GET_EFFECTIVE_VVVV(pVCpu));
-        IEM_MC_FETCH_GREG_U16(uValue,  IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_FETCH_GREG_U8(uValue,   IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_STORE_XREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), uSrc1);
-        IEM_MC_STORE_XREG_U8(          IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 15, uValue & 0xff);
+        IEM_MC_STORE_XREG_U8(          IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 15, uValue);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
