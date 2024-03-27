@@ -12406,19 +12406,18 @@ FNIEMOP_DEF(iemOp_pinsrw_Pq_RyMw_Ib)
         /*
          * Register, register.
          */
-        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(uint16_t,    uValue);
+
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
-        IEM_MC_ARG(uint64_t *,           pu64Dst,               0);
-        IEM_MC_ARG(uint16_t,             u16Src,                1);
-        IEM_MC_ARG_CONST(uint8_t,        bImmArg, /*=*/ bImm,   2);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_PREPARE_FPU_USAGE();
         IEM_MC_FPU_TO_MMX_MODE();
-        IEM_MC_REF_MREG_U64(pu64Dst, IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pinsrw_u64, pu64Dst, u16Src, bImmArg);
-        IEM_MC_MODIFIED_MREG_BY_REF(pu64Dst);
+
+        IEM_MC_FETCH_GREG_U16(uValue, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_STORE_MREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 3, uValue);
+
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -12428,23 +12427,19 @@ FNIEMOP_DEF(iemOp_pinsrw_Pq_RyMw_Ib)
          * Register, memory.
          */
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_ARG(uint64_t *,    pu64Dst,               0);
-        IEM_MC_ARG(uint16_t,      u16Src,                1);
-        IEM_MC_LOCAL(RTGCPTR,            GCPtrEffSrc);
+        IEM_MC_LOCAL(RTGCPTR,     GCPtrEffSrc);
+        IEM_MC_LOCAL(uint16_t,    uValue);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_ARG_CONST(uint8_t, bImmArg, /*=*/ bImm,   2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_PREPARE_FPU_USAGE();
 
-        IEM_MC_FETCH_MEM_U16(u16Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_FETCH_MEM_U16(uValue, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_FPU_TO_MMX_MODE();
+        IEM_MC_STORE_MREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 3, uValue);
 
-        IEM_MC_REF_MREG_U64(pu64Dst, IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pinsrw_u64, pu64Dst, u16Src, bImmArg);
-        IEM_MC_MODIFIED_MREG_BY_REF(pu64Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -12464,14 +12459,13 @@ FNIEMOP_DEF(iemOp_pinsrw_Vdq_RyMw_Ib)
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
-        IEM_MC_ARG(PRTUINT128U,          puDst,                 0);
-        IEM_MC_ARG(uint16_t,             u16Src,                1);
-        IEM_MC_ARG_CONST(uint8_t,        bImmArg, /*=*/ bImm,   2);
+
+        IEM_MC_LOCAL(uint16_t,           uValue);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pinsrw_u128, puDst, u16Src, bImmArg);
+
+        IEM_MC_FETCH_GREG_U16(uValue, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_STORE_XREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 7, uValue);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -12481,20 +12475,17 @@ FNIEMOP_DEF(iemOp_pinsrw_Vdq_RyMw_Ib)
          * Register, memory.
          */
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_ARG(PRTUINT128U,   puDst,                 0);
-        IEM_MC_ARG(uint16_t,      u16Src,                1);
         IEM_MC_LOCAL(RTGCPTR,            GCPtrEffSrc);
+        IEM_MC_LOCAL(uint16_t,           uValue);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_ARG_CONST(uint8_t, bImmArg, /*=*/ bImm,   2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
-        IEM_MC_FETCH_MEM_U16(u16Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_pinsrw_u128, puDst, u16Src, bImmArg);
+        IEM_MC_FETCH_MEM_U16(uValue, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 7, uValue);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }

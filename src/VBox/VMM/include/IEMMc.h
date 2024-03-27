@@ -437,13 +437,27 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     do { (a_u32Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[a_iDWord]; } while (0)
 #define IEM_MC_FETCH_MREG_U16(a_u16Value, a_iMReg, a_iWord) \
     do { (a_u16Value) = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au16[a_iWord]; } while (0)
-#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) do { \
-        pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx = (a_u64Value); \
-        pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+#define IEM_MC_FETCH_MREG_U8(a_u8Value, a_iMReg, a_iByte) \
+    do { (a_u8Value)  = pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au8[a_iByte]; } while (0)
+#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx = (a_u64Value); \
+         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
     } while (0)
-#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) do { \
-        pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); \
-        pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+#define IEM_MC_STORE_MREG_U32(a_iMReg, a_iDword, a_u32Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[(a_iDword)] = (a_u32Value); \
+         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+    } while (0)
+#define IEM_MC_STORE_MREG_U16(a_iMReg, a_iWord, a_u16Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au16[(a_iWord)] = (a_u16Value); \
+         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+    } while (0)
+#define IEM_MC_STORE_MREG_U8(a_iMReg, a_iByte, a_u8Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au8[(a_iByte)] = (a_u8Value); \
+         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+    } while (0)
+#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); \
+         pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
     } while (0)
 #define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg) /** @todo need to set high word to 0xffff on commit (see IEM_MC_STORE_MREG_U64) */ \
         (a_pu64Dst) = (&pVCpu->cpum.GstCtx.XState.x87.aRegs[(a_iMReg)].mmx)
@@ -523,9 +537,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_STORE_XREG_U32(a_iXReg, a_iDword, a_u32Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDword)] = (a_u32Value); } while (0)
 #define IEM_MC_STORE_XREG_U16(a_iXReg, a_iWord, a_u16Value) \
-    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iWord)]  = (a_u16Value); } while (0)
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au16[(a_iWord)]  = (a_u16Value); } while (0)
 #define IEM_MC_STORE_XREG_U8(a_iXReg,  a_iByte, a_u8Value) \
-    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iByte)]  = (a_u8Value);  } while (0)
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au8[(a_iByte)]   = (a_u8Value);  } while (0)
 
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
     do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
