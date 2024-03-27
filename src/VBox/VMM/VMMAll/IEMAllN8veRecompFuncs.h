@@ -7724,46 +7724,48 @@ iemNativeEmitSimdStoreXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
 
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_iQWord, a_u64Value) \
-    off = iemNativeEmitSimdStoreXregU64(pReNative, off, a_iXReg, a_u64Value, a_iQWord)
-
-/** Emits code for IEM_MC_STORE_XREG_U64. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreXregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar, uint8_t iQWord)
-{
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint64_t));
-
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-
-    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
-
-    off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxSimdRegDst, idxVarReg, iQWord);
-
-    /* Free but don't flush the source register. */
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeVarRegisterRelease(pReNative, idxDstVar);
-
-    return off;
-}
-
+    off = iemNativeEmitSimdStoreXregUxx(pReNative, off, a_iXReg, a_u64Value, sizeof(uint64_t), a_iQWord)
 
 #define IEM_MC_STORE_XREG_U32(a_iXReg, a_iDWord, a_u32Value) \
-    off = iemNativeEmitSimdStoreXregU32(pReNative, off, a_iXReg, a_u32Value, a_iDWord)
+    off = iemNativeEmitSimdStoreXregUxx(pReNative, off, a_iXReg, a_u32Value, sizeof(uint32_t), a_iDWord)
 
-/** Emits code for IEM_MC_STORE_XREG_U32. */
+#define IEM_MC_STORE_XREG_U16(a_iXReg, a_iWord, a_u32Value) \
+    off = iemNativeEmitSimdStoreXregUxx(pReNative, off, a_iXReg, a_u32Value, sizeof(uint16_t), a_iWord)
+
+#define IEM_MC_STORE_XREG_U8(a_iXReg, a_iByte, a_u32Value) \
+    off = iemNativeEmitSimdStoreXregUxx(pReNative, off, a_iXReg, a_u32Value, sizeof(uint8_t), a_iByte)
+
+/** Emits code for IEM_MC_STORE_XREG_U64/IEM_MC_STORE_XREG_U32/IEM_MC_STORE_XREG_U16/IEM_MC_STORE_XREG_U8. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreXregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar, uint8_t iDWord)
+iemNativeEmitSimdStoreXregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar, uint8_t cbLocal, uint8_t iElem)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(uint32_t));
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, cbLocal);
+
+#ifdef VBOX_STRICT
+    switch (cbLocal)
+    {
+        case sizeof(uint64_t): Assert(iElem <  2); break;
+        case sizeof(uint32_t): Assert(iElem <  4); break;
+        case sizeof(uint16_t): Assert(iElem <  8); break;
+        case sizeof(uint8_t):  Assert(iElem < 16); break;
+        default: AssertFailed();
+    }
+#endif
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
 
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
 
-    off = iemNativeEmitSimdStoreGprToVecRegU32(pReNative, off, idxSimdRegDst, idxVarReg, iDWord);
+    switch (cbLocal)
+    {
+        case sizeof(uint64_t): off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxSimdRegDst, idxVarReg, iElem); break;
+        case sizeof(uint32_t): off = iemNativeEmitSimdStoreGprToVecRegU32(pReNative, off, idxSimdRegDst, idxVarReg, iElem); break;
+        case sizeof(uint16_t): off = iemNativeEmitSimdStoreGprToVecRegU16(pReNative, off, idxSimdRegDst, idxVarReg, iElem); break;
+        case sizeof(uint8_t):  off = iemNativeEmitSimdStoreGprToVecRegU8(pReNative, off, idxSimdRegDst, idxVarReg, iElem); break;
+        default: AssertFailed();
+    }
 
     /* Free but don't flush the source register. */
     iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
