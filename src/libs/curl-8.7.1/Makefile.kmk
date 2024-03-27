@@ -79,7 +79,9 @@ VBox-libcurl_SOURCES        = \
 	lib/curl_memrchr.c \
 	lib/curl_range.c \
 	lib/curl_sasl.c \
+	lib/curl_sha512_256.c \
 	lib/curl_trc.c \
+	lib/cw-out.c \
 	lib/doh.c \
 	lib/dynbuf.c \
 	lib/dynhds.c \
@@ -121,6 +123,7 @@ VBox-libcurl_SOURCES        = \
 	lib/pingpong.c \
 	lib/progress.c \
 	lib/rand.c \
+	lib/request.c \
 	lib/rename.c \
 	lib/select.c \
 	lib/sendf.c \
