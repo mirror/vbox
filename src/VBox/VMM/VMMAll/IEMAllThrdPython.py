@@ -805,7 +805,8 @@ class ThreadedFunctionVariation(object):
                 self.raiseProblem('Unexpected reference: %s (asBits=%s)' % (sRegRef, asBits));
             sOrgExpr = asBits[0] + '_EX8(pVCpu, ' + asBits[2] + ')';
         else:
-            sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX) ? (%s) : (%s) + 12)' % (sRegRef, sRegRef, sRegRef);
+            sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REX | IEM_OP_PRF_VEX)) ? (%s) : (%s) + 12)' \
+                     % (sRegRef, sRegRef, sRegRef,);
 
         if sRegRef.find('IEM_GET_MODRM_RM') >= 0:    sStdRef = 'bRmRm8Ex';
         elif sRegRef.find('IEM_GET_MODRM_REG') >= 0: sStdRef = 'bRmReg8Ex';
