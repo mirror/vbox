@@ -1525,10 +1525,10 @@ DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestSimdRegShadowing(PIEMRECOMPI
                                                                      uint8_t idxHstSimdReg = UINT8_MAX,
                                                                      uint8_t idxHstSimdRegPrev = UINT8_MAX);
 # endif
-# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-DECL_HIDDEN_THROW(void)     iemNaitveDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
+# if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
                                                              uint8_t idxGstReg, uint8_t idxHstReg);
-DECL_HIDDEN_THROW(void)     iemNaitveDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
+DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
                                                                  uint64_t fGstReg);
 # endif
 DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE pReNative,

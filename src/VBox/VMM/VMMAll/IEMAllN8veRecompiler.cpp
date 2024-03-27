@@ -3823,12 +3823,12 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE p
 }
 # endif
 
+# if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
 
-# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
 /**
  * Debug Info: Record info about a dirty guest register.
  */
-DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
+DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pReNative, bool fSimdReg,
                                                          uint8_t idxGstReg, uint8_t idxHstReg)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
@@ -3842,7 +3842,7 @@ DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pRe
 /**
  * Debug Info: Record info about a dirty guest register writeback operation.
  */
-DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg, uint64_t fGstReg)
+DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg, uint64_t fGstReg)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     pEntry->GuestRegWriteback.uType         = kIemTbDbgEntryType_GuestRegWriteback;
@@ -3851,7 +3851,8 @@ DECL_HIDDEN_THROW(void) iemNaitveDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE
     /** @todo r=aeichner Can't fit the whole register mask in the debug info entry, deal with it when it becomes necessary. */
     Assert((uint64_t)pEntry->GuestRegWriteback.fGstReg == fGstReg);
 }
-# endif
+
+# endif /* defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR) */
 
 #endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
 
@@ -4120,7 +4121,7 @@ iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_
     {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fFlushGstReg);
+        iemNativeDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fFlushGstReg);
 # endif
 
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fFlushGstReg;
@@ -4160,7 +4161,7 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOM
     {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fGstRegShadows);
+        iemNativeDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fGstRegShadows);
 # endif
 
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fGstRegShadows;
@@ -4786,7 +4787,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
         {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
-            iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
+            iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
 # endif
 
             pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
@@ -4819,7 +4820,7 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
     {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
         iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
-        iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxRegNew);
+        iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxRegNew);
 # endif
 
         pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
@@ -5868,7 +5869,7 @@ iemNativeSimdRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        iemNaitveDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
+        iemNativeDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
 # endif
 
         uint32_t idxGstSimdReg = 0;
@@ -6475,7 +6476,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
         {
 # if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
-            iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxSimdReg);
+            iemNativeDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxSimdReg);
 # endif
 
             if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128)
@@ -6511,7 +6512,7 @@ iemNativeSimdRegAllocTmpForGuestSimdReg(PIEMRECOMPILERSTATE pReNative, uint32_t 
     {
 # if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
         iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
-        iemNaitveDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxRegNew);
+        iemNativeDbgInfoAddGuestRegDirty(pReNative, true /*fSimdReg*/, enmGstSimdReg, idxRegNew);
 # endif
 
         if (enmLoadSz == kIemNativeGstSimdRegLdStSz_Low128)
@@ -8543,7 +8544,7 @@ iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t id
         {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
-            iemNaitveDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
+            iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
 # endif
 
             pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);

@@ -992,7 +992,7 @@ typedef enum IEMTBDBGENTRYTYPE
     /** Info about a delayed RIP update. */
     kIemTbDbgEntryType_DelayedPcUpdate,
 #endif
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+#if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
     /** Info about a shadowed guest register becoming dirty. */
     kIemTbDbgEntryType_GuestRegDirty,
     /** Info about register writeback/flush oepration. */
@@ -1097,7 +1097,7 @@ typedef union IEMTBDBGENTRY
     } DelayedPcUpdate;
 #endif
 
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+#if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
     struct
     {
         /* kIemTbDbgEntryType_GuestRegDirty. */
