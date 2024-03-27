@@ -507,23 +507,23 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
     AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
     AssertMsgReturn(cbReq > 32 && cbReq < _512K, ("%#x\n", cbReq), NULL);
 
+    /*
+     * Adjust the request size so it'll fit the allocator alignment/whatnot.
+     *
+     * For the RTHeapSimple allocator this means to follow the logic described
+     * in iemExecMemAllocatorGrow and attempt to allocate it from one of the
+     * existing chunks if we think we've got sufficient free memory around.
+     *
+     * While for the alternative one we just align it up to a whole unit size.
+     */
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    cbReq = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+#else
+    cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
+#endif
 
     for (unsigned iIteration = 0;; iIteration++)
     {
-        /*
-         * Adjust the request size so it'll fit the allocator alignment/whatnot.
-         *
-         * For the RTHeapSimple allocator this means to follow the logic described
-         * in iemExecMemAllocatorGrow and attempt to allocate it from one of the
-         * existing chunks if we think we've got sufficient free memory around.
-         *
-         * While for the alternative one we just align it up to a whole unit size.
-         */
-#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
-        cbReq = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
-#else
-        cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
-#endif
         if (cbReq <= pExecMemAllocator->cbFree)
         {
             uint32_t const cChunks      = pExecMemAllocator->cChunks;
@@ -564,7 +564,7 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
             iemTbAllocatorFreeupNativeSpace(pVCpu, cbReq / sizeof(IEMNATIVEINSTR));
         else
         {
-            /** @todo stats...   */
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeExecMemInstrBufAllocFailed);
             return NULL;
         }
     }

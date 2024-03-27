@@ -1852,6 +1852,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatCheckBranchMisses;
     /** Statistics: Times a jump or page crossing required a TB with CS.LIM checking. */
     STAMCOUNTER             StatCheckNeedCsLimChecking;
+    /** Exec memory allocator statistics: Number of times allocaintg executable memory failed. */
+    STAMCOUNTER             StatNativeExecMemInstrBufAllocFailed;
     /** Native TB statistics: Number of fully recompiled TBs. */
     STAMCOUNTER             StatNativeFullyRecompiledTbs;
     /** Threaded TB statistics: Number of instructions per TB. */
@@ -1976,7 +1978,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 #endif
 
-    uint64_t                au64Padding[5];
+    uint64_t                au64Padding[4];
     /** @} */
 
     /** Data TLB.

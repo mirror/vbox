@@ -440,6 +440,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Needing CS.LIM checking TB after branch or on page crossing", "/IEM/CPU%u/re/CheckTbNeedCsLimChecking", idCpu);
 
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeExecMemInstrBufAllocFailed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the exec memory allocator failed to allocate a large enough buffer",
+                        "/IEM/CPU%u/re/NativeExecMemInstrBufAllocFailed", idCpu);
+
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeCallsRecompiled, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS_PER_TB,
                         "Number of threaded calls per TB that have been properly recompiled to native code",
                         "/IEM/CPU%u/re/NativeCallsRecompiledPerTb", idCpu);
