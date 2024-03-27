@@ -1570,6 +1570,9 @@ DECLHIDDEN(void)            iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative
 DECLHIDDEN(void)            iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, bool fFlushShadows) RT_NOEXCEPT;
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 DECLHIDDEN(void)            iemNativeSimdRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstSimdReg, bool fFlushShadows) RT_NOEXCEPT;
+# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegFlushDirtyGuestByHostSimdRegShadow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstReg);
+# endif
 #endif
 DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs,
@@ -1654,7 +1657,7 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitExecFlagsCheck(PIEMRECOMPILERSTATE pReN
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitEFlagsSkippingCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fEflNeeded);
 #endif
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr);
-DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs, bool fFlushPendingWrites = true);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
                                                    uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
                                                    uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);

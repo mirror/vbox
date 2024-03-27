@@ -4375,6 +4375,9 @@ static uint32_t iemNativeRegMoveVar(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #endif
     RT_NOREF(pszCaller);
 
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(!(pReNative->Core.aHstRegs[idxRegNew].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+#endif
     iemNativeRegClearGstRegShadowing(pReNative, idxRegNew, off);
 
     uint64_t fGstRegShadows = pReNative->Core.aHstRegs[idxRegOld].fGstRegShadows;
@@ -5182,6 +5185,8 @@ static uint32_t iemNativeSimdRegMoveVar(PIEMRECOMPILERSTATE pReNative, uint32_t 
     Assert(pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fSimdReg);
     RT_NOREF(pszCaller);
 
+    Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+             & pReNative->Core.aHstSimdRegs[idxRegNew].fGstRegShadows));
     iemNativeSimdRegClearGstSimdRegShadowing(pReNative, idxRegNew, off);
 
     uint64_t fGstRegShadows = pReNative->Core.aHstSimdRegs[idxRegOld].fGstRegShadows;
@@ -5417,6 +5422,16 @@ iemNativeSimdRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_
             fHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxSimdReg);
 
             AssertMsg(pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows != 0, ("idxSimdReg=%#x\n", idxSimdReg));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            /*
+             * Flush any pending writes now (might have been skipped earlier in iemEmitCallCommon() but it doesn't apply
+             * to call volatile registers).
+             */
+            if (  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                & pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows)
+                off = iemNativeSimdRegFlushDirtyGuestByHostSimdRegShadow(pReNative, off, idxSimdReg);
+#endif
             Assert(!(  (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
                      & pReNative->Core.aHstSimdRegs[idxSimdReg].fGstRegShadows));
 
@@ -5550,9 +5565,17 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
             fHstRegsWithGstShadow &= ~RT_BIT_32(idxReg);
 
             AssertMsg(pReNative->Core.aHstRegs[idxReg].fGstRegShadows != 0, ("idxReg=%#x\n", idxReg));
+
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            /*
+             * Flush any pending writes now (might have been skipped earlier in iemEmitCallCommon() but it doesn't apply
+             * to call volatile registers).
+             */
+            if (pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxReg].fGstRegShadows)
+                off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxReg);
             Assert(!(pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxReg].fGstRegShadows));
 #endif
+
             pReNative->Core.bmGstRegShadows &= ~pReNative->Core.aHstRegs[idxReg].fGstRegShadows;
             pReNative->Core.aHstRegs[idxReg].fGstRegShadows = 0;
         } while (fHstRegsWithGstShadow != 0);
@@ -5885,6 +5908,45 @@ iemNativeSimdRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 
     return off;
 }
+
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+/**
+ * Flush all shadowed guest SIMD registers marked as dirty for the given host SIMD register.
+ *
+ * @returns New code buffer offset.
+ * @param   pReNative       The native recompile state.
+ * @param   off             Current code buffer position.
+ * @param   idxHstSimdReg   The host SIMD register.
+ *
+ * @note This doesn't do any unshadowing of guest registers from the host register.
+ */
+DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegFlushDirtyGuestByHostSimdRegShadow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxHstSimdReg)
+{
+    /* We need to flush any pending guest register writes this host register shadows. */
+    uint64_t bmGstSimdRegShadowDirty =   (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                                       & pReNative->Core.aHstSimdRegs[idxHstSimdReg].fGstRegShadows;
+    if (bmGstSimdRegShadowDirty)
+    {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        iemNativeDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
+# endif
+
+        uint32_t idxGstSimdReg = 0;
+        do
+        {
+            if (bmGstSimdRegShadowDirty & 0x1)
+                off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
+
+            idxGstSimdReg++;
+            bmGstSimdRegShadowDirty >>= 1;
+        } while (bmGstSimdRegShadowDirty);
+    }
+
+    return off;
+}
+#endif
 
 
 /**
@@ -6672,9 +6734,6 @@ DECLHIDDEN(void) iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNative)
  *
  * This must be called prior to calling CImpl functions and any helpers that use
  * the guest state (like raising exceptions) and such.
- *
- * This optimization has not yet been implemented.  The first target would be
- * RIP updates, since these are the most common ones.
  *
  * @note This function does not flush any shadowing information for guest registers. This needs to be done by
  *       the caller if it wishes to do so.
@@ -9102,9 +9161,11 @@ iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
  *                          arguments must not have any variable declared for
  *                          them, whereas all the regular arguments must
  *                          (tstIEMCheckMc ensures this).
+ * @param   fFlushPendingWrites Flag whether to flush pending writes (default true),
+ *                              this will still flush pending writes in call volatile registers if false.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs)
+iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs, bool fFlushPendingWrites /*= true*/)
 {
 #ifdef VBOX_STRICT
     /*
@@ -9123,7 +9184,10 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 #endif
 
     /* We don't know what the called function makes use of, so flush any pending register writes. */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    if (fFlushPendingWrites)
+#endif
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /*
      * Before we do anything else, go over variables that are referenced and
@@ -9189,6 +9253,22 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
     }
 
     uint8_t const cRegArgs = RT_MIN(cArgs, RT_ELEMENTS(g_aidxIemNativeCallRegs));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /*
+     * At the very first step go over the host registers that will be used for arguments
+     * don't shadow anything which needs writing back first.
+     */
+    for (uint32_t i = 0; i < cRegArgs; i++)
+    {
+        uint8_t const idxArgReg = g_aidxIemNativeCallRegs[i];
+
+        /* Writeback any dirty guest shadows before using this register. */
+        if (pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxArgReg].fGstRegShadows)
+            off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxArgReg);
+        Assert(!(pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxArgReg].fGstRegShadows));
+    }
+#endif
 
     /*
      * First, go over the host registers that will be used for arguments and make

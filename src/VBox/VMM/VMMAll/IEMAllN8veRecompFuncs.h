@@ -2414,8 +2414,13 @@ iemNativeEmitCallAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
     /*
      * Do all the call setup and cleanup.
+     *
+     * It is only required to flush pending guest register writes in call volatile registers as
+     * assembly helpers can't throw and don't access anything living in CPUMCTX, they only
+     * access parameters. The flushing of call volatile registers is always done in iemNativeEmitCallCommon()
+     * no matter the fFlushPendingWrites parameter.
      */
-    off = iemNativeEmitCallCommon(pReNative, off, cArgs, 0 /*cHiddenArgs*/);
+    off = iemNativeEmitCallCommon(pReNative, off, cArgs, 0 /*cHiddenArgs*/, false /*fFlushPendingWrites*/);
 
     /*
      * Make the call and update the return code variable if we've got one.
