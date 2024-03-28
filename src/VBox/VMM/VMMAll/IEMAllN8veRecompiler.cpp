@@ -4096,8 +4096,8 @@ iemNativeRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNA
     Assert(enmGstReg >= kIemNativeGstReg_GprFirst && enmGstReg <= kIemNativeGstReg_GprLast);
     Assert(   idxHstReg != UINT8_MAX
            && pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(enmGstReg));
-    Log12(("iemNativeRegFlushPendingWrite: Clearing guest register %s shadowed by host %s\n",
-           g_aGstShadowInfo[enmGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
+    Log12(("iemNativeRegFlushPendingWrite: Clearing guest register %s shadowed by host %s (off=%#x)\n",
+           g_aGstShadowInfo[enmGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg], off));
 
     off = iemNativeEmitStoreGprWithGstShadowReg(pReNative, off, enmGstReg, idxHstReg);
 
@@ -4117,25 +4117,19 @@ iemNativeRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNA
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fFlushGstReg /*= UINT64_MAX*/)
 {
-    if (pReNative->Core.bmGstRegShadowDirty & fFlushGstReg)
+    uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fFlushGstReg;
+    if (bmGstRegShadowDirty)
     {
 # ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        iemNativeDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fFlushGstReg);
+        iemNativeDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, bmGstRegShadowDirty);
 # endif
-
-        uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fFlushGstReg;
-        uint32_t idxGstReg = 0;
-
         do
         {
-            if (bmGstRegShadowDirty & 0x1)
-            {
-                off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
-                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
-            }
-            idxGstReg++;
-            bmGstRegShadowDirty >>= 1;
+            unsigned const idxGstReg = ASMBitFirstSetU64(bmGstRegShadowDirty) - 1;
+            bmGstRegShadowDirty &= ~RT_BIT_64(idxGstReg);
+            off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
+            Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
         } while (bmGstRegShadowDirty);
     }
 
@@ -4163,6 +4157,9 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOM
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
         iemNativeDbgInfoAddGuestRegWriteback(pReNative, false /*fSimdReg*/, pReNative->Core.bmGstRegShadowDirty & fGstRegShadows);
 # endif
+        /** @todo r=bird: This is a crap way of enumerating a bitmask where we're
+         *        likely to only have a single bit set. It'll be in the 0..15 range,
+         *        but still it's 15 unnecessary loops for the last guest register.  */
 
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fGstRegShadows;
         uint32_t idxGstReg = 0;
@@ -10087,7 +10084,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 
                         case kIemTbDbgEntryType_NativeOffset:
                             offDbgNativeNext = pDbgInfo->aEntries[iDbgEntry].NativeOffset.offNative;
-                            Assert(offDbgNativeNext > offNative);
+                            Assert(offDbgNativeNext >= offNative);
                             break;
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING

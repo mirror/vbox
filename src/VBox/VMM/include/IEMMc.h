@@ -2584,7 +2584,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #endif
 
 
-/** The @a a_fSpportedHosts mask are ORed together RT_ARCH_VAL_XXX values. */
+/** The @a a_fSupportedHosts mask are ORed together RT_ARCH_VAL_XXX values. */
 #define IEM_MC_NATIVE_IF(a_fSupportedHosts)                               if (false) {
 #define IEM_MC_NATIVE_ELSE()                                              } else {
 #define IEM_MC_NATIVE_ENDIF()                                             } ((void)0)
@@ -2598,6 +2598,10 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_NATIVE_EMIT_6(a_fnEmitter, a0, a1, a2, a3, a4, a5)         (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5)
 #define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6)     (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6)
 #define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7) (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4), (void)(a5), (void)(a6), (void)(a7)
+
+/** This can be used to direct the register allocator when dealing with
+ * x86/AMD64 instructions (like SHL reg,CL) that takes fixed registers. */
+#define IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(a_VarNm, a_idxHostReg) ((void)0)
 
 
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                   (a_pfn)()

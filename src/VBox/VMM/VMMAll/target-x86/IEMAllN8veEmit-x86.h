@@ -846,6 +846,11 @@ iemNativeEmit_xor_r_i_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+
+/*********************************************************************************************************************************
+*   ADD, ADC, SUB, SBB, CMP                                                                                                      *
+*********************************************************************************************************************************/
+
 /**
  * The ADD instruction will set all status flags.
  */
@@ -1523,6 +1528,344 @@ iemNativeEmit_lzcnt_r_r_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                             uint8_t idxVarDst, uint8_t idxVarSrc, uint8_t idxVarEfl, uint8_t cOpBits)
 {
     RT_NOREF(idxVarDst, idxVarSrc, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+
+/*********************************************************************************************************************************
+*   Shifting and Rotating.                                                                                                       *
+*********************************************************************************************************************************/
+
+
+typedef enum
+{
+    kIemNativeEmitEFlagsForShiftType_Left,
+    kIemNativeEmitEFlagsForShiftType_Right,
+    kIemNativeEmitEFlagsForShiftType_SignedRight
+} IEMNATIVEEMITEFLAGSFORSHIFTTYPE;
+
+/**
+ * This is used by SHL, SHR and SAR emulation.
+ *
+ * It takes liveness stuff into account.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitEFlagsForShift(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxRegEfl, uint8_t idxRegResult,
+                            uint8_t idxRegSrc, uint8_t idxRegCount, uint8_t cOpBits, IEMNATIVEEMITEFLAGSFORSHIFTTYPE enmType,
+                            uint8_t idxRegTmp)
+{
+RT_NOREF(pReNative, off, idxRegEfl, idxRegResult, idxRegSrc, idxRegCount, cOpBits, enmType);
+#if 0 //def IEMNATIVE_WITH_EFLAGS_SKIPPING
+    /*
+     * See if we can skip this wholesale.
+     */
+    PCIEMLIVENESSENTRY const pLivenessEntry = &pReNative->paLivenessEntries[pReNative->idxCurCall];
+    if (IEMLIVENESS_STATE_ARE_STATUS_EFL_TO_BE_CLOBBERED(pLivenessEntry))
+    {
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeEflSkippedLogical);
+# ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        off = iemNativeEmitOrImmIntoVCpuU32(pReNative, off, X86_EFL_STATUS_BITS, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+# endif
+    }
+    else
+#endif
+    {
+        /*
+         * The difference between Intel and AMD flags for SHL are:
+         *  - Intel always clears AF while AMD always sets it.
+         *  - Intel sets OF for the first shift, while AMD for the last shift.
+         *
+         */
+
+#ifdef RT_ARCH_AMD64
+        /*
+         * We capture flags and does the additional OF and AF calculations as needed.
+         */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
+        /** @todo kIemNativeEmitEFlagsForShiftType_SignedRight: we could alternatively
+         *        use SAHF here when host rax is free since, OF is cleared. */
+        /* pushf */
+        pCodeBuf[off++] = 0x9c;
+        /* pop   tmp */
+        if (idxRegTmp >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0x58 + (idxRegTmp & 7);
+        /* Clear the status bits in EFLs. */
+        off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegEfl, ~X86_EFL_STATUS_BITS);
+        uint8_t const idxTargetCpuEflFlavour = pReNative->pVCpu->iem.s.aidxTargetCpuEflFlavour[1];
+        if (idxTargetCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_NATIVE)
+            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegTmp, X86_EFL_STATUS_BITS);
+        else
+        {
+            /* and  tmp, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_CF */
+            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegTmp, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_CF);
+            if (idxTargetCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD)
+                off = iemNativeEmitOrGpr32ByImmEx(pCodeBuf, off, idxRegTmp, X86_EFL_AF);
+            /* OR in the flags we collected. */
+            off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off, idxRegEfl, idxRegTmp);
+
+            /* Calculate OF */
+            if (idxTargetCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD)
+            {
+                /* AMD last bit shifted: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT; */
+                /* bt   idxRegResult, (cOpBits - 1) => CF=result-sign-bit */
+                off = iemNativeEmitAmd64TwoByteModRmInstrRREx(pCodeBuf, off, 0x0f, 0x0b /*ud2*/, 0xba,
+                                                              RT_MAX(cOpBits, 16), 4, idxRegResult);
+                pCodeBuf[off++] = cOpBits - 1;
+                /* setc idxRegTmp */
+                off = iemNativeEmitAmd64TwoByteModRmInstrRREx(pCodeBuf, off, 0x0f, 0x92, 0x0b /*ud2*/, 8, 0, idxRegTmp);
+                /* xor  idxRegTmp, idxRegEfl */
+                off = iemNativeEmitXorGpr32ByGpr32Ex(pCodeBuf, off, idxRegTmp, idxRegEfl);
+                /* and  idxRegTmp, 1 */
+                off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegTmp, 1);
+                /* shl  idxRegTmp, X86_EFL_OF_BIT */
+                off = iemNativeEmitShiftGpr32LeftEx(pCodeBuf, off, idxRegTmp, X86_EFL_OF_BIT);
+            }
+            else
+            {
+                /* Intel first bit shifted: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+                if (cOpBits <= 32)
+                {
+                    /* mov  idxRegTmp, idxRegSrc */
+                    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegTmp, idxRegSrc);
+                    /* shl  idxRegTmp, 1 */
+                    off = iemNativeEmitShiftGpr32LeftEx(pCodeBuf, off, idxRegTmp, 1);
+                    /* xor  idxRegTmp, idxRegSrc */
+                    off = iemNativeEmitXorGprByGprEx(pCodeBuf, off, idxRegTmp, idxRegSrc);
+                    /* shr  idxRegTmp, cOpBits - X86_EFL_OF_BIT - 1  or  shl idxRegTmp, X86_EFL_OF_BIT - cOpBits + 1 */
+                    if (cOpBits >= X86_EFL_OF_BIT)
+                        off = iemNativeEmitShiftGpr32RightEx(pCodeBuf, off, idxRegTmp, cOpBits - X86_EFL_OF_BIT - 1);
+                    else
+                        off = iemNativeEmitShiftGpr32LeftEx(pCodeBuf, off, idxRegTmp, X86_EFL_OF_BIT - cOpBits + 1);
+                }
+                else
+                {
+                    /* same as above but with 64-bit grps*/
+                    off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, idxRegTmp, idxRegSrc);
+                    off = iemNativeEmitShiftGprLeftEx(pCodeBuf, off, idxRegTmp, 1);
+                    off = iemNativeEmitXorGprByGprEx(pCodeBuf, off, idxRegTmp, idxRegSrc);
+                    off = iemNativeEmitShiftGprRightEx(pCodeBuf, off, idxRegTmp, cOpBits - X86_EFL_OF_BIT - 1);
+                }
+                /* and  idxRegTmp, X86_EFL_OF */
+                off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegTmp, X86_EFL_OF);
+            }
+        }
+        /* Or in the collected flag(s) */
+        off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off, idxRegEfl, idxRegTmp);
+
+#elif defined(RT_ARCH_ARM64)
+        /*
+         * Calculate flags.
+         */
+        PIEMNATIVEINSTR const pCodeBuf  = iemNativeInstrBufEnsure(pReNative, off, 20);
+
+        /* Clear the status bits. ~0x8D5 (or ~0x8FD) can't be AND immediate, so use idxRegTmp for constant. */
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, idxRegTmp, ~X86_EFL_STATUS_BITS);
+        off = iemNativeEmitAndGpr32ByGpr32Ex(pCodeBuf, off, idxRegEfl, idxRegTmp);
+
+        /* N,Z -> SF,ZF */
+        if (cOpBits < 32)
+            pCodeBuf[off++] = Armv8A64MkInstrSetF8SetF16(idxRegResult, cOpBits > 8); /* sets NZ */
+        else
+            pCodeBuf[off++] = Armv8A64MkInstrAnds(ARMV8_A64_REG_XZR, idxRegResult, idxRegResult, cOpBits > 32 /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrMrs(idxRegTmp, ARMV8_AARCH64_SYSREG_NZCV); /* Bits: 31=N; 30=Z; 29=C; 28=V; */
+        pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegTmp, idxRegTmp, 30);
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxRegTmp, X86_EFL_ZF_BIT, 2, false /*f64Bit*/);
+        AssertCompile(X86_EFL_ZF_BIT + 1 == X86_EFL_SF_BIT);
+
+        /* Calculate 8-bit parity of the result. */
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegTmp, idxRegResult, idxRegResult, false /*f64Bit*/,
+                                             4 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegTmp, idxRegTmp,    idxRegTmp,    false /*f64Bit*/,
+                                             2 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegTmp, idxRegTmp,    idxRegTmp,    false /*f64Bit*/,
+                                             1 /*offShift6*/, kArmv8A64InstrShift_Lsr);
+        Assert(Armv8A64ConvertImmRImmS2Mask32(0, 0) == 1);
+        pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxRegTmp, idxRegTmp, 0, 0, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxRegTmp, X86_EFL_PF_BIT, 1,  false /*f64Bit*/);
+
+        /* Calculate carry - the last bit shifted out of the input value. */
+        if (enmType == kIemNativeEmitEFlagsForShiftType_Left)
+        {
+            /* CF = (idxRegSrc >> (cOpBits - idxRegCount))) & 1 */
+            pCodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegTmp, cOpBits);
+            pCodeBuf[off++] = Armv8A64MkInstrSubReg(idxRegTmp, idxRegTmp, idxRegCount, false /*f64Bit*/, cOpBits < 32 /*fSetFlags*/);
+            if (cOpBits < 32)
+                pCodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Cc, 3); /* 16 or 8 bit: CF is clear if all shifted out */
+            pCodeBuf[off++] = Armv8A64MkInstrLsrv(idxRegTmp, idxRegSrc, idxRegTmp, cOpBits > 32);
+        }
+        else
+        {
+            /* CF = (idxRegSrc >> (idxRegCount - 1)) & 1 */
+            pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegTmp, idxRegCount, 1, false /*f64Bit*/);
+            pCodeBuf[off++] = Armv8A64MkInstrLsrv(idxRegTmp, idxRegSrc, idxRegTmp, cOpBits > 32);
+        }
+        pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxRegTmp, X86_EFL_CF_BIT, 1, false /*f64Bit*/);
+
+        uint8_t const idxTargetCpuEflFlavour = pReNative->pVCpu->iem.s.aidxTargetCpuEflFlavour[0];
+        if (idxTargetCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_AMD)
+        {
+            /* Intel: OF = first bit shifted: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegTmp, idxRegSrc, idxRegSrc, cOpBits > 32, 1 /*left shift count*/);
+            pCodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegTmp, idxRegTmp, cOpBits - 1, cOpBits > 32);
+            pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxRegTmp, X86_EFL_OF_BIT, 1, false /*f64Bit*/);
+        }
+        else
+        {
+            /* AMD: OF = last bit shifted: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT; */
+            AssertCompile(X86_EFL_CF_BIT == 0);
+            pCodeBuf[off++] = Armv8A64MkInstrEor(idxRegTmp, idxRegEfl, idxRegResult, cOpBits > 32, /* ASSUMES CF calculated! */
+                                                 cOpBits - 1, kArmv8A64InstrShift_Lsr);
+            pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegEfl, idxRegTmp, X86_EFL_OF_BIT, 1, false /*f64Bit*/);
+
+            /* AMD unconditionally clears AF. */
+            Assert(Armv8A64ConvertImmRImmS2Mask32(0, 32 - X86_EFL_AF_BIT) == X86_EFL_AF);
+            pCodeBuf[off++] = Armv8A64MkInstrOrrImm(idxRegEfl, idxRegEfl, 0, 32 - X86_EFL_AF_BIT, false /*f64Bit*/);
+        }
+#else
+# error "port me"
+#endif
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#  ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
+        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+#  endif
+    }
+    return off;
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_shl_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    /* Note! Since we're doing some branching here, we need to allocate all
+             registers we need before the jump or we may end up with invalid
+             register state if the branch is taken. */
+    uint8_t const idxRegTmp   = iemNativeRegAllocTmp(pReNative, &off); /* Do this first in hope we'll get EAX. */
+    uint8_t const idxRegCount = iemNativeVarRegisterAcquire(pReNative, idxVarCount, &off, true /*fInitialized*/); /* modified on arm64 */
+    uint8_t const idxRegDst   = iemNativeVarRegisterAcquire(pReNative, idxVarDst,   &off, true /*fInitialized*/);
+    uint8_t const idxRegEfl   = iemNativeVarRegisterAcquire(pReNative, idxVarEfl,   &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_AMD64
+    /* Make sure IEM_MC_NATIVE_AMD64_HOST_REG_FOR_LOCAL was used. */
+    AssertStmt(idxRegCount == X86_GREG_xCX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_UNEXPECTED_VAR_REGISTER));
+
+    /* We only need a copy of the input value if the target CPU differs from the host CPU. */
+    uint8_t const         idxRegDstIn = pReNative->pVCpu->iem.s.aidxTargetCpuEflFlavour[1] == IEMTARGETCPU_EFL_BEHAVIOR_NATIVE
+                                      ? UINT8_MAX : iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 4+2+3+4);
+
+    /* Check if it's NOP before we do anything. */
+    off = iemNativeEmitTestAnyBitsInGpr8Ex(pCodeBuf, off, idxRegCount, cOpBits <= 32 ? 0x1f : 0x3f);
+    uint32_t const offFixup = off;
+    off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit should be enough */, kIemNativeInstrCond_z);
+
+    if (idxRegDstIn != UINT8_MAX)
+        off = iemNativeEmitLoadGprFromGprEx(pCodeBuf, off, idxRegDstIn, idxRegDst);
+    off = iemNativeEmitAmd64OneByteModRmInstrRREx(pCodeBuf, off, 0xd2, 0xd3, cOpBits, 4, idxRegDst);
+
+#elif defined(RT_ARCH_ARM64)
+    /* We always (except we can skip EFLAGS calcs) a copy of the input value. */
+    uint8_t const         idxRegDstIn = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf    = iemNativeInstrBufEnsure(pReNative, off, 6);
+
+    /* Check if it's NOP before we do anything. We MODIFY idxRegCount here! */
+    Assert(Armv8A64ConvertImmRImmS2Mask32(4, 0) == 0x1f);
+    Assert(Armv8A64ConvertImmRImmS2Mask32(5, 0) == 0x3f);
+    pCodeBuf[off++] = Armv8A64MkInstrAndsImm(idxRegCount, idxRegCount, cOpBits > 32 ? 5 : 4, 0, false /*f64Bit*/);
+    uint32_t const offFixup = off;
+    off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off, kArmv8InstrCond_Eq);
+
+    pCodeBuf[off++] = Armv8A64MkInstrMov(idxRegDstIn, idxRegDst);
+    pCodeBuf[off++] = Armv8A64MkInstrLslv(idxRegDst, idxRegDst, idxRegCount, cOpBits > 32 /*f64Bit*/);
+    if (cOpBits < 32)
+    {
+        Assert(Armv8A64ConvertImmRImmS2Mask32(7, 0) == 0xff);
+        Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+        pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegDst, idxRegDst, cOpBits - 1, 0, false /*f64Bit*/);
+    }
+
+#else
+# error "port me"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    off = iemNativeEmitEFlagsForShift(pReNative, off, idxRegEfl, idxRegDst, idxRegDstIn, idxRegCount,
+                                      cOpBits, kIemNativeEmitEFlagsForShiftType_Left, idxRegTmp);
+
+    /* fixup the jump */
+    iemNativeFixupFixedJump(pReNative, offFixup, off);
+
+#ifdef RT_ARCH_AMD64
+    if (idxRegDstIn != UINT8_MAX)
+#endif
+        iemNativeRegFreeTmp(pReNative, idxRegDstIn);
+    iemNativeVarRegisterRelease(pReNative, idxVarEfl);
+    iemNativeVarRegisterRelease(pReNative, idxVarDst);
+    iemNativeVarRegisterRelease(pReNative, idxVarCount);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    return off;
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_shr_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_sar_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_rol_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_ror_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_rcl_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
+    AssertFailed();
+    return iemNativeEmitBrk(pReNative, off, 0x666);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_rcr_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                           uint8_t idxVarDst, uint8_t idxVarCount, uint8_t idxVarEfl, uint8_t cOpBits)
+{
+    RT_NOREF(idxVarDst, idxVarCount, idxVarEfl, cOpBits);
     AssertFailed();
     return iemNativeEmitBrk(pReNative, off, 0x666);
 }

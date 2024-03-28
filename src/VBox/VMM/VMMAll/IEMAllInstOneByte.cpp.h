@@ -9985,17 +9985,23 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
                     IEM_MC_BEGIN(0, 0); \
                     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_ARG(uint8_t,         cShiftArg,  1); \
-                    IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
-                    /*IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
-                        IEM_MC_LOCAL(uint16_t,      u16Dst); \
+                    IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                        IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); /* we modify this on arm64 */ \
+                        IEM_MC_LOCAL(uint16_t,  u16Dst); \
                         IEM_MC_FETCH_GREG_U16(u16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
-                    } IEM_MC_NATIVE_ELSE() { */ \
-                        IEM_MC_ARG(uint16_t *,      pu16Dst,    0); \
-                        IEM_MC_ARG(uint32_t *,      pEFlags,    2); \
+                        IEM_MC_LOCAL_EFLAGS(fEFlags); \
+                        IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_Ins,_r_CL_efl), u16Dst, cShiftArg, fEFlags, 16); \
+                        IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_RM(pVCpu, bRm), u16Dst); \
+                        IEM_MC_COMMIT_EFLAGS(fEFlags); /** @todo IEM_MC_COMMIT_EFLAGS_OPT */ \
+                    } IEM_MC_NATIVE_ELSE() { \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_ARG(uint16_t *,  pu16Dst,    0); \
                         IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_ARG(uint32_t *,  pEFlags,    2); \
                         IEM_MC_REF_EFLAGS(pEFlags); \
                         IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, cShiftArg, pEFlags); \
-                    /*}*/ \
+                    } IEM_MC_NATIVE_ENDIF(); \
                     IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                     IEM_MC_END(); \
                     break; \
@@ -10003,14 +10009,25 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
                 case IEMMODE_32BIT: \
                     IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0); \
                     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
-                    IEM_MC_ARG(uint32_t *,      pu32Dst,    0); \
                     IEM_MC_ARG(uint8_t,         cShiftArg,  1); \
-                    IEM_MC_ARG(uint32_t *,      pEFlags,    2); \
-                    IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
-                    IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
-                    IEM_MC_REF_EFLAGS(pEFlags); \
-                    IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags); \
-                    IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                    IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                        IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); /* we modify this on arm64 */ \
+                        IEM_MC_LOCAL(uint32_t,  u32Dst); \
+                        IEM_MC_FETCH_GREG_U32(u32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_LOCAL_EFLAGS(fEFlags); \
+                        IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_Ins,_r_CL_efl), u32Dst, cShiftArg, fEFlags, 32); \
+                        IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Dst); \
+                        IEM_MC_COMMIT_EFLAGS(fEFlags); /** @todo IEM_MC_COMMIT_EFLAGS_OPT */ \
+                    } IEM_MC_NATIVE_ELSE() { \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_ARG(uint32_t *,  pu32Dst,    0); \
+                        IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_ARG(uint32_t *,  pEFlags,    2); \
+                        IEM_MC_REF_EFLAGS(pEFlags); \
+                        IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags); \
+                        IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                    } IEM_MC_NATIVE_ENDIF(); \
                     IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                     IEM_MC_END(); \
                     break; \
@@ -10018,13 +10035,24 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
                 case IEMMODE_64BIT: \
                     IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
                     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
-                    IEM_MC_ARG(uint64_t *,      pu64Dst,    0); \
                     IEM_MC_ARG(uint8_t,         cShiftArg,  1); \
-                    IEM_MC_ARG(uint32_t *,      pEFlags,    2); \
-                    IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
-                    IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
-                    IEM_MC_REF_EFLAGS(pEFlags); \
-                    IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, cShiftArg, pEFlags); \
+                    IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                        IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); /* we modify this on arm64 */ \
+                        IEM_MC_LOCAL(uint64_t,  u64Dst); \
+                        IEM_MC_FETCH_GREG_U64(u64Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_LOCAL_EFLAGS(fEFlags); \
+                        IEM_MC_NATIVE_EMIT_4(RT_CONCAT3(iemNativeEmit_,a_Ins,_r_CL_efl), u64Dst, cShiftArg, fEFlags, 64); \
+                        IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Dst); \
+                        IEM_MC_COMMIT_EFLAGS(fEFlags); /** @todo IEM_MC_COMMIT_EFLAGS_OPT */ \
+                    } IEM_MC_NATIVE_ELSE() { \
+                        IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX); \
+                        IEM_MC_ARG(uint64_t *,  pu64Dst,    0); \
+                        IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                        IEM_MC_ARG(uint32_t *,  pEFlags,    2); \
+                        IEM_MC_REF_EFLAGS(pEFlags); \
+                        IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, cShiftArg, pEFlags); \
+                    } IEM_MC_NATIVE_ENDIF(); \
                     IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                     IEM_MC_END(); \
                     break; \
@@ -10158,7 +10186,7 @@ FNIEMOP_DEF_1(iemOp_grp2_rcr_Ev_CL, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_grp2_shl_Ev_CL, uint8_t, bRm)
 {
     IEMOP_MNEMONIC2EX(shl_Ev_CL, "shl Ev,CL", M_CL, SHL, shl, Ev, REG_CL, DISOPTYPE_HARMLESS, 0);
-    GRP2_BODY_Ev_CL(shl, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags), 0, 0);
+    GRP2_BODY_Ev_CL(shl, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags), RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, 0);
 }
 
 

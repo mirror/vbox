@@ -2853,7 +2853,7 @@ class IEMThreadedGenerator(object):
         32: "UINT64_C(0xffffffff)",
     };
 
-    def generateFunctionParameterUnpacking(self, oVariation, oOut, asParams):
+    def generateFunctionParameterUnpacking(self, oVariation, oOut, asParams, uNoRefLevel = 0):
         """
         Outputs code for unpacking parameters.
         This is shared by the threaded and native code generators.
@@ -2893,6 +2893,19 @@ class IEMThreadedGenerator(object):
         sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
         for asVar in sorted(aasVars):
             oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+
+        if uNoRefLevel > 0 and aasVars:
+            if uNoRefLevel > 1:
+                # level 2: Everything. This is used by liveness.
+                oOut.write('   ');
+                for asVar in sorted(aasVars):
+                    oOut.write(' RT_NOREF_PV(%s);' % (asVar[2],));
+                oOut.write('\n');
+            else:
+                # level 1: Only pfnXxxx variables.  This is used by native.
+                for asVar in sorted(aasVars):
+                    if asVar[2].startswith('pfn'):
+                        oOut.write('    RT_NOREF_PV(%s);\n' % (asVar[2],));
         return True;
 
     kasThreadedParamNames = ('uParam0', 'uParam1', 'uParam2');
@@ -3166,7 +3179,8 @@ class IEMThreadedGenerator(object):
                     self.generateFunctionParameterUnpacking(oVariation, oOut,
                                                             ('pCallEntry->auParams[0]',
                                                              'pCallEntry->auParams[1]',
-                                                             'pCallEntry->auParams[2]',));
+                                                             'pCallEntry->auParams[2]',),
+                                                            uNoRefLevel = 1);
 
                     # Now for the actual statements.
                     oOut.write(oVariation.oNativeRecomp.renderCode(cchIndent = 4));
@@ -3264,11 +3278,8 @@ class IEMThreadedGenerator(object):
                     self.generateFunctionParameterUnpacking(oVariation, oOut,
                                                             ('pCallEntry->auParams[0]',
                                                              'pCallEntry->auParams[1]',
-                                                             'pCallEntry->auParams[2]',));
-                    asNoRefs = []; #[ 'RT_NOREF_PV(pReNative);', ];
-                    for aoRefs in oVariation.dParamRefs.values():
-                        asNoRefs.append('RT_NOREF_PV(%s);' % (aoRefs[0].sNewName,));
-                    oOut.write('    %s\n' % (' '.join(asNoRefs),));
+                                                             'pCallEntry->auParams[2]',),
+                                                            uNoRefLevel = 2);
 
                     # Now for the actual statements.
                     oOut.write(oVariation.oNativeRecomp.renderCode(cchIndent = 4));

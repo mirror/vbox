@@ -3234,6 +3234,7 @@ g_dMcStmtParsers = {
     'IEM_MC_NATIVE_IF':                                          (McBlock.parseMcNativeIf,          False, False, True,  ),
     'IEM_MC_NATIVE_ELSE':                                        (McBlock.parseMcGenericCond,       False, False, True,  ),
     'IEM_MC_NATIVE_ENDIF':                                       (McBlock.parseMcGenericCond,       False, False, True,  ),
+    'IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL':                (McBlock.parseMcGeneric,           False, False, True,  ),
     'IEM_MC_OR_2LOCS_U32':                                       (McBlock.parseMcGeneric,           False, False, False, ),
     'IEM_MC_OR_GREG_U16':                                        (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_OR_GREG_U32':                                        (McBlock.parseMcGeneric,           True,  True,  True,  ),
@@ -4508,7 +4509,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             'asFlUndefined':    [],
         },
         'rotate_count': { # rol and ror w/o fixed 1 shift count
-            'asFlTest':         [],
+            'asFlTest':         [ 'cf', 'of', ], # If the count is zero, nothing changes.
             'asFlModify':       [ 'cf', 'of', ],
             'asFlClear':        [],
             'asFlSet':          [],
@@ -4522,7 +4523,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             'asFlUndefined':    [],
         },
         'rotate_carry_count': { # rcl and rcr w/o fixed 1 shift count
-            'asFlTest':         [ 'cf', ],
+            'asFlTest':         [ 'cf', 'of', ], # If the count is zero, nothing changes, so 'of' is also input.
             'asFlModify':       [ 'cf', 'of', ],
             'asFlClear':        [],
             'asFlSet':          [],
@@ -4536,7 +4537,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             'asFlUndefined':    [ 'af', ],
         },
         'shift_count': { # shl, shr or sar w/o fixed 1 shift count
-            'asFlTest':         [],
+            'asFlTest':         [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ], # If the count is zero, nothing is changed.
             'asFlModify':       [ 'cf', 'pf', 'af', 'zf', 'sf', 'of', ],
             'asFlClear':        [],
             'asFlSet':          [],

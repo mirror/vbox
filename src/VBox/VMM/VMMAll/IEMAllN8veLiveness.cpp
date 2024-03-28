@@ -1028,6 +1028,8 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_NATIVE_EMIT_7(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6)                           NOP()
 #define IEM_MC_NATIVE_EMIT_8(a_fnEmitter, a0, a1, a2, a3, a4, a5, a6, a7)                       NOP()
 
+#define IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(a_VarNm, a_idxHostReg)                       NOP()
+
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                                         NOP()
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                                                     NOP()
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                                                 NOP()

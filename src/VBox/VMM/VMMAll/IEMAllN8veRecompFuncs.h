@@ -206,6 +206,38 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
     off = a_fnEmitter(pReNative, off, (a0), (a1), (a2), (a3), (a4), (a5), (a6), (a7))
 
 
+#ifndef RT_ARCH_AMD64
+# define IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(a_VarNm, a_idxHostReg) ((void)0)
+#else
+/** @note This is a naive approach that ASSUMES that the register isn't
+ *        allocated, so it only works safely for the first allocation(s) in
+ *        a MC block. */
+# define IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(a_VarNm, a_idxHostReg) \
+    off = iemNativeVarSetAmd64HostRegisterForLocal(pReNative, off, a_VarNm, a_idxHostReg)
+
+DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg, uint32_t off);
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeVarSetAmd64HostRegisterForLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint8_t idxHstReg)
+{
+    Log12(("iemNativeVarSetAmd64HostRegisterForLocal: idxVar=%#x idxHstReg=%s (%#x) off=%#x\n", idxVar, g_apszIemNativeHstRegNames[idxHstReg], idxHstReg, off));
+    Assert(idxHstReg < RT_ELEMENTS(pReNative->Core.aHstRegs));
+    Assert(!(pReNative->Core.bmHstRegs & RT_BIT_32(idxHstReg))); /* iemNativeVarRegisterSet does a throw/longjmp on this */
+
+# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /* Must flush the register if it hold pending writes. */
+    if (   (pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg))
+        && (pReNative->Core.bmGstRegShadowDirty & pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows) )
+        off = iemNativeRegFlushDirtyGuest(pReNative, off, pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows);
+# endif
+
+    iemNativeVarRegisterSet(pReNative, idxVar, idxHstReg, off);
+    return off;
+}
+
+#endif /* RT_ARCH_AMD64 */
+
+
 
 /*********************************************************************************************************************************
 *   Emitters for standalone C-implementation deferals (IEM_MC_DEFER_TO_CIMPL_XXXX)                                               *

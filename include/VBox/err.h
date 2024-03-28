@@ -2629,6 +2629,8 @@
 #define VERR_IEM_EMIT_BAD_SEG_REG_NO                (-5382)
 /** Recompiler: Fixed jump is out of range. */
 #define VERR_IEM_EMIT_FIXED_JUMP_OUT_OF_RANGE       (-5383)
+/** Recompiler: Unexpected register assignment. */
+#define VERR_IEM_EMIT_UNEXPECTED_VAR_REGISTER       (-5384)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
