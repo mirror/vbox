@@ -7838,16 +7838,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst &= *puSrc;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pand_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au64[0] &= puSrc->au64[0];
     puDst->au64[1] &= puSrc->au64[1];
 }
@@ -7879,16 +7877,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpand_u256_fallback,(PX86XSAVEAREA pExtState, P
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst = ~*puDst & *puSrc;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pandn_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au64[0] = ~puDst->au64[0] & puSrc->au64[0];
     puDst->au64[1] = ~puDst->au64[1] & puSrc->au64[1];
 }
@@ -7920,16 +7916,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpandn_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_por_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_por_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst |= *puSrc;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_por_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_por_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au64[0] |= puSrc->au64[0];
     puDst->au64[1] |= puSrc->au64[1];
 }
@@ -7961,16 +7955,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpor_u256_fallback,(PX86XSAVEAREA pExtState, PR
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst ^= *puSrc;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     puDst->au64[0] ^= puSrc->au64[0];
     puDst->au64[1] ^= puSrc->au64[1];
 }
@@ -8002,9 +7994,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpxor_u256_fallback,(PX86XSAVEAREA pExtState, P
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8020,9 +8011,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = uSrc1.au8[0]  == puSrc->au8[0]  ? UINT8_MAX : 0;
     puDst->au8[1]  = uSrc1.au8[1]  == puSrc->au8[1]  ? UINT8_MAX : 0;
@@ -8110,9 +8100,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqb_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8124,9 +8113,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = uSrc1.au16[0] == puSrc->au16[0] ? UINT16_MAX : 0;
     puDst->au16[1] = uSrc1.au16[1] == puSrc->au16[1] ? UINT16_MAX : 0;
@@ -8182,9 +8170,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqw_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8194,9 +8181,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au32[0] = uSrc1.au32[0] == puSrc->au32[0] ? UINT32_MAX : 0;
     puDst->au32[1] = uSrc1.au32[1] == puSrc->au32[1] ? UINT32_MAX : 0;
@@ -8234,9 +8220,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqd_u256_fallback,(PX86XSAVEAREA pExtState
 /*
  * PCMPEQQ / VPCMPEQQ.
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqq_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au64[0] = uSrc1.au64[0] == puSrc->au64[0] ? UINT64_MAX : 0;
     puDst->au64[1] = uSrc1.au64[1] == puSrc->au64[1] ? UINT64_MAX : 0;
@@ -8266,9 +8251,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpeqq_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8284,9 +8268,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = uSrc1.ai8[0]  > puSrc->ai8[0]  ? UINT8_MAX : 0;
     puDst->au8[1]  = uSrc1.ai8[1]  > puSrc->ai8[1]  ? UINT8_MAX : 0;
@@ -8374,9 +8357,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtb_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8388,9 +8370,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = uSrc1.ai16[0] > puSrc->ai16[0] ? UINT16_MAX : 0;
     puDst->au16[1] = uSrc1.ai16[1] > puSrc->ai16[1] ? UINT16_MAX : 0;
@@ -8446,9 +8427,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtw_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8458,9 +8438,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au32[0] = uSrc1.ai32[0] > puSrc->ai32[0] ? UINT32_MAX : 0;
     puDst->au32[1] = uSrc1.ai32[1] > puSrc->ai32[1] ? UINT32_MAX : 0;
@@ -8498,9 +8477,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtd_u256_fallback,(PX86XSAVEAREA pExtState
 /*
  * PCMPGTQ / VPCMPGTQ.
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtq_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpgtq_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au64[0] = uSrc1.ai64[0] > puSrc->ai64[0] ? UINT64_MAX : 0;
     puDst->au64[1] = uSrc1.ai64[1] > puSrc->ai64[1] ? UINT64_MAX : 0;
@@ -8530,9 +8508,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpgtq_u256_fallback,(PX86XSAVEAREA pExtState
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8548,9 +8525,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = uSrc1.au8[0]  + puSrc->au8[0];
     puDst->au8[1]  = uSrc1.au8[1]  + puSrc->au8[1];
@@ -8644,9 +8620,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddb_u256_fallback,(PX86XSAVEAREA pExtState, 
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8662,9 +8637,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0]  + puSrc->ai8[0]);
     puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1]  + puSrc->ai8[1]);
@@ -8755,9 +8729,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsb_u256_fallback,(PRTUINT256U puDst,
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8773,9 +8746,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[0]  + puSrc->au8[0]);
     puDst->au8[1]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(uSrc1.au8[1]  + puSrc->au8[1]);
@@ -8861,9 +8833,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddusb_u256_fallback,(PRTUINT256U puDst,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8875,9 +8846,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = uSrc1.au16[0] + puSrc->au16[0];
     puDst->au16[1] = uSrc1.au16[1] + puSrc->au16[1];
@@ -8939,9 +8909,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddw_u256_fallback,(PX86XSAVEAREA pExtState, 
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -8953,9 +8922,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] + puSrc->ai16[0]);
     puDst->au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] + puSrc->ai16[1]);
@@ -9014,9 +8982,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsw_u256_fallback,(PRTUINT256U puDst,
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9028,9 +8995,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddusw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[0] + puSrc->au16[0]);
     puDst->au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD(uSrc1.au16[1] + puSrc->au16[1]);
@@ -9084,9 +9050,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddusw_u256_fallback,(PRTUINT256U puDst,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9096,9 +9061,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au32[0] = uSrc1.au32[0] + puSrc->au32[0];
     puDst->au32[1] = uSrc1.au32[1] + puSrc->au32[1];
@@ -9138,15 +9102,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddd_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst = *puDst + *puSrc;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_paddq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au64[0] = uSrc1.au64[0] + puSrc->au64[0];
     puDst->au64[1] = uSrc1.au64[1] + puSrc->au64[1];
@@ -9178,9 +9140,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddq_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9196,9 +9157,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = uSrc1.au8[0]  - puSrc->au8[0];
     puDst->au8[1]  = uSrc1.au8[1]  - puSrc->au8[1];
@@ -9286,9 +9246,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubb_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9304,9 +9263,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[0]  - puSrc->ai8[0]);
     puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(uSrc1.ai8[1]  - puSrc->ai8[1]);
@@ -9397,9 +9355,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubsb_u256_fallback,(PRTUINT256U puDst,
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9415,9 +9372,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusb_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au8[0]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[0]  - puSrc->au8[0]);
     puDst->au8[1]  = SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(uSrc1.au8[1]  - puSrc->au8[1]);
@@ -9503,9 +9459,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubusb_u256_fallback,(PRTUINT256U puDst,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9517,9 +9472,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = uSrc1.au16[0] - puSrc->au16[0];
     puDst->au16[1] = uSrc1.au16[1] - puSrc->au16[1];
@@ -9575,9 +9529,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubw_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9589,9 +9542,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubsw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[0] - puSrc->ai16[0]);
     puDst->au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc1.ai16[1] - puSrc->ai16[1]);
@@ -9650,9 +9602,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubsw_u256_fallback,(PRTUINT256U puDst,
 
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9664,9 +9615,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u64,(PCX86FXSTATE pFpuState, uint64_t *
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubusw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au16[0] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[0] - puSrc->au16[0]);
     puDst->au16[1] = SATURATED_UNSIGNED_DWORD_TO_UNSIGNED_WORD_SUB(uSrc1.au16[1] - puSrc->au16[1]);
@@ -9721,9 +9671,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubusw_u256_fallback,(PRTUINT256U puDst,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9733,9 +9682,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psubd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au32[0] = uSrc1.au32[0] - puSrc->au32[0];
     puDst->au32[1] = uSrc1.au32[1] - puSrc->au32[1];
@@ -9775,15 +9723,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubd_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubq_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubq_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     *puDst = *puDst - *puSrc;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psubq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psubq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->au64[0] = uSrc1.au64[0] - puSrc->au64[0];
     puDst->au64[1] = uSrc1.au64[1] - puSrc->au64[1];
@@ -9816,9 +9762,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubq_u256_fallback,(PX86XSAVEAREA pExtState, 
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9830,9 +9775,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->ai16[0] = uSrc1.ai16[0] * puSrc->ai16[0];
     puDst->ai16[1] = uSrc1.ai16[1] * puSrc->ai16[1];
@@ -9846,7 +9790,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmullw_u128,(PCX86FXSTATE pFpuState, PRTUINT128
 
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmulld_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulld_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -9854,7 +9798,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmulld_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai32[1] = uSrc1.ai32[1] * puSrc->ai32[1];
     puDst->ai32[2] = uSrc1.ai32[2] * puSrc->ai32[2];
     puDst->ai32[3] = uSrc1.ai32[3] * puSrc->ai32[3];
-    RT_NOREF(pFpuState);
 }
 
 
@@ -9919,9 +9862,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmulld_u256_fallback,(PRTUINT256U puDst, PCRTU
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     RTUINT64U uDst;
@@ -9933,9 +9875,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
-    RT_NOREF(pFpuState);
     RTUINT128U uSrc1 = *puDst;
     puDst->ai16[0] = RT_HIWORD(uSrc1.ai16[0] * puSrc->ai16[0]);
     puDst->ai16[1] = RT_HIWORD(uSrc1.ai16[1] * puSrc->ai16[1]);
@@ -11338,7 +11279,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllvq_u256_fallback,(PRTUINT256U puDst, PCRTU
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -11347,11 +11288,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64,(PCX86FXSTATE pFpuState, uint64_t *
     uDst.ai32[0] = (int32_t)uSrc1.ai16[0] * uSrc2.ai16[0] + (int32_t)uSrc1.ai16[1] * uSrc2.ai16[1];
     uDst.ai32[1] = (int32_t)uSrc1.ai16[2] * uSrc2.ai16[2] + (int32_t)uSrc1.ai16[3] * uSrc2.ai16[3];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11359,13 +11299,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128,(PCX86FXSTATE pFpuState, PRTUINT12
     puDst->ai32[1] = (int32_t)uSrc1.ai16[2] * puSrc->ai16[2] + (int32_t)uSrc1.ai16[3] * puSrc->ai16[3];
     puDst->ai32[2] = (int32_t)uSrc1.ai16[4] * puSrc->ai16[4] + (int32_t)uSrc1.ai16[5] * puSrc->ai16[5];
     puDst->ai32[3] = (int32_t)uSrc1.ai16[6] * puSrc->ai16[6] + (int32_t)uSrc1.ai16[7] * puSrc->ai16[7];
-    RT_NOREF(pFpuState);
 }
 
 #endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -11374,11 +11313,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u64_fallback,(PCX86FXSTATE pFpuState, u
     uDst.ai32[0] = (int32_t)uSrc1.ai16[0] * uSrc2.ai16[0] + (int32_t)uSrc1.ai16[1] * uSrc2.ai16[1];
     uDst.ai32[1] = (int32_t)uSrc1.ai16[2] * uSrc2.ai16[2] + (int32_t)uSrc1.ai16[3] * uSrc2.ai16[3];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11386,7 +11324,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddwd_u128_fallback,(PCX86FXSTATE pFpuState, 
     puDst->ai32[1] = (int32_t)uSrc1.ai16[2] * puSrc->ai16[2] + (int32_t)uSrc1.ai16[3] * puSrc->ai16[3];
     puDst->ai32[2] = (int32_t)uSrc1.ai16[4] * puSrc->ai16[4] + (int32_t)uSrc1.ai16[5] * puSrc->ai16[5];
     puDst->ai32[3] = (int32_t)uSrc1.ai16[6] * puSrc->ai16[6] + (int32_t)uSrc1.ai16[7] * puSrc->ai16[7];
-    RT_NOREF(pFpuState);
 }
 
 
@@ -11417,7 +11354,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaddwd_u256_fallback,(PRTUINT256U puDst, PCRT
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -11432,11 +11369,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u64,(PCX86FXSTATE pFpuState, uint64_t *p
     uDst.au8[6] = RT_MAX(uSrc1.au8[6], uSrc2.au8[6]);
     uDst.au8[7] = RT_MAX(uSrc1.au8[7], uSrc2.au8[7]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11456,13 +11392,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxub_u128,(PCX86FXSTATE pFpuState, PRTUINT128
     puDst->au8[13] = RT_MAX(uSrc1.au8[13], puSrc->au8[13]);
     puDst->au8[14] = RT_MAX(uSrc1.au8[14], puSrc->au8[14]);
     puDst->au8[15] = RT_MAX(uSrc1.au8[15], puSrc->au8[15]);
-    RT_NOREF(pFpuState);
 }
 
 #endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxuw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxuw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11474,11 +11409,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxuw_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->au16[ 5] = RT_MAX(uSrc1.au16[ 5], puSrc->au16[ 5]);
     puDst->au16[ 6] = RT_MAX(uSrc1.au16[ 6], puSrc->au16[ 6]);
     puDst->au16[ 7] = RT_MAX(uSrc1.au16[ 7], puSrc->au16[ 7]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxud_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxud_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11486,7 +11420,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxud_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->au32[ 1] = RT_MAX(uSrc1.au32[ 1], puSrc->au32[ 1]);
     puDst->au32[ 2] = RT_MAX(uSrc1.au32[ 2], puSrc->au32[ 2]);
     puDst->au32[ 3] = RT_MAX(uSrc1.au32[ 3], puSrc->au32[ 3]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -11621,7 +11554,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaxud_u256_fallback,(PX86XSAVEAREA pExtState,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -11632,11 +11565,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
     uDst.ai16[2] = RT_MAX(uSrc1.ai16[2], uSrc2.ai16[2]);
     uDst.ai16[3] = RT_MAX(uSrc1.ai16[3], uSrc2.ai16[3]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11648,12 +11580,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128
     puDst->ai16[ 5] = RT_MAX(uSrc1.ai16[ 5], puSrc->ai16[ 5]);
     puDst->ai16[ 6] = RT_MAX(uSrc1.ai16[ 6], puSrc->ai16[ 6]);
     puDst->ai16[ 7] = RT_MAX(uSrc1.ai16[ 7], puSrc->ai16[ 7]);
-    RT_NOREF(pFpuState);
 }
 
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11673,11 +11604,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsb_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai8[13] = RT_MAX(uSrc1.ai8[13], puSrc->ai8[13]);
     puDst->ai8[14] = RT_MAX(uSrc1.ai8[14], puSrc->ai8[14]);
     puDst->ai8[15] = RT_MAX(uSrc1.ai8[15], puSrc->ai8[15]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11685,7 +11615,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaxsd_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai32[ 1] = RT_MAX(uSrc1.ai32[ 1], puSrc->ai32[ 1]);
     puDst->ai32[ 2] = RT_MAX(uSrc1.ai32[ 2], puSrc->ai32[ 2]);
     puDst->ai32[ 3] = RT_MAX(uSrc1.ai32[ 3], puSrc->ai32[ 3]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -11820,7 +11749,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaxsd_u256_fallback,(PX86XSAVEAREA pExtState,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -11835,11 +11764,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u64,(PCX86FXSTATE pFpuState, uint64_t *p
     uDst.au8[6] = RT_MIN(uSrc1.au8[6], uSrc2.au8[6]);
     uDst.au8[7] = RT_MIN(uSrc1.au8[7], uSrc2.au8[7]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11859,12 +11787,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminub_u128,(PCX86FXSTATE pFpuState, PRTUINT128
     puDst->au8[13] = RT_MIN(uSrc1.au8[13], puSrc->au8[13]);
     puDst->au8[14] = RT_MIN(uSrc1.au8[14], puSrc->au8[14]);
     puDst->au8[15] = RT_MIN(uSrc1.au8[15], puSrc->au8[15]);
-    RT_NOREF(pFpuState);
 }
 
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminuw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminuw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11876,11 +11803,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminuw_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->au16[ 5] = RT_MIN(uSrc1.au16[ 5], puSrc->au16[ 5]);
     puDst->au16[ 6] = RT_MIN(uSrc1.au16[ 6], puSrc->au16[ 6]);
     puDst->au16[ 7] = RT_MIN(uSrc1.au16[ 7], puSrc->au16[ 7]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminud_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminud_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -11888,7 +11814,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminud_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->au32[ 1] = RT_MIN(uSrc1.au32[ 1], puSrc->au32[ 1]);
     puDst->au32[ 2] = RT_MIN(uSrc1.au32[ 2], puSrc->au32[ 2]);
     puDst->au32[ 3] = RT_MIN(uSrc1.au32[ 3], puSrc->au32[ 3]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -12023,7 +11948,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpminud_u256_fallback,(PX86XSAVEAREA pExtState,
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -12034,11 +11959,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u64,(PCX86FXSTATE pFpuState, uint64_t *p
     uDst.ai16[2] = RT_MIN(uSrc1.ai16[2], uSrc2.ai16[2]);
     uDst.ai16[3] = RT_MIN(uSrc1.ai16[3], uSrc2.ai16[3]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -12050,12 +11974,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128
     puDst->ai16[ 5] = RT_MIN(uSrc1.ai16[ 5], puSrc->ai16[ 5]);
     puDst->ai16[ 6] = RT_MIN(uSrc1.ai16[ 6], puSrc->ai16[ 6]);
     puDst->ai16[ 7] = RT_MIN(uSrc1.ai16[ 7], puSrc->ai16[ 7]);
-    RT_NOREF(pFpuState);
 }
 
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminsb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -12075,11 +11998,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminsb_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai8[13] = RT_MIN(uSrc1.ai8[13], puSrc->ai8[13]);
     puDst->ai8[14] = RT_MIN(uSrc1.ai8[14], puSrc->ai8[14]);
     puDst->ai8[15] = RT_MIN(uSrc1.ai8[15], puSrc->ai8[15]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pminsd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pminsd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -12087,7 +12009,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pminsd_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai32[ 1] = RT_MIN(uSrc1.ai32[ 1], puSrc->ai32[ 1]);
     puDst->ai32[ 2] = RT_MIN(uSrc1.ai32[ 2], puSrc->ai32[ 2]);
     puDst->ai32[ 3] = RT_MIN(uSrc1.ai32[ 3], puSrc->ai32[ 3]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -12528,7 +12449,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmovmskb_u256_fallback,(uint64_t *pu64Dst, PCR
  * [V]PSHUFB
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U const uSrc    = { *puSrc };
     RTUINT64U const uDstIn  = { *puDst };
@@ -12541,11 +12462,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u64_fallback,(PCX86FXSTATE pFpuState, ui
             uDstOut.au8[iByte] = uDstIn.au8[idxSrc & 7];
     }
     *puDst = uDstOut.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U const uSrc    = *puSrc;
     RTUINT128U const uDstIn  = *puDst;
@@ -12558,7 +12478,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pshufb_u128_fallback,(PCX86FXSTATE pFpuState, P
         if (!(idxSrc & 0x80))
             puDst->au8[iByte] = uDstIn.au8[idxSrc & 15];
     }
-    RT_NOREF(pFpuState);
 }
 
 
@@ -13740,7 +13659,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpackusdw_u256_fallback,(PRTUINT256U puDst, PCR
  * [V]PABSB / [V]PABSW / [V]PABSD
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U const uSrc    = { *puSrc };
     RTUINT64U       uDstOut = { 0 };
@@ -13754,11 +13673,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u64_fallback,(PCX86FXSTATE pFpuState, uin
     uDstOut.au8[6] = RT_ABS(uSrc.ai8[6]);
     uDstOut.au8[7] = RT_ABS(uSrc.ai8[7]);
     *puDst = uDstOut.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     puDst->au8[ 0] = RT_ABS(puSrc->ai8[ 0]);
     puDst->au8[ 1] = RT_ABS(puSrc->ai8[ 1]);
@@ -13776,11 +13694,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pabsb_u128_fallback,(PCX86FXSTATE pFpuState, PR
     puDst->au8[13] = RT_ABS(puSrc->ai8[13]);
     puDst->au8[14] = RT_ABS(puSrc->ai8[14]);
     puDst->au8[15] = RT_ABS(puSrc->ai8[15]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U const uSrc    = { *puSrc };
     RTUINT64U       uDstOut = { 0 };
@@ -13790,11 +13707,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u64_fallback,(PCX86FXSTATE pFpuState, uin
     uDstOut.au16[2] = RT_ABS(uSrc.ai16[2]);
     uDstOut.au16[3] = RT_ABS(uSrc.ai16[3]);
     *puDst = uDstOut.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     puDst->au16[ 0] = RT_ABS(puSrc->ai16[ 0]);
     puDst->au16[ 1] = RT_ABS(puSrc->ai16[ 1]);
@@ -13804,11 +13720,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pabsw_u128_fallback,(PCX86FXSTATE pFpuState, PR
     puDst->au16[ 5] = RT_ABS(puSrc->ai16[ 5]);
     puDst->au16[ 6] = RT_ABS(puSrc->ai16[ 6]);
     puDst->au16[ 7] = RT_ABS(puSrc->ai16[ 7]);
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U const uSrc    = { *puSrc };
     RTUINT64U       uDstOut = { 0 };
@@ -13816,17 +13731,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u64_fallback,(PCX86FXSTATE pFpuState, uin
     uDstOut.au32[0] = RT_ABS(uSrc.ai32[0]);
     uDstOut.au32[1] = RT_ABS(uSrc.ai32[1]);
     *puDst = uDstOut.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pabsd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     puDst->au32[ 0] = RT_ABS(puSrc->ai32[ 0]);
     puDst->au32[ 1] = RT_ABS(puSrc->ai32[ 1]);
     puDst->au32[ 2] = RT_ABS(puSrc->ai32[ 2]);
     puDst->au32[ 3] = RT_ABS(puSrc->ai32[ 3]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -13947,7 +13860,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpabsd_u256_fallback,(PRTUINT256U puDst, PCRTUI
 /*
  * PSIGNB / VPSIGNB / PSIGNW / VPSIGNW / PSIGND / VPSIGND
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -13964,11 +13877,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u64_fallback,(PCX86FXSTATE pFpuState, ui
     }
 
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -13981,12 +13893,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignb_u128_fallback,(PCX86FXSTATE pFpuState, P
         else /* puSrc->ai8[i] > 0 */
             puDst->ai8[i] = uSrc1.ai8[i];
     }
-
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14003,11 +13913,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u64_fallback,(PCX86FXSTATE pFpuState, ui
     }
 
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14020,12 +13929,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignw_u128_fallback,(PCX86FXSTATE pFpuState, P
         else /* puSrc->ai16[i] > 0 */
             puDst->ai16[i] = uSrc1.ai16[i];
     }
-
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14042,11 +13949,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u64_fallback,(PCX86FXSTATE pFpuState, ui
     }
 
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14059,8 +13965,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psignd_u128_fallback,(PCX86FXSTATE pFpuState, P
         else /* puSrc->ai32[i] > 0 */
             puDst->ai32[i] = uSrc1.ai32[i];
     }
-
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14151,7 +14055,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsignd_u256_fallback,(PRTUINT256U puDst, PCRTU
 /*
  * PHADDW / VPHADDW / PHADDD / VPHADDD
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14162,11 +14066,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u64_fallback,(PCX86FXSTATE pFpuState, ui
     uDst.ai16[2] = uSrc2.ai16[0] + uSrc2.ai16[1];
     uDst.ai16[3] = uSrc2.ai16[2] + uSrc2.ai16[3];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14179,11 +14082,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddw_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai16[5] = puSrc->ai16[2] + puSrc->ai16[3];
     puDst->ai16[6] = puSrc->ai16[4] + puSrc->ai16[5];
     puDst->ai16[7] = puSrc->ai16[6] + puSrc->ai16[7];
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14192,11 +14094,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u64_fallback,(PCX86FXSTATE pFpuState, ui
     uDst.ai32[0] = uSrc1.ai32[0] + uSrc1.ai32[1];
     uDst.ai32[1] = uSrc2.ai32[0] + uSrc2.ai32[1];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14205,7 +14106,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddd_u128_fallback,(PCX86FXSTATE pFpuState, P
 
     puDst->ai32[2] = puSrc->ai32[0] + puSrc->ai32[1];
     puDst->ai32[3] = puSrc->ai32[2] + puSrc->ai32[3];
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14296,7 +14196,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddd_u256_fallback,(PRTUINT256U puDst, PCRTU
 /*
  * PHSUBW / VPHSUBW / PHSUBD / VPHSUBD
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14307,11 +14207,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u64_fallback,(PCX86FXSTATE pFpuState, ui
     uDst.ai16[2] = uSrc2.ai16[0] - uSrc2.ai16[1];
     uDst.ai16[3] = uSrc2.ai16[2] - uSrc2.ai16[3];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14324,11 +14223,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubw_u128_fallback,(PCX86FXSTATE pFpuState, P
     puDst->ai16[5] = puSrc->ai16[2] - puSrc->ai16[3];
     puDst->ai16[6] = puSrc->ai16[4] - puSrc->ai16[5];
     puDst->ai16[7] = puSrc->ai16[6] - puSrc->ai16[7];
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14337,11 +14235,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u64_fallback,(PCX86FXSTATE pFpuState, ui
     uDst.ai32[0] = uSrc1.ai32[0] - uSrc1.ai32[1];
     uDst.ai32[1] = uSrc2.ai32[0] - uSrc2.ai32[1];
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14350,7 +14247,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubd_u128_fallback,(PCX86FXSTATE pFpuState, P
 
     puDst->ai32[2] = puSrc->ai32[0] - puSrc->ai32[1];
     puDst->ai32[3] = puSrc->ai32[2] - puSrc->ai32[3];
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14441,7 +14337,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphsubd_u256_fallback,(PRTUINT256U puDst, PCRTU
 /*
  * PHADDSW / VPHADDSW
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14452,11 +14348,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u64_fallback,(PCX86FXSTATE pFpuState, u
     uDst.ai16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.ai16[0] + uSrc2.ai16[1]);
     uDst.ai16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.ai16[2] + uSrc2.ai16[3]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14469,7 +14364,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phaddsw_u128_fallback,(PCX86FXSTATE pFpuState, 
     puDst->ai16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[2] + puSrc->ai16[3]);
     puDst->ai16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[4] + puSrc->ai16[5]);
     puDst->ai16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[6] + puSrc->ai16[7]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14524,7 +14418,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphaddsw_u256_fallback,(PRTUINT256U puDst, PCRT
 /*
  * PHSUBSW / VPHSUBSW
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14535,11 +14429,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u64_fallback,(PCX86FXSTATE pFpuState, u
     uDst.ai16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.ai16[0] - uSrc2.ai16[1]);
     uDst.ai16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(uSrc2.ai16[2] - uSrc2.ai16[3]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14552,7 +14445,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_phsubsw_u128_fallback,(PCX86FXSTATE pFpuState, 
     puDst->ai16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[2] - puSrc->ai16[3]);
     puDst->ai16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[4] - puSrc->ai16[5]);
     puDst->ai16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc->ai16[6] - puSrc->ai16[7]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14607,7 +14499,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vphsubsw_u256_fallback,(PRTUINT256U puDst, PCRT
 /*
  * PMADDUBSW / VPMADDUBSW
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14618,11 +14510,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u64_fallback,(PCX86FXSTATE pFpuState,
     uDst.ai16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD((uint16_t)uSrc1.au8[4] * uSrc2.ai8[4] + (uint16_t)uSrc1.au8[5] * uSrc2.ai8[5]);
     uDst.ai16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD((uint16_t)uSrc1.au8[6] * uSrc2.ai8[6] + (uint16_t)uSrc1.au8[7] * uSrc2.ai8[7]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14634,7 +14525,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmaddubsw_u128_fallback,(PCX86FXSTATE pFpuState
     puDst->ai16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD((uint16_t)uSrc1.au8[10] * puSrc->ai8[10] + (uint16_t)uSrc1.au8[11] * puSrc->ai8[11]);
     puDst->ai16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD((uint16_t)uSrc1.au8[12] * puSrc->ai8[12] + (uint16_t)uSrc1.au8[13] * puSrc->ai8[13]);
     puDst->ai16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD((uint16_t)uSrc1.au8[14] * puSrc->ai8[14] + (uint16_t)uSrc1.au8[15] * puSrc->ai8[15]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14690,7 +14580,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmaddubsw_u256_fallback,(PRTUINT256U puDst, PC
 #define DO_PMULHRSW(a_Src1, a_Src2) \
     (uint16_t)(((((int32_t)(a_Src1) * (a_Src2)) >> 14 ) + 1) >> 1)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u64_fallback,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u64_fallback,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
@@ -14701,11 +14591,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u64_fallback,(PCX86FXSTATE pFpuState, 
     uDst.au16[2] = DO_PMULHRSW(uSrc1.ai16[2], uSrc2.ai16[2]);
     uDst.au16[3] = DO_PMULHRSW(uSrc1.ai16[3], uSrc2.ai16[3]);
     *puDst = uDst.u;
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u128_fallback,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
 
@@ -14717,7 +14606,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pmulhrsw_u128_fallback,(PCX86FXSTATE pFpuState,
     puDst->ai16[5] = DO_PMULHRSW(uSrc1.ai16[5], puSrc->ai16[5]);
     puDst->ai16[6] = DO_PMULHRSW(uSrc1.ai16[6], puSrc->ai16[6]);
     puDst->ai16[7] = DO_PMULHRSW(uSrc1.ai16[7], puSrc->ai16[7]);
-    RT_NOREF(pFpuState);
 }
 
 
@@ -14940,24 +14828,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpmuldq_u256_fallback,(PRTUINT256U puDst, PCRTU
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmuludq_u64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmuludq_u64,(uint64_t *puDst, uint64_t const *puSrc))
 {
     RTUINT64U uSrc1 = { *puDst };
     RTUINT64U uSrc2 = { *puSrc };
     ASMCompilerBarrier();
     *puDst = (uint64_t)uSrc1.au32[0] * uSrc2.au32[0];
-    RT_NOREF(pFpuState);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pmuludq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmuludq_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     RTUINT128U uSrc1 = *puDst;
     RTUINT128U uSrc2 = *puSrc;
     ASMCompilerBarrier();
     puDst->au64[0] = (uint64_t)uSrc1.au32[0] * uSrc2.au32[0];
     puDst->au64[1] = (uint64_t)uSrc1.au32[2] * uSrc2.au32[2];
-    RT_NOREF(pFpuState);
 }
 
 #endif

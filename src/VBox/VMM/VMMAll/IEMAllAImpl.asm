@@ -3864,6 +3864,8 @@ IEMIMPL_FPU_R80_R80 fsincos
 ; @param    A1      Pointer to the first media register size operand (input/output).
 ; @param    A2      Pointer to the second media register size operand (input).
 ;
+; @todo r=aeichner Currently unused, can probably be removed.
+;
 %macro IEMIMPL_MEDIA_F2 2
 %if %2 != 0
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
@@ -3893,68 +3895,6 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
-
-IEMIMPL_MEDIA_F2 pshufb,  1
-IEMIMPL_MEDIA_F2 pand,    1
-IEMIMPL_MEDIA_F2 pandn,   1
-IEMIMPL_MEDIA_F2 por,     1
-IEMIMPL_MEDIA_F2 pxor,    1
-IEMIMPL_MEDIA_F2 pcmpeqb, 1
-IEMIMPL_MEDIA_F2 pcmpeqw, 1
-IEMIMPL_MEDIA_F2 pcmpeqd, 1
-IEMIMPL_MEDIA_F2 pcmpeqq, 0
-IEMIMPL_MEDIA_F2 pcmpgtb, 1
-IEMIMPL_MEDIA_F2 pcmpgtw, 1
-IEMIMPL_MEDIA_F2 pcmpgtd, 1
-IEMIMPL_MEDIA_F2 pcmpgtq, 0
-IEMIMPL_MEDIA_F2 paddb,   1
-IEMIMPL_MEDIA_F2 paddw,   1
-IEMIMPL_MEDIA_F2 paddd,   1
-IEMIMPL_MEDIA_F2 paddq,   1
-IEMIMPL_MEDIA_F2 paddsb,  1
-IEMIMPL_MEDIA_F2 paddsw,  1
-IEMIMPL_MEDIA_F2 paddusb, 1
-IEMIMPL_MEDIA_F2 paddusw, 1
-IEMIMPL_MEDIA_F2 psubb,   1
-IEMIMPL_MEDIA_F2 psubw,   1
-IEMIMPL_MEDIA_F2 psubd,   1
-IEMIMPL_MEDIA_F2 psubq,   1
-IEMIMPL_MEDIA_F2 psubsb,  1
-IEMIMPL_MEDIA_F2 psubsw,  1
-IEMIMPL_MEDIA_F2 psubusb, 1
-IEMIMPL_MEDIA_F2 psubusw, 1
-IEMIMPL_MEDIA_F2 pmullw,  1
-IEMIMPL_MEDIA_F2 pmulld,  0
-IEMIMPL_MEDIA_F2 pmulhw,  1
-IEMIMPL_MEDIA_F2 pmaddwd, 1
-IEMIMPL_MEDIA_F2 pminub,  1
-IEMIMPL_MEDIA_F2 pminuw,  0
-IEMIMPL_MEDIA_F2 pminud,  0
-IEMIMPL_MEDIA_F2 pminsb,  0
-IEMIMPL_MEDIA_F2 pminsw,  1
-IEMIMPL_MEDIA_F2 pminsd,  0
-IEMIMPL_MEDIA_F2 pmaxub,  1
-IEMIMPL_MEDIA_F2 pmaxuw,  0
-IEMIMPL_MEDIA_F2 pmaxud,  0
-IEMIMPL_MEDIA_F2 pmaxsb,  0
-IEMIMPL_MEDIA_F2 pmaxsw,  1
-IEMIMPL_MEDIA_F2 pmaxsd,  0
-IEMIMPL_MEDIA_F2 pabsb,   1
-IEMIMPL_MEDIA_F2 pabsw,   1
-IEMIMPL_MEDIA_F2 pabsd,   1
-IEMIMPL_MEDIA_F2 psignb,  1
-IEMIMPL_MEDIA_F2 psignw,  1
-IEMIMPL_MEDIA_F2 psignd,  1
-IEMIMPL_MEDIA_F2 phaddw,  1
-IEMIMPL_MEDIA_F2 phaddd,  1
-IEMIMPL_MEDIA_F2 phsubw,  1
-IEMIMPL_MEDIA_F2 phsubd,  1
-IEMIMPL_MEDIA_F2 phaddsw, 1
-IEMIMPL_MEDIA_F2 phsubsw, 1
-IEMIMPL_MEDIA_F2 pmaddubsw, 1
-IEMIMPL_MEDIA_F2 pmulhrsw,  1
-IEMIMPL_MEDIA_F2 pmuludq,   1
-
 
 ;;
 ; Media instruction working on two full sized registers, but no FXSAVE state argument.
@@ -3995,6 +3935,66 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 8
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
+IEMIMPL_MEDIA_OPT_F2 pshufb,  1
+IEMIMPL_MEDIA_OPT_F2 pand,    1
+IEMIMPL_MEDIA_OPT_F2 pandn,   1
+IEMIMPL_MEDIA_OPT_F2 por,     1
+IEMIMPL_MEDIA_OPT_F2 pxor,    1
+IEMIMPL_MEDIA_OPT_F2 pcmpeqb, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpeqw, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpeqd, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpeqq, 0
+IEMIMPL_MEDIA_OPT_F2 pcmpgtb, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpgtw, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpgtd, 1
+IEMIMPL_MEDIA_OPT_F2 pcmpgtq, 0
+IEMIMPL_MEDIA_OPT_F2 paddb,   1
+IEMIMPL_MEDIA_OPT_F2 paddw,   1
+IEMIMPL_MEDIA_OPT_F2 paddd,   1
+IEMIMPL_MEDIA_OPT_F2 paddq,   1
+IEMIMPL_MEDIA_OPT_F2 paddsb,  1
+IEMIMPL_MEDIA_OPT_F2 paddsw,  1
+IEMIMPL_MEDIA_OPT_F2 paddusb, 1
+IEMIMPL_MEDIA_OPT_F2 paddusw, 1
+IEMIMPL_MEDIA_OPT_F2 psubb,   1
+IEMIMPL_MEDIA_OPT_F2 psubw,   1
+IEMIMPL_MEDIA_OPT_F2 psubd,   1
+IEMIMPL_MEDIA_OPT_F2 psubq,   1
+IEMIMPL_MEDIA_OPT_F2 psubsb,  1
+IEMIMPL_MEDIA_OPT_F2 psubsw,  1
+IEMIMPL_MEDIA_OPT_F2 psubusb, 1
+IEMIMPL_MEDIA_OPT_F2 psubusw, 1
+IEMIMPL_MEDIA_OPT_F2 pmullw,  1
+IEMIMPL_MEDIA_OPT_F2 pmulld,  0
+IEMIMPL_MEDIA_OPT_F2 pmulhw,  1
+IEMIMPL_MEDIA_OPT_F2 pmaddwd, 1
+IEMIMPL_MEDIA_OPT_F2 pminub,  1
+IEMIMPL_MEDIA_OPT_F2 pminuw,  0
+IEMIMPL_MEDIA_OPT_F2 pminud,  0
+IEMIMPL_MEDIA_OPT_F2 pminsb,  0
+IEMIMPL_MEDIA_OPT_F2 pminsw,  1
+IEMIMPL_MEDIA_OPT_F2 pminsd,  0
+IEMIMPL_MEDIA_OPT_F2 pmaxub,  1
+IEMIMPL_MEDIA_OPT_F2 pmaxuw,  0
+IEMIMPL_MEDIA_OPT_F2 pmaxud,  0
+IEMIMPL_MEDIA_OPT_F2 pmaxsb,  0
+IEMIMPL_MEDIA_OPT_F2 pmaxsw,  1
+IEMIMPL_MEDIA_OPT_F2 pmaxsd,  0
+IEMIMPL_MEDIA_OPT_F2 pabsb,   1
+IEMIMPL_MEDIA_OPT_F2 pabsw,   1
+IEMIMPL_MEDIA_OPT_F2 pabsd,   1
+IEMIMPL_MEDIA_OPT_F2 psignb,  1
+IEMIMPL_MEDIA_OPT_F2 psignw,  1
+IEMIMPL_MEDIA_OPT_F2 psignd,  1
+IEMIMPL_MEDIA_OPT_F2 phaddw,  1
+IEMIMPL_MEDIA_OPT_F2 phaddd,  1
+IEMIMPL_MEDIA_OPT_F2 phsubw,  1
+IEMIMPL_MEDIA_OPT_F2 phsubd,  1
+IEMIMPL_MEDIA_OPT_F2 phaddsw, 1
+IEMIMPL_MEDIA_OPT_F2 phsubsw, 1
+IEMIMPL_MEDIA_OPT_F2 pmaddubsw, 1
+IEMIMPL_MEDIA_OPT_F2 pmulhrsw,  1
+IEMIMPL_MEDIA_OPT_F2 pmuludq,   1
 IEMIMPL_MEDIA_OPT_F2 packsswb, 1
 IEMIMPL_MEDIA_OPT_F2 packssdw, 1
 IEMIMPL_MEDIA_OPT_F2 packuswb, 1
