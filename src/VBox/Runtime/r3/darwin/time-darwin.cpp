@@ -47,6 +47,7 @@
 
 #include <iprt/time.h>
 #include <iprt/assert.h>
+#include <iprt/asm-math.h>
 #include "internal/time.h"
 
 
@@ -54,7 +55,6 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static struct mach_timebase_info    g_Info = { 0, 0 };
-static double                       g_rdFactor = 0.0;
 static bool                         g_fFailedToGetTimeBaseInfo = false;
 
 
@@ -65,14 +65,11 @@ static void rtTimeDarwinLazyInit(void)
 {
     struct mach_timebase_info Info;
     if (mach_timebase_info(&Info) == KERN_SUCCESS)
-    {
-        g_rdFactor = (double)Info.numer / (double)Info.denom;
         g_Info = Info;
-    }
     else
     {
         g_fFailedToGetTimeBaseInfo = true;
-        Assert(g_Info.denom == 0 && g_Info.numer == 0 && g_rdFactor == 0.0);
+        Assert(g_Info.denom == 0 && g_Info.numer == 0);
     }
 }
 
@@ -87,13 +84,21 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     if (RT_UNLIKELY(g_Info.denom == 0 && !g_fFailedToGetTimeBaseInfo))
         rtTimeDarwinLazyInit();
 
-    /* special case: absolute time is in nanoseconds */
+    /* special case: absolute time is in nanoseconds. */
     if (g_Info.denom == 1 && g_Info.numer == 1)
         return mach_absolute_time();
 
     /* general case: multiply by factor to get nanoseconds. */
-    if (g_rdFactor != 0.0)
-        return mach_absolute_time() * g_rdFactor;
+    if (g_Info.denom > 0 && g_Info.numer > 0)
+    {
+        /*
+         * We could use clock_gettime_nsec_np(CLOCK_UPTIME_RAW) but internally
+         * it might be calling mach_timebase_info() for each call. This is most
+         * likely faster since we avoid calling mach_timebase_info() here.
+         */
+        uint64_t const cTicks = mach_absolute_time();
+        return ASMMultU64ByU32DivByU32(cTicks, g_Info.numer, g_Info.denom);
+    }
 
     /* worst case: fallback to gettimeofday(). */
     struct timeval tv;
