@@ -558,7 +558,7 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb)
         if (iIteration == 0)
         {
             /* No header included in the instruction count here. */
-            uint32_t const cNeededInstrs = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE) / sizeof(IEMNATIVEINSTR));
+            uint32_t const cNeededInstrs = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE) / sizeof(IEMNATIVEINSTR);
             iemTbAllocatorFreeupNativeSpace(pVCpu, cNeededInstrs);
         }
         else
