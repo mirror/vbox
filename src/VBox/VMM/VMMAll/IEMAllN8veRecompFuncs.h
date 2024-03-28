@@ -7742,8 +7742,7 @@ iemNativeEmitSimdStoreXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
-
-    uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxSrcVar, &off);
+    uint8_t const idxVarReg     = iemNativeVarSimdRegisterAcquire(pReNative, idxSrcVar, &off, true /*fInitialized*/);
 
     off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxVarReg);
 
@@ -7775,7 +7774,8 @@ iemNativeEmitSimdStoreXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
 /** Emits code for IEM_MC_STORE_XREG_U64/IEM_MC_STORE_XREG_U32/IEM_MC_STORE_XREG_U16/IEM_MC_STORE_XREG_U8. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreXregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar, uint8_t cbLocal, uint8_t iElem)
+iemNativeEmitSimdStoreXregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar,
+                              uint8_t cbLocal, uint8_t iElem)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, cbLocal);
@@ -7793,8 +7793,7 @@ iemNativeEmitSimdStoreXregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-
-    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+    uint8_t const idxVarReg     = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, true /*fInitialized*/);
 
     switch (cbLocal)
     {
@@ -7816,7 +7815,7 @@ iemNativeEmitSimdStoreXregUxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
     off = iemNativeEmitSimdStoreXregU64ZxU128(pReNative, off, a_iXReg, a_u64Value)
 
-/** Emits code for IEM_MC_STORE_XREG_U32. */
+/** Emits code for IEM_MC_STORE_XREG_U64_ZX_U128. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreXregU64ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar)
 {
@@ -7825,8 +7824,7 @@ iemNativeEmitSimdStoreXregU64ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-
-    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+    uint8_t const idxVarReg     = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, true /*fInitialized*/);
 
     /* Zero the vector register first, then store the 64-bit value to the lower 64-bit. */
     off = iemNativeEmitSimdZeroVecRegLowU128(pReNative, off, idxSimdRegDst);
@@ -7843,7 +7841,7 @@ iemNativeEmitSimdStoreXregU64ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value) \
     off = iemNativeEmitSimdStoreXregU32ZxU128(pReNative, off, a_iXReg, a_u32Value)
 
-/** Emits code for IEM_MC_STORE_XREG_U32. */
+/** Emits code for IEM_MC_STORE_XREG_U32_ZX_U128. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreXregU32ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t idxDstVar)
 {
@@ -7852,8 +7850,7 @@ iemNativeEmitSimdStoreXregU32ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-
-    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off);
+    uint8_t const idxVarReg     = iemNativeVarRegisterAcquire(pReNative, idxDstVar, &off, true /*fInitialized*/);
 
     /* Zero the vector register first, then store the 32-bit value to the lowest 32-bit element. */
     off = iemNativeEmitSimdZeroVecRegLowU128(pReNative, off, idxSimdRegDst);
@@ -7872,15 +7869,15 @@ iemNativeEmitSimdStoreXregU32ZxU128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 /** Emits code for IEM_MC_STORE_XREG_U32_U128. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdStoreXregU32U128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t iDwDst, uint8_t idxSrcVar, uint8_t iDwSrc)
+iemNativeEmitSimdStoreXregU32U128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iXReg, uint8_t iDwDst,
+                                  uint8_t idxSrcVar, uint8_t iDwSrc)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSrcVar);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSrcVar, sizeof(RTUINT128U));
 
     uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
                                                                           kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-
-    uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxSrcVar, &off);
+    uint8_t const idxVarReg     = iemNativeVarSimdRegisterAcquire(pReNative, idxSrcVar, &off, true /*fInitialized*/);
 
     off = iemNativeEmitSimdLoadGprFromVecRegU32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, idxVarReg, iDwSrc);
     off = iemNativeEmitSimdStoreGprToVecRegU32(pReNative,  off, idxSimdRegDst, IEMNATIVE_REG_FIXED_TMP0, iDwDst);
@@ -7909,9 +7906,11 @@ iemNativeEmitSimdCopyYregU128ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off
     {
         /* Allocate destination and source register. */
         uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegDst),
-                                                                              kIemNativeGstSimdRegLdStSz_256, kIemNativeGstRegUse_ForFullWrite);
+                                                                              kIemNativeGstSimdRegLdStSz_256,
+                                                                              kIemNativeGstRegUse_ForFullWrite);
         uint8_t const idxSimdRegSrc =  iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iYRegSrc),
-                                                                               kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+                                                                               kIemNativeGstSimdRegLdStSz_Low128,
+                                                                               kIemNativeGstRegUse_ReadOnly);
 
         off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegSrc);
         off = iemNativeEmitSimdZeroVecRegHighU128(pReNative, off, idxSimdRegDst);
