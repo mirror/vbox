@@ -59,7 +59,7 @@ ifndef VBOX_ONLY_SDK
  	$(VBOX_PATH_XPCOM_SRC)/xpcom/build \
  	$(VBOX_JXPCOM_JDEST)
  VBoxJXpcom_INCS.darwin += \
- 	$(VBOX_JAVA_INC)/darwin \
+ 	$(VBOX_JAVA_INC)/darwin
  VBoxJXpcom_SOURCES = \
  	src/nsAppFileLocProviderProxy.cpp \
  	src/nsJavaWrapper.cpp \
