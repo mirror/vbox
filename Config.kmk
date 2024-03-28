@@ -3334,7 +3334,7 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
   if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
    VBOX_JAVA_INC = $(firstword $(wildcard \
    			$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers \
-   			/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/include \
+   			/Library/Java/JavaVirtualMachines/jdk*1.8*.jdk/Contents/Home/include \
    			) )
   else
    VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
