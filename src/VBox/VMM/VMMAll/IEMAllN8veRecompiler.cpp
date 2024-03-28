@@ -4157,16 +4157,12 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOM
          *        but still it's 15 unnecessary loops for the last guest register.  */
 
         uint64_t bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & fGstRegShadows;
-        uint32_t idxGstReg = 0;
         do
         {
-            if (bmGstRegShadowDirty & 0x1)
-            {
-                off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
-                Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
-            }
-            idxGstReg++;
-            bmGstRegShadowDirty >>= 1;
+            unsigned const idxGstReg = ASMBitFirstSetU64(bmGstRegShadowDirty) - 1;
+            bmGstRegShadowDirty &= ~RT_BIT_64(idxGstReg);
+            off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
+            Assert(!(pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg)));
         } while (bmGstRegShadowDirty);
     }
 
@@ -5885,14 +5881,11 @@ iemNativeSimdRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
         iemNativeDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
 # endif
 
-        uint32_t idxGstSimdReg = 0;
         do
         {
-            if (bmGstSimdRegShadowDirty & 0x1)
-                off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
-
-            idxGstSimdReg++;
-            bmGstSimdRegShadowDirty >>= 1;
+            unsigned const idxGstSimdReg = ASMBitFirstSetU64(bmGstSimdRegShadowDirty) - 1;
+            bmGstSimdRegShadowDirty &= ~RT_BIT_64(idxGstSimdReg);
+            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
         } while (bmGstSimdRegShadowDirty);
     }
 
@@ -5923,14 +5916,12 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeSimdRegFlushDirtyGuestByHostSimdRegShadow(P
         iemNativeDbgInfoAddGuestRegWriteback(pReNative, true /*fSimdReg*/, bmGstSimdRegShadowDirty);
 # endif
 
-        uint32_t idxGstSimdReg = 0;
         do
         {
-            if (bmGstSimdRegShadowDirty & 0x1)
-                off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
-
-            idxGstSimdReg++;
-            bmGstSimdRegShadowDirty >>= 1;
+            unsigned const idxGstSimdReg = ASMBitFirstSetU64(bmGstSimdRegShadowDirty) - 1;
+            bmGstSimdRegShadowDirty &= ~RT_BIT_64(idxGstSimdReg);
+            off = iemNativeSimdRegFlushPendingWrite(pReNative, off, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
+            Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg));
         } while (bmGstSimdRegShadowDirty);
     }
 
@@ -6030,18 +6021,7 @@ static uint8_t iemNativeSimdRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint
         Assert(pReNative->Core.bmHstSimdRegsWithGstShadow & RT_BIT_32(idxReg));
 
         /* We need to flush any pending guest register writes this host SIMD register shadows. */
-        uint32_t fGstRegShadows = pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
-        uint32_t idxGstSimdReg = 0;
-        do
-        {
-            if (fGstRegShadows & 0x1)
-            {
-                *poff = iemNativeSimdRegFlushPendingWrite(pReNative, *poff, IEMNATIVEGSTSIMDREG_SIMD(idxGstSimdReg));
-                Assert(!IEMNATIVE_SIMD_REG_STATE_IS_DIRTY_U256(pReNative, idxGstSimdReg));
-            }
-            idxGstSimdReg++;
-            fGstRegShadows >>= 1;
-        } while (fGstRegShadows);
+        *poff = iemNativeSimdRegFlushDirtyGuestByHostSimdRegShadow(pReNative, *poff, idxReg);
 
         pReNative->Core.bmHstSimdRegsWithGstShadow &= ~RT_BIT_32(idxReg);
         pReNative->Core.bmGstSimdRegShadows        &= ~pReNative->Core.aHstSimdRegs[idxReg].fGstRegShadows;
