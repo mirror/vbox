@@ -3235,6 +3235,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->cFixups                     = 0;
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     pReNative->pDbgInfo->cEntries          = 0;
+    pReNative->pDbgInfo->offNativeLast     = UINT32_MAX;
 #endif
     pReNative->pTbOrg                      = pTb;
     pReNative->cCondDepth                  = 0;
@@ -3711,19 +3712,12 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReN
     PIEMTBDBG pDbgInfo = pReNative->pDbgInfo;
 
     /*
-     * Search backwards to see if we've got a similar record already.
+     * Do we need this one?
      */
-    uint32_t idx     = pDbgInfo->cEntries;
-    uint32_t idxStop = idx > 16 ? idx - 16 : 0;
-    while (idx-- > idxStop)
-        if (pDbgInfo->aEntries[idx].Gen.uType == kIemTbDbgEntryType_NativeOffset)
-        {
-            if (pDbgInfo->aEntries[idx].NativeOffset.offNative == off)
-                return;
-            AssertStmt(pDbgInfo->aEntries[idx].NativeOffset.offNative < off,
-                       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_DBGINFO_IPE_2));
-            break;
-        }
+    uint32_t const offPrev = pDbgInfo->offNativeLast;
+    if (offPrev == off)
+        return;
+    AssertStmt(offPrev < off || offPrev == UINT32_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_DBGINFO_IPE_2));
 
     /*
      * Add it.
@@ -3731,6 +3725,7 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReN
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pDbgInfo);
     pEntry->NativeOffset.uType     = kIemTbDbgEntryType_NativeOffset;
     pEntry->NativeOffset.offNative = off;
+    pDbgInfo->offNativeLast = off;
 }
 
 
@@ -4789,7 +4784,6 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
             iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
 # endif
-
             pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
         }
 #endif
@@ -4822,7 +4816,6 @@ iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, I
         iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
         iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxRegNew);
 # endif
-
         pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
     }
 #endif
@@ -8602,7 +8595,6 @@ iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t id
             iemNativeDbgInfoAddNativeOffset(pReNative, *poff);
             iemNativeDbgInfoAddGuestRegDirty(pReNative, false /*fSimdReg*/, enmGstReg, idxReg);
 # endif
-
             pReNative->Core.bmGstRegShadowDirty |= RT_BIT_64(enmGstReg);
         }
 #endif
@@ -10089,8 +10081,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
                         case kIemTbDbgEntryType_DelayedPcUpdate:
-                            pHlp->pfnPrintf(pHlp,
-                                            "  Updating guest PC value by %u (cInstrSkipped=%u)\n",
+                            pHlp->pfnPrintf(pHlp, "  Updating guest PC value by %u (cInstrSkipped=%u)\n",
                                             pDbgInfo->aEntries[iDbgEntry].DelayedPcUpdate.offPc,
                                             pDbgInfo->aEntries[iDbgEntry].DelayedPcUpdate.cInstrSkipped);
                             continue;
@@ -10100,21 +10091,19 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                         case kIemTbDbgEntryType_GuestRegDirty:
                         {
                             PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
-                            const char * const    pszGstReg =   pEntry->GuestRegDirty.fSimdReg
-                                                              ? g_aGstSimdShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName
-                                                              : g_aGstShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName;
-                            const char * const    pszHstReg =   pEntry->GuestRegDirty.fSimdReg
-                                                              ? g_apszIemNativeHstSimdRegNames[pEntry->GuestRegDirty.idxHstReg]
-                                                              : g_apszIemNativeHstRegNames[pEntry->GuestRegDirty.idxHstReg];
-                            pHlp->pfnPrintf(pHlp,
-                                            "  Guest register %s (shadowed by %s) is now dirty\n",
+                            const char * const    pszGstReg = pEntry->GuestRegDirty.fSimdReg
+                                                            ? g_aGstSimdShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName
+                                                            : g_aGstShadowInfo[pEntry->GuestRegDirty.idxGstReg].pszName;
+                            const char * const    pszHstReg = pEntry->GuestRegDirty.fSimdReg
+                                                            ? g_apszIemNativeHstSimdRegNames[pEntry->GuestRegDirty.idxHstReg]
+                                                            : g_apszIemNativeHstRegNames[pEntry->GuestRegDirty.idxHstReg];
+                            pHlp->pfnPrintf(pHlp, "  Guest register %s (shadowed by %s) is now marked dirty (intent)\n",
                                             pszGstReg, pszHstReg);
                             continue;
                         }
 
                         case kIemTbDbgEntryType_GuestRegWriteback:
-                            pHlp->pfnPrintf(pHlp,
-                                            "  Writing dirty %s registers (gst %#RX64)\n",
+                            pHlp->pfnPrintf(pHlp, "  Writing dirty %s registers (gst %#RX32)\n",
                                             pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fSimdReg ? "SIMD" : "general",
                                             pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fGstReg);
                             continue;

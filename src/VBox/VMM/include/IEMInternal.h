@@ -1136,6 +1136,8 @@ typedef struct IEMTBDBG
 {
     /** Number of entries in aEntries. */
     uint32_t        cEntries;
+    /** The offset of the last kIemTbDbgEntryType_NativeOffset record. */
+    uint32_t        offNativeLast;
     /** Debug info entries. */
     RT_FLEXIBLE_ARRAY_EXTENSION
     IEMTBDBGENTRY   aEntries[RT_FLEXIBLE_ARRAY];
