@@ -9165,7 +9165,8 @@ iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
  *                              this will still flush pending writes in call volatile registers if false.
  */
 DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs, bool fFlushPendingWrites /*= true*/)
+iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, uint8_t cHiddenArgs,
+                        bool fFlushPendingWrites /*= true*/)
 {
 #ifdef VBOX_STRICT
     /*
@@ -9184,6 +9185,7 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 #endif
 
     /* We don't know what the called function makes use of, so flush any pending register writes. */
+    RT_NOREF(fFlushPendingWrites);
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     if (fFlushPendingWrites)
 #endif
