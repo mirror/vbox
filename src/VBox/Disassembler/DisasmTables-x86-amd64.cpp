@@ -3651,6 +3651,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
+    INVALID_OPCODE,
     OP("vgroup15",                          IDX_ParseVGrp15,               0,                   0,                          OP_GRP15,           OP_PARM_NONE, OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
 
@@ -3728,8 +3729,10 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     OPVEX("vpaddb %Vx,%Hx,%Wx",             IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       0,                  OP_VPADDB,          OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpaddw %Vx,%Hx,%Wx",             IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       0,                  OP_VPADDW,          OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpaddd %Vx,%Hx,%Wx",             IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       0,                  OP_VPADDD,          OP_PARM_Vx,   OP_PARM_Hx,   OP_PARM_Wx,   OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    /*INVALID_OPCODE,*/
     /*     format string,                   parse param #1,     parse param #2,     parse param #3,     parse param #4,     opcode,             param #1,     param #2,     param #3,     param #4,     flags */
 };
+AssertCompile(RT_ELEMENTS(g_aDisasVexMap1_66) == 256-16-1);
 const DISOPMAPDESC g_DisasVexMap1_66Range = { &g_aDisasVexMap1_66[0], 0x10, RT_ELEMENTS(g_aDisasVexMap1_66) };
 
 static const DISOPCODE g_aDisasVexMap1F2[] =
