@@ -261,6 +261,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  	VMMAll/IEMAllThrdFuncsBltIn.cpp
  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
   VBoxVMM_SOURCES += \
+  	VMMAll/IEMAllN8veExecMem.cpp \
   	VMMAll/IEMAllN8veRecompiler.cpp \
   	VMMAll/IEMAllN8veRecompFuncs1.cpp \
   	VMMAll/IEMAllN8veRecompFuncs2.cpp \
