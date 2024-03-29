@@ -1530,9 +1530,9 @@ FNIEMOP_STUB(iemOp_vpmaskmovd_q_Mx_Vx_Hx);
 /*  Opcode VEX.66.0F38 0x8f - invalid. */
 
 /** Opcode VEX.66.0F38 0x90 (vex only). */
-FNIEMOP_STUB(iemOp_vgatherdd_q_Vx_Hx_Wx);
+FNIEMOP_STUB(iemOp_vpgatherdd_q_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x91 (vex only). */
-FNIEMOP_STUB(iemOp_vgatherqd_q_Vx_Hx_Wx);
+FNIEMOP_STUB(iemOp_vpgatherqd_q_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x92 (vex only). */
 FNIEMOP_STUB(iemOp_vgatherdps_d_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x93 (vex only). */
@@ -1540,7 +1540,7 @@ FNIEMOP_STUB(iemOp_vgatherqps_d_Vx_Hx_Wx);
 /*  Opcode VEX.66.0F38 0x94 - invalid. */
 /*  Opcode VEX.66.0F38 0x95 - invalid. */
 /** Opcode VEX.66.0F38 0x96 (vex only). */
-FNIEMOP_STUB(iemOp_vfmaddsub132ps_q_Vx_Hx_Wx);
+FNIEMOP_STUB(iemOp_vfmaddsub132ps_d_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x97 (vex only). */
 FNIEMOP_STUB(iemOp_vfmsubadd132ps_d_Vx_Hx_Wx);
 /** Opcode VEX.66.0F38 0x98 (vex only). */
@@ -2625,13 +2625,13 @@ const PFNIEMOP g_apfnVexMap2[] =
     /* 0x8e */  iemOp_InvalidNeedRM,        iemOp_vpmaskmovd_q_Mx_Vx_Hx, iemOp_InvalidNeedRM,     iemOp_InvalidNeedRM,
     /* 0x8f */  IEMOP_X4(iemOp_InvalidNeedRM),
 
-    /* 0x90 */  iemOp_InvalidNeedRM,        iemOp_vgatherdd_q_Vx_Hx_Wx, iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
-    /* 0x91 */  iemOp_InvalidNeedRM,        iemOp_vgatherqd_q_Vx_Hx_Wx, iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
+    /* 0x90 */  iemOp_InvalidNeedRM,        iemOp_vpgatherdd_q_Vx_Hx_Wx, iemOp_InvalidNeedRM,     iemOp_InvalidNeedRM,
+    /* 0x91 */  iemOp_InvalidNeedRM,        iemOp_vpgatherqd_q_Vx_Hx_Wx, iemOp_InvalidNeedRM,     iemOp_InvalidNeedRM,
     /* 0x92 */  iemOp_InvalidNeedRM,        iemOp_vgatherdps_d_Vx_Hx_Wx, iemOp_InvalidNeedRM,     iemOp_InvalidNeedRM,
     /* 0x93 */  iemOp_InvalidNeedRM,        iemOp_vgatherqps_d_Vx_Hx_Wx, iemOp_InvalidNeedRM,     iemOp_InvalidNeedRM,
     /* 0x94 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x95 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x96 */  iemOp_InvalidNeedRM,        iemOp_vfmaddsub132ps_q_Vx_Hx_Wx, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
+    /* 0x96 */  iemOp_InvalidNeedRM,        iemOp_vfmaddsub132ps_d_Vx_Hx_Wx, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
     /* 0x97 */  iemOp_InvalidNeedRM,        iemOp_vfmsubadd132ps_d_Vx_Hx_Wx, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
     /* 0x98 */  iemOp_InvalidNeedRM,        iemOp_vfmadd132ps_d_Vx_Hx_Wx,    iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
     /* 0x99 */  iemOp_InvalidNeedRM,        iemOp_vfmadd132ss_d_Vx_Hx_Wx,    iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
