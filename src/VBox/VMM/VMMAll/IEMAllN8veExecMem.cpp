@@ -451,37 +451,8 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
 
 
 /**
- * Worker for iemExecMemAllocatorAlloc that returns @a pvRet after updating
- * the heap statistics.
+ * Try allocate a block of @a cReqUnits in the chunk @a idxChunk.
  */
-static void *iemExecMemAllocatorAllocTailCode(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvRet,
-                                              uint32_t cbReq, uint32_t idxChunk)
-{
-    pExecMemAllocator->cAllocations += 1;
-    pExecMemAllocator->cbAllocated  += cbReq;
-    pExecMemAllocator->cbFree       -= cbReq;
-    pExecMemAllocator->idxChunkHint  = idxChunk;
-
-#ifdef RT_OS_DARWIN
-    /*
-     * Sucks, but RTMEM_PROT_EXEC and RTMEM_PROT_WRITE are mutually exclusive
-     * on darwin.  So, we mark the pages returned as read+write after alloc and
-     * expect the caller to call iemExecMemAllocatorReadyForUse when done
-     * writing to the allocation.
-     *
-     * See also https://developer.apple.com/documentation/apple-silicon/porting-just-in-time-compilers-to-apple-silicon
-     * for details.
-     */
-    /** @todo detect if this is necessary... it wasn't required on 10.15 or
-     *        whatever older version it was. */
-    int rc = RTMemProtect(pvRet, cbReq, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
-    AssertRC(rc);
-#endif
-
-    return pvRet;
-}
-
-
 static void *iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint64_t *pbmAlloc, uint32_t idxFirst,
                                                 uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk, PIEMTB pTb)
 {
@@ -511,21 +482,42 @@ static void *iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAll
             pChunk->cFreeUnits -= cReqUnits;
             pChunk->idxFreeHint = (uint32_t)iBit + cReqUnits;
 
+            pExecMemAllocator->cAllocations += 1;
+            uint32_t const cbReq = cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+            pExecMemAllocator->cbAllocated  += cbReq;
+            pExecMemAllocator->cbFree       -= cbReq;
+            pExecMemAllocator->idxChunkHint  = idxChunk;
+
+            void * const pvMem = (uint8_t *)pChunk->pvChunk
+                               + ((idxFirst + (uint32_t)iBit) << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT);
+#ifdef RT_OS_DARWIN
+            /*
+             * Sucks, but RTMEM_PROT_EXEC and RTMEM_PROT_WRITE are mutually exclusive
+             * on darwin.  So, we mark the pages returned as read+write after alloc and
+             * expect the caller to call iemExecMemAllocatorReadyForUse when done
+             * writing to the allocation.
+             *
+             * See also https://developer.apple.com/documentation/apple-silicon/porting-just-in-time-compilers-to-apple-silicon
+             * for details.
+             */
+            /** @todo detect if this is necessary... it wasn't required on 10.15 or
+             *        whatever older version it was. */
+            int rc = RTMemProtect(pvMem, cbReq, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+            AssertRC(rc);
+#endif
+
+            /*
+             * Initialize the header and return.
+             */
 # ifdef IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
-            PIEMEXECMEMALLOCHDR pHdr = (PIEMEXECMEMALLOCHDR)((uint8_t *)pChunk->pvChunk
-                                                             + (   (idxFirst + (uint32_t)iBit)
-                                                                << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT));
+            PIEMEXECMEMALLOCHDR const pHdr = (PIEMEXECMEMALLOCHDR)pvMem;
             pHdr->uMagic   = IEMEXECMEMALLOCHDR_MAGIC;
             pHdr->idxChunk = idxChunk;
             pHdr->pTb      = pTb;
-            return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pHdr + 1,
-                                                    cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT, idxChunk);
+            return pHdr + 1;
 #else
             RT_NOREF(pTb);
-            void * const pvRet  = (uint8_t *)pChunk->pvChunk
-                                + ((idxFirst + (uint32_t)iBit) << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT);
-            return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet,
-                                                    cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT, idxChunk);
+            return pvMem;
 #endif
         }
 
@@ -656,7 +648,7 @@ DECLHIDDEN(void *) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB
 DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb) RT_NOEXCEPT
 {
 #ifdef RT_OS_DARWIN
-    /* See iemExecMemAllocatorAllocTailCode for the explanation. */
+    /* See iemExecMemAllocatorAllocInChunkInt for the explanation. */
     int rc = RTMemProtect(pv, cb, RTMEM_PROT_EXEC | RTMEM_PROT_READ);
     AssertRC(rc); RT_NOREF(pVCpu);
 
@@ -719,10 +711,19 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
             for (uint32_t i = 1; i < cReqUnits; i++)
                 AssertReturnVoid(ASMBitTest(pbmAlloc, idxFirst + i));
             ASMBitClearRange(pbmAlloc, idxFirst, idxFirst + cReqUnits);
+
 #ifdef IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
+# ifdef RT_OS_DARWIN
+            int rc = RTMemProtect(pHdr, sizeof(*pHdr), RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+            AssertRC(rc); RT_NOREF(pVCpu);
+# endif
             pHdr->uMagic    = 0;
             pHdr->idxChunk  = 0;
             pHdr->pTb       = NULL;
+# ifdef RT_OS_DARWIN
+            rc = RTMemProtect(pHdr, sizeof(*pHdr), RTMEM_PROT_EXEC | RTMEM_PROT_READ);
+            AssertRC(rc); RT_NOREF(pVCpu);
+# endif
 #endif
             pExecMemAllocator->aChunks[idxChunk].cFreeUnits  += cReqUnits;
             pExecMemAllocator->aChunks[idxChunk].idxFreeHint  = idxFirst;
