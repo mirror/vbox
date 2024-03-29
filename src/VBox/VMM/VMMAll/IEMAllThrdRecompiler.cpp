@@ -114,11 +114,6 @@
 #endif
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-static void         iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb);
-
 
 /**
  * Calculates the effective address of a ModR/M memory operand, extended version
@@ -920,7 +915,7 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
  * @param   pTb     The translation block to free.
  * @thread  EMT(pVCpu)
  */
-static void iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
+DECLHIDDEN(void) iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
 {
     /*
      * Validate state.
@@ -940,8 +935,8 @@ static void iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
 
 
 /**
- * Schedules a native TB for freeing when it's not longer being executed and
- * part of the caller's call stack.
+ * Schedules a TB for freeing when it's not longer being executed and/or part of
+ * the caller's call stack.
  *
  * The TB will be removed from the translation block cache, though, so it isn't
  * possible to executed it again and the IEMTB::pNext member can be used to link
@@ -963,7 +958,8 @@ static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
     Assert(ASMBitTest(&pTbAllocator->bmAllocated,
                       IEMTBALLOC_IDX_MAKE(pTbAllocator, pTb->idxAllocChunk,
                                           (uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs))));
-    Assert((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
+    Assert(   (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE
+           || (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED);
 
     /*
      * Remove it from the cache and prepend it to the allocator's todo list.
@@ -1666,9 +1662,11 @@ static void iemThreadedTbAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
  */
 void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree)
 {
-    /* Unless it's safe, we can only immediately free threaded TB, as we will
-       have more code left to execute in native TBs when fSafeToFree == false.  */
-    if (fSafeToFree || (pTb->fFlags & IEMTB_F_TYPE_THREADED))
+    /* We cannot free the current TB (indicated by fSafeToFree) because:
+            - A threaded TB will have its current call entry accessed
+              to update pVCpu->iem.s.cInstructions.
+            - A native TB will have code left to execute. */
+    if (fSafeToFree)
         iemTbAllocatorFree(pVCpu, pTb);
     else
         iemTbAlloctorScheduleForFree(pVCpu, pTb);

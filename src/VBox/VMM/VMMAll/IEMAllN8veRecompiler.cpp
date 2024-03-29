@@ -147,6 +147,8 @@ DECL_INLINE_THROW(void) iemNativeVarRegisterRelease(PIEMRECOMPILERSTATE pReNativ
 /** Enables adding a header to the sub-allocator allocations.
  * This is useful for freeing up executable memory among other things.  */
 #define IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
+/** Use alternative pruning. */
+#define IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
 
 
 #if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
@@ -327,9 +329,22 @@ typedef struct IEMEXECMEMALLOCATOR
     /** Number of bitmap elements per chunk (for quickly locating the bitmap
      * portion corresponding to an chunk). */
     uint32_t                cBitmapElementsPerChunk;
+
+#ifdef IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
+    /** The next chunk to prune in. */
+    uint32_t                idxChunkPrune;
+    /** Where in chunk offset to start pruning at. */
+    uint32_t                offChunkPrune;
+    /** Profiling the pruning code. */
+    STAMPROFILE             StatPruneProf;
+    /** Number of bytes recovered by the pruning. */
+    STAMPROFILE             StatPruneRecovered;
+#endif
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatAlloc;
 #endif
+
 
 #if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
     /** Pointer to the array of unwind info running parallel to aChunks (same
@@ -372,6 +387,113 @@ typedef  IEMEXECMEMALLOCHDR *PIEMEXECMEMALLOCHDR;
 
 
 static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator);
+
+#ifdef IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
+/**
+ * Frees up executable memory when we're out space.
+ *
+ * This is an alternative to iemTbAllocatorFreeupNativeSpace() that frees up
+ * space in a more linear fashion from the allocator's point of view.  It may
+ * also defragment if implemented & enabled
+ */
+static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator)
+{
+# ifndef IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
+#  error "IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING requires IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER"
+# endif
+    STAM_REL_PROFILE_START(&pExecMemAllocator->StatPruneProf, a);
+
+    /*
+     * Before we can start, we must process delayed frees.
+     */
+    iemTbAllocatorProcessDelayedFrees(pVCpu, pVCpu->iem.s.pTbAllocatorR3);
+
+    AssertCompile(RT_IS_POWER_OF_TWO(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE));
+
+    uint32_t const cbChunk = pExecMemAllocator->cbChunk;
+    AssertReturnVoid(RT_IS_POWER_OF_TWO(cbChunk));
+    AssertReturnVoid(cbChunk >= _1M && cbChunk <= _256M); /* see iemExecMemAllocatorInit */
+
+    uint32_t const cChunks = pExecMemAllocator->cChunks;
+    AssertReturnVoid(cChunks == pExecMemAllocator->cMaxChunks);
+    AssertReturnVoid(cChunks >= 1);
+
+    /*
+     * Decide how much to prune.  The chunk is is a multiple of two, so we'll be
+     * scanning a multiple of two here as well.
+     */
+    uint32_t cbToPrune = cbChunk;
+
+    /* Never more than 25%. */
+    if (cChunks < 4)
+        cbToPrune /= cChunks == 1 ? 4 : 2;
+
+    /* Upper limit. In a debug build a 4MB limit averages out at ~0.6ms per call. */
+    if (cbToPrune > _4M)
+        cbToPrune = _4M;
+
+    /*
+     * Adjust the pruning chunk and offset accordingly.
+     */
+    uint32_t idxChunk = pExecMemAllocator->idxChunkPrune;
+    uint32_t offChunk = pExecMemAllocator->offChunkPrune;
+    offChunk &= ~(uint32_t)(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE - 1U);
+    if (offChunk >= cbChunk)
+    {
+        offChunk = 0;
+        idxChunk += 1;
+    }
+    if (idxChunk >= cChunks)
+    {
+        offChunk = 0;
+        idxChunk = 0;
+    }
+
+    uint32_t const offPruneEnd = RT_MIN(offChunk + cbToPrune, cbChunk);
+
+    /*
+     * Do the pruning.  The current approach is the sever kind.
+     */
+    uint64_t            cbPruned = 0;
+    uint8_t * const     pbChunk  = (uint8_t *)pExecMemAllocator->aChunks[idxChunk].pvChunk;
+    while (offChunk < offPruneEnd)
+    {
+        PIEMEXECMEMALLOCHDR pHdr = (PIEMEXECMEMALLOCHDR)&pbChunk[offChunk];
+
+        /* Is this the start of an allocation block for TB? (We typically have
+           one allocation at the start of each chunk for the unwind info where
+           pTb is NULL.)  */
+        if (   pHdr->uMagic   == IEMEXECMEMALLOCHDR_MAGIC
+            && pHdr->pTb      != NULL
+            && pHdr->idxChunk == idxChunk)
+        {
+            PIEMTB const pTb = pHdr->pTb;
+            AssertPtr(pTb);
+            Assert((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
+
+            uint32_t const cbBlock = RT_ALIGN_32(pTb->Native.cInstructions * sizeof(IEMNATIVEINSTR) + sizeof(*pHdr),
+                                                 IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+            AssertBreakStmt(offChunk + cbBlock <= cbChunk, offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE); /* paranoia */
+
+            iemTbAllocatorFree(pVCpu, pTb);
+
+            cbPruned += cbBlock;
+            offChunk += cbBlock;
+        }
+        else
+            offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE;
+    }
+    STAM_REL_PROFILE_ADD_PERIOD(&pExecMemAllocator->StatPruneRecovered, cbPruned);
+
+    /*
+     * Save the current pruning point.
+     */
+    pExecMemAllocator->offChunkPrune = offChunk;
+    pExecMemAllocator->idxChunkPrune = idxChunk;
+
+    STAM_REL_PROFILE_STOP(&pExecMemAllocator->StatPruneProf, a);
+}
+#endif /* IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING */
 
 
 /**
@@ -557,9 +679,13 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb)
          */
         if (iIteration == 0)
         {
+#ifdef IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
+            iemExecMemAllocatorPrune(pVCpu, pExecMemAllocator);
+#else
             /* No header included in the instruction count here. */
             uint32_t const cNeededInstrs = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE) / sizeof(IEMNATIVEINSTR);
             iemTbAllocatorFreeupNativeSpace(pVCpu, cNeededInstrs);
+#endif
         }
         else
         {
@@ -1401,10 +1527,9 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     /*
      * Allocate and initialize the allocatore instance.
      */
-    size_t       cbNeeded   = RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR, aChunks[cMaxChunks]);
-    size_t const offBitmaps = RT_ALIGN_Z(cbNeeded, RT_CACHELINE_SIZE);
-    size_t const cbBitmap   = cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 3);
-    cbNeeded += cbBitmap * cMaxChunks;
+    size_t const offBitmaps = RT_ALIGN_Z(RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR, aChunks[cMaxChunks]), RT_CACHELINE_SIZE);
+    size_t const cbBitmaps  = (size_t)(cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 3)) * cMaxChunks;
+    size_t       cbNeeded   = offBitmaps + cbBitmaps;
     AssertCompile(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT <= 10);
     Assert(cbChunk > RT_BIT_32(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 3));
 #if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
@@ -1426,7 +1551,7 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->pbmAlloc                 = (uint64_t *)((uintptr_t)pExecMemAllocator + offBitmaps);
     pExecMemAllocator->cUnitsPerChunk           = cbChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
     pExecMemAllocator->cBitmapElementsPerChunk  = cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 6);
-    memset(pExecMemAllocator->pbmAlloc, 0xff, cbBitmap); /* Mark everything as allocated. Clear when chunks are added. */
+    memset(pExecMemAllocator->pbmAlloc, 0xff, cbBitmaps); /* Mark everything as allocated. Clear when chunks are added. */
 #if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
     pExecMemAllocator->paEhFrames = (PIEMEXECMEMCHUNKEHFRAME)((uintptr_t)pExecMemAllocator + offEhFrames);
 #endif
@@ -1475,6 +1600,12 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
 #ifdef VBOX_WITH_STATISTICS
     STAMR3RegisterFU(pUVM, &pExecMemAllocator->StatAlloc,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                      "Profiling the allocator",                 "/IEM/CPU%u/re/ExecMem/ProfAlloc", pVCpu->idCpu);
+#endif
+#ifdef IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
+    STAMR3RegisterFU(pUVM, &pExecMemAllocator->StatPruneProf,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                     "Pruning executable memory (alt)",         "/IEM/CPU%u/re/ExecMem/Pruning", pVCpu->idCpu);
+    STAMR3RegisterFU(pUVM, &pExecMemAllocator->StatPruneRecovered, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES_PER_CALL,
+                     "Bytes recovered while pruning",           "/IEM/CPU%u/re/ExecMem/PruningRecovered", pVCpu->idCpu);
 #endif
 
     return VINF_SUCCESS;

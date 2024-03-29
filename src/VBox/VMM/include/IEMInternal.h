@@ -6070,6 +6070,7 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 DECLCALLBACK(int)   iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
                               uint64_t cbInitialExec, uint64_t cbMaxExec, uint32_t cbChunkExec);
 void                iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree);
+DECLHIDDEN(void)    iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb);
 void                iemTbAllocatorProcessDelayedFrees(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator);
 void                iemTbAllocatorFreeupNativeSpace(PVMCPUCC pVCpu, uint32_t cNeededInstrs);
 DECLHIDDEN(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf) RT_NOEXCEPT;
