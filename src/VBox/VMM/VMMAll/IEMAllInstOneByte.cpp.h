@@ -12118,9 +12118,9 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
 
 
 /** Opcode 0xdb 11/3. */
-FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
+FNIEMOP_DEF_1(iemOp_fcmovnu_stN, uint8_t, bRm)
 {
-    IEMOP_MNEMONIC(fcmovnnu_st0_stN, "fcmovnnu st0,stN");
+    IEMOP_MNEMONIC(fcmovnu_st0_stN, "fcmovnu st0,stN");
     IEM_MC_BEGIN(0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
@@ -12254,7 +12254,7 @@ FNIEMOP_DEF(iemOp_EscF3)
             case 0: return FNIEMOP_CALL_1(iemOp_fcmovnb_stN,  bRm);
             case 1: return FNIEMOP_CALL_1(iemOp_fcmovne_stN,  bRm);
             case 2: return FNIEMOP_CALL_1(iemOp_fcmovnbe_stN, bRm);
-            case 3: return FNIEMOP_CALL_1(iemOp_fcmovnnu_stN, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fcmovnu_stN,  bRm);
             case 4:
                 switch (bRm)
                 {
