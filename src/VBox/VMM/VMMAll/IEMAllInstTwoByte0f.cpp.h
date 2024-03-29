@@ -9875,7 +9875,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr, uint8_t, bRm)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,     0);
-    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, 0, iemCImpl_ldmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_MxCsr), iemCImpl_ldmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
 }
 
@@ -9910,7 +9910,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,     0);
-    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, 0, iemCImpl_stmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_MxCsr), iemCImpl_stmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
 }
 
