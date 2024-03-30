@@ -1015,10 +1015,13 @@ typedef struct VUSBIROOTHUBCONNECTOR
      */
     DECLR3CALLBACKMEMBER(VUSBSPEED, pfnDevGetSpeed,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
 
+    /** Alignment dummy. */
+    RTR3PTR Alignment;
+
 } VUSBIROOTHUBCONNECTOR;
 AssertCompileSizeAlignment(VUSBIROOTHUBCONNECTOR, 8);
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-# define VUSBIROOTHUBCONNECTOR_IID              "662d7822-b9c6-43b5-88b6-5d59f0106e46"
+# define VUSBIROOTHUBCONNECTOR_IID              "83eb1fb4-d755-4925-a7c5-751d0899c048"
 
 
 # ifdef IN_RING3
