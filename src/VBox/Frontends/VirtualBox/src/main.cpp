@@ -487,7 +487,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         // calculated automatic way, which means for x2 the effective factor will be 2x2=4.
         // No idea how to proceed, probably we will ignore this variable for now, by
         // setting it to be always equal to 1.
-        qputenv("QT_SCALE_FACTOR", "1");
+        //qputenv("QT_SCALE_FACTOR", "1");
 #endif /* VBOX_WS_NIX */
 
         /* Create application: */
