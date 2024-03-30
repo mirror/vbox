@@ -1116,17 +1116,38 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
 }
 
 
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnAbortEp} */
-static DECLCALLBACK(int) vusbRhAbortEp(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir)
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnAbortEpByPort} */
+static DECLCALLBACK(int) vusbRhAbortEpByPort(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort, "vusbRhAbortEp");
+    PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort, "vusbRhAbortEpByPort");
 
     if (pDev->pHub != pRh)
         AssertFailedReturn(VERR_INVALID_PARAMETER);
 
     vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhAbortEpWorker, 3, pDev, EndPt, enmDir);
-    vusbDevRelease(pDev, "vusbRhAbortEp");
+    vusbDevRelease(pDev, "vusbRhAbortEpByPort");
+
+    /* The reaper thread will take care of completing the URB. */
+
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnAbortEpByAddr} */
+static DECLCALLBACK(int) vusbRhAbortEpByAddr(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, int EndPt, VUSBDIRECTION enmDir)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV pDev = vusbR3RhGetVUsbDevByAddrRetain(pRh, DstAddress, "vusbRhAbortEpByAddr");
+
+    if (pDev->pHub != pRh)
+        AssertFailedReturn(VERR_INVALID_PARAMETER);
+
+    /* This method is the same as vusbRhAbortEp[ByPort], intended for old controllers
+     * which don't have a defined port <-> device relationship.
+     */
+    vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhAbortEpWorker, 3, pDev, EndPt, enmDir);
+    vusbDevRelease(pDev, "vusbRhAbortEpByAddr");
 
     /* The reaper thread will take care of completing the URB. */
 
@@ -1650,7 +1671,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnReapAsyncUrbs              = vusbRhReapAsyncUrbs;
     pThis->IRhConnector.pfnCancelUrbsEp               = vusbRhCancelUrbsEp;
     pThis->IRhConnector.pfnCancelAllUrbs              = vusbRhCancelAllUrbs;
-    pThis->IRhConnector.pfnAbortEp                    = vusbRhAbortEp;
+    pThis->IRhConnector.pfnAbortEpByPort              = vusbRhAbortEpByPort;
+    pThis->IRhConnector.pfnAbortEpByAddr              = vusbRhAbortEpByAddr;
     pThis->IRhConnector.pfnSetPeriodicFrameProcessing = vusbRhSetFrameProcessing;
     pThis->IRhConnector.pfnGetPeriodicFrameRate       = vusbRhGetPeriodicFrameRate;
     pThis->IRhConnector.pfnUpdateIsocFrameDelta       = vusbRhUpdateIsocFrameDelta;

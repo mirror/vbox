@@ -4363,7 +4363,7 @@ static unsigned xhciR3StopEndpoint(PPDMDEVINS pDevIns, PXHCI pThis, PXHCICC pThi
             /* Temporarily give up the lock so that the completion callbacks can run. */
             RTCritSectLeave(&pThisCC->CritSectThrd);
             Log(("Aborting DCI %u -> ep=%u d=%u\n", uDCI, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT));
-            pRh->pIRhConn->pfnAbortEp(pRh->pIRhConn, uPort, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT);
+            pRh->pIRhConn->pfnAbortEpByPort(pRh->pIRhConn, uPort, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT);
             RTCritSectEnter(&pThisCC->CritSectThrd);
         }
 
