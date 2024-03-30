@@ -372,6 +372,8 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
     AssertReturnVoid(cChunks == pExecMemAllocator->cMaxChunks);
     AssertReturnVoid(cChunks >= 1);
 
+    Assert(!pVCpu->iem.s.pCurTbR3);
+
     /*
      * Decide how much to prune.  The chunk is is a multiple of two, so we'll be
      * scanning a multiple of two here as well.
@@ -423,16 +425,25 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
         {
             PIEMTB const pTb = pHdr->pTb;
             AssertPtr(pTb);
-            Assert((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
 
-            uint32_t const cbBlock = RT_ALIGN_32(pTb->Native.cInstructions * sizeof(IEMNATIVEINSTR) + sizeof(*pHdr),
-                                                 IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
-            AssertBreakStmt(offChunk + cbBlock <= cbChunk, offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE); /* paranoia */
+            /* We now have to check that this isn't a old freed header, given
+               that we don't invalidate the header upon free because of darwin
+               restrictions on executable memory (iemExecMemAllocatorFree).
+               This relies upon iemTbAllocatorFreeInner resetting TB members. */
+            if (   pTb->Native.paInstructions == (PIEMNATIVEINSTR)(pHdr + 1)
+                && (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE)
+            {
+                uint32_t const cbBlock = RT_ALIGN_32(pTb->Native.cInstructions * sizeof(IEMNATIVEINSTR) + sizeof(*pHdr),
+                                                     IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+                AssertBreakStmt(offChunk + cbBlock <= cbChunk, offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE); /* paranoia */
 
-            iemTbAllocatorFree(pVCpu, pTb);
+                iemTbAllocatorFree(pVCpu, pTb);
 
-            cbPruned += cbBlock;
-            offChunk += cbBlock;
+                cbPruned += cbBlock;
+                offChunk += cbBlock;
+            }
+            else
+                offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE;
         }
         else
             offChunk += IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE;
@@ -712,7 +723,7 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
                 AssertReturnVoid(ASMBitTest(pbmAlloc, idxFirst + i));
             ASMBitClearRange(pbmAlloc, idxFirst, idxFirst + cReqUnits);
 
-#ifdef IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
+#if 0 /*def IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER - not necessary, we'll validate the header in the pruning code. */
 # ifdef RT_OS_DARWIN
             int rc = RTMemProtect(pHdr, sizeof(*pHdr), RTMEM_PROT_WRITE | RTMEM_PROT_READ);
             AssertRC(rc); RT_NOREF(pVCpu);
