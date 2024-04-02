@@ -1149,12 +1149,24 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
-    off = iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(pReNative, off)
+    off = iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(pReNative, off, pCallEntry->idxInstr)
 
 /** Emits code for IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
 {
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an \#UD or \#XF and all guest register must be up to date in CPUMCTX.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
     uint8_t const idxLabelRaiseSseAvxFpRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseSseAvxFpRelated);
     uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
     uint8_t const idxRegTmp   = iemNativeRegAllocTmp(pReNative, &off);
@@ -8549,71 +8561,22 @@ iemNativeEmitSimdStoreYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t of
 }
 
 
-#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr) \
-    off = iemNativeEmitSimdSseUpdateMxcsr(pReNative, off, a_fMxcsr)
-
-/** Emits code for IEM_MC_SSE_UPDATE_MXCSR. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdSseUpdateMxcsr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxMxCsrVar)
-{
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxMxCsrVar);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxMxCsrVar, sizeof(uint32_t));
-
-    uint8_t const idxRegMxCsr    = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxVarRegMxCsr = iemNativeVarRegisterAcquire(pReNative, idxMxCsrVar, &off, true /*fInitalized*/);
-    uint8_t const idxVarRegTmp   = iemNativeRegAllocTmp(pReNative, &off);
-
-    /** @todo r=aeichner I think it would be safe to spare the temporary register and trash
-     *                   the variable MXCSR register as it isn't used afterwards in the microcode block anyway.
-     *                   Needs verification though, so play it safe for now.
-     */
-    /* mov tmp, varmxcsr */
-    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxVarRegTmp, idxVarRegMxCsr);
-    /* and tmp, X86_MXCSR_XCPT_FLAGS */
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxVarRegTmp, X86_MXCSR_XCPT_FLAGS);
-    /* or mxcsr, tmp */
-    off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegMxCsr, idxVarRegTmp);
-
-    /* Writeback the MXCSR register value (there is no delayed writeback for such registers at the moment). */
-    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxRegMxCsr, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.XState.x87.MXCSR));
-
-    /* Free but don't flush the MXCSR register. */
-    iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
-    iemNativeVarRegisterRelease(pReNative, idxMxCsrVar);
-    iemNativeRegFreeTmp(pReNative, idxVarRegTmp);
-
-    return off;
-}
-
-
 #define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg) \
     off = iemNativeEmitSimdSseStoreResult(pReNative, off, a_SseData, a_iXmmReg)
 
 /** Emits code for IEM_MC_STORE_SSE_RESULT. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSseDataVar, uint8_t iXReg)
+iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSseRes, uint8_t iXReg)
 {
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSseDataVar);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSseDataVar, sizeof(IEMSSERESULT));
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSseRes);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSseRes, sizeof(X86XMMREG));
 
-    /** @todo r=aeichner We probably need to rework this MC statement and the users to make thing more efficient. */
-    uint8_t const idxSimdRegDst    = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
-                                                                             kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
-    uint8_t const idxRegMxCsr      = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxVarRegResAddr = iemNativeRegAllocTmp(pReNative, &off);
-    uint8_t const idxRegTmp        = iemNativeRegAllocTmp(pReNative, &off);
-
-    off = iemNativeEmitLoadArgGregWithVarAddr(pReNative, off, idxVarRegResAddr, idxSseDataVar, false /*fFlushShadows*/);
-
-    /* Update MXCSR. */
-    off = iemNativeEmitLoadGprByGprU32(pReNative, off, idxRegTmp, idxVarRegResAddr, RT_UOFFSETOF_DYN(IEMSSERESULT, MXCSR));
-    /* tmp &= X86_MXCSR_XCPT_FLAGS. */
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS);
-    /* mxcsr |= tmp */
-    off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegMxCsr, idxRegTmp);
-
-    /* Writeback the MXCSR register value (there is no delayed writeback for such registers at the moment). */
-    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxRegMxCsr, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.XState.x87.MXCSR));
+    /* The ForUpdate is important as we might end up not writing the result value to the register in case of an unmasked exception. */
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
+    uint8_t const idxVarRegRes  = iemNativeVarSimdRegisterAcquire(pReNative, idxSseRes, &off, true /*fInitalized*/);
+    uint8_t const idxRegMxCsr   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxRegTmp     = iemNativeRegAllocTmp(pReNative, &off);
 
     /* Update the value if there is no unmasked exception. */
     /* tmp = mxcsr */
@@ -8630,14 +8593,13 @@ iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS);
     uint32_t offFixup = off;
     off = iemNativeEmitJnzToFixed(pReNative, off, off);
-    AssertCompileMemberSize(IEMSSERESULT, uResult, sizeof(RTFLOAT128U));
-    off = iemNativeEmitLoadVecRegByGprU128(pReNative, off, idxSimdRegDst, idxVarRegResAddr, RT_UOFFSETOF_DYN(IEMSSERESULT, uResult));
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxVarRegRes);
     iemNativeFixupFixedJump(pReNative, offFixup, off);
 
     /* Free but don't flush the shadowed register. */
+    iemNativeVarRegisterRelease(pReNative, idxSseRes);
     iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
     iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
-    iemNativeRegFreeTmp(pReNative, idxVarRegResAddr);
     iemNativeRegFreeTmp(pReNative, idxRegTmp);
 
     return off;
@@ -8654,6 +8616,11 @@ iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallSseAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
 {
+    /* Grab the MXCSR register, it must not be call volatile or we end up freeing it when setting up the call below. */
+    uint8_t const  idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
+                                                                 kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    AssertRelease(!(RT_BIT_32(idxRegMxCsr) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
+
     /*
      * Need to do the FPU preparation.
      */
@@ -8662,17 +8629,29 @@ iemNativeEmitCallSseAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     /*
      * Do all the call setup and cleanup.
      */
-    off = iemNativeEmitCallCommon(pReNative, off, cArgs + IEM_SSE_AIMPL_HIDDEN_ARGS, IEM_SSE_AIMPL_HIDDEN_ARGS);
+    off = iemNativeEmitCallCommon(pReNative, off, cArgs + IEM_SSE_AIMPL_HIDDEN_ARGS, IEM_SSE_AIMPL_HIDDEN_ARGS, false /*fFlushPendingWrites*/);
 
     /*
-     * Load the XState::x87 pointer.
+     * Load the MXCSR register into the first argument and mask out the current exception flags.
      */
-    off = iemNativeEmitLeaGprByGstRegRef(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, kIemNativeGstRegRef_X87, 0 /*idxRegInClass*/);
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, idxRegMxCsr);
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, ~X86_MXCSR_XCPT_FLAGS);
 
     /*
      * Make the call.
      */
     off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
+
+    /*
+     * The updated MXCSR is in the return register.
+     */
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegMxCsr, IEMNATIVE_CALL_RET_GREG);
+
+#ifndef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    /* Writeback the MXCSR register value (there is no delayed writeback for such registers at the moment). */
+    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxRegMxCsr, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.XState.x87.MXCSR));
+#endif
+    iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
 
     return off;
 }

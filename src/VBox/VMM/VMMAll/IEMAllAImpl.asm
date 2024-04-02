@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2011-2023 Oracle and/or its affiliates.
+; Copyright (C) 2011-2024 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -183,6 +183,15 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
  %define T2_32      r10d
  %define T2_16      r10w
  %define T2_8       r10b
+
+ ;
+ ; Return value, same as T0 but to make it more obvious
+ ; that this is a return value.
+ ;
+ %define R0         rax
+ %define R0_32      eax
+ %define R0_16      ax
+ %define R0_8       al
 
 %else
  ; x86
@@ -4809,15 +4818,6 @@ IEMIMPL_V_PMOV_SZ_X pmovzxdq
 ;;
 ; Need to move this as well somewhere better?
 ;
-struc IEMSSERESULT
-    .uResult      resd 4
-    .MXCSR        resd 1
-endstruc
-
-
-;;
-; Need to move this as well somewhere better?
-;
 struc IEMAVX128RESULT
     .uResult      resd 4
     .MXCSR        resd 1
@@ -4835,16 +4835,16 @@ endstruc
 
 ;;
 ; Initialize the SSE MXCSR register using the guest value partially to
-; account for rounding mode.
+; account for rounding mode, load the value from the given register.
 ;
 ; @uses     4 bytes of stack to save the original value, T0.
-; @param    1       Expression giving the address of the FXSTATE of the guest.
+; @param    1       Expression giving the register holding the guest's MXCSR.
 ;
-%macro SSE_LD_FXSTATE_MXCSR 1
+%macro SSE_LD_MXCSR 1
         sub     xSP, 4
 
         stmxcsr [xSP]
-        mov     T0_32, [%1 + X86FXSTATE.MXCSR]
+        mov     T0_32, %1
         and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
         or      T0_32, X86_MXCSR_XCPT_MASK
         sub     xSP, 4
@@ -4858,21 +4858,19 @@ endstruc
 ; Restores the SSE MXCSR register with the original value.
 ;
 ; @uses     4 bytes of stack to save the content of MXCSR value, T0, T1.
-; @param    1       Expression giving the address where to return the MXCSR value.
-; @param    2       Expression giving the address of the FXSTATE of the guest.
+; @param    1       Expression giving the register to return the new guest's MXCSR value.
+; @param    2       Expression giving the register holding original guest's MXCSR value.
 ;
 ; @note Restores the stack pointer.
 ;
-%macro SSE_ST_FXSTATE_MXCSR 2
+%macro SSE_ST_MXCSR 2
         sub     xSP, 4
         stmxcsr [xSP]
-        mov     T0_32, [xSP]
+        mov     %1, [xSP]
         add     xSP, 4
         ; Merge the status bits into the original MXCSR value.
-        mov     T1_32, [%2 + X86FXSTATE.MXCSR]
-        and     T0_32, X86_MXCSR_XCPT_FLAGS
-        or      T0_32, T1_32
-        mov     [%1 + IEMSSERESULT.MXCSR], T0_32
+        and     %1, X86_MXCSR_XCPT_FLAGS
+        or      %1, %2
 
         ldmxcsr [xSP]
         add     xSP, 4
@@ -4935,8 +4933,9 @@ endstruc
 ; @param    1       The instruction
 ; @param    2       Flag whether the AVX variant of the instruction takes two or three operands, 0 to disable AVX variants
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the result including the MXCSR value.
+; @returns  R0_32   The new MXCSR value of the guest.
+; @param    A0      The guest's MXCSR register value to use.
+; @param    A1      Where to return the result.
 ; @param    A2      Pointer to the first media register size operand (input/output).
 ; @param    A3      Pointer to the second media register size operand (input).
 ;
@@ -4944,14 +4943,14 @@ endstruc
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movdqu   xmm1, [A3]
         %1       xmm0, xmm1
-        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+        movdqu   [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -5061,8 +5060,9 @@ IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences
 ;
 ; @param    1       The instruction
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the result including the MXCSR value.
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0      The guest's MXCSR register value to use.
+; @param    A1      Where to return the result.
 ; @param    A2      Pointer to the first media register size operand (input/output).
 ; @param    A3      Pointer to the second single precision floating point value (input).
 ;
@@ -5070,14 +5070,14 @@ IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movd     xmm1, [A3]
         %1       xmm0, xmm1
-        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+        movdqu   [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r32
@@ -5115,8 +5115,9 @@ IEMIMPL_FP_F2_R32 rcpss
 ;
 ; @param    1       The instruction
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the result including the MXCSR value.
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0      The guest's MXCSR register value to use.
+; @param    A1      Where to return the result.
 ; @param    A2      Pointer to the first media register size operand (input/output).
 ; @param    A3      Pointer to the second double precision floating point value (input).
 ;
@@ -5124,14 +5125,14 @@ IEMIMPL_FP_F2_R32 rcpss
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movq     xmm1, [A3]
         %1       xmm0, xmm1
-        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+        movdqu   [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r64
@@ -5168,8 +5169,9 @@ IEMIMPL_FP_F2_R64 sqrtsd
 ;           1       The instruction name.
 ;           2       Whether the AVX256 result is 128-bit (0) or 256-bit (1).
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the result including the MXCSR value.
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Where to return the result.
 ; @param    A2      Pointer to the first media register size operand (input/output).
 ; @param    A3      Pointer to the second media register size operand (input).
 ;
@@ -5177,14 +5179,14 @@ IEMIMPL_FP_F2_R64 sqrtsd
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movdqu   xmm1, [A3]
         %1       xmm0, xmm1
-        movdqu   [A1 + IEMSSERESULT.uResult], xmm0
+        movdqu   [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -5977,47 +5979,22 @@ IEMIMPL_MEDIA_MOVMSK_P movmskpd, vmovmskpd
 
 
 ;;
-; Restores the SSE MXCSR register with the original value.
-;
-; @uses     4 bytes of stack to save the content of MXCSR value, T0, T1.
-; @param    1       Expression giving the address where to return the MXCSR value - only the MXCSR is stored, no IEMSSERESULT is used.
-; @param    2       Expression giving the address of the FXSTATE of the guest.
-;
-; @note Restores the stack pointer.
-;
-%macro SSE_ST_FXSTATE_MXCSR_ONLY 2
-        sub     xSP, 4
-        stmxcsr [xSP]
-        mov     T0_32, [xSP]
-        add     xSP, 4
-        ; Merge the status bits into the original MXCSR value.
-        mov     T1_32, [%2 + X86FXSTATE.MXCSR]
-        and     T0_32, X86_MXCSR_XCPT_FLAGS
-        or      T0_32, T1_32
-        mov     [%1], T0_32
-
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
 ; cvttsd2si instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i32_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvttsd2si T0_32, [A3]
-        mov       dword [A2], T0_32
+        cvttsd2si T0_32, [A2]
+        mov       dword [A1], T0_32
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttsd2si_i32_r64
@@ -6025,238 +6002,397 @@ ENDPROC iemAImpl_cvttsd2si_i32_r64
 ;;
 ; cvttsd2si instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i64_r64, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvttsd2si T0, [A3]
-        mov       qword [A2], T0
+        cvttsd2si T0, [A2]
+        mov       qword [A1], T0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttsd2si_i64_r64
 
 
 ;;
 ; cvtsd2si instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i32_r64, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsd2si  T0_32, [A3]
-        mov       dword [A2], T0_32
+        cvtsd2si  T0_32, [A2]
+        mov       dword [A1], T0_32
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsd2si_i32_r64
 
 ;;
 ; cvtsd2si instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i64_r64, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsd2si  T0, [A3]
-        mov       qword [A2], T0
+        cvtsd2si  T0, [A2]
+        mov       qword [A1], T0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsd2si_i64_r64
 
 
 ;;
 ; cvttss2si instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvttss2si_i32_r32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvttss2si T0_32, [A3]
-        mov       dword [A2], T0_32
+        cvttss2si T0_32, [A2]
+        mov       dword [A1], T0_32
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttss2si_i32_r32
 
 ;;
 ; cvttss2si instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvttss2si_i64_r32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvttss2si T0, [A3]
-        mov       qword [A2], T0
+        cvttss2si T0, [A2]
+        mov       qword [A1], T0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttss2si_i64_r32
 
 
 ;;
 ; cvtss2si instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtss2si_i32_r32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtss2si  T0_32, [A3]
-        mov       dword [A2], T0_32
+        cvtss2si  T0_32, [A2]
+        mov       dword [A1], T0_32
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtss2si_i32_r32
 
 ;;
 ; cvtss2si instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtss2si_i64_r32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtss2si  T0, [A3]
-        mov       qword [A2], T0
+        cvtss2si  T0, [A2]
+        mov       qword [A1], T0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtss2si_i64_r32
 
 
 ;;
 ; cvtsi2ss instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsi2ss  xmm0, dword [A3]
-        movd      dword [A2], xmm0
+        cvtsi2ss  xmm0, dword [A2]
+        movd      dword [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i32
 
 ;;
 ; cvtsi2ss instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i64, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsi2ss  xmm0, qword [A3]
-        movd      dword [A2], xmm0
+        cvtsi2ss  xmm0, qword [A2]
+        movd      dword [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i64
 
 
 ;;
 ; cvtsi2sd instruction - 32-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i32, 16
-        PROLOGUE_4_ARGS
+        PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsi2sd  xmm0, dword [A3]
-        movq      [A2], xmm0
+        cvtsi2sd  xmm0, dword [A2]
+        movq      [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
+        EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i32
 
 ;;
 ; cvtsi2sd instruction - 64-bit variant.
 ;
-; @param    A0      FPU context (FXSTATE or XSAVEAREA).
-; @param    A1      Where to return the MXCSR value.
-; @param    A2      Pointer to the result operand (output).
-; @param    A3      Pointer to the second operand (input).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
 ;
 BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        cvtsi2sd  xmm0, qword [A2]
+        movq      [A1], xmm0
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_cvtsi2sd_r64_i64
+
+
+;
+; UCOMISS (SSE)
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR A0
+        SSE_LD_MXCSR A0_32
 
-        cvtsi2sd  xmm0, qword [A3]
-        movq      [A2], xmm0
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        ucomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_FXSTATE_MXCSR_ONLY A1, A0
+        SSE_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
-ENDPROC iemAImpl_cvtsi2sd_r64_i64
+ENDPROC             iemAImpl_ucomiss_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vucomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC             iemAImpl_vucomiss_u128
+
+
+;
+; UCOMISD (SSE)
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        ucomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_ucomisd_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vucomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_vucomisd_u128
+
+;
+; COMISS (SSE)
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        comiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_comiss_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vcomiss xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_vcomiss_u128
+
+
+;
+; COMISD (SSE)
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      Pointer to the first source operand (aka readonly destination).
+; @param    A3      Pointer to the second source operand.
+;
+BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        comisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_comisd_u128
+
+BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_LD_MXCSR A0_32
+
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        vcomisd xmm0, xmm1
+        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
+
+        SSE_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_vcomisd_u128
 
 
 ;;
@@ -6302,161 +6438,6 @@ ENDPROC iemAImpl_cvtsi2sd_r64_i64
         ldmxcsr [xSP]
         add     xSP, 4
 %endmacro
-
-
-;
-; UCOMISS (SSE)
-;
-; @param    A0      Pointer to the MXCSR value (input/output).
-; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
-;
-BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        ucomiss xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_ucomiss_u128
-
-BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        vucomiss xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_vucomiss_u128
-
-
-;
-; UCOMISD (SSE)
-;
-; @param    A0      Pointer to the MXCSR value (input/output).
-; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
-;
-BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        ucomisd xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_ucomisd_u128
-
-BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        vucomisd xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_vucomisd_u128
-
-;
-; COMISS (SSE)
-;
-; @param    A0      Pointer to the MXCSR value (input/output).
-; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
-;
-BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        comiss xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_comiss_u128
-
-BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        vcomiss xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_vcomiss_u128
-
-
-;
-; COMISD (SSE)
-;
-; @param    A0      Pointer to the MXCSR value (input/output).
-; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
-;
-BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        comisd xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_comisd_u128
-
-BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
-
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
-        vcomisd xmm0, xmm1
-        IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
-
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC             iemAImpl_vcomisd_u128
 
 
 ;;
@@ -6845,3 +6826,4 @@ IEMIMPL_ADX_64 adcx, X86_EFL_CF
 
 IEMIMPL_ADX_32 adox, X86_EFL_OF
 IEMIMPL_ADX_64 adox, X86_EFL_OF
+

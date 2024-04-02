@@ -81,7 +81,6 @@ g_kdTypeInfo2 = {
     'IEMFPURESULTTWO':  (80+16+80,False, 'IEMFPURESULTTWO', ),
     'RTUINT128U':       (  128,   False, 'RTUINT128U',      ),
     'X86XMMREG':        (  128,   False, 'X86XMMREG',       ),
-    'IEMSSERESULT':     ( 128+32, False, 'IEMSSERESULT',    ),
     'IEMMEDIAF2XMMSRC': (  256,   False, 'IEMMEDIAF2XMMSRC',),
     'RTUINT256U':       (  256,   False, 'RTUINT256U',      ),
     'IEMPCMPISTRXSRC':  (  256,   False, 'IEMPCMPISTRXSRC', ),
@@ -1897,6 +1896,7 @@ class ThreadedFunction(object):
         'IEM_MC_CALL_AVX_AIMPL_3':                  '__aimpl_avx',
         'IEM_MC_CALL_AVX_AIMPL_4':                  '__aimpl_avx',
         'IEM_MC_CALL_AVX_AIMPL_5':                  '__aimpl_avx',
+        'IEM_MC_CALL_AVX_AIMPL_NEW_3':              '__aimpl_avx',
     };
     def analyzeAndAnnotateName(self, aoStmts: List[iai.McStmt]):
         """

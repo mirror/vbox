@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -3849,13 +3849,13 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLF2EFL256,(PCRTUINT256U puSrc1, PCRTUI
 FNIEMAIMPLF2EFL128 iemAImpl_ptest_u128;
 FNIEMAIMPLF2EFL256 iemAImpl_vptest_u256, iemAImpl_vptest_u256_fallback;
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I32U64,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int32_t *pi32Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32U64,(uint32_t uMxCsrIn, int32_t *pi32Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
 typedef FNIEMAIMPLSSEF2I32U64 *PFNIEMAIMPLSSEF2I32U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I64U64,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64U64,(uint32_t uMxCsrIn, int64_t *pi64Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
 typedef FNIEMAIMPLSSEF2I64U64 *PFNIEMAIMPLSSEF2I64U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I32U32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int32_t *pi32Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32U32,(uint32_t uMxCsrIn, int32_t *pi32Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
 typedef FNIEMAIMPLSSEF2I32U32 *PFNIEMAIMPLSSEF2I32U32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2I64U32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, int64_t *pi64Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64U32,(uint32_t uMxCsrIn, int64_t *pi64Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
 typedef FNIEMAIMPLSSEF2I64U32 *PFNIEMAIMPLSSEF2I64U32;
 
 FNIEMAIMPLSSEF2I32U64 iemAImpl_cvttsd2si_i32_r64;
@@ -3870,24 +3870,24 @@ FNIEMAIMPLSSEF2I32U32 iemAImpl_cvtss2si_i32_r32;
 FNIEMAIMPLSSEF2I64U32 iemAImpl_cvttss2si_i64_r32;
 FNIEMAIMPLSSEF2I64U32 iemAImpl_cvtss2si_i64_r32;
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2R32I32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, PRTFLOAT32U pr32Dst, const int32_t *pi32Src));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2R32I32,(uint32_t uMxCsrIn, PRTFLOAT32U pr32Dst, const int32_t *pi32Src));
 typedef FNIEMAIMPLSSEF2R32I32 *PFNIEMAIMPLSSEF2R32I32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2R32I64,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, PRTFLOAT32U pr32Dst, const int64_t *pi64Src));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2R32I64,(uint32_t uMxCsrIn, PRTFLOAT32U pr32Dst, const int64_t *pi64Src));
 typedef FNIEMAIMPLSSEF2R32I64 *PFNIEMAIMPLSSEF2R32I64;
 
 FNIEMAIMPLSSEF2R32I32 iemAImpl_cvtsi2ss_r32_i32;
 FNIEMAIMPLSSEF2R32I64 iemAImpl_cvtsi2ss_r32_i64;
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2R64I32,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, PRTFLOAT64U pr64Dst, const int32_t *pi32Src));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2R64I32,(uint32_t uMxCsrIn, PRTFLOAT64U pr64Dst, const int32_t *pi32Src));
 typedef FNIEMAIMPLSSEF2R64I32 *PFNIEMAIMPLSSEF2R64I32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSSEF2R64I64,(PCX86FXSTATE pFpuState, uint32_t *pfMxcsr, PRTFLOAT64U pr64Dst, const int64_t *pi64Src));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2R64I64,(uint32_t uMxCsrIn, PRTFLOAT64U pr64Dst, const int64_t *pi64Src));
 typedef FNIEMAIMPLSSEF2R64I64 *PFNIEMAIMPLSSEF2R64I64;
 
 FNIEMAIMPLSSEF2R64I32 iemAImpl_cvtsi2sd_r64_i32;
 FNIEMAIMPLSSEF2R64I64 iemAImpl_cvtsi2sd_r64_i64;
 
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLF2EFLMXCSR128,(uint32_t *pfMxcsr, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLF2EFLMXCSR128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
 typedef FNIEMAIMPLF2EFLMXCSR128 *PFNIEMAIMPLF2EFLMXCSR128;
 
 FNIEMAIMPLF2EFLMXCSR128 iemAImpl_ucomiss_u128;
@@ -4246,23 +4246,6 @@ typedef IEMOPBLENDOP const *PCIEMOPBLENDOP;
 /** @name SSE/AVX single/double precision floating point operations.
  * @{ */
 /**
- * A SSE result.
- */
-typedef struct IEMSSERESULT
-{
-    /** The output value. */
-    X86XMMREG       uResult;
-    /** The output status. */
-    uint32_t        MXCSR;
-} IEMSSERESULT;
-AssertCompileMemberOffset(IEMSSERESULT, MXCSR, 128 / 8);
-/** Pointer to a SSE result. */
-typedef IEMSSERESULT *PIEMSSERESULT;
-/** Pointer to a const SSE result. */
-typedef IEMSSERESULT const *PCIEMSSERESULT;
-
-
-/**
  * A AVX128 result.
  */
 typedef struct IEMAVX128RESULT
@@ -4296,11 +4279,11 @@ typedef IEMAVX256RESULT *PIEMAVX256RESULT;
 typedef IEMAVX256RESULT const *PCIEMAVX256RESULT;
 
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPSSEF2U128,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLFPSSEF2U128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
 typedef FNIEMAIMPLFPSSEF2U128  *PFNIEMAIMPLFPSSEF2U128;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPSSEF2U128R32,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLFPSSEF2U128R32,(uint32_t uMxCsrIn, PX86XMMREG Result, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2));
 typedef FNIEMAIMPLFPSSEF2U128R32  *PFNIEMAIMPLFPSSEF2U128R32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPSSEF2U128R64,(PX86FXSTATE pFpuState, PIEMSSERESULT pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLFPSSEF2U128R64,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2));
 typedef FNIEMAIMPLFPSSEF2U128R64  *PFNIEMAIMPLFPSSEF2U128R64;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPAVXF3U128,(PX86XSAVEAREA pExtState, PIEMAVX128RESULT pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
@@ -5478,7 +5461,6 @@ void            iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg
 
 /** @name SSE+AVX SIMD access and helpers.
  * @{ */
-void            iemSseStoreResult(PVMCPUCC pVCpu, PCIEMSSERESULT pResult, uint8_t iXmmReg) RT_NOEXCEPT;
 void            iemSseUpdateMxcsr(PVMCPUCC pVCpu, uint32_t fMxcsr) RT_NOEXCEPT;
 /** @} */
 
