@@ -598,11 +598,7 @@ static uint32_t vga_ioport_read(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t ad
     } else {
         switch(addr) {
         case 0x3c0:
-            if (pThis->ar_flip_flop == 0) {
-                val = pThis->ar_index;
-            } else {
-                val = 0;
-            }
+            val = pThis->ar_index;
             break;
         case 0x3c1:
             index = pThis->ar_index & 0x1f;
