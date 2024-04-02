@@ -5856,7 +5856,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
         lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+pcmpistrm+ret) == 12: A3 * 12 = (A3 * 3) * 4
         lea     T1, [T1 + T0*4]
  %else
-        lea     T0, [T1 + A3*8]         ; sizeof(pcmpistrm+ret)         ==  8: A3 * 8
+        lea     T1, [T1 + A3*8]         ; sizeof(pcmpistrm+ret)         ==  8: A3 * 8
  %endif
         IBT_NOTRACK
         call    T1
