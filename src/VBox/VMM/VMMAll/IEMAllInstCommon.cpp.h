@@ -691,23 +691,23 @@ IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shrd_eflags[] =
 
 # ifndef IEM_WITHOUT_ASSEMBLY
 /** Function table for the VPXOR instruction */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpand          = { iemAImpl_vpand_u128,   iemAImpl_vpand_u256 };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpand          = { iemAImpl_vpand_u128,   iemAImpl_vpand_u256 };
 /** Function table for the VPXORN instruction */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpandn         = { iemAImpl_vpandn_u128,  iemAImpl_vpandn_u256 };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpandn         = { iemAImpl_vpandn_u128,  iemAImpl_vpandn_u256 };
 /** Function table for the VPOR instruction */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpor           = { iemAImpl_vpor_u128,    iemAImpl_vpor_u256 };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpor           = { iemAImpl_vpor_u128,    iemAImpl_vpor_u256 };
 /** Function table for the VPXOR instruction */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpxor          = { iemAImpl_vpxor_u128,   iemAImpl_vpxor_u256 };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpxor          = { iemAImpl_vpxor_u128,   iemAImpl_vpxor_u256 };
 # endif
 
 /** Function table for the VPAND instruction, software fallback. */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpand_fallback = { iemAImpl_vpand_u128_fallback,  iemAImpl_vpand_u256_fallback };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpand_fallback = { iemAImpl_vpand_u128_fallback,  iemAImpl_vpand_u256_fallback };
 /** Function table for the VPANDN instruction, software fallback. */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpandn_fallback= { iemAImpl_vpandn_u128_fallback, iemAImpl_vpandn_u256_fallback };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpandn_fallback= { iemAImpl_vpandn_u128_fallback, iemAImpl_vpandn_u256_fallback };
 /** Function table for the VPOR instruction, software fallback. */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpor_fallback  = { iemAImpl_vpor_u128_fallback,   iemAImpl_vpor_u256_fallback };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpor_fallback  = { iemAImpl_vpor_u128_fallback,   iemAImpl_vpor_u256_fallback };
 /** Function table for the VPXOR instruction, software fallback. */
-IEM_STATIC const IEMOPMEDIAF3 g_iemAImpl_vpxor_fallback = { iemAImpl_vpxor_u128_fallback,  iemAImpl_vpxor_u256_fallback };
+IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpxor_fallback = { iemAImpl_vpxor_u128_fallback,  iemAImpl_vpxor_u256_fallback };
 
 #endif /* !TST_IEM_CHECK_MC */
 

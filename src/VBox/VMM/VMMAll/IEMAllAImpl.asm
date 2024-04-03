@@ -4430,6 +4430,8 @@ ENDPROC iemAImpl_vpmovmskb_u256
 ; @param    A2      Pointer to the first source media register size operand (input).
 ; @param    A3      Pointer to the second source media register size operand (input).
 ;
+; @todo r=aeichner Not used right now
+;
 %macro IEMIMPL_MEDIA_F3 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
@@ -4457,41 +4459,6 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
-
-IEMIMPL_MEDIA_F3 vpshufb
-IEMIMPL_MEDIA_F3 vpand
-IEMIMPL_MEDIA_F3 vpminub
-IEMIMPL_MEDIA_F3 vpminuw
-IEMIMPL_MEDIA_F3 vpminud
-IEMIMPL_MEDIA_F3 vpminsb
-IEMIMPL_MEDIA_F3 vpminsw
-IEMIMPL_MEDIA_F3 vpminsd
-IEMIMPL_MEDIA_F3 vpmaxub
-IEMIMPL_MEDIA_F3 vpmaxuw
-IEMIMPL_MEDIA_F3 vpmaxud
-IEMIMPL_MEDIA_F3 vpmaxsb
-IEMIMPL_MEDIA_F3 vpmaxsw
-IEMIMPL_MEDIA_F3 vpmaxsd
-IEMIMPL_MEDIA_F3 vpandn
-IEMIMPL_MEDIA_F3 vpor
-IEMIMPL_MEDIA_F3 vpxor
-IEMIMPL_MEDIA_F3 vpcmpeqb
-IEMIMPL_MEDIA_F3 vpcmpeqw
-IEMIMPL_MEDIA_F3 vpcmpeqd
-IEMIMPL_MEDIA_F3 vpcmpeqq
-IEMIMPL_MEDIA_F3 vpcmpgtb
-IEMIMPL_MEDIA_F3 vpcmpgtw
-IEMIMPL_MEDIA_F3 vpcmpgtd
-IEMIMPL_MEDIA_F3 vpcmpgtq
-IEMIMPL_MEDIA_F3 vpaddb
-IEMIMPL_MEDIA_F3 vpaddw
-IEMIMPL_MEDIA_F3 vpaddd
-IEMIMPL_MEDIA_F3 vpaddq
-IEMIMPL_MEDIA_F3 vpsubb
-IEMIMPL_MEDIA_F3 vpsubw
-IEMIMPL_MEDIA_F3 vpsubd
-IEMIMPL_MEDIA_F3 vpsubq
-
 
 ;;
 ; Media instruction working on two full sized source registers and one destination (AVX),
@@ -4531,6 +4498,39 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
+IEMIMPL_MEDIA_OPT_F3 vpshufb
+IEMIMPL_MEDIA_OPT_F3 vpand
+IEMIMPL_MEDIA_OPT_F3 vpminub
+IEMIMPL_MEDIA_OPT_F3 vpminuw
+IEMIMPL_MEDIA_OPT_F3 vpminud
+IEMIMPL_MEDIA_OPT_F3 vpminsb
+IEMIMPL_MEDIA_OPT_F3 vpminsw
+IEMIMPL_MEDIA_OPT_F3 vpminsd
+IEMIMPL_MEDIA_OPT_F3 vpmaxub
+IEMIMPL_MEDIA_OPT_F3 vpmaxuw
+IEMIMPL_MEDIA_OPT_F3 vpmaxud
+IEMIMPL_MEDIA_OPT_F3 vpmaxsb
+IEMIMPL_MEDIA_OPT_F3 vpmaxsw
+IEMIMPL_MEDIA_OPT_F3 vpmaxsd
+IEMIMPL_MEDIA_OPT_F3 vpandn
+IEMIMPL_MEDIA_OPT_F3 vpor
+IEMIMPL_MEDIA_OPT_F3 vpxor
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqb
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqw
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqd
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqq
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtb
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtw
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtd
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtq
+IEMIMPL_MEDIA_OPT_F3 vpaddb
+IEMIMPL_MEDIA_OPT_F3 vpaddw
+IEMIMPL_MEDIA_OPT_F3 vpaddd
+IEMIMPL_MEDIA_OPT_F3 vpaddq
+IEMIMPL_MEDIA_OPT_F3 vpsubb
+IEMIMPL_MEDIA_OPT_F3 vpsubw
+IEMIMPL_MEDIA_OPT_F3 vpsubd
+IEMIMPL_MEDIA_OPT_F3 vpsubq
 IEMIMPL_MEDIA_OPT_F3 vpacksswb
 IEMIMPL_MEDIA_OPT_F3 vpackssdw
 IEMIMPL_MEDIA_OPT_F3 vpackuswb

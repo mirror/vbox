@@ -40,8 +40,8 @@
 FNIEMOP_DEF(iemOp_vpshufb_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPSHUFB, vpshufb, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpshufb);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpshufb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -726,8 +726,8 @@ FNIEMOP_DEF(iemOp_vpmuldq_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpcmpeqq_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPCMPEQQ, vpcmpeqq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpcmpeqq);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(vpcmpeqq);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -896,8 +896,8 @@ FNIEMOP_STUB(iemOp_vpermd_Vqq_Hqq_Wqq);
 FNIEMOP_DEF(iemOp_vpcmpgtq_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPCMPGTQ, vpcmpgtq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpcmpgtq);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(         vpcmpgtq);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -905,8 +905,8 @@ FNIEMOP_DEF(iemOp_vpcmpgtq_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpminsb_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMINSB, vpminsb, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpminsb);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpminsb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -914,8 +914,8 @@ FNIEMOP_DEF(iemOp_vpminsb_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpminsd_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMINSD, vpminsd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpminsd);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpminsd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -923,8 +923,8 @@ FNIEMOP_DEF(iemOp_vpminsd_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpminuw_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMINUW, vpminuw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpminuw);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpminuw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -932,8 +932,8 @@ FNIEMOP_DEF(iemOp_vpminuw_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpminud_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMINUD, vpminud, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpminud);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpminud);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -941,8 +941,8 @@ FNIEMOP_DEF(iemOp_vpminud_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpmaxsb_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMAXSB, vpmaxsb, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpmaxsb);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpmaxsb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -950,8 +950,8 @@ FNIEMOP_DEF(iemOp_vpmaxsb_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpmaxsd_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMAXSD, vpmaxsd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpmaxsd);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpmaxsd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -959,8 +959,8 @@ FNIEMOP_DEF(iemOp_vpmaxsd_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpmaxuw_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMAXUW, vpmaxuw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpmaxuw);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpmaxuw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
@@ -968,8 +968,8 @@ FNIEMOP_DEF(iemOp_vpmaxuw_Vx_Hx_Wx)
 FNIEMOP_DEF(iemOp_vpmaxud_Vx_Hx_Wx)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VPMAXUD, vpmaxud, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-    IEMOPMEDIAF3_INIT_VARS(vpmaxud);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+    IEMOPMEDIAOPTF3_INIT_VARS(        vpmaxud);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }
 
 
