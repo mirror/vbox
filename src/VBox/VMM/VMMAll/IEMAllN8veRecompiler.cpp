@@ -605,7 +605,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU256AlignedAvx,(PVMCPUCC p
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_STORE
     iemMemStoreDataU256AlignedAvxSafeJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
 #else
-    iemMemStoreDataU256AlignedAvxcJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
+    iemMemStoreDataU256AlignedAvxJmp(pVCpu, iSegReg, GCPtrMem, pu256Src);
 #endif
 }
 #endif
@@ -863,7 +863,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU128,(PVMCPUCC pVCpu, 
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
     return iemMemFetchDataU128SafeJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
 #else
-    return iemMemFlatFetchDataU128Jmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
+    return iemMemFlatFetchDataU128Jmp(pVCpu, pu128Dst, GCPtrMem);
 #endif
 }
 
@@ -876,7 +876,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU128AlignedSse,(PVMCPU
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
     return iemMemFetchDataU128AlignedSseSafeJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
 #else
-    return iemMemFlatFetchDataU128AlignedSseJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
+    return iemMemFlatFetchDataU128AlignedSseJmp(pVCpu, pu128Dst, GCPtrMem);
 #endif
 }
 
@@ -889,7 +889,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU128NoAc,(PVMCPUCC pVC
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
     return iemMemFetchDataU128NoAcSafeJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
 #else
-    return iemMemFlatFetchDataU128NoAcJmp(pVCpu, pu128Dst, UINT8_MAX, GCPtrMem);
+    return iemMemFlatFetchDataU128NoAcJmp(pVCpu, pu128Dst, GCPtrMem);
 #endif
 }
 
@@ -902,7 +902,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU256NoAc,(PVMCPUCC pVC
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
     return iemMemFetchDataU256NoAcSafeJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
 #else
-    return iemMemFlatFetchDataU256NoAcJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
+    return iemMemFlatFetchDataU256NoAcJmp(pVCpu, pu256Dst, GCPtrMem);
 #endif
 }
 
@@ -915,7 +915,7 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatFetchDataU256AlignedAvx,(PVMCPU
 #ifdef IEMNATIVE_WITH_TLB_LOOKUP_FETCH
     return iemMemFetchDataU256AlignedAvxSafeJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
 #else
-    return iemMemFlatFetchDataU256AlignedAvxJmp(pVCpu, pu256Dst, UINT8_MAX, GCPtrMem);
+    return iemMemFlatFetchDataU256AlignedAvxJmp(pVCpu, pu256Dst, GCPtrMem);
 #endif
 }
 #endif
