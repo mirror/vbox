@@ -8285,8 +8285,30 @@ iemNativeEmitSimdLoadGprFromVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
 #ifdef RT_ARCH_AMD64
     if (iQWord >= 2)
     {
-        /** @todo Currently not used. */
-        AssertReleaseFailed();
+        /*
+         * vpextrq doesn't work on the upper 128-bits.
+         * So we use the following sequence:
+         *     vextracti128 vectmp0, vecsrc, 1
+         *     pextrd       gpr, vectmp0, #(iQWord - 2)
+         */
+        /* vextracti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegSrc >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x39;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x1;
+
+        /* pextrd gpr, vecsrc, #iDWord (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        pCodeBuf[off++] =   X86_OP_REX_W
+                          | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x16;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, iGprDst & 7);
+        pCodeBuf[off++] = iQWord - 2;
     }
     else
     {
@@ -8346,8 +8368,30 @@ iemNativeEmitSimdLoadGprFromVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
 #ifdef RT_ARCH_AMD64
     if (iDWord >= 4)
     {
-        /** @todo Currently not used. */
-        AssertReleaseFailed();
+        /*
+         * vpextrd doesn't work on the upper 128-bits.
+         * So we use the following sequence:
+         *     vextracti128 vectmp0, vecsrc, 1
+         *     pextrd       gpr, vectmp0, #(iDWord - 4)
+         */
+        /* vextracti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegSrc >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x39;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x1;
+
+        /* pextrd gpr, vecsrc, #iDWord (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iGprDst >= 8 || IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8)
+            pCodeBuf[off++] =   (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprDst < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x16;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, iGprDst & 7);
+        pCodeBuf[off++] = iDWord - 4;
     }
     else
     {
@@ -8363,6 +8407,8 @@ iemNativeEmitSimdLoadGprFromVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
         pCodeBuf[off++] = iDWord;
     }
 #elif defined(RT_ARCH_ARM64)
+    Assert(iDWord < 4);
+
     /* umov gprdst, vecsrc[iDWord] */
     pCodeBuf[off++] = Armv8A64MkVecInstrUmov(iGprDst, iVecRegSrc, iDWord, kArmv8InstrUmovInsSz_U32, false /*fDst64Bit*/);
 #else
@@ -8381,7 +8427,7 @@ iemNativeEmitSimdLoadGprFromVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t of
     Assert(iDWord <= 7);
 
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadGprFromVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, iVecRegSrc, iDWord);
+    off = iemNativeEmitSimdLoadGprFromVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 15), off, iGprDst, iVecRegSrc, iDWord);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegSrc & 0x1));
@@ -8526,16 +8572,55 @@ DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitSimdStoreGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iQWord)
 {
 #ifdef RT_ARCH_AMD64
-    /* pinsrq vecsrc, gpr, #iQWord (ASSUMES SSE4.1). */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    pCodeBuf[off++] =   X86_OP_REX_W
-                      | (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                      | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0x3a;
-    pCodeBuf[off++] = 0x22;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-    pCodeBuf[off++] = iQWord;
+    if (iQWord >= 2)
+    {
+        /*
+         * vpinsrq doesn't work on the upper 128-bits.
+         * So we use the following sequence:
+         *     vextracti128 vectmp0, vecdst, 1
+         *     pinsrq       vectmp0, gpr, #(iQWord - 2)
+         *     vinserti128  vecdst, vectmp0, 1
+         */
+        /* vextracti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegDst >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x39;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x1;
+
+        /* pinsrq */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        pCodeBuf[off++] =   X86_OP_REX_W
+                          | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, iGprSrc & 7);
+        pCodeBuf[off++] = iQWord - 2;
+
+        /* vinserti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegDst >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegDst, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x38;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x01; /* Immediate */
+    }
+    else
+    {
+        /* pinsrq vecsrc, gpr, #iQWord (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        pCodeBuf[off++] =   X86_OP_REX_W
+                          | (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+        pCodeBuf[off++] = iQWord;
+    }
 #elif defined(RT_ARCH_ARM64)
     /* ins vecsrc[iQWord], gpr */
     pCodeBuf[off++] = Armv8A64MkVecInstrIns(iVecRegDst, iGprSrc, iQWord, kArmv8InstrUmovInsSz_U64);
@@ -8552,12 +8637,16 @@ iemNativeEmitSimdStoreGprToVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, u
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreGprToVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iQWord)
 {
-    Assert(iQWord <= 1);
+    Assert(iQWord <= 3);
 
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdStoreGprToVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iVecRegDst, iGprSrc, iQWord);
+    off = iemNativeEmitSimdStoreGprToVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 19), off, iVecRegDst, iGprSrc, iQWord);
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitSimdStoreGprToVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iGprSrc, iQWord);
+    Assert(!(iVecRegDst & 0x1));
+    if (iQWord >= 2)
+        off = iemNativeEmitSimdStoreGprToVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst + 1, iGprSrc, iQWord - 2);
+    else
+        off = iemNativeEmitSimdStoreGprToVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst,     iGprSrc, iQWord);
 #else
 # error "port me"
 #endif
@@ -8573,16 +8662,55 @@ DECL_FORCE_INLINE(uint32_t)
 iemNativeEmitSimdStoreGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iDWord)
 {
 #ifdef RT_ARCH_AMD64
-    /* pinsrd vecsrc, gpr, #iDWord (ASSUMES SSE4.1). */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (iVecRegDst >= 8 || iGprSrc >= 8)
-        pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
-                          | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0x3a;
-    pCodeBuf[off++] = 0x22;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
-    pCodeBuf[off++] = iDWord;
+    if (iDWord >= 4)
+    {
+        /*
+         * vpinsrq doesn't work on the upper 128-bits.
+         * So we use the following sequence:
+         *     vextracti128 vectmp0, vecdst, 1
+         *     pinsrd       vectmp0, gpr, #(iDword - 4)
+         *     vinserti128  vecdst, vectmp0, 1
+         */
+        /* vextracti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegDst >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE_NO_VVVV(false, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x39;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x1;
+
+        /* pinsrd */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8 || iGprSrc >= 8)
+            pCodeBuf[off++] =   (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, iGprSrc & 7);
+        pCodeBuf[off++] = iDWord - 4;
+
+        /* vinserti128 */
+        pCodeBuf[off++] = X86_OP_VEX3;
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE1_MAKE(0x3, IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8, false, iVecRegDst >= 8);
+        pCodeBuf[off++] = X86_OP_VEX3_BYTE2_MAKE(false, iVecRegDst, true, X86_OP_VEX3_BYTE2_P_066H);
+        pCodeBuf[off++] = 0x38;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
+        pCodeBuf[off++] = 0x01; /* Immediate */
+    }
+    else
+    {
+        /* pinsrd vecsrc, gpr, #iDWord (ASSUMES SSE4.1). */
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+        if (iVecRegDst >= 8 || iGprSrc >= 8)
+            pCodeBuf[off++] =   (iVecRegDst < 8 ? 0 : X86_OP_REX_R)
+                              | (iGprSrc < 8 ? 0 : X86_OP_REX_B);
+        pCodeBuf[off++] = 0x0f;
+        pCodeBuf[off++] = 0x3a;
+        pCodeBuf[off++] = 0x22;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegDst & 7, iGprSrc & 7);
+        pCodeBuf[off++] = iDWord;
+    }
 #elif defined(RT_ARCH_ARM64)
     /* ins vecsrc[iDWord], gpr */
     pCodeBuf[off++] = Armv8A64MkVecInstrIns(iVecRegDst, iGprSrc, iDWord, kArmv8InstrUmovInsSz_U32);
@@ -8599,12 +8727,16 @@ iemNativeEmitSimdStoreGprToVecRegU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, u
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreGprToVecRegU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iVecRegDst, uint8_t iGprSrc, uint8_t iDWord)
 {
-    Assert(iDWord <= 3);
+    Assert(iDWord <= 7);
 
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iVecRegDst, iGprSrc, iDWord);
+    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 19), off, iVecRegDst, iGprSrc, iDWord);
 #elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst, iGprSrc, iDWord);
+    Assert(!(iVecRegDst & 0x1));
+    if (iDWord >= 4)
+        off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst + 1, iGprSrc, iDWord - 4);
+    else
+        off = iemNativeEmitSimdStoreGprToVecRegU32Ex(iemNativeInstrBufEnsure(pReNative, off, 1), off, iVecRegDst,     iGprSrc, iDWord);
 #else
 # error "port me"
 #endif

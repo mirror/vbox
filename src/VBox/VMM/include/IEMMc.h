@@ -702,6 +702,27 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
     } while (0)
+#define IEM_MC_STORE_YREG_U32_U256(a_iYRegDst, a_iDwDst, a_u256Value, a_iDwSrc) \
+    do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         if ((a_iDwDst) < 4) \
+            pVCpu->cpum.GstCtx.XState.x87.aXMM[(iYRegDstTmp)].au32[(a_iDwDst)] = (a_u256Value).au32[(a_iDwSrc)]; \
+         else \
+            pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(iYRegDstTmp)].au32[(a_iDwDst) - 4] = (a_u256Value).au32[(a_iDwSrc)]; \
+    } while (0)
+#define IEM_MC_STORE_YREG_U64_U256(a_iYRegDst, a_iQwDst, a_u256Value, a_iQwSrc) \
+    do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         if ((a_iQwDst) < 2) \
+            pVCpu->cpum.GstCtx.XState.x87.aXMM[(iYRegDstTmp)].au64[(a_iQwDst)] = (a_u256Value).au64[(a_iQwDst)]; \
+         else \
+            pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(iYRegDstTmp)].au64[(a_iQwDst) - 4] = (a_u256Value).au64[(a_iQwDst)]; \
+    } while (0)
+#define IEM_MC_STORE_YREG_U64(a_iYRegDst, a_iQword, a_u64Value) \
+    do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         if ((a_iQword) < 2) \
+            pVCpu->cpum.GstCtx.XState.x87.aXMM[(iYRegDstTmp)].au64[(a_iQword)] = (a_u64Value); \
+         else \
+            pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(iYRegDstTmp)].au64[(a_iQword) - 2] = (a_u64Value); \
+    } while (0)
 
 #define IEM_MC_BROADCAST_YREG_U8_ZX_VLMAX(a_iYRegDst, a_u8Src) \
     do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
@@ -888,6 +909,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
     } while (0)
+
+#define IEM_MC_CLEAR_ZREG_256_UP(a_iYReg) \
+    do { IEM_MC_INT_CLEAR_ZMM_256_UP(a_iYReg); } while (0)
 
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
