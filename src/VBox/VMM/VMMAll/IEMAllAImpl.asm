@@ -5017,14 +5017,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128_r32
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  xmm0, [A2]
         vmovd    xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
         vmovdqu  [A1], xmm0
 
-        AVX128_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128_r32
@@ -5072,14 +5072,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128_r64
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  xmm0, [A2]
         vmovq    xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
         vmovdqu  [A1], xmm0
 
-        AVX128_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128_r64
@@ -5126,14 +5126,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu   xmm0, [A2]
         vmovdqu   xmm1, [A3]
         v %+ %1   xmm0, xmm1
         vmovdqu  [A1], xmm0
 
-        AVX128_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128
@@ -5141,7 +5141,7 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu    ymm0, [A2]
         vmovdqu    ymm1, [A3]
@@ -5152,7 +5152,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
  %endif
         vmovdqu    [A1], ymm0
 
-        AVX256_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
