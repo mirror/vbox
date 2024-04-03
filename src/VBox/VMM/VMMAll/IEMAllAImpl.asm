@@ -5022,7 +5022,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r32, 16
         vmovdqu  xmm0, [A2]
         vmovd    xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
-        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+        vmovdqu  [A1], xmm0
 
         AVX128_ST_XSAVEAREA_MXCSR A1
         IEMIMPL_AVX_PROLOGUE
@@ -5077,7 +5077,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_r64, 16
         vmovdqu  xmm0, [A2]
         vmovq    xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
-        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+        vmovdqu  [A1], xmm0
 
         AVX128_ST_XSAVEAREA_MXCSR A1
         IEMIMPL_AVX_EPILOGUE
@@ -5131,7 +5131,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
         vmovdqu   xmm0, [A2]
         vmovdqu   xmm1, [A3]
         v %+ %1   xmm0, xmm1
-        vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
+        vmovdqu  [A1], xmm0
 
         AVX128_ST_XSAVEAREA_MXCSR A1
         IEMIMPL_AVX_EPILOGUE
@@ -5150,7 +5150,7 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
  %else
         v %+ %1    ymm0, xmm1
  %endif
-        vmovdqu    [A1 + IEMAVX256RESULT.uResult], ymm0
+        vmovdqu    [A1], ymm0
 
         AVX256_ST_XSAVEAREA_MXCSR A1
         IEMIMPL_AVX_EPILOGUE
