@@ -1274,6 +1274,44 @@ iemNativeEmitRaiseDivideError(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
+#define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) \
+    off = iemNativeEmitRaiseGp0IfEffAddrUnaligned(pReNative, off, pCallEntry->idxInstr, a_EffAddr, a_cbAlign)
+
+/**
+ * Emits code to raise a \#GP(0) if the given variable contains an unaligned address.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRaiseGp0IfEffAddrUnaligned(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uint8_t idxVarEffAddr, uint8_t cbAlign)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarEffAddr);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarEffAddr, sizeof(RTGCPTR));
+
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may throw an exception.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint8_t const idxLabelRaiseGp0 = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseGp0);
+    uint8_t const idxVarReg        = iemNativeVarRegisterAcquire(pReNative, idxVarEffAddr, &off);
+
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxVarReg, cbAlign - 1, idxLabelRaiseGp0);
+
+    iemNativeVarRegisterRelease(pReNative, idxVarEffAddr);
+    return off;
+}
+
+
 /*********************************************************************************************************************************
 *   Emitters for conditionals (IEM_MC_IF_XXX, IEM_MC_ELSE, IEM_MC_ENDIF)                                                         *
 *********************************************************************************************************************************/
@@ -2843,6 +2881,35 @@ iemNativeEmitFetchGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 }
 
 
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#define IEM_MC_FETCH_GREG_PAIR_U64(a_u128Dst, a_iGRegLo, a_iGRegHi) \
+    off = iemNativeEmitFetchGregPairU64(pReNative, off, a_u128Dst, a_iGRegLo, a_iGRegHi)
+
+/** Emits code for IEM_MC_FETCH_GREG_PAIR_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchGregPairU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGRegLo, uint8_t iGRegHi)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(RTUINT128U));
+    Assert(iGRegLo < 16 && iGRegHi < 16);
+
+    uint8_t const idxGstFullRegLo = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegLo),
+                                                                    kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxGstFullRegHi = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegHi),
+                                                                    kIemNativeGstRegUse_ReadOnly);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxDstVar, &off);
+    off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxVarReg, idxGstFullRegLo, 0);
+    off = iemNativeEmitSimdStoreGprToVecRegU64(pReNative, off, idxVarReg, idxGstFullRegHi, 1);
+
+    iemNativeVarSimdRegisterRelease(pReNative, idxDstVar);
+    iemNativeRegFreeTmp(pReNative, idxGstFullRegLo);
+    iemNativeRegFreeTmp(pReNative, idxGstFullRegHi);
+    return off;
+}
+#endif
+
 
 /*********************************************************************************************************************************
 *   Emitters for general purpose register stores (IEM_MC_STORE_GREG_XXX).                                                        *
@@ -3272,6 +3339,36 @@ iemNativeEmitClearHighGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
+
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#define IEM_MC_STORE_GREG_PAIR_U64(a_iGRegLo, a_iGRegHi, a_u128Value) \
+    off = iemNativeEmitStoreGregPairU64(pReNative, off, a_iGRegLo, a_iGRegHi, a_u128Value)
+
+/** Emits code for IEM_MC_FETCH_GREG_PAIR_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStoreGregPairU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGRegLo, uint8_t iGRegHi, uint8_t idxDstVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxDstVar);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxDstVar, sizeof(RTUINT128U));
+    Assert(iGRegLo < 16 && iGRegHi < 16);
+
+    uint8_t const idxGstFullRegLo = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegLo),
+                                                                    kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxGstFullRegHi = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegHi),
+                                                                    kIemNativeGstRegUse_ForFullWrite);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarSimdRegisterAcquire(pReNative, idxDstVar, &off, true /*fInitialized*/);
+    off = iemNativeEmitSimdLoadGprFromVecRegU64(pReNative, off, idxGstFullRegLo, idxVarReg, 0);
+    off = iemNativeEmitSimdLoadGprFromVecRegU64(pReNative, off, idxGstFullRegHi, idxVarReg, 1);
+
+    iemNativeVarSimdRegisterRelease(pReNative, idxDstVar);
+    iemNativeRegFreeTmp(pReNative, idxGstFullRegLo);
+    iemNativeRegFreeTmp(pReNative, idxGstFullRegHi);
+    return off;
+}
+#endif
 
 
 /*********************************************************************************************************************************
