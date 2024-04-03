@@ -565,12 +565,12 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 
 # elif defined(RT_ARCH_ARM64)
         /* lsr  reg1, regflat, #48 */
-        pCodeBuf[off++] = Armv8A64MkInstrLslImm(pTlbState->idxReg1, idxRegFlatPtr, 4);
+        pCodeBuf[off++] = Armv8A64MkInstrLsrImm(pTlbState->idxReg1, idxRegFlatPtr, 48);
         /* add  reg1, reg1, #1 */
         pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(pTlbState->idxReg1, pTlbState->idxReg1, 1, false /*f64Bit*/);
         /* tst  reg1, #0xfffe */
         Assert(Armv8A64ConvertImmRImmS2Mask32(14, 31) == 0xfffe);
-        pCodeBuf[off++] = Armv8A64MkInstrTstImm(pTlbState->idxReg1, 14, 31,  false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrTstImm(pTlbState->idxReg1, 14, 31, false /*f64Bit*/);
         /* b.nq tlbmiss */
         off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
 
