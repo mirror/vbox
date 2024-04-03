@@ -115,7 +115,7 @@ int tmCpuTickResume(PVMCC pVM, PVMCPUCC pVCpu)
         switch (pVM->tm.s.enmTSCMode)
         {
             case TMTSCMODE_REAL_TSC_OFFSET:
-                pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVCpu->tm.s.u64TSC;
+                pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier - pVCpu->tm.s.u64TSC;
                 break;
             case TMTSCMODE_VIRT_TSC_EMULATED:
             case TMTSCMODE_DYNAMIC:
@@ -162,7 +162,7 @@ int tmCpuTickResumeLocked(PVMCC pVM, PVMCPUCC pVCpu)
             switch (pVM->tm.s.enmTSCMode)
             {
                 case TMTSCMODE_REAL_TSC_OFFSET:
-                    pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVM->tm.s.u64LastPausedTSC;
+                    pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier - pVM->tm.s.u64LastPausedTSC;
                     break;
                 case TMTSCMODE_VIRT_TSC_EMULATED:
                 case TMTSCMODE_DYNAMIC:
@@ -495,7 +495,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPUCC pVCpu, bool fCheckTimers)
         switch (pVM->tm.s.enmTSCMode)
         {
             case TMTSCMODE_REAL_TSC_OFFSET:
-                u64 = SUPReadTsc();
+                u64 = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier;
                 break;
             case TMTSCMODE_VIRT_TSC_EMULATED:
             case TMTSCMODE_DYNAMIC:
@@ -641,7 +641,7 @@ VMMDECL(uint64_t) TMCpuTicksPerSecond(PVMCC pVM)
             uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGipBySetIndex(pGip, VMMGetCpu(pVM)->iHostCpuSet);
 #endif
             if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))
-                return cTSCTicksPerSecond;
+                return cTSCTicksPerSecond * pVM->tm.s.u8TSCMultiplier;
         }
     }
     return pVM->tm.s.cTSCTicksPerSecond;

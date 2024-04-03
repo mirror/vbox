@@ -477,8 +477,8 @@ typedef struct TM
     bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
-    /** Alignment padding. */
-    bool                        afAlignment1[1];
+    /** The multiplier for TSC. */
+    uint8_t                     u8TSCMultiplier;
     /** WarpDrive percentage.
      * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply
      * this percentage to the raw time source for the period it's been valid in,

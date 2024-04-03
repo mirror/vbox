@@ -334,6 +334,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                               "TSCTicksPerSecond|"
                               "TSCTiedToExecution|"
                               "TSCNotTiedToHalt|"
+                              "TSCMultiplier|"
                               "ScheduleSlack|"
                               "CatchUpStopThreshold|"
                               "CatchUpGiveUpThreshold|"
@@ -419,6 +420,23 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCModeSwitchAllowed = false;
     }
 
+    /** @cfgm{/TM/TSCMultiplier, uint8_t}
+     * This is a multiplier to apply to the host TSC while calculating the guest
+     * TSC.  It's recommended to avoid using a power-of-two value to reduce number
+     * of zeros in least-significant-bits of the scaled TSC.  Defaults to 43 on
+     * ARM64 and 1 on all other hosts. */
+#ifdef RT_ARCH_ARM64
+    pVM->tm.s.u8TSCMultiplier = 43; /* 125/3 + some fudge to get us >= 1GHz from 24MHz */
+#else
+    pVM->tm.s.u8TSCMultiplier = 1;
+#endif
+    rc = CFGMR3QueryU8Def(pCfgHandle, "TSCMultiplier", &pVM->tm.s.u8TSCMultiplier, pVM->tm.s.u8TSCMultiplier);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to query 8-bit value \"TSCMultiplier\""));
+    if (pVM->tm.s.u8TSCMultiplier == 0)
+        return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: \"TSCMultiplier\" must not be zero!"));
+
     /** @cfgm{/TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
      * The number of TSC ticks per second (i.e. the TSC frequency). This will
      * override enmTSCMode.
@@ -427,7 +445,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU64(pCfgHandle, "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost;
+        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost * pVM->tm.s.u8TSCMultiplier;
         if (   (   pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
                 || pVM->tm.s.enmTSCMode == TMTSCMODE_VIRT_TSC_EMULATED)
             && pVM->tm.s.cTSCTicksPerSecond >= _4G)
@@ -449,7 +467,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     else
     {
         LogRel(("TM: NEM overrides the /TM/TSCTicksPerSecond=%RU64 setting.\n", pVM->tm.s.cTSCTicksPerSecond));
-        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost;
+        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost * pVM->tm.s.u8TSCMultiplier;
     }
 
     /** @cfgm{/TM/TSCTiedToExecution, bool, false}
@@ -640,10 +658,10 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 #if !defined(VBOX_VMM_TARGET_ARMV8)
     CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
 #endif
-    LogRel(("TM:     cTSCTicksPerSecond=%'RU64 (%#RX64) enmTSCMode=%d (%s)\n"
+    LogRel(("TM:     cTSCTicksPerSecond=%'RU64 (%#RX64) enmTSCMode=%d (%s) TSCMultiplier=%u\n"
             "TM: cTSCTicksPerSecondHost=%'RU64 (%#RX64)\n"
             "TM: TSCTiedToExecution=%RTbool TSCNotTiedToHalt=%RTbool\n",
-            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM),
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM), pVM->tm.s.u8TSCMultiplier,
             pVM->tm.s.cTSCTicksPerSecondHost, pVM->tm.s.cTSCTicksPerSecondHost,
             pVM->tm.s.fTSCTiedToExecution, pVM->tm.s.fTSCNotTiedToHalt));
 
@@ -1249,7 +1267,7 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     switch (pVM->tm.s.enmTSCMode)
     {
         case TMTSCMODE_REAL_TSC_OFFSET:
-            offTscRawSrc = SUPReadTsc();
+            offTscRawSrc = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier;
             break;
         case TMTSCMODE_DYNAMIC:
         case TMTSCMODE_VIRT_TSC_EMULATED:
@@ -3741,7 +3759,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtEnable(PVM pVM, PVMCPU pVCp
          *  => offTscRawSrcNew  = uRawNewTsc - uOldTsc
          */
         uint64_t uRawOldTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
-        uint64_t uRawNewTsc = SUPReadTsc();
+        uint64_t uRawNewTsc = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier;
         uint32_t cCpus = pVM->cCpus;
         for (uint32_t i = 0; i < cCpus; i++)
         {
@@ -3795,7 +3813,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVC
         /*
          * See tmR3CpuTickParavirtEnable for an explanation of the conversion math.
          */
-        uint64_t uRawOldTsc = SUPReadTsc();
+        uint64_t uRawOldTsc = SUPReadTsc() * pVM->tm.s.u8TSCMultiplier;
         uint64_t uRawNewTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
         uint32_t cCpus = pVM->cCpus;
         for (uint32_t i = 0; i < cCpus; i++)
