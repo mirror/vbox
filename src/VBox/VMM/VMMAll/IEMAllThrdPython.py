@@ -1896,7 +1896,6 @@ class ThreadedFunction(object):
         'IEM_MC_CALL_AVX_AIMPL_3':                  '__aimpl_avx',
         'IEM_MC_CALL_AVX_AIMPL_4':                  '__aimpl_avx',
         'IEM_MC_CALL_AVX_AIMPL_5':                  '__aimpl_avx',
-        'IEM_MC_CALL_AVX_AIMPL_NEW_3':              '__aimpl_avx',
     };
     def analyzeAndAnnotateName(self, aoStmts: List[iai.McStmt]):
         """

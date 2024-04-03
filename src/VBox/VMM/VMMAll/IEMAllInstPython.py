@@ -2994,7 +2994,6 @@ g_dMcStmtParsers = {
     'IEM_MC_CALL_AIMPL_4':                                       (McBlock.parseMcCallAImpl,         True,  True,  True,  ),
     'IEM_MC_CALL_AVX_AIMPL_2':                                   (McBlock.parseMcCallAvxAImpl,      True,  True,  g_fNativeSimd),
     'IEM_MC_CALL_AVX_AIMPL_3':                                   (McBlock.parseMcCallAvxAImpl,      True,  True,  g_fNativeSimd),
-    'IEM_MC_CALL_AVX_AIMPL_NEW_3':                               (McBlock.parseMcCallAvxAImpl,      True,  True,  False, ),
     'IEM_MC_CALL_CIMPL_0':                                       (McBlock.parseMcCallCImpl,         True,  True,  False, ),
     'IEM_MC_CALL_CIMPL_1':                                       (McBlock.parseMcCallCImpl,         True,  True,  False, ),
     'IEM_MC_CALL_CIMPL_2':                                       (McBlock.parseMcCallCImpl,         True,  True,  False, ),

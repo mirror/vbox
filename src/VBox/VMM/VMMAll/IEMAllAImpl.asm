@@ -4816,31 +4816,13 @@ IEMIMPL_V_PMOV_SZ_X pmovzxdq
 
 
 ;;
-; Need to move this as well somewhere better?
-;
-struc IEMAVX128RESULT
-    .uResult      resd 4
-    .MXCSR        resd 1
-endstruc
-
-
-;;
-; Need to move this as well somewhere better?
-;
-struc IEMAVX256RESULT
-    .uResult      resd 8
-    .MXCSR        resd 1
-endstruc
-
-
-;;
 ; Initialize the SSE MXCSR register using the guest value partially to
 ; account for rounding mode, load the value from the given register.
 ;
 ; @uses     4 bytes of stack to save the original value, T0.
 ; @param    1       Expression giving the register holding the guest's MXCSR.
 ;
-%macro SSE_LD_MXCSR 1
+%macro SSE_AVX_LD_MXCSR 1
         sub     xSP, 4
 
         stmxcsr [xSP]
@@ -4863,7 +4845,7 @@ endstruc
 ;
 ; @note Restores the stack pointer.
 ;
-%macro SSE_ST_MXCSR 2
+%macro SSE_AVX_ST_MXCSR 2
         sub     xSP, 4
         stmxcsr [xSP]
         mov     %1, [xSP]
@@ -4871,56 +4853,6 @@ endstruc
         ; Merge the status bits into the original MXCSR value.
         and     %1, X86_MXCSR_XCPT_FLAGS
         or      %1, %2
-
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
-; Initialize the SSE MXCSR register using the guest value partially to
-; account for rounding mode.
-;
-; @uses     4 bytes of stack to save the original value.
-; @param    1       Expression giving the address of the FXSTATE of the guest.
-;
-%macro AVX_LD_XSAVEAREA_MXCSR 1
-        sub     xSP, 4
-
-        stmxcsr [xSP]
-        mov     T0_32, [%1 + X86FXSTATE.MXCSR]
-        and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
-        sub     xSP, 4
-        mov     [xSP], T0_32
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
-; Restores the AVX128 MXCSR register with the original value.
-;
-; @param    1       Expression giving the address where to return the MXCSR value.
-;
-; @note Restores the stack pointer.
-;
-%macro AVX128_ST_XSAVEAREA_MXCSR 1
-        stmxcsr [%1 + IEMAVX128RESULT.MXCSR]
-
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
-; Restores the AVX256 MXCSR register with the original value.
-;
-; @param    1       Expression giving the address where to return the MXCSR value.
-;
-; @note Restores the stack pointer.
-;
-%macro AVX256_ST_XSAVEAREA_MXCSR 1
-        stmxcsr [%1 + IEMAVX256RESULT.MXCSR]
 
         ldmxcsr [xSP]
         add     xSP, 4
@@ -4943,14 +4875,14 @@ endstruc
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movdqu   xmm1, [A3]
         %1       xmm0, xmm1
         movdqu   [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -4959,14 +4891,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  xmm0, [A2]
         vmovdqu  xmm1, [A3]
         v %+ %1  xmm0, xmm0, xmm1
         vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
 
-        AVX128_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128
@@ -4974,14 +4906,14 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  ymm0, [A2]
         vmovdqu  ymm1, [A3]
         v %+ %1  ymm0, ymm0, ymm1
         vmovdqu  [A1 + IEMAVX256RESULT.uResult], ymm0
 
-        AVX256_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
@@ -4989,14 +4921,14 @@ ENDPROC iemAImpl_v %+ %1 %+ _u256
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  xmm0, [A2]
         vmovdqu  xmm1, [A3]
         v %+ %1  xmm0, xmm1
         vmovdqu  [A1 + IEMAVX128RESULT.uResult], xmm0
 
-        AVX128_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u128
@@ -5004,14 +4936,14 @@ ENDPROC iemAImpl_v %+ %1 %+ _u128
 BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 12
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
-        AVX_LD_XSAVEAREA_MXCSR A0
+        SSE_AVX_LD_MXCSR A0_32
 
         vmovdqu  ymm0, [A2]
         vmovdqu  ymm1, [A3]
         v %+ %1  ymm0, ymm1
         vmovdqu  [A1 + IEMAVX256RESULT.uResult], ymm0
 
-        AVX256_ST_XSAVEAREA_MXCSR A1
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_v %+ %1 %+ _u256
@@ -5070,14 +5002,14 @@ IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r32, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movd     xmm1, [A3]
         %1       xmm0, xmm1
         movdqu   [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r32
@@ -5125,14 +5057,14 @@ IEMIMPL_FP_F2_R32 rcpss
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movq     xmm1, [A3]
         %1       xmm0, xmm1
         movdqu   [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128_r64
@@ -5179,14 +5111,14 @@ IEMIMPL_FP_F2_R64 sqrtsd
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu   xmm0, [A2]
         movdqu   xmm1, [A3]
         %1       xmm0, xmm1
         movdqu   [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -5989,12 +5921,12 @@ IEMIMPL_MEDIA_MOVMSK_P movmskpd, vmovmskpd
 BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i32_r64, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvttsd2si T0_32, [A2]
         mov       dword [A1], T0_32
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_cvttsd2si_i32_r64
@@ -6010,12 +5942,12 @@ ENDPROC iemAImpl_cvttsd2si_i32_r64
 BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i64_r64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvttsd2si T0, [A2]
         mov       qword [A1], T0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttsd2si_i64_r64
@@ -6032,12 +5964,12 @@ ENDPROC iemAImpl_cvttsd2si_i64_r64
 BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i32_r64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsd2si  T0_32, [A2]
         mov       dword [A1], T0_32
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsd2si_i32_r64
@@ -6053,12 +5985,12 @@ ENDPROC iemAImpl_cvtsd2si_i32_r64
 BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i64_r64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsd2si  T0, [A2]
         mov       qword [A1], T0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsd2si_i64_r64
@@ -6075,12 +6007,12 @@ ENDPROC iemAImpl_cvtsd2si_i64_r64
 BEGINPROC_FASTCALL iemAImpl_cvttss2si_i32_r32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvttss2si T0_32, [A2]
         mov       dword [A1], T0_32
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttss2si_i32_r32
@@ -6096,12 +6028,12 @@ ENDPROC iemAImpl_cvttss2si_i32_r32
 BEGINPROC_FASTCALL iemAImpl_cvttss2si_i64_r32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvttss2si T0, [A2]
         mov       qword [A1], T0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvttss2si_i64_r32
@@ -6118,12 +6050,12 @@ ENDPROC iemAImpl_cvttss2si_i64_r32
 BEGINPROC_FASTCALL iemAImpl_cvtss2si_i32_r32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtss2si  T0_32, [A2]
         mov       dword [A1], T0_32
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtss2si_i32_r32
@@ -6139,12 +6071,12 @@ ENDPROC iemAImpl_cvtss2si_i32_r32
 BEGINPROC_FASTCALL iemAImpl_cvtss2si_i64_r32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtss2si  T0, [A2]
         mov       qword [A1], T0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtss2si_i64_r32
@@ -6161,12 +6093,12 @@ ENDPROC iemAImpl_cvtss2si_i64_r32
 BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsi2ss  xmm0, dword [A2]
         movd      dword [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i32
@@ -6182,12 +6114,12 @@ ENDPROC iemAImpl_cvtsi2ss_r32_i32
 BEGINPROC_FASTCALL iemAImpl_cvtsi2ss_r32_i64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsi2ss  xmm0, qword [A2]
         movd      dword [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2ss_r32_i64
@@ -6204,12 +6136,12 @@ ENDPROC iemAImpl_cvtsi2ss_r32_i64
 BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i32, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsi2sd  xmm0, dword [A2]
         movq      [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i32
@@ -6225,12 +6157,12 @@ ENDPROC iemAImpl_cvtsi2sd_r64_i32
 BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         cvtsi2sd  xmm0, qword [A2]
         movq      [A1], xmm0
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i64
@@ -6248,14 +6180,14 @@ ENDPROC iemAImpl_cvtsi2sd_r64_i64
 BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         ucomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ucomiss_u128
@@ -6263,14 +6195,14 @@ ENDPROC             iemAImpl_ucomiss_u128
 BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         vucomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC             iemAImpl_vucomiss_u128
@@ -6288,14 +6220,14 @@ ENDPROC             iemAImpl_vucomiss_u128
 BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         ucomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ucomisd_u128
@@ -6303,14 +6235,14 @@ ENDPROC             iemAImpl_ucomisd_u128
 BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         vucomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vucomisd_u128
@@ -6327,14 +6259,14 @@ ENDPROC             iemAImpl_vucomisd_u128
 BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         comiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_comiss_u128
@@ -6342,14 +6274,14 @@ ENDPROC             iemAImpl_comiss_u128
 BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         vcomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vcomiss_u128
@@ -6367,14 +6299,14 @@ ENDPROC             iemAImpl_vcomiss_u128
 BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         comisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_comisd_u128
@@ -6382,14 +6314,14 @@ ENDPROC             iemAImpl_comisd_u128
 BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_MXCSR A0_32
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         movdqu  xmm1, [A3]
         vcomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
-        SSE_ST_MXCSR R0_32, A0_32
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_vcomisd_u128

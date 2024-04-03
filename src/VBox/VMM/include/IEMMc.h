@@ -3078,10 +3078,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a1              The first extra argument.
  * @param   a2              The second extra argument.
  */
-#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2) \
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        a_pfnAImpl(&pVCpu->cpum.GstCtx.XState, (a1), (a2)); \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
+                                                         (a0), (a1)); \
     } while (0)
 
 /**
@@ -3094,32 +3095,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a2              The second extra argument.
  * @param   a3              The third extra argument.
  */
-#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3) \
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        a_pfnAImpl(&pVCpu->cpum.GstCtx.XState, (a1), (a2), (a3)); \
-    } while (0)
-
-/**
- * Calls a AVX assembly implementation taking three visible arguments.
- *
- * @param   a_pfnAImpl      Pointer to the assembly SSE routine.
- * @param   a0              The first extra argument.
- * @param   a1              The second extra argument.
- * @param   a2              The third extra argument.
- *
- * @note The and'ing with X86_MXCSR_XCPT_FLAGS is just a precaution as
- *       the called helper should return an MXCSR with only new exception flags
- *       added.
- * @note This is temporarily required for the v(u)comis* stuff because
- *       tstIEMAImpl will not compile otherwise, will be removed once the AVX
- *       stuff is reworked, see @bugref{10641}
- */
-#define IEM_MC_CALL_AVX_AIMPL_NEW_3(a_pfnAImpl, a0, a1, a2) \
-    do { \
-        IEM_MC_PREPARE_SSE_USAGE(); \
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR |=   a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR, (a0), (a1), (a2)) \
-                                               & X86_MXCSR_XCPT_FLAGS; \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
+                                                         (a0), (a1), (a2)); \
     } while (0)
 
 /** @note Not for IOPL or IF testing. */

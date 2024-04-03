@@ -8717,10 +8717,10 @@ iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
 *********************************************************************************************************************************/
 
 /**
- * Common worker for IEM_MC_CALL_SSE_AIMPL_XXX.
+ * Common worker for IEM_MC_CALL_SSE_AIMPL_XXX/IEM_MC_CALL_AVX_AIMPL_XXX.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallSseAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
+iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
 {
     /* Grab the MXCSR register, it must not be call volatile or we end up freeing it when setting up the call below. */
     uint8_t const  idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
@@ -8772,7 +8772,7 @@ iemNativeEmitCallSseAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAImplCommon(pReNative, off, pfnAImpl, 2);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2);
 }
 
 
@@ -8786,43 +8786,13 @@ iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_SSE_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAImplCommon(pReNative, off, pfnAImpl, 3);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3);
 }
 
 
 /*********************************************************************************************************************************
 *   Emitters for IEM_MC_CALL_AVX_AIMPL_XXX                                                                                       *
 *********************************************************************************************************************************/
-
-/**
- * Common worker for IEM_MC_CALL_AVX_AIMPL_XXX.
- */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
-{
-    /*
-     * Need to do the FPU preparation.
-     */
-    off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/);
-
-    /*
-     * Do all the call setup and cleanup.
-     */
-    off = iemNativeEmitCallCommon(pReNative, off, cArgs + IEM_AVX_AIMPL_HIDDEN_ARGS, IEM_AVX_AIMPL_HIDDEN_ARGS);
-
-    /*
-     * Load the XState pointer.
-     */
-    off = iemNativeEmitLeaGprByGstRegRef(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, kIemNativeGstRegRef_XState, 0 /*idxRegInClass*/);
-
-    /*
-     * Make the call.
-     */
-    off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
-
-    return off;
-}
-
 
 #define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
     off = iemNativeEmitCallAvxAImpl2(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1))
@@ -8833,7 +8803,7 @@ iemNativeEmitCallAvxAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallAvxAImplCommon(pReNative, off, pfnAImpl, 2);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2);
 }
 
 
@@ -8847,7 +8817,7 @@ iemNativeEmitCallAvxAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_AVX_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallAvxAImplCommon(pReNative, off, pfnAImpl, 3);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3);
 }
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 

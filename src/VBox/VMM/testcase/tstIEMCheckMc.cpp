@@ -1081,8 +1081,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AVX_AIMPL_NEW_3(a_pfnAImpl, a0, a1, a2) \
-    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_AVX_AIMPL_4(a_pfnAImpl, a0, a1, a2, a3) \
     do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; } while (0)
 
