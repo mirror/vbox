@@ -573,11 +573,10 @@ static int checkTargetDirOne(MSIHANDLE hModule, PTGTDIRSECCTX pCtx, const char *
 
                                     break;
                                 }
-
+#ifdef DEBUG
                                 case ACCESS_DENIED_ACE_TYPE: /* We're only interested in the ALLOW ACE. */
                                 {
                                     ACCESS_DENIED_ACE const *pAce = (ACCESS_DENIED_ACE *)pAceHdr;
-#ifdef DEBUG
                                     LPWSTR pwszSid = NULL;
                                     ConvertSidToStringSid((PSID)&pAce->SidStart, &pwszSid);
 
@@ -585,10 +584,12 @@ static int checkTargetDirOne(MSIHANDLE hModule, PTGTDIRSECCTX pCtx, const char *
                                                pwszSid ? pwszSid : L"<Allocation Error>", pAce->Mask);
 
                                     LocalFree(pwszSid);
-#endif /* DEBUG */
-                                    /* Ignore everything else. */
                                     break;
                                 }
+#endif /* DEBUG */
+                                default:
+                                    /* Ignore everything else. */
+                                    break;
                             }
                         }
                         else
