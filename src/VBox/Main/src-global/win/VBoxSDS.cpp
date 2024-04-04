@@ -812,6 +812,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         { "--loginterval",  'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "-loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "/loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "/?",             'h',    RTGETOPT_REQ_NOTHING }, /* Most Windows programs use '/?', so have this as an alias. */
+        { "/h",             'h',    RTGETOPT_REQ_NOTHING }, /* Ditto for '/h'. */
+        { "/help",          'h',    RTGETOPT_REQ_NOTHING }  /* Ditto for '/help'. */
     };
 
     bool            fRun = true;
