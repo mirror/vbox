@@ -95,9 +95,9 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 *   Executable Memory Allocator                                                                                                  *
 *********************************************************************************************************************************/
 /** The chunk sub-allocation unit size in bytes. */
-#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE      128
+#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE      256
 /** The chunk sub-allocation unit size as a shift factor. */
-#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT     7
+#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT     8
 /** Enables adding a header to the sub-allocator allocations.
  * This is useful for freeing up executable memory among other things.  */
 #define IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
