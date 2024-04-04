@@ -2796,10 +2796,20 @@ void UICommon::sltHandleFontScaleFactorChanged(int iFontScaleFactor)
 {
     QFont appFont = qApp->font();
 
+    /* Let's round up some double var: */
+    auto roundUp = [](double dValue)
+    {
+        const int iValue = dValue;
+        return dValue > (double)iValue ? iValue + 1 : iValue;
+    };
+
+    /* Do we have pixel font? */
     if (iOriginalFontPixelSize != -1)
-        appFont.setPixelSize(iFontScaleFactor / 100.f * iOriginalFontPixelSize);
+        appFont.setPixelSize(roundUp(iFontScaleFactor / 100.f * iOriginalFontPixelSize));
+    /* Point font otherwise: */
     else
-        appFont.setPointSize(iFontScaleFactor / 100.f * iOriginalFontPointSize);
+        appFont.setPointSize(roundUp(iFontScaleFactor / 100.f * iOriginalFontPointSize));
+
     qApp->setFont(appFont);
 }
 
