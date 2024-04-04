@@ -18474,50 +18474,56 @@ static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PC
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmpps_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpps_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
     {
-        if (iemAImpl_cmp_worker_r32(pfMxcsr, &pSrc->uSrc1.ar32[i], &pSrc->uSrc2.ar32[i], bEvil & 0x7))
+        if (iemAImpl_cmp_worker_r32(&uMxCsrIn, &pSrc->uSrc1.ar32[i], &pSrc->uSrc2.ar32[i], bEvil & 0x7))
             puDst->au32[i] = UINT32_MAX;
         else
             puDst->au32[i] = 0;
     }
+
+    return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmppd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmppd_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
     {
-        if (iemAImpl_cmp_worker_r64(pfMxcsr, &pSrc->uSrc1.ar64[i], &pSrc->uSrc2.ar64[i], bEvil & 0x7))
+        if (iemAImpl_cmp_worker_r64(&uMxCsrIn, &pSrc->uSrc1.ar64[i], &pSrc->uSrc2.ar64[i], bEvil & 0x7))
             puDst->au64[i] = UINT64_MAX;
         else
             puDst->au64[i] = 0;
     }
+
+    return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmpss_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpss_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
 {
-    if (iemAImpl_cmp_worker_r32(pfMxcsr, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bEvil & 0x7))
+    if (iemAImpl_cmp_worker_r32(&uMxCsrIn, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bEvil & 0x7))
         puDst->au32[0] = UINT32_MAX;
     else
         puDst->au32[0] = 0;
 
     puDst->au32[1] = pSrc->uSrc1.au32[1];
     puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmpsd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpsd_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
 {
-    if (iemAImpl_cmp_worker_r64(pfMxcsr, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bEvil & 0x7))
+    if (iemAImpl_cmp_worker_r64(&uMxCsrIn, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bEvil & 0x7))
         puDst->au64[0] = UINT64_MAX;
     else
         puDst->au64[0] = 0;
 
     puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
 }
 #endif
 
@@ -18571,36 +18577,42 @@ static RTFLOAT64U iemAImpl_round_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64
 }
 
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(void, iemAImpl_roundss_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundss_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    puDst->ar32[0] = iemAImpl_round_worker_r32(pfMxcsr, &pSrc->uSrc2.ar32[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    puDst->ar32[0] = iemAImpl_round_worker_r32(&uMxCsrIn, &pSrc->uSrc2.ar32[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     puDst->au32[1] = pSrc->uSrc1.au32[1];
     puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_roundsd_u128,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundsd_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    puDst->ar64[0] = iemAImpl_round_worker_r64(pfMxcsr, &pSrc->uSrc2.ar64[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    puDst->ar64[0] = iemAImpl_round_worker_r64(&uMxCsrIn, &pSrc->uSrc2.ar64[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_roundps_u128_fallback,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
     {
-        puDst->ar32[i] = iemAImpl_round_worker_r32(pfMxcsr, &pSrc->uSrc2.ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+        puDst->ar32[i] = iemAImpl_round_worker_r32(&uMxCsrIn, &pSrc->uSrc2.ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     }
+
+    return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_roundpd_u128_fallback,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
     {
-        puDst->ar64[i] = iemAImpl_round_worker_r64(pfMxcsr, &pSrc->uSrc2.ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+        puDst->ar64[i] = iemAImpl_round_worker_r64(&uMxCsrIn, &pSrc->uSrc2.ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     }
+
+    return uMxCsrIn;
 }
 
 /**
@@ -19247,18 +19259,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vperm2f128_u256_fallback,(PRTUINT256U puDst, PC
 /**
  * DPPS
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_dpps_u128_fallback,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(pfMxcsr, puDst, pSrc, bImm);
+    RT_NOREF(puDst, pSrc, bImm);
     AssertReleaseFailed();
+    return uMxCsrIn;
 }
 
 
 /**
  * DPPD
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_dppd_u128_fallback,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(pfMxcsr, puDst, pSrc, bImm);
+    RT_NOREF(puDst, pSrc, bImm);
     AssertReleaseFailed();
+    return uMxCsrIn;
 }

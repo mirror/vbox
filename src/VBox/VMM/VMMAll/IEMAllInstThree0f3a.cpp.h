@@ -174,16 +174,14 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMXCSRF2XMMIMM8
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_MXCSR(pfMxcsr);
 
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(pfnU128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), Dst);
 
@@ -198,21 +196,19 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMXCSRF2XMMIMM8
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
         IEM_MC_LOCAL(RTGCPTR,                       GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
         IEM_MC_FETCH_MEM_XMM_ALIGN_SSE_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_REF_MXCSR(pfMxcsr);
-        IEM_MC_CALL_VOID_AIMPL_4(pfnU128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), Dst);
 
@@ -325,15 +321,13 @@ FNIEMOP_DEF(iemOp_roundss_Vss_Wss_Ib)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_roundss_u128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundss_u128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U32(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDword*/, Dst);
 
@@ -348,22 +342,20 @@ FNIEMOP_DEF(iemOp_roundss_Vss_Wss_Ib)
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
         IEM_MC_LOCAL(RTGCPTR,                       GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
         IEM_MC_FETCH_MEM_XMM_U32_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm),
                                               0 /*a_iDword*/, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_REF_MXCSR(pfMxcsr);
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_roundss_u128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundss_u128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U32(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDword*/, Dst);
 
@@ -389,15 +381,13 @@ FNIEMOP_DEF(iemOp_roundsd_Vsd_Wsd_Ib)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_MXCSR(pfMxcsr);
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_roundsd_u128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundsd_u128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U64(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQword*/, Dst);
 
@@ -412,22 +402,20 @@ FNIEMOP_DEF(iemOp_roundsd_Vsd_Wsd_Ib)
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEM_MC_LOCAL(IEMMEDIAF2XMMSRC,              Src);
         IEM_MC_LOCAL(X86XMMREG,                     Dst);
-        IEM_MC_ARG(uint32_t *,                      pfMxcsr,                0);
-        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    1);
-        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    2);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            pDst,           Dst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCIEMMEDIAF2XMMSRC,    pSrc,           Src,    1);
         IEM_MC_LOCAL(RTGCPTR,                       GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    3);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
         IEM_MC_FETCH_MEM_XMM_U64_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm),
                                               0 /*a_iQword */, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_REF_MXCSR(pfMxcsr);
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_roundsd_u128, pfMxcsr, pDst, pSrc, bImmArg);
+        IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundsd_u128, pDst, pSrc, bImmArg);
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U64(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQword*/, Dst);
 

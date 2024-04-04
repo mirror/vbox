@@ -6384,7 +6384,8 @@ endstruc
 ;
 ; CMPPS (SSE)
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first media register size operand (output).
 ; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
 ; @param    A3      The 8-bit immediate (input).
@@ -6392,7 +6393,7 @@ endstruc
 BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
@@ -6408,7 +6409,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         call    T1
         movdqu  [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
  %assign bImm 0
@@ -6430,7 +6431,8 @@ ENDPROC iemAImpl_cmpps_u128
 ;
 ; @param    1       The instruction name.
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first media register size operand (output).
 ; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
 ; @param    A3      The 8-bit immediate (input).
@@ -6439,7 +6441,7 @@ ENDPROC iemAImpl_cmpps_u128
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
@@ -6455,7 +6457,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         call    T1
         movdqu  [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
  %assign bImm 0
@@ -6482,7 +6484,8 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
 ;
 ; @param    1       The instruction name.
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first media register size operand (output).
 ; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
 ; @param    A3      The 8-bit immediate (input).
@@ -6491,7 +6494,7 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
@@ -6507,7 +6510,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         call    T1
         movdqu  [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
  %assign bImm 0
