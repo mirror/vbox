@@ -7485,7 +7485,7 @@ static void SseBinaryR32I64Test(void)
 /*
  * Compare SSE operations on single single-precision floating point values - outputting only EFLAGS.
  */
-TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R32_R32_T, SSE_COMPARE_EFL_R32_R32_TEST_T, PFNIEMAIMPLF2EFLMXCSR128);
+TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R32_R32_T, SSE_COMPARE_EFL_R32_R32_TEST_T, PFNIEMAIMPLF2EFLMXCSRR32R32);
 
 static SSE_COMPARE_EFL_R32_R32_T g_aSseCompareEflR32R32[] =
 {
@@ -7517,7 +7517,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
     uint32_t cMinNormalPairs       = (cTests - 144) / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareEflR32R32); iFn++)
     {
-        PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR32R32[iFn].pfnNative ? g_aSseCompareEflR32R32[iFn].pfnNative : g_aSseCompareEflR32R32[iFn].pfn;
+        PFNIEMAIMPLF2EFLMXCSRR32R32 const pfn = g_aSseCompareEflR32R32[iFn].pfnNative ? g_aSseCompareEflR32R32[iFn].pfnNative : g_aSseCompareEflR32R32[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
         AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareEflR32R32[iFn]), RTEXITCODE_FAILURE);
@@ -7526,14 +7526,9 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
             SSE_COMPARE_EFL_R32_R32_TEST_T TestData; RT_ZERO(TestData);
-            X86XMMREG ValIn1; RT_ZERO(ValIn1);
-            X86XMMREG ValIn2; RT_ZERO(ValIn2);
 
             TestData.r32ValIn1 = iTest < cTests ? RandR32Src(iTest) : s_aSpecials[iTest - cTests].Val1;
             TestData.r32ValIn2 = iTest < cTests ? RandR32Src(iTest) : s_aSpecials[iTest - cTests].Val2;
-
-            ValIn1.ar32[0] = TestData.r32ValIn1;
-            ValIn2.ar32[0] = TestData.r32ValIn2;
 
             if (   RTFLOAT32U_IS_NORMAL(&TestData.r32ValIn1)
                 && RTFLOAT32U_IS_NORMAL(&TestData.r32ValIn2))
@@ -7557,7 +7552,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
                                           | X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrM  = fMxcsrIn;
                         uint32_t fEFlagsM = fEFlags;
-                        fMxcsrM = pfn(fMxcsrIn, &fEFlagsM, &ValIn1, &ValIn2);
+                        fMxcsrM = pfn(fMxcsrIn, &fEFlagsM, TestData.r32ValIn1, TestData.r32ValIn2);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.fEflIn     = fEFlags;
@@ -7567,7 +7562,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
                         uint32_t fEFlagsU = fEFlags;
-                        fMxcsrU = pfn(fMxcsrIn, &fEFlagsU, &ValIn1, &ValIn2);
+                        fMxcsrU = pfn(fMxcsrIn, &fEFlagsU, TestData.r32ValIn1, TestData.r32ValIn2);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.fEflIn     = fEFlags;
@@ -7580,7 +7575,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
                             uint32_t fMxcsr1  = fMxcsrIn;
                             uint32_t fEFlags1 = fEFlags;
-                            fMxcsr1 = pfn(fMxcsrIn, &fEFlags1, &ValIn1, &ValIn2);
+                            fMxcsr1 = pfn(fMxcsrIn, &fEFlags1, TestData.r32ValIn1, TestData.r32ValIn2);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.fEflIn     = fEFlags;
@@ -7593,7 +7588,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
                                 uint32_t fMxcsr2  = fMxcsrIn;
                                 uint32_t fEFlags2 = fEFlags;
-                                fMxcsr2 = pfn(fMxcsrIn, &fEFlags2, &ValIn1, &ValIn2);
+                                fMxcsr2 = pfn(fMxcsrIn, &fEFlags2, TestData.r32ValIn1, TestData.r32ValIn2);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.fEflIn     = fEFlags;
@@ -7607,7 +7602,7 @@ static RTEXITCODE SseCompareEflR32R32Generate(uint32_t cTests, const char * cons
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
                                         uint32_t fMxcsr3  = fMxcsrIn;
                                         uint32_t fEFlags3 = fEFlags;
-                                        fMxcsr3 = pfn(fMxcsrIn, &fEFlags3, &ValIn1, &ValIn2);
+                                        fMxcsr3 = pfn(fMxcsrIn, &fEFlags3, TestData.r32ValIn1, TestData.r32ValIn2);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.fEflIn     = fEFlags;
@@ -7633,20 +7628,15 @@ static void SseCompareEflR32R32Test(void)
 
         SSE_COMPARE_EFL_R32_R32_TEST_T const * const    paTests = g_aSseCompareEflR32R32[iFn].paTests;
         uint32_t const                                  cTests  = g_aSseCompareEflR32R32[iFn].cTests;
-        PFNIEMAIMPLF2EFLMXCSR128                        pfn     = g_aSseCompareEflR32R32[iFn].pfn;
+        PFNIEMAIMPLF2EFLMXCSRR32R32                     pfn     = g_aSseCompareEflR32R32[iFn].pfn;
         uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareEflR32R32[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
-                X86XMMREG ValIn1; RT_ZERO(ValIn1);
-                X86XMMREG ValIn2; RT_ZERO(ValIn2);
-
-                ValIn1.ar32[0] = paTests[iTest].r32ValIn1;
-                ValIn2.ar32[0] = paTests[iTest].r32ValIn2;
                 uint32_t fEFlags = paTests[iTest].fEflIn;
-                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &fEFlags, &ValIn1, &ValIn2);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &fEFlags, paTests[iTest].r32ValIn1, paTests[iTest].r32ValIn2);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || fEFlags != paTests[iTest].fEflOut)
                     RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x efl=%#08x in1=%s in2=%s\n"
@@ -7670,7 +7660,7 @@ static void SseCompareEflR32R32Test(void)
 /*
  * Compare SSE operations on single single-precision floating point values - outputting only EFLAGS.
  */
-TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R64_R64_T, SSE_COMPARE_EFL_R64_R64_TEST_T, PFNIEMAIMPLF2EFLMXCSR128);
+TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_EFL_R64_R64_T, SSE_COMPARE_EFL_R64_R64_TEST_T, PFNIEMAIMPLF2EFLMXCSRR64R64);
 
 static SSE_COMPARE_EFL_R64_R64_T g_aSseCompareEflR64R64[] =
 {
@@ -7702,7 +7692,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
     uint32_t cMinNormalPairs       = (cTests - 144) / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareEflR64R64); iFn++)
     {
-        PFNIEMAIMPLF2EFLMXCSR128 const pfn = g_aSseCompareEflR64R64[iFn].pfnNative ? g_aSseCompareEflR64R64[iFn].pfnNative : g_aSseCompareEflR64R64[iFn].pfn;
+        PFNIEMAIMPLF2EFLMXCSRR64R64 const pfn = g_aSseCompareEflR64R64[iFn].pfnNative ? g_aSseCompareEflR64R64[iFn].pfnNative : g_aSseCompareEflR64R64[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
         AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareEflR64R64[iFn]), RTEXITCODE_FAILURE);
@@ -7711,14 +7701,9 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
             SSE_COMPARE_EFL_R64_R64_TEST_T TestData; RT_ZERO(TestData);
-            X86XMMREG ValIn1; RT_ZERO(ValIn1);
-            X86XMMREG ValIn2; RT_ZERO(ValIn2);
 
             TestData.r64ValIn1 = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].Val1;
             TestData.r64ValIn2 = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].Val2;
-
-            ValIn1.ar64[0] = TestData.r64ValIn1;
-            ValIn2.ar64[0] = TestData.r64ValIn2;
 
             if (   RTFLOAT64U_IS_NORMAL(&TestData.r64ValIn1)
                 && RTFLOAT64U_IS_NORMAL(&TestData.r64ValIn2))
@@ -7742,7 +7727,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
                                           | X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrM  = fMxcsrIn;
                         uint32_t fEFlagsM = fEFlags;
-                        fMxcsrM = pfn(fMxcsrIn, &fEFlagsM, &ValIn1, &ValIn2);
+                        fMxcsrM = pfn(fMxcsrIn, &fEFlagsM, TestData.r64ValIn1, TestData.r64ValIn2);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.fEflIn     = fEFlags;
@@ -7752,7 +7737,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
                         uint32_t fMxcsrU  = fMxcsrIn;
                         uint32_t fEFlagsU = fEFlags;
-                        fMxcsrU = pfn(fMxcsrIn, &fEFlagsU, &ValIn1, &ValIn2);
+                        fMxcsrU = pfn(fMxcsrIn, &fEFlagsU, TestData.r64ValIn1, TestData.r64ValIn2);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.fEflIn     = fEFlags;
@@ -7765,7 +7750,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
                             uint32_t fMxcsr1  = fMxcsrIn;
                             uint32_t fEFlags1 = fEFlags;
-                            fMxcsr1 = pfn(fMxcsrIn, &fEFlags1, &ValIn1, &ValIn2);
+                            fMxcsr1 = pfn(fMxcsrIn, &fEFlags1, TestData.r64ValIn1, TestData.r64ValIn2);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.fEflIn     = fEFlags;
@@ -7778,7 +7763,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
                                 uint32_t fMxcsr2  = fMxcsrIn;
                                 uint32_t fEFlags2 = fEFlags;
-                                fMxcsr2 = pfn(fMxcsrIn, &fEFlags2, &ValIn1, &ValIn2);
+                                fMxcsr2 = pfn(fMxcsrIn, &fEFlags2, TestData.r64ValIn1, TestData.r64ValIn2);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.fEflIn     = fEFlags;
@@ -7792,7 +7777,7 @@ static RTEXITCODE SseCompareEflR64R64Generate(uint32_t cTests, const char * cons
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
                                         uint32_t fMxcsr3  = fMxcsrIn;
                                         uint32_t fEFlags3 = fEFlags;
-                                        fMxcsr3 = pfn(fMxcsrIn, &fEFlags3, &ValIn1, &ValIn2);
+                                        fMxcsr3 = pfn(fMxcsrIn, &fEFlags3, TestData.r64ValIn1, TestData.r64ValIn2);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.fEflIn     = fEFlags;
@@ -7818,20 +7803,15 @@ static void SseCompareEflR64R64Test(void)
 
         SSE_COMPARE_EFL_R64_R64_TEST_T const * const    paTests = g_aSseCompareEflR64R64[iFn].paTests;
         uint32_t const                                  cTests  = g_aSseCompareEflR64R64[iFn].cTests;
-        PFNIEMAIMPLF2EFLMXCSR128                        pfn     = g_aSseCompareEflR64R64[iFn].pfn;
+        PFNIEMAIMPLF2EFLMXCSRR64R64                     pfn     = g_aSseCompareEflR64R64[iFn].pfn;
         uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareEflR64R64[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
-                X86XMMREG ValIn1; RT_ZERO(ValIn1);
-                X86XMMREG ValIn2; RT_ZERO(ValIn2);
-
-                ValIn1.ar64[0] = paTests[iTest].r64ValIn1;
-                ValIn2.ar64[0] = paTests[iTest].r64ValIn2;
                 uint32_t fEFlags = paTests[iTest].fEflIn;
-                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &fEFlags, &ValIn1, &ValIn2);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &fEFlags, paTests[iTest].r64ValIn1, paTests[iTest].r64ValIn2);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || fEFlags != paTests[iTest].fEflOut)
                     RTTestFailed(g_hTest, "#%04u%s: mxcsr=%#08x efl=%#08x in1=%s in2=%s\n"

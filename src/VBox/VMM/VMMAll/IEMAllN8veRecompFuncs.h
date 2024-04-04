@@ -7763,6 +7763,9 @@ iemNativeEmitSimdFetchXregU128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg, a_iQWord) \
     off = iemNativeEmitSimdFetchXregU64(pReNative, off, a_u64Value, a_iXReg, a_iQWord)
 
+#define IEM_MC_FETCH_XREG_R64(a_r64Value, a_iXReg, a_iQWord) \
+    off = iemNativeEmitSimdFetchXregU64(pReNative, off, a_r64Value, a_iXReg, a_iQWord)
+
 /** Emits code for IEM_MC_FETCH_XREG_U64. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdFetchXregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iXReg, uint8_t iQWord)
@@ -7786,10 +7789,13 @@ iemNativeEmitSimdFetchXregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
-#define IEM_MC_FETCH_XREG_U32(a_u64Value, a_iXReg, a_iDWord) \
-    off = iemNativeEmitSimdFetchXregU32(pReNative, off, a_u64Value, a_iXReg, a_iDWord)
+#define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg, a_iDWord) \
+    off = iemNativeEmitSimdFetchXregU32(pReNative, off, a_u32Value, a_iXReg, a_iDWord)
 
-/** Emits code for IEM_MC_FETCH_XREG_U32. */
+#define IEM_MC_FETCH_XREG_R32(a_r32Value, a_iXReg, a_iDWord) \
+    off = iemNativeEmitSimdFetchXregU32(pReNative, off, a_r32Value, a_iXReg, a_iDWord)
+
+/** Emits code for IEM_MC_FETCH_XREG_U32/IEM_MC_FETCH_XREG_R32. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdFetchXregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iXReg, uint8_t iDWord)
 {

@@ -18175,16 +18175,16 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtsi2ss_r32_i64,(uint32_t uMxCsrIn, PRTFLO
  * [V]UCOMISS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomiss_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomiss_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2))
 {
     uint32_t fEFlagsNew = *pfEFlags & ~X86_EFL_STATUS_BITS;
 
-    if (RTFLOAT32U_IS_SIGNALLING_NAN(&puSrc1->ar32[0]) || RTFLOAT32U_IS_SIGNALLING_NAN(&puSrc2->ar32[0]))
+    if (RTFLOAT32U_IS_SIGNALLING_NAN(&uSrc1) || RTFLOAT32U_IS_SIGNALLING_NAN(&uSrc2))
     {
         uMxCsrIn   |= X86_MXCSR_IE;
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
     }
-    else if (RTFLOAT32U_IS_QUIET_NAN(&puSrc1->ar32[0]) || RTFLOAT32U_IS_QUIET_NAN(&puSrc2->ar32[0]))
+    else if (RTFLOAT32U_IS_QUIET_NAN(&uSrc1) || RTFLOAT32U_IS_QUIET_NAN(&uSrc2))
     {
         /* ucomiss doesn't raise \#IE for quiet NaNs. */
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
@@ -18194,8 +18194,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomiss_u128,(uint32_t uMxCsrIn, uint32_t *
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
 
         RTFLOAT32U r32Src1, r32Src2;
-        uint32_t fDe  = iemSsePrepareValueR32(&r32Src1, uMxCsrIn, &puSrc1->ar32[0]);
-                 fDe |= iemSsePrepareValueR32(&r32Src2, uMxCsrIn, &puSrc2->ar32[0]);
+        uint32_t fDe  = iemSsePrepareValueR32(&r32Src1, uMxCsrIn, &uSrc1);
+                 fDe |= iemSsePrepareValueR32(&r32Src2, uMxCsrIn, &uSrc2);
 
         float32_t f32Src1 = iemFpSoftF32FromIprt(&r32Src1);
         float32_t f32Src2 = iemFpSoftF32FromIprt(&r32Src2);
@@ -18213,9 +18213,9 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomiss_u128,(uint32_t uMxCsrIn, uint32_t *
 }
 #endif
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomiss_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomiss_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2))
 {
-    return iemAImpl_ucomiss_u128(uMxCsrIn, pfEFlags, puSrc1, puSrc2);
+    return iemAImpl_ucomiss_u128(uMxCsrIn, pfEFlags, uSrc1, uSrc2);
 }
 
 
@@ -18223,16 +18223,16 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomiss_u128_fallback,(uint32_t uMxCsrIn, 
  * [V]UCOMISD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomisd_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomisd_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT64U uSrc1, RTFLOAT64U uSrc2))
 {
     uint32_t fEFlagsNew = *pfEFlags & ~X86_EFL_STATUS_BITS;
 
-    if (RTFLOAT64U_IS_SIGNALLING_NAN(&puSrc1->ar64[0]) || RTFLOAT64U_IS_SIGNALLING_NAN(&puSrc2->ar64[0]))
+    if (RTFLOAT64U_IS_SIGNALLING_NAN(&uSrc1) || RTFLOAT64U_IS_SIGNALLING_NAN(&uSrc2))
     {
         uMxCsrIn   |= X86_MXCSR_IE;
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
     }
-    else if (RTFLOAT64U_IS_QUIET_NAN(&puSrc1->ar64[0]) || RTFLOAT64U_IS_QUIET_NAN(&puSrc2->ar64[0]))
+    else if (RTFLOAT64U_IS_QUIET_NAN(&uSrc1) || RTFLOAT64U_IS_QUIET_NAN(&uSrc2))
     {
         /* ucomiss doesn't raise \#IE for quiet NaNs. */
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
@@ -18242,8 +18242,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomisd_u128,(uint32_t uMxCsrIn, uint32_t *
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
 
         RTFLOAT64U r64Src1, r64Src2;
-        uint32_t fDe = iemSsePrepareValueR64(&r64Src1, uMxCsrIn, &puSrc1->ar64[0])
-                     | iemSsePrepareValueR64(&r64Src2, uMxCsrIn, &puSrc2->ar64[0]);
+        uint32_t fDe = iemSsePrepareValueR64(&r64Src1, uMxCsrIn, &uSrc1)
+                     | iemSsePrepareValueR64(&r64Src2, uMxCsrIn, &uSrc2);
 
         float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
         float64_t f64Src2 = iemFpSoftF64FromIprt(&r64Src2);
@@ -18261,9 +18261,9 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ucomisd_u128,(uint32_t uMxCsrIn, uint32_t *
 }
 #endif
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomisd_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomisd_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT64U uSrc1, RTFLOAT64U uSrc2))
 {
-    return iemAImpl_ucomisd_u128(uMxCsrIn, pfEFlags, puSrc1, puSrc2);
+    return iemAImpl_ucomisd_u128(uMxCsrIn, pfEFlags, uSrc1, uSrc2);
 }
 
 
@@ -18271,12 +18271,12 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vucomisd_u128_fallback,(uint32_t uMxCsrIn, 
  * [V]COMISS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comiss_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comiss_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2))
 {
     uint32_t fEFlagsNew = *pfEFlags & ~X86_EFL_STATUS_BITS;
 
-    if (   RTFLOAT32U_IS_SIGNALLING_NAN(&puSrc1->ar32[0]) || RTFLOAT32U_IS_SIGNALLING_NAN(&puSrc2->ar32[0])
-        || RTFLOAT32U_IS_QUIET_NAN(&puSrc1->ar32[0]) || RTFLOAT32U_IS_QUIET_NAN(&puSrc2->ar32[0]))
+    if (   RTFLOAT32U_IS_SIGNALLING_NAN(&uSrc1) || RTFLOAT32U_IS_SIGNALLING_NAN(&uSrc2)
+        || RTFLOAT32U_IS_QUIET_NAN(&uSrc1) || RTFLOAT32U_IS_QUIET_NAN(&uSrc2))
     {
         uMxCsrIn   |= X86_MXCSR_IE;
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
@@ -18286,8 +18286,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comiss_u128,(uint32_t uMxCsrIn, uint32_t *p
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
 
         RTFLOAT32U r32Src1, r32Src2;
-        uint32_t fDe = iemSsePrepareValueR32(&r32Src1, uMxCsrIn, &puSrc1->ar32[0])
-                     | iemSsePrepareValueR32(&r32Src2, uMxCsrIn, &puSrc2->ar32[0]);
+        uint32_t fDe = iemSsePrepareValueR32(&r32Src1, uMxCsrIn, &uSrc1)
+                     | iemSsePrepareValueR32(&r32Src2, uMxCsrIn, &uSrc2);
 
         float32_t f32Src1 = iemFpSoftF32FromIprt(&r32Src1);
         float32_t f32Src2 = iemFpSoftF32FromIprt(&r32Src2);
@@ -18306,9 +18306,9 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comiss_u128,(uint32_t uMxCsrIn, uint32_t *p
 #endif
 
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomiss_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomiss_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2))
 {
-    return iemAImpl_comiss_u128(uMxCsrIn, pfEFlags, puSrc1, puSrc2);
+    return iemAImpl_comiss_u128(uMxCsrIn, pfEFlags, uSrc1, uSrc2);
 }
 
 
@@ -18316,12 +18316,12 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomiss_u128_fallback,(uint32_t uMxCsrIn, u
  * [V]COMISD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comisd_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comisd_u128,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT64U uSrc1, RTFLOAT64U uSrc2))
 {
     uint32_t fEFlagsNew = *pfEFlags & ~X86_EFL_STATUS_BITS;
 
-    if (   RTFLOAT64U_IS_SIGNALLING_NAN(&puSrc1->ar64[0]) || RTFLOAT64U_IS_SIGNALLING_NAN(&puSrc2->ar64[0])
-        || RTFLOAT64U_IS_QUIET_NAN(&puSrc1->ar64[0]) || RTFLOAT64U_IS_QUIET_NAN(&puSrc2->ar64[0]))
+    if (   RTFLOAT64U_IS_SIGNALLING_NAN(&uSrc1) || RTFLOAT64U_IS_SIGNALLING_NAN(&uSrc2)
+        || RTFLOAT64U_IS_QUIET_NAN(&uSrc1) || RTFLOAT64U_IS_QUIET_NAN(&uSrc2))
     {
         uMxCsrIn   |= X86_MXCSR_IE;
         fEFlagsNew |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF; /* UNORDERED 111 */
@@ -18331,8 +18331,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comisd_u128,(uint32_t uMxCsrIn, uint32_t *p
         softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
 
         RTFLOAT64U r64Src1, r64Src2;
-        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, uMxCsrIn, &puSrc1->ar64[0]);
-                 fDe |= iemSsePrepareValueR64(&r64Src2, uMxCsrIn, &puSrc2->ar64[0]);
+        uint32_t fDe  = iemSsePrepareValueR64(&r64Src1, uMxCsrIn, &uSrc1);
+                 fDe |= iemSsePrepareValueR64(&r64Src2, uMxCsrIn, &uSrc2);
 
         float64_t f64Src1 = iemFpSoftF64FromIprt(&r64Src1);
         float64_t f64Src2 = iemFpSoftF64FromIprt(&r64Src2);
@@ -18350,9 +18350,9 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_comisd_u128,(uint32_t uMxCsrIn, uint32_t *p
 }
 #endif
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomisd_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomisd_u128_fallback,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT64U uSrc1, RTFLOAT64U uSrc2))
 {
-    return iemAImpl_comisd_u128(uMxCsrIn, pfEFlags, puSrc1, puSrc2);
+    return iemAImpl_comisd_u128(uMxCsrIn, pfEFlags, uSrc1, uSrc2);
 }
 
 

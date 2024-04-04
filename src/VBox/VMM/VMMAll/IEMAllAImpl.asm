@@ -6174,16 +6174,16 @@ ENDPROC iemAImpl_cvtsi2sd_r64_i64
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
+; @param    A2_32   The first source operand.
+; @param    A3_32   The second source operand.
 ;
 BEGINPROC_FASTCALL  iemAImpl_ucomiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movd    xmm0, A2_32
+        movd    xmm1, A3_32
         ucomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6197,8 +6197,8 @@ BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movd    xmm0, [A2]
+        movd    xmm1, [A3]
         vucomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6214,16 +6214,16 @@ ENDPROC             iemAImpl_vucomiss_u128
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
+; @param    A2      The first source operand.
+; @param    A3      The second source operand.
 ;
 BEGINPROC_FASTCALL  iemAImpl_ucomisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movq    xmm0, A2
+        movq    xmm1, A3
         ucomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6237,8 +6237,8 @@ BEGINPROC_FASTCALL  iemAImpl_vucomisd_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movq    xmm0, A2
+        movq    xmm1, A3
         vucomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6253,16 +6253,16 @@ ENDPROC             iemAImpl_vucomisd_u128
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
+; @param    A2_32   The first source operand.
+; @param    A3_32   The second source operand.
 ;
 BEGINPROC_FASTCALL  iemAImpl_comiss_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movd    xmm0, A2_32
+        movd    xmm1, A3_32
         comiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6276,8 +6276,8 @@ BEGINPROC_FASTCALL  iemAImpl_vcomiss_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movd    xmm0, A2_32
+        movd    xmm1, A3_32
         vcomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6293,16 +6293,16 @@ ENDPROC             iemAImpl_vcomiss_u128
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the EFLAGS value (input/output).
-; @param    A2      Pointer to the first source operand (aka readonly destination).
-; @param    A3      Pointer to the second source operand.
+; @param    A2      The first source operand.
+; @param    A3      The second source operand.
 ;
 BEGINPROC_FASTCALL  iemAImpl_comisd_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movq    xmm0, A2
+        movq    xmm1, A3
         comisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
@@ -6316,8 +6316,8 @@ BEGINPROC_FASTCALL  iemAImpl_vcomisd_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu  xmm0, [A2]
-        movdqu  xmm1, [A3]
+        movq    xmm0, A2
+        movq    xmm1, A3
         vcomisd xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 

@@ -486,8 +486,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg, a_iQWord) \
     do { (a_u64Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au64[(a_iQWord)]; } while (0)
+#define IEM_MC_FETCH_XREG_R64(a_r64Value, a_iXReg, a_iQWord) \
+    do { (a_r64Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar64[(a_iQWord)]; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg, a_iDWord) \
     do { (a_u32Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au32[(a_iDWord)]; } while (0)
+#define IEM_MC_FETCH_XREG_R32(a_r32Value, a_iXReg, a_iDWord) \
+    do { (a_r32Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].ar32[(a_iDWord)]; } while (0)
 #define IEM_MC_FETCH_XREG_U16(a_u16Value, a_iXReg, a_iWord) \
     do { (a_u16Value) = pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].au16[(a_iWord)]; } while (0)
 #define IEM_MC_FETCH_XREG_U8( a_u8Value,  a_iXReg, a_iByte) \
@@ -1052,10 +1056,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
-# define IEM_MC_FETCH_MEM_XMM_U32(a_XmmDst, a_iDWord, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pVCpu, &(a_XmmDst).au32[(a_iDWord)], (a_iSeg), (a_GCPtrMem)))
-# define IEM_MC_FETCH_MEM_XMM_U64(a_XmmDst, a_iQWord, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pVCpu, &(a_XmmDst).au64[(a_iQWord)], (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_U128_NO_AC_AND_XREG_U128(a_u128Dst, a_iXReg1, a_iSeg2, a_GCPtrMem2) do { \
         IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128NoAc(pVCpu, &(a_Dst).uSrc2, (a_iSeg2), (a_GCPtrMem2))); \
@@ -1113,10 +1113,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
-# define IEM_MC_FETCH_MEM_XMM_U32(a_XmmDst, a_iDWord, a_iSeg, a_GCPtrMem) \
-    (a_XmmDst).au32[(a_iDWord)] = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem))
-# define IEM_MC_FETCH_MEM_XMM_U64(a_XmmDst, a_iQWord, a_iSeg, a_GCPtrMem) \
-    (a_XmmDst).au64[(a_iQWord)] = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem) \
     iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
@@ -1131,10 +1127,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemFlatFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE(a_XmmDst, a_GCPtrMem) \
     iemMemFlatFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
-# define IEM_MC_FETCH_MEM_FLAT_XMM_U32(a_XmmDst, a_iDWord, a_GCPtrMem) \
-    (a_XmmDst).au32[(a_iDWord)] = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem))
-# define IEM_MC_FETCH_MEM_FLAT_XMM_U64(a_XmmDst, a_iQWord, a_GCPtrMem) \
-    (a_XmmDst).au64[(a_iQWord)] = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_U128_AND_XREG_U128(a_Dst, a_iXReg1, a_iSeg2, a_GCPtrMem2) do { \
         iemMemFetchDataU128Jmp(pVCpu, &(a_Dst).uSrc2, (a_iSeg2), (a_GCPtrMem2)); \
