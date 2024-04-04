@@ -2972,77 +2972,41 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             }
             else
             {
+                if (RT_SUCCESS(vrc))
+                    vrc = setProgress(5);
+
                 Utf8Str strUpdateDir;
 
-                vrc = setProgress(5);
+                /*
+                 * Prepare the update directory.
+                 */
                 if (RT_SUCCESS(vrc))
                 {
-                    /* Try getting the installed Guest Additions version to know whether we
-                     * can install our temporary Guest Addition data into the original installation
-                     * directory.
-                     *
-                     * Because versions prior to 4.2 had bugs wrt spaces in paths we have to choose
-                     * a different location then.
-                     */
-                    bool fUseInstallDir = false;
-
-                    Utf8Str strAddsVer;
-                    vrc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
-                    if (   RT_SUCCESS(vrc)
-                        && RTStrVersionCompare(strAddsVer.c_str(), "4.2r80329") > 0)
-                    {
-                        fUseInstallDir = true;
-                    }
-
-                    if (fUseInstallDir)
-                    {
-                        vrc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
-                        if (RT_SUCCESS(vrc))
-                        {
-                            if (strUpdateDir.isNotEmpty())
-                            {
-                                if (osType == eOSType_Windows)
-                                {
-                                    strUpdateDir.findReplace('/', '\\');
-                                    strUpdateDir.append("\\Update\\");
-                                }
-                                else
-                                    strUpdateDir.append("/update/");
-                            }
-                            /* else Older Guest Additions might not handle this property correctly. */
-                        }
-                        /* Ditto. */
-                    }
-
-                    /** @todo Set fallback installation directory. Make this a *lot* smarter. Later. */
-                    if (strUpdateDir.isEmpty())
+                    /* Note: No fallback to unsafe guest locations! See @bugref{10625}. */
+                    int vrcGuest;
+                    vrc = pSession->i_fsCreateTemp("VBoxAutoUpdate-XXXXXXXXXXXX", "" /* Use default temp dir */,
+                                                   true /* fDirectory */, strUpdateDir, 755 /* Mode */, false /* fSecure */, &vrcGuest);
+                    if (RT_SUCCESS(vrc))
                     {
                         if (osType == eOSType_Windows)
-                            strUpdateDir = "C:\\Temp\\";
+                            strUpdateDir.append("\\");
                         else
-                            strUpdateDir = "/tmp/";
+                            strUpdateDir.append("/");
+
+                        LogRel(("Guest Additions update directory is: %s\n", strUpdateDir.c_str()));
                     }
-                }
-
-                /* Create the installation directory. */
-                int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-                if (RT_SUCCESS(vrc))
-                {
-                    LogRel(("Guest Additions update directory is: %s\n", strUpdateDir.c_str()));
-
-                    vrc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &vrcGuest);
-                    if (RT_FAILURE(vrc))
+                    else
                     {
                         switch (vrc)
                         {
                             case VERR_GSTCTL_GUEST_ERROR:
-                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Creating installation directory on guest failed"),
+                                hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR, tr("Creating update directory on guest failed"),
                                                           GuestErrorInfo(GuestErrorInfo::Type_Directory, vrcGuest, strUpdateDir.c_str()));
                                 break;
 
                             default:
                                 hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                          Utf8StrFmt(tr("Creating installation directory \"%s\" on guest failed: %Rrc"),
+                                                          Utf8StrFmt(tr("Creating update directory \"%s\" on guest failed: %Rrc"),
                                                                      strUpdateDir.c_str(), vrc));
                                 break;
                         }
