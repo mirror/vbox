@@ -3003,6 +3003,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                 }
             }
 #endif
+            pVCpu->iem.s.pCurTbR3 = NULL;
             return rcStrict;
         }
         IEM_CATCH_LONGJMP_END(pVCpu);
