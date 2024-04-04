@@ -6197,8 +6197,8 @@ BEGINPROC_FASTCALL  iemAImpl_vucomiss_u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movd    xmm0, [A2]
-        movd    xmm1, [A3]
+        movd    xmm0, A2_32
+        movd    xmm1, A3_32
         vucomiss xmm0, xmm1
         IEM_SAVE_FLAGS A1, X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF, 0, X86_EFL_OF | X86_EFL_SF | X86_EFL_AF
 
