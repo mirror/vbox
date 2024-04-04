@@ -63,7 +63,6 @@
     <String Id="VB_NetAdpDriver">Οδηγός [ProductName] εικονικής κάρτας δικτύου για μόνο-με-οικοδεσπότη δίκτυα.</String>
     <String Id="VB_NetLwfDriver">Οδηγός [ProductName] για NDIS6 γεφυρωμένα δίκτυα.</String>
     <String Id="VB_NetAdp6Driver">Οδηγός [ProductName] εικονικής κάρτας δικτύου για NDIS6 μόνο-με-οικοδεσπότη δίκτυα.</String>
-
     <String Id="VB_Python">Υποστήριξη Python για το VirtualBox.</String>
 
     <!---->
@@ -75,6 +74,7 @@
     <String Id="Only64Bit">Αυτή η εφαρμογή τρέχει μόνο σε συστήματα Windows 64 bit. Εγκαταστήστε την έκδοση 32-bit του [ProductName]!</String>
     <String Id="SunFound">Βρέθηκε μία παλιότερη εγκατάσταση του Sun VirtualBox στον υπολογιστή. Καταργήστε πρώτα την εγκατάσταση αυτού του πακέτου και μετά εγκαταστήστε το [ProductName]!</String>
     <String Id="InnotekFound">Βρέθηκε μία παλιότερη εγκατάσταση του innotek VirtualBox στον υπολογιστή. Καταργήστε πρώτα την εγκατάσταση αυτού του πακέτου και μετά εγκαταστήστε το [ProductName]!</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
 
     <!---->
 
@@ -91,6 +91,12 @@
     <String Id="LicenseAgreementDlg_Body">Διαβάστε προσεκτικά την παρακάτω Άδειας Χρήσης.</String>
     <String Id="LicenseAgreementDlg_Accept">Αποδέχομαι τους όρους της Άδειας Χρήσης</String>
     <String Id="LicenseAgreementDlg_Decline">Δεν αποδέχομαι τους όρους της Άδειας Χρήσης</String>
+
+    <!---->
+
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->
 

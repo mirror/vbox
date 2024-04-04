@@ -127,6 +127,7 @@
                     ErrorControl="normal"
                     Vital="yes">
             <ServiceDependency Id="RPCSS" />
+            <ServiceConfig ServiceSid="restricted" OnInstall="yes" OnReinstall="yes" />
         </ServiceInstall>
         <ServiceControl Id="VBoxSDSControl" Name="VBoxSDS" Stop="both" Remove="uninstall" />
     </Component>

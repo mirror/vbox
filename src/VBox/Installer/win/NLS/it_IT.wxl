@@ -58,8 +58,7 @@
     <String Id="VB_NetAdpDriver">Driver di [ProductName] per la scheda di rete virtuale per la rete solo host.</String>
     <String Id="VB_NetLwfDriver">Driver di [ProductName] per la rete con bridge NDIS6.</String>
     <String Id="VB_NetAdp6Driver">Driver di [ProductName] per la scheda di rete virtuale per la rete solo host NDIS6.</String>
-
-  <String Id="VB_Python">Supporto Python per VirtualBox.</String>
+    <String Id="VB_Python">Supporto Python per VirtualBox.</String>
     <!---->
     <String Id="NeedAdmin">Devi avere diritti di amministrazione per (dis)installare [ProductName]! L'installazione sarà interrotta immediatamente.</String>
     <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
@@ -68,6 +67,7 @@
     <String Id="Only64Bit">Questa applicazione può essere eseguita solo su sistemi Windows a 64 bit. Installa la versione a 32 bit di [ProductName]!</String>
     <String Id="SunFound">Una vecchia installazione di Sun VirtualBox è stata trovata su questa macchina. Disinstalla prima questo pacchetto e poi installa [ProductName]!</String>
     <String Id="InnotekFound">Una vecchia installazione di innotek VirtualBox è stata trovata su questa macchina. Disinstalla prima questo pacchetto e poi installa [ProductName]!</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
     <!---->
     <String Id="CancelDlg_Question">Sei sicuro di voler annullare l'installazione di [ProductName]?</String>
     <!---->
@@ -78,6 +78,10 @@
     <String Id="LicenseAgreementDlg_Body">Leggi attentamente il seguente accordo di licenza.</String>
     <String Id="LicenseAgreementDlg_Accept">&amp;Accetto i termini dell'accordo di licenza</String>
     <String Id="LicenseAgreementDlg_Decline">&amp;Non accetto i termini dell'accordo di licenza</String>
+    <!---->
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
     <!---->
     <String Id="CheckSerialDlg_Header">Numero di serie</String>
     <String Id="CheckSerialDlg_Body">Digita il numero di serie nel campo seguente. Troverai il numero sull'adesivo all'interno della custodia del CD di VirtualBox.</String>

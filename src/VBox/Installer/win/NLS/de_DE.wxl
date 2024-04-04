@@ -63,8 +63,7 @@
     <String Id="VB_NetAdpDriver">[ProductName] Treiber für virtuellen Netzwerk-Adapter für Host-only Netzwerke.</String>
     <String Id="VB_NetLwfDriver">[ProductName] Treiber für NDIS6-Netzwerkbrücke.</String>
     <String Id="VB_NetAdp6Driver">[ProductName] Treiber für virtuellen Netzwerk-Adapter für NDIS6-Host-only-Netzwerke.</String>
-
-  <String Id="VB_Python">Python-Support für VirtualBox.</String>
+    <String Id="VB_Python">Python-Support für VirtualBox.</String>
 
     <!---->
 
@@ -75,6 +74,7 @@
     <String Id="Only64Bit">Diese Applikation läuft nur auf 64-bit Windows-Systemen. Bitte installieren Sie die 32-bit Version von [ProductName]!</String>
     <String Id="SunFound">Eine alte Sun Version von VirtualBox wurde auf diesem Computer gefunden. Bitte deinstallieren Sie diese Version zuerst. Danach können Sie [ProductName] installieren!</String>
     <String Id="InnotekFound">Eine alte innotek Version von VirtualBox wurde auf diesem Computer gefunden. Bitte deinstallieren Sie diese Version zuerst. Danach können Sie [ProductName] installieren!</String>
+    <String Id="InvalidTargetDir">Ungültiges Installationsverzeichnis angegeben. Bitte ein anderes Installationsverzeichnis wählen, um [ProductName] zu installieren.</String>
 
     <!---->
 
@@ -91,6 +91,11 @@
     <String Id="LicenseAgreementDlg_Body">Bitte lesen Sie den folgenden Lizenzvertrag sorgfältig durch.</String>
     <String Id="LicenseAgreementDlg_Accept">Ich &amp;akzeptiere die Bedingungen des Lizenzvertrags.</String>
     <String Id="LicenseAgreementDlg_Decline">Ich &amp;akzeptiere die Bedingungen des Lizenzvertrags nicht.</String>
+
+    <!---->
+    <String Id="InvalidTargetDirDlg_Header">Ungültiges Installationsverzeichnis</String>
+    <String Id="InvalidTargetDirDlg_Desc1">Das gewählte Installationsverzeichnis is ungültig, da dieses nicht den Sicherheitsrichtlinien entspricht.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Bitte ein anderes Installationsverzeichnis wählen um [ProductName] zu installieren.</String>
 
     <!---->
 

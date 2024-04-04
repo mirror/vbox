@@ -58,8 +58,7 @@
     <String Id="VB_NetAdpDriver">درایور آداپتور شبکه مجازی [ProductName] برای شبکه فقط-میزبان.</String>
     <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
     <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
-
-  <String Id="VB_Python">پشتیبانی از پایتون برای ویرچوال باکس.</String>
+    <String Id="VB_Python">پشتیبانی از پایتون برای ویرچوال باکس.</String>
     <!---->
     <String Id="NeedAdmin">برای حذف [ProductName] شما نیاز به اجازه مدیر دارید! این راه انداز حالا لغو میشود.</String>
     <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
@@ -68,6 +67,7 @@
     <String Id="Only64Bit">این برنامه فقط روی ویندوز 64 بیتی اِجرا میشود. لطفا نسخه 32 بیتی [ProductName] را نصب کنید!</String>
     <String Id="SunFound">یک نصب قدیمی ویرچوال باکس روی این رایانه یافت شد. لطفا اول این بسته را حذف سپس [ProductName] را نصب کنید!</String>
     <String Id="InnotekFound">یک نسخه قدیمی نصب ویرچوال باکس در این ماشین یافت شد. لطفا اول این بسته را حذف و سپس [ProductName] را نصب کنید!</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
     <!---->
     <String Id="CancelDlg_Question">آیا میخواهید نصب [ProductName] را لغو کنید؟</String>
     <!---->
@@ -78,6 +78,10 @@
     <String Id="LicenseAgreementDlg_Body">لطفا توافقنامه مجوز زیرا را بادقت بخوانید.</String>
     <String Id="LicenseAgreementDlg_Accept">&amp;من ضوابط را در توافقنامه مجوز می پذیرم</String>
     <String Id="LicenseAgreementDlg_Decline">&amp;من ضوابط را در توافقنامه مجوز نمی پذیرم</String>
+    <!---->
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
     <!---->
     <String Id="CheckSerialDlg_Header">شماره سریال</String>
     <String Id="CheckSerialDlg_Body">لطفا شماره سریال را در فیلد زیر وارد کنید.آن را روی برچسب روی جلد سی دی ویرچوال باکس می یابید.</String>

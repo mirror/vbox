@@ -63,8 +63,7 @@
     <String Id="VB_NetAdpDriver">Yalnızca-Anamakine Ağı Oluşturma için [ProductName] sanal ağ bağdaştırıcısı sürücüsü.</String>
     <String Id="VB_NetLwfDriver">NDIS6 Köprü Ağı Oluşturma için [ProductName] sürücüsü.</String>
     <String Id="VB_NetAdp6Driver">NDIS6 Yalnızca-Anamakine Ağı Oluşturma için [ProductName] sanal ağ bağdaştırıcısı sürücüsü.</String>
-
-  <String Id="VB_Python">VirtualBox için Python desteği.</String>
+    <String Id="VB_Python">VirtualBox için Python desteği.</String>
 
     <!---->
 
@@ -75,6 +74,7 @@
     <String Id="Only64Bit">Bu uygulama yalnızca 64-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 32-bit sürümünü yükleyin!</String>
     <String Id="SunFound">Bu makinede eski bir Sun VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
     <String Id="InnotekFound">Bu makinede eski bir innotek VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
 
     <!---->
 
@@ -91,6 +91,12 @@
     <String Id="LicenseAgreementDlg_Body">Lütfen aşağıdaki lisans sözleşmesini dikkatlice okuyun.</String>
     <String Id="LicenseAgreementDlg_Accept">Lisans Sözleşmesi içindeki şartları kabul e&amp;diyorum</String>
     <String Id="LicenseAgreementDlg_Decline">Lisans Sözleşmesi içindeki şartları kabul e&amp;tmiyorum</String>
+
+    <!---->
+
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->
 

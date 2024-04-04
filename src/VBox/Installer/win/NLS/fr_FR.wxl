@@ -63,8 +63,7 @@
     <String Id="VB_NetAdpDriver">Pilote de carte réseau virtuelle [ProductName] pour l'accès réseau privé hôte.</String>
     <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
     <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
-
-  <String Id="VB_Python">Python support for VirtualBox.</String>
+    <String Id="VB_Python">Python support for VirtualBox.</String>
 
     <!---->
 
@@ -74,6 +73,7 @@
     <String Id="Only32Bit">Cette application ne marche que sur des systèmes Windows 32-bit. Veuillez installer la version 64-bit de [ProductName]!</String>
     <String Id="Only64Bit">Cette application ne marche que sur des systèmes Windows 64-bit. Veuillez installer la version 32-bit de [ProductName]!</String>
     <String Id="InnotekFound">Vous avez une ancienne installation de innotek VirtualBox sur cette machine. Il vous faudra la désinstaller avant de pouvoir installer [ProductName].</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
 
     <!---->
 
@@ -90,6 +90,12 @@
     <String Id="LicenseAgreementDlg_Body">Veuillez lire attentivement le Contrat de licence suivant.</String>
     <String Id="LicenseAgreementDlg_Accept">J'&amp;accepte les termes du Contrat de licence</String>
     <String Id="LicenseAgreementDlg_Decline">Je &amp;n'accepte pas les termes du Contrat de licence</String>
+
+    <!---->
+
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->
 

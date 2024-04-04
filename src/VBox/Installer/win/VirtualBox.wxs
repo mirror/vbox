@@ -127,6 +127,11 @@
         Installed OR (VBOX_MSCRT_INSTALLED)
     </Condition>
 <?endif ?>
+    <!-- Check if the current INSTALLDIR is valid or not, or if VBox already is installed.
+         Thight might be handed-in via command line (MSI properties) or through a customized merge module. See @bugref{10616} -->
+    <Condition Message="!(loc.InvalidTargetDir)">
+        Installed OR (VBox_Target_Dir_Is_Valid="1")
+    </Condition>
 
     <!-- Detect old innotek installation -->
     <!-- Force a manual uninstall of an already installed innotek VirtualBox version first -->

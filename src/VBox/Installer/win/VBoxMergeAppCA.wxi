@@ -35,5 +35,11 @@
     <CustomAction Id="ca_IsWindows10" BinaryKey="VBoxInstallHelper"
                   DllEntry="IsWindows10" Execute="immediate" Return="ignore" Impersonate="no" />
 
+    <!-- Makes sure we check if the chosen target directory is valid before allowing to install. See @bugref{10616} -->
+    <CustomAction Id="ca_CheckTargetDirPre" BinaryKey="VBoxInstallHelper"
+                  DllEntry="CheckTargetDir" Execute="immediate" Return="ignore" Impersonate="no" />
+    <!-- Makes sure that the target directory we installed into still is valid. Rollback if it isn't. See @bugref{10616} -->
+    <CustomAction Id="ca_CheckTargetDirPost" BinaryKey="VBoxInstallHelper"
+                  DllEntry="CheckTargetDir" Execute="immediate" Return="check" Impersonate="no" />
 </Include>
 

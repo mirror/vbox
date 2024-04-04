@@ -38,28 +38,28 @@
 #include <iprt/string.h>
 #include <iprt/utf16.h>
 
+#include "VBoxCommon.h"
 
+
+#ifndef TESTCASE
+/**
+ * Retrieves a MSI property (in UTF-16).
+ *
+ * Convenience function for VBoxGetMsiProp().
+ *
+ * @returns VBox status code.
+ * @param   hMsi                MSI handle to use.
+ * @param   pwszName            Name of property to retrieve.
+ * @param   pwszValueBuf        Where to store the allocated value on success.
+ * @param   cwcValueBuf         Size (in WCHARs) of \a pwszValueBuf.
+ */
 UINT VBoxGetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, WCHAR *pwszValueBuf, DWORD cwcValueBuf)
 {
-    RT_BZERO(pwszValueBuf, cwcValueBuf * sizeof(pwszValueBuf[0]));
-
-    /** @todo r=bird: why do we need to query the size first and then the data.
-     *        The API should be perfectly capable of doing that without our help. */
-    WCHAR wcDummy   = 0;
-    DWORD cwcNeeded = 0;
-    UINT  uiRet = MsiGetPropertyW(hMsi, pwszName, &wcDummy, &cwcNeeded);
-    if (uiRet == ERROR_MORE_DATA)
-    {
-        ++cwcNeeded;     /* On output does not include terminating null, so add 1. */
-
-        if (cwcNeeded > cwcValueBuf)
-            return ERROR_MORE_DATA;
-        uiRet = MsiGetPropertyW(hMsi, pwszName, pwszValueBuf, &cwcNeeded);
-    }
-    return uiRet;
+    RT_BZERO(pwszValueBuf, cwcValueBuf * sizeof(WCHAR));
+    return MsiGetPropertyW(hMsi, pwszName, pwszValueBuf, &cwcValueBuf);
 }
+#endif
 
-#if 0 /* unused */
 /**
  * Retrieves a MSI property (in UTF-8).
  *
@@ -88,12 +88,13 @@ int VBoxGetMsiPropUtf8(MSIHANDLE hMsi, const char *pcszName, char **ppszValue)
 
     return rc;
 }
-#endif
 
+#ifndef TESTCASE
 UINT VBoxSetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, const WCHAR *pwszValue)
 {
     return MsiSetPropertyW(hMsi, pwszName, pwszValue);
 }
+#endif
 
 UINT VBoxSetMsiPropDWORD(MSIHANDLE hMsi, const WCHAR *pwszName, DWORD dwVal)
 {

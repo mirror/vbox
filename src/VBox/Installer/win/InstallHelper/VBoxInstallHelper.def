@@ -29,6 +29,7 @@ LIBRARY "VBoxInstallHelper"
 EXPORTS
     IsSerialCheckNeeded
     CheckSerial
+    CheckTargetDir
     IsMSCRTInstalled
     IsPythonInstalled
     IsWindows10
@@ -38,8 +39,8 @@ EXPORTS
     UninstallBranding
     InstallNetFlt
     UninstallNetFlt
-        UninstallNetAdp
-        InstallNetLwf
+    UninstallNetAdp
+    InstallNetLwf
     UninstallNetLwf
     UninstallTAPInstances
     UninstallVBoxDrv

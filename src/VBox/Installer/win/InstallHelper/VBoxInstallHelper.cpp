@@ -37,6 +37,7 @@
 #define _WIN32_DCOM
 #include <iprt/win/windows.h>
 
+#include <aclapi.h>
 #include <msi.h>
 #include <msiquery.h>
 
@@ -45,6 +46,7 @@
 #include <guiddef.h>
 #include <cfgmgr32.h>
 #include <devguid.h>
+#include <sddl.h> /* For ConvertSidToStringSidW. */
 
 #include <iprt/win/objbase.h>
 #include <iprt/win/setupapi.h>
@@ -54,9 +56,14 @@
 
 #include <iprt/assert.h>
 #include <iprt/alloca.h>
+#include <iprt/dir.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>   /* RTPATH_MAX, RTPATH_IS_SLASH */
 #include <iprt/string.h> /* RT_ZERO */
+#include <iprt/stream.h>
+#include <iprt/thread.h>
 #include <iprt/utf16.h>
 
 #include "VBoxCommon.h"
@@ -78,6 +85,48 @@
 #define MY_WTEXT(a_str)     MY_WTEXT_HLP(a_str)
 
 
+/*********************************************************************************************************************************
+*   Internal structures                                                                                                          *
+*********************************************************************************************************************************/
+/**
+ * Structure for keeping a target's directory security context.
+ */
+typedef struct TGTDIRSECCTX
+{
+    /** Initialized status. */
+    bool     fInitialized;
+    /** Handle of the target's parent directory.
+     *
+     * Kept open while the context is around and initialized. */
+    RTDIR    hParentDir;
+    /** Absolute (resolved) path of the target directory. */
+    char     szTargetDirAbs[RTPATH_MAX];
+    /** Access mask which is forbidden for an ACE of type ACCESS_ALLOWED_ACE_TYPE. */
+    uint32_t fAccessMaskForbidden;
+    /** Array of well-known SIDs which are forbidden. */
+    PSID    *paWellKnownSidsForbidden;
+    /** Number of entries in \a paWellKnownSidsForbidden. */
+    size_t   cWellKnownSidsForbidden;
+} TGTDIRSECCTX;
+/** Pointer to a target's directory security context. */
+typedef TGTDIRSECCTX *PTGTDIRSECCTX;
+
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static void destroyTargetDirSecurityCtx(PTGTDIRSECCTX pCtx);
+
+
+/*********************************************************************************************************************************
+*   Globals                                                                                                                      *
+*********************************************************************************************************************************/
+static uint32_t     g_cRef = 0;
+/** Our target directory security context.
+ *
+ * Has to be global in order to keep it around as long as the DLL is being loaded. */
+static TGTDIRSECCTX g_TargetDirSecCtx = { 0 };
+
 
 /**
  * DLL entry point.
@@ -86,59 +135,94 @@ BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID pReserved)
 {
     RT_NOREF(hInst, uReason, pReserved);
 
-#if 0
-    /*
-     * This is a trick for allowing the debugger to be attached, don't know if
-     * there is an official way to do that, but this is a pretty efficient.
-     *
-     * Monitor the debug output in DbgView and be ready to start windbg when
-     * the message below appear.  This will happen 3-4 times during install,
-     * and 2-3 times during uninstall.
-     *
-     * Note! The DIFxApp.DLL will automatically trigger breakpoints when a
-     *       debugger is attached.  Just continue on these.
-     */
-    if (uReason == DLL_PROCESS_ATTACH)
-    {
-        WCHAR wszMsg[128];
-        RTUtf16Printf(wszMsg, RT_ELEMENTS(wszMsg), "Waiting for debugger to attach: windbg -g -G -p %u\n", GetCurrentProcessId());
-        for (unsigned i = 0; i < 128 && !IsDebuggerPresent(); i++)
-        {
-            OutputDebugStringW(wszMsg);
-            Sleep(1001);
-        }
-        Sleep(1002);
-        __debugbreak();
-    }
+#ifdef DEBUG
+    WCHAR wszMsg[128];
+    RTUtf16Printf(wszMsg, RT_ELEMENTS(wszMsg), "DllMain: hInst=%#x, uReason=%u (PID %u), g_cRef=%RU32\n",
+                  hInst, uReason, GetCurrentProcessId(), g_cRef);
+    OutputDebugStringW(wszMsg);
 #endif
+
+    switch (uReason)
+    {
+        case DLL_PROCESS_ATTACH:
+        {
+            g_cRef++;
+#if 0
+            /*
+             * This is a trick for allowing the debugger to be attached, don't know if
+             * there is an official way to do that, but this is a pretty efficient.
+             *
+             * Monitor the debug output in DbgView and be ready to start windbg when
+             * the message below appear.  This will happen 3-4 times during install,
+             * and 2-3 times during uninstall.
+             *
+             * Note! The DIFxApp.DLL will automatically trigger breakpoints when a
+             *       debugger is attached.  Just continue on these.
+             */
+            RTUtf16Printf(wszMsg, RT_ELEMENTS(wszMsg), "Waiting for debugger to attach: windbg -g -G -p %u\n", GetCurrentProcessId());
+            for (unsigned i = 0; i < 128 && !IsDebuggerPresent(); i++)
+            {
+                OutputDebugStringW(wszMsg);
+                Sleep(1001);
+            }
+            Sleep(1002);
+            __debugbreak();
+#endif
+            break;
+        }
+
+        case DLL_PROCESS_DETACH:
+        {
+            g_cRef--;
+            break;
+        }
+
+        default:
+            break;
+    }
 
     return TRUE;
 }
 
 /**
- * Format and add message to the MSI log.
+ * Format a log message and print it to whatever is there (i.e. to the MSI log).
  *
  * UTF-16 strings are formatted using '%ls' (lowercase).
  * ANSI strings are formatted using '%s' (uppercase).
+ *
+ * @returns VBox status code.
+ * @param   hInstall            MSI installer handle. Optional and can be NULL.
+ * @param   pszFmt              Format string.
+ * @param   ...                 Variable arguments for format string.
  */
-static UINT logStringF(MSIHANDLE hInstall, const char *pszFmt, ...)
+static int logStringF(MSIHANDLE hInstall, const char *pszFmt, ...)
 {
+    RTUTF16 wszVa[RTPATH_MAX + 256];
+    va_list va;
+    va_start(va, pszFmt);
+    ssize_t cwc = RTUtf16PrintfV(wszVa, RT_ELEMENTS(wszVa), pszFmt, va);
+    va_end(va);
+
+    RTUTF16 wszMsg[RTPATH_MAX + 256];
+    cwc = RTUtf16Printf(wszMsg, sizeof(wszMsg), "VBoxInstallHelper: %ls", wszVa);
+    if (cwc <= 0)
+        return VERR_BUFFER_OVERFLOW;
+
+#ifdef DEBUG
+    OutputDebugStringW(wszMsg);
+#endif
+#ifdef TESTCASE
+    RTPrintf("%ls\n", wszMsg);
+#endif
     PMSIHANDLE hMSI = MsiCreateRecord(2 /* cParms */);
     if (hMSI)
     {
-        wchar_t wszBuf[RTPATH_MAX + 256];
-        va_list va;
-        va_start(va, pszFmt);
-        ssize_t cwc = RTUtf16PrintfV(wszBuf, RT_ELEMENTS(wszBuf), pszFmt, va);
-        va_end(va);
-
-        MsiRecordSetStringW(hMSI, 0, wszBuf);
+        MsiRecordSetStringW(hMSI, 0, wszMsg);
         MsiProcessMessage(hInstall, INSTALLMESSAGE(INSTALLMESSAGE_INFO), hMSI);
-
         MsiCloseHandle(hMSI);
-        return cwc < RT_ELEMENTS(wszBuf) ? ERROR_SUCCESS : ERROR_BUFFER_OVERFLOW;
     }
-    return ERROR_ACCESS_DENIED;
+
+    return cwc < RT_ELEMENTS(wszVa) ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
 }
 
 UINT __stdcall IsSerialCheckNeeded(MSIHANDLE hModule)
@@ -159,6 +243,481 @@ UINT __stdcall CheckSerial(MSIHANDLE hModule)
     RT_NOREF(hModule);
 #endif
     return ERROR_SUCCESS;
+}
+
+/**
+ * Initializes a target security context.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Target directory security context to initialize.
+ * @param   hModule             Windows installer module handle.
+ * @param   pszPath             Target directory path to use.
+ */
+static int initTargetDirSecurityCtx(PTGTDIRSECCTX pCtx, MSIHANDLE hModule, const char *pszPath)
+{
+    if (pCtx->fInitialized)
+        return VINF_SUCCESS;
+
+#ifdef DEBUG
+    logStringF(hModule, "initTargetDirSecurityCtx: pszPath=%s\n", pszPath);
+#endif
+
+    char szPathTemp[RTPATH_MAX];
+    int vrc = RTStrCopy(szPathTemp, sizeof(szPathTemp), pszPath);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Try to find a parent path which exists. */
+    char szPathParentAbs[RTPATH_MAX] = { 0 };
+    for (int i = 0; i < 256; i++) /* Failsafe counter. */
+    {
+        RTPathStripTrailingSlash(szPathTemp);
+        RTPathStripFilename(szPathTemp);
+        vrc = RTPathReal(szPathTemp, szPathParentAbs, sizeof(szPathParentAbs));
+        if (RT_SUCCESS(vrc))
+            break;
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        logStringF(hModule, "initTargetDirSecurityCtx: No existing / valid parent directory found (%Rrc), giving up\n", vrc);
+        return vrc;
+    }
+
+    RTDIR hParentDir;
+    vrc = RTDirOpen(&hParentDir, szPathParentAbs);
+    if (RT_FAILURE(vrc))
+    {
+        logStringF(hModule, "initTargetDirSecurityCtx: Locking parent directory '%s' failed with %Rrc\n", szPathParentAbs, vrc);
+        return vrc;
+    }
+
+#ifdef DEBUG
+    logStringF(hModule, "initTargetDirSecurityCtx: Locked parent directory '%s'\n", szPathParentAbs);
+#endif
+
+    char szPathTargetAbs[RTPATH_MAX];
+    vrc = RTPathReal(pszPath, szPathTargetAbs, sizeof(szPathTargetAbs));
+    if (RT_FAILURE(vrc))
+        vrc = RTStrCopy(szPathTargetAbs, sizeof(szPathTargetAbs), pszPath);
+    if (RT_FAILURE(vrc))
+    {
+        logStringF(hModule, "initTargetDirSecurityCtx: Failed to resolve absolute target path (%Rrc)\n", vrc);
+        return vrc;
+    }
+
+#ifdef DEBUG
+    logStringF(hModule, "initTargetDirSecurityCtx: szPathTargetAbs=%s, szPathParentAbs=%s\n", szPathTargetAbs, szPathParentAbs);
+#endif
+
+    /* Target directory validation. */
+    if (   !RTStrCmp(szPathTargetAbs, szPathParentAbs) /* Don't allow installation into root directories. */
+        ||  RTStrStr(szPathTargetAbs, ".."))
+    {
+        logStringF(hModule, "initTargetDirSecurityCtx: Directory '%s' invalid", szPathTargetAbs);
+        vrc = VERR_INVALID_NAME;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        RTFSOBJINFO fsObjInfo;
+        vrc = RTPathQueryInfo(szPathParentAbs, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(vrc))
+        {
+            if (RTFS_IS_DIRECTORY(fsObjInfo.Attr.fMode)) /* No symlinks or other fun stuff. */
+            {
+                static WELL_KNOWN_SID_TYPE aForbiddenWellKnownSids[] =
+                {
+                    WinNullSid,
+                    WinWorldSid,
+                    WinAuthenticatedUserSid,
+                    WinBuiltinUsersSid,
+                    WinBuiltinGuestsSid,
+                    WinBuiltinPowerUsersSid
+                };
+
+                pCtx->paWellKnownSidsForbidden = (PSID *)RTMemAlloc(sizeof(PSID) * RT_ELEMENTS(aForbiddenWellKnownSids));
+                AssertPtrReturn(pCtx->paWellKnownSidsForbidden, VERR_NO_MEMORY);
+
+                size_t i = 0;
+                for(; i < RT_ELEMENTS(aForbiddenWellKnownSids); i++)
+                {
+                    pCtx->paWellKnownSidsForbidden[i] = RTMemAlloc(SECURITY_MAX_SID_SIZE);
+                    AssertPtrBreakStmt(pCtx->paWellKnownSidsForbidden, vrc = VERR_NO_MEMORY);
+                    DWORD cbSid = SECURITY_MAX_SID_SIZE;
+                    if (!CreateWellKnownSid(aForbiddenWellKnownSids[i], NULL, pCtx->paWellKnownSidsForbidden[i], &cbSid))
+                    {
+                        vrc = RTErrConvertFromWin32(GetLastError());
+                        logStringF(hModule, "initTargetDirSecurityCtx: Creating SID (index %zu) failed with %Rrc\n", i, vrc);
+                        break;
+                    }
+                }
+
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = RTStrCopy(pCtx->szTargetDirAbs, sizeof(pCtx->szTargetDirAbs), szPathTargetAbs);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        pCtx->fInitialized            = true;
+                        pCtx->hParentDir              = hParentDir;
+                        pCtx->cWellKnownSidsForbidden = i;
+                        pCtx->fAccessMaskForbidden    = FILE_WRITE_DATA
+                                                      | FILE_APPEND_DATA
+                                                      | FILE_WRITE_ATTRIBUTES
+                                                      | FILE_WRITE_EA;
+
+                        RTFILE fh;
+                        RTFileOpen(&fh, "c:\\temp\\targetdir.ctx", RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE | RTFILE_O_WRITE);
+                        RTFileClose(fh);
+
+                        return VINF_SUCCESS;
+                    }
+                }
+            }
+            else
+                vrc = VERR_INVALID_NAME;
+        }
+    }
+
+    RTDirClose(hParentDir);
+
+    while (pCtx->cWellKnownSidsForbidden--)
+    {
+        RTMemFree(pCtx->paWellKnownSidsForbidden[pCtx->cWellKnownSidsForbidden]);
+        pCtx->paWellKnownSidsForbidden[pCtx->cWellKnownSidsForbidden] = NULL;
+    }
+
+    logStringF(hModule, "initTargetDirSecurityCtx: Initialization failed failed with %Rrc\n", vrc);
+    return vrc;
+}
+
+/**
+ * Destroys a target security context.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Target directory security context to destroy.
+ */
+static void destroyTargetDirSecurityCtx(PTGTDIRSECCTX pCtx)
+{
+    if (   !pCtx
+        || !pCtx->fInitialized)
+        return;
+
+    if (pCtx->hParentDir != NIL_RTDIR)
+    {
+        RTDirClose(pCtx->hParentDir);
+        pCtx->hParentDir = NIL_RTDIR;
+    }
+    RT_ZERO(pCtx->szTargetDirAbs);
+
+    for (size_t i = 0; i < pCtx->cWellKnownSidsForbidden; i++)
+        RTMemFree(pCtx->paWellKnownSidsForbidden[i]);
+    pCtx->cWellKnownSidsForbidden = 0;
+
+    RTMemFree(pCtx->paWellKnownSidsForbidden);
+    pCtx->paWellKnownSidsForbidden = NULL;
+
+    RTFileDelete("c:\\temp\\targetdir.ctx");
+
+    logStringF(NULL, "destroyTargetDirSecurityCtx\n");
+}
+
+#ifdef DEBUG
+/**
+ * Returns a stingified version of an ACE type.
+ *
+ * @returns Stingified version of an ACE type.
+ * @param   uType               ACE type.
+ */
+inline const char *dbgAceTypeToString(uint8_t uType)
+{
+    switch (uType)
+    {
+        RT_CASE_RET_STR(ACCESS_ALLOWED_ACE_TYPE);
+        RT_CASE_RET_STR(ACCESS_DENIED_ACE_TYPE);
+        RT_CASE_RET_STR(SYSTEM_AUDIT_ACE_TYPE);
+        RT_CASE_RET_STR(SYSTEM_ALARM_ACE_TYPE);
+        default: break;
+    }
+
+    return "<Invalid>";
+}
+
+/**
+ * Returns an allocated string for a SID containing the user/domain name.
+ *
+ * @returns Allocated string (UTF-8). Must be free'd using RTStrFree().
+ * @param   pSid                SID to return allocated string for.
+ */
+inline char *dbgSidToNameA(const PSID pSid)
+{
+    char *pszName = NULL;
+    int   vrc     = VINF_SUCCESS;
+
+    LPWSTR pwszSid = NULL;
+    if (ConvertSidToStringSid(pSid, &pwszSid))
+    {
+        SID_NAME_USE SidNameUse;
+
+        WCHAR wszUser[MAX_PATH];
+        DWORD cbUser   = sizeof(wszUser);
+        WCHAR wszDomain[MAX_PATH];
+        DWORD cbDomain = sizeof(wszDomain);
+        if (LookupAccountSid(NULL, pSid, wszUser, &cbUser, wszDomain, &cbDomain, &SidNameUse))
+        {
+            RTUTF16 wszName[RTPATH_MAX];
+            if (RTUtf16Printf(wszName, RT_ELEMENTS(wszName), "%ls%s%ls (%ls)",
+                              wszUser, wszDomain[0] == L'\0' ? "" : "\\", wszDomain, pwszSid))
+            {
+                vrc = RTUtf16ToUtf8(wszName, &pszName);
+            }
+            else
+                vrc = VERR_NO_MEMORY;
+        }
+        else
+            vrc = RTStrAPrintf(&pszName, "<Lookup Error>");
+
+        LocalFree(pwszSid);
+    }
+    else
+        vrc = VERR_NOT_FOUND;
+
+    return RT_SUCCESS(vrc) ? pszName : "<Invalid>";
+}
+#endif /* DEBUG */
+
+/**
+ * Checks a single target path whether it's safe to use or not.
+ *
+ * We check if the given path is owned by "NT Service\TrustedInstaller" and therefore assume that it's safe to use.
+ *
+ * @returns VBox status code. On error the path should be considered unsafe.
+ * @retval  VERR_INVALID_NAME if the given path is considered unsafe.
+ * @retval  VINF_SUCCESS if the given path is found to be safe to use.
+ * @param   hModule             Windows installer module handle.
+ * @param   pszPath             Path to check.
+ */
+static int checkTargetDirOne(MSIHANDLE hModule, PTGTDIRSECCTX pCtx, const char *pszPath)
+{
+    logStringF(hModule, "checkTargetDirOne: Checking '%s' ...", pszPath);
+
+    PRTUTF16 pwszPath;
+    int vrc = RTStrToUtf16(pszPath, &pwszPath);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    PACL      pDacl = NULL;
+    PSECURITY_DESCRIPTOR pSecurityDescriptor = { 0 };
+    DWORD dwErr = GetNamedSecurityInfo(pwszPath, SE_FILE_OBJECT, GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+                                       NULL, NULL, NULL, NULL, &pSecurityDescriptor);
+    if (dwErr == ERROR_SUCCESS)
+    {
+        BOOL fDaclPresent          = FALSE;
+        BOOL fDaclDefaultedIgnored = FALSE;
+        if (GetSecurityDescriptorDacl(pSecurityDescriptor, &fDaclPresent,
+                                      &pDacl, &fDaclDefaultedIgnored))
+        {
+            if (   !fDaclPresent
+                || !pDacl)
+            {
+                /* Bail out early if the DACL isn't provided or is missing. */
+                vrc = VERR_INVALID_NAME;
+            }
+            else
+            {
+                ACL_SIZE_INFORMATION aclSizeInfo;
+                RT_ZERO(aclSizeInfo);
+                if (GetAclInformation(pDacl, &aclSizeInfo, sizeof(aclSizeInfo), AclSizeInformation))
+                {
+                    for(DWORD idxACE = 0; idxACE < aclSizeInfo.AceCount; idxACE++)
+                    {
+                        ACE_HEADER *pAceHdr = NULL;
+                        if (GetAce(pDacl, idxACE, (LPVOID *)&pAceHdr))
+                        {
+#ifdef DEBUG
+                            logStringF(hModule, "checkTargetDirOne: ACE type=%s, flags=%#x, size=%#x",
+                                       dbgAceTypeToString(pAceHdr->AceType), pAceHdr->AceFlags, pAceHdr->AceSize);
+#endif
+                            /* Note: We print the ACEs in canonoical order. */
+                            switch (pAceHdr->AceType)
+                            {
+                                case ACCESS_ALLOWED_ACE_TYPE: /* We're only interested in the ALLOW ACE. */
+                                {
+                                    ACCESS_ALLOWED_ACE const *pAce = (ACCESS_ALLOWED_ACE *)pAceHdr;
+                                    PSID const pSid                = (PSID)&pAce->SidStart;
+#ifdef DEBUG
+                                    char *pszSid = dbgSidToNameA(pSid);
+                                    logStringF(hModule, "checkTargetDirOne:\t%s fMask=%#x", pszSid, pAce->Mask);
+                                    RTStrFree(pszSid);
+#endif
+                                    /* We check the flags here first for performance reasons. */
+                                    if ((pAce->Mask & pCtx->fAccessMaskForbidden) == pCtx->fAccessMaskForbidden)
+                                    {
+                                        for (size_t idxSID = 0; idxSID < pCtx->cWellKnownSidsForbidden; idxSID++)
+                                        {
+                                            PSID const pSidForbidden = pCtx->paWellKnownSidsForbidden[idxSID];
+                                            bool const fForbidden    = EqualSid(pSid, pSidForbidden);
+#ifdef DEBUG
+                                            char *pszName = dbgSidToNameA(pSidForbidden);
+                                            logStringF(hModule, "checkTargetDirOne:\t%s : %s",
+                                                       fForbidden ? "** FORBIDDEN **" : "ALLOWED        ", pszName);
+                                            RTStrFree(pszName);
+#endif /* DEBUG */
+                                            if (fForbidden)
+                                            {
+                                                vrc = VERR_INVALID_NAME;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    break;
+                                }
+
+                                case ACCESS_DENIED_ACE_TYPE: /* We're only interested in the ALLOW ACE. */
+                                {
+                                    ACCESS_DENIED_ACE const *pAce = (ACCESS_DENIED_ACE *)pAceHdr;
+#ifdef DEBUG
+                                    LPWSTR pwszSid = NULL;
+                                    ConvertSidToStringSid((PSID)&pAce->SidStart, &pwszSid);
+
+                                    logStringF(hModule, "checkTargetDirOne:\t%ls fMask=%#x (generic %#x specific %#x)",
+                                               pwszSid ? pwszSid : L"<Allocation Error>", pAce->Mask);
+#endif /* DEBUG */
+                                    LocalFree(pwszSid);
+
+                                    /* Ignore everything else. */
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                            dwErr = GetLastError();
+
+                        /* No point in checking further if we failed somewhere above. */
+                        if (RT_FAILURE(vrc))
+                            break;
+
+                    } /* for ACE */
+                }
+                else
+                    dwErr = GetLastError();
+            }
+        }
+        else
+            dwErr = GetLastError();
+
+        LocalFree(pSecurityDescriptor);
+    }
+    else
+        dwErr = GetLastError();
+
+    if (RT_SUCCESS(vrc))
+        vrc = RTErrConvertFromWin32(dwErr);
+
+#ifdef DEBUG
+    logStringF(hModule, "checkTargetDirOne: Returning %Rrc", vrc);
+#endif
+
+    if (   RT_FAILURE(vrc)
+        && vrc != VERR_INVALID_NAME)
+        logStringF(hModule, "checkTargetDirOne: Failed with %Rrc (%#x)", vrc, dwErr);
+
+    return vrc;
+}
+
+/**
+ * Checks whether the path in the public property INSTALLDIR has the correct ACL permissions and returns whether
+ * it's valid or not.
+ *
+ * Called from the MSI installer as a custom action.
+ *
+ * @returns Success status (acccording to MSI custom actions).
+ * @retval  ERROR_SUCCESS if checking the target directory turned out to be valid.
+ * @retval  ERROR_NO_NET_OR_BAD_PATH is the target directory is invalid.
+ * @param   hModule             Windows installer module handle.
+ *
+ * @note    Sets private property VBox_Target_Dir_Is_Valid to "1" (true) if the given target path is valid,
+ *          or "0" (false) if it is not. An empty target directory is considered to be valid (i.e. INSTALLDIR not set yet).
+ *
+ * @sa      @bugref{10616}
+ */
+UINT __stdcall CheckTargetDir(MSIHANDLE hModule)
+{
+    char *pszTargetDir;
+
+    int vrc = VBoxGetMsiPropUtf8(hModule, "INSTALLDIR", &pszTargetDir);
+    if (RT_SUCCESS(vrc))
+    {
+        logStringF(hModule, "CheckTargetDir: Checking target directory '%s' ...", pszTargetDir);
+
+        if (!RTStrNLen(pszTargetDir, RTPATH_MAX))
+        {
+            logStringF(hModule, "CheckTargetDir: No INSTALLDIR set (yet), skipping ...");
+            VBoxSetMsiProp(hModule, L"VBox_Target_Dir_Is_Valid", L"1");
+        }
+        else
+        {
+            union
+            {
+                RTPATHPARSED    Parsed;
+                uint8_t         ab[RTPATH_MAX];
+            } u;
+
+            vrc = RTPathParse(pszTargetDir, &u.Parsed, sizeof(u), RTPATH_STR_F_STYLE_DOS);
+            if (RT_SUCCESS(vrc))
+            {
+                if (u.Parsed.fProps & RTPATH_PROP_DOTDOT_REFS)
+                    vrc = VERR_INVALID_PARAMETER;
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = initTargetDirSecurityCtx(&g_TargetDirSecCtx, hModule, pszTargetDir);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        uint16_t idxComp = u.Parsed.cComps;
+                        char     szPathToCheck[RTPATH_MAX];
+                        while (idxComp > 1) /* We traverse backwards from INSTALLDIR and leave out the root (e.g. C:\"). */
+                        {
+                            u.Parsed.cComps = idxComp;
+                            vrc = RTPathParsedReassemble(pszTargetDir, &u.Parsed, RTPATH_STR_F_STYLE_DOS,
+                                                         szPathToCheck, sizeof(szPathToCheck));
+                            if (RT_FAILURE(vrc))
+                                break;
+                            if (RTDirExists(szPathToCheck))
+                            {
+                                vrc = checkTargetDirOne(hModule, &g_TargetDirSecCtx, szPathToCheck);
+                                if (RT_FAILURE(vrc))
+                                    break;
+                            }
+                            else
+                                logStringF(hModule, "CheckTargetDir: Path '%s' does not exist (yet)", szPathToCheck);
+                            idxComp--;
+                        }
+
+                        destroyTargetDirSecurityCtx(&g_TargetDirSecCtx);
+                    }
+                    else
+                        logStringF(hModule, "CheckTargetDir: initTargetDirSecurityCtx failed with %Rrc\n", vrc);
+
+                    if (RT_SUCCESS(vrc))
+                        VBoxSetMsiProp(hModule, L"VBox_Target_Dir_Is_Valid", L"1");
+                }
+            }
+            else
+                logStringF(hModule, "CheckTargetDir: Parsing path failed with %Rrc", vrc);
+        }
+
+        RTStrFree(pszTargetDir);
+    }
+
+    if (RT_FAILURE(vrc)) /* On failure (or when in doubt), mark the installation directory as invalid. */
+    {
+        logStringF(hModule, "CheckTargetDir: Checking failed with %Rrc", vrc);
+        VBoxSetMsiProp(hModule, L"VBox_Target_Dir_Is_Valid", L"0");
+    }
+
+    /* Return back outcome to the MSI engine. */
+    return RT_SUCCESS(vrc) ? ERROR_SUCCESS : ERROR_NO_NET_OR_BAD_PATH;
 }
 
 /**

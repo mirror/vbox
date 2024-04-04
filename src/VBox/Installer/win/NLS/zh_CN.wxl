@@ -63,7 +63,6 @@
 <String Id="VB_NetAdpDriver">[ProductName] 虚拟网络界面卡针对“仅主机”网络。</String>
 <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
 <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
-
 <String Id="VB_Python">VirtualBox 的 Python 支持。</String>
 
 <!---->
@@ -75,6 +74,7 @@
 <String Id="Only64Bit">此应用程序只能运行在 64 位 Windows 系统。 请安装 [ProductName] 的 32 位版本！</String>
 <String Id="SunFound">在此计算机发现旧的 Sun VirtualBox 安装。 请先卸载此组件然后安装 [ProductName]！</String>
 <String Id="InnotekFound">在此计算机发现旧的 innotek VirtualBox 安装。 请先卸载此组件然后安装 [ProductName]！</String>
+<String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
 
 <!---->
 
@@ -91,6 +91,12 @@
 <String Id="LicenseAgreementDlg_Body">请仔细阅读以下授权协议。</String>
 <String Id="LicenseAgreementDlg_Accept">我接受授权协议中条款(&amp;A)</String>
 <String Id="LicenseAgreementDlg_Decline">我不接受授权协议中条款(&amp;D)</String>
+
+<!---->
+
+<String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+<String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+<String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
 <!---->
 

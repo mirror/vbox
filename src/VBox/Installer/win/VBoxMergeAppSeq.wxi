@@ -30,6 +30,11 @@
 <?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
     <Custom Action="ca_IsMSCRTInstalled" After="AppSearch">1</Custom>
 <?endif?>
+    <!-- Required for lauch conditions. See @bugref{10616} -->
+    <Custom Action="ca_CheckTargetDirPre" After="AppSearch"/>
+    <!-- Check if the installation directory still fits our security requirements after we finalized installation.
+         See @bugref{10616} -->
+    <Custom Action="ca_CheckTargetDirPost" After="InstallFinalize"><![CDATA[NOT REMOVE]]></Custom>
 
     <Custom Action="ca_IsWindows10" After="FileCost">1</Custom>
 

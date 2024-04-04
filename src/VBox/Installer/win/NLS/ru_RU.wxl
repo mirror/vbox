@@ -63,7 +63,6 @@
     <String Id="VB_NetAdpDriver">[ProductName] virtual network adapter driver for Host-Only Networking.</String>
     <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
     <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
-
     <String Id="VB_Python">Python support for VirtualBox.</String>
 
     <!---->
@@ -75,6 +74,7 @@
     <String Id="Only64Bit">This application only runs on 64-bit Windows systems. Please install the 32-bit version of [ProductName]!</String>
     <String Id="SunFound">An old Sun VirtualBox installation has been found on this machine. Please uninstall this package first and then install [ProductName]!</String>
     <String Id="InnotekFound">An old innotek VirtualBox installation has been found on this machine. Please uninstall this package first and then install [ProductName]!</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
 
     <!---->
 
@@ -91,6 +91,12 @@
     <String Id="LicenseAgreementDlg_Body">Please read the following license agreement carefully.</String>
     <String Id="LicenseAgreementDlg_Accept">I &amp;accept the terms in the License Agreement</String>
     <String Id="LicenseAgreementDlg_Decline">I &amp;do not accept the terms in the License Agreement</String>
+
+    <!---->
+
+    <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->
 
