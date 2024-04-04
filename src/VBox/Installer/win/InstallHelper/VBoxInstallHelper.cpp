@@ -583,9 +583,9 @@ static int checkTargetDirOne(MSIHANDLE hModule, PTGTDIRSECCTX pCtx, const char *
 
                                     logStringF(hModule, "checkTargetDirOne:\t%ls fMask=%#x (generic %#x specific %#x)",
                                                pwszSid ? pwszSid : L"<Allocation Error>", pAce->Mask);
-#endif /* DEBUG */
-                                    LocalFree(pwszSid);
 
+                                    LocalFree(pwszSid);
+#endif /* DEBUG */
                                     /* Ignore everything else. */
                                     break;
                                 }
