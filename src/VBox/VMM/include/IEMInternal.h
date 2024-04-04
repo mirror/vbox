@@ -1118,8 +1118,10 @@ typedef union IEMTBDBGENTRY
         uint32_t    uType         : 4;
         /** Flag whether this is about a SIMD (true) or general (false) register flush. */
         uint32_t    fSimdReg      : 1;
+        /** The mask shift. */
+        uint32_t    cShift        : 2;
         /** The guest register mask being written back. */
-        uint32_t    fGstReg       : 27;
+        uint32_t    fGstReg       : 25;
     } GuestRegWriteback;
 #endif
 

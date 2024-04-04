@@ -2390,12 +2390,45 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddGuestRegDirty(PIEMRECOMPILERSTATE pRe
  */
 DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddGuestRegWriteback(PIEMRECOMPILERSTATE pReNative, bool fSimdReg, uint64_t fGstReg)
 {
+    unsigned const cBitsGstRegMask = 25;
+    uint32_t const fGstRegMask     = RT_BIT_32(cBitsGstRegMask) - 1U;
+
+    /* The first block of 25 bits: */
+    if (fGstReg & fGstRegMask)
+    {
+        PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+        pEntry->GuestRegWriteback.uType     = kIemTbDbgEntryType_GuestRegWriteback;
+        pEntry->GuestRegWriteback.fSimdReg  = fSimdReg ? 1 : 0;
+        pEntry->GuestRegWriteback.cShift    = 0;
+        pEntry->GuestRegWriteback.fGstReg   = (uint32_t)(fGstReg & fGstRegMask);
+        fGstReg &= ~(uint64_t)fGstRegMask;
+        if (!fGstReg)
+            return;
+    }
+
+    /* The second block of 25 bits: */
+    fGstReg >>= cBitsGstRegMask;
+    if (fGstReg & fGstRegMask)
+    {
+        PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+        pEntry->GuestRegWriteback.uType     = kIemTbDbgEntryType_GuestRegWriteback;
+        pEntry->GuestRegWriteback.fSimdReg  = fSimdReg ? 1 : 0;
+        pEntry->GuestRegWriteback.cShift    = 0;
+        pEntry->GuestRegWriteback.fGstReg   = (uint32_t)(fGstReg & fGstRegMask);
+        fGstReg &= ~(uint64_t)fGstRegMask;
+        if (!fGstReg)
+            return;
+    }
+
+    /* The last block with 14 bits: */
+    fGstReg >>= cBitsGstRegMask;
+    Assert(fGstReg & fGstRegMask);
+    Assert((fGstReg & ~(uint64_t)fGstRegMask) == 0);
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
-    pEntry->GuestRegWriteback.uType         = kIemTbDbgEntryType_GuestRegWriteback;
-    pEntry->GuestRegWriteback.fSimdReg      = fSimdReg ? 1 : 0;
-    pEntry->GuestRegWriteback.fGstReg       = (uint32_t)fGstReg;
-    /** @todo r=aeichner Can't fit the whole register mask in the debug info entry, deal with it when it becomes necessary. */
-    Assert((uint64_t)pEntry->GuestRegWriteback.fGstReg == fGstReg);
+    pEntry->GuestRegWriteback.uType     = kIemTbDbgEntryType_GuestRegWriteback;
+    pEntry->GuestRegWriteback.fSimdReg  = fSimdReg ? 1 : 0;
+    pEntry->GuestRegWriteback.cShift    = 2;
+    pEntry->GuestRegWriteback.fGstReg   = (uint32_t)(fGstReg & fGstRegMask);
 }
 
 # endif /* defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) || defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR) */
@@ -8638,7 +8671,8 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                         case kIemTbDbgEntryType_GuestRegWriteback:
                             pHlp->pfnPrintf(pHlp, "  Writing dirty %s registers (gst %#RX32)\n",
                                             pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fSimdReg ? "SIMD" : "general",
-                                            pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fGstReg);
+                                               (uint64_t)pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.fGstReg
+                                            << (pDbgInfo->aEntries[iDbgEntry].GuestRegWriteback.cShift * 25));
                             continue;
 #endif
 
