@@ -8190,14 +8190,14 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
         ENTRY(iem.s.StatNativeCodeTlbMissesNewPageWithOffset),
         ENTRY(iem.s.StatNativeCodeTlbHitsForNewPageWithOffset),
 #endif
-        ENTRY(iem.s.DataTlb.aEntries),
         ENTRY(iem.s.DataTlb.uTlbRevision),
         ENTRY(iem.s.DataTlb.uTlbPhysRev),
         ENTRY(iem.s.DataTlb.cTlbHits),
-        ENTRY(iem.s.CodeTlb.aEntries),
+        ENTRY(iem.s.DataTlb.aEntries),
         ENTRY(iem.s.CodeTlb.uTlbRevision),
         ENTRY(iem.s.CodeTlb.uTlbPhysRev),
         ENTRY(iem.s.CodeTlb.cTlbHits),
+        ENTRY(iem.s.CodeTlb.aEntries),
         ENTRY(pVMR3),
         ENTRY(cpum.GstCtx.rax),
         ENTRY(cpum.GstCtx.ah),
@@ -8959,6 +8959,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
  */
 DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 {
+#if 0 /* For profiling the native recompiler code. */
+l_profile_again:
+#endif
     STAM_REL_PROFILE_START(&pVCpu->iem.s.StatNativeRecompilation, a);
 
     /*
@@ -9246,6 +9249,14 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
     uint32_t const        cLabels  = pReNative->cLabels;
     for (uint32_t i = 0; i < cLabels; i++)
         AssertMsgReturn(paLabels[i].off < off, ("i=%d enmType=%d\n", i, paLabels[i].enmType), pTb);
+#endif
+
+#if 0 /* For profiling the native recompiler code. */
+    if (pTb->Thrd.cCalls >= 136)
+    {
+        STAM_REL_PROFILE_STOP(&pVCpu->iem.s.StatNativeRecompilation, a);
+        goto l_profile_again;
+    }
 #endif
 
     /*

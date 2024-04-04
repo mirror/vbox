@@ -79,6 +79,15 @@ typedef struct IEMNATIVEEMITTLBSTATE
     uint8_t const   idxReg2;
 #if defined(RT_ARCH_ARM64)
     uint8_t const   idxReg3;
+/** @def IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+ * Use LDP and STDP to reduce number of instructions accessing memory at the
+ * cost of using more registers.  This will typically reduce the number of
+ * instructions emitted as well.  */
+//# define IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+    uint8_t const   idxReg4;
+    uint8_t const   idxReg5;
+# endif
 #endif
     uint64_t const  uAbsPtr;
 
@@ -124,6 +133,10 @@ typedef struct IEMNATIVEEMITTLBSTATE
         ,         idxReg2(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
 #if defined(RT_ARCH_ARM64)
         ,         idxReg3(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+        ,         idxReg4(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+        ,         idxReg5(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# endif
 #endif
         ,         uAbsPtr(      a_pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(a_idxVarGCPtrMem)].enmKind
                              != kIemNativeVarKind_Immediate
@@ -159,6 +172,10 @@ typedef struct IEMNATIVEEMITTLBSTATE
         ,         idxReg2(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
 #if defined(RT_ARCH_ARM64)
         ,         idxReg3(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+        ,         idxReg4(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+        ,         idxReg5(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# endif
 #endif
         ,         uAbsPtr(UINT64_MAX)
 
@@ -188,6 +205,10 @@ typedef struct IEMNATIVEEMITTLBSTATE
         ,         idxReg2(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
 #if defined(RT_ARCH_ARM64)
         ,         idxReg3(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+        ,         idxReg4(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+        ,         idxReg5(!fSkip ? iemNativeRegAllocTmp(a_pReNative, a_poff) : UINT8_MAX)
+# endif
 #endif
         ,         uAbsPtr(UINT64_MAX)
 
@@ -227,6 +248,10 @@ typedef struct IEMNATIVEEMITTLBSTATE
         if (idxRegSegAttrib != UINT8_MAX)
             iemNativeRegFreeTmp(a_pReNative, idxRegSegAttrib);
 #if defined(RT_ARCH_ARM64)
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+        iemNativeRegFreeTmp(a_pReNative, idxReg5);
+        iemNativeRegFreeTmp(a_pReNative, idxReg4);
+# endif
         iemNativeRegFreeTmp(a_pReNative, idxReg3);
 #endif
         iemNativeRegFreeTmp(a_pReNative, idxReg2);
@@ -241,6 +266,10 @@ typedef struct IEMNATIVEEMITTLBSTATE
                  | RT_BIT_32(idxReg2)
 #if defined(RT_ARCH_ARM64)
                  | RT_BIT_32(idxReg3)
+# ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+                 | RT_BIT_32(idxReg4)
+                 | RT_BIT_32(idxReg5)
+# endif
 #endif
                  ;
         return 0;
@@ -591,14 +620,31 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = 0x0b; /* OR r64,r/m64 */
     off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, pTlbState->idxReg1, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbRevision));
 # else
+#  ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+    /* Load uTlbRevision into reg3 and uTlbPhysRev into reg5.
+       We load the offVCpuTlb + aEntries into reg4 and use it for addressing here
+       and later when calculating pTble (save an instruction). */
+    AssertCompileMemberAlignment(IEMTLB, uTlbRevision, 16); /* It is said that misaligned pair loads doesn't perform well. */
+    AssertCompileAdjacentMembers(IEMTLB, uTlbRevision, uTlbPhysRev);
+    AssertCompile(RTASSERT_OFFSET_OF(IEMTLB, uTlbPhysRev) < RTASSERT_OFFSET_OF(IEMTLB, aEntries));
+    AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.DataTlb.aEntries) < _64K);
+    AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.CodeTlb.aEntries) < _64K); /* if larger do: ADD x3, x27, x3, LSL #y */
+    pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries));
+    pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4);
+    pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg3, pTlbState->idxReg5, pTlbState->idxReg4,
+                                               (RT_OFFSETOF(IEMTLB, uTlbRevision) - RT_OFFSETOF(IEMTLB, aEntries)) / 8);
+#  else
     off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbRevision));
+#  endif
     off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # endif
 
     /*
      * 3b. Calc pTlbe.
      */
+# if !defined(RT_ARCH_ARM64) || !defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
     uint32_t const offTlbEntries = offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries);
+# endif
 # if defined(RT_ARCH_AMD64)
     /* movzx reg2, byte reg1 */
     off = iemNativeEmitLoadGprFromGpr8Ex(pCodeBuf, off, pTlbState->idxReg2, pTlbState->idxReg1);
@@ -619,10 +665,15 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 # elif defined(RT_ARCH_ARM64)
     /* reg2 = (reg1 & 0xff) << 5 */
     pCodeBuf[off++] = Armv8A64MkInstrUbfiz(pTlbState->idxReg2, pTlbState->idxReg1, 5, 8);
+#  ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+    /* reg2 += &pVCpu->iem.s.DataTlb.aEntries / CodeTlb.aEntries */
+    pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg2, pTlbState->idxReg2, pTlbState->idxReg4);
+#  else
     /* reg2 += offsetof(VMCPUCC, iem.s.DataTlb.aEntries) */
     off = iemNativeEmitAddGprImmEx(pCodeBuf, off, pTlbState->idxReg2, offTlbEntries, pTlbState->idxReg3 /*iGprTmp*/);
     /* reg2 += pVCpu */
     off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, pTlbState->idxReg2, IEMNATIVE_REG_FIXED_PVMCPU);
+#  endif
 # else
 #  error "Port me"
 # endif
@@ -636,7 +687,14 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = 0x3b;
     off = iemNativeEmitGprByGprDisp(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
 # elif defined(RT_ARCH_ARM64)
+#  ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+    AssertCompileMemberAlignment(IEMTLBENTRY, uTag, 16); /* It is said that misaligned pair loads doesn't perform well. */
+    AssertCompile(RT_UOFFSETOF(IEMTLBENTRY, uTag) + sizeof(uint64_t) == RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
+    pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg3, pTlbState->idxReg4,
+                                               pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag) / 8);
+#  else
     off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg3, pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, uTag));
+#  endif
     off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
 # else
 #  error "Port me"
@@ -672,11 +730,16 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     off = iemNativeEmitGprByGprDisp(pCodeBuf, off, pTlbState->idxReg1, IEMNATIVE_REG_FIXED_PVMCPU,
                                     offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbPhysRev));
 # elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg3, pTlbState->idxReg2,
-                                         RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
+#  ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
+    pCodeBuf[off++] = Armv8A64MkInstrAnd(pTlbState->idxReg1, pTlbState->idxReg1, pTlbState->idxReg4);
+    off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg5);
+#  else
+    off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg3,
+                                         pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, fFlagsAndPhysRev));
     pCodeBuf[off++] = Armv8A64MkInstrAnd(pTlbState->idxReg1, pTlbState->idxReg1, pTlbState->idxReg3);
     off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg3, offVCpuTlb + RT_UOFFSETOF(IEMTLB, uTlbPhysRev));
     off = iemNativeEmitCmpGprWithGprEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg3);
+#  endif
 # else
 #  error "Port me"
 # endif
@@ -690,9 +753,22 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      *    For code TLB lookups we have some more work to do here to set various
      *    IEMCPU members and we return a GCPhys address rather than a host pointer.
      */
-    /* mov  reg1, [reg2->pbMappingR3] */
-    off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
-                                         RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
+# if defined(RT_ARCH_ARM64) && defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
+    if (!a_fDataTlb)
+    {
+        /* ldp  reg4, reg1, [reg2->GCPhys+pbMappingR3] */
+        AssertCompileMemberAlignment(IEMTLBENTRY, GCPhys, 16);
+        AssertCompileAdjacentMembers(IEMTLBENTRY, GCPhys, pbMappingR3);
+        pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg4, pTlbState->idxReg1,
+                                                   pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, GCPhys) / 8);
+    }
+    else
+# endif
+    {
+        /* mov  reg1, [reg2->pbMappingR3] */
+        off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                             RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
+    }
     /* if (!reg1) goto tlbmiss; */
     /** @todo eliminate the need for this test? */
     off = iemNativeEmitTestIfGprIsZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, pTlbState->idxReg1,
@@ -722,11 +798,12 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
          *
          * Note. We do not need to set offCurInstrStart or offInstrNextByte.
          */
-# ifdef RT_ARCH_AMD64
+# if !defined(RT_ARCH_ARM64) || !defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
+#  ifdef RT_ARCH_AMD64
         uint8_t const idxReg3 = UINT8_MAX;
-# else
+#  else
         uint8_t const idxReg3 = pTlbState->idxReg3;
-# endif
+#  endif
         /* Set pbInstrBuf first since we've got it loaded already. */
         off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
                                                RT_UOFFSETOF(VMCPUCC, iem.s.pbInstrBuf), idxReg3);
@@ -738,10 +815,40 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         off = iemNativeEmitStoreImmToVCpuU16Ex(pCodeBuf, off, GUEST_PAGE_SIZE, RT_UOFFSETOF(VMCPUCC, iem.s.cbInstrBufTotal),
                                                pTlbState->idxReg1, idxReg3);
         /* Now set GCPhysInstrBuf last as we'll be returning it in idxRegMemResult. */
+#  if defined(RT_ARCH_ARM64) && defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
+        off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg4,
+                                               RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf), idxReg3);
+#  else
         off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1,
                                              pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, GCPhys));
         off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, pTlbState->idxReg1,
                                                RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf), idxReg3);
+#  endif
+# else
+        /* ARM64: Same as above but using STP. This ASSUMES that we can trash
+                  the 6 bytes following iem.s.cbInstrBufTotal! */
+        AssertCompileMemberAlignment(VMCPUCC, iem.s.pbInstrBuf, 16);
+        AssertCompileAdjacentMembers(VMCPUCC, iem.s.pbInstrBuf, iem.s.uInstrBufPc);
+        AssertCompile(RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf) < 512);
+        /* idxReg1 = reg2->pbMappingR3 (see previous LDP) */
+        /* idxReg3 = FlatPC & ~GUEST_PAGE_OFFSET_MASK. */
+        off = iemNativeEmitGprEqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg3, idxRegFlatPtr, ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK);
+        pCodeBuf[off++] = Armv8A64MkInstrStPairGpr(pTlbState->idxReg1, pTlbState->idxReg3,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, RT_UOFFSETOF(VMCPUCC, iem.s.pbInstrBuf) / 8);
+
+        AssertCompileMemberAlignment(VMCPUCC, iem.s.GCPhysInstrBuf, 16);
+        AssertCompileAdjacentMembers(VMCPUCC, iem.s.GCPhysInstrBuf, iem.s.cbInstrBufTotal);
+        AssertCompile(RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf) < 512);
+#  ifndef IEM_WITH_OPAQUE_DECODER_STATE
+        AssertCompileAdjacentMembers(VMCPUCC, iem.s.cbInstrBufTotal, iem.s.offCurInstrStart);
+        AssertCompileAdjacentMembers(VMCPUCC, iem.s.offCurInstrStart, iem.s.fPrefixes);       /* these two will be set to ~0. */
+#  endif
+        /* idxReg4 = reg2->GCPhys (see previous LDP) */
+        /* idxReg3 = GUEST_PAGE_SIZE | UINT64_C(0xffffffffffff0000) */
+        pCodeBuf[off++] = Armv8A64MkInstrMovN(pTlbState->idxReg3, ~GUEST_PAGE_SIZE & 0xffff);
+        pCodeBuf[off++] = Armv8A64MkInstrStPairGpr(pTlbState->idxReg4, pTlbState->idxReg3,
+                                                   IEMNATIVE_REG_FIXED_PVMCPU, RT_UOFFSETOF(VMCPUCC, iem.s.GCPhysInstrBuf) / 8);
+# endif
         if (!a_fNoReturn) /* (We skip this for iemNativeEmitBltLoadTlbAfterBranch.) */
         {
             /* Set idxRegMemResult. */
@@ -749,7 +856,11 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
                 off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
             else
                 off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+# if defined(RT_ARCH_ARM64) && defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
+            off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg4);
+# else
             off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
+# endif
         }
     }
 

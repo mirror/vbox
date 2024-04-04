@@ -2367,6 +2367,25 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t u2Opc, 
          | iReg1;
 }
 
+
+/** A64: ldp x1, x2, [x3]   */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLdPairGpr(uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0,
+                                                     ARM64INSTRSTLDPAIRTYPE enmType = kArm64InstrStLdPairType_Signed,
+                                                     bool f64Bit = true)
+{
+    return Armv8A64MkInstrStLdPair(true /*fLoad*/, f64Bit ? 2 : 0, enmType, iReg1, iReg2, iBaseReg, iImm7);
+}
+
+
+/** A64: stp x1, x2, [x3]   */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStPairGpr(uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0,
+                                                     ARM64INSTRSTLDPAIRTYPE enmType = kArm64InstrStLdPairType_Signed,
+                                                     bool f64Bit = true)
+{
+    return Armv8A64MkInstrStLdPair(false /*fLoad*/, f64Bit ? 2 : 0, enmType, iReg1, iReg2, iBaseReg, iImm7);
+}
+
+
 typedef enum                         /* Size VR Opc */
 {                                    /*     \ | /   */
     kArmv8A64InstrLdStType_Mask_Size     = 0x300,
