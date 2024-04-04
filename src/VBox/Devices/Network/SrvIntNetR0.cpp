@@ -4104,9 +4104,16 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
              * Process the send buffer.
              */
             INTNETSWDECISION    enmSwDecision = INTNETSWDECISION_BROADCAST;
-            INTNETSG            Sg; /** @todo this will have to be changed if we're going to use async sending
-                                     * with buffer sharing for some OS or service. Darwin copies everything so
-                                     * I won't bother allocating and managing SGs right now. Sorry. */
+
+            /** @todo this will have to be changed if we're going to use async sending
+             * with buffer sharing for some OS or service. Darwin copies everything so
+             * I won't bother allocating and managing SGs right now. Sorry. */
+            union
+            {
+                uint8_t     abBuf[sizeof(INTNETSG) + sizeof(INTNETSEG)];
+                INTNETSG    SG;
+            } u;
+
             PINTNETHDR          pHdr;
             while ((pHdr = IntNetRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
             {
@@ -4115,10 +4122,10 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                 {
                     /* Send regular frame. */
                     void *pvCurFrame = IntNetHdrGetFramePtr(pHdr, pIf->pIntBuf);
-                    IntNetSgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
+                    IntNetSgInitTemp(&u.SG, pvCurFrame, pHdr->cbFrame);
                     if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                        intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&Sg.fFlags);
-                    enmSwDecision = intnetR0NetworkSend(pNetwork, pIf,  0 /*fSrc*/, &Sg, pDstTab);
+                        intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&u.SG.fFlags);
+                    enmSwDecision = intnetR0NetworkSend(pNetwork, pIf,  0 /*fSrc*/, &u.SG, pDstTab);
                 }
                 else if (u8Type == INTNETHDR_TYPE_GSO)
                 {
@@ -4128,10 +4135,10 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                     if (RT_LIKELY(PDMNetGsoIsValid(pGso, pHdr->cbFrame, cbFrame)))
                     {
                         void       *pvCurFrame = pGso + 1;
-                        IntNetSgInitTempGso(&Sg, pvCurFrame, cbFrame, pGso);
+                        IntNetSgInitTempGso(&u.SG, pvCurFrame, cbFrame, pGso);
                         if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                            intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, cbFrame, true /*fGso*/, (uint16_t *)&Sg.fFlags);
-                        enmSwDecision = intnetR0NetworkSend(pNetwork, pIf, 0 /*fSrc*/, &Sg, pDstTab);
+                            intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, cbFrame, true /*fGso*/, (uint16_t *)&u.SG.fFlags);
+                        enmSwDecision = intnetR0NetworkSend(pNetwork, pIf, 0 /*fSrc*/, &u.SG, pDstTab);
                     }
                     else
                     {

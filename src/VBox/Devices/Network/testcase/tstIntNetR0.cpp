@@ -203,9 +203,13 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 static int tstIntNetSendBuf(PINTNETRINGBUF pRingBuf, INTNETIFHANDLE hIf,
                             PSUPDRVSESSION pSession, void const *pvBuf, size_t cbBuf)
 {
-    INTNETSG Sg;
-    IntNetSgInitTemp(&Sg, (void *)pvBuf, (uint32_t)cbBuf);
-    int rc = intnetR0RingWriteFrame(pRingBuf, &Sg, NULL);
+    union
+    {
+        uint8_t abBuf[sizeof(INTNETSG) + sizeof(INTNETSEG)];
+        INTNETSG SG;
+    } u;
+    IntNetSgInitTemp(&u.SG, (void *)pvBuf, (uint32_t)cbBuf);
+    int rc = intnetR0RingWriteFrame(pRingBuf, &u.SG, NULL);
     if (RT_SUCCESS(rc))
         rc = IntNetR0IfSend(hIf, pSession);
     return rc;
@@ -269,9 +273,13 @@ static DECLCALLBACK(int) SendThread(RTTHREAD hThreadSelf, void *pvArg)
                           : iFrame % 1519 + sizeof(RTMAC) * 2 + sizeof(unsigned);
         pHdr->iFrame = iFrame;
 
-        INTNETSG Sg;
-        IntNetSgInitTemp(&Sg, abBuf, cb);
-        RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL));
+        union
+        {
+            uint8_t abBuf[sizeof(INTNETSG) + sizeof(INTNETSEG)];
+            INTNETSG SG;
+        } u;
+        IntNetSgInitTemp(&u.SG, abBuf, cb);
+        RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &u.SG, NULL));
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC_OK(g_hTest, rc = IntNetR0IfSend(pArgs->hIf, g_pSession));
         if (RT_FAILURE(rc) && ++cErrors > 64)
