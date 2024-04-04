@@ -5434,6 +5434,24 @@ iemNativeEmitXorGpr32ByImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGp
 }
 
 
+/**
+ * Emits code for XOR'ing two 32-bit GPRs.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitXorGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint32_t uImm)
+{
+#if defined(RT_ARCH_AMD64)
+    off = iemNativeEmitXorGpr32ByImmEx(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, uImm);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitXorGpr32ByImmEx(iemNativeInstrBufEnsure(pReNative, off, 1), off, iGprDst, uImm);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
 /*********************************************************************************************************************************
 *   Shifting                                                                                                                     *
 *********************************************************************************************************************************/

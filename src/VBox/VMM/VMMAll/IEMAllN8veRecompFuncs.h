@@ -4144,6 +4144,54 @@ iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 }
 
 
+typedef enum IEMNATIVEMITEFLOP
+{
+    kIemNativeEmitEflOp_Invalid = 0,
+    kIemNativeEmitEflOp_Set,
+    kIemNativeEmitEflOp_Clear,
+    kIemNativeEmitEflOp_Flip
+} IEMNATIVEMITEFLOP;
+
+#define IEM_MC_SET_EFL_BIT(a_fBit) \
+    off = iemNativeEmitModifyEFlagsBit(pReNative, off, a_fBit, kIemNativeEmitEflOp_Set);
+
+#define IEM_MC_CLEAR_EFL_BIT(a_fBit) \
+    off = iemNativeEmitModifyEFlagsBit(pReNative, off, a_fBit, kIemNativeEmitEflOp_Clear);
+
+#define IEM_MC_FLIP_EFL_BIT(a_fBit) \
+    off = iemNativeEmitModifyEFlagsBit(pReNative, off, a_fBit, kIemNativeEmitEflOp_Flip);
+
+/** Handles IEM_MC_SET_EFL_BIT/IEM_MC_CLEAR_EFL_BIT/IEM_MC_FLIP_EFL_BIT. */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitModifyEFlagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fEflBit, IEMNATIVEMITEFLOP enmOp)
+{
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ForUpdate, false /*fNoVolatileRegs*/);
+
+    switch (enmOp)
+    {
+        case kIemNativeEmitEflOp_Set:
+            off = iemNativeEmitOrGpr32ByImm(pReNative, off, idxEflReg, fEflBit);
+            break;
+        case kIemNativeEmitEflOp_Clear:
+            off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxEflReg, ~fEflBit);
+            break;
+        case kIemNativeEmitEflOp_Flip:
+            off = iemNativeEmitXorGpr32ByImm(pReNative, off, idxEflReg, fEflBit);
+            break;
+        default:
+            AssertFailed();
+            break;
+    }
+
+    /** @todo No delayed writeback for EFLAGS right now. */
+    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxEflReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.eflags));
+
+    /* Free but don't flush the EFLAGS register. */
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    return off;
+}
+
 
 /*********************************************************************************************************************************
 *   Emitters for segment register fetches (IEM_MC_FETCH_SREG_XXX).
