@@ -3067,8 +3067,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * There is one implicit zero'th argument, a pointer to the extended state.
  *
  * @param   a_pfnAImpl      Pointer to the assembly AVX routine.
- * @param   a1              The first extra argument.
- * @param   a2              The second extra argument.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
  */
 #define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
@@ -3083,9 +3083,9 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * There is one implicit zero'th argument, a pointer to the extended state.
  *
  * @param   a_pfnAImpl      Pointer to the assembly AVX routine.
- * @param   a1              The first extra argument.
- * @param   a2              The second extra argument.
- * @param   a3              The third extra argument.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
  */
 #define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
