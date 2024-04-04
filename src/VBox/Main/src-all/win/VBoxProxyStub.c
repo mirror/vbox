@@ -2492,7 +2492,7 @@ static void vbpsUpdateWindowsService(VBPSREGSTATE *pState, const WCHAR *pwszVBox
                                           NULL /* pwszLoadOrderGroup */,
                                           NULL /* pdwTagId */,
                                           wszzDependencies,
-                                          NULL /* pwszServiceStartName */,
+                                          pwszServiceStartName /* pwszServiceStartName */,
                                           NULL /* pwszPassword */);
                 if (hService != NULL)
                 {
