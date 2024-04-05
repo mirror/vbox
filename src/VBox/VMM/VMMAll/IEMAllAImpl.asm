@@ -1316,8 +1316,8 @@ ENDPROC iemAImpl_mulx_u64_fallback
 ; variants, except on 32-bit system where the 64-bit accesses requires hand
 ; coding.
 ;
-; All the functions takes a pointer to the destination memory operand in A0,
-; the source register operand in A1 and a pointer to eflags in A2.
+; All the functions takes a pointer to the destination memory operand in A1,
+; the source register operand in A2 and incoming eflags in A0.
 ;
 ; @param        1       The instruction mnemonic.
 ; @param        2       Non-zero if there should be a locked version.
@@ -1328,26 +1328,26 @@ ENDPROC iemAImpl_mulx_u64_fallback
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        %1      word [A0], A1_16
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        %1      word [A1], A2_16
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        %1      dword [A0], A1_32
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        %1      dword [A1], A2_32
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        %1      qword [A0], A1
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        %1      qword [A1], A2
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
   %endif ; RT_ARCH_AMD64
@@ -1356,26 +1356,26 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        lock %1 word [A0], A1_16
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        lock %1 word [A1], A2_16
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        lock %1 dword [A0], A1_32
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        lock %1 dword [A1], A2_32
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
   %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %3, %4, 0
-        lock %1 qword [A0], A1
-        IEM_SAVE_FLAGS_OLD                 A2, %3, %4, 0
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %3, %4, 0
+        lock %1 qword [A1], A2
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %3, %4, 0
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %endif ; RT_ARCH_AMD64

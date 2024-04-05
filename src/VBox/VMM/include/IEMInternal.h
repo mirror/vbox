@@ -2685,27 +2685,20 @@ FNIEMAIMPLBINROU32 iemAImpl_test_u32;
 FNIEMAIMPLBINROU64 iemAImpl_test_u64;
 /** @}  */
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU16,(uint16_t const *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOROU16 *PFNIEMAIMPLBINTODOROU16;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU32,(uint32_t const *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOROU32 *PFNIEMAIMPLBINTODOROU32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU64,(uint64_t const *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOROU64 *PFNIEMAIMPLBINTODOROU64;
-
 /** @name Bit operations operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINTODOROU16 iemAImpl_bt_u16;
-FNIEMAIMPLBINTODOROU32 iemAImpl_bt_u32;
-FNIEMAIMPLBINTODOROU64 iemAImpl_bt_u64;
-FNIEMAIMPLBINTODOU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
-FNIEMAIMPLBINTODOU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
-FNIEMAIMPLBINTODOU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;
-FNIEMAIMPLBINTODOU16 iemAImpl_btr_u16, iemAImpl_btr_u16_locked;
-FNIEMAIMPLBINTODOU32 iemAImpl_btr_u32, iemAImpl_btr_u32_locked;
-FNIEMAIMPLBINTODOU64 iemAImpl_btr_u64, iemAImpl_btr_u64_locked;
-FNIEMAIMPLBINTODOU16 iemAImpl_bts_u16, iemAImpl_bts_u16_locked;
-FNIEMAIMPLBINTODOU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
-FNIEMAIMPLBINTODOU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
+FNIEMAIMPLBINROU16 iemAImpl_bt_u16;
+FNIEMAIMPLBINROU32 iemAImpl_bt_u32;
+FNIEMAIMPLBINROU64 iemAImpl_bt_u64;
+FNIEMAIMPLBINU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;
+FNIEMAIMPLBINU16 iemAImpl_btr_u16, iemAImpl_btr_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_btr_u32, iemAImpl_btr_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_btr_u64, iemAImpl_btr_u64_locked;
+FNIEMAIMPLBINU16 iemAImpl_bts_u16, iemAImpl_bts_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
 /** @}  */
 
 /** @name Arithmetic three operand operations on double words (binary).

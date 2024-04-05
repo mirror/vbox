@@ -1204,42 +1204,45 @@ EMIT_LOCKED_BIN_OP(and, 8)
  * BT
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bt_u64,(uint32_t fEFlags, uint64_t const *puDst, uint64_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 64);
     uint64_t uDst = *puDst;
     if (uDst & RT_BIT_64(uSrc))
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bt_u32,(uint32_t fEFlags, uint32_t const *puDst, uint32_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 32);
     uint32_t uDst = *puDst;
     if (uDst & RT_BIT_32(uSrc))
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bt_u16,(uint32_t fEFlags, uint16_t const *puDst, uint16_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 16);
     uint16_t uDst = *puDst;
     if (uDst & RT_BIT_32(uSrc))
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1248,7 +1251,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t const *puDst, uint16_t uSrc, u
  * BTC
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btc_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
@@ -1259,19 +1262,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btc_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
@@ -1282,18 +1286,19 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btc_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
@@ -1304,14 +1309,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1320,7 +1326,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u16,(uint16_t *puDst, uint16_t uSrc, uint32
  * BTR
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btr_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1331,15 +1337,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btr_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1350,14 +1357,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_btr_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1368,10 +1376,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     }
     else
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1380,7 +1389,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u16,(uint16_t *puDst, uint16_t uSrc, uint32
  * BTS
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bts_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1388,18 +1397,19 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     uint64_t fMask = RT_BIT_64(uSrc);
     uint64_t uDst = *puDst;
     if (uDst & fMask)
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bts_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1407,17 +1417,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     uint32_t fMask = RT_BIT_32(uSrc);
     uint32_t uDst = *puDst;
     if (uDst & fMask)
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bts_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
        logical operation (AND/OR/whatever). */
@@ -1425,54 +1436,29 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     uint16_t fMask = RT_BIT_32(uSrc);
     uint32_t uDst = *puDst;
     if (uDst & fMask)
-        *pfEFlags |= X86_EFL_CF;
+        fEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        *pfEFlags &= ~X86_EFL_CF;
+        fEFlags &= ~X86_EFL_CF;
     }
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
-
-/** 64-bit locked binary operand operation. */
-# define DO_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth) \
-    do { \
-        uint ## a_cBitsWidth ## _t uOld = ASMAtomicUoReadU ## a_cBitsWidth(puDst); \
-        uint ## a_cBitsWidth ## _t uTmp; \
-        uint32_t fEflTmp; \
-        do \
-        { \
-            uTmp = uOld; \
-            fEflTmp = *pfEFlags; \
-            iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth(&uTmp, uSrc, &fEflTmp); \
-        } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uTmp, uOld, &uOld)); \
-        *pfEFlags = fEflTmp; \
-    } while (0)
-
-
-#define EMIT_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth) \
-    IEM_DECL_IMPL_DEF(void, iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth ##  _locked,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                                       uint ## a_cBitsWidth ## _t uSrc, \
-                                                                                       uint32_t *pfEFlags)) \
-    { \
-        DO_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth); \
-    }
-
-
-EMIT_LOCKED_BIN_TODO_OP(btc, 64)
-EMIT_LOCKED_BIN_TODO_OP(btr, 64)
-EMIT_LOCKED_BIN_TODO_OP(bts, 64)
+EMIT_LOCKED_BIN_OP(btc, 64)
+EMIT_LOCKED_BIN_OP(btr, 64)
+EMIT_LOCKED_BIN_OP(bts, 64)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_LOCKED_BIN_TODO_OP(btc, 32)
-EMIT_LOCKED_BIN_TODO_OP(btr, 32)
-EMIT_LOCKED_BIN_TODO_OP(bts, 32)
+EMIT_LOCKED_BIN_OP(btc, 32)
+EMIT_LOCKED_BIN_OP(btr, 32)
+EMIT_LOCKED_BIN_OP(bts, 32)
 
-EMIT_LOCKED_BIN_TODO_OP(btc, 16)
-EMIT_LOCKED_BIN_TODO_OP(btr, 16)
-EMIT_LOCKED_BIN_TODO_OP(bts, 16)
+EMIT_LOCKED_BIN_OP(btc, 16)
+EMIT_LOCKED_BIN_OP(btr, 16)
+EMIT_LOCKED_BIN_OP(bts, 16)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 #endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */

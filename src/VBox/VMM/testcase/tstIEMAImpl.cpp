@@ -1937,7 +1937,6 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN(and_u16_locked),
     ENTRY_BIN_PFN_CAST(cmp_u16,   PFNIEMAIMPLBINU16),
     ENTRY_BIN_PFN_CAST(test_u16,  PFNIEMAIMPLBINU16),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u16, PFNIEMAIMPLBINU16, 1),
     ENTRY_BIN_EX(btc_u16, 1),
     ENTRY_BIN_EX(btc_u16_locked, 1),
@@ -1945,7 +1944,6 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN_EX(btr_u16_locked, 1),
     ENTRY_BIN_EX(bts_u16, 1),
     ENTRY_BIN_EX(bts_u16_locked, 1),
-#endif
     ENTRY_BIN_AMD(  bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
@@ -1987,7 +1985,6 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN(and_u32_locked),
     ENTRY_BIN_PFN_CAST(cmp_u32,   PFNIEMAIMPLBINU32),
     ENTRY_BIN_PFN_CAST(test_u32,  PFNIEMAIMPLBINU32),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u32, PFNIEMAIMPLBINU32, 1),
     ENTRY_BIN_EX(btc_u32, 1),
     ENTRY_BIN_EX(btc_u32_locked, 1),
@@ -1995,7 +1992,6 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN_EX(btr_u32_locked, 1),
     ENTRY_BIN_EX(bts_u32, 1),
     ENTRY_BIN_EX(bts_u32_locked, 1),
-#endif
     ENTRY_BIN_AMD(  bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
@@ -2038,7 +2034,6 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN(and_u64_locked),
     ENTRY_BIN_PFN_CAST(cmp_u64,   PFNIEMAIMPLBINU64),
     ENTRY_BIN_PFN_CAST(test_u64,  PFNIEMAIMPLBINU64),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u64, PFNIEMAIMPLBINU64, 1),
     ENTRY_BIN_EX(btc_u64, 1),
     ENTRY_BIN_EX(btc_u64_locked, 1),
@@ -2046,7 +2041,6 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN_EX(btr_u64_locked, 1),
     ENTRY_BIN_EX(bts_u64, 1),
     ENTRY_BIN_EX(bts_u64_locked, 1),
-#endif
     ENTRY_BIN_AMD(  bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
