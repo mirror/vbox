@@ -77,6 +77,8 @@
 #define BX_USE_ATADRV           1
 #define BX_ELTORITO_BOOT        1
 
+#define VBOX_IS_ATA_DEVICE(device_id) (device_id < BX_MAX_ATA_DEVICES)
+
 #ifdef VBOX_WITH_SCSI
     /* Enough for now */
     #define BX_MAX_SCSI_DEVICES 4

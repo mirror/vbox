@@ -130,22 +130,76 @@ void BIOSCALL ata_init(void)
 }
 
 // ---------------------------------------------------------------------------
+// ATA/ATAPI driver : initialize device parameters (CHS geometry)
+// ---------------------------------------------------------------------------
+uint16_t ata_set_params(bio_dsk_t __far *bios_dsk, uint8_t device)
+{
+    uint16_t        iobase1, iobase2;
+    uint8_t         lheads, lsectors;
+    uint8_t         pheads, psectors;
+    uint8_t         status;
+
+    psectors = bios_dsk->devices[device].pchs.spt;
+    pheads   = bios_dsk->devices[device].pchs.heads - 1;
+
+    lsectors = bios_dsk->devices[device].lchs.spt;
+    lheads   = bios_dsk->devices[device].lchs.heads - 1;
+
+    if ((psectors == lsectors) && (pheads == lheads)) {
+        // If LCHS == PCHS, we can save ourselves the bother
+        // because INITIALIZE DEVICE PARAMETERS won't change anything.
+        return 0;
+    }
+
+    iobase1 = bios_dsk->channels[device / 2].iobase1;
+    iobase2 = bios_dsk->channels[device / 2].iobase2;
+
+    status = inb(iobase1 + ATA_CB_STAT);
+    if (status & ATA_CB_STAT_BSY)
+    {
+        BX_DEBUG_ATA("%s: disk busy\n", __func__);
+        return 1;
+    }
+
+    outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
+    outb(iobase1 + ATA_CB_FR, 0x00);
+    outb(iobase1 + ATA_CB_SC, lsectors);
+    outb(iobase1 + ATA_CB_DH, ((device & 1) ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0) | lheads );
+    outb(iobase1 + ATA_CB_CMD, ATA_CMD_INITIALIZE_DEVICE_PARAMETERS);
+
+    int_enable(); // enable higher priority interrupts
+
+    while (1) {
+        status = inb(iobase1 + ATA_CB_STAT);
+        if ( !(status & ATA_CB_STAT_BSY) )
+            break;
+    }
+
+    // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+    return 0;
+}
+
+
+// ---------------------------------------------------------------------------
 // ATA/ATAPI driver : software reset
 // ---------------------------------------------------------------------------
 // ATA-3
 // 8.2.1 Software reset - Device 0
+// NB: If two hard disks are installed on a single channel, *both* are reset
+//     by setting the SRST bit.
 
 void   ata_reset(uint16_t device)
 {
     uint16_t        iobase1, iobase2;
-    uint8_t         channel, slave, sn, sc;
+    uint8_t         channel, sn, sc;
     uint16_t        max;
     uint16_t        pdelay;
     bio_dsk_t __far *bios_dsk;
 
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     channel = device / 2;
-    slave = device % 2;
+    device  = channel * 2;
 
     iobase1 = bios_dsk->channels[channel].iobase1;
     iobase2 = bios_dsk->channels[channel].iobase2;
@@ -178,20 +232,23 @@ void   ata_reset(uint16_t device)
         }
     }
 
-    if (bios_dsk->devices[device].type != DSK_TYPE_NONE) {
-        // 8.2.1 (g) -- check for sc==sn==0x01
-        // select device
-        outb(iobase1+ATA_CB_DH, slave?ATA_CB_DH_DEV1:ATA_CB_DH_DEV0);
-        sc = inb(iobase1+ATA_CB_SC);
-        sn = inb(iobase1+ATA_CB_SN);
+    for ( ; (device & ~1) == (channel * 2); ++device) {
+        if (bios_dsk->devices[device].type == DSK_TYPE_ATA) {
+            // 8.2.1 (g) -- check for sc==sn==0x01
+            // select device
+            outb(iobase1+ATA_CB_DH, (device & 1) ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
+            sc = inb(iobase1+ATA_CB_SC);
+            sn = inb(iobase1+ATA_CB_SN);
 
-        if ( (sc==0x01) && (sn==0x01) ) {
-            // 8.2.1 (i) -- wait for DRDY
-            max = 0x10; /* Speed up for virtual drives. Disks are immediately ready, CDs never */
-            while(--max>0) {
-                uint8_t status = inb(iobase1+ATA_CB_STAT);
-                if ((status & ATA_CB_STAT_RDY) != 0)
-                    break;
+            if ( (sc==0x01) && (sn==0x01) ) {
+                // 8.2.1 (i) -- wait for DRDY
+                max = 0x10; /* Speed up for virtual drives. Disks are immediately ready, CDs never */
+                while(--max>0) {
+                    uint8_t status = inb(iobase1+ATA_CB_STAT);
+                    if ((status & ATA_CB_STAT_RDY) != 0)
+                        break;
+                }
+                ata_set_params(bios_dsk, device);
             }
         }
     }
@@ -672,6 +729,9 @@ void BIOSCALL ata_detect(void)
                     *int_vec = fdpt;
                 }
             }
+
+            // Set the right CHS geometry if needed
+            ata_set_params(bios_dsk, device);
 
             // fill hdidmap
             bios_dsk->hdidmap[hdcount] = device;

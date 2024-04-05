@@ -76,6 +76,14 @@
   at least in protected mode, assumes that those vectors must point into
   the F000h segment.
 
+- NetWare 2.0a INSTALL and VREPAIR utilities run in real mode but have their
+  own ATA disk driver. Like NetWare itself, the utilities obtain drive
+  geometry from the FDPT, but unlike NetWare, they assume that the drive
+  already had the correct geometry set during POST and that INT 13h/00h
+  will keep it in place by executing INITIALIZE DRIVE PARAMETERS.
+  NB: The BIOS itself always uses LBA and thus does not depend on the
+  drive's current CHS geometry at all.
+
 - Windows NT (including XP) uses INT 13h/08h to obtain the DPT for each floppy
   drive. NT assumes a 13-byte DPT which includes the number of tracks. NT will
   refuse to read more tracks than the DPT specifies and formats as many tracks

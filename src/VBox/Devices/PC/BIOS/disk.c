@@ -313,11 +313,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     switch (GET_AH()) {
 
     case 0x00: /* disk controller reset */
-#ifdef VBOX_WITH_SCSI
-        /* SCSI controller does not need a reset. */
-        if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-        ata_reset (device);
+        /* For ATA drives only. NB: This resets both drives on a channel. */
+        if (VBOX_IS_ATA_DEVICE(device))
+            ata_reset(device);
         goto int13_success;
         break;
 
