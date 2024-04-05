@@ -10989,10 +10989,9 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsllq_imm_u256,(PRTUINT256U puDst, PCRTUINT256
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_psrldq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
 {
-    RTUINT128U uSrc1 = *puDst;
-
     if (uShift < 16)
     {
+        RTUINT128U uSrc1 = *puDst;
         int i;
 
         for (i = 0; i < 16 - uShift; ++i)
@@ -11007,7 +11006,56 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrldq_imm_u128,(PRTUINT128U puDst, uint8_t uSh
     }
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift))
+{
+    if (uShift < 16)
+    {
+        RTUINT128U uSrc1 = *puSrc;
+        int i;
+
+        for (i = 0; i < 16 - uShift; ++i)
+            puDst->au8[i] = uSrc1.au8[i + uShift];
+        for (i = 16 - uShift; i < 16; ++i)
+            puDst->au8[i] = 0;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift))
+{
+    iemAImpl_vpsrldq_imm_u128(&puDst->au128[0], &puSrc->au128[0], uShift);
+    iemAImpl_vpsrldq_imm_u128(&puDst->au128[1], &puSrc->au128[1], uShift);
+}
 #endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift))
+{
+    if (uShift < 16)
+    {
+        RTUINT128U uSrc1 = *puSrc;
+        int i;
+
+        for (i = 0; i < 16 - uShift; ++i)
+            puDst->au8[i] = uSrc1.au8[i + uShift];
+        for (i = 16 - uShift; i < 16; ++i)
+            puDst->au8[i] = 0;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift))
+{
+    iemAImpl_vpsrldq_imm_u128_fallback(&puDst->au128[0], &puSrc->au128[0], uShift);
+    iemAImpl_vpsrldq_imm_u128_fallback(&puDst->au128[1], &puSrc->au128[1], uShift);
+}
 
 
 /*
@@ -11017,10 +11065,9 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_psrldq_imm_u128,(PRTUINT128U puDst, uint8_t uSh
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_pslldq_imm_u128,(PRTUINT128U puDst, uint8_t uShift))
 {
-    RTUINT128U uSrc1 = *puDst;
-
     if (uShift < 16)
     {
+        RTUINT128U uSrc1 = *puDst;
         int i;
 
         for (i = 0; i < uShift; ++i)
@@ -11035,7 +11082,57 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pslldq_imm_u128,(PRTUINT128U puDst, uint8_t uSh
     }
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift))
+{
+    if (uShift < 16)
+    {
+        RTUINT128U uSrc1 = *puSrc;
+        int i;
+
+        for (i = 0; i < uShift; ++i)
+            puDst->au8[i] = 0;
+        for (i = uShift; i < 16; ++i)
+            puDst->au8[i] = uSrc1.au8[i - uShift];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift))
+{
+    iemAImpl_vpslldq_imm_u128(&puDst->au128[0], &puSrc->au128[0], uShift);
+    iemAImpl_vpslldq_imm_u128(&puDst->au128[1], &puSrc->au128[1], uShift);
+}
+
 #endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift))
+{
+    if (uShift < 16)
+    {
+        RTUINT128U uSrc1 = *puSrc;
+        int i;
+
+        for (i = 0; i < uShift; ++i)
+            puDst->au8[i] = 0;
+        for (i = uShift; i < 16; ++i)
+            puDst->au8[i] = uSrc1.au8[i - uShift];
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift))
+{
+    iemAImpl_vpslldq_imm_u128_fallback(&puDst->au128[0], &puSrc->au128[0], uShift);
+    iemAImpl_vpslldq_imm_u128_fallback(&puDst->au128[1], &puSrc->au128[1], uShift);
+}
 
 
 /*

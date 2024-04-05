@@ -3812,7 +3812,20 @@ FNIEMOP_DEF_1(iemOp_VGrp14_vpsrlq_Hx_Ux_Ib, uint8_t, bRm)
 
 
 /** Opcode VEX.66.0F 0x73 11/3. */
-FNIEMOP_STUB_1(iemOp_VGrp14_vpsrldq_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_VGrp14_vpsrldq_Hx_Ux_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC3(VEX_VMI_REG, VPSRLDQ, vpsrldq, Hx, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    if (pVCpu->iem.s.uVexLength)
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrldq_imm_u256, iemAImpl_vpsrldq_imm_u256_fallback));
+    }
+    else
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u128, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpsrldq_imm_u128, iemAImpl_vpsrldq_imm_u128_fallback));
+    }
+}
 
 /*  Opcode VEX.0F 0x73 11/6 - invalid. */
 
@@ -3833,7 +3846,22 @@ FNIEMOP_DEF_1(iemOp_VGrp14_vpsllq_Hx_Ux_Ib, uint8_t, bRm)
 }
 
 /** Opcode VEX.66.0F 0x73 11/7. */
-FNIEMOP_STUB_1(iemOp_VGrp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_VGrp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC3(VEX_VMI_REG, VPSLLDQ, vpslldq, Hx, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    if (pVCpu->iem.s.uVexLength)
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u256, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpslldq_imm_u256, iemAImpl_vpslldq_imm_u256_fallback));
+    }
+    else
+    {
+        return FNIEMOP_CALL_2(iemOpCommonAvxAvx2_Hx_Ux_Ib_u128, bRm,
+                              IEM_SELECT_HOST_OR_FALLBACK(fAvx2, iemAImpl_vpslldq_imm_u128, iemAImpl_vpslldq_imm_u128_fallback));
+    }
+}
+
+/*  Opcode VEX.0F 0x73 11/6 - invalid. */
 
 /**
  * Group 14 jump table for register variant.

@@ -3792,6 +3792,10 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpslld_imm_u128, iemAImpl_vpslld_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpslld_imm_u256, iemAImpl_vpslld_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsllq_imm_u128, iemAImpl_vpsllq_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsllq_imm_u256, iemAImpl_vpsllq_imm_u256_fallback;
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpslldq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift));
 
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsraw_imm_u128, iemAImpl_vpsraw_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsraw_imm_u256, iemAImpl_vpsraw_imm_u256_fallback;
@@ -3804,8 +3808,10 @@ FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrld_imm_u128, iemAImpl_vpsrld_imm_u128_fall
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrld_imm_u256, iemAImpl_vpsrld_imm_u256_fallback;
 FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrlq_imm_u128, iemAImpl_vpsrlq_imm_u128_fallback;
 FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrlq_imm_u256, iemAImpl_vpsrlq_imm_u256_fallback;
-FNIEMAIMPLMEDIAPSHUFU128 iemAImpl_vpsrldq_imm_u128, iemAImpl_vpsrldq_imm_u128_fallback;
-FNIEMAIMPLMEDIAPSHUFU256 iemAImpl_vpsrldq_imm_u256, iemAImpl_vpsrldq_imm_u256_fallback;
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u256,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift));
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpsrldq_imm_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc, uint8_t uShift));
 
 FNIEMAIMPLMEDIAOPTF3U128     iemAImpl_vpermilps_u128,     iemAImpl_vpermilps_u128_fallback;
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_vpermilps_imm_u128, iemAImpl_vpermilps_imm_u128_fallback;
