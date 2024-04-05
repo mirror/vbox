@@ -6838,18 +6838,19 @@ ENDPROC iemAImpl_sha256rnds2_u128
 ;
 ; 32-bit forms of ADCX and ADOX
 ;
-; @param    A0      Pointer to the destination operand (input/output).
-; @param    A1      32-bit source operand 1 (input).
-; @param    A2      Pointer to the EFLAGS value (input/output).
+; @returns  Updated EFLAGS.
+; @param    A0      Incoming EFLAGS value (input).
+; @param    A1      Pointer to the destination operand (input/output).
+; @param    A2      32-bit source operand 1 (input).
 ;
 %macro IEMIMPL_ADX_32 2
 BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u32, 8
         PROLOGUE_4_ARGS
 
-        IEM_LOAD_FLAGS_OLD A2, %2, 0
-        %1      A1_32, [A0]
-        mov     [A0], A1_32
-        IEM_SAVE_FLAGS_OLD A2, %2, 0, 0
+        IEM_LOAD_FLAGS          A0_32, %2, 0
+        %1      A2_32, [A1]
+        mov     [A1], A2_32
+        IEM_SAVE_FLAGS_RETVAL   A0_32, %2, 0, 0
 
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ %+ %1 %+ _u32
@@ -6858,18 +6859,19 @@ ENDPROC             iemAImpl_ %+ %1 %+ _u32
 ;
 ; 64-bit forms of ADCX and ADOX
 ;
-; @param    A0      Pointer to the destination operand (input/output).
-; @param    A1      64-bit source operand 1 (input).
-; @param    A2      Pointer to the EFLAGS value (input/output).
+; @returns  Updated EFLAGS.
+; @param    A0      Incoming EFLAGS value (input).
+; @param    A1      Pointer to the destination operand (input/output).
+; @param    A2      64-bit source operand 1 (input).
 ;
 %macro IEMIMPL_ADX_64 2
 BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u64, 8
         PROLOGUE_4_ARGS
 
-        IEM_LOAD_FLAGS_OLD A2, %2, 0
-        %1      A1, [A0]
-        mov     [A0], A1
-        IEM_SAVE_FLAGS_OLD A2, %2, 0, 0
+        IEM_LOAD_FLAGS          A0_32, %2, 0
+        %1      A2, [A1]
+        mov     [A1], A2
+        IEM_SAVE_FLAGS_RETVAL   A0_32, %2, 0, 0
 
         EPILOGUE_4_ARGS
 ENDPROC             iemAImpl_ %+ %1 %+ _u64

@@ -3932,17 +3932,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_alt_mem_fence,(void))
 #endif /* !RT_ARCH_AMD64 || IEM_WITHOUT_ASSEMBLY */
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_arpl,(uint32_t fEFlags, uint16_t *pu16Dst, uint16_t u16Src))
 {
-    if ((*pu16Dst & X86_SEL_RPL) < (u16Src & X86_SEL_RPL))
+    uint16_t u16Dst = *pu16Dst;
+    if ((u16Dst & X86_SEL_RPL) < (u16Src & X86_SEL_RPL))
     {
-        *pu16Dst &= X86_SEL_MASK_OFF_RPL;
-        *pu16Dst |= u16Src & X86_SEL_RPL;
+        u16Dst   &= X86_SEL_MASK_OFF_RPL;
+        u16Dst   |= u16Src & X86_SEL_RPL;
+        *pu16Dst = u16Dst;
 
-        *pfEFlags |= X86_EFL_ZF;
+        fEFlags  |= X86_EFL_ZF;
     }
     else
-        *pfEFlags &= ~X86_EFL_ZF;
+        fEFlags  &= ~X86_EFL_ZF;
+    return fEFlags;
 }
 
 
@@ -19263,41 +19266,45 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128_fallback,(PRTUINT128U puDst, P
 #define ADX_EMIT(a_Flag, a_Type, a_Max) \
     do \
     { \
-        bool f = RT_BOOL(*pfEFlags & (a_Flag)); \
+        bool f = RT_BOOL(fEFlags & (a_Flag)); \
         a_Type uTmp = *puDst + uSrc; \
         if (uTmp < uSrc) \
-            *pfEFlags |= (a_Flag); \
+            fEFlags |= (a_Flag); \
         else \
-            *pfEFlags &= ~(a_Flag); \
+            fEFlags &= ~(a_Flag); \
         if (   uTmp == a_Max \
             && f) \
-            *pfEFlags |= (a_Flag); \
+            fEFlags |= (a_Flag); \
         if (f) \
             uTmp++; \
         *puDst = uTmp; \
     } \
     while (0)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adcx_u32_fallback,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adcx_u32_fallback,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     ADX_EMIT(X86_EFL_CF, uint32_t, UINT32_MAX);
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adcx_u64_fallback,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adcx_u64_fallback,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     ADX_EMIT(X86_EFL_CF, uint64_t, UINT64_MAX);
+    return fEFlags;
 }
 
 # if defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adcx_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adcx_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     ADX_EMIT(X86_EFL_CF, uint32_t, UINT32_MAX);
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adcx_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adcx_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     ADX_EMIT(X86_EFL_CF, uint64_t, UINT64_MAX);
+    return fEFlags;
 }
 
 #endif
@@ -19306,26 +19313,30 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adcx_u64,(uint64_t *puDst, uint64_t uSrc, uint3
 /**
  * ADOX
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_adox_u32_fallback,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adox_u32_fallback,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     ADX_EMIT(X86_EFL_OF, uint32_t, UINT32_MAX);
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adox_u64_fallback,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adox_u64_fallback,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     ADX_EMIT(X86_EFL_OF, uint64_t, UINT64_MAX);
+    return fEFlags;
 }
 
 # if defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adox_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adox_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     ADX_EMIT(X86_EFL_OF, uint32_t, UINT32_MAX);
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adox_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adox_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     ADX_EMIT(X86_EFL_OF, uint64_t, UINT64_MAX);
+    return fEFlags;
 }
 
 # endif

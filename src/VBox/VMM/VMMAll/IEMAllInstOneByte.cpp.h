@@ -3149,14 +3149,13 @@ FNIEMOP_DEF(iemOp_arpl_Ew_Gw)
         /* Register */
         IEM_MC_BEGIN(IEM_MC_F_MIN_286 | IEM_MC_F_NOT_64BIT, 0);
         IEMOP_HLP_DECODED_NL_2(OP_ARPL, IEMOPFORM_MR_REG, OP_PARM_Ew, OP_PARM_Gw, DISOPTYPE_HARMLESS);
-        IEM_MC_ARG(uint16_t *,      pu16Dst,    0);
-        IEM_MC_ARG(uint16_t,        u16Src,     1);
-        IEM_MC_ARG(uint32_t *,      pEFlags,    2);
-
+        IEM_MC_ARG(uint16_t,        u16Src,     2);
         IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_ARG(uint16_t *,      pu16Dst,    1);
         IEM_MC_REF_GREG_U16(pu16Dst,  IEM_GET_MODRM_RM_8(bRm));
-        IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_arpl, pu16Dst, u16Src, pEFlags);
+        IEM_MC_ARG_EFLAGS(          fEFlagsIn,  0);
+        IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, iemAImpl_arpl, fEFlagsIn, pu16Dst, u16Src);
+        IEM_MC_COMMIT_EFLAGS(fEFlagsRet);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -3165,20 +3164,20 @@ FNIEMOP_DEF(iemOp_arpl_Ew_Gw)
     {
         /* Memory */
         IEM_MC_BEGIN(IEM_MC_F_MIN_286 | IEM_MC_F_NOT_64BIT, 0);
-        IEM_MC_ARG(uint16_t *, pu16Dst,          0);
-        IEM_MC_ARG(uint16_t,   u16Src,           1);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DECODED_NL_2(OP_ARPL, IEMOPFORM_MR_REG, OP_PARM_Ew, OP_PARM_Gw, DISOPTYPE_HARMLESS);
+
+        IEM_MC_LOCAL(uint8_t,   bUnmapInfo);
+        IEM_MC_ARG(uint16_t *,  pu16Dst,    1);
         IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+        IEM_MC_ARG(uint16_t,   u16Src,      2);
         IEM_MC_FETCH_GREG_U16(u16Src, IEM_GET_MODRM_REG_8(bRm));
-        IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
-        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_arpl, pu16Dst, u16Src, pEFlags);
+        IEM_MC_ARG_EFLAGS(      fEFlagsIn,  0);
+        IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, iemAImpl_arpl, fEFlagsIn, pu16Dst, u16Src);
 
         IEM_MC_MEM_COMMIT_AND_UNMAP_RW(bUnmapInfo);
-        IEM_MC_COMMIT_EFLAGS(EFlags);
+        IEM_MC_COMMIT_EFLAGS(fEFlagsRet);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }

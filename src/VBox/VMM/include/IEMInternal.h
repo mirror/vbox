@@ -2996,7 +2996,7 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 
 /** @name Misc.
  * @{ */
-FNIEMAIMPLBINTODOU16 iemAImpl_arpl;
+FNIEMAIMPLBINU16 iemAImpl_arpl;
 /** @} */
 
 /** @name RDRAND and RDSEED
@@ -3018,10 +3018,10 @@ FNIEMAIMPLRDRANDSEEDU64 iemAImpl_rdseed_u64, iemAImpl_rdseed_u64_fallback;
 
 /** @name ADOX and ADCX
  * @{ */
-FNIEMAIMPLBINTODOU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
-FNIEMAIMPLBINTODOU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
-FNIEMAIMPLBINTODOU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
-FNIEMAIMPLBINTODOU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
+FNIEMAIMPLBINU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
+FNIEMAIMPLBINU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
+FNIEMAIMPLBINU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
+FNIEMAIMPLBINU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
 /** @} */
 
 /** @name FPU operations taking a 32-bit float argument

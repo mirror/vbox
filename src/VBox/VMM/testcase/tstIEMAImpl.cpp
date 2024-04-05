@@ -1950,9 +1950,7 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN_INTEL(bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(arpl),
-#endif
 };
 TEST_BINARY_OPS(16, uint16_t, "%#06x", BINU16_TEST_T, g_aBinU16)
 
@@ -1998,10 +1996,8 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN_INTEL(bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(adcx_u32),
     ENTRY_BIN(adox_u32),
-#endif
 };
 TEST_BINARY_OPS(32, uint32_t, "%#010RX32", BINU32_TEST_T, g_aBinU32)
 
@@ -2047,10 +2043,8 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN_INTEL(bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
-#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(adcx_u64),
     ENTRY_BIN(adox_u64),
-#endif
 /** @todo popcnt */
 /** @todo tzcnt */
 /** @todo lzcnt */
