@@ -254,8 +254,7 @@ static bool iemHlpCalcParityFlag(uint8_t u8Result)
  */
 static void iemHlpUpdateArithEFlagsU8(PVMCPUCC pVCpu, uint8_t u8Result, uint32_t fToUpdate, uint32_t fUndefined)
 {
-    uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
-    iemAImpl_test_u8(&u8Result, u8Result, &fEFlags);
+    uint32_t fEFlags = iemAImpl_test_u8(pVCpu->cpum.GstCtx.eflags.u, &u8Result, u8Result);
     pVCpu->cpum.GstCtx.eflags.u &= ~(fToUpdate | fUndefined);
     pVCpu->cpum.GstCtx.eflags.u |= (fToUpdate | fUndefined) & fEFlags;
 }
@@ -271,8 +270,7 @@ static void iemHlpUpdateArithEFlagsU8(PVMCPUCC pVCpu, uint8_t u8Result, uint32_t
  */
 static void iemHlpUpdateArithEFlagsU16(PVMCPUCC pVCpu, uint16_t u16Result, uint32_t fToUpdate, uint32_t fUndefined)
 {
-    uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
-    iemAImpl_test_u16(&u16Result, u16Result, &fEFlags);
+    uint32_t fEFlags = iemAImpl_test_u16(pVCpu->cpum.GstCtx.eflags.u, &u16Result, u16Result);
     pVCpu->cpum.GstCtx.eflags.u &= ~(fToUpdate | fUndefined);
     pVCpu->cpum.GstCtx.eflags.u |= (fToUpdate | fUndefined) & fEFlags;
 }
@@ -8429,7 +8427,7 @@ IEM_CIMPL_DEF_0(iemCImpl_aaa)
         if (   pVCpu->cpum.GstCtx.eflags.Bits.u1AF
             || (pVCpu->cpum.GstCtx.ax & 0xf) >= 10)
         {
-            iemAImpl_add_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.uBoth);
+            pVCpu->cpum.GstCtx.eflags.uBoth = iemAImpl_add_u16(pVCpu->cpum.GstCtx.eflags.uBoth, &pVCpu->cpum.GstCtx.ax, 0x106);
             pVCpu->cpum.GstCtx.eflags.Bits.u1AF = 1;
             pVCpu->cpum.GstCtx.eflags.Bits.u1CF = 1;
         }
@@ -8473,7 +8471,7 @@ IEM_CIMPL_DEF_0(iemCImpl_aas)
         if (   pVCpu->cpum.GstCtx.eflags.Bits.u1AF
             || (pVCpu->cpum.GstCtx.ax & 0xf) >= 10)
         {
-            iemAImpl_sub_u16(&pVCpu->cpum.GstCtx.ax, 0x106, &pVCpu->cpum.GstCtx.eflags.uBoth);
+            pVCpu->cpum.GstCtx.eflags.uBoth = iemAImpl_sub_u16(pVCpu->cpum.GstCtx.eflags.uBoth, &pVCpu->cpum.GstCtx.ax, 0x106);
             pVCpu->cpum.GstCtx.eflags.Bits.u1AF = 1;
             pVCpu->cpum.GstCtx.eflags.Bits.u1CF = 1;
         }

@@ -661,6 +661,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     uint32_t  a_Name  = 0; \
     uint32_t *a_pName = &a_Name; \
     NOREF(a_pName)
+#define IEM_MC_ARG_EFLAGS(a_Name, a_iArg) IEM_MC_ARG(uint32_t, a_Name, a_iArg); IEM_MC_FETCH_EFLAGS(a_Name)
 
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags)                  do { CHK_TYPE(uint32_t, a_EFlags); (void)fMcBegin; } while (0)
 #define IEM_MC_COMMIT_EFLAGS_OPT(a_EFlags)              do { CHK_TYPE(uint32_t, a_EFlags); (void)fMcBegin; } while (0)
@@ -1001,9 +1002,11 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2) \
+#define IEM_MC_CALL_AIMPL_3(a_rcType, a_rc, a_pfn, a0, a1, a2) \
+    IEM_MC_LOCAL(a_rcType, a_rc); \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);  (a_rc) = VINF_SUCCESS; (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3) \
+#define IEM_MC_CALL_AIMPL_4(a_rcType, a_rc, a_pfn, a0, a1, a2, a3) \
+    IEM_MC_LOCAL(a_rcType, a_rc); \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3);  (a_rc) = VINF_SUCCESS; (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_CIMPL_0(a_fFlags, a_fGstShwFlush, a_pfnCImpl)                       do { (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_CIMPL_1(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0) \

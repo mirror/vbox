@@ -2481,7 +2481,8 @@ iemNativeEmitCallAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2) \
     off = iemNativeEmitCallAImpl3(pReNative, off, UINT8_MAX /*idxVarRc*/, (uintptr_t)(a_pfn), a0, a1, a2)
 
-#define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2) \
+#define IEM_MC_CALL_AIMPL_3(a_rcType, a_rc, a_pfn, a0, a1, a2) \
+    IEM_MC_LOCAL(a_rcType, a_rc); \
     off = iemNativeEmitCallAImpl3(pReNative, off, a_rc,                   (uintptr_t)(a_pfn), a0, a1, a2)
 
 /** Emits code for IEM_MC_CALL_VOID_AIMPL_3 and IEM_MC_CALL_AIMPL_3. */
@@ -2499,7 +2500,8 @@ iemNativeEmitCallAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 #define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3) \
     off = iemNativeEmitCallAImpl4(pReNative, off, UINT8_MAX /*idxVarRc*/, (uintptr_t)(a_pfn), a0, a1, a2, a3)
 
-#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3) \
+#define IEM_MC_CALL_AIMPL_4(a_rcType, a_rc, a_pfn, a0, a1, a2, a3) \
+    IEM_MC_LOCAL(a_rcType, a_rc); \
     off = iemNativeEmitCallAImpl4(pReNative, off, a_rc,                   (uintptr_t)(a_pfn), a0, a1, a2, a3)
 
 /** Emits code for IEM_MC_CALL_VOID_AIMPL_4 and IEM_MC_CALL_AIMPL_4. */

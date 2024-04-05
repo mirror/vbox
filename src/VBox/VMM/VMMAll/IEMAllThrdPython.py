@@ -770,6 +770,7 @@ class ThreadedFunctionVariation(object):
             sBaseType = self.analyzeCallToType('pImpl');
             offBits   = sMember.rfind('U') + 1;
             if sBaseType == 'PCIEMOPBINSIZES':          return 'PFNIEMAIMPLBINU'        + sMember[offBits:];
+            if sBaseType == 'PCIEMOPBINTODOSIZES':      return 'PFNIEMAIMPLBINTODOU'    + sMember[offBits:];
             if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLUNARYU'      + sMember[offBits:];
             if sBaseType == 'PCIEMOPSHIFTSIZES':        return 'PFNIEMAIMPLSHIFTU'      + sMember[offBits:];
             if sBaseType == 'PCIEMOPSHIFTDBLSIZES':     return 'PFNIEMAIMPLSHIFTDBLU'   + sMember[offBits:];
@@ -1938,6 +1939,11 @@ class ThreadedFunction(object):
                 if oStmt.sVarName in self.dVariables:
                     raise Exception('Variable %s is defined more than once!' % (oStmt.sVarName,));
                 self.dVariables[oStmt.sVarName] = oStmt.sVarName;
+            elif isinstance(oStmt, iai.McStmtCall) and oStmt.sName.startswith('IEM_MC_CALL_AIMPL_'):
+                if oStmt.asParams[1] in self.dVariables:
+                    raise Exception('Variable %s is defined more than once!' % (oStmt.asParams[1],));
+                self.dVariables[oStmt.asParams[1]] = iai.McStmtVar('IEM_MC_LOCAL', oStmt.asParams[0:2],
+                                                                   oStmt.asParams[0], oStmt.asParams[1]);
 
             # There shouldn't be any variables or arguments declared inside if/
             # else blocks, but scan them too to be on the safe side.

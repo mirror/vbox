@@ -119,7 +119,7 @@ DECL_FORCE_INLINE(uint32_t) iemAImplCalcParity(uint32_t uResult)
  * Updates the status bits (CF, PF, AF, ZF, SF, and OF) after arithmetic op.
  *
  * @returns Status bits.
- * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_fEFlagsVar    The 32-bit EFLAGS variable to update.
  * @param   a_uResult       Unsigned result value.
  * @param   a_uSrc          The source value (for AF calc).
  * @param   a_uDst          The original destination value (for AF+OF calc).
@@ -127,15 +127,14 @@ DECL_FORCE_INLINE(uint32_t) iemAImplCalcParity(uint32_t uResult)
  * @param   a_CfExpr        Bool expression for the carry flag (CF).
  * @param   a_uSrcOf        The a_uSrc value to use for overflow calculation.
  */
-#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_pfEFlags, a_uResult, a_uDst, a_uSrc, a_cBitsWidth, a_CfExpr, a_uSrcOf) \
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_fEFlagsVar, a_uResult, a_uDst, a_uSrc, a_cBitsWidth, a_CfExpr, a_uSrcOf) \
     do { \
-        uint32_t fEflTmp = *(a_pfEFlags); \
-        fEflTmp &= ~X86_EFL_STATUS_BITS; \
-        fEflTmp |= (a_CfExpr) << X86_EFL_CF_BIT; \
-        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
-        fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
-        fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
-        fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
+        a_fEFlagsVar &= ~X86_EFL_STATUS_BITS; \
+        a_fEFlagsVar |= (a_CfExpr) << X86_EFL_CF_BIT; \
+        a_fEFlagsVar |= IEM_EFL_CALC_PARITY(a_uResult); \
+        a_fEFlagsVar |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
+        a_fEFlagsVar |= X86_EFL_CALC_ZF(a_uResult); \
+        a_fEFlagsVar |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
         \
         /* Overflow during ADDition happens when both inputs have the same signed \
            bit value and the result has a different sign bit value. \
@@ -146,10 +145,9 @@ DECL_FORCE_INLINE(uint32_t) iemAImplCalcParity(uint32_t uResult)
            Note! Must xor with sign bit to convert, not do (0 - a_uSrc). \
            \
            See also: http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt */ \
-        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(  (  ((uint ## a_cBitsWidth ## _t)~((a_uDst) ^ (a_uSrcOf))) \
-                                                      & RT_BIT_64(a_cBitsWidth - 1)) \
-                                                   & ((a_uResult) ^ (a_uDst)) ); \
-        *(a_pfEFlags) = fEflTmp; \
+        a_fEFlagsVar |= X86_EFL_GET_OF_ ## a_cBitsWidth(  (  ((uint ## a_cBitsWidth ## _t)~((a_uDst) ^ (a_uSrcOf))) \
+                                                           & RT_BIT_64(a_cBitsWidth - 1)) \
+                                                        & ((a_uResult) ^ (a_uDst)) ); \
     } while (0)
 
 /**
@@ -160,20 +158,18 @@ DECL_FORCE_INLINE(uint32_t) iemAImplCalcParity(uint32_t uResult)
  * to be the correct behavior on current CPUs.
  *
  * @returns Status bits.
- * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_fEFlagsVar    The 32-bit EFLAGS variable to update.
  * @param   a_uResult       Unsigned result value.
  * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
  * @param   a_fExtra        Additional bits to set.
  */
-#define IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(a_pfEFlags, a_uResult, a_cBitsWidth, a_fExtra) \
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(a_fEFlagsVar, a_uResult, a_cBitsWidth, a_fExtra) \
     do { \
-        uint32_t fEflTmp = *(a_pfEFlags); \
-        fEflTmp &= ~X86_EFL_STATUS_BITS; \
-        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
-        fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
-        fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
-        fEflTmp |= (a_fExtra); \
-        *(a_pfEFlags) = fEflTmp; \
+        a_fEFlagsVar &= ~X86_EFL_STATUS_BITS; \
+        a_fEFlagsVar |= IEM_EFL_CALC_PARITY(a_uResult); \
+        a_fEFlagsVar |= X86_EFL_CALC_ZF(a_uResult); \
+        a_fEFlagsVar |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
+        a_fEFlagsVar |= (a_fExtra); \
     } while (0)
 
 
@@ -675,40 +671,44 @@ const RTFLOAT128U g_ar128F2xm1HornerConsts[] =
  * ADD
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_add_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_add_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult < uDst, uSrc);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 64, uResult < uDst, uSrc);
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_add_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_add_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     uint32_t uDst    = *puDst;
     uint32_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult < uDst, uSrc);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 32, uResult < uDst, uSrc);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_add_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_add_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     uint16_t uDst    = *puDst;
     uint16_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult < uDst, uSrc);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 16, uResult < uDst, uSrc);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_add_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_add_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
     uint8_t uDst    = *puDst;
     uint8_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult < uDst, uSrc);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 8, uResult < uDst, uSrc);
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -717,60 +717,64 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_add_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
  * ADC
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adc_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_add_u64(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_add_u64(fEFlags, puDst, uSrc);
     else
     {
         uint64_t uDst    = *puDst;
         uint64_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult <= uDst, uSrc);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 64, uResult <= uDst, uSrc);
     }
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adc_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_add_u32(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_add_u32(fEFlags, puDst, uSrc);
     else
     {
         uint32_t uDst    = *puDst;
         uint32_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult <= uDst, uSrc);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 32, uResult <= uDst, uSrc);
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adc_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_add_u16(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_add_u16(fEFlags, puDst, uSrc);
     else
     {
         uint16_t uDst    = *puDst;
         uint16_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult <= uDst, uSrc);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 16, uResult <= uDst, uSrc);
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_adc_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_add_u8(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_add_u8(fEFlags, puDst, uSrc);
     else
     {
         uint8_t uDst    = *puDst;
         uint8_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult <= uDst, uSrc);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 8, uResult <= uDst, uSrc);
     }
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -780,40 +784,44 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
  */
 # if !defined(RT_ARCH_ARM64)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sub_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uDst < uSrc, uSrc ^ RT_BIT_64(63));
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 64, uDst < uSrc, uSrc ^ RT_BIT_64(63));
+    return fEFlags;
 }
 
 #  if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sub_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     uint32_t uDst    = *puDst;
     uint32_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uDst < uSrc, uSrc ^ RT_BIT_32(31));
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 32, uDst < uSrc, uSrc ^ RT_BIT_32(31));
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sub_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     uint16_t uDst    = *puDst;
     uint16_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uDst < uSrc, uSrc ^ (uint16_t)0x8000);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 16, uDst < uSrc, uSrc ^ (uint16_t)0x8000);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sub_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
     uint8_t uDst    = *puDst;
     uint8_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uDst < uSrc, uSrc ^ (uint8_t)0x80);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 8, uDst < uSrc, uSrc ^ (uint8_t)0x80);
+    return fEFlags;
 }
 
 #  endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -823,60 +831,64 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
  * SBB
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sbb_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_sub_u64(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_sub_u64(fEFlags, puDst, uSrc);
     else
     {
         uint64_t uDst    = *puDst;
         uint64_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uDst <= uSrc, uSrc ^ RT_BIT_64(63));
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 64, uDst <= uSrc, uSrc ^ RT_BIT_64(63));
     }
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sbb_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_sub_u32(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_sub_u32(fEFlags, puDst, uSrc);
     else
     {
         uint32_t uDst    = *puDst;
         uint32_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uDst <= uSrc, uSrc ^ RT_BIT_32(31));
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 32, uDst <= uSrc, uSrc ^ RT_BIT_32(31));
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sbb_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_sub_u16(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_sub_u16(fEFlags, puDst, uSrc);
     else
     {
         uint16_t uDst    = *puDst;
         uint16_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uDst <= uSrc, uSrc ^ (uint16_t)0x8000);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 16, uDst <= uSrc, uSrc ^ (uint16_t)0x8000);
     }
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sbb_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
-    if (!(*pfEFlags & X86_EFL_CF))
-        iemAImpl_sub_u8(puDst, uSrc, pfEFlags);
+    if (!(fEFlags & X86_EFL_CF))
+        fEFlags = iemAImpl_sub_u8(fEFlags, puDst, uSrc);
     else
     {
         uint8_t uDst    = *puDst;
         uint8_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uDst <= uSrc, uSrc ^ (uint8_t)0x80);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(fEFlags, uResult, uDst, uSrc, 8, uDst <= uSrc, uSrc ^ (uint8_t)0x80);
     }
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -886,36 +898,40 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
  * OR
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_or_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_or_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     uint64_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 64, 0);
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_or_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_or_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     uint32_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 32, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_or_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_or_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     uint16_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 16, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_or_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_or_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
     uint8_t uResult = *puDst | uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 8, 0);
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -924,36 +940,40 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_or_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *
  * XOR
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_xor_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     uint64_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 64, 0);
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_xor_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     uint32_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 32, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_xor_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     uint16_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 16, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_xor_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
     uint8_t uResult = *puDst ^ uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 8, 0);
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -962,36 +982,40 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xor_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
  * AND
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_and_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_and_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
     uint64_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 64, 0);
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_and_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_and_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
     uint32_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 32, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_and_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_and_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
     uint16_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 16, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_and_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_and_u8,(uint32_t fEFlags, uint8_t *puDst, uint8_t uSrc))
 {
     uint8_t const uResult = *puDst & uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 8, 0);
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1005,7 +1029,9 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u64_fallback,(uint64_t *puDst, uint64_t uS
 {
     uint64_t const uResult = ~uSrc1 & uSrc2;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
+    uint32_t fEFlags = *pfEFlags;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 64, 0);
+    *pfEFlags = fEFlags;
 }
 
 
@@ -1013,7 +1039,9 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u32_fallback,(uint32_t *puDst, uint32_t uS
 {
     uint32_t const uResult = ~uSrc1 & uSrc2;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
+    uint32_t fEFlags = *pfEFlags;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 32, 0);
+    *pfEFlags = fEFlags;
 }
 
 
@@ -1038,32 +1066,32 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u32,(uint32_t *puDst, uint32_t uSrc1, uint
  * CMP
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmp_u64,(uint32_t fEFlags, uint64_t const *puDst, uint64_t uSrc))
 {
     uint64_t uDstTmp = *puDst;
-    iemAImpl_sub_u64(&uDstTmp, uSrc, pfEFlags);
+    return iemAImpl_sub_u64(fEFlags, &uDstTmp, uSrc);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmp_u32,(uint32_t fEFlags, uint32_t const *puDst, uint32_t uSrc))
 {
     uint32_t uDstTmp = *puDst;
-    iemAImpl_sub_u32(&uDstTmp, uSrc, pfEFlags);
+    return iemAImpl_sub_u32(fEFlags, &uDstTmp, uSrc);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmp_u16,(uint32_t fEFlags, uint16_t const *puDst, uint16_t uSrc))
 {
     uint16_t uDstTmp = *puDst;
-    iemAImpl_sub_u16(&uDstTmp, uSrc, pfEFlags);
+    return iemAImpl_sub_u16(fEFlags, &uDstTmp, uSrc);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t const *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmp_u8,(uint32_t fEFlags, uint8_t const *puDst, uint8_t uSrc))
 {
     uint8_t uDstTmp = *puDst;
-    iemAImpl_sub_u8(&uDstTmp, uSrc, pfEFlags);
+    return iemAImpl_sub_u8(fEFlags, &uDstTmp, uSrc);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1072,32 +1100,36 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t const *puDst, uint8_t uSrc, uin
  * TEST
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_test_u64,(uint32_t fEFlags, uint64_t const *puDst, uint64_t uSrc))
 {
     uint64_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 64, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 64, 0);
+    return fEFlags;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_test_u32,(uint32_t fEFlags, uint32_t const *puDst, uint32_t uSrc))
 {
     uint32_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 32, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 32, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_test_u16,(uint32_t fEFlags, uint16_t const *puDst, uint16_t uSrc))
 {
     uint16_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 16, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 16, 0);
+    return fEFlags;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u8,(uint8_t const *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_test_u8,(uint32_t fEFlags, uint8_t const *puDst, uint8_t uSrc))
 {
     uint8_t uResult = *puDst & uSrc;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(pfEFlags, uResult, 8, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGICAL(fEFlags, uResult, 8, 0);
+    return fEFlags;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1116,17 +1148,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u8,(uint8_t const *puDst, uint8_t uSrc, ui
         do \
         { \
             uTmp = uOld; \
-            fEflTmp = *pfEFlags; \
-            iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth(&uTmp, uSrc, &fEflTmp); \
+            fEflTmp = iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth(fEFlagsIn, &uTmp, uSrc); \
         } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uTmp, uOld, &uOld)); \
-        *pfEFlags = fEflTmp; \
+        return fEflTmp; \
     } while (0)
 
 
 #define EMIT_LOCKED_BIN_OP(a_Mnemonic, a_cBitsWidth) \
-    IEM_DECL_IMPL_DEF(void, iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth ##  _locked,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                                       uint ## a_cBitsWidth ## _t uSrc, \
-                                                                                       uint32_t *pfEFlags)) \
+    IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth ##  _locked,(uint32_t fEFlagsIn, \
+                                                                                           uint ## a_cBitsWidth ## _t *puDst, \
+                                                                                           uint ## a_cBitsWidth ## _t uSrc)) \
     { \
         DO_LOCKED_BIN_OP(a_Mnemonic, a_cBitsWidth); \
     }
@@ -1406,17 +1437,42 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u16,(uint16_t *puDst, uint16_t uSrc, uint32
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
-EMIT_LOCKED_BIN_OP(btc, 64)
-EMIT_LOCKED_BIN_OP(btr, 64)
-EMIT_LOCKED_BIN_OP(bts, 64)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_LOCKED_BIN_OP(btc, 32)
-EMIT_LOCKED_BIN_OP(btr, 32)
-EMIT_LOCKED_BIN_OP(bts, 32)
+/** 64-bit locked binary operand operation. */
+# define DO_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth) \
+    do { \
+        uint ## a_cBitsWidth ## _t uOld = ASMAtomicUoReadU ## a_cBitsWidth(puDst); \
+        uint ## a_cBitsWidth ## _t uTmp; \
+        uint32_t fEflTmp; \
+        do \
+        { \
+            uTmp = uOld; \
+            fEflTmp = *pfEFlags; \
+            iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth(&uTmp, uSrc, &fEflTmp); \
+        } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uTmp, uOld, &uOld)); \
+        *pfEFlags = fEflTmp; \
+    } while (0)
 
-EMIT_LOCKED_BIN_OP(btc, 16)
-EMIT_LOCKED_BIN_OP(btr, 16)
-EMIT_LOCKED_BIN_OP(bts, 16)
+
+#define EMIT_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth) \
+    IEM_DECL_IMPL_DEF(void, iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth ##  _locked,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                                       uint ## a_cBitsWidth ## _t uSrc, \
+                                                                                       uint32_t *pfEFlags)) \
+    { \
+        DO_LOCKED_BIN_TODO_OP(a_Mnemonic, a_cBitsWidth); \
+    }
+
+
+EMIT_LOCKED_BIN_TODO_OP(btc, 64)
+EMIT_LOCKED_BIN_TODO_OP(btr, 64)
+EMIT_LOCKED_BIN_TODO_OP(bts, 64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_LOCKED_BIN_TODO_OP(btc, 32)
+EMIT_LOCKED_BIN_TODO_OP(btr, 32)
+EMIT_LOCKED_BIN_TODO_OP(bts, 32)
+
+EMIT_LOCKED_BIN_TODO_OP(btc, 16)
+EMIT_LOCKED_BIN_TODO_OP(btr, 16)
+EMIT_LOCKED_BIN_TODO_OP(bts, 16)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 #endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1756,8 +1812,8 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsr_u,a_cBits,a_Suffix),(a_Type *pu
     uint32_t fEfl1 = *pfEFlags; \
     uint32_t fEfl2 = fEfl1; \
     *puDst = uSrc; \
-    iemAImpl_sub_u ## a_cBits(&uSrc, 1, &fEfl1); \
-    iemAImpl_and_u ## a_cBits(puDst, uSrc, &fEfl2); \
+    fEfl1 = iemAImpl_sub_u ## a_cBits(fEfl1, &uSrc, 1); \
+    fEfl2 = iemAImpl_and_u ## a_cBits(fEfl2, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
@@ -1784,8 +1840,8 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsmsk_u,a_cBits,a_Suffix),(a_Type *
     uint32_t fEfl1 = *pfEFlags; \
     uint32_t fEfl2 = fEfl1; \
     *puDst = uSrc; \
-    iemAImpl_sub_u ## a_cBits(&uSrc, 1, &fEfl1); \
-    iemAImpl_xor_u ## a_cBits(puDst, uSrc, &fEfl2); \
+    fEfl1 = iemAImpl_sub_u ## a_cBits(fEfl1, &uSrc, 1); \
+    fEfl2 = iemAImpl_xor_u ## a_cBits(fEfl2, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
@@ -1813,7 +1869,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsi_u,a_cBits,a_Suffix),(a_Type *pu
     uint32_t fEfl2 = fEfl1; \
     *puDst = uSrc; \
     iemAImpl_neg_u ## a_cBits(&uSrc, &fEfl1); \
-    iemAImpl_and_u ## a_cBits(puDst, uSrc, &fEfl2); \
+    fEfl2 = iemAImpl_and_u ## a_cBits(fEfl2, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
@@ -2022,7 +2078,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u ## a_cBitsWidth,(a_Type *puDst, a_Type *
 { \
     a_Type uDst    = *puDst; \
     a_Type uResult = uDst; \
-    iemAImpl_add_u ## a_cBitsWidth(&uResult, *puReg, pfEFlags); \
+    *pfEFlags = iemAImpl_add_u ## a_cBitsWidth(*pfEFlags, &uResult, *puReg); \
     *puDst = uResult; \
     *puReg = uDst; \
 } \
@@ -2035,8 +2091,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u ## a_cBitsWidth ## _locked,(a_Type *puDs
     do \
     { \
         uResult = uOld; \
-        fEflTmp = *pfEFlags; \
-        iemAImpl_add_u ## a_cBitsWidth(&uResult, *puReg, &fEflTmp); \
+        fEflTmp = iemAImpl_add_u ## a_cBitsWidth(*pfEFlags, &uResult, *puReg); \
     } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uResult, uOld, &uOld)); \
     *puReg    = uOld; \
     *pfEFlags = fEflTmp; \
@@ -2063,7 +2118,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u8_locked, (uint8_t  *pu8Dst,  uint8_t 
     uint8_t uOld = *puAl;
     if (ASMAtomicCmpXchgExU8(pu8Dst, uSrcReg, uOld, puAl))
         Assert(*puAl == uOld);
-    iemAImpl_cmp_u8(&uOld, *puAl, pEFlags);
+    *pEFlags = iemAImpl_cmp_u8(*pEFlags, &uOld, *puAl);
 }
 
 
@@ -2072,7 +2127,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16_locked,(uint16_t *pu16Dst, uint16_t
     uint16_t uOld = *puAx;
     if (ASMAtomicCmpXchgExU16(pu16Dst, uSrcReg, uOld, puAx))
         Assert(*puAx == uOld);
-    iemAImpl_cmp_u16(&uOld, *puAx, pEFlags);
+    *pEFlags = iemAImpl_cmp_u16(*pEFlags, &uOld, *puAx);
 }
 
 
@@ -2081,7 +2136,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32_locked,(uint32_t *pu32Dst, uint32_t
     uint32_t uOld = *puEax;
     if (ASMAtomicCmpXchgExU32(pu32Dst, uSrcReg, uOld, puEax))
         Assert(*puEax == uOld);
-    iemAImpl_cmp_u32(&uOld, *puEax, pEFlags);
+    *pEFlags = iemAImpl_cmp_u32(*pEFlags, &uOld, *puEax);
 }
 
 
@@ -2097,7 +2152,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64_locked,(uint64_t *pu64Dst, uint64_t
     uint64_t uOld = *puRax;
     if (ASMAtomicCmpXchgExU64(pu64Dst, uSrcReg, uOld, puRax))
         Assert(*puRax == uOld);
-    iemAImpl_cmp_u64(&uOld, *puRax, pEFlags);
+    *pEFlags = iemAImpl_cmp_u64(*pEFlags, &uOld, *puRax);
 }
 
 
@@ -2184,12 +2239,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16,       (uint16_t *pu16Dst, uint16_t
         if (uOld == uDst)
         {
             *pu16Dst = uSrcReg;
-            iemAImpl_cmp_u16(&uOld, uOld, pEFlags);
+            *pEFlags = iemAImpl_cmp_u16(*pEFlags, &uOld, uOld);
         }
         else
         {
             *puAx = uDst;
-            iemAImpl_cmp_u16(&uOld, uDst, pEFlags);
+            *pEFlags = iemAImpl_cmp_u16(*pEFlags, &uOld, uDst);
         }
     }
 }
@@ -2210,12 +2265,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32,       (uint32_t *pu32Dst, uint32_t
         if (uOld == uDst)
         {
             *pu32Dst = uSrcReg;
-            iemAImpl_cmp_u32(&uOld, uOld, pEFlags);
+            *pEFlags = iemAImpl_cmp_u32(*pEFlags, &uOld, uOld);
         }
         else
         {
             *puEax = uDst;
-            iemAImpl_cmp_u32(&uOld, uDst, pEFlags);
+            *pEFlags = iemAImpl_cmp_u32(*pEFlags, &uOld, uDst);
         }
     }
 }
@@ -2238,12 +2293,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t
         if (uOld == uDst)
         {
             *pu64Dst = uSrc;
-            iemAImpl_cmp_u64(&uOld, uOld, pEFlags);
+            *pEFlags = iemAImpl_cmp_u64(*pEFlags, &uOld, uOld);
         }
         else
         {
             *puRax = uDst;
-            iemAImpl_cmp_u64(&uOld, uDst, pEFlags);
+            *pEFlags = iemAImpl_cmp_u64(*pEFlags, &uOld, uDst);
         }
     }
 }
@@ -2263,12 +2318,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t
         if (uOld == uDst)
         {
             *pu64Dst = uSrcReg;
-            iemAImpl_cmp_u64(&uOld, uOld, pEFlags);
+            *pEFlags = iemAImpl_cmp_u64(*pEFlags, &uOld, uOld);
         }
         else
         {
             *puRax = uDst;
-            iemAImpl_cmp_u64(&uOld, uDst, pEFlags);
+            *pEFlags = iemAImpl_cmp_u64(*pEFlags, &uOld, uDst);
         }
     }
 }

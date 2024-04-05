@@ -2591,7 +2591,7 @@ RT_C_DECLS_END
 
 /** @name Arithmetic assignment operations on bytes (binary).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINU8,  (uint8_t  *pu8Dst,  uint8_t  u8Src,  uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINU8, (uint32_t fEFlagsIn, uint8_t  *pu8Dst,  uint8_t  u8Src));
 typedef FNIEMAIMPLBINU8  *PFNIEMAIMPLBINU8;
 FNIEMAIMPLBINU8 iemAImpl_add_u8, iemAImpl_add_u8_locked;
 FNIEMAIMPLBINU8 iemAImpl_adc_u8, iemAImpl_adc_u8_locked;
@@ -2600,11 +2600,14 @@ FNIEMAIMPLBINU8 iemAImpl_sbb_u8, iemAImpl_sbb_u8_locked;
 FNIEMAIMPLBINU8  iemAImpl_or_u8,  iemAImpl_or_u8_locked;
 FNIEMAIMPLBINU8 iemAImpl_xor_u8, iemAImpl_xor_u8_locked;
 FNIEMAIMPLBINU8 iemAImpl_and_u8, iemAImpl_and_u8_locked;
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU8, (uint8_t *pu8Dst, uint8_t u8Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOU8 *PFNIEMAIMPLBINTODOU8;
 /** @} */
 
 /** @name Arithmetic assignment operations on words (binary).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINU16,  (uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINU16, (uint32_t fEFlagsIn, uint16_t *pu16Dst, uint16_t u16Src));
 typedef FNIEMAIMPLBINU16  *PFNIEMAIMPLBINU16;
 FNIEMAIMPLBINU16 iemAImpl_add_u16, iemAImpl_add_u16_locked;
 FNIEMAIMPLBINU16 iemAImpl_adc_u16, iemAImpl_adc_u16_locked;
@@ -2613,11 +2616,15 @@ FNIEMAIMPLBINU16 iemAImpl_sbb_u16, iemAImpl_sbb_u16_locked;
 FNIEMAIMPLBINU16  iemAImpl_or_u16,  iemAImpl_or_u16_locked;
 FNIEMAIMPLBINU16 iemAImpl_xor_u16, iemAImpl_xor_u16_locked;
 FNIEMAIMPLBINU16 iemAImpl_and_u16, iemAImpl_and_u16_locked;
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU16, (uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOU16 *PFNIEMAIMPLBINTODOU16;
 /** @}  */
+
 
 /** @name Arithmetic assignment operations on double words (binary).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINU32, (uint32_t *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINU32, (uint32_t fEFlagsIn, uint32_t *pu32Dst, uint32_t u32Src));
 typedef FNIEMAIMPLBINU32 *PFNIEMAIMPLBINU32;
 FNIEMAIMPLBINU32 iemAImpl_add_u32, iemAImpl_add_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_adc_u32, iemAImpl_adc_u32_locked;
@@ -2626,14 +2633,17 @@ FNIEMAIMPLBINU32 iemAImpl_sbb_u32, iemAImpl_sbb_u32_locked;
 FNIEMAIMPLBINU32  iemAImpl_or_u32,  iemAImpl_or_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_xor_u32, iemAImpl_xor_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_and_u32, iemAImpl_and_u32_locked;
-FNIEMAIMPLBINU32 iemAImpl_blsi_u32, iemAImpl_blsi_u32_fallback;
-FNIEMAIMPLBINU32 iemAImpl_blsr_u32, iemAImpl_blsr_u32_fallback;
-FNIEMAIMPLBINU32 iemAImpl_blsmsk_u32, iemAImpl_blsmsk_u32_fallback;
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU32, (uint32_t *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOU32 *PFNIEMAIMPLBINTODOU32;
+FNIEMAIMPLBINTODOU32 iemAImpl_blsi_u32, iemAImpl_blsi_u32_fallback;
+FNIEMAIMPLBINTODOU32 iemAImpl_blsr_u32, iemAImpl_blsr_u32_fallback;
+FNIEMAIMPLBINTODOU32 iemAImpl_blsmsk_u32, iemAImpl_blsmsk_u32_fallback;
 /** @}  */
 
 /** @name Arithmetic assignment operations on quad words (binary).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINU64, (uint64_t *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINU64, (uint32_t fEFlagsIn, uint64_t *pu64Dst, uint64_t u64Src));
 typedef FNIEMAIMPLBINU64 *PFNIEMAIMPLBINU64;
 FNIEMAIMPLBINU64 iemAImpl_add_u64, iemAImpl_add_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_adc_u64, iemAImpl_adc_u64_locked;
@@ -2642,18 +2652,21 @@ FNIEMAIMPLBINU64 iemAImpl_sbb_u64, iemAImpl_sbb_u64_locked;
 FNIEMAIMPLBINU64  iemAImpl_or_u64,  iemAImpl_or_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_xor_u64, iemAImpl_xor_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_and_u64, iemAImpl_and_u64_locked;
-FNIEMAIMPLBINU64 iemAImpl_blsi_u64, iemAImpl_blsi_u64_fallback;
-FNIEMAIMPLBINU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
-FNIEMAIMPLBINU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
+
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU64, (uint64_t *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOU64 *PFNIEMAIMPLBINTODOU64;
+FNIEMAIMPLBINTODOU64 iemAImpl_blsi_u64, iemAImpl_blsi_u64_fallback;
+FNIEMAIMPLBINTODOU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
+FNIEMAIMPLBINTODOU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
 /** @}  */
 
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU8,(uint8_t const *pu8Dst, uint8_t u8Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINROU8, (uint32_t fEFlagsIn, uint8_t const *pu8Dst, uint8_t u8Src));
 typedef FNIEMAIMPLBINROU8 *PFNIEMAIMPLBINROU8;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU16,(uint16_t const *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINROU16,(uint32_t fEFlagsIn, uint16_t const *pu16Dst, uint16_t u16Src));
 typedef FNIEMAIMPLBINROU16 *PFNIEMAIMPLBINROU16;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU32,(uint32_t const *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINROU32,(uint32_t fEFlagsIn, uint32_t const *pu32Dst, uint32_t u32Src));
 typedef FNIEMAIMPLBINROU32 *PFNIEMAIMPLBINROU32;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU64,(uint64_t const *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINROU64,(uint32_t fEFlagsIn, uint64_t const *pu64Dst, uint64_t u64Src));
 typedef FNIEMAIMPLBINROU64 *PFNIEMAIMPLBINROU64;
 
 /** @name Compare operations (thrown in with the binary ops).
@@ -2672,20 +2685,27 @@ FNIEMAIMPLBINROU32 iemAImpl_test_u32;
 FNIEMAIMPLBINROU64 iemAImpl_test_u64;
 /** @}  */
 
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU16,(uint16_t const *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOROU16 *PFNIEMAIMPLBINTODOROU16;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU32,(uint32_t const *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOROU32 *PFNIEMAIMPLBINTODOROU32;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOROU64,(uint64_t const *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINTODOROU64 *PFNIEMAIMPLBINTODOROU64;
+
 /** @name Bit operations operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINROU16 iemAImpl_bt_u16;
-FNIEMAIMPLBINROU32 iemAImpl_bt_u32;
-FNIEMAIMPLBINROU64 iemAImpl_bt_u64;
-FNIEMAIMPLBINU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
-FNIEMAIMPLBINU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
-FNIEMAIMPLBINU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;
-FNIEMAIMPLBINU16 iemAImpl_btr_u16, iemAImpl_btr_u16_locked;
-FNIEMAIMPLBINU32 iemAImpl_btr_u32, iemAImpl_btr_u32_locked;
-FNIEMAIMPLBINU64 iemAImpl_btr_u64, iemAImpl_btr_u64_locked;
-FNIEMAIMPLBINU16 iemAImpl_bts_u16, iemAImpl_bts_u16_locked;
-FNIEMAIMPLBINU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
-FNIEMAIMPLBINU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
+FNIEMAIMPLBINTODOROU16 iemAImpl_bt_u16;
+FNIEMAIMPLBINTODOROU32 iemAImpl_bt_u32;
+FNIEMAIMPLBINTODOROU64 iemAImpl_bt_u64;
+FNIEMAIMPLBINTODOU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
+FNIEMAIMPLBINTODOU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
+FNIEMAIMPLBINTODOU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;
+FNIEMAIMPLBINTODOU16 iemAImpl_btr_u16, iemAImpl_btr_u16_locked;
+FNIEMAIMPLBINTODOU32 iemAImpl_btr_u32, iemAImpl_btr_u32_locked;
+FNIEMAIMPLBINTODOU64 iemAImpl_btr_u64, iemAImpl_btr_u64_locked;
+FNIEMAIMPLBINTODOU16 iemAImpl_bts_u16, iemAImpl_bts_u16_locked;
+FNIEMAIMPLBINTODOU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
+FNIEMAIMPLBINTODOU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
 /** @}  */
 
 /** @name Arithmetic three operand operations on double words (binary).
@@ -2826,28 +2846,28 @@ FNIEMAIMPLSHIFTDBLU64 iemAImpl_shrd_u64, iemAImpl_shrd_u64_amd, iemAImpl_shrd_u6
 
 /** @name Bit search operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_bsf_u16, iemAImpl_bsf_u16_amd, iemAImpl_bsf_u16_intel;
-FNIEMAIMPLBINU32 iemAImpl_bsf_u32, iemAImpl_bsf_u32_amd, iemAImpl_bsf_u32_intel;
-FNIEMAIMPLBINU64 iemAImpl_bsf_u64, iemAImpl_bsf_u64_amd, iemAImpl_bsf_u64_intel;
-FNIEMAIMPLBINU16 iemAImpl_bsr_u16, iemAImpl_bsr_u16_amd, iemAImpl_bsr_u16_intel;
-FNIEMAIMPLBINU32 iemAImpl_bsr_u32, iemAImpl_bsr_u32_amd, iemAImpl_bsr_u32_intel;
-FNIEMAIMPLBINU64 iemAImpl_bsr_u64, iemAImpl_bsr_u64_amd, iemAImpl_bsr_u64_intel;
-FNIEMAIMPLBINU16 iemAImpl_lzcnt_u16, iemAImpl_lzcnt_u16_amd, iemAImpl_lzcnt_u16_intel;
-FNIEMAIMPLBINU32 iemAImpl_lzcnt_u32, iemAImpl_lzcnt_u32_amd, iemAImpl_lzcnt_u32_intel;
-FNIEMAIMPLBINU64 iemAImpl_lzcnt_u64, iemAImpl_lzcnt_u64_amd, iemAImpl_lzcnt_u64_intel;
-FNIEMAIMPLBINU16 iemAImpl_tzcnt_u16, iemAImpl_tzcnt_u16_amd, iemAImpl_tzcnt_u16_intel;
-FNIEMAIMPLBINU32 iemAImpl_tzcnt_u32, iemAImpl_tzcnt_u32_amd, iemAImpl_tzcnt_u32_intel;
-FNIEMAIMPLBINU64 iemAImpl_tzcnt_u64, iemAImpl_tzcnt_u64_amd, iemAImpl_tzcnt_u64_intel;
-FNIEMAIMPLBINU16 iemAImpl_popcnt_u16, iemAImpl_popcnt_u16_fallback;
-FNIEMAIMPLBINU32 iemAImpl_popcnt_u32, iemAImpl_popcnt_u32_fallback;
-FNIEMAIMPLBINU64 iemAImpl_popcnt_u64, iemAImpl_popcnt_u64_fallback;
+FNIEMAIMPLBINTODOU16 iemAImpl_bsf_u16, iemAImpl_bsf_u16_amd, iemAImpl_bsf_u16_intel;
+FNIEMAIMPLBINTODOU32 iemAImpl_bsf_u32, iemAImpl_bsf_u32_amd, iemAImpl_bsf_u32_intel;
+FNIEMAIMPLBINTODOU64 iemAImpl_bsf_u64, iemAImpl_bsf_u64_amd, iemAImpl_bsf_u64_intel;
+FNIEMAIMPLBINTODOU16 iemAImpl_bsr_u16, iemAImpl_bsr_u16_amd, iemAImpl_bsr_u16_intel;
+FNIEMAIMPLBINTODOU32 iemAImpl_bsr_u32, iemAImpl_bsr_u32_amd, iemAImpl_bsr_u32_intel;
+FNIEMAIMPLBINTODOU64 iemAImpl_bsr_u64, iemAImpl_bsr_u64_amd, iemAImpl_bsr_u64_intel;
+FNIEMAIMPLBINTODOU16 iemAImpl_lzcnt_u16, iemAImpl_lzcnt_u16_amd, iemAImpl_lzcnt_u16_intel;
+FNIEMAIMPLBINTODOU32 iemAImpl_lzcnt_u32, iemAImpl_lzcnt_u32_amd, iemAImpl_lzcnt_u32_intel;
+FNIEMAIMPLBINTODOU64 iemAImpl_lzcnt_u64, iemAImpl_lzcnt_u64_amd, iemAImpl_lzcnt_u64_intel;
+FNIEMAIMPLBINTODOU16 iemAImpl_tzcnt_u16, iemAImpl_tzcnt_u16_amd, iemAImpl_tzcnt_u16_intel;
+FNIEMAIMPLBINTODOU32 iemAImpl_tzcnt_u32, iemAImpl_tzcnt_u32_amd, iemAImpl_tzcnt_u32_intel;
+FNIEMAIMPLBINTODOU64 iemAImpl_tzcnt_u64, iemAImpl_tzcnt_u64_amd, iemAImpl_tzcnt_u64_intel;
+FNIEMAIMPLBINTODOU16 iemAImpl_popcnt_u16, iemAImpl_popcnt_u16_fallback;
+FNIEMAIMPLBINTODOU32 iemAImpl_popcnt_u32, iemAImpl_popcnt_u32_fallback;
+FNIEMAIMPLBINTODOU64 iemAImpl_popcnt_u64, iemAImpl_popcnt_u64_fallback;
 /** @}  */
 
 /** @name Signed multiplication operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_imul_two_u16, iemAImpl_imul_two_u16_amd, iemAImpl_imul_two_u16_intel;
-FNIEMAIMPLBINU32 iemAImpl_imul_two_u32, iemAImpl_imul_two_u32_amd, iemAImpl_imul_two_u32_intel;
-FNIEMAIMPLBINU64 iemAImpl_imul_two_u64, iemAImpl_imul_two_u64_amd, iemAImpl_imul_two_u64_intel;
+FNIEMAIMPLBINTODOU16 iemAImpl_imul_two_u16, iemAImpl_imul_two_u16_amd, iemAImpl_imul_two_u16_intel;
+FNIEMAIMPLBINTODOU32 iemAImpl_imul_two_u32, iemAImpl_imul_two_u32_amd, iemAImpl_imul_two_u32_intel;
+FNIEMAIMPLBINTODOU64 iemAImpl_imul_two_u64, iemAImpl_imul_two_u64_amd, iemAImpl_imul_two_u64_intel;
 /** @}  */
 
 /** @name Arithmetic assignment operations on bytes (unary).
@@ -2983,7 +3003,7 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 
 /** @name Misc.
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_arpl;
+FNIEMAIMPLBINTODOU16 iemAImpl_arpl;
 /** @} */
 
 /** @name RDRAND and RDSEED
@@ -3005,10 +3025,10 @@ FNIEMAIMPLRDRANDSEEDU64 iemAImpl_rdseed_u64, iemAImpl_rdseed_u64_fallback;
 
 /** @name ADOX and ADCX
  * @{ */
-FNIEMAIMPLBINU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
-FNIEMAIMPLBINU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
-FNIEMAIMPLBINU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
-FNIEMAIMPLBINU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
+FNIEMAIMPLBINTODOU32 iemAImpl_adcx_u32, iemAImpl_adcx_u32_fallback;
+FNIEMAIMPLBINTODOU64 iemAImpl_adcx_u64, iemAImpl_adcx_u64_fallback;
+FNIEMAIMPLBINTODOU32 iemAImpl_adox_u32, iemAImpl_adox_u32_fallback;
+FNIEMAIMPLBINTODOU64 iemAImpl_adox_u64, iemAImpl_adox_u64_fallback;
 /** @} */
 
 /** @name FPU operations taking a 32-bit float argument
@@ -3970,6 +3990,21 @@ typedef struct IEMOPBINSIZES
 } IEMOPBINSIZES;
 /** Pointer to a binary operator function table. */
 typedef IEMOPBINSIZES const *PCIEMOPBINSIZES;
+
+
+/**
+ * Function table for a binary operator providing implementation based on
+ * operand size.
+ */
+typedef struct IEMOPBINTODOSIZES
+{
+    PFNIEMAIMPLBINTODOU8  pfnNormalU8,    pfnLockedU8;
+    PFNIEMAIMPLBINTODOU16 pfnNormalU16,   pfnLockedU16;
+    PFNIEMAIMPLBINTODOU32 pfnNormalU32,   pfnLockedU32;
+    PFNIEMAIMPLBINTODOU64 pfnNormalU64,   pfnLockedU64;
+} IEMOPBINTODOSIZES;
+/** Pointer to a binary operator function table. */
+typedef IEMOPBINTODOSIZES const *PCIEMOPBINTODOSIZES;
 
 
 /**

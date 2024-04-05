@@ -284,6 +284,9 @@ class NativeRecompFunctionVariation(object):
         #
         asVarsInScope = [];
         for oStmt in aoStmts:
+            if isinstance(oStmt, iai.McStmtCall) and oStmt.sName.startswith('IEM_MC_CALL_AIMPL_'):
+                oStmt = iai.McStmtVar(oStmt.sName, oStmt.asParams[0:2], oStmt.asParams[0], oStmt.asParams[1]);
+
             if isinstance(oStmt, iai.McStmtVar):
                 if oStmt.sVarName in dVars:
                     raise Exception('Duplicate variable: %s' % (oStmt.sVarName, ));

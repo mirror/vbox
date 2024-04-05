@@ -1760,14 +1760,13 @@ static RTEXITCODE BinU ## a_cBits ## Generate(uint32_t cTests, const char * cons
         { \
             a_TestType Test; \
             Test.fEflIn    = RandEFlags(); \
-            Test.fEflOut   = Test.fEflIn; \
             Test.uDstIn    = RandU ## a_cBits ## Dst(iTest); \
             Test.uDstOut   = Test.uDstIn; \
             Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
             if (g_aBinU ## a_cBits[iFn].uExtra) \
                 Test.uSrcIn &= a_cBits - 1; /* Restrict bit index according to operand width */ \
             Test.uMisc     = 0; \
-            pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
+            Test.fEflOut   = pfn(Test.fEflIn, &Test.uDstOut, Test.uSrcIn); \
             GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
         for (uint32_t iTest = 0; iTest < g_aBinU ## a_cBits[iFn].cFixedTests; iTest++ ) \
@@ -1775,12 +1774,11 @@ static RTEXITCODE BinU ## a_cBits ## Generate(uint32_t cTests, const char * cons
             a_TestType Test; \
             Test.fEflIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].fEflIn == UINT32_MAX ? RandEFlags() \
                            : g_aBinU ## a_cBits[iFn].paFixedTests[iTest].fEflIn; \
-            Test.fEflOut   = Test.fEflIn; \
             Test.uDstIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uDstIn; \
             Test.uDstOut   = Test.uDstIn; \
             Test.uSrcIn    = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uSrcIn; \
             Test.uMisc     = g_aBinU ## a_cBits[iFn].paFixedTests[iTest].uMisc; \
-            pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
+            Test.fEflOut   = pfn(Test.fEflIn, &Test.uDstOut, Test.uSrcIn); \
             GenerateBinaryWrite(&BinOut, &Test, sizeof(Test)); \
         } \
         AssertReturn(GenerateBinaryClose(&BinOut), RTEXITCODE_FAILURE); \
@@ -1817,24 +1815,20 @@ static uint64_t BinU ## a_cBits ## Bench(uint32_t cIterations, PFNIEMAIMPLBINU #
     a_uType  const uSrcIn = pEntry->uSrcIn; \
     cIterations /= 4; \
     RTThreadYield(); \
-    uint64_t const nsStart     = RTTimeNanoTS(); \
+    uint64_t const nsStart = RTTimeNanoTS(); \
     for (uint32_t i = 0; i < cIterations; i++) \
     { \
-        uint32_t fBenchEfl = fEflIn; \
-        a_uType  uBenchDst = uDstIn;  \
-        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        a_uType uBenchDst = uDstIn;  \
+        pfn(fEflIn, &uBenchDst, uSrcIn); \
         \
-        fBenchEfl = fEflIn; \
         uBenchDst = uDstIn;  \
-        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        pfn(fEflIn, &uBenchDst, uSrcIn); \
         \
-        fBenchEfl = fEflIn; \
         uBenchDst = uDstIn;  \
-        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        pfn(fEflIn, &uBenchDst, uSrcIn); \
         \
-        fBenchEfl = fEflIn; \
         uBenchDst = uDstIn;  \
-        pfn(&uBenchDst, uSrcIn, &fBenchEfl); \
+        pfn(fEflIn, &uBenchDst, uSrcIn); \
     } \
     return RTTimeNanoTS() - nsStart; \
 } \
@@ -1854,11 +1848,10 @@ static void BinU ## a_cBits ## Test(void) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
-                uint32_t fEfl = paTests[iTest].fEflIn; \
                 a_uType  uDst = paTests[iTest].uDstIn; \
-                pfn(&uDst, paTests[iTest].uSrcIn, &fEfl); \
+                uint32_t fEfl = pfn(paTests[iTest].fEflIn, &uDst, paTests[iTest].uSrcIn); \
                 if (   uDst != paTests[iTest].uDstOut \
-                    || fEfl != paTests[iTest].fEflOut ) \
+                    || fEfl != paTests[iTest].fEflOut) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s - %s\n", \
                                  iTest, !iVar ? "" : "/n", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
                                  fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
@@ -1867,10 +1860,9 @@ static void BinU ## a_cBits ## Test(void) \
                 else \
                 { \
                      *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
-                     *g_pfEfl = paTests[iTest].fEflIn; \
-                     pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, g_pfEfl); \
+                     fEfl = pfn(paTests[iTest].fEflIn, g_pu ## a_cBits, paTests[iTest].uSrcIn); \
                      RTTEST_CHECK(g_hTest, *g_pu ## a_cBits  == paTests[iTest].uDstOut); \
-                     RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
+                     RTTEST_CHECK(g_hTest, fEfl == paTests[iTest].fEflOut); \
                 } \
             } \
             \
@@ -1945,6 +1937,7 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN(and_u16_locked),
     ENTRY_BIN_PFN_CAST(cmp_u16,   PFNIEMAIMPLBINU16),
     ENTRY_BIN_PFN_CAST(test_u16,  PFNIEMAIMPLBINU16),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u16, PFNIEMAIMPLBINU16, 1),
     ENTRY_BIN_EX(btc_u16, 1),
     ENTRY_BIN_EX(btc_u16_locked, 1),
@@ -1959,6 +1952,7 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN(arpl),
+#endif
 };
 TEST_BINARY_OPS(16, uint16_t, "%#06x", BINU16_TEST_T, g_aBinU16)
 
@@ -1991,6 +1985,7 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN(and_u32_locked),
     ENTRY_BIN_PFN_CAST(cmp_u32,   PFNIEMAIMPLBINU32),
     ENTRY_BIN_PFN_CAST(test_u32,  PFNIEMAIMPLBINU32),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u32, PFNIEMAIMPLBINU32, 1),
     ENTRY_BIN_EX(btc_u32, 1),
     ENTRY_BIN_EX(btc_u32_locked, 1),
@@ -2006,6 +2001,7 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN(adcx_u32),
     ENTRY_BIN(adox_u32),
+#endif
 };
 TEST_BINARY_OPS(32, uint32_t, "%#010RX32", BINU32_TEST_T, g_aBinU32)
 
@@ -2038,6 +2034,7 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN(and_u64_locked),
     ENTRY_BIN_PFN_CAST(cmp_u64,   PFNIEMAIMPLBINU64),
     ENTRY_BIN_PFN_CAST(test_u64,  PFNIEMAIMPLBINU64),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN_PFN_CAST_EX(bt_u64, PFNIEMAIMPLBINU64, 1),
     ENTRY_BIN_EX(btc_u64, 1),
     ENTRY_BIN_EX(btc_u64_locked, 1),
@@ -2053,6 +2050,7 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN(adcx_u64),
     ENTRY_BIN(adox_u64),
+#endif
 };
 TEST_BINARY_OPS(64, uint64_t, "%#018RX64", BINU64_TEST_T, g_aBinU64)
 
@@ -2228,9 +2226,8 @@ static void CmpXchgTest(void)
                                  uNew, fEfl, *g_pu ## a_cBits, uA, paTests[iTest].fEflOut, uExpect, paTests[iTest].uSrcIn, \
                                  EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
                 /* positive */ \
-                uint32_t fEflExpect = paTests[iTest].fEflIn; \
                 uA                  = paTests[iTest].uDstIn; \
-                s_aFuncs[iFn].pfnSub(&uA, uA, &fEflExpect); \
+                uint32_t fEflExpect = s_aFuncs[iFn].pfnSub(paTests[iTest].fEflIn, &uA, uA); \
                 fEfl                = paTests[iTest].fEflIn; \
                 uA                  = paTests[iTest].uDstIn; \
                 *g_pu ## a_cBits    = uA; \

@@ -190,113 +190,106 @@ NAME(iemAImpl_xchg_u16_locked):
  * The CMP instruction.
  */
 
-/* void iemAImpl_cmp_u8(uint8_t const *puDst, uint8_t uSrc, uint32_t *pEFlags); */
+/* uint32_t iemAImpl_cmp_u8(uint32_t fEFlags, uint8_t const *puDst, uint8_t uSrc); */
         .p2align        2
         .private_extern NAME(iemAImpl_sub_u8)
         .globl          NAME(iemAImpl_sub_u8)
 NAME(iemAImpl_sub_u8):
         .cfi_startproc
         /* Do the subtraction. */
-        ldrb    w8, [x0]
-        /*and     w1, w1, #0xff - should not be necessary. */
-        subs    w9, w8, w1                      /* w9 = w8 (*puDst) - w1 (uSrc)  */
+        ldrb    w8, [x1]
+        /*and     w2, w2, #0xff - should not be necessary. */
+        subs    w9, w8, w2                      /* w9 = w8 (*puDst) - w2 (uSrc)  */
+        strb    w9, [x1]
         setf8   w9
-        strb    w9, [x0]
 
-        /* Load EFLAGS. */
-        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+        /* Calculate EFLAGS (passed in and returned via x0). */
         and     w9, w9, #0xffff
-        CALC_EFLAGS x10, x9, x8, x1, x11, X86_EFL_OF
+        CALC_EFLAGS x0, x9, x8, x2, x11, X86_EFL_OF
 
         /* The overflow flag calc done by setf16 isn't correct for subtraction, so we have to
            figure it out ourselves. (See IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC for details.) */
-        eor     w11, w8, w1                     /* input dst ^ source (simplified from ~(dst ^ (source ^ 0x8000)) ). */
+        eor     w11, w8, w2                     /* input dst ^ source (simplified from ~(dst ^ (source ^ 0x8000)) ). */
         eor     w12, w8, w9
         and     w11, w12, w11
         lsr     w11, w11, #7
-        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
 
-        /* Done with EFLAGS. */
-        str     w10, [x2]
         ret
         .cfi_endproc
 
 
-/* void iemAImpl_cmp_u16(uint16_t const *puDst, uint16_t uSrc, uint32_t *pEFlags); */
+/* uint32_t iemAImpl_cmp_u16(uint32_t fEFlags, uint16_t const *puDst, uint16_t uSrc); */
         .p2align        2
         .private_extern NAME(iemAImpl_sub_u16)
         .globl          NAME(iemAImpl_sub_u16)
 NAME(iemAImpl_sub_u16):
         .cfi_startproc
         /* Do the subtraction. */
-        ldrh    w8, [x0]
-        /*and     w1, w1, #0xffff - should not be necessary. */
-        subs    w9, w8, w1                      /* w9 = w8 (*puDst) - w1 (uSrc)  */
+        ldrh    w8, [x1]
+        /*and     w2, w2, #0xffff - should not be necessary. */
+        subs    w9, w8, w2                      /* w9 = w8 (*puDst) - w2 (uSrc)  */
         setf16  w9
-        strh    w9, [x0]
+        strh    w9, [x1]
 
-        /* Load EFLAGS. */
-        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+        /* Calculate EFLAGS (passed in and returned via x0). */
         and     w9, w9, #0xffff
-        CALC_EFLAGS x10, x9, x8, x1, x11, X86_EFL_OF
+        CALC_EFLAGS x0, x9, x8, x2, x11, X86_EFL_OF
 
         /* The overflow flag calc done by setf16 isn't correct for subtraction, so we have to
            figure it out ourselves. (See IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC for details.) */
-        eor     w11, w8, w1                     /* input dst ^ source (simplified from ~(dst ^ (source ^ 0x8000)) ). */
+        eor     w11, w8, w2                     /* input dst ^ source (simplified from ~(dst ^ (source ^ 0x8000)) ). */
         eor     w12, w8, w9
         and     w11, w12, w11
         lsr     w11, w11, #15
-        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
 
-        /* Done with EFLAGS. */
-        str     w10, [x2]
         ret
         .cfi_endproc
 
 
-/* void iemAImpl_cmp_u32(uint32_t const *puDst, uint32_t uSrc, uint32_t *pEFlags); */
+/* uint32_t iemAImpl_cmp_u32(uint32_t fEFlags, uint32_t const *puDst, uint32_t uSrc); */
         .p2align        2
         .private_extern NAME(iemAImpl_sub_u32)
         .globl          NAME(iemAImpl_sub_u32)
 NAME(iemAImpl_sub_u32):
         .cfi_startproc
         /* Do the subtraction. */
-        ldr     w8, [x0]
-        subs    w9, w8, w1                      /* w9 = w8 (*puDst) - w1 (uSrc)  */
-        str     w9, [x0]
+        ldr     w8, [x1]
+        subs    w9, w8, w2                      /* w9 = w8 (*puDst) - w2 (uSrc)  */
+        str     w9, [x1]
 
-        /* Load EFLAGS. */
-        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+        /* Calculate EFLAGS (passed in and returned via x0). */
 
 #if 0
         /* Translate the arm NZCV bits into corresponding EFLAGS bits. */
 #if 0   /* maybe just a tiny bit slow than the next one. */
         mrs     x11, NZCV                       /* w11[31] = N; w11[30] = Z; w11[29] = C; w11[29] = V */
         lsr     w11, w11, #28
-        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
         lsr     w11, w11, #1
         eor     w11, w11, #1                    /* inverts the carry flag to x86 style. */
-        bfi     w10, w11, #X86_EFL_CF_BIT, #1   /* CF(0) = C */
+        bfi     w0, w11, #X86_EFL_CF_BIT, #1    /* CF(0) = C */
         lsr     w11, w11, #1
-        bfi     w10, w11, #X86_EFL_ZF_BIT, #2   /* SF(7),ZF(6) = NZ */
+        bfi     w0, w11, #X86_EFL_ZF_BIT, #2    /* SF(7),ZF(6) = NZ */
 #elif 1 /* seems the faster one... */
         cfinv
         mrs     x11, NZCV                       /* w11[31] = N; w11[30] = Z; w11[29] = C; w11[29] = V */
         lsr     w11, w11, #28
-        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
         lsr     w11, w11, #1
-        bfi     w10, w11, #X86_EFL_CF_BIT, #1   /* CF(0) = C */
+        bfi     w0, w11, #X86_EFL_CF_BIT, #1    /* CF(0) = C */
         lsr     w11, w11, #1
-        bfi     w10, w11, #X86_EFL_ZF_BIT, #2   /* SF(7),ZF(6) = NZ */
+        bfi     w0, w11, #X86_EFL_ZF_BIT, #2    /* SF(7),ZF(6) = NZ */
 #else
         cset    w11, eq
-        bfi     w10, w11, #X86_EFL_ZF_BIT, #1
+        bfi     w0, w11, #X86_EFL_ZF_BIT, #1
         cset    w11, cc
-        bfi     w10, w11, #X86_EFL_CF_BIT, #1
+        bfi     w0, w11, #X86_EFL_CF_BIT, #1
         cset    w11, vs
-        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
         cset    w11, mi
-        bfi     w10, w11, #X86_EFL_SF_BIT, #1
+        bfi     w0, w11, #X86_EFL_SF_BIT, #1
 #endif
 
         /* Parity calculation for low byte of the result (sucks that there is no popcount for gprs). */
@@ -304,38 +297,35 @@ NAME(iemAImpl_sub_u32):
         eor     w11, w11, w11, LSR #2
         eor     w11, w11, w11, LSR #1
         eor     w11, w11, #1
-        bfi     w10, w11, #X86_EFL_PF_BIT, #1   /* PF(2) = popcount(w9 & 0xff) & 1 ^ 1 */
+        bfi     w0, w11, #X86_EFL_PF_BIT, #1    /* PF(2) = popcount(w9 & 0xff) & 1 ^ 1 */
 
         /* Auxilary carry / borrow flag.  This is related to 8-bit BCD. */
-        eor     w11, w8, w1
+        eor     w11, w8, w2
         eor     w11, w11, w9
         lsr     w11, w11, #X86_EFL_AF_BIT
-        bfi     w10, w11, #X86_EFL_AF_BIT, #1   /* AF(4) = (w8 ^ w1 ^ w9 & X86_EFL_AF) >> X86_EFL_AF_BIT */
+        bfi     w0, w11, #X86_EFL_AF_BIT, #1    /* AF(4) = (w8 ^ w2 ^ w9 & X86_EFL_AF) >> X86_EFL_AF_BIT */
 #else
-        CALC_EFLAGS x10, x9, x8, x1, x11
+        CALC_EFLAGS x0, x9, x8, x2, x11
 #endif
 
-        str     w10, [x2]
         ret
         .cfi_endproc
 
 
-/* void iemAImpl_cmp_u64(uint64_t const *puDst, uint64_t uSrc, uint32_t *pEFlags); */
+/* uint32_t iemAImpl_cmp_u64(uint32_t fEFlags, uint64_t const *puDst, uint64_t uSrc); */
         .p2align        2
         .private_extern NAME(iemAImpl_sub_u64)
         .globl          NAME(iemAImpl_sub_u64)
 NAME(iemAImpl_sub_u64):
         .cfi_startproc
         /* Do the subtraction. */
-        ldr     x8, [x0]
-        subs    x9, x8, x1                      /* x9 = x8 (*puDst) - x1 (uSrc)  */
-        str     x9, [x0]
+        ldr     x8, [x1]
+        subs    x9, x8, x2                      /* x9 = x8 (*puDst) - x2 (uSrc)  */
+        str     x9, [x1]
 
-        /* Load EFLAGS. */
-        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
-        CALC_EFLAGS x10, x9, x8, x1, x11
+        /* Calculate EFLAGS (passed in and returned via x0). */
+        CALC_EFLAGS x0, x9, x8, x2, x11
 
-        str     w10, [x2]
         ret
         .cfi_endproc
 

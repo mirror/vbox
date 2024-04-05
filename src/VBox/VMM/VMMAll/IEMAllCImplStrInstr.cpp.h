@@ -220,7 +220,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
                     if (!memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
                     {
                         /* All matches, only compare the last itme to get the right eflags. */
-                        RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
+                        uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1]);
                         uSrc1AddrReg += cLeftPage * cbIncr;
                         uSrc2AddrReg += cLeftPage * cbIncr;
                         uCounterReg  -= cLeftPage;
@@ -232,7 +232,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
                         uint32_t off = 0;
                         do
                         {
-                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off], &uEFlags);
+                            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off]);
                             off++;
                         } while (   off < cLeftPage
                                  && (uEFlags & X86_EFL_ZF));
@@ -274,7 +274,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
+            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, &uValue1, uValue2);
 
             pVCpu->cpum.GstCtx.ADDR_rSI = uSrc1AddrReg += cbIncr;
             pVCpu->cpum.GstCtx.ADDR_rDI = uSrc2AddrReg += cbIncr;
@@ -386,7 +386,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
                     if (memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
                     {
                         /* All matches, only compare the last item to get the right eflags. */
-                        RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
+                        uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1]);
                         uSrc1AddrReg += cLeftPage * cbIncr;
                         uSrc2AddrReg += cLeftPage * cbIncr;
                         uCounterReg  -= cLeftPage;
@@ -398,7 +398,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
                         uint32_t off = 0;
                         do
                         {
-                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off], &uEFlags);
+                            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off]);
                             off++;
                         } while (   off < cLeftPage
                                  && !(uEFlags & X86_EFL_ZF));
@@ -440,7 +440,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
+            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, &uValue1, uValue2);
 
             pVCpu->cpum.GstCtx.ADDR_rSI = uSrc1AddrReg += cbIncr;
             pVCpu->cpum.GstCtx.ADDR_rDI = uSrc2AddrReg += cbIncr;
@@ -537,7 +537,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
                 } while (i < cLeftPage && !fQuit);
 
                 /* Update the regs. */
-                RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+                uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&uValueReg, uTmpValue);
                 pVCpu->cpum.GstCtx.ADDR_rCX = uCounterReg -= i;
                 pVCpu->cpum.GstCtx.ADDR_rDI = uAddrReg    += i * cbIncr;
                 pVCpu->cpum.GstCtx.eflags.u = uEFlags;
@@ -569,7 +569,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&uValueReg, uTmpValue);
 
             pVCpu->cpum.GstCtx.ADDR_rDI = uAddrReg += cbIncr;
             pVCpu->cpum.GstCtx.ADDR_rCX = --uCounterReg;
@@ -665,7 +665,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
                 } while (i < cLeftPage && !fQuit);
 
                 /* Update the regs. */
-                RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+                uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&uValueReg, uTmpValue);
                 pVCpu->cpum.GstCtx.ADDR_rCX = uCounterReg -= i;
                 pVCpu->cpum.GstCtx.ADDR_rDI = uAddrReg    += i * cbIncr;
                 pVCpu->cpum.GstCtx.eflags.u = uEFlags;
@@ -697,7 +697,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
-            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+            uEFlags = RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(uEFlags, (OP_TYPE *)&uValueReg, uTmpValue);
             pVCpu->cpum.GstCtx.ADDR_rDI = uAddrReg += cbIncr;
             pVCpu->cpum.GstCtx.ADDR_rCX = --uCounterReg;
             pVCpu->cpum.GstCtx.eflags.u = uEFlags;
