@@ -2625,7 +2625,7 @@ VBOX_PATH_NSIS ?= $(KBUILD_DEVTOOLS)/win.x86/nsis/v3.08-log
 
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
-VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.11.2
+VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.14.1
 ifdef VBOX_WITH_NEW_WINDOWS_SDK
  VBOX_PATH_MSITRAN  ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/../x86/MsiTran.Exe
  VBOX_PATH_MSIDB    ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/../x86/MsiDb.Exe
