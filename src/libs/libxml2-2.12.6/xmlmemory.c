@@ -36,7 +36,7 @@ static int xmlMemInitialized = 0;
 static unsigned long  debugMemSize = 0;
 static unsigned long  debugMemBlocks = 0;
 static unsigned long  debugMaxMemSize = 0;
-static xmlMutexPtr xmlMemMutex = NULL;
+static xmlMutex xmlMemMutex;
 
 void xmlMallocBreakpoint(void);
 
