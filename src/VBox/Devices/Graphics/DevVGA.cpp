@@ -388,9 +388,9 @@ DECLINLINE(bool) vgaR3IsDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
  */
 DECLINLINE(void) vgaR3ResetDirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHYS offVRAMEnd)
 {
-    Assert(offVRAMStart < pThis->vram_size);
-    Assert(offVRAMEnd <= pThis->vram_size);
-    Assert(offVRAMStart < offVRAMEnd);
+    AssertReturnVoid(offVRAMStart < pThis->vram_size);
+    AssertReturnVoid(offVRAMEnd <= pThis->vram_size);
+    AssertReturnVoid(offVRAMStart < offVRAMEnd);
     ASMBitClearRange(&pThis->bmDirtyBitmap[0], offVRAMStart >> GUEST_PAGE_SHIFT, offVRAMEnd >> GUEST_PAGE_SHIFT);
 }
 
@@ -959,9 +959,9 @@ static void recalculate_data(PVGASTATE pThis)
         offStart += offX >> 1;
     else
         offStart += offX * ((cBPP + 7) >> 3);
-    offStart >>= 2;
+
     pThis->vbe_line_offset = RT_MIN(cbLinePitch, pThis->vram_size);
-    pThis->vbe_start_addr  = RT_MIN(offStart, pThis->vram_size);
+    pThis->vbe_start_addr  = RT_MIN(offStart, pThis->vram_size) >> 2;
 
     /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than
      * the VRAM size permits. It is used instead of VBE_DISPI_INDEX_YRES *only* in case
