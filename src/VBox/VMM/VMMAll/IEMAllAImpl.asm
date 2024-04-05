@@ -1082,8 +1082,9 @@ IEMIMPL_VEX_BIN_OP bzhi,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF, X86_EFL_AF | X86
 ; This will generate code for the 32 and 64 bit accesses, except on 32-bit system
 ; where the 64-bit accesses requires hand coding.
 ;
-; All the functions takes a pointer to the destination memory operand in A0,
-; the source register operand in A1 and a pointer to eflags in A2.
+; All the functions takes a pointer to the destination memory operand in A1,
+; the source register operand in A2 and incoming EFLAGS in A0.  Updated EFLAGS
+; are returned in EAX.
 ;
 ; @param        1       The instruction mnemonic.
 ; @param        2       The modified flags.
@@ -1093,22 +1094,22 @@ IEMIMPL_VEX_BIN_OP bzhi,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_CF, X86_EFL_AF | X86
 %macro IEMIMPL_VEX_BIN_OP_2 4
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, 0 ;; @todo check if any undefined flags are passed thru
-        mov     T0_32, [A0]
-        %1      T0_32, A1_32
-        mov     [A0], T0_32
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, 0 ;; @todo check if any undefined flags are passed thru
+        mov     T0_32, [A1]
+        %1      T0_32, A2_32
+        mov     [A1], T0_32
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, %4
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, 0
-        mov     T0, [A0]
-        %1      T0, A1
-        mov     [A0], T0
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, 0
+        mov     T0, [A1]
+        %1      T0, A2
+        mov     [A1], T0
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, %4
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif ; RT_ARCH_AMD64

@@ -1821,14 +1821,15 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         { \
             IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
-            IEM_MC_ARG(uint64_t *,          pDst,    0); \
-            IEM_MC_ARG(uint64_t,            uSrc,    1); \
-            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_ARG(uint64_t,            uSrc,       2); \
             IEM_MC_FETCH_GREG_U64(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_ARG(uint64_t *,          pDst,       1); \
             IEM_MC_REF_GREG_U64(pDst,   IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
-            IEM_MC_REF_EFLAGS(pEFlags); \
-            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
-                                                                 iemAImpl_ ## a_Instr ## _u64_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ARG_EFLAGS(              fEFlagsIn,  0); \
+            IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, \
+                                IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
+                                                                   iemAImpl_ ## a_Instr ## _u64_fallback), fEFlagsIn, pDst, uSrc); \
+            IEM_MC_COMMIT_EFLAGS(fEFlagsRet); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1836,15 +1837,16 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         { \
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
-            IEM_MC_ARG(uint32_t *,          pDst,    0); \
-            IEM_MC_ARG(uint32_t,            uSrc,    1); \
-            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+            IEM_MC_ARG(uint32_t,            uSrc,       2); \
             IEM_MC_FETCH_GREG_U32(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_ARG(uint32_t *,          pDst,       1); \
             IEM_MC_REF_GREG_U32(pDst,   IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
-            IEM_MC_REF_EFLAGS(pEFlags); \
-            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
-                                                                 iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ARG_EFLAGS(              fEFlagsIn,  0); \
+            IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, \
+                                IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
+                                                                   iemAImpl_ ## a_Instr ## _u32_fallback), fEFlagsIn, pDst, uSrc); \
             IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_COMMIT_EFLAGS(fEFlagsRet); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1857,35 +1859,39 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(IEM_MC_F_64BIT, 0); \
-            IEM_MC_ARG(uint64_t *,          pDst,    0); \
-            IEM_MC_ARG(uint64_t,            uSrc,    1); \
-            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
+            \
+            IEM_MC_ARG(uint64_t,            uSrc,       2); \
             IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_ARG(uint64_t *,          pDst,       1); \
             IEM_MC_REF_GREG_U64(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
-            IEM_MC_REF_EFLAGS(pEFlags); \
-            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
-                                                                 iemAImpl_ ## a_Instr ## _u64_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ARG_EFLAGS(              fEFlagsIn,  0); \
+            IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, \
+                                IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u64, \
+                                                                   iemAImpl_ ## a_Instr ## _u64_fallback), fEFlagsIn, pDst, uSrc); \
+            IEM_MC_COMMIT_EFLAGS(fEFlagsRet); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
         else \
         { \
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
-            IEM_MC_ARG(uint32_t *,          pDst,    0); \
-            IEM_MC_ARG(uint32_t,            uSrc,    1); \
-            IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
+            \
+            IEM_MC_ARG(uint32_t,            uSrc,       2); \
             IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_ARG(uint32_t *,          pDst,       1); \
             IEM_MC_REF_GREG_U32(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
-            IEM_MC_REF_EFLAGS(pEFlags); \
-            IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
-                                                                 iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
+            IEM_MC_ARG_EFLAGS(              fEFlagsIn,  0); \
+            IEM_MC_CALL_AIMPL_3(uint32_t, fEFlagsRet, \
+                                IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
+                                                                   iemAImpl_ ## a_Instr ## _u32_fallback), fEFlagsIn, pDst, uSrc); \
             IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
+            IEM_MC_COMMIT_EFLAGS(fEFlagsRet); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \

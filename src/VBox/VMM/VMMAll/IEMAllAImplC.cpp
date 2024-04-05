@@ -1820,19 +1820,17 @@ EMIT_BEXTR(32, uint32_t, RT_NOTHING)
  * BLSR (BMI1 instruction)
  */
 #define EMIT_BLSR(a_cBits, a_Type, a_Suffix) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsr_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_blsr_u,a_cBits,a_Suffix),(uint32_t fEFlags, a_Type *puDst, a_Type uSrc)) \
 { \
-    uint32_t fEfl1 = *pfEFlags; \
-    uint32_t fEfl2 = fEfl1; \
     *puDst = uSrc; \
-    fEfl1 = iemAImpl_sub_u ## a_cBits(fEfl1, &uSrc, 1); \
-    fEfl2 = iemAImpl_and_u ## a_cBits(fEfl2, puDst, uSrc); \
+    uint32_t fEfl1 = iemAImpl_sub_u ## a_cBits(fEFlags, &uSrc, 1); \
+    uint32_t fEfl2 = iemAImpl_and_u ## a_cBits(fEFlags, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
     fEfl2 &= ~(X86_EFL_CF | X86_EFL_PF); \
     fEfl2 |= fEfl1 & X86_EFL_CF; \
-    *pfEFlags = fEfl2; \
+    return fEfl2; \
 }
 
 EMIT_BLSR(64, uint64_t, _fallback)
@@ -1848,19 +1846,17 @@ EMIT_BLSR(32, uint32_t, RT_NOTHING)
  * BLSMSK (BMI1 instruction)
  */
 #define EMIT_BLSMSK(a_cBits, a_Type, a_Suffix) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsmsk_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_blsmsk_u,a_cBits,a_Suffix),(uint32_t fEFlags, a_Type *puDst, a_Type uSrc)) \
 { \
-    uint32_t fEfl1 = *pfEFlags; \
-    uint32_t fEfl2 = fEfl1; \
     *puDst = uSrc; \
-    fEfl1 = iemAImpl_sub_u ## a_cBits(fEfl1, &uSrc, 1); \
-    fEfl2 = iemAImpl_xor_u ## a_cBits(fEfl2, puDst, uSrc); \
+    uint32_t fEfl1 = iemAImpl_sub_u ## a_cBits(fEFlags, &uSrc, 1); \
+    uint32_t fEfl2 = iemAImpl_xor_u ## a_cBits(fEFlags, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
     fEfl2 &= ~(X86_EFL_CF | X86_EFL_PF); \
     fEfl2 |= fEfl1 & X86_EFL_CF; \
-    *pfEFlags = fEfl2; \
+    return fEfl2; \
 }
 
 EMIT_BLSMSK(64, uint64_t, _fallback)
@@ -1876,19 +1872,18 @@ EMIT_BLSMSK(32, uint32_t, RT_NOTHING)
  * BLSI (BMI1 instruction)
  */
 #define EMIT_BLSI(a_cBits, a_Type, a_Suffix) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_blsi_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_blsi_u,a_cBits,a_Suffix),(uint32_t fEFlags, a_Type *puDst, a_Type uSrc)) \
 { \
-    uint32_t fEfl1 = *pfEFlags; \
-    uint32_t fEfl2 = fEfl1; \
+    uint32_t fEfl1 = fEFlags; \
     *puDst = uSrc; \
     iemAImpl_neg_u ## a_cBits(&uSrc, &fEfl1); \
-    fEfl2 = iemAImpl_and_u ## a_cBits(fEfl2, puDst, uSrc); \
+    uint32_t fEfl2 = iemAImpl_and_u ## a_cBits(fEFlags, puDst, uSrc); \
     \
     /* AMD: The carry flag is from the SUB operation. */ \
     /* 10890xe: PF always cleared? */ \
     fEfl2 &= ~(X86_EFL_CF | X86_EFL_PF); \
     fEfl2 |= fEfl1 & X86_EFL_CF; \
-    *pfEFlags = fEfl2; \
+    return fEfl2; \
 }
 
 EMIT_BLSI(64, uint64_t, _fallback)

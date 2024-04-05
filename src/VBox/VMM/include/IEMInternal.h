@@ -2600,9 +2600,6 @@ FNIEMAIMPLBINU8 iemAImpl_sbb_u8, iemAImpl_sbb_u8_locked;
 FNIEMAIMPLBINU8  iemAImpl_or_u8,  iemAImpl_or_u8_locked;
 FNIEMAIMPLBINU8 iemAImpl_xor_u8, iemAImpl_xor_u8_locked;
 FNIEMAIMPLBINU8 iemAImpl_and_u8, iemAImpl_and_u8_locked;
-
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU8, (uint8_t *pu8Dst, uint8_t u8Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOU8 *PFNIEMAIMPLBINTODOU8;
 /** @} */
 
 /** @name Arithmetic assignment operations on words (binary).
@@ -2616,9 +2613,6 @@ FNIEMAIMPLBINU16 iemAImpl_sbb_u16, iemAImpl_sbb_u16_locked;
 FNIEMAIMPLBINU16  iemAImpl_or_u16,  iemAImpl_or_u16_locked;
 FNIEMAIMPLBINU16 iemAImpl_xor_u16, iemAImpl_xor_u16_locked;
 FNIEMAIMPLBINU16 iemAImpl_and_u16, iemAImpl_and_u16_locked;
-
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU16, (uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOU16 *PFNIEMAIMPLBINTODOU16;
 /** @}  */
 
 
@@ -2633,12 +2627,9 @@ FNIEMAIMPLBINU32 iemAImpl_sbb_u32, iemAImpl_sbb_u32_locked;
 FNIEMAIMPLBINU32  iemAImpl_or_u32,  iemAImpl_or_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_xor_u32, iemAImpl_xor_u32_locked;
 FNIEMAIMPLBINU32 iemAImpl_and_u32, iemAImpl_and_u32_locked;
-
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU32, (uint32_t *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOU32 *PFNIEMAIMPLBINTODOU32;
-FNIEMAIMPLBINTODOU32 iemAImpl_blsi_u32, iemAImpl_blsi_u32_fallback;
-FNIEMAIMPLBINTODOU32 iemAImpl_blsr_u32, iemAImpl_blsr_u32_fallback;
-FNIEMAIMPLBINTODOU32 iemAImpl_blsmsk_u32, iemAImpl_blsmsk_u32_fallback;
+FNIEMAIMPLBINU32 iemAImpl_blsi_u32, iemAImpl_blsi_u32_fallback;
+FNIEMAIMPLBINU32 iemAImpl_blsr_u32, iemAImpl_blsr_u32_fallback;
+FNIEMAIMPLBINU32 iemAImpl_blsmsk_u32, iemAImpl_blsmsk_u32_fallback;
 /** @}  */
 
 /** @name Arithmetic assignment operations on quad words (binary).
@@ -2652,12 +2643,9 @@ FNIEMAIMPLBINU64 iemAImpl_sbb_u64, iemAImpl_sbb_u64_locked;
 FNIEMAIMPLBINU64  iemAImpl_or_u64,  iemAImpl_or_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_xor_u64, iemAImpl_xor_u64_locked;
 FNIEMAIMPLBINU64 iemAImpl_and_u64, iemAImpl_and_u64_locked;
-
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINTODOU64, (uint64_t *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
-typedef FNIEMAIMPLBINTODOU64 *PFNIEMAIMPLBINTODOU64;
-FNIEMAIMPLBINTODOU64 iemAImpl_blsi_u64, iemAImpl_blsi_u64_fallback;
-FNIEMAIMPLBINTODOU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
-FNIEMAIMPLBINTODOU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
+FNIEMAIMPLBINU64 iemAImpl_blsi_u64, iemAImpl_blsi_u64_fallback;
+FNIEMAIMPLBINU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
+FNIEMAIMPLBINU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
 /** @}  */
 
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLBINROU8, (uint32_t fEFlagsIn, uint8_t const *pu8Dst, uint8_t u8Src));
@@ -3983,21 +3971,6 @@ typedef struct IEMOPBINSIZES
 } IEMOPBINSIZES;
 /** Pointer to a binary operator function table. */
 typedef IEMOPBINSIZES const *PCIEMOPBINSIZES;
-
-
-/**
- * Function table for a binary operator providing implementation based on
- * operand size.
- */
-typedef struct IEMOPBINTODOSIZES
-{
-    PFNIEMAIMPLBINTODOU8  pfnNormalU8,    pfnLockedU8;
-    PFNIEMAIMPLBINTODOU16 pfnNormalU16,   pfnLockedU16;
-    PFNIEMAIMPLBINTODOU32 pfnNormalU32,   pfnLockedU32;
-    PFNIEMAIMPLBINTODOU64 pfnNormalU64,   pfnLockedU64;
-} IEMOPBINTODOSIZES;
-/** Pointer to a binary operator function table. */
-typedef IEMOPBINTODOSIZES const *PCIEMOPBINTODOSIZES;
 
 
 /**
