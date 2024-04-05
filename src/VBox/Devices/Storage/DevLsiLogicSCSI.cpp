@@ -2295,7 +2295,8 @@ static int lsilogicR3ProcessSCSIIORequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
     {
         PLSILOGICDEVICE pTgtDev = &pThisCC->paDeviceStates[pGuestReq->SCSIIO.u8TargetID];
 
-        if (pTgtDev->pDrvBase)
+        if (   pTgtDev->pDrvBase
+            && pGuestReq->SCSIIO.u8CDBLength <= RT_ELEMENTS(pGuestReq->SCSIIO.au8CDB))
         {
             /* Allocate and prepare a new request. */
             PDMMEDIAEXIOREQ hIoReq;
@@ -2364,12 +2365,12 @@ static int lsilogicR3ProcessSCSIIORequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
 
     if (g_cLogged++ < MAX_REL_LOG_ERRORS)
     {
-        LogRel(("LsiLogic#%d: %d/%d (Bus/Target) doesn't exist\n", pDevIns->iInstance,
-                pGuestReq->SCSIIO.u8TargetID, pGuestReq->SCSIIO.u8Bus));
+        LogRel(("LsiLogic#%d: %d/%d/%d (Bus/Target/CDBLength) doesn't exist\n", pDevIns->iInstance,
+                pGuestReq->SCSIIO.u8TargetID, pGuestReq->SCSIIO.u8Bus, pGuestReq->SCSIIO.u8CDBLength));
         /* Log the CDB too  */
         LogRel(("LsiLogic#%d: Guest issued CDB {%#x",
                 pDevIns->iInstance, pGuestReq->SCSIIO.au8CDB[0]));
-        for (unsigned i = 1; i < pGuestReq->SCSIIO.u8CDBLength; i++)
+        for (unsigned i = 1; i < RT_MIN(pGuestReq->SCSIIO.u8CDBLength, RT_ELEMENTS(pGuestReq->SCSIIO.au8CDB)); i++)
             LogRel((", %#x", pGuestReq->SCSIIO.au8CDB[i]));
         LogRel(("}\n"));
     }
