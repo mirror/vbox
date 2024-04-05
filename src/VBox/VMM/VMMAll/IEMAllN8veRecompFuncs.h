@@ -1193,53 +1193,6 @@ iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, u
 #endif
 
 
-#define IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
-    off = iemNativeEmitRaiseSseAvxSimdFpXcpt(pReNative, off, pCallEntry->idxInstr)
-
-/**
- * Emits code to raise a SIMD floating point (either \#UD or \#XF) should be raised.
- *
- * @returns New code buffer offset, UINT32_MAX on failure.
- * @param   pReNative       The native recompile state.
- * @param   off             The code buffer offset.
- * @param   idxInstr        The current instruction.
- */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitRaiseSseAvxSimdFpXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
-{
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an \#UD or \#NM and all guest register must be up to date in CPUMCTX.
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
-#else
-    RT_NOREF(idxInstr);
-#endif
-
-    /* Allocate a temporary CR4 register. */
-    uint8_t const idxCr4Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxLabelRaiseXf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseXf);
-    uint8_t const idxLabelRaiseUd = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseUd);
-
-    /*
-     * if (!(cr4 & X86_CR4_OSXMMEEXCPT))
-     *     return raisexcpt();
-     */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxCr4Reg, X86_CR4_OSXMMEEXCPT_BIT, idxLabelRaiseXf);
-
-    /* raise \#UD exception unconditionally. */
-    off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelRaiseUd);
-
-    /* Free but don't flush the CR4 register. */
-    iemNativeRegFreeTmp(pReNative, idxCr4Reg);
-
-    return off;
-}
-
-
 #define IEM_MC_RAISE_DIVIDE_ERROR() \
     off = iemNativeEmitRaiseDivideError(pReNative, off, pCallEntry->idxInstr)
 
@@ -2088,45 +2041,6 @@ iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     return off;
 }
 
-
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-
-#define IEM_MC_IF_MXCSR_XCPT_PENDING() \
-    off = iemNativeEmitIfMxcsrXcptPending(pReNative, off); \
-    do {
-
-/** Emits code for IEM_MC_IF_MXCSR_XCPT_PENDING. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitIfMxcsrXcptPending(PIEMRECOMPILERSTATE pReNative, uint32_t off)
-{
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
-
-    uint8_t const idxGstMxcsrReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
-                                                                   kIemNativeGstRegUse_Calculation);
-    uint8_t const idxRegTmp      = iemNativeRegAllocTmp(pReNative, &off);
-
-    /* mov tmp0, mxcsr */
-    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegTmp, idxGstMxcsrReg);
-    /* tmp0 &= X86_MXCSR_XCPT_FLAGS */
-    off = iemNativeEmitAndGprByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS);
-    /* mxcsr &= X86_MXCSR_XCPT_MASK */
-    off = iemNativeEmitAndGprByImm(pReNative, off, idxGstMxcsrReg, X86_MXCSR_XCPT_MASK);
-    /* mxcsr ~= mxcsr */
-    off = iemNativeEmitInvBitsGpr(pReNative, off, idxGstMxcsrReg, idxGstMxcsrReg);
-    /* mxcsr >>= X86_MXCSR_XCPT_MASK_SHIFT */
-    off = iemNativeEmitShiftGprRight(pReNative, off, idxGstMxcsrReg, X86_MXCSR_XCPT_MASK_SHIFT);
-    /* tmp0 &= mxcsr */
-    off = iemNativeEmitAndGprByGpr(pReNative, off, idxRegTmp, idxGstMxcsrReg);
-
-    off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, idxRegTmp, true /*f64Bit*/, pEntry->idxLabelElse);
-    iemNativeRegFreeTmp(pReNative, idxGstMxcsrReg);
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
-
-    iemNativeCondStartIfBlock(pReNative, off);
-    return off;
-}
-
-#endif
 
 
 /*********************************************************************************************************************************

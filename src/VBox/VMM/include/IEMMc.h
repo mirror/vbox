@@ -187,12 +187,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
             return iemRaiseUndefinedOpcode(pVCpu); \
         } \
     } while (0)
-#define IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
-    do { \
-        if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)\
-            return iemRaiseSimdFpException(pVCpu); \
-        return iemRaiseUndefinedOpcode(pVCpu); \
-    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
@@ -3160,9 +3154,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     if (iemFpu2StRegsNotEmptyRefFirst(pVCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1)) == VINF_SUCCESS) {
 #define IEM_MC_IF_FCW_IM() \
     if (pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_IM) {
-#define IEM_MC_IF_MXCSR_XCPT_PENDING() \
-        if ((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)

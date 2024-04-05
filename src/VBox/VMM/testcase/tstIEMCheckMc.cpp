@@ -616,7 +616,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()              do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() do { (void)fMcBegin; } while (0)
-#define IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT()       do { (void)fMcBegin; } while (0)
 
 #define CHK_VAR(a_Name)                                 do { RT_CONCAT(iVarCheck_,a_Name) = 1; } while (0)
 #define IEM_MC_LOCAL(a_Type, a_Name) (void)fMcBegin; \
@@ -1118,7 +1117,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     p0 = NULL; CHK_VAR(p0); \
     if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_FCW_IM()                                              (void)fMcBegin; if (g_fRandom != fFpuRead) {
-#define IEM_MC_IF_MXCSR_XCPT_PENDING()                                  (void)fMcBegin; if (g_fRandom != fSseRead) {
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do { (void)fMcBegin; } while (0)
 
