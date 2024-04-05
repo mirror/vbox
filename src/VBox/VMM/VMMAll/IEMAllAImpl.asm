@@ -571,19 +571,80 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
 
 
 ;;
-; Checks that the size expression %1 matches %2 adjusted according to
-; RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK and for 256 entries.
-; @param 1  The jump array size assembly expression.
-; @param 2  The size without accounting for the IBT_ENDBRxx_WITHOUT_NOTRACK instruction.
+; Loads register with offset of imm8 instruction -- used by all of the instruction
+; implementations which lay out jump tables of 256x immediate byte variants.
+; Also checks that the instruction size matches the offsets in the table.
 ;
-%macro IEMCHECK_256_JUMP_ARRAY_SIZE 2
+; @param    1       The register to receive the jump target address (T1).
+; @param    2       The register containing the imm8 index (A1 / A2 / A3).
+; @param    3       Byte size of one instruction + ret (+ ?int3) in the table
+; @note             Implicitly uses local symbols .imm0, .imm1, and .immEmd
+;                   (implementation artifacts of each instruction jump table).
+;
+; Emits the equivalent (in actual code) of `lea %1, [.imm0 + %2 * %3]`.
+;
+%macro IEMIMPL_JUMP_TABLE_TARGET_INT 3
+        lea     %1, [.imm0 xWrtRIP]
+  %if   %3 == 5
+        lea     T0, [%2 + %2*4]  ; *5
+        lea     %1, [%1 + T0]    ; *5 + .imm0
+  %elif %3 == 6
+        lea     T0, [%2 + %2*2]  ; *3
+        lea     %1, [%1 + T0*2]  ; *6 + .imm0
+  %elif %3 == 7
+        lea     T0, [%2 + %2*2]  ; *3
+        lea     T0, [T0 + %2*4]  ; *7
+        lea     %1, [%1 + T0]    ; *7 + .imm0
+  %elif %3 == 8
+        lea     %1, [%1 + %2*8]  ; *8 + .imm0
+  %elif %3 == 9
+        lea     T0, [%2 + %2*8]  ; *9
+        lea     %1, [%1 + T0]    ; *9 + .imm0
+  %elif %3 == 10
+        lea     T0, [%2 + %2*4]  ; *5
+        lea     %1, [%1 + T0*2]  ; *10 + .imm0
+  %elif %3 == 11
+        lea     T0, [%2 + %2*4]  ; *5
+        lea     T0, [%2 + T0*2]  ; *11
+        lea     %1, [%1 + T0]    ; *11 + .imm0
+  %elif %3 == 12
+        lea     T0, [%2 + %2*2]  ; *3
+        lea     %1, [%1 + T0*4]  ; *12 + .imm0
+  %else
+   %error Unexpected instruction byte count in IEMIMPL_JUMP_TABLE_TARGET_INT
+  %endif
+        ; check size: 'warning: value does not fit in 8 bit field' if bad
+        times (.imm1 - .imm0 + %3) %% %3 db 999 * \
+              (.imm1 - .imm0 + %3)
+        ; check alignment: 'warning: value does not fit in 8 bit field' if bad
+        times ((.immEnd - .imm0) - 256 * %3) db 999 * \
+              ((.immEnd - .imm0) - 256 * %3)
+%endmacro
+
+%macro IEMIMPL_JUMP_TABLE_TARGET 3
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        dw      (0xffff - %2 - 256*4) + %1  ; will cause warning if entries are too big.
-        dw      (0xffff + %2 + 256*4) - %1  ; will cause warning if entries are too small.
+        IEMIMPL_JUMP_TABLE_TARGET_INT %1, %2, (%3 + 4)
  %else
-        dw      (0xffff - %2)         + %1  ; will cause warning if entries are too big.
-        dw      (0xffff + %2)         - %1  ; will cause warning if entries are too small.
+        IEMIMPL_JUMP_TABLE_TARGET_INT %1, %2, %3
  %endif
+%endmacro
+
+
+;;
+; Calls the given imm8 instruction -- used by all of the instruction
+; implementations which lay out jump tables of 256x immediate byte variants.
+;
+; @param    1       The register to receive the jump target address (T1).
+; @param    2       The register containing the imm8 index (A1 / A2 / A3).
+; @param    3       Byte size of one instruction + ret (+ ?int3) in the table
+;
+; Emits the equivalent (in actual code) of `lea %1, [.imm0 + %2 * %3]` +
+; `IBT_NOTRACK, call %1`.
+;
+%macro IEMIMPL_CALL_JUMP_TABLE_TARGET 3
+        IEMIMPL_JUMP_TABLE_TARGET %1, %2, %3
+        IBT_NOTRACK
+        call    %1
 %endmacro
 
 
@@ -4181,15 +4242,7 @@ BEGINPROC_FASTCALL iemAImpl_pshufw_u64, 16
         movzx   A2, A2_8                ; must clear top bits
         movq    mm1, [A1]
         movq    mm0, mm0                ; paranoia!
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*8]         ; sizeof(pshufw+ret) == 9
- %else
-        lea     T0, [A2 + A2*4]         ; sizeof(pshufw+ret) == 5
- %endif
-        lea     T1, [T1 + T0]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 5
         movq    [A0], mm0
 
         IEMIMPL_MMX_EPILOGUE
@@ -4202,7 +4255,7 @@ BEGINPROC_FASTCALL iemAImpl_pshufw_u64, 16
         ret
  %assign bImm bImm + 1
 %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x500
+.immEnd:
 ENDPROC iemAImpl_pshufw_u64
 
 
@@ -4214,15 +4267,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm1, [A1]
         movdqu  xmm0, xmm1              ; paranoia!
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(pshufXX+ret) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(pshufXX+ret) ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -4236,7 +4281,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
@@ -4251,17 +4296,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         IEMIMPL_SSE_PROLOGUE
 
         movzx   A2, A2_8                ; must clear top bits
-        vmovdqu  ymm1, [A1]
-        vmovdqu  ymm0, ymm1             ; paranoia!
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(pshufXX+ret) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(pshufXX+ret) ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        vmovdqu ymm1, [A1]
+        vmovdqu ymm0, ymm1              ; paranoia!
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         vmovdqu  [A0], ymm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -4274,7 +4311,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
@@ -4294,15 +4331,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u64, 16
 
         movzx   A1, A1_8                ; must clear top bits
         movq    mm0, [A0]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A1 + A1*8]         ; sizeof(psXX+ret) == 9
- %else
-        lea     T0, [A1 + A1*4]         ; sizeof(psXX+ret) == 5
- %endif
-        lea     T1, [T1 + T0]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A1, 5
         movq    [A0], mm0
 
         IEMIMPL_MMX_EPILOGUE
@@ -4315,7 +4344,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u64, 16
         ret
  %assign bImm bImm + 1
 %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x500
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _imm_u64
 %endmacro
 
@@ -4336,15 +4365,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
 
         movzx   A1, A1_8                ; must clear top bits
         movdqu  xmm0, [A0]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A1 + A1*4]         ; sizeof(psXX+ret) == 10: A1 * 10 = (A1 * 5) * 2
- %else
-        lea     T0, [A1 + A1*2]         ; sizeof(psXX+ret) ==  6: A1 *  6 = (A1 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A1, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -4357,7 +4378,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _imm_u128
 %endmacro
 
@@ -4369,8 +4390,6 @@ IEMIMPL_MEDIA_SSE_PSHIFTXX psrld
 IEMIMPL_MEDIA_SSE_PSHIFTXX psrlq
 IEMIMPL_MEDIA_SSE_PSHIFTXX psraw
 IEMIMPL_MEDIA_SSE_PSHIFTXX psrad
-IEMIMPL_MEDIA_SSE_PSHIFTXX pslldq
-IEMIMPL_MEDIA_SSE_PSHIFTXX psrldq
 
 
 ;
@@ -5176,15 +5195,7 @@ BEGINPROC_FASTCALL iemAImpl_shufps_u128, 16
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(shufpX+ret+int3) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(shufpX+ret+int3) ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -5198,7 +5209,7 @@ BEGINPROC_FASTCALL iemAImpl_shufps_u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_shufps_u128
 
 
@@ -5216,15 +5227,7 @@ BEGINPROC_FASTCALL iemAImpl_shufpd_u128, 16
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(shufpX+ret) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(shufpX+ret) ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -5237,7 +5240,7 @@ BEGINPROC_FASTCALL iemAImpl_shufpd_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_shufpd_u128
 
 
@@ -5259,15 +5262,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A1]
         movdqu  xmm1, [A2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*4]         ; sizeof(vshufpX+ret) == 10: A3 * 10 = (A3 * 5) * 2
- %else
-        lea     T0, [A3 + A3*2]         ; sizeof(vshufpX+ret) ==  6: A3 *  6 = (A3 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5280,7 +5275,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
@@ -5290,15 +5285,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         movzx   A3, A3_8                ; must clear top bits
         vmovdqu ymm0, [A1]
         vmovdqu ymm1, [A2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*4]         ; sizeof(vshufpX+ret) == 10: A3 * 10 = (A3 * 5) * 2
- %else
-        lea     T0, [A3 + A3*2]         ; sizeof(vshufpX+ret) ==  6: A3 *  6 = (A3 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 6
         vmovdqu [A0], ymm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5311,7 +5298,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
@@ -5406,15 +5393,7 @@ BEGINPROC_FASTCALL iemAImpl_palignr_u64, 16
         movzx   A2, A2_8                ; must clear top bits
         movq    mm0, [A0]
         movq    mm1, A1
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(endbrxx+palignr+ret) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(palignr+ret)         ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         movq    [A0], mm0
 
         IEMIMPL_MMX_EPILOGUE
@@ -5427,7 +5406,7 @@ BEGINPROC_FASTCALL iemAImpl_palignr_u64, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_palignr_u64
 
 
@@ -5450,15 +5429,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A2 * 12 = (A2 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A2*8]         ; sizeof(insnX+ret+int3)         ==  8: A2 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 8
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -5472,7 +5443,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
@@ -5508,15 +5479,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A1]
         movdqu  xmm1, [A2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insnX+ret+int3)         ==  8: A3 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
         movdqu  [A0], xmm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5530,7 +5493,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
  %endif
 
@@ -5542,15 +5505,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         movzx   A3, A3_8                ; must clear top bits
         vmovdqu ymm0, [A1]
         vmovdqu ymm1, [A2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insnX+ret+int3)         ==  8: A3 *  8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
         vmovdqu [A0], ymm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5564,7 +5519,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u256
  %endif
 %endmacro
@@ -5588,12 +5543,13 @@ IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vmpsadbw,   1, 1
 ; @param    1       The instruction name.
 ; @param    2       Whether the instruction has a 128-bit variant (1) or not (0).
 ; @param    3       Whether the instruction has a 256-bit variant (1) or not (0).
+; @param    4       The number of bytes taken up by a single instance of the instruction.
 ;
 ; @param    A0      Pointer to the destination media register size operand (output).
 ; @param    A1      Pointer to the first source media register size operand (input).
 ; @param    A2      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 3
+%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP 4
  %if %2 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
         PROLOGUE_4_ARGS
@@ -5601,15 +5557,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
 
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A2 * 12 = (A2 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A2*8]         ; sizeof(insnX+ret+int3)         ==  8: A2 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, %4
         movdqu  [A0], xmm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5623,7 +5571,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _imm_u128
  %endif
 
@@ -5634,15 +5582,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u256, 16
 
         movzx   A2, A2_8                ; must clear top bits
         vmovdqu ymm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*2]         ; sizeof(endbrxx+insnX+ret+int3) == 12: A2 * 12 = (A2 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A2*8]         ; sizeof(insnX+ret+int3)         ==  8: A2 *  8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, %4
         vmovdqu [A0], ymm0
 
         IEMIMPL_AVX_EPILOGUE
@@ -5656,13 +5596,15 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _imm_u256, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _imm_u256
  %endif
 %endmacro
 
-IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 vpermilps,  1, 1
-IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP_6 vpermilpd,  1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP vpermilps, 1, 1, 8
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP vpermilpd, 1, 1, 8
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP vpslldq,   1, 1, 7
+IEMIMPL_MEDIA_AVX_INSN_IMM8_2OP vpsrldq,   1, 1, 7
 
 
 ;;
@@ -5696,15 +5638,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
         movdqu  xmm0, [A2 + IEMPCMPISTRXSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insnX+ret) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insnX+ret)         ==  8: A3 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
 
         IEM_SAVE_FLAGS A1, X86_EFL_CF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF, 0, X86_EFL_AF | X86_EFL_PF
         mov    [T2], ecx
@@ -5720,7 +5654,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_pcmpistri_u128
 
 ;;
@@ -5739,13 +5673,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
         movdqu  xmm0, [A2 + IEMPCMPESTRXSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insnX+ret) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insnX+ret)         == 8: A3 * 8
- %endif
+        IEMIMPL_JUMP_TABLE_TARGET T1, A3, 8
         push    xDX                                 ; xDX can be A1 or A2 depending on the calling convention
         mov     xAX, [A2 + IEMPCMPESTRXSRC.u64Rax]  ; T0 is rax, so only overwrite it after we're done using it
         mov     xDX, [A2 + IEMPCMPESTRXSRC.u64Rdx]
@@ -5767,7 +5695,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_pcmpestri_u128
 
 ;;
@@ -5785,15 +5713,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc1]
         movdqu  xmm2, [A2 + IEMPCMPISTRXSRC.uSrc2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+pcmpistrm+ret) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(pcmpistrm+ret)         ==  8: A3 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
 
         IEM_SAVE_FLAGS A1, X86_EFL_CF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF, 0, X86_EFL_AF | X86_EFL_PF
         movdqu  [A0], xmm0
@@ -5809,7 +5729,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_pcmpistrm_u128
 
 ;;
@@ -5827,13 +5747,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc1]
         movdqu  xmm2, [A2 + IEMPCMPESTRXSRC.uSrc2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insnX+ret) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insnX+ret)         ==  8: A3 * 8
- %endif
+        IEMIMPL_JUMP_TABLE_TARGET T1, A3, 8
         push    xDX                                 ; xDX can be A1 or A2 depending on the calling convention
         mov     xAX, [A2 + IEMPCMPESTRXSRC.u64Rax]  ; T0 is rax, so only overwrite it after we're done using it
         mov     xDX, [A2 + IEMPCMPESTRXSRC.u64Rdx]
@@ -5855,7 +5769,7 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_pcmpestrm_u128
 
 
@@ -6353,15 +6267,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*8]         ; sizeof(endbrxx+cmpps+ret) == 9: A3 * 9
- %else
-        lea     T0, [A3 + A3*4]         ; sizeof(cmpps+ret)         == 5: A3 * 5
- %endif
-        lea     T1, [T1 + T0]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 5
         movdqu  [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
@@ -6375,7 +6281,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x500
+.immEnd:
 ENDPROC iemAImpl_cmpps_u128
 
 ;;
@@ -6401,15 +6307,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*4]         ; sizeof(endbrxx+cmpXX+ret) == 10: A3 * 10 = (A3 * 5) * 2
- %else
-        lea     T0, [A3 + A3*2]         ; sizeof(cmpXX+ret)         ==  6: A3 *  6 = (A3 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 6
         movdqu  [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
@@ -6423,7 +6321,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
@@ -6454,15 +6352,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A3 + A3*2]         ; sizeof(endbrxx+insn+ret+int3) == 12: A3 * 12 = (A3 * 3) * 4
-        lea     T1, [T1 + T0*4]
- %else
-        lea     T1, [T1 + A3*8]         ; sizeof(insn+ret+int3)         ==  8: A3 * 8
- %endif
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
         movdqu  [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
@@ -6477,7 +6367,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         int3
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
+.immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
@@ -6625,15 +6515,7 @@ BEGINPROC_FASTCALL iemAImpl_sha1rnds4_u128, 16
         movzx   A2, A2_8                ; must clear top bits
         movdqu  xmm0, [A0]
         movdqu  xmm1, [A1]
-        lea     T1, [.imm0 xWrtRIP]
- %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        lea     T0, [A2 + A2*4]         ; sizeof(endbrxx+sha1rnds4+ret) == 10: A2 * 10 = (A2 * 5) * 2
- %else
-        lea     T0, [A2 + A2*2]         ; sizeof(sha1rnds4+ret)         ==  6: A2 *  6 = (A2 * 3) * 2
- %endif
-        lea     T1, [T1 + T0*2]
-        IBT_NOTRACK
-        call    T1
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 6
         movdqu  [A0], xmm0
 
         IEMIMPL_SSE_EPILOGUE
@@ -6646,7 +6528,7 @@ BEGINPROC_FASTCALL iemAImpl_sha1rnds4_u128, 16
         ret
   %assign bImm bImm + 1
  %endrep
-.immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x600
+.immEnd:
 ENDPROC iemAImpl_sha1rnds4_u128
 
 
