@@ -444,7 +444,7 @@
   #define ATTRIBUTE_NO_SANITIZE_INTEGER
 #endif
 
-#ifndef ATTRIBUTE_NO_SANITIZE(arg)
+#ifndef ATTRIBUTE_NO_SANITIZE
   #define ATTRIBUTE_NO_SANITIZE(arg)
 #endif
 
