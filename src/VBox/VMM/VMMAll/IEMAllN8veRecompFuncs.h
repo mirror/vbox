@@ -1284,6 +1284,8 @@ iemNativeEmitRaiseDivideError(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
  * @param   pReNative       The native recompile state.
  * @param   off             The code buffer offset.
  * @param   idxInstr        The current instruction.
+ * @param   idxVarEffAddr   Index of the variable containing the effective address to check.
+ * @param   cbAlign         The alignment in bytes to check against.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitRaiseGp0IfEffAddrUnaligned(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uint8_t idxVarEffAddr, uint8_t cbAlign)
