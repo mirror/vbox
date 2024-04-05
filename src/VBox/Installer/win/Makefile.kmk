@@ -70,7 +70,6 @@ ifdef VBOX_INSTALLER_QUICK
  VBOX_WITH_NETADP               :=
  VBOX_WITH_NETFLT               :=
  VBOX_WITH_PYTHON               :=
- VBOX_WITH_SDS                  :=
  VBOX_WITH_WEBSERVICES          :=
  VBOX_WITH_UNATTENDED           :=
  VBOX_WITH_DOCS_PACKING         :=
