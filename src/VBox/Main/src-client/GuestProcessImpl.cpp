@@ -2269,28 +2269,28 @@ HRESULT GuestProcess::writeArray(ULONG aHandle, const std::vector<ProcessInputFl
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GuestProcessToolbox::GuestProcessToolbox(void)
+GuestProcessWrapper::GuestProcessWrapper(void)
     : pSession(NULL),
       pProcess(NULL)
 {
 }
 
-GuestProcessToolbox::~GuestProcessToolbox(void)
+GuestProcessWrapper::~GuestProcessWrapper(void)
 {
     uninit();
 }
 
 /**
- * Initializes and starts a process tool on the guest.
+ * Initializes and starts a process on the guest.
  *
  * @returns VBox status code.
- * @param   pGuestSession       Guest session the process tools should be started in.
+ * @param   pGuestSession       Guest session the process should be started in.
  * @param   startupInfo         Guest process startup info to use for starting.
  * @param   fAsync              Whether to start asynchronously or not.
  * @param   pvrcGuest           Where to return the guest error when
  *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
  */
-int GuestProcessToolbox::init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+int GuestProcessWrapper::init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
                               bool fAsync, int *pvrcGuest)
 {
     LogFlowThisFunc(("pGuestSession=%p, exe=%s, fAsync=%RTbool\n",
@@ -2330,9 +2330,9 @@ int GuestProcessToolbox::init(GuestSession *pGuestSession, const GuestProcessSta
 }
 
 /**
- * Unitializes a guest process tool by terminating it on the guest.
+ * Unitializes a guest process by terminating it on the guest.
  */
-void GuestProcessToolbox::uninit(void)
+void GuestProcessWrapper::uninit(void)
 {
     /* Make sure the process is terminated and unregistered from the guest session. */
     int vrcGuestIgnored;
@@ -2349,50 +2349,11 @@ void GuestProcessToolbox::uninit(void)
 }
 
 /**
- * Gets the current guest process stream block.
- *
- * @returns VBox status code.
- * @retval  VINF_EOF if the stream reached its end.
- * @param   uHandle             Guest process file handle to get current block for.
- * @param   strmBlock           Where to return the stream block on success.
- */
-int GuestProcessToolbox::getCurrentBlock(uint32_t uHandle, GuestToolboxStreamBlock &strmBlock)
-{
-    GuestToolboxStream *pStream = NULL;
-    if (uHandle == GUEST_PROC_OUT_H_STDOUT)
-        pStream = &mStdOut;
-    else if (uHandle == GUEST_PROC_OUT_H_STDERR)
-        pStream = &mStdErr;
-
-    if (!pStream)
-        return VERR_INVALID_PARAMETER;
-
-    int vrc = pStream->ParseBlock(strmBlock);
-
-    LogFlowThisFunc(("vrc=%Rrc, currently %RU64 pairs\n", vrc, strmBlock.GetCount()));
-    return vrc;
-}
-
-/**
- * Returns the result code from an ended guest process tool.
- *
- * @returns Result code from guest process tool.
- */
-int GuestProcessToolbox::getRc(void) const
-{
-    LONG exitCode = -1;
-    HRESULT hrc = pProcess->COMGETTER(ExitCode(&exitCode));
-    AssertComRC(hrc);
-
-    return GuestProcessToolbox::exitCodeToRc(mStartupInfo, exitCode);
-}
-
-/**
- * Returns whether a guest process tool is still running or not.
+ * Returns whether a guest process is still running or not.
  *
  * @returns \c true if running, or \c false if not.
  */
-bool GuestProcessToolbox::isRunning(void)
+bool GuestProcessWrapper::isRunning(void)
 {
     AssertReturn(!pProcess.isNull(), false);
 
@@ -2411,120 +2372,20 @@ bool GuestProcessToolbox::isRunning(void)
 }
 
 /**
- * Returns whether the tool has been run correctly or not, based on it's internal process
+ * Returns whether the guest process has been run correctly or not, based on it's internal process
  * status and reported exit status.
  *
- * @return @c true if the tool has been run correctly (exit status 0), or @c false if some error
+ * @return @c true if the guest process has been run correctly (exit status 0), or @c false if some error
  *         occurred (exit status <> 0 or wrong process state).
  */
-bool GuestProcessToolbox::isTerminatedOk(void)
+bool GuestProcessWrapper::isTerminatedOk(void)
 {
     return getTerminationStatus() == VINF_SUCCESS;
 }
 
-/**
- * Static helper function to start and wait for output of a certain toolbox tool.
- *
- * The optional @a pLstStdOutObjects argument enables the caller to retrieve
- * so-called parsable guest stream objects containing additional information on
- * a key value pair basis.  Those objects are emitted on the guest side by the
- * tool to convey retrieve additional information, like names in a directory or
- * file statistics, to the host.
- *
- * @return  IPRT status code.
- * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
- * @param   startupInfo             Startup information about the toolbox tool.
- * @param   pvrcGuest               Error code returned from the guest side if VERR_GSTCTL_GUEST_ERROR is returned.
- * @param   pLstStdOutObjects       Pointer to vector to receive the stdout
- *                                  objects.  Optional.
- * @param   cStdOutObjectsToRead    Number of parsable guest stream objects to
- *                                  try receive and parse.  Ignored when
- *                                  pLstStdOutObjects is NULL.  Optional.
- */
-/* static */
-int GuestProcessToolbox::runTool(GuestSession                  *pGuestSession,
-                                 GuestProcessStartupInfo const &startupInfo,
-                                 int                           *pvrcGuest,
-                                 GuestCtrlStreamObjects        *pLstStdOutObjects /* = NULL */,
-                                 uint32_t                       cStdOutObjectsToRead /* = 1 */)
-{
-    GuestProcessToolErrorInfo errorInfo = { VERR_IPE_UNINITIALIZED_STATUS, INT32_MAX };
-    int vrc = GuestProcessToolbox::runToolWithErrorInfo(pGuestSession, startupInfo,
-                                                        errorInfo, pLstStdOutObjects, cStdOutObjectsToRead);
-    if (RT_SUCCESS(vrc))
-    {
-        /* Translate exit statuses to VBox statuses according to the guest tool: */
-        if (errorInfo.vrcGuest == VERR_GSTCTL_PROCESS_EXIT_CODE)
-        {
-            errorInfo.vrcGuest = GuestProcessToolbox::exitCodeToRc(startupInfo, errorInfo.iExitCode);
-            vrc = VERR_GSTCTL_GUEST_ERROR;
-        }
-        /* In case of something else that may be relevant: */
-        else if (errorInfo.vrcGuest == VERR_GSTCTL_PROCESS_WRONG_STATE /* possible getTerminationStatus result, see below */)
-            vrc = VERR_GSTCTL_GUEST_ERROR;
-        else
-            AssertMsg(errorInfo.vrcGuest == VERR_IPE_UNINITIALIZED_STATUS || errorInfo.vrcGuest == VINF_SUCCESS,
-                      ("vrcGuest=%Rrc iExitCode=%d vrc=%Rrc\n", errorInfo.vrcGuest, errorInfo.iExitCode, vrc));
-    }
-
-    *pvrcGuest = errorInfo.vrcGuest;
-    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
-    return vrc;
-}
 
 /**
- * Bare-bone version of runTool that doesn't translate exit codes to statuses.
- *
- * It's currently not used by anyone other than runTool().
- *
- * @return  VBox status code.
- * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
- * @param   startupInfo             Startup information about the toolbox tool.
- * @param   errorInfo               Error information returned for error handling.
- * @param   pLstStdOutObjects       Pointer to vector to receive the stdout
- *                                  objects.  Optional.
- * @param   cStdOutObjectsToRead    Number of parsable guest stream objects to
- *                                  try receive and parse.  Ignored when
- *                                  pLstStdOutObjects is NULL.  Optional.
- *
- * @note    This will not do call exitCodeToRc, for that use runTool().
- */
-/* static */
-int GuestProcessToolbox::runToolWithErrorInfo(GuestSession                  *pGuestSession,
-                                              GuestProcessStartupInfo const &startupInfo,
-                                              GuestProcessToolErrorInfo     &errorInfo,
-                                              GuestCtrlStreamObjects        *pLstStdOutObjects /* = NULL */,
-                                              uint32_t                       cStdOutObjectsToRead /* = 1 */)
-{
-    GuestProcessToolbox procTool;
-    int vrc = procTool.init(pGuestSession, startupInfo, false /* fAsync */, &errorInfo.vrcGuest);
-    if (pLstStdOutObjects)
-        while (RT_SUCCESS(vrc) && cStdOutObjectsToRead-- > 0)
-            try
-            {
-                GuestToolboxStreamBlock strmBlk;
-                vrc = procTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK, &strmBlk, &errorInfo.vrcGuest);
-                pLstStdOutObjects->push_back(strmBlk);
-            }
-            catch (std::bad_alloc &)
-            {
-                vrc = VERR_NO_MEMORY;
-            }
-    if (RT_SUCCESS(vrc))
-    {
-        /* Make sure the process runs until completion. */
-        vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &errorInfo.vrcGuest);
-        if (RT_SUCCESS(vrc))
-            errorInfo.vrcGuest = procTool.getTerminationStatus(&errorInfo.iExitCode);
-    }
-
-    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d (%#x)\n",
-                 vrc, errorInfo.vrcGuest, errorInfo.iExitCode, errorInfo.iExitCode));
-    return vrc;
-}
-
-/**
- * Reports if the tool has been run correctly.
+ * Reports if the guest process has been run correctly.
  *
  * @retval  VINF_SUCCESS if the process has stopped and the exit code is zero.
  * @retval  VERR_GSTCTL_PROCESS_EXIT_CODE if the exit code is _not_ zero.
@@ -2532,7 +2393,7 @@ int GuestProcessToolbox::runToolWithErrorInfo(GuestSession                  *pGu
  *
  * @param   piExitCode      Exit code of the tool. Optional.
  */
-int GuestProcessToolbox::getTerminationStatus(int32_t *piExitCode /* = NULL */)
+int GuestProcessWrapper::getTerminationStatus(int32_t *piExitCode /* = NULL */)
 {
     Assert(!pProcess.isNull());
     AssertPtrNull(piExitCode);
@@ -2561,7 +2422,40 @@ int GuestProcessToolbox::getTerminationStatus(int32_t *piExitCode /* = NULL */)
 }
 
 /**
- * Waits for a guest process tool.
+ * Terminates a guest process.
+ *
+ * @returns VBox status code.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvrcGuest           Where to return the guest error when
+ *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ */
+int GuestProcessWrapper::terminate(uint32_t uTimeoutMS, int *pvrcGuest)
+{
+    LogFlowThisFuncEnter();
+
+    int vrc;
+    if (!pProcess.isNull())
+        vrc = pProcess->i_terminateProcess(uTimeoutMS, pvrcGuest);
+    else
+        vrc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+GuestProcessToolbox::GuestProcessToolbox(void)
+{
+}
+
+GuestProcessToolbox::~GuestProcessToolbox(void)
+{
+}
+
+/**
+ * Waits for a guest toolbox process.
  *
  * @returns VBox status code.
  * @param   fToolWaitFlags      Guest process tool wait flags to use for waiting.
@@ -2574,17 +2468,17 @@ int GuestProcessToolbox::wait(uint32_t fToolWaitFlags, int *pvrcGuest)
 }
 
 /**
- * Waits for a guest process tool, also returning process output.
+ * Waits for a guest toolbox process, also returning process output.
  *
  * @returns VBox status code.
  * @param   fToolWaitFlags      Guest process tool wait flags to use for waiting.
- * @param   pStrmBlkOut         Where to store the guest process output.
+ * @param   pStrmBlkOut         Where to store the guest toolbox output.
  * @param   pvrcGuest           Where to return the guest error when
  *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
  */
 int GuestProcessToolbox::waitEx(uint32_t fToolWaitFlags, GuestToolboxStreamBlock *pStrmBlkOut, int *pvrcGuest)
 {
-    LogFlowThisFunc(("fToolWaitFlags=0x%x, pStreamBlock=%p, pvrcGuest=%p\n", fToolWaitFlags, pStrmBlkOut, pvrcGuest));
+    LogFlowThisFunc(("fToolWaitFlags=0x%x, pStrmBlkOut=%p, pvrcGuest=%p\n", fToolWaitFlags, pStrmBlkOut, pvrcGuest));
 
     int vrc;
 
@@ -2769,24 +2663,142 @@ int GuestProcessToolbox::waitEx(uint32_t fToolWaitFlags, GuestToolboxStreamBlock
 }
 
 /**
- * Terminates a guest process tool.
+ * Gets the current guest toolbox process stream block.
  *
  * @returns VBox status code.
- * @param   uTimeoutMS          Timeout (in ms) to wait.
- * @param   pvrcGuest           Where to return the guest error when
- *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ * @retval  VINF_EOF if the stream reached its end.
+ * @param   uHandle             Guest process file handle to get current block for.
+ * @param   strmBlock           Where to return the stream block on success.
  */
-int GuestProcessToolbox::terminate(uint32_t uTimeoutMS, int *pvrcGuest)
+int GuestProcessToolbox::getCurrentBlock(uint32_t uHandle, GuestToolboxStreamBlock &strmBlock)
 {
-    LogFlowThisFuncEnter();
+    GuestToolboxStream *pStream = NULL;
+    if (uHandle == GUEST_PROC_OUT_H_STDOUT)
+        pStream = &mStdOut;
+    else if (uHandle == GUEST_PROC_OUT_H_STDERR)
+        pStream = &mStdErr;
 
-    int vrc;
-    if (!pProcess.isNull())
-        vrc = pProcess->i_terminateProcess(uTimeoutMS, pvrcGuest);
-    else
-        vrc = VERR_NOT_FOUND;
+    if (!pStream)
+        return VERR_INVALID_PARAMETER;
 
-    LogFlowFuncLeaveRC(vrc);
+    int vrc = pStream->ParseBlock(strmBlock);
+
+    LogFlowThisFunc(("vrc=%Rrc, currently %RU64 pairs\n", vrc, strmBlock.GetCount()));
+    return vrc;
+}
+
+/**
+ * Returns the result code from an ended guest toolbox process.
+ *
+ * @returns Result code from guest toolbox process.
+ */
+int GuestProcessToolbox::getRc(void) const
+{
+    LONG exitCode = -1;
+    HRESULT hrc = pProcess->COMGETTER(ExitCode(&exitCode));
+    AssertComRC(hrc);
+
+    return GuestProcessToolbox::exitCodeToRc(mStartupInfo, exitCode);
+}
+
+/**
+ * Static helper function to start and wait for output of a certain toolbox tool.
+ *
+ * The optional @a pLstStdOutObjects argument enables the caller to retrieve
+ * so-called parsable guest stream objects containing additional information on
+ * a key value pair basis.  Those objects are emitted on the guest side by the
+ * tool to convey retrieve additional information, like names in a directory or
+ * file statistics, to the host.
+ *
+ * @return  IPRT status code.
+ * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
+ * @param   startupInfo             Startup information about the toolbox tool.
+ * @param   pvrcGuest               Error code returned from the guest side if VERR_GSTCTL_GUEST_ERROR is returned.
+ * @param   pLstStdOutObjects       Pointer to vector to receive the stdout
+ *                                  objects.  Optional.
+ * @param   cStdOutObjectsToRead    Number of parsable guest stream objects to
+ *                                  try receive and parse.  Ignored when
+ *                                  pLstStdOutObjects is NULL.  Optional.
+ */
+/* static */
+int GuestProcessToolbox::runTool(GuestSession                  *pGuestSession,
+                                 GuestProcessStartupInfo const &startupInfo,
+                                 int                           *pvrcGuest,
+                                 GuestCtrlStreamObjects        *pLstStdOutObjects /* = NULL */,
+                                 uint32_t                       cStdOutObjectsToRead /* = 1 */)
+{
+    GuestProcessToolErrorInfo errorInfo = { VERR_IPE_UNINITIALIZED_STATUS, INT32_MAX };
+    int vrc = GuestProcessToolbox::runToolWithErrorInfo(pGuestSession, startupInfo,
+                                                        errorInfo, pLstStdOutObjects, cStdOutObjectsToRead);
+    if (RT_SUCCESS(vrc))
+    {
+        /* Translate exit statuses to VBox statuses according to the guest tool: */
+        if (errorInfo.vrcGuest == VERR_GSTCTL_PROCESS_EXIT_CODE)
+        {
+            errorInfo.vrcGuest = GuestProcessToolbox::exitCodeToRc(startupInfo, errorInfo.iExitCode);
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+        }
+        /* In case of something else that may be relevant: */
+        else if (errorInfo.vrcGuest == VERR_GSTCTL_PROCESS_WRONG_STATE /* possible getTerminationStatus result, see below */)
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+        else
+            AssertMsg(errorInfo.vrcGuest == VERR_IPE_UNINITIALIZED_STATUS || errorInfo.vrcGuest == VINF_SUCCESS,
+                      ("vrcGuest=%Rrc iExitCode=%d vrc=%Rrc\n", errorInfo.vrcGuest, errorInfo.iExitCode, vrc));
+    }
+
+    *pvrcGuest = errorInfo.vrcGuest;
+    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
+    return vrc;
+}
+
+/**
+ * Bare-bone version of runTool that doesn't translate exit codes to statuses.
+ *
+ * It's currently not used by anyone other than runTool().
+ *
+ * @return  VBox status code.
+ * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
+ * @param   startupInfo             Startup information about the toolbox tool.
+ * @param   errorInfo               Error information returned for error handling.
+ * @param   pLstStdOutObjects       Pointer to vector to receive the stdout
+ *                                  objects.  Optional.
+ * @param   cStdOutObjectsToRead    Number of parsable guest stream objects to
+ *                                  try receive and parse.  Ignored when
+ *                                  pLstStdOutObjects is NULL.  Optional.
+ *
+ * @note    This will not do call exitCodeToRc, for that use runTool().
+ */
+/* static */
+int GuestProcessToolbox::runToolWithErrorInfo(GuestSession                  *pGuestSession,
+                                              GuestProcessStartupInfo const &startupInfo,
+                                              GuestProcessToolErrorInfo     &errorInfo,
+                                              GuestCtrlStreamObjects        *pLstStdOutObjects /* = NULL */,
+                                              uint32_t                       cStdOutObjectsToRead /* = 1 */)
+{
+    GuestProcessToolbox procTool;
+    int vrc = procTool.init(pGuestSession, startupInfo, false /* fAsync */, &errorInfo.vrcGuest);
+    if (pLstStdOutObjects)
+        while (RT_SUCCESS(vrc) && cStdOutObjectsToRead-- > 0)
+            try
+            {
+                GuestToolboxStreamBlock strmBlk;
+                vrc = procTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK, &strmBlk, &errorInfo.vrcGuest);
+                pLstStdOutObjects->push_back(strmBlk);
+            }
+            catch (std::bad_alloc &)
+            {
+                vrc = VERR_NO_MEMORY;
+            }
+    if (RT_SUCCESS(vrc))
+    {
+        /* Make sure the process runs until completion. */
+        vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &errorInfo.vrcGuest);
+        if (RT_SUCCESS(vrc))
+            errorInfo.vrcGuest = procTool.getTerminationStatus(&errorInfo.iExitCode);
+    }
+
+    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d (%#x)\n",
+                 vrc, errorInfo.vrcGuest, errorInfo.iExitCode, errorInfo.iExitCode));
     return vrc;
 }
 
@@ -2960,4 +2972,4 @@ Utf8Str GuestProcessToolbox::guestErrorToString(const char *pszTool, const Guest
 
     return strErr;
 }
-
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */

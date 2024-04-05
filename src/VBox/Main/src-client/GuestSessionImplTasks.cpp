@@ -2626,6 +2626,10 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
+#ifndef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    RT_NOREF(procInfo, fSilent);
+    return VERR_NOT_SUPPORTED;
+#else
     LogRel(("Running %s ...\n", procInfo.mName.c_str()));
 
     GuestProcessToolbox procToRun;
@@ -2670,6 +2674,7 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
     }
 
     return vrc;
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 }
 
 /**

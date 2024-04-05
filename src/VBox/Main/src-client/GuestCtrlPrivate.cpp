@@ -529,6 +529,134 @@ RTFMODE GuestFsObjData::GetFileMode(void) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+GuestProcessOutputStream::GuestProcessOutputStream(void)
+    : m_cbMax(_32M)
+    , m_cbAllocated(0)
+    , m_cbUsed(0)
+    , m_offBuf(0)
+    , m_pbBuffer(NULL) { }
+
+GuestProcessOutputStream::~GuestProcessOutputStream(void)
+{
+    Destroy();
+}
+
+/**
+ * Adds data to the internal parser buffer. Useful if there
+ * are multiple rounds of adding data needed.
+ *
+ * @return  VBox status code. Will return VERR_TOO_MUCH_DATA if the buffer's maximum (limit) has been reached.
+ * @param   pbData              Pointer to data to add.
+ * @param   cbData              Size (in bytes) of data to add.
+ */
+int GuestProcessOutputStream::AddData(const BYTE *pbData, size_t cbData)
+{
+    AssertPtrReturn(pbData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    int vrc = VINF_SUCCESS;
+
+    /* Rewind the buffer if it's empty. */
+    size_t     cbInBuf   = m_cbUsed - m_offBuf;
+    bool const fAddToSet = cbInBuf == 0;
+    if (fAddToSet)
+        m_cbUsed = m_offBuf = 0;
+
+    /* Try and see if we can simply append the data. */
+    if (cbData + m_cbUsed <= m_cbAllocated)
+    {
+        memcpy(&m_pbBuffer[m_cbUsed], pbData, cbData);
+        m_cbUsed += cbData;
+    }
+    else
+    {
+        /* Move any buffered data to the front. */
+        cbInBuf = m_cbUsed - m_offBuf;
+        if (cbInBuf == 0)
+            m_cbUsed = m_offBuf = 0;
+        else if (m_offBuf) /* Do we have something to move? */
+        {
+            memmove(m_pbBuffer, &m_pbBuffer[m_offBuf], cbInBuf);
+            m_cbUsed = cbInBuf;
+            m_offBuf = 0;
+        }
+
+        /* Do we need to grow the buffer? */
+        if (cbData + m_cbUsed > m_cbAllocated)
+        {
+            size_t cbAlloc = m_cbUsed + cbData;
+            if (cbAlloc <= m_cbMax)
+            {
+                cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
+                void *pvNew = RTMemRealloc(m_pbBuffer, cbAlloc);
+                if (pvNew)
+                {
+                    m_pbBuffer = (uint8_t *)pvNew;
+                    m_cbAllocated = cbAlloc;
+                }
+                else
+                    vrc = VERR_NO_MEMORY;
+            }
+            else
+                vrc = VERR_TOO_MUCH_DATA;
+        }
+
+        /* Finally, copy the data. */
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbData + m_cbUsed <= m_cbAllocated)
+            {
+                memcpy(&m_pbBuffer[m_cbUsed], pbData, cbData);
+                m_cbUsed += cbData;
+            }
+            else
+                vrc = VERR_BUFFER_OVERFLOW;
+        }
+    }
+
+    return vrc;
+}
+
+/**
+ * Destroys the internal data buffer.
+ */
+void GuestProcessOutputStream::Destroy(void)
+{
+    if (m_pbBuffer)
+    {
+        RTMemFree(m_pbBuffer);
+        m_pbBuffer = NULL;
+    }
+
+    m_cbAllocated = 0;
+    m_cbUsed = 0;
+    m_offBuf = 0;
+}
+
+#ifdef DEBUG
+/**
+ * Dumps the raw guest process output to a file on the host.
+ * If the file on the host already exists, it will be overwritten.
+ *
+ * @param   pszFile             Absolute path to host file to dump the output to.
+ */
+void GuestProcessOutputStream::Dump(const char *pszFile)
+{
+    LogFlowFunc(("Dumping contents of stream=0x%p (cbAlloc=%u, cbSize=%u, cbOff=%u) to %s\n",
+                 m_pbBuffer, m_cbAllocated, m_cbUsed, m_offBuf, pszFile));
+
+    RTFILE hFile;
+    int vrc = RTFileOpen(&hFile, pszFile, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTFileWrite(hFile, m_pbBuffer, m_cbUsed, NULL /* pcbWritten */);
+        RTFileClose(hFile);
+    }
+}
+#endif /* DEBUG */
+
+///////////////////////////////////////////////////////////////////////////////
+
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /** @todo *NOT* thread safe yet! */
 /** @todo Add exception handling for STL stuff! */
@@ -773,132 +901,13 @@ int GuestToolboxStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestToolboxStream::GuestToolboxStream(void)
-    : m_cbMax(_32M)
-    , m_cbAllocated(0)
-    , m_cbUsed(0)
-    , m_offBuf(0)
-    , m_pbBuffer(NULL)
-    , m_cBlocks(0) { }
+    : m_cBlocks(0)
+{
+}
 
 GuestToolboxStream::~GuestToolboxStream(void)
 {
-    Destroy();
 }
-
-/**
- * Adds data to the internal parser buffer. Useful if there
- * are multiple rounds of adding data needed.
- *
- * @return  VBox status code. Will return VERR_TOO_MUCH_DATA if the buffer's maximum (limit) has been reached.
- * @param   pbData              Pointer to data to add.
- * @param   cbData              Size (in bytes) of data to add.
- */
-int GuestToolboxStream::AddData(const BYTE *pbData, size_t cbData)
-{
-    AssertPtrReturn(pbData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-
-    int vrc = VINF_SUCCESS;
-
-    /* Rewind the buffer if it's empty. */
-    size_t     cbInBuf   = m_cbUsed - m_offBuf;
-    bool const fAddToSet = cbInBuf == 0;
-    if (fAddToSet)
-        m_cbUsed = m_offBuf = 0;
-
-    /* Try and see if we can simply append the data. */
-    if (cbData + m_cbUsed <= m_cbAllocated)
-    {
-        memcpy(&m_pbBuffer[m_cbUsed], pbData, cbData);
-        m_cbUsed += cbData;
-    }
-    else
-    {
-        /* Move any buffered data to the front. */
-        cbInBuf = m_cbUsed - m_offBuf;
-        if (cbInBuf == 0)
-            m_cbUsed = m_offBuf = 0;
-        else if (m_offBuf) /* Do we have something to move? */
-        {
-            memmove(m_pbBuffer, &m_pbBuffer[m_offBuf], cbInBuf);
-            m_cbUsed = cbInBuf;
-            m_offBuf = 0;
-        }
-
-        /* Do we need to grow the buffer? */
-        if (cbData + m_cbUsed > m_cbAllocated)
-        {
-            size_t cbAlloc = m_cbUsed + cbData;
-            if (cbAlloc <= m_cbMax)
-            {
-                cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
-                void *pvNew = RTMemRealloc(m_pbBuffer, cbAlloc);
-                if (pvNew)
-                {
-                    m_pbBuffer = (uint8_t *)pvNew;
-                    m_cbAllocated = cbAlloc;
-                }
-                else
-                    vrc = VERR_NO_MEMORY;
-            }
-            else
-                vrc = VERR_TOO_MUCH_DATA;
-        }
-
-        /* Finally, copy the data. */
-        if (RT_SUCCESS(vrc))
-        {
-            if (cbData + m_cbUsed <= m_cbAllocated)
-            {
-                memcpy(&m_pbBuffer[m_cbUsed], pbData, cbData);
-                m_cbUsed += cbData;
-            }
-            else
-                vrc = VERR_BUFFER_OVERFLOW;
-        }
-    }
-
-    return vrc;
-}
-
-/**
- * Destroys the internal data buffer.
- */
-void GuestToolboxStream::Destroy(void)
-{
-    if (m_pbBuffer)
-    {
-        RTMemFree(m_pbBuffer);
-        m_pbBuffer = NULL;
-    }
-
-    m_cbAllocated = 0;
-    m_cbUsed = 0;
-    m_offBuf = 0;
-    m_cBlocks = 0;
-}
-
-#ifdef DEBUG
-/**
- * Dumps the raw guest process output to a file on the host.
- * If the file on the host already exists, it will be overwritten.
- *
- * @param   pszFile             Absolute path to host file to dump the output to.
- */
-void GuestToolboxStream::Dump(const char *pszFile)
-{
-    LogFlowFunc(("Dumping contents of stream=0x%p (cbAlloc=%u, cbSize=%u, cbOff=%u) to %s\n",
-                 m_pbBuffer, m_cbAllocated, m_cbUsed, m_offBuf, pszFile));
-
-    RTFILE hFile;
-    int vrc = RTFileOpen(&hFile, pszFile, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(vrc))
-    {
-        vrc = RTFileWrite(hFile, m_pbBuffer, m_cbUsed, NULL /* pcbWritten */);
-        RTFileClose(hFile);
-    }
-}
-#endif /* DEBUG */
 
 /**
  * Tries to parse the next upcoming pair block within the internal buffer.

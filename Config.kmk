@@ -936,6 +936,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT = 1
  # Enables treating the toolbox as built-in commands. Requires 7.1 Guest Additions. See @bugref{9783}
  VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS = 1
+ if !defined(VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT) && !defined(VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS)
+  $(error Neither VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT nor VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS specified, which will lead to broken Guest Control functionality!) 
+ endif
 endif
 # Enable ballooning
 VBOX_WITH_MEMBALLOON = 1
@@ -2622,7 +2625,7 @@ VBOX_PATH_NSIS ?= $(KBUILD_DEVTOOLS)/win.x86/nsis/v3.08-log
 
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
-VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.11.2
+VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.14.1
 ifdef VBOX_WITH_NEW_WINDOWS_SDK
  VBOX_PATH_MSITRAN  ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/../x86/MsiTran.Exe
  VBOX_PATH_MSIDB    ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/../x86/MsiDb.Exe

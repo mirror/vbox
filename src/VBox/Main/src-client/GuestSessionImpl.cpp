@@ -1090,7 +1090,12 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         vrc = i_directoryCreateViaToolbox(strPath, uMode, uFlags, pvrcGuest);
+#else
+        RT_NOREF(uMode, uFlags, pvrcGuest);
+        vrc = VERR_NOT_SUPPORTED;
+#endif
     }
 
     LogFlowFunc(("LEAVE: %Rrc *pvrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS));
@@ -1254,6 +1259,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
     return vrc;
 }
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /**
  * Creates a temporary directory / file on the guest (legacy version).
  *
@@ -1341,6 +1347,7 @@ int GuestSession::i_fsCreateTempViaToolbox(const Utf8Str &strTemplate, const Utf
 
     return vrc;
 }
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 /**
  * Creates a temporary directory / file on the guest.
@@ -1429,7 +1436,12 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         vrc = i_fsCreateTempViaToolbox(strTemplate, strPath, fDirectory, strName, fMode, fSecure, pvrcGuest);
+#else
+        RT_NOREF(strTemplate, strPath, fDirectory, strName, fMode, fSecure, pvrcGuest);
+        vrc = VERR_NOT_SUPPORTED;
+#endif
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
@@ -1768,6 +1780,7 @@ int GuestSession::i_fileUnregister(GuestFile *pFile)
     return vrc;
 }
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /**
  * Removes a file from the guest (legacy version).
  *
@@ -1822,6 +1835,7 @@ int GuestSession::i_fileRemoveViaToolbox(const Utf8Str &strPath, int *pvrcGuest)
 
     return vrc;
 }
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 /**
  * Removes a file from the guest.
@@ -1870,7 +1884,12 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         vrc = i_fileRemoveViaToolbox(strPath, pvrcGuest);
+#else
+        RT_NOREF(strPath, pvrcGuest);
+        vrc = VERR_NOT_SUPPORTED;
+#endif
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
@@ -2047,6 +2066,7 @@ int GuestSession::i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, 
     return vrc;
 }
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
 /**
  * Queries information of a file system object (file, directory, ...). Legacy version.
  *
@@ -2103,6 +2123,7 @@ int GuestSession::i_fsObjQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollo
 
     return vrc;
 }
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 /**
  * Queries information of a guest file system.
@@ -2249,7 +2270,12 @@ int GuestSession::i_fsObjQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         vrc = i_fsObjQueryInfoViaToolbox(strPath, fFollowSymlinks, objData, pvrcGuest);
+#else
+        RT_NOREF(strPath, fFollowSymlinks, objData, pvrcGuest);
+        vrc = VERR_NOT_SUPPORTED;
+#endif
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));

@@ -967,6 +967,47 @@ public:
     uint64_t                    mAffinity;
 };
 
+/**
+ * Generic class for handling a guest process output (i.e. stdout / stderr) stream.
+ */
+class GuestProcessOutputStream
+{
+public:
+
+    GuestProcessOutputStream();
+
+    virtual ~GuestProcessOutputStream();
+
+public:
+
+    int AddData(const BYTE *pbData, size_t cbData);
+
+    void Destroy();
+
+#ifdef DEBUG
+    void Dump(const char *pszFile);
+#endif
+
+    size_t GetOffset(void) const { return m_offBuf; }
+
+    size_t GetSize(void) const { return m_cbUsed; }
+
+    const BYTE *GetData(void) const { return m_pbBuffer; }
+
+protected:
+
+    /** Maximum allowed size the stream buffer can grow to.
+     *  Defaults to 32 MB. */
+    size_t m_cbMax;
+    /** Currently allocated size of internal stream buffer. */
+    size_t m_cbAllocated;
+    /** Currently used size at m_offBuffer. */
+    size_t m_cbUsed;
+    /** Current byte offset within the internal stream buffer. */
+    size_t m_offBuf;
+    /** Internal stream buffer. */
+    BYTE  *m_pbBuffer;
+};
 
 /**
  * Class representing the "value" side of a "key=value" pair.
@@ -1009,6 +1050,7 @@ class GuestToolboxStream;
  * An empty stream block will be treated as being incomplete.
  *
  * Only used for the busybox-like toolbox commands within VBoxService.
+ *
  * Deprecated, do not use anymore.
  */
 class GuestToolboxStreamBlock
@@ -1081,7 +1123,7 @@ typedef std::vector< GuestToolboxStreamBlock >::const_iterator GuestCtrlStreamOb
  *
  * Deprecated, do not use anymore.
  */
-class GuestToolboxStream
+class GuestToolboxStream : public GuestProcessOutputStream
 {
 
 public:
@@ -1092,35 +1134,12 @@ public:
 
 public:
 
-    int AddData(const BYTE *pbData, size_t cbData);
-
-    void Destroy();
-
-#ifdef DEBUG
-    void Dump(const char *pszFile);
-#endif
-
-    size_t GetOffset(void) const { return m_offBuf; }
-
-    size_t GetSize(void) const { return m_cbUsed; }
-
     size_t GetBlocks(void) const { return m_cBlocks; }
 
     int ParseBlock(GuestToolboxStreamBlock &streamBlock);
 
 protected:
 
-    /** Maximum allowed size the stream buffer can grow to.
-     *  Defaults to 32 MB. */
-    size_t m_cbMax;
-    /** Currently allocated size of internal stream buffer. */
-    size_t m_cbAllocated;
-    /** Currently used size at m_offBuffer. */
-    size_t m_cbUsed;
-    /** Current byte offset within the internal stream buffer. */
-    size_t m_offBuf;
-    /** Internal stream buffer. */
-    BYTE  *m_pbBuffer;
     /** How many completed stream blocks already were processed. */
     size_t m_cBlocks;
 };
