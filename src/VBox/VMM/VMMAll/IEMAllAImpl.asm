@@ -6328,51 +6328,6 @@ ENDPROC             iemAImpl_vcomisd_u128
 
 
 ;;
-; Initialize the SSE MXCSR register using the guest value partially to
-; account for rounding mode.
-;
-; @uses     4 bytes of stack to save the original value, T0.
-; @param    1       Expression giving the address of the MXCSR register of the guest.
-;
-%macro SSE_LD_FXSTATE_MXCSR_ONLY 1
-        sub     xSP, 4
-
-        stmxcsr [xSP]
-        mov     T0_32, [%1]
-        and     T0_32, X86_MXCSR_FZ | X86_MXCSR_RC_MASK | X86_MXCSR_DAZ
-        or      T0_32, X86_MXCSR_XCPT_MASK
-        sub     xSP, 4
-        mov     [xSP], T0_32
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
-; Restores the SSE MXCSR register with the original value.
-;
-; @uses     4 bytes of stack to save the content of MXCSR value, T0, T1.
-; @param    1       Expression giving the address where to return the MXCSR value - only the MXCSR is stored, no IEMSSERESULT is used.
-;
-; @note Restores the stack pointer.
-;
-%macro SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE 1
-        sub     xSP, 4
-        stmxcsr [xSP]
-        mov     T0_32, [xSP]
-        add     xSP, 4
-        ; Merge the status bits into the original MXCSR value.
-        mov     T1_32, [%1]
-        and     T0_32, X86_MXCSR_XCPT_FLAGS
-        or      T0_32, T1_32
-        mov     [%1], T0_32
-
-        ldmxcsr [xSP]
-        add     xSP, 4
-%endmacro
-
-
-;;
 ; Need to move this as well somewhere better?
 ;
 struc IEMMEDIAF2XMMSRC
@@ -6541,7 +6496,8 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 dppd
 ;
 ; @param    1       The instruction name.
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first MMX register sized operand (output).
 ; @param    A2      Pointer to the media register sized operand (input).
 ;
@@ -6549,13 +6505,13 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 dppd
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A2]
         %1      mm0, xmm0
         movq    [A1], mm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -6571,7 +6527,8 @@ IEMIMPL_MEDIA_SSE_MXCSR_I64_U128 cvttpd2pi
 ;
 ; @param    1       The instruction name.
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first media register sized operand (input/output).
 ; @param    A2      The 64bit source value from a MMX media register (input)
 ;
@@ -6579,14 +6536,14 @@ IEMIMPL_MEDIA_SSE_MXCSR_I64_U128 cvttpd2pi
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movdqu  xmm0, [A1]
         movq    mm0, A2
         %1      xmm0, mm0
         movdqu  [A1], xmm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
@@ -6602,7 +6559,8 @@ IEMIMPL_MEDIA_SSE_MXCSR_U128_U64 cvtpi2pd
 ;
 ; @param    1       The instruction name.
 ;
-; @param    A0      Pointer to the MXCSR value (input/output).
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first MMX media register sized operand (output).
 ; @param    A2      The 64bit source value (input).
 ;
@@ -6610,13 +6568,13 @@ IEMIMPL_MEDIA_SSE_MXCSR_U128_U64 cvtpi2pd
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_3_ARGS
         IEMIMPL_SSE_PROLOGUE
-        SSE_LD_FXSTATE_MXCSR_ONLY A0
+        SSE_AVX_LD_MXCSR A0_32
 
         movq    xmm0, A2
         %1      mm0, xmm0
         movq    [A1], mm0
 
-        SSE_ST_FXSTATE_MXCSR_ONLY_NO_FXSTATE A0
+        SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128

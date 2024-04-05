@@ -328,7 +328,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @note Must preserve any undefined bits, see CPUMX86EFLAGS! */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &pVCpu->cpum.GstCtx.eflags.uBoth
 #define IEM_MC_REF_EFLAGS_EX(a_pEFlags, a_fEflInput, a_fEflOutput) IEM_MC_REF_EFLAGS(a_pEFlags)
-#define IEM_MC_REF_MXCSR(a_pfMxcsr)                     (a_pfMxcsr) = &pVCpu->cpum.GstCtx.XState.x87.MXCSR
 
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) += (a_u16Value)
 #define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value) \

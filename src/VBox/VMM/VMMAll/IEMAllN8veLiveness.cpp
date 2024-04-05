@@ -584,7 +584,6 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
                  & ~(uint32_t)(X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_VM | X86_EFL_VIF | X86_EFL_IOPL))); \
     } while (0)
 #define IEM_MC_ASSERT_EFLAGS(a_fEflInput, a_fEflOutput)             NOP()
-#define IEM_MC_REF_MXCSR(a_pfMxcsr)                                 IEM_LIVENESS_MXCSR_MODIFY()
 
 
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)                    IEM_LIVENESS_GPR_MODIFY(a_iGReg)

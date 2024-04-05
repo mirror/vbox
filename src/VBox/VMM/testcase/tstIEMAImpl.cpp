@@ -8905,18 +8905,16 @@ static RTEXITCODE SseConvertMmXmmGenerate(uint32_t cTests, const char * const *p
                                           | (iDaz ? X86_MXCSR_DAZ : 0)
                                           | (iFz  ? X86_MXCSR_FZ  : 0)
                                           | X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrM  = fMxcsrIn;
                         uint64_t u64ResM;
-                        pfn(&fMxcsrM, &u64ResM, &TestData.InVal);
+                        uint32_t fMxcsrM    = pfn(fMxcsrIn, &u64ResM, &TestData.InVal);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         TestData.OutVal.u   = u64ResM;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrU  = fMxcsrIn;
                         uint64_t u64ResU;
-                        pfn(&fMxcsrU, &u64ResU, &TestData.InVal);
+                        uint32_t fMxcsrU    = pfn(fMxcsrIn, &u64ResU, &TestData.InVal);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         TestData.OutVal.u   = u64ResU;
@@ -8926,9 +8924,8 @@ static RTEXITCODE SseConvertMmXmmGenerate(uint32_t cTests, const char * const *p
                         if (fXcpt)
                         {
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
-                            uint32_t fMxcsr1  = fMxcsrIn;
                             uint64_t u64Res1;
-                            pfn(&fMxcsr1, &u64Res1, &TestData.InVal);
+                            uint32_t fMxcsr1    = pfn(fMxcsrIn, &u64Res1, &TestData.InVal);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             TestData.OutVal.u   = u64Res1;
@@ -8938,9 +8935,8 @@ static RTEXITCODE SseConvertMmXmmGenerate(uint32_t cTests, const char * const *p
                             {
                                 fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
-                                uint32_t fMxcsr2  = fMxcsrIn;
                                 uint64_t u64Res2;
-                                pfn(&fMxcsr2, &u64Res2, &TestData.InVal);
+                                uint32_t fMxcsr2    = pfn(fMxcsrIn, &u64Res2, &TestData.InVal);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 TestData.OutVal.u   = u64Res2;
@@ -8951,9 +8947,8 @@ static RTEXITCODE SseConvertMmXmmGenerate(uint32_t cTests, const char * const *p
                                     if (fUnmasked & fXcpt)
                                     {
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
-                                        uint32_t fMxcsr3  = fMxcsrIn;
                                         uint64_t u64Res3;
-                                        pfn(&fMxcsr3, &u64Res3, &TestData.InVal);
+                                        uint32_t fMxcsr3    = pfn(fMxcsrIn, &u64Res3, &TestData.InVal);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         TestData.OutVal.u   = u64Res3;
@@ -8986,8 +8981,7 @@ static void SseConvertMmXmmTest(void)
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
                 RTUINT64U ValOut;
-                uint32_t fMxcsr = paTests[iTest].fMxcsrIn;
-                pfn(&fMxcsr, &ValOut.u, &paTests[iTest].InVal);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &ValOut.u, &paTests[iTest].InVal);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || ValOut.ai32[0] != paTests[iTest].OutVal.ai32[0]
                     || ValOut.ai32[1] != paTests[iTest].OutVal.ai32[1])
@@ -9059,15 +9053,13 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(uint32_t cTests, const char * const
                                           | (iDaz ? X86_MXCSR_DAZ : 0)
                                           | (iFz  ? X86_MXCSR_FZ  : 0)
                                           | X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrM  = fMxcsrIn;
-                        pfn(&fMxcsrM, &TestData.OutVal, TestData.InVal.u);
+                        uint32_t fMxcsrM    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrU  = fMxcsrIn;
-                        pfn(&fMxcsrU, &TestData.OutVal, TestData.InVal.u);
+                        uint32_t fMxcsrU    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9076,8 +9068,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(uint32_t cTests, const char * const
                         if (fXcpt)
                         {
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
-                            uint32_t fMxcsr1  = fMxcsrIn;
-                            pfn(&fMxcsr1, &TestData.OutVal, TestData.InVal.u);
+                            uint32_t fMxcsr1    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9086,8 +9077,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(uint32_t cTests, const char * const
                             {
                                 fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
-                                uint32_t fMxcsr2  = fMxcsrIn;
-                                pfn(&fMxcsr2, &TestData.OutVal, TestData.InVal.u);
+                                uint32_t fMxcsr2    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9097,8 +9087,7 @@ static RTEXITCODE SseConvertXmmR64MmGenerate(uint32_t cTests, const char * const
                                     if (fUnmasked & fXcpt)
                                     {
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
-                                        uint32_t fMxcsr3  = fMxcsrIn;
-                                        pfn(&fMxcsr3, &TestData.OutVal, TestData.InVal.u);
+                                        uint32_t fMxcsr3    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9130,8 +9119,7 @@ static void SseConvertXmmR64MmTest(void)
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
                 X86XMMREG ValOut;
-                uint32_t fMxcsr = paTests[iTest].fMxcsrIn;
-                pfn(&fMxcsr, &ValOut, paTests[iTest].InVal.u);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &ValOut, paTests[iTest].InVal.u);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || !RTFLOAT64U_ARE_IDENTICAL(&ValOut.ar64[0], &paTests[iTest].OutVal.ar64[0])
                     || !RTFLOAT64U_ARE_IDENTICAL(&ValOut.ar64[1], &paTests[iTest].OutVal.ar64[1]))
@@ -9204,15 +9192,13 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(uint32_t cTests, const char * const
                                           | (iDaz ? X86_MXCSR_DAZ : 0)
                                           | (iFz  ? X86_MXCSR_FZ  : 0)
                                           | X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrM  = fMxcsrIn;
-                        pfn(&fMxcsrM, &TestData.OutVal, TestData.InVal.u);
+                        uint32_t fMxcsrM    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrM;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrU  = fMxcsrIn;
-                        pfn(&fMxcsrU, &TestData.OutVal, TestData.InVal.u);
+                        uint32_t fMxcsrU    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                         TestData.fMxcsrIn   = fMxcsrIn;
                         TestData.fMxcsrOut  = fMxcsrU;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9221,8 +9207,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(uint32_t cTests, const char * const
                         if (fXcpt)
                         {
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
-                            uint32_t fMxcsr1  = fMxcsrIn;
-                            pfn(&fMxcsr1, &TestData.OutVal, TestData.InVal.u);
+                            uint32_t fMxcsr1    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                             TestData.fMxcsrIn   = fMxcsrIn;
                             TestData.fMxcsrOut  = fMxcsr1;
                             GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9231,8 +9216,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(uint32_t cTests, const char * const
                             {
                                 fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
-                                uint32_t fMxcsr2  = fMxcsrIn;
-                                pfn(&fMxcsr2, &TestData.OutVal, TestData.InVal.u);
+                                uint32_t fMxcsr2    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                                 TestData.fMxcsrIn   = fMxcsrIn;
                                 TestData.fMxcsrOut  = fMxcsr2;
                                 GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9242,8 +9226,7 @@ static RTEXITCODE SseConvertXmmR32MmGenerate(uint32_t cTests, const char * const
                                     if (fUnmasked & fXcpt)
                                     {
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
-                                        uint32_t fMxcsr3  = fMxcsrIn;
-                                        pfn(&fMxcsr3, &TestData.OutVal, TestData.InVal.u);
+                                        uint32_t fMxcsr3    = pfn(fMxcsrIn, &TestData.OutVal, TestData.InVal.u);
                                         TestData.fMxcsrIn   = fMxcsrIn;
                                         TestData.fMxcsrOut  = fMxcsr3;
                                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
@@ -9275,8 +9258,7 @@ static void SseConvertXmmR32MmTest(void)
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
                 X86XMMREG ValOut;
-                uint32_t fMxcsr = paTests[iTest].fMxcsrIn;
-                pfn(&fMxcsr, &ValOut, paTests[iTest].InVal.u);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &ValOut, paTests[iTest].InVal.u);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || !RTFLOAT32U_ARE_IDENTICAL(&ValOut.ar32[0], &paTests[iTest].OutVal.ar32[0])
                     || !RTFLOAT32U_ARE_IDENTICAL(&ValOut.ar32[1], &paTests[iTest].OutVal.ar32[1]))
@@ -9367,18 +9349,16 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(uint32_t cTests, const char * co
                                           | (iDaz ? X86_MXCSR_DAZ : 0)
                                           | (iFz  ? X86_MXCSR_FZ  : 0)
                                           | X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrM  = fMxcsrIn;
                         uint64_t u64ResM;
-                        pfn(&fMxcsrM, &u64ResM, TestVal.u);
+                        uint32_t fMxcsrM   = pfn(fMxcsrIn, &u64ResM, TestVal.u);
                         TestData.fMxcsrIn  = fMxcsrIn;
                         TestData.fMxcsrOut = fMxcsrM;
                         TestData.OutVal.u  = u64ResM;
                         GenerateBinaryWrite(&BinOut, &TestData, sizeof(TestData));
 
                         fMxcsrIn &= ~X86_MXCSR_XCPT_MASK;
-                        uint32_t fMxcsrU  = fMxcsrIn;
                         uint64_t u64ResU;
-                        pfn(&fMxcsrU, &u64ResU, TestVal.u);
+                        uint32_t fMxcsrU   = pfn(fMxcsrIn, &u64ResU, TestVal.u);
                         TestData.fMxcsrIn  = fMxcsrIn;
                         TestData.fMxcsrOut = fMxcsrU;
                         TestData.OutVal.u  = u64ResU;
@@ -9388,9 +9368,8 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(uint32_t cTests, const char * co
                         if (fXcpt)
                         {
                             fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | fXcpt;
-                            uint32_t fMxcsr1  = fMxcsrIn;
                             uint64_t u64Res1;
-                            pfn(&fMxcsr1, &u64Res1, TestVal.u);
+                            uint32_t fMxcsr1   = pfn(fMxcsrIn, &u64Res1, TestVal.u);
                             TestData.fMxcsrIn  = fMxcsrIn;
                             TestData.fMxcsrOut = fMxcsr1;
                             TestData.OutVal.u  = u64Res1;
@@ -9400,9 +9379,8 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(uint32_t cTests, const char * co
                             {
                                 fXcpt |= fMxcsr1 & X86_MXCSR_XCPT_FLAGS;
                                 fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | (fXcpt << X86_MXCSR_XCPT_MASK_SHIFT);
-                                uint32_t fMxcsr2  = fMxcsrIn;
                                 uint64_t u64Res2;
-                                pfn(&fMxcsr2, &u64Res2, TestVal.u);
+                                uint32_t fMxcsr2   = pfn(fMxcsrIn, &u64Res2, TestVal.u);
                                 TestData.fMxcsrIn  = fMxcsrIn;
                                 TestData.fMxcsrOut = fMxcsr2;
                                 TestData.OutVal.u  = u64Res2;
@@ -9413,9 +9391,8 @@ static RTEXITCODE SseConvertMmI32XmmR32Generate(uint32_t cTests, const char * co
                                     if (fUnmasked & fXcpt)
                                     {
                                         fMxcsrIn = (fMxcsrIn & ~X86_MXCSR_XCPT_MASK) | ((fXcpt & ~fUnmasked) << X86_MXCSR_XCPT_MASK_SHIFT);
-                                        uint32_t fMxcsr3  = fMxcsrIn;
                                         uint64_t u64Res3;
-                                        pfn(&fMxcsr3, &u64Res3, TestVal.u);
+                                        uint32_t fMxcsr3   = pfn(fMxcsrIn, &u64Res3, TestVal.u);
                                         TestData.fMxcsrIn  = fMxcsrIn;
                                         TestData.fMxcsrOut = fMxcsr3;
                                         TestData.OutVal.u  = u64Res3;
@@ -9456,8 +9433,7 @@ static void SseConvertMmI32XmmR32Test(void)
                 ValIn.au32[0] = paTests[iTest].ar32InVal[0].u;
                 ValIn.au32[1] = paTests[iTest].ar32InVal[1].u;
 
-                uint32_t fMxcsr = paTests[iTest].fMxcsrIn;
-                pfn(&fMxcsr, &ValOut.u, ValIn.u);
+                uint32_t fMxcsr = pfn(paTests[iTest].fMxcsrIn, &ValOut.u, ValIn.u);
                 if (   fMxcsr != paTests[iTest].fMxcsrOut
                     || ValOut.ai32[0] != paTests[iTest].OutVal.ai32[0]
                     || ValOut.ai32[1] != paTests[iTest].OutVal.ai32[1])

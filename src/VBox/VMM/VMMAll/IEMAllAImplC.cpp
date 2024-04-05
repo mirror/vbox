@@ -18664,14 +18664,14 @@ static uint32_t iemAImpl_cvtpd2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst,
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpd2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, PCX86XMMREG pSrc))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtpd2pi_u128,(uint32_t fMxCsrIn, uint64_t *pu64Dst, PCX86XMMREG pSrc))
 {
     RTUINT64U u64Res;
-    uint32_t fMxcsrOut  = iemAImpl_cvtpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[0], &pSrc->ar64[0]);
-             fMxcsrOut |= iemAImpl_cvtpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[1], &pSrc->ar64[1]);
+    uint32_t fMxcsrOut  = iemAImpl_cvtpd2pi_u128_worker(fMxCsrIn, &u64Res.ai32[0], &pSrc->ar64[0]);
+             fMxcsrOut |= iemAImpl_cvtpd2pi_u128_worker(fMxCsrIn, &u64Res.ai32[1], &pSrc->ar64[1]);
 
     *pu64Dst = u64Res.u;
-    *pfMxcsr = fMxcsrOut;
+    return fMxcsrOut;
 }
 #endif
 
@@ -18691,14 +18691,14 @@ static uint32_t iemAImpl_cvttpd2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvttpd2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, PCX86XMMREG pSrc))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvttpd2pi_u128,(uint32_t fMxCsrIn, uint64_t *pu64Dst, PCX86XMMREG pSrc))
 {
     RTUINT64U u64Res;
-    uint32_t fMxcsrOut  = iemAImpl_cvttpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[0], &pSrc->ar64[0]);
-             fMxcsrOut |= iemAImpl_cvttpd2pi_u128_worker(*pfMxcsr, &u64Res.ai32[1], &pSrc->ar64[1]);
+    uint32_t fMxcsrOut  = iemAImpl_cvttpd2pi_u128_worker(fMxCsrIn, &u64Res.ai32[0], &pSrc->ar64[0]);
+             fMxcsrOut |= iemAImpl_cvttpd2pi_u128_worker(fMxCsrIn, &u64Res.ai32[1], &pSrc->ar64[1]);
 
     *pu64Dst = u64Res.u;
-    *pfMxcsr = fMxcsrOut;
+    return fMxcsrOut;
 }
 #endif
 
@@ -18715,12 +18715,12 @@ static uint32_t iemAImpl_cvtpi2ps_u128_worker(uint32_t fMxcsr, PRTFLOAT32U pr32D
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpi2ps_u128,(uint32_t *pfMxcsr, PX86XMMREG pDst, uint64_t u64Src))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtpi2ps_u128,(uint32_t fMxCsrIn, PX86XMMREG pDst, uint64_t u64Src))
 {
     RTUINT64U uSrc = { u64Src };
-    uint32_t fMxcsrOut  = iemAImpl_cvtpi2ps_u128_worker(*pfMxcsr, &pDst->ar32[0], uSrc.ai32[0]);
-             fMxcsrOut |= iemAImpl_cvtpi2ps_u128_worker(*pfMxcsr, &pDst->ar32[1], uSrc.ai32[1]);
-    *pfMxcsr = fMxcsrOut;
+    uint32_t fMxcsrOut  = iemAImpl_cvtpi2ps_u128_worker(fMxCsrIn, &pDst->ar32[0], uSrc.ai32[0]);
+             fMxcsrOut |= iemAImpl_cvtpi2ps_u128_worker(fMxCsrIn, &pDst->ar32[1], uSrc.ai32[1]);
+    return fMxcsrOut;
 }
 #endif
 
@@ -18737,12 +18737,12 @@ static uint32_t iemAImpl_cvtpi2pd_u128_worker(uint32_t fMxcsr, PRTFLOAT64U pr64D
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvtpi2pd_u128,(uint32_t *pfMxcsr, PX86XMMREG pDst, uint64_t u64Src))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtpi2pd_u128,(uint32_t fMxCsrIn, PX86XMMREG pDst, uint64_t u64Src))
 {
     RTUINT64U uSrc = { u64Src };
-    uint32_t fMxcsrOut  = iemAImpl_cvtpi2pd_u128_worker(*pfMxcsr, &pDst->ar64[0], uSrc.ai32[0]);
-             fMxcsrOut |= iemAImpl_cvtpi2pd_u128_worker(*pfMxcsr, &pDst->ar64[1], uSrc.ai32[1]);
-    *pfMxcsr = fMxcsrOut;
+    uint32_t fMxcsrOut  = iemAImpl_cvtpi2pd_u128_worker(fMxCsrIn, &pDst->ar64[0], uSrc.ai32[0]);
+             fMxcsrOut |= iemAImpl_cvtpi2pd_u128_worker(fMxCsrIn, &pDst->ar64[1], uSrc.ai32[1]);
+    return fMxcsrOut;
 }
 #endif
 
@@ -18762,14 +18762,14 @@ static uint32_t iemAImpl_cvtps2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst,
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvtps2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, uint64_t u64Src))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtps2pi_u128,(uint32_t fMxCsrIn, uint64_t *pu64Dst, uint64_t u64Src))
 {
     RTUINT64U uDst;
     RTUINT64U uSrc = { u64Src };
-    uint32_t fMxcsrOut  = iemAImpl_cvtps2pi_u128_worker(*pfMxcsr, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
-             fMxcsrOut |= iemAImpl_cvtps2pi_u128_worker(*pfMxcsr, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
+    uint32_t fMxcsrOut  = iemAImpl_cvtps2pi_u128_worker(fMxCsrIn, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
+             fMxcsrOut |= iemAImpl_cvtps2pi_u128_worker(fMxCsrIn, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
     *pu64Dst = uDst.u;
-    *pfMxcsr = fMxcsrOut;
+    return fMxcsrOut;
 }
 #endif
 
@@ -18789,14 +18789,14 @@ static uint32_t iemAImpl_cvttps2pi_u128_worker(uint32_t fMxcsr, int32_t *pi32Dst
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cvttps2pi_u128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, uint64_t u64Src))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvttps2pi_u128,(uint32_t fMxCsrIn, uint64_t *pu64Dst, uint64_t u64Src))
 {
     RTUINT64U uDst;
     RTUINT64U uSrc = { u64Src };
-    uint32_t fMxcsrOut  = iemAImpl_cvttps2pi_u128_worker(*pfMxcsr, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
-             fMxcsrOut |= iemAImpl_cvttps2pi_u128_worker(*pfMxcsr, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
+    uint32_t fMxcsrOut  = iemAImpl_cvttps2pi_u128_worker(fMxCsrIn, &uDst.ai32[0], (PCRTFLOAT32U)&uSrc.au32[0]);
+             fMxcsrOut |= iemAImpl_cvttps2pi_u128_worker(fMxCsrIn, &uDst.ai32[1], (PCRTFLOAT32U)&uSrc.au32[1]);
     *pu64Dst = uDst.u;
-    *pfMxcsr = fMxcsrOut;
+    return fMxcsrOut;
 }
 #endif
 
