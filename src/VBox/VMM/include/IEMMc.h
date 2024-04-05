@@ -635,7 +635,10 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 #define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord) \
     do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
-         (a_u64Dst) = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[(a_iQWord)]; \
+         if ((a_iQWord) < 2) \
+            (a_u64Dst) = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[(a_iQWord)]; \
+         else \
+            (a_u64Dst) = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[(a_iQWord) - 2]; \
     } while (0)
 #define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc, a_iDQword) \
     do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \

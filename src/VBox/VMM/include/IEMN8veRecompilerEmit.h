@@ -8307,7 +8307,7 @@ iemNativeEmitSimdLoadGprFromVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
          * vpextrq doesn't work on the upper 128-bits.
          * So we use the following sequence:
          *     vextracti128 vectmp0, vecsrc, 1
-         *     pextrd       gpr, vectmp0, #(iQWord - 2)
+         *     pextrq       gpr, vectmp0, #(iQWord - 2)
          */
         /* vextracti128 */
         pCodeBuf[off++] = X86_OP_VEX3;
@@ -8317,7 +8317,7 @@ iemNativeEmitSimdLoadGprFromVecRegU64Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, 
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iVecRegSrc & 7, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7);
         pCodeBuf[off++] = 0x1;
 
-        /* pextrd gpr, vecsrc, #iDWord (ASSUMES SSE4.1). */
+        /* pextrq */
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
         pCodeBuf[off++] =   X86_OP_REX_W
                           | (IEMNATIVE_SIMD_REG_FIXED_TMP0 < 8 ? 0 : X86_OP_REX_R)
