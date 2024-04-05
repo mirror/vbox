@@ -1485,82 +1485,90 @@ EMIT_LOCKED_BIN_TODO_OP(bts, 16)
  *       produce different result (see https://www.sandpile.org/x86/flags.htm),
  *       but we restrict ourselves to emulating these recent marchs.
  */
-#define SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlag, a_iBit) do { \
+#define SET_BIT_SEARCH_RESULT_INTEL(a_puDst, a_fEFlagsVar, a_iBit) do { \
         unsigned iBit = (a_iBit); \
-        uint32_t fEfl = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+        a_fEFlagsVar &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
         if (iBit) \
         { \
-            *puDst    = --iBit; \
-            fEfl     |= IEM_EFL_CALC_PARITY(iBit); \
+            *(a_puDst)    = --iBit; \
+            a_fEFlagsVar |= IEM_EFL_CALC_PARITY(iBit); \
         } \
         else \
-            fEfl     |= X86_EFL_ZF | X86_EFL_PF; \
-        *pfEFlags = fEfl; \
+            a_fEFlagsVar |= X86_EFL_ZF | X86_EFL_PF; \
     } while (0)
-#define SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlag, a_iBit) do { \
+#define SET_BIT_SEARCH_RESULT_AMD(a_puDst, a_fEFlagsVar, a_iBit) do { \
         unsigned const iBit = (a_iBit); \
         if (iBit) \
         { \
-            *puDst     = iBit - 1; \
-            *pfEFlags &= ~X86_EFL_ZF; \
+            *(a_puDst)    = iBit - 1; \
+            a_fEFlagsVar &= ~X86_EFL_ZF; \
         } \
         else \
-            *pfEFlags |= X86_EFL_ZF; \
+            a_fEFlagsVar |= X86_EFL_ZF; \
     } while (0)
 
 /*
  * BSF - first (least significant) bit set
  */
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU64(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u64_intel,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU64(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u64_amd,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitFirstSetU64(uSrc));
+    return fEFlags;
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU32(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u32_intel,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU32(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u32_amd,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitFirstSetU32(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU16(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u16_intel,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitFirstSetU16(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsf_u16_amd,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitFirstSetU16(uSrc));
+    return fEFlags;
 }
 
 
@@ -1569,83 +1577,90 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16_amd,(uint16_t *puDst, uint16_t uSrc, ui
  * BSR - last (most significant) bit set
  */
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU64(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u64_intel,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU64(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u64_amd,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitLastSetU64(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU32(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u32_intel,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU32(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u32_amd,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitLastSetU32(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU16(uSrc));
+    return fEFlags;
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u16_intel,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, fEFlags, ASMBitLastSetU16(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_bsr_u16_amd,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
+    SET_BIT_SEARCH_RESULT_AMD(puDst, fEFlags, ASMBitLastSetU16(uSrc));
+    return fEFlags;
 }
 
 
 /*
  * Helpers for LZCNT and TZCNT.
  */
-#define SET_BIT_CNT_SEARCH_RESULT_INTEL(a_puDst, a_uSrc, a_pfEFlags, a_uResult) do { \
+#define SET_BIT_CNT_SEARCH_RESULT_INTEL(a_puDst, a_uSrc, a_fEFlagsVar, a_uResult) do { \
         unsigned const uResult = (a_uResult); \
         *(a_puDst) = uResult; \
-        uint32_t fEfl = *(a_pfEFlags) & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+        a_fEFlagsVar &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
         if (uResult) \
-            fEfl |= IEM_EFL_CALC_PARITY(uResult); \
+            a_fEFlagsVar |= IEM_EFL_CALC_PARITY(uResult); \
         else \
-            fEfl |= X86_EFL_ZF | X86_EFL_PF; \
+            a_fEFlagsVar |= X86_EFL_ZF | X86_EFL_PF; \
         if (!a_uSrc) \
-            fEfl |= X86_EFL_CF; \
-        *(a_pfEFlags) = fEfl; \
+            a_fEFlagsVar |= X86_EFL_CF; \
     } while (0)
-#define SET_BIT_CNT_SEARCH_RESULT_AMD(a_puDst, a_uSrc, a_pfEFlags, a_uResult) do { \
+#define SET_BIT_CNT_SEARCH_RESULT_AMD(a_puDst, a_uSrc, a_fEFlagsVar, a_uResult) do { \
         unsigned const uResult = (a_uResult); \
         *(a_puDst) = uResult; \
-        uint32_t fEfl = *(a_pfEFlags) & ~(X86_EFL_ZF | X86_EFL_CF); \
+        a_fEFlagsVar &= ~(X86_EFL_ZF | X86_EFL_CF); \
         if (!uResult) \
-            fEfl |= X86_EFL_ZF; \
+            a_fEFlagsVar |= X86_EFL_ZF; \
         if (!a_uSrc) \
-            fEfl |= X86_EFL_CF; \
-        *(a_pfEFlags) = fEfl; \
+            a_fEFlagsVar |= X86_EFL_CF; \
     } while (0)
 
 
@@ -1653,56 +1668,62 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_amd,(uint16_t *puDst, uint16_t uSrc, ui
  * LZCNT - count leading zero bits.
  */
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    iemAImpl_lzcnt_u64_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_lzcnt_u64_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u64_intel,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU64(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountLeadingZerosU64(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u64_amd,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU64(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountLeadingZerosU64(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    iemAImpl_lzcnt_u32_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_lzcnt_u32_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u32_intel,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU32(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountLeadingZerosU32(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u32_amd,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU32(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountLeadingZerosU32(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    iemAImpl_lzcnt_u16_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_lzcnt_u16_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u16_intel,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU16(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountLeadingZerosU16(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_lzcnt_u16_amd,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountLeadingZerosU16(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountLeadingZerosU16(uSrc));
+    return fEFlags;
 }
 
 
@@ -1710,56 +1731,62 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_lzcnt_u16_amd,(uint16_t *puDst, uint16_t uSrc, 
  * TZCNT - count leading zero bits.
  */
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u64,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    iemAImpl_tzcnt_u64_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_tzcnt_u64_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u64_intel,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU64(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountTrailingZerosU64(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u64_amd,(uint32_t fEFlags, uint64_t *puDst, uint64_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU64(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountTrailingZerosU64(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u32,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    iemAImpl_tzcnt_u32_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_tzcnt_u32_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u32_intel,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU32(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountTrailingZerosU32(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u32_amd,(uint32_t fEFlags, uint32_t *puDst, uint32_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU32(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountTrailingZerosU32(uSrc));
+    return fEFlags;
 }
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u16,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    iemAImpl_tzcnt_u16_intel(puDst, uSrc, pfEFlags);
+    return iemAImpl_tzcnt_u16_intel(fEFlags, puDst, uSrc);
 }
 #endif
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u16_intel,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU16(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_INTEL(puDst, uSrc, fEFlags, ASMCountTrailingZerosU16(uSrc));
+    return fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_tzcnt_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_tzcnt_u16_amd,(uint32_t fEFlags, uint16_t *puDst, uint16_t uSrc))
 {
-    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, pfEFlags, ASMCountTrailingZerosU16(uSrc));
+    SET_BIT_CNT_SEARCH_RESULT_AMD(puDst, uSrc, fEFlags, ASMCountTrailingZerosU16(uSrc));
+    return fEFlags;
 }
 
 
@@ -1966,19 +1993,19 @@ DECLINLINE(uint8_t) iemPopCountU64(uint64_t u64)
 }
 
 #define EMIT_POPCNT(a_cBits, a_Type, a_Suffix) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_popcnt_u,a_cBits,a_Suffix),(a_Type *puDst, a_Type uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_popcnt_u,a_cBits,a_Suffix),(uint32_t fEFlags, a_Type *puDst, a_Type uSrc)) \
 { \
-    uint32_t    fEfl = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+    fEFlags &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
     a_Type      uResult; \
     if (uSrc) \
         uResult = iemPopCountU ## a_cBits(uSrc); \
     else \
     { \
-        fEfl |= X86_EFL_ZF; \
-        uResult = 0; \
+        fEFlags |= X86_EFL_ZF; \
+        uResult  = 0; \
     } \
-    *puDst    = uResult; \
-    *pfEFlags = fEfl; \
+    *puDst = uResult; \
+    return fEFlags; \
 }
 
 EMIT_POPCNT(64, uint64_t, _fallback)
@@ -2621,22 +2648,25 @@ EMIT_IMUL(8, 16, (uint16_t *puAX, uint8_t uFactor2, uint32_t *pfEFlags),        
  * the high part of the product.
  */
 # define EMIT_IMUL_TWO(a_cBits, a_uType) \
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_imul_two_u ## a_cBits,(uint32_t fEFlags, a_uType *puDst, a_uType uSrc)) \
 { \
     a_uType uIgn; \
-    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
+    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, &fEFlags); \
+    return fEFlags; \
 } \
 \
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _intel,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_imul_two_u ## a_cBits ## _intel,(uint32_t fEFlags, a_uType *puDst, a_uType uSrc)) \
 { \
     a_uType uIgn; \
-    iemAImpl_imul_u ## a_cBits ## _intel(puDst, &uIgn, uSrc, pfEFlags); \
+    iemAImpl_imul_u ## a_cBits ## _intel(puDst, &uIgn, uSrc, &fEFlags); \
+    return fEFlags; \
 } \
 \
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _amd,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_imul_two_u ## a_cBits ## _amd,(uint32_t fEFlags, a_uType *puDst, a_uType uSrc)) \
 { \
     a_uType uIgn; \
-    iemAImpl_imul_u ## a_cBits ## _amd(puDst, &uIgn, uSrc, pfEFlags); \
+    iemAImpl_imul_u ## a_cBits ## _amd(puDst, &uIgn, uSrc, &fEFlags); \
+    return fEFlags; \
 }
 
 EMIT_IMUL_TWO(64, uint64_t)

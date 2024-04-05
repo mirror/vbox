@@ -472,56 +472,41 @@ GLOBALNAME_RAW NAME_FASTCALL(%1,%2,@), function, hidden
 
 ;;
 ; Calculates the new EFLAGS based on the CPU EFLAGS (%2), a clear mask (%3),
-; signed input (%4[%5]) and parity index (%6).
+; signed input (%4[%5]) and parity index (%6), storing the result into EAX (T0).
 ;
-; This is used by MUL and IMUL, where we got result (%4 & %6) in xAX which is
-; also T0. So, we have to use T1 for the EFLAGS calculation and save T0/xAX
-; while we extract the %2 flags from the CPU EFLAGS or use T2 (only AMD64).
-;
-; @remarks  Clobbers T0, T1, stack, %6, EFLAGS.
+; @note     %4 & %6 must not be RAX, EAX, or AX! So, don't use with full MUL/IMUL.
+
+; @remarks  Clobbers T0, T1, stack, %6, EFLAGS, %1.
 ; @param        1       The parameter (A0..A3) holding the eflags value.
 ; @param        2       The mask of modified flags to save.
 ; @param        3       Mask of additional flags to always clear
 ; @param        4       The result register to set SF by.
 ; @param        5       The width of the %4 register in bits (8, 16, 32, or 64).
 ; @param        6       The (full) register containing the parity table index. Will be modified!
-
-%macro IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF 6
- %ifdef RT_ARCH_AMD64
-        pushf
-        pop     T2
- %else
-        push    T0
+%macro IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_RETVAL 6
         pushf
         pop     T0
- %endif
-        mov     T1_32, %1               ; load flags.
-        and     T1_32, ~(%2 | %3 | X86_EFL_PF | X86_EFL_SF)  ; clear the modified, always cleared flags and the two flags we calc.
- %ifdef RT_ARCH_AMD64
-        and     T2_32, (%2)             ; select the modified flags.
-        or      T1_32, T2_32            ; combine the flags.
- %else
+        and     %1, ~(%2 | %3 | X86_EFL_PF | X86_EFL_SF)  ; clear the modified, always cleared flags and the two flags we calc.
         and     T0_32, (%2)             ; select the modified flags.
-        or      T1_32, T0_32            ; combine the flags.
-        pop     T0
- %endif
+        or      T0_32, %1               ; combine the flags.
 
-        ; First calculate SF as it's likely to be refereing to the same register as %6 does.
+        ; First calculate SF as it is the same register as %6 (only %6 is always full width).
         bt      %4, %5 - 1
         jnc     %%sf_clear
-        or      T1_32, X86_EFL_SF
+        or      T0_32, X86_EFL_SF
  %%sf_clear:
 
         ; Parity last.
         and     %6, 0xff
  %ifdef RT_ARCH_AMD64
-        lea     T2, [NAME(g_afParity) xWrtRIP]
-        or      T1_8, [T2 + %6]
+        lea     T1, [NAME(g_afParity) xWrtRIP]
+        or      T0_8, [T1 + %6]
  %else
-        or      T1_8, [NAME(g_afParity) + %6]
+        or      T0_8, [NAME(g_afParity) + %6]
  %endif
 
-        mov     %1, T1_32               ; save the result.
+        ;mov     %1, T0_32               ; save the result.
+        ; ASSUMES T0 = eax!
 %endmacro
 
 ;;
@@ -1410,8 +1395,8 @@ IEMIMPL_BIT_OP btr, 1, (X86_EFL_CF), 0 ;passed-thru (X86_EFL_OF | X86_EFL_SF | X
 ; This will generate code for the 16, 32 and 64 bit accesses, except on 32-bit
 ; system where the 64-bit accesses requires hand coding.
 ;
-; All the functions takes a pointer to the destination memory operand in A0,
-; the source register operand in A1 and a pointer to eflags in A2.
+; All the functions takes a pointer to the destination memory operand in A1,
+; the source register operand in A2 and the incoming eflags in A0.
 ;
 ; In the ZF case the destination register is 'undefined', however it seems that
 ; both AMD and Intel just leaves it as is.  The undefined EFLAGS differs between
@@ -1433,14 +1418,14 @@ BEGINCODE
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
-        %1      T0_16, A1_16
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
+        %1      T0_16, A2_16
 %if %4 != 0
         jz      .unchanged_dst
 %endif
-        mov     [A0], T0_16
+        mov     [A1], T0_16
 .unchanged_dst:
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, 0
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
@@ -1475,14 +1460,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
-        %1      T0_32, A1_32
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
+        %1      T0_32, A2_32
 %if %4 != 0
         jz      .unchanged_dst
 %endif
-        mov     [A0], T0_32
+        mov     [A1], T0_32
 .unchanged_dst:
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, 0
+        IEM_SAVE_FLAGS_RETVAL             A0_32, %2, %3, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
@@ -1518,14 +1503,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
-        %1      T0, A1
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, %3 ; Must load undefined flags since AMD passes them thru
+        %1      T0, A2
 %if %4 != 0
         jz      .unchanged_dst
 %endif
-        mov     [A0], T0
+        mov     [A1], T0
 .unchanged_dst:
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, 0
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, 0
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
 
@@ -1570,8 +1555,8 @@ IEMIMPL_BIT_OP2 lzcnt, (X86_EFL_ZF | X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86
 ; This will generate code for the 16, 32 and 64 bit accesses, except on 32-bit
 ; system where the 64-bit accesses requires hand coding.
 ;
-; All the functions takes a pointer to the destination memory operand in A0,
-; the source register operand in A1 and a pointer to eflags in A2.
+; All the functions takes a pointer to the destination memory operand in A1,
+; the source register operand in A2 and eflags in A0.
 ;
 ; ASSUMES Intel and AMD set EFLAGS the same way.
 ;
@@ -1586,29 +1571,29 @@ IEMIMPL_BIT_OP2 lzcnt, (X86_EFL_ZF | X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, 0
-        %1      T0_16, A1_16
-        mov     [A0], T0_16
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, 0
+        %1      T0_16, A2_16
+        mov     [A1], T0_16
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, %4
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, 0
-        %1      T0_32, A1_32
-        mov     [A0], T0_32
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, 0
+        %1      T0_32, A2_32
+        mov     [A1], T0_32
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, %4
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD           A2, %2, %3, 0
-        %1      T0, A1
-        mov     [A0], T0
-        IEM_SAVE_FLAGS_OLD                 A2, %2, %3, %4
+        IEM_MAYBE_LOAD_FLAGS               A0_32, %2, %3, 0
+        %1      T0, A2
+        mov     [A1], T0
+        IEM_SAVE_FLAGS_RETVAL              A0_32, %2, %3, %4
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif ; RT_ARCH_AMD64
@@ -1629,26 +1614,26 @@ BEGINCODE
 %macro IEMIMPL_IMUL_TWO 4
 BEGINPROC_FASTCALL iemAImpl_imul_two_u16 %+ %3, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD                    A2, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
-        imul    A1_16, word [A0]
-        mov     [A0], A1_16
+        IEM_MAYBE_LOAD_FLAGS                        A0_32, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
+        imul    A2_16, word [A1]
+        mov     [A1], A2_16
  %if %4 != 1
-        IEM_SAVE_FLAGS_OLD                          A2, %1, %2, 0
+        IEM_SAVE_FLAGS_RETVAL                       A0_32, %1, %2, 0
  %else
-        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_OLD    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1_16, 16, A1 ; intel
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_RETVAL A0_32, %1, X86_EFL_AF | X86_EFL_ZF, A2_16, 16, A2 ; intel
  %endif
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_imul_two_u16 %+ %3
 
 BEGINPROC_FASTCALL iemAImpl_imul_two_u32 %+ %3, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD                    A2, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
-        imul    A1_32, dword [A0]
-        mov     [A0], A1_32
+        IEM_MAYBE_LOAD_FLAGS                        A0_32, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
+        imul    A2_32, dword [A1]
+        mov     [A1], A2_32
  %if %4 != 1
-        IEM_SAVE_FLAGS_OLD                          A2, %1, %2, 0
+        IEM_SAVE_FLAGS_RETVAL                       A0_32, %1, %2, 0
  %else
-        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_OLD    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1_32, 32, A1 ; intel
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_RETVAL A0_32, %1, X86_EFL_AF | X86_EFL_ZF, A2_32, 32, A2 ; intel
  %endif
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_imul_two_u32 %+ %3
@@ -1656,13 +1641,13 @@ ENDPROC iemAImpl_imul_two_u32 %+ %3
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_imul_two_u64 %+ %3, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD                    A2, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
-        imul    A1, qword [A0]
-        mov     [A0], A1
+        IEM_MAYBE_LOAD_FLAGS                        A0_32, %1, %2, %2 ; Undefined flags may be passed thru (AMD)
+        imul    A2, qword [A1]
+        mov     [A1], A2
  %if %4 != 1
-        IEM_SAVE_FLAGS_OLD                          A2, %1, %2, 0
+        IEM_SAVE_FLAGS_RETVAL                       A0_32, %1, %2, 0
  %else
-        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_OLD    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1, 64, A1 ; intel
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF_RETVAL A0_32, %1, X86_EFL_AF | X86_EFL_ZF, A2, 64, A2 ; intel
  %endif
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_imul_two_u64 %+ %3

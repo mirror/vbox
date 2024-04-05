@@ -1945,12 +1945,14 @@ static BINU16_T g_aBinU16[] =
     ENTRY_BIN_EX(btr_u16_locked, 1),
     ENTRY_BIN_EX(bts_u16, 1),
     ENTRY_BIN_EX(bts_u16_locked, 1),
+#endif
     ENTRY_BIN_AMD(  bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(arpl),
 #endif
 };
@@ -1993,12 +1995,14 @@ static BINU32_T g_aBinU32[] =
     ENTRY_BIN_EX(btr_u32_locked, 1),
     ENTRY_BIN_EX(bts_u32, 1),
     ENTRY_BIN_EX(bts_u32_locked, 1),
+#endif
     ENTRY_BIN_AMD(  bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(adcx_u32),
     ENTRY_BIN(adox_u32),
 #endif
@@ -2042,15 +2046,20 @@ static BINU64_T g_aBinU64[] =
     ENTRY_BIN_EX(btr_u64_locked, 1),
     ENTRY_BIN_EX(bts_u64, 1),
     ENTRY_BIN_EX(bts_u64_locked, 1),
+#endif
     ENTRY_BIN_AMD(  bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_INTEL(bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
     ENTRY_BIN_AMD(  imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY_BIN_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+#if 0 /** @todo convert to new eflags format  */
     ENTRY_BIN(adcx_u64),
     ENTRY_BIN(adox_u64),
 #endif
+/** @todo popcnt */
+/** @todo tzcnt */
+/** @todo lzcnt */
 };
 TEST_BINARY_OPS(64, uint64_t, "%#018RX64", BINU64_TEST_T, g_aBinU64)
 
