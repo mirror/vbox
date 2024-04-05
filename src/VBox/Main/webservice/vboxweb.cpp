@@ -139,7 +139,7 @@ static int              g_iWatchdogCheckInterval = 5;
 
 static const char       *g_pcszBindToHost = NULL;       // host; NULL = localhost
 static unsigned int     g_uBindToPort = 18083;          // port
-static unsigned int     g_uBacklog = 100;               // backlog = max queue size for requests
+static unsigned int     g_uBacklog = 100;               // backlog = max queue size for connections
 
 #ifdef WITH_OPENSSL
 static bool             g_fSSL = false;                 // if SSL is enabled
@@ -306,7 +306,7 @@ static void DisplayHelp()
                 break;
 
             case 'k':
-                pcszDescr = "Maximum number of requests before a socket will be closed (100).";
+                pcszDescr = "Maximum number of requests before a connection will be closed (100).";
                 break;
 
             case 'A':
@@ -361,30 +361,13 @@ public:
      * Constructor. Creates the new thread and makes it call process() for processing the queue.
      * @param u Thread number. (So we can count from 1 and be readable.)
      * @param q SoapQ instance which has the queue to process.
-     * @param soap struct soap instance from main() which we copy here.
      */
     SoapThread(size_t u,
-               SoapQ &q,
-               const struct soap *soap)
+               SoapQ &q)
         : m_u(u),
-          m_strThread(com::Utf8StrFmt("SQW%02d", m_u)),
           m_pQ(&q)
     {
-        // make a copy of the soap struct for the new thread
-        m_soap = soap_copy(soap);
-        m_soap->fget = fnHttpGet;
-
-        /* The soap.max_keep_alive value can be set to the maximum keep-alive calls allowed,
-         * which is important to avoid a client from holding a thread indefinitely.
-         * http://www.cs.fsu.edu/~engelen/soapdoc2.html#sec:keepalive
-         *
-         * Strings with 8-bit content can hold ASCII (default) or UTF8. The latter is
-         * possible by enabling the SOAP_C_UTFSTRING flag.
-         */
-        soap_set_omode(m_soap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
-        soap_set_imode(m_soap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
-        m_soap->max_keep_alive = g_cMaxKeepAlive;
-
+         m_strThread = com::Utf8StrFmt("SQW%02d", m_u);
         int vrc = RTThreadCreate(&m_pThread,
                                  fntWrapper,
                                  this,           // pvUser
@@ -431,7 +414,6 @@ public:
     size_t          m_u;            // thread number
     com::Utf8Str    m_strThread;    // thread name ("SoapQWrkXX")
     SoapQ           *m_pQ;          // the single SOAP queue that all the threads service
-    struct soap     *m_soap;        // copy of the soap structure for this thread (from soap_copy())
     RTTHREAD        m_pThread;      // IPRT thread struct for this thread
 };
 
@@ -446,11 +428,9 @@ public:
 
     /**
      * Constructor. Creates the soap queue.
-     * @param pSoap
      */
-    SoapQ(const struct soap *pSoap)
-        : m_soap(pSoap),
-          m_mutex(util::LOCKCLASS_OBJECTSTATE),     // lowest lock order, no other may be held while this is held
+    SoapQ()
+        : m_mutex(util::LOCKCLASS_OBJECTSTATE),     // lowest lock order, no other may be held while this is held
           m_cIdleThreads(0)
     {
         RTSemEventMultiCreate(&m_event);
@@ -474,16 +454,29 @@ public:
         }
 
         RTSemEventMultiDestroy(m_event);
+
+        while (!m_llSocketsQ.empty())
+        {
+            struct soap *pSoap = m_llSocketsQ.front();
+            m_llSocketsQ.pop_front();
+
+            if (pSoap == NULL || !soap_valid_socket(pSoap->socket))
+                continue;
+
+            soap_destroy(pSoap); // clean up class instances
+            soap_end(pSoap); // clean up everything and close socket
+            soap_free(pSoap); // free soap connection
+        }
     }
 
     /**
-     * Adds the given socket to the SOAP queue and posts the
+     * Adds the given soap connection to the SOAP queue and posts the
      * member event sem to wake up the workers. Called on the main thread
-     * whenever a socket has work to do. Creates a new SOAP thread on the
+     * whenever a connection comes in. Creates a new SOAP thread on the
      * first call or when all existing threads are busy.
-     * @param s Socket from soap_accept() which has work to do.
+     * @param pSoap connection
      */
-    size_t add(SOAP_SOCKET s)
+    size_t add(const struct soap *pSoap)
     {
         size_t cItems;
         util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
@@ -496,17 +489,16 @@ public:
            )
         {
             SoapThread *pst = new SoapThread(m_llAllThreads.size() + 1,
-                                             *this,
-                                             m_soap);
+                                             *this);
             m_llAllThreads.push_back(pst);
             util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
             g_mapThreads[pst->m_pThread] = com::Utf8StrFmt("[%3u]", pst->m_u);
             ++m_cIdleThreads;
         }
 
-        // enqueue the socket of this connection and post eventsem so that
-        // one of the threads (possibly the one just created) can pick it up
-        m_llSocketsQ.push_back(s);
+        // enqueue this connection and post eventsem so that one of the threads
+        // (possibly the one just created) can pick it up
+        m_llSocketsQ.push_back(soap_copy(pSoap));
         cItems = m_llSocketsQ.size();
         qlock.release();
 
@@ -518,14 +510,14 @@ public:
 
     /**
      * Blocks the current thread until work comes in; then returns
-     * the SOAP socket which has work to do. This reduces m_cIdleThreads
+     * the SOAP connection which has work to do. This reduces m_cIdleThreads
      * by one, and the caller MUST call done() when it's done processing.
      * Called from the worker threads.
      * @param cIdleThreads out: no. of threads which are currently idle (not counting the caller)
      * @param cThreads out: total no. of SOAP threads running
      * @return
      */
-    SOAP_SOCKET get(size_t &cIdleThreads, size_t &cThreads)
+    struct soap *get(size_t &cIdleThreads, size_t &cThreads)
     {
         while (g_fKeepRunning)
         {
@@ -538,7 +530,7 @@ public:
             util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
             if (!m_llSocketsQ.empty())
             {
-                SOAP_SOCKET socket = m_llSocketsQ.front();
+                struct soap *pSoap = m_llSocketsQ.front();
                 m_llSocketsQ.pop_front();
                 cIdleThreads = --m_cIdleThreads;
                 cThreads = m_llAllThreads.size();
@@ -551,12 +543,12 @@ public:
 
                 qlock.release();
 
-                return socket;
+                return pSoap;
             }
 
             // nothing to do: keep looping
         }
-        return SOAP_INVALID_SOCKET;
+        return NULL;
     }
 
     /**
@@ -571,7 +563,7 @@ public:
 
     /**
      * To be called by a worker thread when signing off, i.e. no longer
-     * willing to process requests.
+     * willing to process SOAP connections.
      */
     void signoff(SoapThread *th)
     {
@@ -587,8 +579,6 @@ public:
         }
     }
 
-    const struct soap       *m_soap;            // soap structure created by main(), passed to constructor
-
     util::WriteLockHandle   m_mutex;
     RTSEMEVENTMULTI         m_event;            // posted by add(), blocked on by get()
 
@@ -596,15 +586,15 @@ public:
     size_t                  m_cIdleThreads;     // threads which are currently idle (statistics)
 
     // A std::list abused as a queue; this contains the actual jobs to do,
-    // each int being a socket from soap_accept()
-    std::list<SOAP_SOCKET>  m_llSocketsQ;
+    // each entry being a connection from soap_accept() passed through SoapQ::add.
+    std::list<struct soap *>  m_llSocketsQ;
 };
 
 /**
  * Thread function for each of the SOAP queue worker threads. This keeps
  * running, blocks on the event semaphore in SoapThread.SoapQ and picks
- * up a socket from the queue therein, which has been put there by
- * beginProcessing().
+ * up a connection from the queue therein, which has been put there by
+ * SoapQ::add().
  */
 void SoapThread::process()
 {
@@ -612,39 +602,54 @@ void SoapThread::process()
 
     while (g_fKeepRunning)
     {
-        // wait for a socket to arrive on the queue
+        // wait for a job to arrive on the queue
         size_t cIdleThreads = 0, cThreads = 0;
-        m_soap->socket = m_pQ->get(cIdleThreads, cThreads);
+        struct soap *pSoap = m_pQ->get(cIdleThreads, cThreads);
 
-        if (!soap_valid_socket(m_soap->socket))
+        if (pSoap == NULL || !soap_valid_socket(pSoap->socket))
             continue;
 
+        pSoap->fget = fnHttpGet;
+
+        /* The soap.max_keep_alive value can be set to the maximum keep-alive calls allowed,
+         * which is important to avoid a client from holding a thread indefinitely.
+         * http://www.cs.fsu.edu/~engelen/soapdoc2.html#sec:keepalive
+         *
+         * Strings with 8-bit content can hold ASCII (default) or UTF8. The latter is
+         * possible by enabling the SOAP_C_UTFSTRING flag.
+         */
+        soap_set_omode(pSoap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
+        soap_set_imode(pSoap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
+        pSoap->max_keep_alive = g_cMaxKeepAlive;
+
         LogRel(("Processing connection from IP=%RTnaipv4 socket=%d (%d out of %d threads idle)\n",
-                RT_H2N_U32(m_soap->ip), m_soap->socket, cIdleThreads, cThreads));
+                RT_H2N_U32(pSoap->ip), pSoap->socket, cIdleThreads, cThreads));
 
         // Ensure that we don't get stuck indefinitely for connections using
         // keepalive, otherwise stale connections tie up worker threads.
-        m_soap->send_timeout = 60;
-        m_soap->recv_timeout = 60;
+        pSoap->send_timeout = 60;
+        pSoap->recv_timeout = 60;
         // Limit the maximum SOAP request size to a generous amount, just to
         // be on the safe side (SOAP is quite wordy when representing arrays,
         // and some API uses need to deal with large arrays). Good that binary
         // data is no longer represented by byte arrays...
-        m_soap->recv_maxlength = _16M;
+        pSoap->recv_maxlength = _16M;
         // process the request; this goes into the COM code in methodmaps.cpp
+
         do {
 #ifdef WITH_OPENSSL
-            if (g_fSSL && soap_ssl_accept(m_soap))
+            if (g_fSSL && soap_ssl_accept(pSoap))
             {
-                WebLogSoapError(m_soap);
+                WebLogSoapError(pSoap);
                 break;
             }
 #endif /* WITH_OPENSSL */
-            soap_serve(m_soap);
+            soap_serve(pSoap);
         } while (0);
 
-        soap_destroy(m_soap); // clean up class instances
-        soap_end(m_soap); // clean up everything and close socket
+        soap_destroy(pSoap); // clean up class instances
+        soap_end(pSoap); // clean up everything and close connection
+        soap_free(pSoap); // free soap connection
 
         // tell the queue we're idle again
         m_pQ->done();
@@ -908,6 +913,7 @@ static void doQueuesLoop()
     }
 #endif /* WITH_OPENSSL */
 
+    soap.accept_timeout = 60;
     soap.bind_flags |= SO_REUSEADDR;
             // avoid EADDRINUSE on bind()
 
@@ -915,7 +921,7 @@ static void doQueuesLoop()
     m = soap_bind(&soap,
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
-                  g_uBacklog);      // backlog = max queue size for requests
+                  g_uBacklog);      // backlog = max queue size for connections
     if (m == SOAP_INVALID_SOCKET)
         WebLogSoapError(&soap);
     else
@@ -930,65 +936,30 @@ static void doQueuesLoop()
                 g_uBindToPort, pszSsl, m));
 
         // initialize thread queue, mutex and eventsem
-        g_pSoapQ = new SoapQ(&soap);
+        g_pSoapQ = new SoapQ();
 
         uint64_t cAccepted = 1;
         while (g_fKeepRunning)
         {
-            struct timeval timeout;
-            fd_set ReadFds, WriteFds, XcptFds;
-            int rv;
-            for (;;)
-            {
-                timeout.tv_sec = 60;
-                timeout.tv_usec = 0;
-                FD_ZERO(&ReadFds);
-                FD_SET(soap.master, &ReadFds);
-                FD_ZERO(&WriteFds);
-                FD_SET(soap.master, &WriteFds);
-                FD_ZERO(&XcptFds);
-                FD_SET(soap.master, &XcptFds);
-                rv = select((int)soap.master + 1, &ReadFds, &WriteFds, &XcptFds, &timeout);
-                if (rv > 0)
-                    break; // work is waiting
-                if (rv == 0)
-                    continue; // timeout, not necessary to bother gsoap
-                // r < 0, errno
-#if GSOAP_VERSION >= 208103
-                if (soap_socket_errno == SOAP_EINTR)
-#else
-                if (soap_socket_errno(soap.master) == SOAP_EINTR)
-#endif
-                    rv = 0; // re-check if we should terminate
-                break;
-            }
-            if (rv == 0)
-                continue;
-
-            // call gSOAP to handle incoming SOAP connection
-            soap.accept_timeout = -1; // 1usec timeout, actual waiting is above
             s = soap_accept(&soap);
             if (!soap_valid_socket(s))
             {
-                if (soap.errnum)
+                if (soap.errnum != SOAP_EINTR)
                     WebLogSoapError(&soap);
                 continue;
             }
 
-            // add the socket to the queue and tell worker threads to
+            // add the connection to the queue and tell worker threads to
             // pick up the job
-            size_t cItemsOnQ = g_pSoapQ->add(s);
-            LogRel(("Request %llu on socket %d queued for processing (%d items on Q)\n", cAccepted, s, cItemsOnQ));
+            size_t cItemsOnQ = g_pSoapQ->add(&soap);
+            LogRel(("Connection %llu on socket %d queued for processing (%d items on Q)\n", cAccepted, s, cItemsOnQ));
             cAccepted++;
         }
 
         delete g_pSoapQ;
         g_pSoapQ = NULL;
 
-        LogRel(("ending SOAP request handling\n"));
-
-        delete g_pSoapQ;
-        g_pSoapQ = NULL;
+        LogRel(("Ending SOAP connection handling\n"));
 
     }
     soap_done(&soap); // close master socket and detach environment
@@ -1001,7 +972,7 @@ static void doQueuesLoop()
 
 /**
  * Thread function for the "queue pumper" thread started from main(). This implements
- * the loop that takes SOAP calls from HTTP and serves them by handing sockets to the
+ * the loop that takes SOAP calls from HTTP and serves them by handing connections to the
  * SOAP queue worker threads.
  */
 static DECLCALLBACK(int) fntQPumper(RTTHREAD hThreadSelf, void *pvUser)
