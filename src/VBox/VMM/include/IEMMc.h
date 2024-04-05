@@ -2976,15 +2976,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 /** Actualizes the guest FPU state so it can be accessed and modified. */
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() iemFpuActualizeStateForChange(pVCpu)
 
-/** Stores SSE SIMD result updating MXCSR. */
-#define IEM_MC_STORE_SSE_RESULT(a_Res, a_iXmmReg) \
-    do { \
-        PCX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87; \
-        if ((  ~((pFpuCtx->MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-             & (pFpuCtx->MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0) \
-            pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXmmReg)] = (a_Res); \
-    } while (0)
-
 /** Prepares for using the SSE state.
  * Ensures that we can use the host SSE/FPU in the current context (RC+R0.
  * Ensures the guest SSE state in the CPUMCTX is up to date. */

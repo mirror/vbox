@@ -3350,7 +3350,6 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_MREG_U64':                                     (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_SREG_BASE_U32':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_STORE_SREG_BASE_U64':                                (McBlock.parseMcGeneric,           True,  True,  False, ),
-    'IEM_MC_STORE_SSE_RESULT':                                   (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_XREG_R32':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_XREG_R64':                                     (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_STORE_XREG_U128':                                    (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),

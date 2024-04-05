@@ -4419,26 +4419,6 @@ iemNativeEmitRefXregXxx(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 }
 
 
-#define IEM_MC_REF_MXCSR(a_pfMxcsr) \
-    off = iemNativeEmitRefMxcsr(pReNative, off, a_pfMxcsr)
-
-/** Handles IEM_MC_REF_MXCSR. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitRefMxcsr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef)
-{
-    iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_MxCsr, 0);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarRef, sizeof(void *));
-
-    /* If we've delayed writing back the register value, flush it now. */
-    off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_MxCsr, 0);
-
-    /* If there is a shadow copy of guest MXCSR, flush it now. */
-    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(kIemNativeGstReg_MxCsr));
-
-    return off;
-}
-
-
 
 /*********************************************************************************************************************************
 *   Effective Address Calculation                                                                                                *
@@ -8849,50 +8829,6 @@ iemNativeEmitSimdClearZregU256Vlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     return off;
 }
 
-
-#define IEM_MC_STORE_SSE_RESULT(a_SseData, a_iXmmReg) \
-    off = iemNativeEmitSimdSseStoreResult(pReNative, off, a_SseData, a_iXmmReg)
-
-/** Emits code for IEM_MC_STORE_SSE_RESULT. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdSseStoreResult(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxSseRes, uint8_t iXReg)
-{
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxSseRes);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxSseRes, sizeof(X86XMMREG));
-
-    /* The ForUpdate is important as we might end up not writing the result value to the register in case of an unmasked exception. */
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(iXReg),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxVarRegRes  = iemNativeVarSimdRegisterAcquire(pReNative, idxSseRes, &off, true /*fInitalized*/);
-    uint8_t const idxRegMxCsr   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxRegTmp     = iemNativeRegAllocTmp(pReNative, &off);
-
-    /* Update the value if there is no unmasked exception. */
-    /* tmp = mxcsr */
-    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
-    /* tmp &= X86_MXCSR_XCPT_MASK */
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK);
-    /* tmp >>= X86_MXCSR_XCPT_MASK_SHIFT */
-    off = iemNativeEmitShiftGprRight(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK_SHIFT);
-    /* tmp = ~tmp */
-    off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp, idxRegTmp, false /*f64Bit*/);
-    /* tmp &= mxcsr */
-    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
-
-    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS);
-    uint32_t offFixup = off;
-    off = iemNativeEmitJnzToFixed(pReNative, off, off);
-    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxVarRegRes);
-    iemNativeFixupFixedJump(pReNative, offFixup, off);
-
-    /* Free but don't flush the shadowed register. */
-    iemNativeVarRegisterRelease(pReNative, idxSseRes);
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
-
-    return off;
-}
 
 
 /*********************************************************************************************************************************
