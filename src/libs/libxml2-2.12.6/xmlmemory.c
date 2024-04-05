@@ -859,13 +859,7 @@ xmlInitMemoryInternal(void) {
      xmlGenericError(xmlGenericErrorContext,
 	     "xmlInitMemory()\n");
 #endif
-    /*
-     This is really not good code (see Bug 130419).  Suggestions for
-     improvement will be welcome!
-    */
-     if (xmlMemInitialized) return(-1);
-     xmlMemInitialized = 1;
-     xmlMemMutex = xmlNewMutex();
+
      xmlInitMutex(&xmlMemMutex);
 
      breakpoint = getenv("XML_MEM_BREAKPOINT");
@@ -876,7 +870,6 @@ xmlInitMemoryInternal(void) {
      if (breakpoint != NULL) {
          sscanf(breakpoint, "%p", &xmlMemTraceBlockAt);
      }
-
 }
 
 /**
