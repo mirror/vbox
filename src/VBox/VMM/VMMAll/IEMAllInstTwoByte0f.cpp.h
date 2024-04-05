@@ -3750,6 +3750,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
 
             IEM_MC_REF_GREG_I32_CONST(pi32Src, IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_cvtsi2sd_r64_i32, pr64Dst, pi32Src);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_REG(pVCpu, bRm), r64Dst);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -3772,6 +3773,7 @@ FNIEMOP_DEF(iemOp_cvtsi2sd_Vsd_Ey)
 
             IEM_MC_FETCH_MEM_I32(i32Src, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_cvtsi2sd_r64_i32, pr64Dst, pi32Src);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
             IEM_MC_STORE_XREG_R64(IEM_GET_MODRM_REG(pVCpu, bRm), r64Dst);
 
             IEM_MC_ADVANCE_RIP_AND_FINISH();
