@@ -83,6 +83,28 @@ RT_C_DECLS_END
     ( (uint32_t)((a_uResult) == 0) << X86_EFL_ZF_BIT )
 
 /**
+ * Calculates the parity flag.
+ *
+ * @returns X86_EFL_PF or 0.
+ * @param   a_uResult       Unsigned result value.
+ */
+#if !defined(RT_ARCH_ARM64) || 1 /** @todo profile this... micro benching in tstIEMAImpl indicates no gain, but it may be skewed. */
+# define IEM_EFL_CALC_PARITY(a_uResult) (g_afParity[(a_uResult) & 0xff])
+#else
+# define IEM_EFL_CALC_PARITY(a_uResult) iemAImplCalcParity(a_uResult)
+DECL_FORCE_INLINE(uint32_t) iemAImplCalcParity(uint32_t uResult)
+{
+    /* Emulate 8-bit pop count.  This translates to 4 EOR instructions on
+       ARM64 as they can shift the 2nd source operand. */
+    uint8_t bPf = uResult ^ (uResult >> 4);
+    bPf ^= bPf >> 2;
+    bPf ^= bPf >> 1;
+    bPf ^= 1;
+    return (bPf & 1) << X86_EFL_PF_BIT;
+}
+#endif
+
+/**
  * Extracts the OF flag from a OF calculation result.
  *
  * These are typically used by concating with a bitcount.  The problem is that
@@ -110,7 +132,7 @@ RT_C_DECLS_END
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS; \
         fEflTmp |= (a_CfExpr) << X86_EFL_CF_BIT; \
-        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
@@ -147,7 +169,7 @@ RT_C_DECLS_END
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS; \
-        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
         fEflTmp |= (a_fExtra); \
@@ -1413,7 +1435,7 @@ EMIT_LOCKED_BIN_OP(bts, 16)
         if (iBit) \
         { \
             *puDst    = --iBit; \
-            fEfl     |= g_afParity[iBit]; \
+            fEfl     |= IEM_EFL_CALC_PARITY(iBit); \
         } \
         else \
             fEfl     |= X86_EFL_ZF | X86_EFL_PF; \
@@ -1552,7 +1574,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_amd,(uint16_t *puDst, uint16_t uSrc, ui
         *(a_puDst) = uResult; \
         uint32_t fEfl = *(a_pfEFlags) & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
         if (uResult) \
-            fEfl |= g_afParity[uResult]; \
+            fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         else \
             fEfl |= X86_EFL_ZF | X86_EFL_PF; \
         if (!a_uSrc) \
@@ -2401,7 +2423,7 @@ IEM_DECL_IMPL_DEF(int, RT_CONCAT3(iemAImpl_mul_u,a_cBitsWidth,a_Suffix), a_Args)
         fEfl &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF); \
         if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
             fEfl |= X86_EFL_SF; \
-        fEfl |= g_afParity[Result.s.Lo & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(Result.s.Lo); \
         if (Result.s.Hi != 0) \
             fEfl |= X86_EFL_CF | X86_EFL_OF; \
     } \
@@ -2515,7 +2537,7 @@ IEM_DECL_IMPL_DEF(int, RT_CONCAT3(iemAImpl_imul_u,a_cBitsWidth,a_Suffix),a_Args)
         fEfl &= ~(X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_PF); \
         if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
             fEfl |= X86_EFL_SF;  \
-        fEfl |= g_afParity[Result.s.Lo & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(Result.s.Lo & 0xff); \
     } \
     *pfEFlags = fEfl; \
     return 0; \
@@ -2746,7 +2768,7 @@ EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),          
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS | X86_EFL_CF; \
-        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
@@ -2903,7 +2925,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_not_u8,(uint8_t  *puDst,  uint32_t *pfEFlags))
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS & ~X86_EFL_CF; \
         fEflTmp |= ((a_uDst) != 0) << X86_EFL_CF_BIT; \
-        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= IEM_EFL_CALC_PARITY(a_uResult); \
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
@@ -3273,36 +3295,40 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shl_u,a_cBitsWidth,a_Suffix),(a_uTyp
             fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << 1)); /* Intel 10980XE: First shift result. */ \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         if (!a_fIntelFlags) \
             fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally, Intel 10980XE does the oposite */ \
         *pfEFlags = fEfl; \
     } \
 }
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#if !defined(RT_ARCH_ARM64)
+
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(64, uint64_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHL(64, uint64_t, _intel,     1)
 EMIT_SHL(64, uint64_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(32, uint32_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHL(32, uint32_t, _intel,     1)
 EMIT_SHL(32, uint32_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(16, uint16_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHL(16, uint16_t, _intel,     1)
 EMIT_SHL(16, uint16_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(8,  uint8_t,  RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHL(8,  uint8_t,  _intel,     1)
 EMIT_SHL(8,  uint8_t,  _amd,       0)
+
+#endif /* !RT_ARCH_ARM64 */
 
 
 /*
@@ -3326,36 +3352,40 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shr_u,a_cBitsWidth,a_Suffix),(a_uTyp
             fEfl |= (uDst >> (a_cBitsWidth - 1)) << X86_EFL_OF_BIT; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         if (!a_fIntelFlags) \
             fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally, Intel 10980XE does the oposite */ \
         *pfEFlags = fEfl; \
     } \
 }
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#if !defined(RT_ARCH_ARM64)
+
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(64, uint64_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHR(64, uint64_t, _intel,     1)
 EMIT_SHR(64, uint64_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(32, uint32_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHR(32, uint32_t, _intel,     1)
 EMIT_SHR(32, uint32_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(16, uint16_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHR(16, uint16_t, _intel,     1)
 EMIT_SHR(16, uint16_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(8,  uint8_t,  RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SHR(8,  uint8_t,  _intel,     1)
 EMIT_SHR(8,  uint8_t,  _amd,       0)
+
+#endif /* !RT_ARCH_ARM64 */
 
 
 /*
@@ -3378,36 +3408,40 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sar_u,a_cBitsWidth,a_Suffix),(a_uTyp
         fEfl |= (iDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         if (!a_fIntelFlags) \
             fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally, Intel 10980XE does the oposite */ \
         *pfEFlags = fEfl; \
     } \
 }
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#if !defined(RT_ARCH_ARM64)
+
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(64, uint64_t, int64_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SAR(64, uint64_t, int64_t, _intel,     1)
 EMIT_SAR(64, uint64_t, int64_t, _amd,       0)
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(32, uint32_t, int32_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SAR(32, uint32_t, int32_t, _intel,     1)
 EMIT_SAR(32, uint32_t, int32_t, _amd,       0)
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(16, uint16_t, int16_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SAR(16, uint16_t, int16_t, _intel,     1)
 EMIT_SAR(16, uint16_t, int16_t, _amd,       0)
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(8,  uint8_t,  int8_t,  RT_NOTHING, 1)
-#endif
+# endif
 EMIT_SAR(8,  uint8_t,  int8_t,  _intel,     1)
 EMIT_SAR(8,  uint8_t,  int8_t,  _amd,       0)
+
+#endif /* !RT_ARCH_ARM64 */
 
 
 /*
@@ -3450,7 +3484,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shld_u,a_cBitsWidth,a_Suffix),(a_uTy
         } \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         *pfEFlags = fEfl; \
@@ -3507,7 +3541,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shld_u16,a_Suffix),(uint16_t *puDst, 
             } \
             fEfl |= X86_EFL_AF; \
         } \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         fEfl |= X86_EFL_CALC_SF(uResult, 16); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         *pfEFlags = fEfl; \
@@ -3565,7 +3599,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uTy
         } \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         *pfEFlags = fEfl; \
     } \
 }
@@ -3617,7 +3651,7 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shrd_u16,a_Suffix),(uint16_t *puDst, 
         } \
         fEfl |= X86_EFL_CALC_SF(uResult, 16); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= IEM_EFL_CALC_PARITY(uResult); \
         *pfEFlags = fEfl; \
     } \
 }

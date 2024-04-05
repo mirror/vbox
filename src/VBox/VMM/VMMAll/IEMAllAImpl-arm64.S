@@ -43,6 +43,34 @@
         .cpu            apple-a14+crc
 #endif
 
+.macro BEGINPROC, a_Name
+        .private_extern NAME(\a_Name)
+        .globl          NAME(\a_Name)
+NAME(\a_Name):
+.endm
+
+
+.macro CALC_EFLAGS_PARITY, regEfl, regResult, regTmp
+        /*
+         * Parity calculation for low byte of the result (sucks that there is no popcount for gprs).
+         */
+        eor     \regTmp, \regResult, \regResult, LSR #4
+        eor     \regTmp, \regTmp, \regTmp, LSR #2
+        eor     \regTmp, \regTmp, \regTmp, LSR #1
+        eor     \regTmp, \regTmp, #1
+        bfi     \regEfl, \regTmp, #X86_EFL_PF_BIT, #1   /* PF(2) = popcount(w9 & 0xff) & 1 ^ 1 */
+.endm
+
+
+.macro CALC_EFLAGS_AUX_CARRY, regEfl, regResult, regLeft, regRight, regTmp
+        /*
+         * Auxilary carry / borrow flag.  This is related to 8-bit BCD.
+         */
+        eor     \regTmp, \regLeft, \regRight
+        eor     \regTmp, \regTmp, \regResult
+        lsr     \regTmp, \regTmp, #X86_EFL_AF_BIT
+        bfi     \regEfl, \regTmp, #X86_EFL_AF_BIT, #1   /* AF(4) = (w8 ^ w1 ^ w9 & X86_EFL_AF) >> X86_EFL_AF_BIT */
+.endm
 
 .macro CALC_EFLAGS, regEfl, regResult, regLeft, regRight, regTmp, fSkipFlags=0
         /*
@@ -310,3 +338,415 @@ NAME(iemAImpl_sub_u64):
         str     w10, [x2]
         ret
         .cfi_endproc
+
+
+
+/*
+ * Shift Left.
+ */
+
+/* void iemAImpl_shl_u8(uint8_t *pu8Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_shl_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_shl_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro SHL_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w1, w1, #0x1f
+        cbz     w1, 99f
+
+        /*
+         * Do the shifting
+         */
+        ldr\a_LdStSuff  w8, [x0]
+.ifne \a_cBits < 32
+        lslv    w9, w8, w1
+.else
+        lslv    x9, x8, x1                      /* use 64-bit registers here so we get CF for free. We know x1 != 0. */
+.endif
+        str\a_LdStSuff  w9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        CALC_EFLAGS_PARITY w10, w9, w12
+
+.ifne \a_cBits < 32
+        setf\a_cBits w9                         /* Sets NZ */
+.else
+        ands    wzr, w9, w9                     /* Sets NZ */
+.endif
+#if 1
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+#else
+        cset    x11, eq
+        bfi     w10, w11, X86_EFL_ZF_BIT, 1
+        cset    x12, pl
+        bfi     w10, w12, X86_EFL_SF_BIT, 1
+#endif
+
+.ifne \a_cBits < 32
+        bfxil   w10, w9, #\a_cBits, #1          /* w9 bit 8/16 contains carry. (X86_EFL_CF_BIT == 0) */
+.else
+        bfxil   x10, x9, #\a_cBits, #1          /* x9 bit 32 contains carry. (X86_EFL_CF_BIT == 0) */
+.endif
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first bit shifted: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     w11, w8, w8, LSL #1
+        lsr     w11, w11, #(\a_cBits - 1)
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+
+        and     w10, w10, ~X86_EFL_AF           /* AF is cleared */
+.else
+        /* AMD: OF = last bit shifted: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+ .ifne \a_cBits < 32
+        eor     w11, w9, w9, LSR #1
+        lsr     w11, w11, #(\a_cBits - 1)
+ .else
+        eor     x11, x9, x9, LSR #1
+        lsr     x11, x11, #(\a_cBits - 1)
+ .endif
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+
+        orr     w10, w10, X86_EFL_AF           /* AF is set  */
+.endif
+
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+SHL_8_16_32 iemAImpl_shl_u8,         8, 1, b
+SHL_8_16_32 iemAImpl_shl_u8_intel,   8, 1, b
+SHL_8_16_32 iemAImpl_shl_u8_amd,     8, 0, b
+
+SHL_8_16_32 iemAImpl_shl_u16,       16, 1, h
+SHL_8_16_32 iemAImpl_shl_u16_intel, 16, 1, h
+SHL_8_16_32 iemAImpl_shl_u16_amd,   16, 0, h
+
+SHL_8_16_32 iemAImpl_shl_u32,       32, 1,
+SHL_8_16_32 iemAImpl_shl_u32_intel, 32, 1,
+SHL_8_16_32 iemAImpl_shl_u32_amd,   32, 0,
+
+;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/* void iemAImpl_shl_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro SHL_64, a_Name, a_fIntelFlags
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w1, w1, #0x3f
+        cbz     w1, 99f
+
+        /*
+         * Do the shifting
+         */
+        ldr     x8, [x0]
+        lslv    x9, x8, x1
+        str     x9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        CALC_EFLAGS_PARITY w10, w9, w11
+
+        ands    xzr, x9, x9                     /* Sets NZ */
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+
+        neg     w11, w1                         /* the shift count is MODed by the data size, so this is safe. */
+        lsrv    x11, x8, x11
+        bfi     w10, w11, X86_EFL_CF_BIT, 1
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first bit shifted: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     x11, x8, x8, LSL #1
+        lsr     x11, x11, #63
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+
+        and     w10, w10, ~X86_EFL_AF           /* AF is cleared */
+.else
+        /* AMD: OF = last bit shifted: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+        eor     x11, x11, x9, LSR #63           /* w11[0]=CF from above */
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+
+        orr     w10, w10, X86_EFL_AF           /* AF is set  */
+.endif
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+SHL_64 iemAImpl_shl_u64,       1
+SHL_64 iemAImpl_shl_u64_intel, 1
+SHL_64 iemAImpl_shl_u64_amd,   0
+
+
+/*
+ * Shift Right, Unsigned.
+ */
+
+/* void iemAImpl_shr_u8(uint8_t *pu8Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_shr_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_shr_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro shr_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w1, w1, #0x1f
+        cbz     w1, 99f
+
+        /* Load EFLAGS before we start the calculation. */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        /*
+         * Do the shifting.
+         */
+        ldr\a_LdStSuff  w8, [x0]
+        lsrv    w9, w8, w1
+        str\a_LdStSuff  w9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        sub     w11, w1, #1
+        lsrv    w11, w8, w11
+        bfxil   w10, w11, #X86_EFL_CF_BIT, #1
+
+.ifne \a_fIntelFlags
+        and     w10, w10, ~X86_EFL_AF           /* AF is cleared */
+        /* Intel: OF = one bit shift: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDstIn); */
+        lsr     w11, w8, #(\a_cBits - 1)
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+.else
+        orr     w10, w10, X86_EFL_AF            /* AF is set  */
+        /* AMD: OF = last bits shifted: fEfl |= (uResult >> (cOpBits - 2)) << X86_EFL_OF_BIT;  */
+        lsr     w11, w9, #(\a_cBits - 2)
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+        CALC_EFLAGS_PARITY w10, w9, w11
+
+.ifne \a_cBits < 32
+        setf\a_cBits w9                         /* Sets NZ */
+.else
+        ands    wzr, w9, w9                     /* Sets NZ */
+.endif
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+shr_8_16_32 iemAImpl_shr_u8,         8, 1, b
+shr_8_16_32 iemAImpl_shr_u8_intel,   8, 1, b
+shr_8_16_32 iemAImpl_shr_u8_amd,     8, 0, b
+
+shr_8_16_32 iemAImpl_shr_u16,       16, 1, h
+shr_8_16_32 iemAImpl_shr_u16_intel, 16, 1, h
+shr_8_16_32 iemAImpl_shr_u16_amd,   16, 0, h
+
+shr_8_16_32 iemAImpl_shr_u32,       32, 1,
+shr_8_16_32 iemAImpl_shr_u32_intel, 32, 1,
+shr_8_16_32 iemAImpl_shr_u32_amd,   32, 0,
+
+;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/* void iemAImpl_shr_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro shr_64, a_Name, a_fIntelFlags
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        ands    w1, w1, #0x3f
+        b.eq    99f
+
+        /* Load EFLAGS before we start the calculation. */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        /*
+         * Do the shifting
+         */
+        ldr     x8, [x0]
+        lsrv    x9, x8, x1
+        str     x9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        sub     w11, w1, #1
+        lsrv    x11, x8, x11
+        bfxil   w10, w11, #X86_EFL_CF_BIT, #1
+
+.ifne \a_fIntelFlags
+        and     w10, w10, ~X86_EFL_AF           /* AF is cleared */
+        /* Intel: OF = one bit shift: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDstIn); */
+        lsr     x11, x8, #63
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+.else
+        orr     w10, w10, X86_EFL_AF            /* AF is set  */
+        /* AMD: OF = last bits shifted: fEfl |= (uResult >> (cOpBits - 2)) << X86_EFL_OF_BIT;  */
+        lsr     x11, x9, #62
+        bfi     w10, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+        CALC_EFLAGS_PARITY w10, w9, w11
+
+        ands    xzr, x9, x9                     /* Sets NZ */
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+shr_64 iemAImpl_shr_u64,       1
+shr_64 iemAImpl_shr_u64_intel, 1
+shr_64 iemAImpl_shr_u64_amd,   0
+
+
+/*
+ * Shift Right, Signed
+ */
+
+/* void iemAImpl_sar_u8(uint8_t *pu8Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_sar_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
+/* void iemAImpl_sar_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro sar_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdSuff, a_StSuff
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w1, w1, #0x1f
+        cbz     w1, 99f
+
+        /* Load EFLAGS before we start the calculation. */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        /*
+         * Do the shifting.
+         */
+        ldr\a_LdSuff  w8, [x0]                  /* Sign-extending for 8 and 16 bits! */
+        asrv    w9, w8, w1
+        str\a_StSuff  w9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        sub     w11, w1, #1
+        lsrv    w11, w8, w11
+        bfxil   w10, w11, #X86_EFL_CF_BIT, #1
+
+.ifne \a_fIntelFlags
+        mov     w11, ~(X86_EFL_AF | X86_EFL_OF)
+        and     w10, w10, w11                   /* AF and OF are cleared */
+.else
+        orr     w10, w10, X86_EFL_AF            /* AF is set  */
+        and     w10, w10, ~X86_EFL_OF           /* OF is cleared */
+.endif
+
+        CALC_EFLAGS_PARITY w10, w9, w11
+
+.ifne \a_cBits < 32
+        setf\a_cBits w9                         /* Sets NZ */
+.else
+        ands    wzr, w9, w9                     /* Sets NZ */
+.endif
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+sar_8_16_32 iemAImpl_sar_u8,         8, 1, sb, b
+sar_8_16_32 iemAImpl_sar_u8_intel,   8, 1, sb, b
+sar_8_16_32 iemAImpl_sar_u8_amd,     8, 0, sb, b
+
+sar_8_16_32 iemAImpl_sar_u16,       16, 1, sh, h
+sar_8_16_32 iemAImpl_sar_u16_intel, 16, 1, sh, h
+sar_8_16_32 iemAImpl_sar_u16_amd,   16, 0, sh, h
+
+sar_8_16_32 iemAImpl_sar_u32,       32, 1, ,
+sar_8_16_32 iemAImpl_sar_u32_intel, 32, 1, ,
+sar_8_16_32 iemAImpl_sar_u32_amd,   32, 0, ,
+
+;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/* void iemAImpl_sar_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
+.macro sar_64, a_Name, a_fIntelFlags
+        .p2align        2
+BEGINPROC \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        ands    w1, w1, #0x3f
+        b.eq    99f
+
+        /* Load EFLAGS before we start the calculation. */
+        ldr     w10, [x2]                       /* w10 = eflags; CF=0 PF=2 AF=4 ZF=6 SF=7 OF=11 */
+
+        /*
+         * Do the shifting
+         */
+        ldr     x8, [x0]
+        asrv    x9, x8, x1
+        str     x9, [x0]
+
+        /*
+         * Calculate EFLAGS.
+         */
+        sub     w11, w1, #1
+        lsrv    x11, x8, x11
+        bfxil   w10, w11, #X86_EFL_CF_BIT, #1
+
+.ifne \a_fIntelFlags
+        mov     w11, ~(X86_EFL_AF | X86_EFL_OF)
+        and     w10, w10, w11                   /* AF and OF are cleared */
+.else
+        orr     w10, w10, X86_EFL_AF            /* AF is set  */
+        and     w10, w10, ~X86_EFL_OF           /* OF is cleared */
+.endif
+
+        CALC_EFLAGS_PARITY w10, w9, w11
+
+        ands    xzr, x9, x9                     /* Sets NZ */
+        mrs     x11, NZCV
+        lsr     w11, w11, #30                   /* N=1; Z=0 */
+        bfi     w10, w11, X86_EFL_ZF_BIT, 2     /* EFLAGS.ZF and EFLAGS.SF */
+
+        str     w10, [x2]
+99:
+        ret
+        .cfi_endproc
+.endm
+
+sar_64 iemAImpl_sar_u64,       1
+sar_64 iemAImpl_sar_u64_intel, 1
+sar_64 iemAImpl_sar_u64_amd,   0
+
