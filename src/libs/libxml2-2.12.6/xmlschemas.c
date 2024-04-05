@@ -5460,7 +5460,6 @@ static xmlSchemaParticlePtr
 xmlSchemaAddParticle(xmlSchemaParserCtxtPtr ctxt,
 		     xmlNodePtr node, int min, int max)
 {
-
     xmlSchemaParticlePtr ret = NULL;
     if (ctxt == NULL)
         return (NULL);
@@ -5472,6 +5471,29 @@ xmlSchemaAddParticle(xmlSchemaParserCtxtPtr ctxt,
     fprintf(stderr, "Adding particle component\n");
 #endif /* !VBOX */
 #endif
+
+	xmlMalloc(sizeof(xmlSchemaParticle));
+    if (ret == NULL) {
+	xmlSchemaPErrMemory(ctxt, "allocating particle component",
+	    NULL);
+	return (NULL);
+    }
+    ret->type = XML_SCHEMA_TYPE_PARTICLE;
+    ret->annot = NULL;
+    ret->node = node;
+    ret->minOccurs = min;
+    ret->maxOccurs = max;
+    ret->next = NULL;
+    ret->children = NULL;
+
+    WXS_ADD_LOCAL(ctxt, ret);
+    /*
+    * Note that addition to pending components will be done locally
+    * to the specific parsing function, since the most particles
+    * need not to be fixed up (i.e. the reference to be resolved).
+    * REMOVED: WXS_ADD_PENDING(ctxt, ret);
+    */
+    return (ret);
 }
 
 /**
