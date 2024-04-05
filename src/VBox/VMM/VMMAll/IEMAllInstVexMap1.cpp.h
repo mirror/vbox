@@ -2344,11 +2344,8 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
         IEM_MC_FETCH_XREG_R32(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm),  0 /*a_iDWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomiss_u128, iemAImpl_vucomiss_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2375,11 +2372,8 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
         IEM_MC_FETCH_XREG_R32(uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomiss_u128, iemAImpl_vucomiss_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2415,11 +2409,8 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
         IEM_MC_FETCH_XREG_R64(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm),  0 /*a_iQWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomisd_u128, iemAImpl_vucomisd_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2446,11 +2437,8 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
         IEM_MC_FETCH_XREG_R64(uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vucomisd_u128, iemAImpl_vucomisd_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2489,11 +2477,8 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
         IEM_MC_FETCH_XREG_R32(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm),  0 /*a_iDWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomiss_u128, iemAImpl_vcomiss_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2520,11 +2505,8 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
         IEM_MC_FETCH_XREG_R32(uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomiss_u128, iemAImpl_vcomiss_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2560,11 +2542,8 @@ FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
         IEM_MC_FETCH_XREG_R64(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm),  0 /*a_iQWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomisd_u128, iemAImpl_vcomisd_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -2591,11 +2570,8 @@ FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
         IEM_MC_FETCH_XREG_R64(uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQWord*/);
         IEM_MC_CALL_AVX_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vcomisd_u128, iemAImpl_vcomisd_u128_fallback),
                                 pEFlags, uSrc1, uSrc2);
-        IEM_MC_IF_MXCSR_XCPT_PENDING() {
-            IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
-        } IEM_MC_ELSE() {
-            IEM_MC_COMMIT_EFLAGS(fEFlags);
-        } IEM_MC_ENDIF();
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_COMMIT_EFLAGS(fEFlags);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
