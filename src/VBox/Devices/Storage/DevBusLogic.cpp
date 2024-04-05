@@ -2845,7 +2845,7 @@ static DECLCALLBACK(VBOXSTRICTRC) buslogicMMIORead(PPDMDEVINS pDevIns, void *pvU
 
     /* the linux driver does not make use of the MMIO area. */
     ASSERT_GUEST_MSG_FAILED(("MMIO Read: %RGp LB %u\n", off, cb));
-    return VINF_SUCCESS;
+    return VINF_IOM_MMIO_UNUSED_FF;
 }
 
 /**
@@ -4345,7 +4345,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
         rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 1 /*iPciRegion*/, 32 /*cbRegion*/, PCI_ADDRESS_SPACE_MEM,
                                             buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/,
-                                            IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                            IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                             "BusLogic MMIO", &pThis->hMmio);
         AssertRCReturn(rc, rc);
     }
