@@ -1288,9 +1288,15 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     } else {
         int tmp;
         fdctrl->data_len = 128 << (fdctrl->fifo[5] > 7 ? 7 : fdctrl->fifo[5]);
-        tmp = (fdctrl->fifo[6] - ks + 1);
-        if (fdctrl->fifo[0] & 0x80)
-            tmp += fdctrl->fifo[6];
+        if (fdctrl->fifo[6] >= ks) {
+            /* EOT is beyond the starting sector */
+            tmp = (fdctrl->fifo[6] - ks + 1);
+            if (fdctrl->fifo[0] & 0x80)
+                tmp += fdctrl->fifo[6];
+        } else {
+            /* EOT is below starting sector; keep going until we run out of sectors. */
+            tmp = 255;
+        }
         fdctrl->data_len *= tmp;
     }
     fdctrl->eot = fdctrl->fifo[6];
