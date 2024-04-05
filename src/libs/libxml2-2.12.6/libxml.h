@@ -76,4 +76,5 @@
   #define ATTRIBUTE_NO_SANITIZE_INTEGER
 #endif
 
+#endif /* #if defined(macintosh) */
 #endif /* ! __XML_LIBXML_H__ */
