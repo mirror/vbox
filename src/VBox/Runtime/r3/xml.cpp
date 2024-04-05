@@ -1871,12 +1871,20 @@ static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...) RT_NO
     va_end(args);
 }
 
+#if LIBXML_VERSION >= 21206
+static void xmlStructuredErrorFunc(void *userData, const xmlError *error)  RT_NOTHROW_DEF
+{
+    NOREF(userData);
+    NOREF(error);
+}
+#else
 static void xmlParserBaseStructuredError(void *pCtx, xmlErrorPtr error) RT_NOTHROW_DEF
 {
     NOREF(pCtx);
     /* we expect that there is always a trailing NL */
     LogRel(("XML error at '%s' line %d: %s", error->file, error->line, error->message));
 }
+#endif
 
 XmlParserBase::XmlParserBase()
 {
@@ -1885,7 +1893,11 @@ XmlParserBase::XmlParserBase()
         throw std::bad_alloc();
     /* per-thread so it must be here */
     xmlSetGenericErrorFunc(NULL, xmlParserBaseGenericError);
+#if LIBXML_VERSION >= 21206
+    xmlSetStructuredErrorFunc(NULL, xmlStructuredErrorFunc);
+#else
     xmlSetStructuredErrorFunc(NULL, xmlParserBaseStructuredError);
+#endif
 }
 
 XmlParserBase::~XmlParserBase()
@@ -1946,7 +1958,7 @@ void XmlMemParser::read(const void *pvBuf, size_t cbSize,
                                                   pcszFilename,
                                                   NULL,       // encoding = auto
                                                   options)))
-        throw XmlError(xmlCtxtGetLastError(m_ctxt));
+        throw XmlError((xmlErrorPtr)xmlCtxtGetLastError(m_ctxt));
 
     doc.refreshInternals();
 }
@@ -2206,7 +2218,7 @@ void XmlFileParser::read(const RTCString &strFilename,
                                               pcszFilename,
                                               NULL,       // encoding = auto
                                               options)))
-        throw XmlError(xmlCtxtGetLastError(m_ctxt));
+        throw XmlError((xmlErrorPtr)xmlCtxtGetLastError(m_ctxt));
 
     doc.refreshInternals();
 }
