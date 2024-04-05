@@ -1876,7 +1876,7 @@ lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void con
 {
     RT_NOREF(pDevIns, pvUser, off, pv, cb);
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI), off, pv, cb, pv, cb));
-    return VINF_SUCCESS;
+    return VINF_IOM_MMIO_UNUSED_FF;
 }
 
 /**
@@ -5202,7 +5202,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Region #2: MMIO - Diag. */
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 2 /*iPciRegion*/, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM,
                                         lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL /*pvUser*/,
-                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                         pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "LsiLogicDiag" : "LsiLogicSasDiag",
                                         &pThis->hMmioDiag);
     AssertRCReturn(rc, rc);
