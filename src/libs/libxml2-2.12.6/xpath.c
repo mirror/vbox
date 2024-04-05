@@ -166,7 +166,7 @@ xmlXPathInit(void) {
 ATTRIBUTE_NO_SANITIZE("float-divide-by-zero")
 void
 xmlInitXPathInternal(void) {
-#if defined(NAN) && defined(INFINITY)
+#if defined(NAN) && defined(INFINITY) && !defined(VBOX)
     xmlXPathNAN = NAN;
     xmlXPathPINF = INFINITY;
     xmlXPathNINF = -INFINITY;

@@ -41,6 +41,12 @@ VBox-libxml2_CFLAGS.win    += -wd4701 # potentially uninitialized local variable
 VBox-libxml2_CFLAGS.win    += -wd4232 # nonstandard extension used : 'xmlFree' : address of dllimport 'free' is not static, identity not guaranteed
 VBox-libxml2_CFLAGS.win    += -wd4305 # 'type cast' : truncation from 'xmlChar *' to 'long'
 VBox-libxml2_CFLAGS.win    += -wd4306 # 'type cast' : conversion from 'long' to 'void *' of greater size [TODO: check these out?]
+VBox-libxml2_CFLAGS.win    += -wd4090 # 'function': different 'const' qualifiers
+VBox-libxml2_CFLAGS.win    += -wd4047 # dwarning C4047: 'function': 'xmlMutexPtr' differs in levels of indirection from 'xmlMutexPtr *'
+VBox-libxml2_CFLAGS.win    += -wd4024 # warning C4024: 'xmlMutexLock': different types for formal and actual parameter 1
+VBox-libxml2_CFLAGS.win    += -wd4098 # warning C4098: 'xmlInitMemoryInternal': 'void' function returning a value
+VBox-libxml2_CFLAGS.win    += -wd4703 # warning C4703: potentially uninitialized local pointer variable 'nsuri' used
+VBox-libxml2_CFLAGS.win    += -wd4013 # warning C4013: 'sprintf' undefined; assuming extern returning int
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
  VBox-libxml2_CFLAGS.win   += -wd4311 # parser.c(1346) : warning C4311: 'type cast' : pointer truncation from 'void *' to 'long'
  VBox-libxml2_CFLAGS.win   += -wd4312 # parser.c(1327) : warning C4312: 'type cast' : conversion from 'long' to 'void *' of greater size
@@ -62,7 +68,6 @@ VBox-libxml2_SOURCES        = \
 	chvalid.c \
 	debugXML.c \
 	dict.c \
-	DOCBparser.c \
 	encoding.c \
 	entities.c \
 	error.c \
@@ -72,6 +77,7 @@ VBox-libxml2_SOURCES        = \
 	HTMLtree.c \
 	legacy.c \
 	list.c \
+	nanohttp.c \
 	parser.c \
 	parserInternals.c \
 	pattern.c \

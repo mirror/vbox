@@ -35,11 +35,9 @@
 
 #include "private/error.h"
 
-#ifndef LIBXML_XPATH_ENABLED
 #ifndef VBOX /* Avoid warnings about redefining DEBUG */
 #define DEBUG
 #endif /* !VBOX */
-
 
 #ifndef LIBXML_XPATH_ENABLED
 extern double xmlXPathNAN;

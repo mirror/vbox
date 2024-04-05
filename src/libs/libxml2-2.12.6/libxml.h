@@ -22,6 +22,12 @@
   #endif
 #endif
 
+#if defined(VBOX)
+#include <vboxconfig.h>
+#include <libxml/xmlversion.h>
+#endif
+
+
 #if defined(macintosh)
 #include "config-mac.h"
 #elif defined(_WIN32)
@@ -33,9 +39,6 @@
  * and public build configuration.
  */
 #include "config.h"
-#include <libxml/xmlversion.h>
-#elif defined(VBOX)
-#include <vboxconfig.h>
 #include <libxml/xmlversion.h>
 #else
 /*

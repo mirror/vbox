@@ -435,3 +435,7 @@
 #include <libxml/xmlversion.h>
 #undef LIBXML_ICONV_ENABLED
 
+#define XML_HIDDEN
+#define ATTRIBUTE_NO_SANITIZE_INTEGER
+#define ATTRIBUTE_NO_SANITIZE(arg)
+#undef NAN

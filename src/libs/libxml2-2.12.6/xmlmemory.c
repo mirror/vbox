@@ -19,9 +19,9 @@
  * Always build the memory list !
  */
 #ifdef DEBUG_MEMORY_LOCATION
-#ifndef MEM_LIST
-#define MEM_LIST /* keep a list of all the allocated memory blocks */
-#endif
+ #ifndef MEM_LIST
+  #define MEM_LIST /* keep a list of all the allocated memory blocks */
+ #endif
 #endif
 
 #include <libxml/xmlmemory.h>
@@ -32,10 +32,11 @@
 #include "private/memory.h"
 #include "private/threads.h"
 
+static int xmlMemInitialized = 0;
 static unsigned long  debugMemSize = 0;
 static unsigned long  debugMemBlocks = 0;
 static unsigned long  debugMaxMemSize = 0;
-static xmlMutex xmlMemMutex;
+static xmlMutexPtr xmlMemMutex = NULL;
 
 void xmlMallocBreakpoint(void);
 
@@ -46,15 +47,17 @@ void xmlMallocBreakpoint(void);
  ************************************************************************/
 
 #if !defined(LIBXML_THREAD_ENABLED) && !defined(LIBXML_THREAD_ALLOC_ENABLED)
-#ifdef xmlMalloc
-#undef xmlMalloc
-#endif
-#ifdef xmlRealloc
-#undef xmlRealloc
-#endif
-#ifdef xmlMemStrdup
-#undef xmlMemStrdup
-#endif
+ #ifdef xmlMalloc
+ #undef xmlMalloc
+ #endif
+
+ #ifdef xmlRealloc
+ #undef xmlRealloc
+ #endif
+
+ #ifdef xmlMemStrdup
+ #undef xmlMemStrdup
+ #endif
 #endif
 
 /*
@@ -88,6 +91,7 @@ typedef struct memnod {
 #else
 #define ALIGN_SIZE  sizeof(double)
 #endif
+
 #define HDR_SIZE    sizeof(MEMHDR)
 #define RESERVE_SIZE (((HDR_SIZE + (ALIGN_SIZE-1)) \
 		      / ALIGN_SIZE ) * ALIGN_SIZE)
@@ -844,12 +848,13 @@ xmlInitMemory(void) {
  */
 void
 xmlInitMemoryInternal(void) {
+
 #ifdef VBOX
      const char *breakpoint;
 #else
      char *breakpoint;
 #endif
-#endif
+
 #ifdef DEBUG_MEMORY
      xmlGenericError(xmlGenericErrorContext,
 	     "xmlInitMemory()\n");
