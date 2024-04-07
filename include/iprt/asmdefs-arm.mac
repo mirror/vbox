@@ -51,8 +51,8 @@
  * @param   a_Name      The unmangled symbol name.
  */
 .macro BEGINPROC, a_Name
-        .p2align 2
-        .globl          NAME(\a_Name)
+    .p2align 2
+    .globl          NAME(\a_Name)
 NAME(\a_Name):
 .endm
 
@@ -63,11 +63,13 @@ NAME(\a_Name):
  * @param   a_Name      The unmangled symbol name.
  */
 .macro BEGINPROC_HIDDEN, a_Name
-        .p2align 2
+    .p2align 2
 #ifndef ASM_FORMAT_ELF
-        .private_extern NAME(\a_Name)
+    .private_extern NAME(\a_Name)
+#else
+    .hidden         NAME(\a_Name)
 #endif
-        .globl          NAME(\a_Name)
+    .globl          NAME(\a_Name)
 NAME(\a_Name):
 .endm
 
