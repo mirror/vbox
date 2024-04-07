@@ -144,8 +144,8 @@
  */
 #if defined(__clang__)
 # define PAGE(a_Symbol) a_Symbol ## @PAGE
-#elif defined(__GNUC__)
-# define PAGE(a_Symbol) a_Symbol
+#elif defined(__GNUC__) && defined(ASM_FORMAT_ELF)
+# define PAGE(a_Symbol) :got: ## a_Symbol
 #else
 # error "Port me!"
 #endif
@@ -158,8 +158,8 @@
  */
 #if defined(__clang__)
 # define PAGEOFF(a_Symbol) a_Symbol ## @PAGEOFF
-#elif defined(__GNUC__)
-# define PAGEOFF(a_Symbol) :lo12: ## a_Symbol
+#elif defined(__GNUC__) && defined(ASM_FORMAT_ELF)
+# define PAGEOFF(a_Symbol) :got_lo12: ## a_Symbol
 #else
 # error "Port me!"
 #endif
