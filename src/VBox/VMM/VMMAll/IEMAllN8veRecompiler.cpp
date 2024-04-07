@@ -8299,6 +8299,7 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
         ENTRY(cpum.GstCtx.aXcr[0]),
         ENTRY(cpum.GstCtx.aXcr[1]),
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        ENTRY(cpum.GstCtx.XState.x87.MXCSR),
         ENTRY(cpum.GstCtx.XState.x87.aXMM[0]),
         ENTRY(cpum.GstCtx.XState.x87.aXMM[1]),
         ENTRY(cpum.GstCtx.XState.x87.aXMM[2]),
