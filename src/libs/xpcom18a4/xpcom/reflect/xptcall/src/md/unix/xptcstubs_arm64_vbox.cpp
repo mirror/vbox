@@ -34,90 +34,82 @@
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-#if defined(RT_OS_DARWIN)
-# define NAME_PREFIX        _
-# define NAME_PREFIX_STR    "_"
-#else
-# define NAME_PREFIX
-# define NAME_PREFIX_STR    ""
-#endif
-#define ASMNAME(a_Name)     NAME_PREFIX ## a_Name
-#define NUM_ARGS_IN_GPRS    8   /**< Number of arguments passed in general purpose registers (starting with x0). */
-#define NUM_ARGS_IN_FPRS    8   /**< Number of arguments passed in floating point registers (starting with d0). */
+#include "xptc_arm64_vbox.h"
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-extern "C" __attribute__((naked)) nsresult CommonXPTCStub(void);
 DECL_NO_INLINE(extern "C", nsresult)
 CommonXPTCStubCWorker(nsXPTCStubBase *pThis, uint32_t idxMethod, uint64_t *pauGprArgs, uint64_t *pauFprArgs, uint64_t *puStackArgs);
 
-
-/**
- * All the stubs call this shared code w/ method index in w17.
- *
- * The naked attribute means pure inline assembly function.  clang complains
- * if we put C statements in it.  So, this exacty what we need here and for the
- * stubs.
- *
- * @note This could be static if we weren't afraid the compile would optimize it
- *       out.
+/*
+ * clang supports the naked attribute on arm64 whereas gcc does not, so we have to resort to this ugliness
+ * in order to support both and not require a separate assembly file so we need only one set of defines...
+ * Luckily this abormination is contained in this file.
  */
-extern "C" __attribute__((naked)) nsresult CommonXPTCStub(void)
-{
-    __asm__ __volatile__(
-        /* Prologue - reserve space for frame+link reg spill and the GPR and FPR arrays. */ "\
-        sub     sp, sp, %[cbGPRandFPRs] + 16 \n\
-        stp     x29, x30, [sp, %[cbGPRandFPRs]] \n\
-        add     x29, sp, %[cbGPRandFPRs] \n\
-        .cfi_def_cfa        x29, 16 \n\
-        .cfi_rel_offset     x30, -8 \n\
-        .cfi_rel_offset     x29, -16 \n\
+__asm__(
+    "BEGINCODE \n"
+    "BEGINPROC_HIDDEN CommonXPTCStub\n"
+    ".cfi_startproc\n"
+    /* Prologue - reserve space for frame+link reg spill and the GPR and FPR arrays. */ "\
+    sub     sp, sp,        #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) " + 16 \n\
+    stp     x29, x30, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) "] \n\
+    add     x29, sp,       #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) "\n\
+    .cfi_def_cfa        x29, 16 \n\
+    .cfi_rel_offset     x30, -8 \n\
+    .cfi_rel_offset     x29, -16 \n\
 "
-        /* reserve stack space for the integer and floating point registers and save them: */ "\
-        \n\
-        stp     x0, x1, [sp, #0] \n\
-        stp     x2, x3, [sp, #16] \n\
-        stp     x4, x5, [sp, #32] \n\
-        stp     x6, x7, [sp, #48] \n\
-        \n\
-        stp     d0, d1, [sp, %[cbGPRs]] \n\
-        stp     d2, d3, [sp, %[cbGPRs] + 16] \n\
-        stp     d4, d5, [sp, %[cbGPRs] + 32] \n\
-        stp     d6, d7, [sp, %[cbGPRs] + 48] \n\
+    /* reserve stack space for the integer and floating point registers and save them: */ "\
+    \n\
+    stp     x0, x1, [sp, #0] \n\
+    stp     x2, x3, [sp, #16] \n\
+    stp     x4, x5, [sp, #32] \n\
+    stp     x6, x7, [sp, #48] \n\
+    \n\
+    stp     d0, d1, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS) "] \n\
+    stp     d2, d3, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS) " + 16] \n\
+    stp     d4, d5, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS) " + 32] \n\
+    stp     d6, d7, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS) " + 48] \n\
 \n"
-        /* Call the C worker. We keep x0 as is.
-           Set w1 to the w17 method index from the stubs. */ "\
-        mov     w1, w17 \n\
-        mov     x2, sp \n\
-        add     x3, sp, %[cbGPRs] \n\
-        add     x4, sp, %[cbGPRandFPRs] + 16 \n\
-        bl      " NAME_PREFIX_STR "CommonXPTCStubCWorker \n\
+    /* Call the C worker. We keep x0 as is.
+       Set w1 to the w17 method index from the stubs. */ "\
+    mov     w1, w17 \n\
+    mov     x2, sp \n\
+    add     x3, sp, #" RT_XSTR(SZ_ARGS_IN_GPRS) "\n\
+    add     x4, sp, #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) " + 16 \n\
+    bl      " NAME_PREFIX_STR "CommonXPTCStubCWorker \n\
 "
-        /* Epilogue (clang does not emit the .cfi's here, so drop them too?): */ "\
-        ldp     x29, x30, [sp, %[cbGPRandFPRs]] \n\
-        add     sp, sp, %[cbGPRandFPRs] + 16 \n\
-        .cfi_def_cfa sp, 0 \n\
-        .cfi_restore x29 \n\
-        .cfi_restore x30 \n\
-        ret \n\
-"   :
-    : [cbGPRandFPRs] "i" (NUM_ARGS_IN_GPRS * 8 + NUM_ARGS_IN_FPRS * 8)
-    , [cbGPRs] "i" (NUM_ARGS_IN_GPRS * 8)
-    :);
-}
+    /* Epilogue (clang does not emit the .cfi's here, so drop them too?): */ "\
+    ldp     x29, x30, [sp, #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) "] \n\
+    add     sp, sp,        #" RT_XSTR(SZ_ARGS_IN_GPRS_AND_FPRS) " + 16 \n\
+    .cfi_def_cfa sp, 0 \n\
+    .cfi_restore x29 \n\
+    .cfi_restore x30 \n\
+    ret \n"
+    ".cfi_endproc\n"
+);
 
 #define STUB_ENTRY(n) \
-    __attribute__((naked)) nsresult nsXPTCStubBase::Stub##n() \
-    { \
-        __asm__ __volatile__ ("mov  w17, #" #n "\n\t"  \
-                              "b    " NAME_PREFIX_STR "CommonXPTCStub\n\t"); \
-    }
+    asm("BEGINCODE\n" \
+        ".if    " #n " < 10\n" \
+        "BEGINPROC _ZN14nsXPTCStubBase5Stub" #n "Ev\n" \
+        ".elseif    " #n " < 100\n" \
+        "BEGINPROC _ZN14nsXPTCStubBase6Stub" #n "Ev\n" \
+        ".elseif    " #n " < 1000\n" \
+        "BEGINPROC _ZN14nsXPTCStubBase7Stub" #n "Ev\n" \
+        ".else\n" \
+        ".err   \"stub number " #n " >= 1000 not yet supported\"\n" \
+        ".endif\n" \
+        "mov  w17, #" #n "\n" \
+        "b    " NAME_PREFIX_STR "CommonXPTCStub\n" \
+        ".if    " #n " < 10\n" \
+        "    .size " NAME_PREFIX_STR "_ZN14nsXPTCStubBase5Stub" #n "Ev,.-" NAME_PREFIX_STR "_ZN14nsXPTCStubBase5Stub" #n "Ev\n" \
+        ".elseif    " #n " < 100\n" \
+        "    .size " NAME_PREFIX_STR "_ZN14nsXPTCStubBase6Stub" #n "Ev,.-" NAME_PREFIX_STR "_ZN14nsXPTCStubBase6Stub" #n "Ev\n" \
+        ".else\n" \
+        "    .size " NAME_PREFIX_STR "_ZN14nsXPTCStubBase7Stub" #n "Ev,.-" NAME_PREFIX_STR "_ZN14nsXPTCStubBase7Stub" #n "Ev\n" \
+        ".endif");
 
 #define SENTINEL_ENTRY(n) \
     nsresult nsXPTCStubBase::Sentinel##n() \

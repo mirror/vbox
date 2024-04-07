@@ -34,24 +34,35 @@
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 
+#include "xptc_arm64_vbox.h"
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define NUM_ARGS_IN_GPRS    8   /**< Number of arguments passed in general purpose registers (starting with x0). */
-#define NUM_ARGS_IN_FPRS    8   /**< Number of arguments passed in floating point registers (starting with d0). */
-
 #define MY_MAX_ARGS         64  /**< Limit ourselves to 64 arguments. */
 
+#define NSXPTC_VARIANT_SIZE    (8 + 8 + 8)
+#define NSXPTC_VARIANT_PTR_OFF 8
 
-
+AssertCompileSize(nsXPTCVariant, NSXPTC_VARIANT_SIZE);
+AssertCompileMemberOffset(nsXPTCVariant, ptr, NSXPTC_VARIANT_PTR_OFF);
 AssertCompileMemberOffset(nsXPTCVariant, val, 0);
 
-extern "C" __attribute__((naked)) nsresult
+
+/*
+ * clang supports the naked attribute on arm64 whereas gcc does not, so we have to resort to this ugliness
+ * in order to support both and not require a separate assembly file so we need only one set of defines...
+ * Luckily this abormination is contained in this file.
+ */
+extern "C" nsresult
 arm64AsmInvoker(uintptr_t pfnMethod /*x0*/, uint32_t cParams /*w1*/, nsXPTCVariant *paParams /*x2*/, uint64_t cbStack /*x3*/,
-                uint8_t *acbStackArgs /*x4*/, uint64_t *pauGprArgs /*x5*/, uint64_t *pauFprArgs /*x6*/, uint32_t cFprArgs /*x7*/)
-{
-    __asm__ __volatile__(
+                uint8_t *acbStackArgs /*x4*/, uint64_t *pauGprArgs /*x5*/, uint64_t *pauFprArgs /*x6*/, uint32_t cFprArgs /*x7*/);
+
+__asm__ (
+"BEGINCODE\n"
+"BEGINPROC_HIDDEN arm64AsmInvoker\n"
+        ".cfi_startproc\n"
         /* Prologue - create the frame. */ "\
         sub     sp, sp, 16 \n\
         stp     x29, x30, [sp] \n\
@@ -96,7 +107,7 @@ Lstore_32bits:\n\
         add     x3, x3, #3 \n\
         bic     x3, x3, #3 \n\
         str     w0, [x3] \n"
-#ifdef RT_OS_DARWIN /* macOS compacts stack usage. */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) /* macOS compacts stack usage. */
 "       add     x3, x3, #4 \n"
 #endif
 "       b       Ladvance \n\
@@ -104,7 +115,7 @@ Lstore_32bits:\n\
 Lstore_8bits:\n\
         ldrb    w0, [x2] \n\
         strb    w0, [x3] \n"
-#ifdef RT_OS_DARWIN /* macOS compacts stack usage. */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) /* macOS compacts stack usage. */
 "       add     x3, x3, #1 \n"
 #endif
 "       b       Ladvance \n\
@@ -114,13 +125,13 @@ Lstore_16bits:\n\
         add     x3, x3, #1 \n\
         bic     x3, x3, #1 \n\
         strh    w0, [x3] \n"
-#ifdef RT_OS_DARWIN /* macOS compacts stack usage. */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) /* macOS compacts stack usage. */
 "       add     x3, x3, #2 \n"
 #endif
 "       b       Ladvance \n\
 \n\
 Lstore_64bits_ptr:\n\
-        ldr     x0, [x2, %[offPtrInXPTCVariant]] \n\
+        ldr     x0, [x2, #" RT_XSTR(NSXPTC_VARIANT_PTR_OFF) "] \n\
         b       Lstore_64bits_common \n\
 Lstore_64bits:\n\
         tst     w7, #0x80 \n\
@@ -130,16 +141,16 @@ Lstore_64bits_common:\n\
         add     x3, x3, #7 \n\
         bic     x3, x3, #7 \n\
         str     x0, [x3] \n"
-#ifdef RT_OS_DARWIN /* macOS compacts stack usage. */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) /* macOS compacts stack usage. */
 "       add     x3, x3, #8 \n"
 #endif
 "\n\
 Ladvance:\n"
-#ifndef RT_OS_DARWIN /* macOS compacts stack usage. */
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_LINUX) /* macOS compacts stack usage. */
 "       add     x3, x3, #8 \n"
 #endif
 "       add     x4, x4, #1 \n\
-        add     x2, x2, %[cbXPTCVariant] \n\
+        add     x2, x2, # " RT_XSTR(NSXPTC_VARIANT_SIZE) " \n\
         sub     w1, w1, #1 \n\
         cmp     w1, #0 \n\
         bne     Lnext_parameter \n\
@@ -163,12 +174,9 @@ Lno_stack_args: \n\
         .cfi_def_cfa sp, 0 \n\
         .cfi_restore x29 \n\
         .cfi_restore x30 \n\
-        ret \n\
-"   :
-    : [cbXPTCVariant] "i" (sizeof(nsXPTCVariant))
-    , [offPtrInXPTCVariant] "i" (offsetof(nsXPTCVariant, ptr))
-    :);
-}
+        ret \n"
+        ".cfi_endproc\n"
+);
 
 
 XPTC_PUBLIC_API(nsresult)
