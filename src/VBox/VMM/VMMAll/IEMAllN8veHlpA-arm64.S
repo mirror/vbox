@@ -29,8 +29,7 @@
 /*********************************************************************************************************************************
 *       Header Files                                                                                                             *
 *********************************************************************************************************************************/
-#include <iprt/asmdefs-arm.h>
-#include <iprt/x86.h>
+#include <iprt/asmdefs-arm.mac>
 
 
 BEGINCODE
@@ -53,14 +52,10 @@ BEGINCODE
  *       without restoring them.  This is highly unlikely, unless we're doing
  *       it ourselves, I think.
  */
-        .p2align        2
-        .private_extern NAME(iemNativeTbLongJmp)
-        .globl          NAME(iemNativeTbLongJmp)
-NAME(iemNativeTbLongJmp):
-
-        ;
-        ; This must exactly match what iemNativeEmitEpilog does.
-        ;
+BEGINPROC_HIDDEN iemNativeTbLongJmp
+        /*
+         * This must exactly match what iemNativeEmitEpilog does.
+         */
         sub     sp, x0, #0x50
         ldp     x19, x20, [sp, #0x00]
         ldp     x21, x22, [sp, #0x10]
@@ -81,21 +76,18 @@ NAME(iemNativeTbLongJmp):
 
 #define IEMNATIVE_HLP_FRAME_SIZE (11 * 16)
 
-;;
-; This is wrapper function that saves and restores all volatile registers
-; so the impact of inserting LogCpuState is minimal to the other TB code.
-;
-        .p2align        2
-        .private_extern NAME(iemNativeHlpAsmSafeWrapLogCpuState)
-        .globl          NAME(iemNativeHlpAsmSafeWrapLogCpuState)
-NAME(iemNativeHlpAsmSafeWrapLogCpuState):
+/**
+ * This is wrapper function that saves and restores all volatile registers
+ * so the impact of inserting LogCpuState is minimal to the other TB code.
+ */
+BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapLogCpuState
 #ifdef RT_OS_DARWIN
         pacibsp
 #endif
 
-        ;
-        ; Save all volatile registers.
-        ;
+        /*
+         * Save all volatile registers.
+         */
         stp     x29, x30, [sp, #-IEMNATIVE_HLP_FRAME_SIZE]!
         stp      x0,  x1, [sp, #( 1 * 16)]
         stp      x2,  x3, [sp, #( 2 * 16)]
@@ -108,22 +100,22 @@ NAME(iemNativeHlpAsmSafeWrapLogCpuState):
         stp     x15, x16, [sp, #( 9 * 16)]
         stp     x17, x18, [sp, #(10 * 16)]
 
-        ;
-        ; Move the pVCpu pointer from the fixed register to the first argument.
-        ; @todo This needs syncing with what we use in IEMN8veRecompiler.h
-        ;       but we can't include that header right now, would need some #ifndef IN_ASM_CODE...
-        ;       in the header or splitting up the header into a asm safe one and a one included from C/C++.
-        ;
+        /*
+         * Move the pVCpu pointer from the fixed register to the first argument.
+         * @todo This needs syncing with what we use in IEMN8veRecompiler.h
+         *       but we can't include that header right now, would need some #ifndef IN_ASM_CODE...
+         *       in the header or splitting up the header into a asm safe one and a one included from C/C++.
+         */
         mov      x0, x28
 
-        ;
-        ; Call C function to do the actual work.
-        ;
+        /*
+         * Call C function to do the actual work.
+         */
         bl      NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
 
-        ;
-        ; Restore volatile registers and return to the TB code.
-        ;
+        /*
+         * Restore volatile registers and return to the TB code.
+         */
         ldp    x29, x30, [sp, #( 0 * 16)]
         ldp     x0,  x1, [sp, #( 1 * 16)]
         ldp     x2,  x3, [sp, #( 2 * 16)]

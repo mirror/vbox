@@ -111,3 +111,5 @@
 /VBox/*.h: --guard-relative-to-dir VBox --guard-prefix VBOX_INCLUDED_
 /iprt/sanitized/*: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_ --treat-as h
 
+# /iprt/asmdefs-arm.mac needs to be treated as an C/C++ header file
+/iprt/asmdefs-arm.mac: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_ --treat-as h
