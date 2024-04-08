@@ -77,12 +77,13 @@ signals:
 public:
 
     UIVisoSettingWidget(QWidget *pParent);
-    virtual void retranslateUi();
     void setVisoName(const QString &strName);
     void setSettings(const UIVisoCreatorWidget::Settings &settings);
     UIVisoCreatorWidget::Settings settings() const;
 
 private slots:
+
+    void sltRetranslateUI();
 
 private:
 
@@ -227,10 +228,12 @@ void UIVisoSettingWidget::prepare()
 
     ++iRow;
     pDialogSettingsContainerLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVisoSettingWidget::sltRetranslateUI);
 }
 
-void UIVisoSettingWidget::retranslateUi()
+void UIVisoSettingWidget::sltRetranslateUI()
 {
     int iLabelWidth = 0;
     if (m_pVisoNameLabel)
@@ -303,7 +306,7 @@ UIVisoCreatorWidget::Settings UIVisoSettingWidget::settings() const
 
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
                                          bool fShowToolBar, const QString& strVisoFilePath, const QString& strMachineName)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pActionSettings(0)
     , m_pAddAction(0)
     , m_pOpenAction(0)
@@ -327,7 +330,6 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     prepareWidgets();
     populateMenuMainToolbar();
     prepareConnections();
-    retranslateUi();
     if (m_pActionSettings)
         sltSettingsActionToggled(m_pActionSettings->isChecked());
 }
@@ -395,10 +397,6 @@ void UIVisoCreatorWidget::setCurrentPath(const QString &/*strPath*/)
 QMenu *UIVisoCreatorWidget::menu() const
 {
     return m_pMainMenu;
-}
-
-void UIVisoCreatorWidget::retranslateUi()
-{
 }
 
 void UIVisoCreatorWidget::sltAddObjectsToViso()
@@ -741,7 +739,7 @@ QString UIVisoCreatorWidget::visoFileFullPath() const
 *********************************************************************************************************************************/
 UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent,
                                          const QString& strVisoFilePath, const QString& strMachineName /* = QString() */)
-    : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
+    : QIWithRestorableGeometry<QIMainDialog>(pParent)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
     , m_pActionPool(pActionPool)
@@ -840,10 +838,12 @@ void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoFilePath, const Q
 
     uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVisoCreatorDialog::sltRetranslateUI);
 }
 
-void UIVisoCreatorDialog::retranslateUi()
+void UIVisoCreatorDialog::sltRetranslateUI()
 {
     updateWindowTitle();
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
@@ -874,7 +874,7 @@ bool UIVisoCreatorDialog::event(QEvent *pEvent)
             saveDialogGeometry();
         }
     }
-    return QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >::event(pEvent);
+    return QIWithRestorableGeometry<QIMainDialog>::event(pEvent);
 }
 
 void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)

@@ -37,7 +37,6 @@
 /* GUI includes: */
 #include "QIMainDialog.h"
 #include "QIWithRestorableGeometry.h"
-#include "QIWithRetranslateUI.h"
 #include "UIFileManagerHostTable.h"
 
 /* Forward declarations: */
@@ -77,7 +76,7 @@ private:
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
   * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
   * actions. */
-class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -121,10 +120,6 @@ public:
     /** Returns the toolbar. */
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
-
-protected:
-
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
@@ -188,7 +183,7 @@ private:
 };
 
 
-class SHARED_LIBRARY_STUFF UIVisoCreatorDialog : public QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >
+class SHARED_LIBRARY_STUFF UIVisoCreatorDialog : public QIWithRestorableGeometry<QIMainDialog>
 {
     Q_OBJECT;
 
@@ -223,12 +218,12 @@ private slots:
     void sltVisoNameChanged(const QString &strName);
     void sltVisoFilePathChanged(const QString &strPath);
     void sltSave();
+    void sltRetranslateUI();
 
 private:
 
     bool saveVISOFile();
     void prepareWidgets(const QString& strVisoSavePath, const QString &strMachineName);
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
     void loadSettings();
     void saveDialogGeometry();
     void updateWindowTitle();
