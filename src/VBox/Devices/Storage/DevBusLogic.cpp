@@ -980,10 +980,12 @@ typedef struct ESCMD
     unsigned char   uReserved2 : 3;
     /** Length of the SCSI CDB. */
     uint8_t         cbCDB;
-    /** The SCSI CDB.  (A CDB can be 12 bytes long.)   */
-    uint8_t         abCDB[12];
+    /** The SCSI CDB.  (A CDB from our BIOS can be up to 16 bytes long
+     * which works with our emulation even though the original BusLogic HBA
+     * supports only 12 byte CDBs). */
+    uint8_t         abCDB[16];
 } ESCMD, *PESCMD;
-AssertCompileSize(ESCMD, 24);
+AssertCompileSize(ESCMD, 28);
 
 /**
  * Task state for a CCB request.
