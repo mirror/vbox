@@ -1460,6 +1460,14 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     AssertMsgReturn(idEvent != NIL_SHCLEVENTID, ("NIL event in context ID %#RX64\n", pCmdCtx->uContextID), VERR_WRONG_ORDER);
 
     PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, idEvent);
+#if defined(RT_OS_DARWIN)
+    /* We do not wait for guest clipboard availability event on macOS. Rather,
+     * we paste directly into pasteboard when guest sends its clipboard data. 
+     * Do not assert here. */
+    if (!RT_VALID_PTR(pEvent))
+        return VINF_SUCCESS;
+#endif
+
     AssertMsgReturn(pEvent != NULL, ("Event %#x not found\n", idEvent), VERR_NOT_FOUND);
 
     /*
