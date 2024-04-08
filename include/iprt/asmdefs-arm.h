@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2023 Oracle and/or its affiliates.
+ * Copyright (C) 2023-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -163,6 +163,35 @@
 #else
 # error "Port me!"
 #endif
+
+
+/**
+ * Starts an externally visible procedure.
+ *
+ * @param   a_Name      The unmangled symbol name.
+ */
+.macro BEGINPROC, a_Name
+    .p2align 2
+    .globl          NAME(\a_Name)
+NAME(\a_Name):
+.endm
+
+
+/**
+ * Starts a procedure with hidden visibility.
+ *
+ * @param   a_Name      The unmangled symbol name.
+ */
+.macro BEGINPROC_HIDDEN, a_Name
+    .p2align 2
+#ifndef ASM_FORMAT_ELF
+    .private_extern NAME(\a_Name)
+#else
+    .hidden         NAME(\a_Name)
+#endif
+    .globl          NAME(\a_Name)
+NAME(\a_Name):
+.endm
 
 
 /** @} */
