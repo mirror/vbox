@@ -40,14 +40,12 @@
            For some reason the +crc make cfinv work (with clang 12). 'flagm' isn't
            recognized, nor is the 'fmi' in the error message for cfinv.  'flagm'
            work for v15 and is enabled by default it seems. */
+# ifdef RT_OS_DARWIN
         .cpu            apple-a14+crc
+# else
+        .cpu            cortex-a53+flagm
+# endif
 #endif
-
-.macro BEGINPROC, a_Name
-        .private_extern NAME(\a_Name)
-        .globl          NAME(\a_Name)
-NAME(\a_Name):
-.endm
 
 
 .macro CALC_EFLAGS_PARITY, regEfl, regResult, regTmp
@@ -149,30 +147,22 @@ NAME(\a_Name):
 
 
 BEGINCODE
-        .p2align        2
-        .private_extern NAME(iemAImpl_placeholder)
-        .globl          NAME(iemAImpl_placeholder)
-NAME(iemAImpl_placeholder):
+
+BEGINPROC_HIDDEN iemAImpl_placeholder
         brk #1
         ret
 
 /* Some sketches.
 
 // IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
-        .p2align        2
-        .private_extern NAME(iemAImpl_xchg_u8_locked)
-        .globl          NAME(iemAImpl_xchg_u8_locked)
-NAME(iemAImpl_xchg_u8_locked):
+BEGINPROC_HIDDEN iemAImpl_xchg_u8_locked
         ldrb    w2, [x1]
         swpalb  w2, w2, [x0]
         strb    w2, [x1]
         ret
 
 // IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_locked,(uint16_t *pu16Mem, uint16_t *pu16Reg));
-        .p2align        2
-        .private_extern NAME(iemAImpl_xchg_u16_locked)
-        .globl          NAME(iemAImpl_xchg_u16_locked)
-NAME(iemAImpl_xchg_u16_locked):
+BEGINPROC_HIDDEN iemAImpl_xchg_u16_locked
         ldrh    w2, [x1]
         swpalh  w2, w2, [x0]
         strh    w2, [x1]
@@ -191,10 +181,7 @@ NAME(iemAImpl_xchg_u16_locked):
  */
 
 /* uint32_t iemAImpl_cmp_u8(uint32_t fEFlags, uint8_t const *puDst, uint8_t uSrc); */
-        .p2align        2
-        .private_extern NAME(iemAImpl_sub_u8)
-        .globl          NAME(iemAImpl_sub_u8)
-NAME(iemAImpl_sub_u8):
+BEGINPROC_HIDDEN iemAImpl_sub_u8
         .cfi_startproc
         /* Do the subtraction. */
         ldrb    w8, [x1]
@@ -220,10 +207,7 @@ NAME(iemAImpl_sub_u8):
 
 
 /* uint32_t iemAImpl_cmp_u16(uint32_t fEFlags, uint16_t const *puDst, uint16_t uSrc); */
-        .p2align        2
-        .private_extern NAME(iemAImpl_sub_u16)
-        .globl          NAME(iemAImpl_sub_u16)
-NAME(iemAImpl_sub_u16):
+BEGINPROC_HIDDEN iemAImpl_sub_u16
         .cfi_startproc
         /* Do the subtraction. */
         ldrh    w8, [x1]
@@ -249,10 +233,7 @@ NAME(iemAImpl_sub_u16):
 
 
 /* uint32_t iemAImpl_cmp_u32(uint32_t fEFlags, uint32_t const *puDst, uint32_t uSrc); */
-        .p2align        2
-        .private_extern NAME(iemAImpl_sub_u32)
-        .globl          NAME(iemAImpl_sub_u32)
-NAME(iemAImpl_sub_u32):
+BEGINPROC_HIDDEN iemAImpl_sub_u32
         .cfi_startproc
         /* Do the subtraction. */
         ldr     w8, [x1]
@@ -313,10 +294,7 @@ NAME(iemAImpl_sub_u32):
 
 
 /* uint32_t iemAImpl_cmp_u64(uint32_t fEFlags, uint64_t const *puDst, uint64_t uSrc); */
-        .p2align        2
-        .private_extern NAME(iemAImpl_sub_u64)
-        .globl          NAME(iemAImpl_sub_u64)
-NAME(iemAImpl_sub_u64):
+BEGINPROC_HIDDEN iemAImpl_sub_u64
         .cfi_startproc
         /* Do the subtraction. */
         ldr     x8, [x1]
@@ -339,8 +317,7 @@ NAME(iemAImpl_sub_u64):
 /* void iemAImpl_shl_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
 /* void iemAImpl_shl_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro SHL_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
@@ -426,11 +403,10 @@ SHL_8_16_32 iemAImpl_shl_u32,       32, 1,
 SHL_8_16_32 iemAImpl_shl_u32_intel, 32, 1,
 SHL_8_16_32 iemAImpl_shl_u32_amd,   32, 0,
 
-;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
 /* void iemAImpl_shl_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro SHL_64, a_Name, a_fIntelFlags
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
@@ -493,8 +469,7 @@ SHL_64 iemAImpl_shl_u64_amd,   0
 /* void iemAImpl_shr_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
 /* void iemAImpl_shr_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro shr_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
@@ -559,11 +534,10 @@ shr_8_16_32 iemAImpl_shr_u32,       32, 1,
 shr_8_16_32 iemAImpl_shr_u32_intel, 32, 1,
 shr_8_16_32 iemAImpl_shr_u32_amd,   32, 0,
 
-;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
 /* void iemAImpl_shr_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro shr_64, a_Name, a_fIntelFlags
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
@@ -625,8 +599,7 @@ shr_64 iemAImpl_shr_u64_amd,   0
 /* void iemAImpl_sar_u16(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags); */
 /* void iemAImpl_sar_u32(uint16_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro sar_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdSuff, a_StSuff
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
@@ -687,11 +660,10 @@ sar_8_16_32 iemAImpl_sar_u32,       32, 1, ,
 sar_8_16_32 iemAImpl_sar_u32_intel, 32, 1, ,
 sar_8_16_32 iemAImpl_sar_u32_amd,   32, 0, ,
 
-;; @todo this is slightly slower than the C version (release) on an M2. Investigate why.
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
 /* void iemAImpl_sar_u64(uint16_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags); */
 .macro sar_64, a_Name, a_fIntelFlags
-        .p2align        2
-BEGINPROC \a_Name
+BEGINPROC_HIDDEN \a_Name
         .cfi_startproc
 
         /* Do we need to shift anything at all? */
