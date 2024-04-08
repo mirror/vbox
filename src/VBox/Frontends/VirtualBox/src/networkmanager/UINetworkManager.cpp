@@ -54,6 +54,7 @@
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
 #endif
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CCloudNetwork.h"
@@ -376,7 +377,7 @@ void UIItemCloudNetwork::updateFields()
 
 UINetworkManagerWidget::UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -404,7 +405,7 @@ QMenu *UINetworkManagerWidget::menu() const
     return m_pActionPool->action(UIActionIndexMN_M_NetworkWindow)->menu();
 }
 
-void UINetworkManagerWidget::retranslateUi()
+void UINetworkManagerWidget::sltRetranslateUI()
 {
     /* Translate tab-widget: */
     if (m_pTabWidget)
@@ -461,7 +462,7 @@ void UINetworkManagerWidget::retranslateUi()
 void UINetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+    QWidget::resizeEvent(pEvent);
 
     /* Adjust tree-widgets: */
     sltAdjustTreeWidgets();
@@ -470,7 +471,7 @@ void UINetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
 void UINetworkManagerWidget::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 
     /* Adjust tree-widgets: */
     sltAdjustTreeWidgets();
@@ -1727,7 +1728,10 @@ void UINetworkManagerWidget::prepare()
     loadSettings();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINetworkManagerWidget::sltRetranslateUI);
 
     /* Load networks: */
     loadHostNetworks();
@@ -2539,7 +2543,7 @@ void UINetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenter
 *********************************************************************************************************************************/
 
 UINetworkManager::UINetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
@@ -2558,7 +2562,7 @@ void UINetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
         emit sigDataChangeAccepted();
 }
 
-void UINetworkManager::retranslateUi()
+void UINetworkManager::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Network Manager"));
@@ -2642,7 +2646,10 @@ void UINetworkManager::configureButtonBox()
 void UINetworkManager::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINetworkManager::sltRetranslateUI);
 }
 
 UINetworkManagerWidget *UINetworkManager::widget()

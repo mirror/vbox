@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIPortForwardingTable.h"
 
 /* COM includes: */
@@ -61,7 +60,7 @@ class UINotificationCenter;
 
 
 /** QDialog subclass for subnet selection functionality. */
-class UISubnetSelectionDialog : public QIWithRetranslateUI<QDialog>
+class UISubnetSelectionDialog : public QDialog
 {
     Q_OBJECT;
 
@@ -89,11 +88,6 @@ public slots:
     /** Executes dialog. */
     virtual int exec() RT_OVERRIDE RT_FINAL;
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
 private slots:
 
     /** Performs dialog initialization. */
@@ -101,6 +95,9 @@ private slots:
 
     /** Handles notification about subnet selection @a comForm being created. */
     void sltHandleVSDFormCreated(const CVirtualSystemDescriptionForm &comForm);
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -178,7 +175,7 @@ struct UIDataCloudNetwork
 
 
 /** Network Manager: Cloud network details-widget. */
-class UIDetailsWidgetCloudNetwork : public QIWithRetranslateUI<QWidget>
+class UIDetailsWidgetCloudNetwork : public QWidget
 {
     Q_OBJECT;
 
@@ -215,11 +212,6 @@ public:
         void updateButtonStates();
     /** @} */
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** @name Change handling stuff.
@@ -238,6 +230,9 @@ private slots:
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

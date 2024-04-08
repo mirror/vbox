@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -218,7 +217,7 @@ struct UIDataHostNetwork
 
 
 /** Network Manager: Host network details-widget. */
-class UIDetailsWidgetHostNetwork : public QIWithRetranslateUI<QWidget>
+class UIDetailsWidgetHostNetwork : public QWidget
 {
     Q_OBJECT;
 
@@ -258,11 +257,6 @@ public:
         /** Updates button states. */
         void updateButtonStates();
     /** @} */
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -308,6 +302,9 @@ private slots:
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -455,4 +452,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetHostNetwork_h */
-

@@ -43,6 +43,7 @@
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #ifndef VBOX_WS_MAC
@@ -51,7 +52,7 @@
 
 
 UIDetailsWidgetHostNetwork::UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
 #ifdef VBOX_WS_MAC
     , m_pLabelName(0)
@@ -266,7 +267,7 @@ void UIDetailsWidgetHostNetwork::updateButtonStates()
     emit sigDataChanged(m_oldData != m_newData);
 }
 
-void UIDetailsWidgetHostNetwork::retranslateUi()
+void UIDetailsWidgetHostNetwork::sltRetranslateUI()
 {
 #ifdef VBOX_WS_MAC
     if (m_pLabelName)
@@ -525,7 +526,10 @@ void UIDetailsWidgetHostNetwork::prepare()
     prepareThis();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDetailsWidgetHostNetwork::sltRetranslateUI);
 
     /* Update button states finally: */
     updateButtonStates();

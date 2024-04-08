@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIPortForwardingTable.h"
 
 /* Forward declarations: */
@@ -107,7 +106,7 @@ struct UIDataNATNetwork
 
 
 /** Network Manager: NAT network details-widget. */
-class UIDetailsWidgetNATNetwork : public QIWithRetranslateUI<QWidget>
+class UIDetailsWidgetNATNetwork : public QWidget
 {
     Q_OBJECT;
 
@@ -147,11 +146,6 @@ public:
         void updateButtonStates();
     /** @} */
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** @name Change handling stuff.
@@ -177,6 +171,8 @@ private slots:
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -261,4 +257,3 @@ private:
 
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetNATNetwork_h */
-

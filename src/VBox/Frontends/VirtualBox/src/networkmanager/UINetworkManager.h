@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class CCloudNetwork;
@@ -66,7 +65,7 @@ struct UIDataNATNetwork;
 
 
 /** QWidget extension providing GUI with the pane to control network related functionality. */
-class UINetworkManagerWidget : public QIWithRetranslateUI<QWidget>
+class UINetworkManagerWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -103,9 +102,6 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles resize @a pEvent. */
         virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
@@ -186,6 +182,12 @@ private slots:
         void sltHandleContextMenuRequestCloudNetwork(const QPoint &position);
         /** Handles command to apply cloud network details changes. */
         void sltApplyDetailsChangesCloudNetwork();
+    /** @} */
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
 private:
@@ -352,7 +354,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog to control network related functionality. */
-class UINetworkManager : public QIWithRetranslateUI<QIManagerDialog>
+class UINetworkManager : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -371,18 +373,18 @@ private slots:
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
 
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
+
 private:
 
     /** Constructs Network Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference. */
     UINetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */
@@ -413,4 +415,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkManager_h */
-

@@ -49,13 +49,13 @@
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
-
+#include "UITranslationEventListener.h"
 
 UISubnetSelectionDialog::UISubnetSelectionDialog(QWidget *pParent,
                                                  const QString &strShortProviderName,
                                                  const QString &strProfileName,
                                                  const QString &strSubnetId)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_strProviderShortName(strShortProviderName)
     , m_strProfileName(strProfileName)
     , m_strSubnetId(strSubnetId)
@@ -89,7 +89,7 @@ void UISubnetSelectionDialog::accept()
     m_strSubnetId = aVBoxValues.first();
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QDialog>::accept();
+    return QDialog::accept();
 }
 
 int UISubnetSelectionDialog::exec()
@@ -98,10 +98,10 @@ int UISubnetSelectionDialog::exec()
     QMetaObject::invokeMethod(this, "sltInit", Qt::QueuedConnection);
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QDialog>::exec();
+    return QDialog::exec();
 }
 
-void UISubnetSelectionDialog::retranslateUi()
+void UISubnetSelectionDialog::sltRetranslateUI()
 {
     setWindowTitle(UINetworkManager::tr("Select Subnet"));
 }
@@ -165,7 +165,10 @@ void UISubnetSelectionDialog::prepare()
         m_pFormEditor->setNotificationCenter(m_pNotificationCenter);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UISubnetSelectionDialog::sltRetranslateUI);
 }
 
 void UISubnetSelectionDialog::cleanup()
@@ -177,7 +180,7 @@ void UISubnetSelectionDialog::cleanup()
 
 
 UIDetailsWidgetCloudNetwork::UIDetailsWidgetCloudNetwork(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pLabelNetworkName(0)
     , m_pEditorNetworkName(0)
@@ -248,7 +251,7 @@ void UIDetailsWidgetCloudNetwork::updateButtonStates()
     emit sigDataChanged(m_oldData != m_newData);
 }
 
-void UIDetailsWidgetCloudNetwork::retranslateUi()
+void UIDetailsWidgetCloudNetwork::sltRetranslateUI()
 {
     if (m_pLabelNetworkName)
         m_pLabelNetworkName->setText(UINetworkManager::tr("N&ame:"));
@@ -362,7 +365,10 @@ void UIDetailsWidgetCloudNetwork::prepare()
     prepareProfiles();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDetailsWidgetCloudNetwork::sltRetranslateUI);
 
     /* Update button states finally: */
     updateButtonStates();
