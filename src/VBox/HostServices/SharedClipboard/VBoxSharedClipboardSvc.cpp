@@ -1462,7 +1462,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, idEvent);
 #if defined(RT_OS_DARWIN)
     /* We do not wait for guest clipboard availability event on macOS. Rather,
-     * we paste directly into pasteboard when guest sends its clipboard data. 
+     * we paste directly into pasteboard when guest sends its clipboard data.
      * Do not assert here. */
     if (!RT_VALID_PTR(pEvent))
         return VINF_SUCCESS;
