@@ -39,6 +39,9 @@
 # pragma once
 #endif
 
+#include <iprt/cdefs.h>
+
+
 #if !defined(RT_ARCH_ARM64) && !defined(RT_ARCH_ARM32)
 # error "Not on ARM64 or ARM32"
 #endif
@@ -47,6 +50,19 @@
  * @ingroup grp_rt_asm
  * @{
  */
+
+/**
+ * Align code, pad with BRK. */
+#define ALIGNCODE(alignment)    .balignl alignment, 0xd42000cc
+
+/**
+ * Align data, pad with ZEROs. */
+#define ALIGNDATA(alignment)    .balign alignment
+
+/**
+ * Align BSS, pad with ZEROs. */
+#define ALIGNBSS(alignment)     .balign alignment
+
 
 /** Marks the beginning of a code section. */
 #ifdef ASM_FORMAT_MACHO
@@ -171,8 +187,6 @@
  * @param   a_Name      The unmangled symbol name.
  */
 .macro BEGINPROC, a_Name
-    .p2align 2
-    .globl          NAME(\a_Name)
 NAME(\a_Name):
 .endm
 
@@ -183,13 +197,12 @@ NAME(\a_Name):
  * @param   a_Name      The unmangled symbol name.
  */
 .macro BEGINPROC_HIDDEN, a_Name
-    .p2align 2
 #ifndef ASM_FORMAT_ELF
-    .private_extern NAME(\a_Name)
+        .private_extern NAME(\a_Name)
 #else
-    .hidden         NAME(\a_Name)
+        .hidden         NAME(\a_Name)
 #endif
-    .globl          NAME(\a_Name)
+        .globl          NAME(\a_Name)
 NAME(\a_Name):
 .endm
 

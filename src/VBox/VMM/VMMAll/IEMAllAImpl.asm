@@ -2360,7 +2360,10 @@ ENDPROC iemAImpl_bswap_u64
 ; @param        3       The undefined flags.
 ; @param        4       Force load flags.
 ;
-; Makes ASSUMPTIONS about A0, A1 and A2 assignments.
+; Makes ASSUMPTIONS about A0, A1 and A2 assignments.  Specifically, that with
+; GCC/64 we're free to use RCX/CL as it isn't used for any arguments.  While
+; MSC/64 & 32-bit fastcall are using ECX for the first argument (fEFlagsIn),
+; so we have to switch it around with the shift count parameter registers.
 ;
 ; @note the _intel and _amd variants are implemented in C.
 ;
@@ -2368,59 +2371,67 @@ ENDPROC iemAImpl_bswap_u64
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
-        mov     cl, A1_8
-        %1      byte [A0], cl
- %else
-        xchg    A1, A0
+        IEM_MAYBE_LOAD_FLAGS     A0_32, %2, %3, %4
+        mov     cl, A2_8
         %1      byte [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A0_32, %2, %3, 0
+ %else
+        xchg    A2, A0
+        IEM_MAYBE_LOAD_FLAGS     A2_32, %2, %3, %4
+        %1      byte [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A2_32, %2, %3, 0
  %endif
-        IEM_SAVE_FLAGS_OLD       A2, %2, %3, 0
 .zero_shift:
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
-        mov     cl, A1_8
-        %1      word [A0], cl
- %else
-        xchg    A1, A0
+        IEM_MAYBE_LOAD_FLAGS     A0_32, %2, %3, %4
+        mov     cl, A2_8
         %1      word [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A0_32, %2, %3, 0
+ %else
+        xchg    A2, A0
+        IEM_MAYBE_LOAD_FLAGS     A2_32, %2, %3, %4
+        %1      word [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A2_32, %2, %3, 0
  %endif
-        IEM_SAVE_FLAGS_OLD       A2, %2, %3, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD A2, %2, %3, %4
  %ifdef ASM_CALL64_GCC
-        mov     cl, A1_8
-        %1      dword [A0], cl
- %else
-        xchg    A1, A0
+        IEM_MAYBE_LOAD_FLAGS     A0_32, %2, %3, %4
+        mov     cl, A2_8
         %1      dword [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A0_32, %2, %3, 0
+ %else
+        xchg    A2, A0
+        IEM_MAYBE_LOAD_FLAGS     A2_32, %2, %3, %4
+        %1      dword [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A2_32, %2, %3, 0
  %endif
-        IEM_SAVE_FLAGS_OLD       A2, %2, %3, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS_OLD A2, %2, %3, %4
   %ifdef ASM_CALL64_GCC
-        mov     cl, A1_8
-        %1      qword [A0], cl
-  %else
-        xchg    A1, A0
+        IEM_MAYBE_LOAD_FLAGS     A0_32, %2, %3, %4
+        mov     cl, A2_8
         %1      qword [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A0_32, %2, %3, 0
+  %else
+        xchg    A2, A0
+        IEM_MAYBE_LOAD_FLAGS     A2_32, %2, %3, %4
+        %1      qword [A1], cl
+        IEM_SAVE_FLAGS_RETVAL    A2_32, %2, %3, 0
   %endif
-        IEM_SAVE_FLAGS_OLD       A2, %2, %3, 0
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif ; RT_ARCH_AMD64

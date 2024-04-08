@@ -2894,7 +2894,7 @@ FNIEMAIMPLUNARYU64 iemAImpl_neg_u64, iemAImpl_neg_u64_locked;
 
 /** @name Shift operations on bytes (Group 2).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTU8,(uint8_t *pu8Dst, uint8_t cShift, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHIFTU8,(uint32_t fEFlagsIn, uint8_t *pu8Dst, uint8_t cShift));
 typedef FNIEMAIMPLSHIFTU8  *PFNIEMAIMPLSHIFTU8;
 FNIEMAIMPLSHIFTU8 iemAImpl_rol_u8, iemAImpl_rol_u8_amd, iemAImpl_rol_u8_intel;
 FNIEMAIMPLSHIFTU8 iemAImpl_ror_u8, iemAImpl_ror_u8_amd, iemAImpl_ror_u8_intel;
@@ -2907,7 +2907,7 @@ FNIEMAIMPLSHIFTU8 iemAImpl_sar_u8, iemAImpl_sar_u8_amd, iemAImpl_sar_u8_intel;
 
 /** @name Shift operations on words (Group 2).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTU16,(uint16_t *pu16Dst, uint8_t cShift, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHIFTU16,(uint32_t fEFlagsIn, uint16_t *pu16Dst, uint8_t cShift));
 typedef FNIEMAIMPLSHIFTU16  *PFNIEMAIMPLSHIFTU16;
 FNIEMAIMPLSHIFTU16 iemAImpl_rol_u16, iemAImpl_rol_u16_amd, iemAImpl_rol_u16_intel;
 FNIEMAIMPLSHIFTU16 iemAImpl_ror_u16, iemAImpl_ror_u16_amd, iemAImpl_ror_u16_intel;
@@ -2920,7 +2920,7 @@ FNIEMAIMPLSHIFTU16 iemAImpl_sar_u16, iemAImpl_sar_u16_amd, iemAImpl_sar_u16_inte
 
 /** @name Shift operations on double words (Group 2).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTU32,(uint32_t *pu32Dst, uint8_t cShift, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHIFTU32,(uint32_t fEFlagsIn, uint32_t *pu32Dst, uint8_t cShift));
 typedef FNIEMAIMPLSHIFTU32  *PFNIEMAIMPLSHIFTU32;
 FNIEMAIMPLSHIFTU32 iemAImpl_rol_u32, iemAImpl_rol_u32_amd, iemAImpl_rol_u32_intel;
 FNIEMAIMPLSHIFTU32 iemAImpl_ror_u32, iemAImpl_ror_u32_amd, iemAImpl_ror_u32_intel;
@@ -2933,7 +2933,7 @@ FNIEMAIMPLSHIFTU32 iemAImpl_sar_u32, iemAImpl_sar_u32_amd, iemAImpl_sar_u32_inte
 
 /** @name Shift operations on words (Group 2).
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTU64,(uint64_t *pu64Dst, uint8_t cShift, uint32_t *pEFlags));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHIFTU64,(uint32_t fEFlagsIn, uint64_t *pu64Dst, uint8_t cShift));
 typedef FNIEMAIMPLSHIFTU64  *PFNIEMAIMPLSHIFTU64;
 FNIEMAIMPLSHIFTU64 iemAImpl_rol_u64, iemAImpl_rol_u64_amd, iemAImpl_rol_u64_intel;
 FNIEMAIMPLSHIFTU64 iemAImpl_ror_u64, iemAImpl_ror_u64_amd, iemAImpl_ror_u64_intel;
