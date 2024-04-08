@@ -740,7 +740,7 @@ BEGINPROC_HIDDEN \a_Name
         /*
          * Calculate EFLAGS - only CF and OF.
          */
-        bfi     w0, w9, #0, #1                  /* CF = last bit rotated around */
+        bfi     w0, w9, #0, #1                  /* CF = last bit rotated around (new bottom bit) */
 
 .ifne \a_fIntelFlags
         /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
@@ -813,4 +813,114 @@ BEGINPROC_HIDDEN \a_Name
 ROL_64 iemAImpl_rol_u64,       1
 ROL_64 iemAImpl_rol_u64_intel, 1
 ROL_64 iemAImpl_rol_u64_amd,   0
+
+
+/*
+ * Rotate Right.
+ */
+
+/* uint32_t iemAImpl_ror_u8( uint32_t fEFlagsIn, uint8_t *pu8Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_ror_u16(uint32_t fEFlagsIn, uint16_t *pu16Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_ror_u32(uint32_t fEFlagsIn, uint16_t *pu32Dst, uint8_t cShift); */
+.macro ROR_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to rotate anything at all? */
+        and     w2, w2, #0x1f
+        cbz     w2, 99f
+
+        /*
+         * Do the shifting
+         */
+.ifne \a_cBits < 32
+        and     w2, w2, #(\a_cBits - 1)
+        neg     w3, w2
+        and     w3, w3, #(\a_cBits - 1)
+        ldr\a_LdStSuff  w8, [x1]
+        lsrv    w9, w8, w2
+        lslv    w10, w8, w3
+        orr     w9, w9, w10
+        str\a_LdStSuff  w9, [x1]
+        and     w9, w9, #(RT_BIT_32(\a_cBits) - 1)
+.else
+        ldr\a_LdStSuff  w8, [x1]
+        rorv    w9, w8, w2
+        str\a_LdStSuff  w9, [x1]
+.endif
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        bfxil   w0, w9, #(\a_cBits - 1), #1     /* CF = last bit rotated around (new top bit) */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << (a_cBitsWidth - 1))); */
+        eor     w11, w8, w8, LSR #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEFlags |= (((uResult >> ((a_cBitsWidth) - 2)) ^ fCarry) & 1) << X86_EFL_OF_BIT; */
+        eor     w11, w0, w9, LSR #(\a_cBits - 2)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+ROR_8_16_32 iemAImpl_ror_u8,         8, 1, b
+ROR_8_16_32 iemAImpl_ror_u8_intel,   8, 1, b
+ROR_8_16_32 iemAImpl_ror_u8_amd,     8, 0, b
+
+ROR_8_16_32 iemAImpl_ror_u16,       16, 1, h
+ROR_8_16_32 iemAImpl_ror_u16_intel, 16, 1, h
+ROR_8_16_32 iemAImpl_ror_u16_amd,   16, 0, h
+
+ROR_8_16_32 iemAImpl_ror_u32,       32, 1,
+ROR_8_16_32 iemAImpl_ror_u32_intel, 32, 1,
+ROR_8_16_32 iemAImpl_ror_u32_amd,   32, 0,
+
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
+/* uint32_t iemAImpl_ror_u64(uint32_t fEFlagsIn, uint16_t *pu64Dst, uint8_t cShift); */
+.macro ROR_64, a_Name, a_fIntelFlags
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w2, w2, #0x3f
+        cbz     w2, 99f
+
+        /*
+         * Do the shifting
+         */
+        ldr     x8, [x1]
+        rorv    x9, x8, x2
+        str     x9, [x1]
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        bfxil   x0, x9, #(64 - 1), #1           /* CF = last bit rotated around (new top bit) */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << (a_cBitsWidth - 1))); */
+        eor     x11, x8, x8, LSR #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEFlags |= (((uResult >> ((a_cBitsWidth) - 2)) ^ fCarry) & 1) << X86_EFL_OF_BIT; */
+        eor     x11, x0, x9, LSR #(64 - 2)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+ROR_64 iemAImpl_ror_u64,       1
+ROR_64 iemAImpl_ror_u64_intel, 1
+ROR_64 iemAImpl_ror_u64_amd,   0
 
