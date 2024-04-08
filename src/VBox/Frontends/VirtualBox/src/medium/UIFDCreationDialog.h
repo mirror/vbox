@@ -35,9 +35,6 @@
 #include <QDialog>
 #include <QUuid>
 
-/* GUI Includes */
-#include "QIWithRetranslateUI.h"
-
 /* COM includes: */
 #include "CMedium.h"
 #include "CMediumFormat.h"
@@ -50,7 +47,7 @@ class QLabel;
 class UIFilePathSelector;
 
 /* A QDialog extension to get necessary setting from the user for floppy disk creation. */
-class SHARED_LIBRARY_STUFF UIFDCreationDialog : public QIWithRetranslateUI<QDialog>
+class SHARED_LIBRARY_STUFF UIFDCreationDialog : public QDialog
 {
     Q_OBJECT;
 
@@ -79,16 +76,13 @@ public slots:
     /** Creates the floppy disc image, asynchronously. */
     virtual void accept() RT_OVERRIDE;
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** Handles signal about @a comMedium was created. */
     void sltHandleMediumCreated(const CMedium &comMedium);
     void sltPathChanged(const QString &strPath);
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

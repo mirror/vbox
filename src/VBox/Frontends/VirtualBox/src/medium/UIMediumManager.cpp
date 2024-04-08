@@ -40,12 +40,15 @@
 #include "QILabel.h"
 #include "QIMessageBox.h"
 #include "QITabWidget.h"
+#include "QIToolBar.h"
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
+#include "UIMedium.h"
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumItem.h"
 #include "UIMediumManager.h"
@@ -53,10 +56,8 @@
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #include "UIWizardCloneVD.h"
-#include "QIToolBar.h"
-#include "UIIconPool.h"
-#include "UIMedium.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -160,7 +161,7 @@ void UIEnumerationProgressBar::prepare()
 
 UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                              bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -193,10 +194,10 @@ void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBa
     m_pProgressBar = pProgressBar;
 
     /* Update translation: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIMediumManagerWidget::retranslateUi()
+void UIMediumManagerWidget::sltRetranslateUI()
 {
     /* Translate tab-widget: */
     if (m_pTabWidget)
@@ -735,7 +736,10 @@ void UIMediumManagerWidget::prepare()
     loadSettings();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumManagerWidget::sltRetranslateUI);
 
     /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
@@ -1703,7 +1707,7 @@ void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterW
 *********************************************************************************************************************************/
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
     , m_pProgressBar(0)
 {
@@ -1723,7 +1727,7 @@ void UIMediumManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
         emit sigDataChangeAccepted();
 }
 
-void UIMediumManager::retranslateUi()
+void UIMediumManager::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Virtual Media Manager"));
@@ -1812,7 +1816,10 @@ void UIMediumManager::configureButtonBox()
 void UIMediumManager::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumManager::sltRetranslateUI);
 }
 
 UIMediumManagerWidget *UIMediumManager::widget()

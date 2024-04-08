@@ -36,7 +36,6 @@
 #include <QSet>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #include "UIMedium.h"
 
@@ -54,7 +53,7 @@ typedef QMap<QUuid, CMedium> CMediumMap;
 /** QObject extension operating as medium-enumeration object.
   * Manages access to cached UIMedium information via public API.
   * Updates cache on corresponding Main events using thread-pool interface. */
-class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QObject
 {
     Q_OBJECT;
 
@@ -103,11 +102,6 @@ public:
       *        by a worker COM-aware thread. */
     void refreshMedia();
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** Handles machine-data-change event for a machine with specified @a uMachineId. */
@@ -134,6 +128,9 @@ private slots:
 
     /** Handles medium-enumeration @a pTask complete signal. */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

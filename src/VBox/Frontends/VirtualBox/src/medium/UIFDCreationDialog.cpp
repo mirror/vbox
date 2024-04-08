@@ -43,6 +43,7 @@
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIModalWindowManager.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -52,7 +53,7 @@
 UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent,
                                        const QString &strDefaultFolder,
                                        const QString &strMachineName /* = QString() */)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_strDefaultFolder(strDefaultFolder)
     , m_strMachineName(strMachineName)
     , m_pPathLabel(0)
@@ -136,7 +137,7 @@ void UIFDCreationDialog::accept()
     gpNotificationCenter->append(pNotification);
 }
 
-void UIFDCreationDialog::retranslateUi()
+void UIFDCreationDialog::sltRetranslateUI()
 {
     if (m_strMachineName.isEmpty())
         setWindowTitle(QString("%1").arg(tr("Floppy Disk Creator")));
@@ -273,7 +274,10 @@ void UIFDCreationDialog::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFDCreationDialog::sltRetranslateUI);
 
 #ifdef VBOX_WS_MAC
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);

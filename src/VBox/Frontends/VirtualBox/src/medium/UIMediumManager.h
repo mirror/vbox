@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIMediumDefs.h"
 
 /* COM includes: */
@@ -106,7 +105,7 @@ private:
 
 
 /** QWidget extension providing GUI with the pane to control media related functionality. */
-class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
+class UIMediumManagerWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -145,14 +144,6 @@ public:
 
     /** Defines @a pProgressBar reference. */
     void setProgressBar(UIEnumerationProgressBar *pProgressBar);
-
-protected:
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
 public slots:
 
@@ -243,6 +234,12 @@ private slots:
       * @{ */
         /** Handles command to detach COM stuff. */
         void sltDetachCOM();
+    /** @} */
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
 private:
@@ -441,7 +438,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog to control media related functionality. */
-class UIMediumManager : public QIWithRetranslateUI<QIManagerDialog>
+class UIMediumManager : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -460,18 +457,18 @@ private slots:
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
 
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
+
 private:
 
     /** Constructs Medium Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference. */
     UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */

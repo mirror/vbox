@@ -36,6 +36,7 @@
 #include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
 #include "UITask.h"
+#include "UITranslationEventListener.h"
 #include "UIThreadPool.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -134,6 +135,9 @@ UIMediumEnumerator::UIMediumEnumerator()
     /* Prepare global thread-pool listener: */
     connect(uiCommon().threadPool(), &UIThreadPool::sigTaskComplete,
             this, &UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete);
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumEnumerator::sltRetranslateUI);
 
     /* We should make sure media map contains at least NULL medium object: */
     addNullMediumToMap(m_media);
@@ -252,7 +256,7 @@ void UIMediumEnumerator::refreshMedia()
         m_media[uMediumID].refresh();
 }
 
-void UIMediumEnumerator::retranslateUi()
+void UIMediumEnumerator::sltRetranslateUI()
 {
     /* Translating NULL UIMedium by recreating it: */
     if (m_media.contains(UIMedium::nullID()))

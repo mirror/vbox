@@ -40,6 +40,7 @@
 #include "UIMediumItem.h"
 #include "UIMediumSearchWidget.h"
 #include "UISearchLineEdit.h"
+#include "UITranslationEventListener.h"
 
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -95,7 +96,7 @@ private:
 *********************************************************************************************************************************/
 
 UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
-    :QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pSearchComboxBox(0)
     , m_pSearchTermLineEdit(0)
     , m_pShowNextMatchButton(0)
@@ -148,7 +149,10 @@ void UIMediumSearchWidget::prepareWidgets()
         pLayout->addWidget(m_pShowNextMatchButton);
     }
 
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumSearchWidget::sltRetranslateUI);
 }
 
 UIMediumSearchWidget::SearchType UIMediumSearchWidget::searchType() const
@@ -187,7 +191,7 @@ void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget, bool fGotoNext /* =
     updateSearchLineEdit(m_matchedItemList.size(), m_iScrollToIndex);
 }
 
-void UIMediumSearchWidget::retranslateUi()
+void UIMediumSearchWidget::sltRetranslateUI()
 {
     if (m_pSearchComboxBox)
     {
@@ -207,7 +211,7 @@ void UIMediumSearchWidget::showEvent(QShowEvent *pEvent)
 {
     if (m_pSearchTermLineEdit)
         m_pSearchTermLineEdit->setFocus();
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 }
 
 void UIMediumSearchWidget::markUnmarkItems(QList<QTreeWidgetItem*> &itemList, bool fMark)

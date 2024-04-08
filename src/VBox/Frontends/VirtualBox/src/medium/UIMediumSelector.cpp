@@ -37,6 +37,7 @@
 #include "QIFileDialog.h"
 #include "QIMessageBox.h"
 #include "QITabWidget.h"
+#include "QIToolBar.h"
 #include "QIToolButton.h"
 #include "UIActionPool.h"
 #include "UICommon.h"
@@ -50,7 +51,7 @@
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumItem.h"
-#include "QIToolBar.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -67,7 +68,7 @@
 UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDeviceType enmMediumType, const QString &machineName,
                                    const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
                                    const QUuid &uMachineID, QWidget *pParent, UIActionPool *pActionPool)
-    :QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
+    : QIWithRestorableGeometry<QIMainDialog>(pParent)
     , m_pCentralWidget(0)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)
@@ -168,7 +169,7 @@ int UIMediumSelector::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceT
     return static_cast<int>(returnCode);
 }
 
-void UIMediumSelector::retranslateUi()
+void UIMediumSelector::sltRetranslateUI()
 {
     if (m_pCancelButton)
     {
@@ -213,7 +214,7 @@ bool UIMediumSelector::event(QEvent *pEvent)
             saveDialogGeometry();
         }
     }
-    return QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >::event(pEvent);
+    return QIWithRestorableGeometry<QIMainDialog>::event(pEvent);
 }
 
 void UIMediumSelector::configure()
@@ -640,7 +641,9 @@ void UIMediumSelector::updateChooseButton()
 void UIMediumSelector::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMediumSelector::sltRetranslateUI);
 }
 
 void UIMediumSelector::showEvent(QShowEvent *pEvent)
