@@ -230,30 +230,35 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                                                  SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             else
             {
-                SCSIINQUIRYDATA ScsiInquiryReply;
+                if (pVScsiReq->cbCDB >= 5)
+                {
+                    SCSIINQUIRYDATA ScsiInquiryReply;
 
-                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
-                memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
+                    vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
+                    memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
-                ScsiInquiryReply.cbAdditional           = 31;
-                ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
-                ScsiInquiryReply.u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
-                ScsiInquiryReply.u3AnsiVersion          = 0x05; /* SPC-4 compliant */
-                ScsiInquiryReply.fCmdQue                = 1;    /* Command queuing supported. */
-                ScsiInquiryReply.fWBus16                = 1;
+                    ScsiInquiryReply.cbAdditional           = 31;
+                    ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+                    ScsiInquiryReply.u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+                    ScsiInquiryReply.u3AnsiVersion          = 0x05; /* SPC-4 compliant */
+                    ScsiInquiryReply.fCmdQue                = 1;    /* Command queuing supported. */
+                    ScsiInquiryReply.fWBus16                = 1;
 
-                const char *pszVendorId = "VBOX";
-                const char *pszProductId = "HARDDISK";
-                const char *pszProductLevel = "1.0";
-                int rcTmp = vscsiLunQueryInqStrings(pVScsiLun, &pszVendorId, &pszProductId, &pszProductLevel);
-                Assert(RT_SUCCESS(rcTmp) || rcTmp == VERR_NOT_FOUND); RT_NOREF(rcTmp);
+                    const char *pszVendorId = "VBOX";
+                    const char *pszProductId = "HARDDISK";
+                    const char *pszProductLevel = "1.0";
+                    int rcTmp = vscsiLunQueryInqStrings(pVScsiLun, &pszVendorId, &pszProductId, &pszProductLevel);
+                    Assert(RT_SUCCESS(rcTmp) || rcTmp == VERR_NOT_FOUND); RT_NOREF(rcTmp);
 
-                scsiPadStrS(ScsiInquiryReply.achVendorId, pszVendorId, 8);
-                scsiPadStrS(ScsiInquiryReply.achProductId, pszProductId, 16);
-                scsiPadStrS(ScsiInquiryReply.achProductLevel, pszProductLevel, 4);
+                    scsiPadStrS(ScsiInquiryReply.achVendorId, pszVendorId, 8);
+                    scsiPadStrS(ScsiInquiryReply.achProductId, pszProductId, 16);
+                    scsiPadStrS(ScsiInquiryReply.achProductLevel, pszProductLevel, 4);
 
-                RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
-                rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
+                    rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                }
+                else
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INVALID_MESSAGE, 0x00);
             }
             break;
         }
@@ -421,7 +426,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             uint8_t uDataMode = pVScsiReq->pbCDB[1] & 0x1f;
 
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
-            vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U16(&pVScsiReq->pbCDB[6]));
+            vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U24(&pVScsiReq->pbCDB[6]));
 
             switch (uDataMode)
             {
@@ -629,6 +634,92 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     return rc;
 }
 
+
+/**
+ * The supported operation codes for the SBC LUN type.
+ * 
+ * @note This gives the minimum size required by our implementation
+ *       which may be smaller than what the spec defines (for example
+ *       we do not access the control byte at the end).
+ */
+static uint8_t s_acbCdbOpc[] =
+{
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x00 - 0x07 Invalid */
+    5,                               /**< 0x08        READ (6) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x09        Invalid */
+    5,                               /**< 0x0a        WRITE (6) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x0b        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x0c - 0x0f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x10 - 0x11 Invalid */
+    3,                               /**< 0x12        INQUIRY (at least 3) */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x13 - 0x14 Invalid */
+    5,                               /**< 0x15        MODE SELECT (6) */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x16 - 0x19 Invalid */
+    5,                               /**< 0x1a        MODE SENSE (6) */
+    1,                               /**< 0x1b        START STOP UNIT */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x1c - 0x1f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x20 - 0x23 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x24        Invalid */
+    1,                               /**< 0x25        READ CAPACITY */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x26 - 0x27 Invalid */
+    9,                               /**< 0x28        READ (10) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x29        Invalid */
+    9,                               /**< 0x2a        WRITE (10) */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x2b - 0x2e Invalid */
+    1,                               /**< 0x2f        VERIFY (10) */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x30 - 0x33 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x34        Invalid */
+    1,                               /**< 0x35        SYNCHRONIZE CACHE */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x36 - 0x39 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x3a - 0x3b Invalid */
+    8,                               /**< 0x3c        READ BUFFER */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x3d        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x3e - 0x3f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x40 - 0x41 Invalid */
+    9,                               /**< 0x42        UNMAP */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x43        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x44 - 0x4b Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x4c        Invalid */
+    9,                               /**< 0x4d        LOG SENSE */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x4e - 0x4f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0x50 - 0x5f Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0x60 - 0x6f Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0x70 - 0x7f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x80 - 0x87 Invalid */
+    14,                              /**< 0x88        READ (16) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x89        Invalid */
+    14,                              /**< 0x8a        WRITE (16) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x8b        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x8c - 0x8f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x90 - 0x97 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x98 - 0x9b Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x9c - 0x9d Invalid */
+    2,                               /**< 0x9e        SERVICE ACTION IN (16) (at least 2). */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x9f        Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0xa0 - 0xa7 Invalid */
+    10,                              /**< 0xa8        READ (12) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xa9        Invalid */
+    10,                              /**< 0xaa        WRITE (12) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xab        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0xac - 0xaf Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xb0 - 0xbf Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xc0 - 0xcf Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xd0 - 0xdf Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xe0 - 0xef Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16     /**< 0xf0 - 0xff Invalid */
+};
+AssertCompileSize(s_acbCdbOpc, 256 * sizeof(uint8_t));
+
+
 VSCSILUNDESC g_VScsiLunTypeSbc =
 {
     /** enmLunType */
@@ -637,6 +728,8 @@ VSCSILUNDESC g_VScsiLunTypeSbc =
     "SBC",
     /** cbLun */
     sizeof(VSCSILUNSBC),
+    /** pacbCdbOpc */
+    &s_acbCdbOpc[0],
     /** cSupOpcInfo */
     0,
     /** paSupOpcInfo */

@@ -241,6 +241,25 @@ typedef const VSCSILUNSUPOPC *PCVSCSILUNSUPOPC;
     { a_u8Opc, a_u16SvcAction, VSCSI_LUN_SUP_OPC_SVC_ACTION_REQUIRED, a_pszOpc, a_cbCdb, a_pbCdbUsage, 0, 0, 0}
 /** @} */
 
+/** @name Helper macros to specify a range of not supported CDB opcodes for the entries pointed
+ * to by VSCSILUNDESC::pacbCdbOpc.
+ * @{ */
+#define VSCSI_LUN_CDB_SZ_INVALID 0
+#define VSCSI_LUN_CDB_SZ_INVALID_X2 \
+    VSCSI_LUN_CDB_SZ_INVALID, \
+    VSCSI_LUN_CDB_SZ_INVALID
+#define VSCSI_LUN_CDB_SZ_INVALID_X4 \
+    VSCSI_LUN_CDB_SZ_INVALID_X2, \
+    VSCSI_LUN_CDB_SZ_INVALID_X2
+#define VSCSI_LUN_CDB_SZ_INVALID_X8 \
+    VSCSI_LUN_CDB_SZ_INVALID_X4, \
+    VSCSI_LUN_CDB_SZ_INVALID_X4
+#define VSCSI_LUN_CDB_SZ_INVALID_X16 \
+    VSCSI_LUN_CDB_SZ_INVALID_X8, \
+    VSCSI_LUN_CDB_SZ_INVALID_X8
+/** @} */
+
+
 /**
  * Virtual SCSI LUN descriptor.
  */
@@ -252,6 +271,9 @@ typedef struct VSCSILUNDESC
     const char          *pcszDescName;
     /** LUN type size */
     size_t               cbLun;
+    /** Pointer to the array holding the CDB length indexed by the opcode.
+     * A 0 entry means opcode not supported (CDB must be at least 1 byte big). */
+    const uint8_t       *pacbCdbOpc;
     /** Number of entries in the supported operation codes array. */
     uint32_t             cSupOpcInfo;
     /** Pointer to the array of supported operation codes for the

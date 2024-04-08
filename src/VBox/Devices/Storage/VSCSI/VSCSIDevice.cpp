@@ -69,6 +69,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
 
     LogFlowFunc(("CDB: %.*Rhxs Cmd: %s\n", pVScsiReq->cbCDB, pVScsiReq->pbCDB, SCSICmdText(pVScsiReq->pbCDB[0])));
 
+    if (!pVScsiReq->cbCDB)
+    {
+        *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                        SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+        return true;
+    }
+
     switch (pVScsiReq->pbCDB[0])
     {
         case SCSI_INQUIRY:
@@ -94,6 +101,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REPORT_LUNS:
         {
+            if (pVScsiReq->cbCDB < 10)
+            {
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             /*
              * If allocation length is less than 16 bytes SPC compliant devices have
              * to return an error.
@@ -129,6 +143,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REQUEST_SENSE:
         {
+            if (pVScsiReq->cbCDB < 5)
+            {
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
             vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
 
@@ -142,6 +163,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
 #if 0
         case SCSI_MAINTENANCE_IN:
         {
+            if (pVScsiReq->cbCDB < 8)
+            {
+                *prcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                   SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             if (pVScsiReq->pbCDB[1] == SCSI_MAINTENANCE_IN_REPORT_SUPP_OPC)
             {
                 /*
@@ -376,7 +404,26 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
         if (vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun))
         {
             PVSCSILUNINT pVScsiLun = pVScsiDevice->papVScsiLun[pVScsiReq->iLun];
-            rc = pVScsiLun->pVScsiLunDesc->pfnVScsiLunReqProcess(pVScsiLun, pVScsiReq);
+            PVSCSILUNDESC pVScsiLunDesc = pVScsiLun->pVScsiLunDesc;
+            uint8_t const bOpc = pVScsiReq->pbCDB[0];
+            uint8_t const cbCdbMin = pVScsiLunDesc->pacbCdbOpc[bOpc];
+
+            /* Fail if the opcode is not supported or the CDB is too short. */
+            if (   cbCdbMin != VSCSI_LUN_CDB_SZ_INVALID
+                && pVScsiReq->cbCDB >= cbCdbMin)
+                rc = pVScsiLunDesc->pfnVScsiLunReqProcess(pVScsiLun, pVScsiReq);
+            else
+            {
+                /*
+                 * CDB length is smaller than what the LUN expects, respond with an
+                 * ILLEGAL OPCODE error.
+                 */
+                vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                         SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+
+                vscsiDeviceReqComplete(pVScsiDevice, pVScsiReq,
+                                       SCSI_STATUS_CHECK_CONDITION, false, VINF_SUCCESS);
+            }
         }
         else
         {

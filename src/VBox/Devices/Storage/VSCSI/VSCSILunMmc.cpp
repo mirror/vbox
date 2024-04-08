@@ -1774,6 +1774,115 @@ static DECLCALLBACK(int) vscsiLunMmcMediumRemoved(PVSCSILUNINT pVScsiLun)
 }
 
 
+/**
+ * The supported operation codes for the SBC LUN type.
+ * 
+ * @note This gives the minimum size required by our implementation
+ *       which may be smaller than what the spec defines (for example
+ *       we do not access the control byte at the end).
+ */
+static uint8_t s_acbCdbOpc[] =
+{
+    1,                               /**< 0x00        TEST UNIT READY */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x01        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x02 - 0x03 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x04 - 0x07 Invalid */
+    5,                               /**< 0x08        READ (6) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x09        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x0a - 0x0b Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x0c - 0x0f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x10 - 0x11 Invalid */
+    5,                               /**< 0x12        INQUIRY */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x13        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x14        Invalid */
+    5,                               /**< 0x15        MODE SELECT (6) */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x16 - 0x17 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x18 - 0x19 Invalid */
+    5,                               /**< 0x1a        MODE SENSE (6) */
+    5,                               /**< 0x1b        START STOP UNIT */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x1c - 0x1d Invalid */
+    5,                               /**< 0x1e        PREVENT ALLOW MEDIUM REMOVAL */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x1f        Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x20 - 0x23 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x24        Invalid */
+    1,                               /**< 0x25        READ CAPACITY */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x26 - 0x27 Invalid */
+    9,                               /**< 0x28        READ (10) */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x29 - 0x2a Invalid */
+    6,                               /**< 0x2b        SEEK (10) */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x2c - 0x2d Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x2e        Invalid */
+    5,                               /**< 0x2f        VERIFY (10) */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x30 - 0x37 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x38 - 0x3b Invalid */
+    8,                               /**< 0x3c        READ BUFFER */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x3d        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x3e - 0x3f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x40 - 0x41 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x42        Invalid */
+    9,                               /**< 0x43        READ TOC PMA ATIP */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x44 - 0x45 Invalid */
+    9,                               /**< 0x46        GET CONFIGURATION */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x47        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x48 - 0x49 Invalid */
+    9,                               /**< 0x4a        GET EVENT STATUS NOTIFICATION */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x4b        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x4c        Invalid */
+    9,                               /**< 0x4d        LOG SENSE */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x4e - 0x4f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x50        Invalid */
+    9,                               /**< 0x51        READ DISC INFORMATION */
+    9,                               /**< 0x52        READ TRACK INFORMATION */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x53        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x54 - 0x57 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x58 - 0x59 Invalid */
+    9,                               /**< 0x5a        MODE SENSE (10) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x5b        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x5c - 0x5f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0x60 - 0x6f Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0x70 - 0x7f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x80 - 0x87 Invalid */
+    14,                              /**< 0x88        READ (16) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x89        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x8a - 0x8b Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x8c - 0x8f Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0x90 - 0x97 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0x98 - 0x9b Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0x9c - 0x9d Invalid */
+    2,                               /**< 0x9e        SERVICE ACTION IN (16) (at least 2). */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0x9f        Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0xa0 - 0xa7 Invalid */
+    10,                              /**< 0xa8        READ (12) */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xa9        Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0xaa - 0xab Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xac        Invalid */
+    10,                              /**< 0xad        READ DVD STRUCTURE */
+    VSCSI_LUN_CDB_SZ_INVALID_X2,     /**< 0xae - 0xaf Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X8,     /**< 0xb0 - 0xb7 Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X4,     /**< 0xb8 - 0xbb Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xbc        Invalid */
+    10,                              /**< 0xbd        MECHANISM STATUS */
+    10,                              /**< 0xbe        READ CD */
+    VSCSI_LUN_CDB_SZ_INVALID,        /**< 0xbf        Invalid */
+
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xc0 - 0xcf Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xd0 - 0xdf Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16,    /**< 0xe0 - 0xef Invalid */
+    VSCSI_LUN_CDB_SZ_INVALID_X16     /**< 0xf0 - 0xff Invalid */
+};
+AssertCompileSize(s_acbCdbOpc, 256 * sizeof(uint8_t));
+
+
 VSCSILUNDESC g_VScsiLunTypeMmc =
 {
     /** enmLunType */
@@ -1782,6 +1891,8 @@ VSCSILUNDESC g_VScsiLunTypeMmc =
     "MMC",
     /** cbLun */
     sizeof(VSCSILUNMMC),
+    /** pacbCdbOpc */
+    &s_acbCdbOpc[0],
     /** cSupOpcInfo */
     0,
     /** paSupOpcInfo */
