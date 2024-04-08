@@ -247,7 +247,7 @@ static VBOXSTRICTRC ox958UartRegRead(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX958
     if (offUartReg >= OX958_REG_UART_DMA_REGION_OFFSET)
     {
         /* Access to the DMA registers. */
-        rc = VINF_SUCCESS;
+        rc = VINF_IOM_MMIO_UNUSED_00; /** @todo Misses implementation, just pretend there is nothing there yet. */
     }
     else /* Access UART registers. */
         rc = uartRegRead(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, (uint32_t *)pv, cb);
