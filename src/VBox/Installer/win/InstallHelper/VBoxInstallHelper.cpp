@@ -577,6 +577,7 @@ static int checkTargetDirOne(MSIHANDLE hModule, PTGTDIRSECCTX pCtx, const char *
                                 case ACCESS_DENIED_ACE_TYPE: /* We're only interested in the ALLOW ACE. */
                                 {
                                     ACCESS_DENIED_ACE const *pAce = (ACCESS_DENIED_ACE *)pAceHdr;
+
                                     LPWSTR pwszSid = NULL;
                                     ConvertSidToStringSid((PSID)&pAce->SidStart, &pwszSid);
 
