@@ -44,7 +44,6 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QITableView.h"
-#include "QIWithRetranslateUI.h"
 #include "UIGuestControlDefs.h"
 
 /* Forward declarations: */
@@ -138,7 +137,7 @@ private:
  *  and a host version are derived from this base. Each of these children
  *  populates the UIFileSystemModel by scanning the file system
  *  differently. The file structure kept in this class as a tree. */
-class UIFileManagerTable : public QIWithRetranslateUI<QWidget>
+class UIFileManagerTable : public QWidget
 {
     Q_OBJECT;
 
@@ -207,7 +206,6 @@ protected:
         FileOperationType_Max
     };
 
-    void retranslateUi() RT_OVERRIDE;
     void updateCurrentLocationEdit(const QString& strLocation);
     /* @p index is for model not for 'proxy' model */
     void changeLocation(const QModelIndex &index);
@@ -274,6 +272,10 @@ protected:
     QString          m_strTableName;
     /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
     UIFileTableNavigationWidget   *m_pNavigationWidget;
+
+protected slots:
+
+    virtual void sltRetranslateUI();
 
 private slots:
 

@@ -79,7 +79,6 @@ public:
 
 protected:
 
-    void            retranslateUi() RT_OVERRIDE RT_FINAL;
     virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) RT_OVERRIDE RT_FINAL;
     virtual void    deleteByItem(UIFileSystemItem *item) RT_OVERRIDE RT_FINAL;
     virtual void    goToHomeDirectory() RT_OVERRIDE RT_FINAL;
@@ -112,6 +111,7 @@ private slots:
     void sltMachineStateChange(const QUuid &uMachineId, const KMachineState state);
     void sltCommitDataSignalReceived();
     void sltAdditionsStateChange();
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

@@ -51,6 +51,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "QILineEdit.h"
 #include "QIToolBar.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -445,7 +446,10 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
         openMachineSession();
     setStateAndEnableWidgets();
 
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFileManagerGuestTable::sltRetranslateUI);
 }
 
 UIFileManagerGuestTable::~UIFileManagerGuestTable()
@@ -462,7 +466,7 @@ void UIFileManagerGuestTable::initFileTable()
     initializeFileTree();
 }
 
-void UIFileManagerGuestTable::retranslateUi()
+void UIFileManagerGuestTable::sltRetranslateUI()
 {
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Guest File System:"));
@@ -511,7 +515,7 @@ void UIFileManagerGuestTable::retranslateUi()
         m_pGuestSessionWidget->setStatusLabelIconAndToolTip(icon, strWarningText);
     }
 
-    UIFileManagerTable::retranslateUi();
+    UIFileManagerTable::sltRetranslateUI();
 }
 
 bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
@@ -1522,7 +1526,7 @@ void UIFileManagerGuestTable::setStateAndEnableWidgets()
 {
     setState();
     setSessionDependentWidgetsEnabled();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFileManagerGuestTable::sltHandleCloseSessionRequest()

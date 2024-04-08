@@ -61,7 +61,6 @@ protected:
      *  tree under the @p parent. */
     static bool scanDirectory(const QString& strPath, UIFileSystemItem *parent,
                               QMap<QString, UIFileSystemItem*> &fileObjects);
-    void            retranslateUi() override;
     virtual bool    readDirectory(const QString& strPath, UIFileSystemItem *parent, bool isStartDir = false) override final;
     virtual void    deleteByItem(UIFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
@@ -81,6 +80,10 @@ protected:
         virtual void  setPasteActionEnabled(bool)  override final {}
         virtual void  pasteCutCopiedObjects()  override final {}
     /** @} */
+
+protected slots:
+
+    virtual void sltRetranslateUI() RT_OVERRIDE;
 
 private:
 

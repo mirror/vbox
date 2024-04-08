@@ -40,7 +40,7 @@
 #include "UIFileManagerHostTable.h"
 #include "UIPathOperations.h"
 #include "QIToolBar.h"
-
+#include "UITranslationEventListener.h"
 
 /*********************************************************************************************************************************
 *   UIHostDirectoryDiskUsageComputer definition.                                                                                 *
@@ -141,7 +141,9 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     prepareToolbar();
     prepareActionConnections();
     determinePathSeparator();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFileManagerHostTable::sltRetranslateUI);
 }
 
 /* static */ bool UIFileManagerHostTable::scanDirectory(const QString& strPath, UIFileSystemItem *parent,
@@ -183,12 +185,12 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     return true;
 }
 
-void UIFileManagerHostTable::retranslateUi()
+void UIFileManagerHostTable::sltRetranslateUI()
 {
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Host File System:"));
     m_strTableName = UIFileManager::tr("Host");
-    UIFileManagerTable::retranslateUi();
+    UIFileManagerTable::sltRetranslateUI();
 }
 
 void UIFileManagerHostTable::prepareToolbar()

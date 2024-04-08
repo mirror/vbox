@@ -49,6 +49,7 @@
 #include "UIIconPool.h"
 #include "UIPathOperations.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"
@@ -405,7 +406,7 @@ bool UIFileDeleteConfirmationDialog::askDeleteConfirmationNextTime() const
 const unsigned UIFileManagerTable::m_iKiloByte = 1024; /**< Our kilo bytes are a power of two! (bird) */
 
 UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_eFileOperationType(FileOperationType_None)
     , m_pLocationLabel(0)
     , m_pPropertiesDialog(0)
@@ -541,6 +542,10 @@ void UIFileManagerTable::prepareObjects()
         connect(m_pSearchLineEdit, &QLineEdit::textChanged,
                 this, &UIFileManagerTable::sltSearchTextChanged);
     }
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIFileManagerTable::sltRetranslateUI);
+
     optionsUpdated();
 }
 
@@ -1038,7 +1043,7 @@ void UIFileManagerTable::deleteByIndex(const QModelIndex &itemIndex)
     deleteByItem(treeItem);
 }
 
-void UIFileManagerTable::retranslateUi()
+void UIFileManagerTable::sltRetranslateUI()
 {
     UIFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
@@ -1055,7 +1060,7 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
 {
     /* Handle only events sent to m_pView: */
     if (pObject != m_pView)
-        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+        return QWidget::eventFilter(pObject, pEvent);
 
     if (pEvent->type() == QEvent::KeyPress)
     {
@@ -1112,7 +1117,7 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
 UIFileSystemItem *UIFileManagerTable::getStartDirectoryItem()
@@ -1201,8 +1206,8 @@ QHBoxLayout* UIFileManagerTable::toolBarLayout()
 bool UIFileManagerTable::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::EnabledChange)
-        retranslateUi();
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+        sltRetranslateUI();
+    return QWidget::event(pEvent);
 }
 
 QString UIFileManagerTable::fileTypeString(KFsObjType type)

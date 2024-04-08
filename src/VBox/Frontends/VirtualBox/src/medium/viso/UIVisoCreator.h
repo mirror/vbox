@@ -56,15 +56,20 @@ class UIVisoSettingWidget;
 class UIVisoHostBrowser : public UIFileManagerHostTable
 {
 
+    Q_OBJECT;
+
 public:
 
     UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent = 0);
     void prepareMainMenu(QMenu *pMenu);
 
+private slots:
+
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
+
 private:
 
     virtual void createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) RT_OVERRIDE RT_FINAL;
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
     QPointer<QMenu>        m_pSubMenu;
 };
 
