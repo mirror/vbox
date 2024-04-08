@@ -1775,8 +1775,8 @@ static DECLCALLBACK(int) vscsiLunMmcMediumRemoved(PVSCSILUNINT pVScsiLun)
 
 
 /**
- * The supported operation codes for the SBC LUN type.
- * 
+ * The supported operation codes for the MMC LUN type.
+ *
  * @note This gives the minimum size required by our implementation
  *       which may be smaller than what the spec defines (for example
  *       we do not access the control byte at the end).
