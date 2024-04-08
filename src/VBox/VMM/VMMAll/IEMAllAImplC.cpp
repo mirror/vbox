@@ -3115,15 +3115,17 @@ IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_rol_u,a_cBitsWidth,a_Suffix),(ui
     return fEFlags; \
 }
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#ifndef RT_ARCH_ARM64
+
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(64, uint64_t, RT_NOTHING, 1, ASMRotateLeftU64)
-#endif
+# endif
 EMIT_ROL(64, uint64_t, _intel,     1, ASMRotateLeftU64)
 EMIT_ROL(64, uint64_t, _amd,       0, ASMRotateLeftU64)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(32, uint32_t, RT_NOTHING, 1, ASMRotateLeftU32)
-#endif
+# endif
 EMIT_ROL(32, uint32_t, _intel,     1, ASMRotateLeftU32)
 EMIT_ROL(32, uint32_t, _amd,       0, ASMRotateLeftU32)
 
@@ -3131,9 +3133,9 @@ DECL_FORCE_INLINE(uint16_t) iemAImpl_rol_u16_hlp(uint16_t uValue, uint8_t cShift
 {
     return (uValue << cShift) | (uValue >> (16 - cShift));
 }
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(16, uint16_t, RT_NOTHING, 1, iemAImpl_rol_u16_hlp)
-#endif
+# endif
 EMIT_ROL(16, uint16_t, _intel,     1, iemAImpl_rol_u16_hlp)
 EMIT_ROL(16, uint16_t, _amd,       0, iemAImpl_rol_u16_hlp)
 
@@ -3141,12 +3143,13 @@ DECL_FORCE_INLINE(uint8_t) iemAImpl_rol_u8_hlp(uint8_t uValue, uint8_t cShift)
 {
     return (uValue << cShift) | (uValue >> (8 - cShift));
 }
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(8,  uint8_t,  RT_NOTHING, 1, iemAImpl_rol_u8_hlp)
-#endif
+# endif
 EMIT_ROL(8,  uint8_t,  _intel,     1, iemAImpl_rol_u8_hlp)
 EMIT_ROL(8,  uint8_t,  _amd,       0, iemAImpl_rol_u8_hlp)
 
+#endif /* !RT_ARCH_ARM64 */
 
 /*
  * ROR

@@ -700,3 +700,117 @@ sar_64 iemAImpl_sar_u64,       1
 sar_64 iemAImpl_sar_u64_intel, 1
 sar_64 iemAImpl_sar_u64_amd,   0
 
+
+/*
+ * Rotate Left.
+ */
+
+/* uint32_t iemAImpl_rol_u8( uint32_t fEFlagsIn, uint8_t *pu8Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rol_u16(uint32_t fEFlagsIn, uint16_t *pu16Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rol_u32(uint32_t fEFlagsIn, uint16_t *pu32Dst, uint8_t cShift); */
+.macro ROL_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to rotate anything at all? */
+        and     w2, w2, #0x1f
+        cbz     w2, 99f
+
+        /*
+         * Do the shifting
+         */
+.ifne \a_cBits < 32
+        and     w2, w2, #(\a_cBits - 1)
+        neg     w3, w2
+        and     w3, w3, #(\a_cBits - 1)
+        ldr\a_LdStSuff  w8, [x1]
+        lslv    w9, w8, w2
+        lsrv    w10, w8, w3
+        orr     w9, w9, w10
+        str\a_LdStSuff  w9, [x1]
+        and     w9, w9, #(RT_BIT_32(\a_cBits) - 1)
+.else
+        neg     w3, w2                          /* the count is MODed by the data size, so this is safe. */
+        ldr\a_LdStSuff  w8, [x1]
+        rorv    w9, w8, w3
+        str\a_LdStSuff  w9, [x1]
+.endif
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        bfi     w0, w9, #0, #1                  /* CF = last bit rotated around */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     w11, w8, w8, LSL #1
+        lsr     w11, w11, #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+        eor     w11, w0, w9, LSR #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+ROL_8_16_32 iemAImpl_rol_u8,         8, 1, b
+ROL_8_16_32 iemAImpl_rol_u8_intel,   8, 1, b
+ROL_8_16_32 iemAImpl_rol_u8_amd,     8, 0, b
+
+ROL_8_16_32 iemAImpl_rol_u16,       16, 1, h
+ROL_8_16_32 iemAImpl_rol_u16_intel, 16, 1, h
+ROL_8_16_32 iemAImpl_rol_u16_amd,   16, 0, h
+
+ROL_8_16_32 iemAImpl_rol_u32,       32, 1,
+ROL_8_16_32 iemAImpl_rol_u32_intel, 32, 1,
+ROL_8_16_32 iemAImpl_rol_u32_amd,   32, 0,
+
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
+/* uint32_t iemAImpl_rol_u64(uint32_t fEFlagsIn, uint16_t *pu64Dst, uint8_t cShift); */
+.macro ROL_64, a_Name, a_fIntelFlags
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w2, w2, #0x3f
+        cbz     w2, 99f
+
+        /*
+         * Do the shifting
+         */
+        neg     w3, w2
+        ldr     x8, [x1]
+        rorv    x9, x8, x3
+        str     x9, [x1]
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        bfi     w0, w9, #0, #1                  /* CF = last bit rotated around */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     x11, x8, x8, LSL #1
+        lsr     x11, x11, #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+        eor     x11, x0, x9, LSR #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+ROL_64 iemAImpl_rol_u64,       1
+ROL_64 iemAImpl_rol_u64_intel, 1
+ROL_64 iemAImpl_rol_u64_amd,   0
+
