@@ -250,7 +250,20 @@ static VBOXSTRICTRC ox958UartRegRead(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX958
         rc = VINF_IOM_MMIO_UNUSED_00; /** @todo Misses implementation, just pretend there is nothing there yet. */
     }
     else /* Access UART registers. */
-        rc = uartRegRead(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, (uint32_t *)pv, cb);
+    {
+        AssertReturn(cb == 1, VINF_IOM_MMIO_UNUSED_00);
+
+        uint32_t u32 = 0;
+        rc = uartRegRead(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, &u32, 1);
+        Assert(rc == VINF_SUCCESS || rc == VINF_IOM_R3_IOPORT_READ);
+
+        if (rc == VINF_SUCCESS)
+            *(uint8_t *)pv = (uint8_t)u32;
+        else if (rc == VERR_IOM_IOPORT_UNUSED)
+            rc = VINF_IOM_MMIO_UNUSED_00;
+        else if (rc == VINF_IOM_R3_IOPORT_READ)
+            rc = VINF_IOM_R3_MMIO_READ;
+    }
 
     return rc;
 }
@@ -280,7 +293,15 @@ static VBOXSTRICTRC ox958UartRegWrite(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX95
         rc = VINF_SUCCESS;
     }
     else /* Access UART registers. */
-        rc = uartRegWrite(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, *(const uint32_t *)pv, cb);
+    {
+        AssertReturn(cb == 1, VINF_SUCCESS);
+
+        rc = uartRegWrite(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, *(const uint8_t *)pv, 1);
+        Assert(rc == VINF_SUCCESS || rc == VINF_IOM_R3_IOPORT_WRITE);
+
+        if (rc == VINF_IOM_R3_IOPORT_WRITE)
+            rc = VINF_IOM_R3_MMIO_WRITE;
+    }
 
     return rc;
 }
@@ -319,8 +340,8 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser
 
     if (off < OX958_REG_UART_REGION_OFFSET)
     {
+        AssertReturn(cb == 4, VINF_IOM_MMIO_UNUSED_00);
         uint32_t *pu32 = (uint32_t *)pv;
-        Assert(cb == 4);
 
         switch ((uint32_t)off)
         {
@@ -360,8 +381,6 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser
             POX958UART   pUart   = &pThis->aUarts[iUart];
             POX958UARTCC pUartCC = &pThisCC->aUarts[iUart];
             rc = ox958UartRegRead(pDevIns, pThis, pUart, pUartCC, offUartReg, pv, cb);
-            if (rc == VINF_IOM_R3_IOPORT_READ)
-                rc = VINF_IOM_R3_MMIO_READ;
         }
         else
             rc = VINF_IOM_MMIO_UNUSED_00;
@@ -383,8 +402,8 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUse
 
     if (off < OX958_REG_UART_REGION_OFFSET)
     {
+        AssertReturn(cb == 4, VINF_SUCCESS);
         const uint32_t u32 = *(const uint32_t *)pv;
-        Assert(cb == 4);
 
         switch ((uint32_t)off)
         {
@@ -420,8 +439,6 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUse
             POX958UART   pUart   = &pThis->aUarts[iUart];
             POX958UARTCC pUartCC = &pThisCC->aUarts[iUart];
             rc = ox958UartRegWrite(pDevIns, pThis, pUart, pUartCC, offUartReg, pv, cb);
-            if (rc == VINF_IOM_R3_IOPORT_WRITE)
-                rc = VINF_IOM_R3_MMIO_WRITE;
         }
     }
 
