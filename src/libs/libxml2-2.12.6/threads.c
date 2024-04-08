@@ -585,7 +585,9 @@ xmlInitParser(void) {
 
         xmlInitMemoryInternal(); /* Should come second */
         xmlInitGlobalsInternal();
+#ifndef VBOX
         xmlInitRandom();
+#endif
         xmlInitDictInternal();
         xmlInitEncodingInternal();
 #if defined(LIBXML_XPATH_ENABLED) || defined(LIBXML_SCHEMAS_ENABLED)
@@ -650,7 +652,9 @@ xmlCleanupParser(void) {
 #endif
 
     xmlCleanupDictInternal();
+#ifndef VBOX
     xmlCleanupRandom();
+#endif
     xmlCleanupGlobalsInternal();
     /*
      * Must come last. On Windows, xmlCleanupGlobalsInternal can call

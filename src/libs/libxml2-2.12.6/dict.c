@@ -31,6 +31,10 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
 
+#ifdef VBOX
+# include <iprt/rand.h>
+#endif
+
 #ifndef SIZE_MAX
   #define SIZE_MAX ((size_t) -1)
 #endif
@@ -900,6 +904,7 @@ xmlDictQLookup(xmlDictPtr dict, const xmlChar *prefix, const xmlChar *name) {
     return(entry->name);
 }
 
+#ifndef VBOX
 /*
  * Pseudo-random generator
  */
@@ -946,9 +951,11 @@ xoroshiro64ss(unsigned *s) {
 
     return(result & 0xFFFFFFFF);
 }
+#endif
 
 unsigned
 xmlRandom(void) {
+#ifndef VBOX
 #ifdef XML_THREAD_LOCAL
     if (!localRngInitialized) {
         xmlMutexLock(&xmlRngMutex);
@@ -967,6 +974,9 @@ xmlRandom(void) {
     xmlMutexUnlock(&xmlRngMutex);
 
     return(ret);
+#endif
+#else
+    return RTRandU32();
 #endif
 }
 
