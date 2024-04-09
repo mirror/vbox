@@ -46,6 +46,7 @@
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -183,7 +184,7 @@ QString UIItemExtensionPack::defaultText() const
 
 UIExtensionPackManagerWidget::UIExtensionPackManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -198,7 +199,7 @@ QMenu *UIExtensionPackManagerWidget::menu() const
     return m_pActionPool->action(UIActionIndexMN_M_ExtensionWindow)->menu();
 }
 
-void UIExtensionPackManagerWidget::retranslateUi()
+void UIExtensionPackManagerWidget::sltRetranslateUI()
 {
     /* Translate tree-widget: */
     m_pTreeWidget->setHeaderLabels(   QStringList()
@@ -379,7 +380,10 @@ void UIExtensionPackManagerWidget::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIExtensionPackManagerWidget::sltRetranslateUI);
 
     /* Load extension packs: */
     loadExtensionPacks();
@@ -595,12 +599,12 @@ void UIExtensionPackManagerFactory::create(QIManagerDialog *&pDialog, QWidget *p
 *********************************************************************************************************************************/
 
 UIExtensionPackManager::UIExtensionPackManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
 
-void UIExtensionPackManager::retranslateUi()
+void UIExtensionPackManager::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Extension Pack Manager"));
@@ -644,7 +648,10 @@ void UIExtensionPackManager::configureCentralWidget()
 void UIExtensionPackManager::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIExtensionPackManager::sltRetranslateUI);
 }
 
 UIExtensionPackManagerWidget *UIExtensionPackManager::widget()

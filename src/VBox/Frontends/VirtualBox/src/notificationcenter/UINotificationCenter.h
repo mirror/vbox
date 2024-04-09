@@ -38,7 +38,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #include "UINotificationObjects.h"
 
@@ -54,7 +53,7 @@ class UINotificationObject;
 class UINotificationObjectItem;
 
 /** QWidget-based notification-center overlay. */
-class SHARED_LIBRARY_STUFF UINotificationCenter : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UINotificationCenter : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
@@ -104,9 +103,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
@@ -149,6 +145,9 @@ private slots:
     /** Handles immediate progress being finished.
       * @note Breaks blocking handleNow() call. */
     void sltHandleProgressFinished();
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

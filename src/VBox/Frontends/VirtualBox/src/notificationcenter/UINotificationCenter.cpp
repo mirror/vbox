@@ -47,6 +47,7 @@
 #include "UINotificationCenter.h"
 #include "UINotificationObjectItem.h"
 #include "UINotificationModel.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -156,7 +157,7 @@ UINotificationCenter *UINotificationCenter::instance()
 }
 
 UINotificationCenter::UINotificationCenter(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pModel(0)
     , m_enmAlignment(Qt::AlignTop)
     , m_enmOrder(Qt::AscendingOrder)
@@ -193,7 +194,7 @@ void UINotificationCenter::setParent(QWidget *pParent)
         parent()->removeEventFilter(this);
 
     /* Reparent: */
-    QIWithRetranslateUI<QWidget>::setParent(pParent);
+    QWidget::setParent(pParent);
 
     /* Install filter to new parent: */
     if (parent())
@@ -300,7 +301,7 @@ void UINotificationCenter::abortOperations()
     emit sigOperationsAborted();
 }
 
-void UINotificationCenter::retranslateUi()
+void UINotificationCenter::sltRetranslateUI()
 {
     if (m_pButtonOpen)
         m_pButtonOpen->setToolTip(tr("Open notification center"));
@@ -335,7 +336,7 @@ bool UINotificationCenter::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
 bool UINotificationCenter::event(QEvent *pEvent)
@@ -363,7 +364,7 @@ bool UINotificationCenter::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+    return QWidget::event(pEvent);
 }
 
 void UINotificationCenter::paintEvent(QPaintEvent *pEvent)
@@ -556,7 +557,10 @@ void UINotificationCenter::prepare()
     sltHandleOrderChange();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UINotificationCenter::sltRetranslateUI);
 }
 
 void UINotificationCenter::prepareModel()
