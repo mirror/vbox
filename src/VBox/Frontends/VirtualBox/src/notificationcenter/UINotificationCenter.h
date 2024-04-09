@@ -34,6 +34,7 @@
 /* Qt includes: */
 #include <QEventLoop>
 #include <QPointer>
+#include <QMap>
 #include <QUuid>
 #include <QWidget>
 
