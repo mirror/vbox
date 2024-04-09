@@ -2515,6 +2515,11 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
 
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             PGM_UNLOCK(pVM);
+            /* If the access origins with a device, make sure the buffer is initialized
+               as a guard against leaking heap, stack and other info via badly written
+               MMIO handling. @bugref{10651} */
+            if (enmOrigin == PGMACCESSORIGIN_DEVICE)
+                memset(pvBuf, 0xff, cb);
             rcStrict = pfnHandler(pVM, pVCpu, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, enmOrigin, uUser);
             PGM_LOCK_VOID(pVM);
 
