@@ -2521,7 +2521,7 @@ ifdef VBOX_WITH_PARFAIT
 	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
 	 $(VBOX_PARFAIT_OPTS) \
-	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),,-b $(PATH_ROOT)/tools/parfait-vbox-baseline.conf) \
+	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),-b $(PATH_ROOT)/tools/parfait-vbox-baseline.conf) \
 	 -j $(if-expr $(KMK_OPTS_JOBS) > 0, $(KMK_OPTS_JOBS), 1) \
 	 -o $(PATH_OUT)/report.txt \
 	 -g $(PATH_OUT)/html \
