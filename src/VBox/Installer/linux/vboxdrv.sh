@@ -85,10 +85,12 @@ else
     # Applies to Debian packages only (but shouldn't hurt elsewhere)
     exit 0
 fi
-VIRTUALBOX="${INSTALL_DIR}/VirtualBox"
 VBOXMANAGE="${INSTALL_DIR}/VBoxManage"
 BUILDINTMP="${MODULE_SRC}/build_in_tmp"
-if test -u "${VIRTUALBOX}"; then
+
+# If the VirtualBoxVM file has the set-uid bit set or if it doesn't exist, setup vboxdrv
+# in hardened mode.  Otherwise, do the developer mode using vboxusers for access control.
+if test -u "${INSTALL_DIR}/VirtualBoxVM" || test '!' -e "${INSTALL_DIR}/VirtualBoxVM"; then
     GROUP=root
     DEVICE_MODE=0600
 else
