@@ -222,13 +222,8 @@ if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/libQt6CoreVBox.so.6 ]; then
 fi
 rm -f $RPM_BUILD_ROOT/usr/lib/virtualbox/chrpath
 ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
-for i in VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
+for i in VirtualBoxVM VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
-if test -e $RPM_BUILD_ROOT/usr/lib/virtualbox/VirtualBoxVM; then
-  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VirtualBoxVM
-else
-  chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VirtualBox
-fi
 if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo ]; then
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo
 fi
