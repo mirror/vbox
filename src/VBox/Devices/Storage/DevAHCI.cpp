@@ -1912,7 +1912,7 @@ static VBOXSTRICTRC PortInvalid_r(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAh
 {
     RT_NOREF(pDevIns, pThis, pAhciPort, iReg, pu32Value);
     ahciLog(("%s: Read denied!!! iReg=%u\n", __FUNCTION__, iReg));
-    return VINF_SUCCESS;
+    return VINF_IOM_MMIO_UNUSED_00;
 }
 
 /**
