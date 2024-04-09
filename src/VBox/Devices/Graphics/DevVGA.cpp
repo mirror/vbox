@@ -982,10 +982,14 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     uint32_t max_bank;
     RT_NOREF(pThisCC, addr);
 
-    if (pThis->vbe_index <= VBE_DISPI_INDEX_NB) {
+    uint16_t const idxVbe = pThis->vbe_index;
+    if (idxVbe <= VBE_DISPI_INDEX_NB)
+    {
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
         bool fRecalculate = false;
-        Log(("VBE: write index=0x%x val=0x%x\n", pThis->vbe_index, val));
-        switch(pThis->vbe_index) {
+        Log(("VBE: write index=0x%x val=0x%x\n", idxVbe, val));
+        switch(idxVbe) {
         case VBE_DISPI_INDEX_ID:
             if (val == VBE_DISPI_ID0 ||
                 val == VBE_DISPI_ID1 ||
@@ -1000,27 +1004,27 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 # endif
                 val == VBE_DISPI_ID_CFG)
             {
-                pThis->vbe_regs[pThis->vbe_index] = val;
+                pThis->vbe_regs[VBE_DISPI_INDEX_ID] = val;
             }
             break;
         case VBE_DISPI_INDEX_XRES:
             if (val <= VBE_DISPI_MAX_XRES)
             {
-                pThis->vbe_regs[pThis->vbe_index] = val;
+                pThis->vbe_regs[VBE_DISPI_INDEX_XRES] = val;
                 pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = val;
                 fRecalculate = true;
             }
             break;
         case VBE_DISPI_INDEX_YRES:
             if (val <= VBE_DISPI_MAX_YRES)
-                pThis->vbe_regs[pThis->vbe_index] = val;
+                pThis->vbe_regs[VBE_DISPI_INDEX_YRES] = val;
             break;
         case VBE_DISPI_INDEX_BPP:
             if (val == 0)
                 val = 8;
             if (val == 4 || val == 8 || val == 15 ||
                 val == 16 || val == 24 || val == 32) {
-                pThis->vbe_regs[pThis->vbe_index] = val;
+                pThis->vbe_regs[VBE_DISPI_INDEX_BPP] = val;
                 fRecalculate = true;
             }
             break;
@@ -1036,7 +1040,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
                 val &= 0xff;
             if (val > max_bank)
                 val = max_bank;
-            pThis->vbe_regs[pThis->vbe_index] = val;
+            pThis->vbe_regs[VBE_DISPI_INDEX_BANK] = val;
             pThis->bank_offset = (val << 16);
 
 # ifndef IN_RC
@@ -1140,7 +1144,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
                  */
                 pThis->bank_offset = 0;
             }
-            pThis->vbe_regs[pThis->vbe_index] = val;
+            pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] = val;
             /*
              * LFB video mode is either disabled or changed. Notify the display
              * and reset VBVA.
@@ -1164,7 +1168,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
         case VBE_DISPI_INDEX_X_OFFSET:
         case VBE_DISPI_INDEX_Y_OFFSET:
             {
-                pThis->vbe_regs[pThis->vbe_index] = val;
+                pThis->vbe_regs[idxVbe] = val;
                 fRecalculate = true;
             }
             break;
@@ -1182,7 +1186,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 # endif /* IN_RING3 */
             break;
         case VBE_DISPI_INDEX_CFG:
-            pThis->vbe_regs[pThis->vbe_index] = val;
+            pThis->vbe_regs[VBE_DISPI_INDEX_CFG] = val;
             break;
         default:
             break;
