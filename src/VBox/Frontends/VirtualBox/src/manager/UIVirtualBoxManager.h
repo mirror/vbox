@@ -38,7 +38,6 @@
 
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
-#include "QIWithRetranslateUI.h"
 #include "UIAdvancedSettingsDialog.h"
 #include "UICloudMachineSettingsDialog.h"
 #include "UIDefs.h"
@@ -59,10 +58,9 @@ class CUnattended;
 
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
-typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
 
 /** Singleton QMainWindow extension used as VirtualBox Manager instance. */
-class UIVirtualBoxManager : public QMainWindowWithRestorableGeometryAndRetranslateUi
+class UIVirtualBoxManager : public QMainWindowWithRestorableGeometry
 {
     Q_OBJECT;
 
@@ -105,9 +103,6 @@ protected:
         /** Mac OS X: Preprocesses any @a pEvent for passed @a pObject. */
         virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 #endif
-
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
 
         /** Handles any Qt @a pEvent. */
         virtual bool event(QEvent *pEvent) RT_OVERRIDE;
@@ -172,6 +167,9 @@ private slots:
 
         /** Handles state change for cloud machine with certain @a uId. */
         void sltHandleCloudMachineStateChange(const QUuid &uId);
+
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
     /** @name CVirtualBox event handling stuff.

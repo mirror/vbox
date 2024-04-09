@@ -26,6 +26,8 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
+#include <QKeyEvent>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -36,9 +38,10 @@
 #include "UIChooserSearchWidget.h"
 #include "UIIconPool.h"
 #include "UISearchLineEdit.h"
+#include "UITranslationEventListener.h"
 
 UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pLineEdit(0)
     , m_pMainLayout(0)
     , m_pScrollToNextMatchButton(0)
@@ -49,7 +52,9 @@ UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
     setAutoFillBackground(true);
     prepareWidgets();
     prepareConnections();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserSearchWidget::sltRetranslateUI);
 }
 
 void UIChooserSearchWidget::setMatchCount(int iMatchCount)
@@ -156,7 +161,7 @@ void UIChooserSearchWidget::hideEvent(QHideEvent *pEvent)
         m_pLineEdit->clear();
 }
 
-void UIChooserSearchWidget::retranslateUi()
+void UIChooserSearchWidget::sltRetranslateUI()
 {
     if (m_pScrollToNextMatchButton)
         m_pScrollToNextMatchButton->setToolTip(tr("Navigate to the next item among the search results"));
@@ -191,7 +196,7 @@ bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
+    return QWidget::eventFilter(pWatched, pEvent);
 }
 
 void UIChooserSearchWidget::sltHandleSearchTermChange(const QString &strSearchTerm)

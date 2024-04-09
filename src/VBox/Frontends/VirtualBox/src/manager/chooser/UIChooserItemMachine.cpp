@@ -40,6 +40,7 @@
 #include "UIChooserNodeMachine.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -177,7 +178,7 @@ void UIChooserItemMachine::enumerateMachineItems(const QList<UIChooserItem*> &il
     }
 }
 
-void UIChooserItemMachine::retranslateUi()
+void UIChooserItemMachine::sltRetranslateUI()
 {
 }
 
@@ -610,7 +611,9 @@ void UIChooserItemMachine::prepare()
     updateItem();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserItemMachine::sltRetranslateUI);
 }
 
 void UIChooserItemMachine::cleanup()

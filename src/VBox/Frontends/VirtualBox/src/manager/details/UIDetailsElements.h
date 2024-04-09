@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "UIDetailsElement.h"
+#include "UILibraryDefs.h"
 #include "UITask.h"
 
 /* COM includes: */
@@ -99,9 +100,6 @@ public:
 
 protected:
 
-    /** Performs translation. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Updates appearance. */
     virtual void updateAppearance() RT_OVERRIDE;
 
@@ -112,6 +110,9 @@ private slots:
 
     /** Handles the signal about update @a pTask is finished. */
     virtual void sltUpdateAppearanceFinished(UITask *pTask);
+
+    /** Performs translation. */
+    void sltRetranslateUI();
 
 private:
 
@@ -139,10 +140,10 @@ private slots:
     /** Handles preview size-hint changes. */
     void sltPreviewSizeHintChanged();
 
-private:
-
     /** Performs translation. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
+
+private:
 
     /** Returns minimum width hint. */
     int minimumWidthHint() const RT_OVERRIDE;

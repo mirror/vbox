@@ -35,6 +35,7 @@
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
@@ -159,7 +160,9 @@ void UIVirtualMachineItemLocal::recache()
     recachePixmap();
 
     /* Retranslate finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVirtualMachineItemLocal::sltRetranslateUI);
 }
 
 void UIVirtualMachineItemLocal::recachePixmap()
@@ -262,7 +265,7 @@ bool UIVirtualMachineItemLocal::isItemCanBeSwitchedTo() const
            || isItemRunningHeadless();
 }
 
-void UIVirtualMachineItemLocal::retranslateUi()
+void UIVirtualMachineItemLocal::sltRetranslateUI()
 {
     /* This is used in tool-tip generation: */
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)

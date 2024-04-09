@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
 #include "UIChooserItem.h"
 
@@ -129,9 +132,6 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles show @a pEvent. */
         virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
@@ -235,6 +235,12 @@ private slots:
         void sltGroupToggleStart();
         /** Handles group toggle finish for group finally @a fToggled. */
         void sltGroupToggleFinish(bool fToggled);
+    /** @} */
+
+    /** @name Event handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
 private:

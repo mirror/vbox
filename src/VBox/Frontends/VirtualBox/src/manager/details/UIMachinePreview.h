@@ -35,7 +35,6 @@
 #include <QHash>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIDetailsItem.h"
 #include "UIExtraDataDefs.h"
 
@@ -51,7 +50,7 @@ class QMenu;
 class QTimer;
 
 /** QIGraphicsWidget sub-class used as VM Preview widget inside Details pane. */
-class UIMachinePreview : public QIWithRetranslateUI4<QIGraphicsWidget>
+class UIMachinePreview : public QIGraphicsWidget
 {
     Q_OBJECT;
 
@@ -85,9 +84,6 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles resize @a pEvent. */
         virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
@@ -123,6 +119,8 @@ private slots:
       * @{ */
         /** Handles machine-state change for item with @a uId. */
         void sltMachineStateChange(const QUuid &uId);
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
     /** @name Item stuff.

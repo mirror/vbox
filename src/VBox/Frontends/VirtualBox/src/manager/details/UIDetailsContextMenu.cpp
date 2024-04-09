@@ -34,10 +34,10 @@
 #include "UIConverter.h"
 #include "UIDetailsContextMenu.h"
 #include "UIDetailsModel.h"
-
+#include "UITranslationEventListener.h"
 
 UIDetailsContextMenu::UIDetailsContextMenu(UIDetailsModel *pModel)
-    : QIWithRetranslateUI2<QWidget>(0, Qt::Popup)
+    : QWidget(0, Qt::Popup)
     , m_pModel(pModel)
     , m_pListWidgetCategories(0)
     , m_pListWidgetOptions(0)
@@ -258,7 +258,7 @@ void UIDetailsContextMenu::updateOptionStates(DetailsElementType enmRequiredCate
     }
 }
 
-void UIDetailsContextMenu::retranslateUi()
+void UIDetailsContextMenu::sltRetranslateUI()
 {
     retranslateCategories();
     retranslateOptions();
@@ -654,7 +654,9 @@ void UIDetailsContextMenu::prepare()
     populateCategories();
     populateOptions();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIDetailsContextMenu::sltRetranslateUI);
 }
 
 void UIDetailsContextMenu::populateCategories()

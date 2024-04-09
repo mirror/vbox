@@ -48,6 +48,7 @@
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualMachineItem.h"
 
@@ -205,7 +206,7 @@ QString UIChooserItemGroup::className()
     return "UIChooserItemGroup";
 }
 
-void UIChooserItemGroup::retranslateUi()
+void UIChooserItemGroup::sltRetranslateUI()
 {
     updateToggleButtonToolTip();
 }
@@ -1183,7 +1184,9 @@ void UIChooserItemGroup::prepare()
     copyContents(nodeToGroupType());
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserItemGroup::sltRetranslateUI);
 
     /* Initialize non-root items: */
     if (!isRoot())

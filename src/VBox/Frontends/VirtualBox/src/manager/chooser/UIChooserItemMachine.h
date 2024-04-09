@@ -94,9 +94,6 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles show @a pEvent. */
         virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
@@ -190,6 +187,12 @@ private slots:
 
         /** Updates first row maximum width. */
         void sltUpdateFirstRowMaximumWidth() { updateFirstRowMaximumWidth(); }
+    /** @} */
+
+    /** @name Event handling stuff.
+     * @{ */
+       /** Handles translation event. */
+       void sltRetranslateUI();
     /** @} */
 
 private:

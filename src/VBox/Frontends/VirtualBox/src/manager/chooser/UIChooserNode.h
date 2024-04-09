@@ -37,7 +37,6 @@
 #include <QString>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIChooserDefs.h"
 #include "UIChooserItem.h"
 
@@ -51,7 +50,7 @@ class UIChooserNodeMachine;
 /** QObject subclass used as interface for invisible tree-view nodes.
   * These nodes can be of three types (group, global and machine node).
   * They can be used to compose a tree of nodes loaded from VBox setting. */
-class UIChooserNode : public QIWithRetranslateUI3<QObject>
+class UIChooserNode : public QObject
 {
     Q_OBJECT;
 

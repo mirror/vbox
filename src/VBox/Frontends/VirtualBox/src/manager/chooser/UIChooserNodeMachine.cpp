@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "UIChooserAbstractModel.h"
 #include "UIChooserNodeMachine.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
@@ -46,7 +47,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeMachine::sltRetranslateUI);
 }
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
@@ -68,7 +71,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
             static_cast<UIChooserAbstractModel*>(model()), &UIChooserAbstractModel::sltHandleCloudMachineRefreshFinished);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeMachine::sltRetranslateUI);
 }
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
@@ -82,7 +87,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeMachine::sltRetranslateUI);
 }
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
@@ -111,7 +118,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeMachine::sltRetranslateUI);
 }
 
 UIChooserNodeMachine::~UIChooserNodeMachine()
@@ -268,7 +277,7 @@ bool UIChooserNodeMachine::accessible() const
     return cache() ? cache()->accessible() : false;
 }
 
-void UIChooserNodeMachine::retranslateUi()
+void UIChooserNodeMachine::sltRetranslateUI()
 {
     /* Update internal stuff: */
     m_strDescription = tr("Virtual Machine");

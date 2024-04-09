@@ -38,7 +38,6 @@
 #include <QTransform>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIToolsItem.h"
 
 /* COM includes: */
@@ -56,7 +55,7 @@ class UIToolsHandlerMouse;
 class UIToolsHandlerKeyboard;
 
 /** QObject extension used as VM Tools-pane model: */
-class UIToolsModel : public QIWithRetranslateUI3<QObject>
+class UIToolsModel : public QObject
 {
     Q_OBJECT;
 
@@ -194,9 +193,6 @@ protected:
       * @{ */
         /** Preprocesses Qt @a pEvent for passed @a pObject. */
         virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
-
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
 private slots:
@@ -205,6 +201,12 @@ private slots:
       * @{ */
         /** Handles focus item destruction. */
         void sltFocusItemDestroyed();
+    /** @} */
+
+    /** @name Event handling stuff.
+     * @{ */
+       /** Handles translation event. */
+       void sltRetranslateUI();
     /** @} */
 
 private:

@@ -122,10 +122,10 @@ public:
     /** Returns node group id. */
     QUuid id() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
 
 private:
 

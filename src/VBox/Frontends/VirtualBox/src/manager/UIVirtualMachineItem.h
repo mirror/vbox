@@ -38,7 +38,6 @@
 #include <QUuid>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIManagerDefs.h"
 #include "UISettingsDefs.h"
 
@@ -50,7 +49,7 @@ class UIVirtualMachineItemLocal;
 using namespace UISettingsDefs;
 
 /** Virtual Machine item interface. A wrapper caching VM data. */
-class UIVirtualMachineItem : public QIWithRetranslateUI3<QObject>
+class UIVirtualMachineItem : public QObject
 {
     Q_OBJECT;
 

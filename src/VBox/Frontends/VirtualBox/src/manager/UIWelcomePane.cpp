@@ -35,11 +35,11 @@
 
 /* GUI includes */
 #include "QIRichTextLabel.h"
-#include "QIWithRetranslateUI.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIWelcomePane.h"
 
 
@@ -48,7 +48,7 @@
 *********************************************************************************************************************************/
 
 UIWelcomePane::UIWelcomePane(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pLabelGreetings(0)
     , m_pLabelMode(0)
     , m_pLabelIcon(0)
@@ -74,10 +74,10 @@ bool UIWelcomePane::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+    return QWidget::event(pEvent);
 }
 
-void UIWelcomePane::retranslateUi()
+void UIWelcomePane::sltRetranslateUI()
 {
     /* Translate greetings text: */
     if (m_pLabelGreetings)
@@ -224,7 +224,10 @@ void UIWelcomePane::prepare()
     uiCommon().setHelpKeyword(this, "intro-starting");
 
     /* Translate finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIWelcomePane::sltRetranslateUI);
+
     /* Update stuff: */
     updateTextLabels();
     updatePixmap();

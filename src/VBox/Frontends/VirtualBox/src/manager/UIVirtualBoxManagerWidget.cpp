@@ -48,6 +48,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
 #include "QIToolBar.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -347,7 +348,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint 
     }
 }
 
-void UIVirtualBoxManagerWidget::retranslateUi()
+void UIVirtualBoxManagerWidget::sltRetranslateUI()
 {
     /* Make sure chosen item fetched: */
     sltHandleChooserPaneIndexChange();
@@ -626,7 +627,9 @@ void UIVirtualBoxManagerWidget::prepare()
     loadSettings();
 
     /* Translate UI: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVirtualBoxManagerWidget::sltRetranslateUI);
 
     /* Make sure current Chooser-pane index fetched: */
     sltHandleChooserPaneIndexChange();

@@ -125,12 +125,10 @@ public:
     /** Returns whether node accessible. */
     bool accessible() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
+    void sltRetranslateUI();
 
     /** Handles machine state change. */
     void sltHandleStateChange();

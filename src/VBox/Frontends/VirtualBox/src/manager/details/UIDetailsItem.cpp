@@ -201,7 +201,7 @@ private:
 *********************************************************************************************************************************/
 
 UIDetailsItem::UIDetailsItem(UIDetailsItem *pParent)
-    : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
+    : QIGraphicsWidget(pParent)
     , m_pParent(pParent)
 {
     /* Install Details-view item accessibility interface factory: */

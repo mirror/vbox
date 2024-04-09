@@ -40,7 +40,6 @@
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
-#include "QIWithRetranslateUI.h"
 #include "UIChooserDefs.h"
 
 /* Forward declaration: */
@@ -83,7 +82,7 @@ private:
 
 /** QIGraphicsWidget extension used as interface
   * for graphics chooser model/view architecture. */
-class UIChooserItem : public QIWithRetranslateUI4<QIGraphicsWidget>
+class UIChooserItem : public QIGraphicsWidget
 {
     Q_OBJECT;
     Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);

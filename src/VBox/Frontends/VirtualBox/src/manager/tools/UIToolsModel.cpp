@@ -42,6 +42,7 @@
 #include "UIToolsHandlerMouse.h"
 #include "UIToolsHandlerKeyboard.h"
 #include "UIToolsModel.h"
+#include "UITranslationEventListener.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
@@ -61,7 +62,7 @@ typedef QSet<QString> UIStringSet;
 
 
 UIToolsModel::UIToolsModel(UIToolClass enmClass, UITools *pParent)
-    : QIWithRetranslateUI3<QObject>(pParent)
+    : QObject(pParent)
     , m_enmClass(enmClass)
     , m_pTools(pParent)
     , m_pScene(0)
@@ -382,15 +383,15 @@ bool UIToolsModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Process only scene events: */
     if (pWatched != scene())
-        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+        return QObject::eventFilter(pWatched, pEvent);
 
     /* Process only item focused by model: */
     if (scene()->focusItem())
-        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+        return QObject::eventFilter(pWatched, pEvent);
 
     /* Do not handle disabled items: */
     if (!currentItem()->isEnabled())
-        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+        return QObject::eventFilter(pWatched, pEvent);
 
     /* Checking event-type: */
     switch (pEvent->type())
@@ -410,10 +411,10 @@ bool UIToolsModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+    return QObject::eventFilter(pWatched, pEvent);
 }
 
-void UIToolsModel::retranslateUi()
+void UIToolsModel::sltRetranslateUI()
 {
     foreach (UIToolsItem *pItem, m_items)
     {
@@ -449,7 +450,9 @@ void UIToolsModel::prepare()
     /* Prepare handlers: */
     prepareHandlers();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIToolsModel::sltRetranslateUI);
 }
 
 void UIToolsModel::prepareScene()

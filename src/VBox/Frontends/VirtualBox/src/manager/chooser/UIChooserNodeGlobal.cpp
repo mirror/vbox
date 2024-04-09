@@ -28,6 +28,7 @@
 /* GUI includes: */
 #include "UIChooserAbstractModel.h"
 #include "UIChooserNodeGlobal.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -44,7 +45,9 @@ UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeGlobal::sltRetranslateUI);
 }
 
 UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
@@ -57,7 +60,9 @@ UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeGlobal::sltRetranslateUI);
 }
 
 UIChooserNodeGlobal::~UIChooserNodeGlobal()
@@ -170,7 +175,7 @@ void UIChooserNodeGlobal::sortNodes()
     AssertFailedReturnVoid();
 }
 
-void UIChooserNodeGlobal::retranslateUi()
+void UIChooserNodeGlobal::sltRetranslateUI()
 {
     /* Translate name & description: */
     m_strName = tr("Tools");

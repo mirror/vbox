@@ -30,6 +30,7 @@
 #include "UIChooserNodeGroup.h"
 #include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -52,7 +53,9 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
         parentNode()->addNode(this, iPosition);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeGroup::sltRetranslateUI);
 }
 
 UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
@@ -72,7 +75,9 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
     copyContents(pCopyFrom);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserNodeGroup::sltRetranslateUI);
 }
 
 UIChooserNodeGroup::~UIChooserNodeGroup()
@@ -310,7 +315,7 @@ QUuid UIChooserNodeGroup::id() const
     return m_uId;
 }
 
-void UIChooserNodeGroup::retranslateUi()
+void UIChooserNodeGroup::sltRetranslateUI()
 {
     /* Update group-item: */
     if (item())

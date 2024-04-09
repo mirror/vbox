@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QAccessibleWidget>
 #include <QScrollBar>
 
@@ -35,10 +36,10 @@
 #include "UIChooserSearchWidget.h"
 #include "UIChooserView.h"
 #include "UICommon.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
-
 
 /** QAccessibleWidget extension used as an accessibility interface for Chooser-view. */
 class UIAccessibilityInterfaceForUIChooserView : public QAccessibleWidget
@@ -119,7 +120,7 @@ private:
 
 
 UIChooserView::UIChooserView(QWidget *pParent)
-    : QIWithRetranslateUI<QIGraphicsView>(pParent)
+    : QIGraphicsView(pParent)
     , m_pChooserModel(0)
     , m_pSearchWidget(0)
     , m_iMinimumWidthHint(0)
@@ -246,7 +247,7 @@ void UIChooserView::sltHandleSearchWidgetVisibilityToggle(bool fVisible)
     setSearchWidgetVisible(fVisible);
 }
 
-void UIChooserView::retranslateUi()
+void UIChooserView::sltRetranslateUI()
 {
     /* Translate this: */
     setWhatsThis(tr("Contains a tree of Virtual Machines and their groups"));
@@ -255,7 +256,7 @@ void UIChooserView::retranslateUi()
 void UIChooserView::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QIGraphicsView>::resizeEvent(pEvent);
+    QIGraphicsView::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 
@@ -278,7 +279,9 @@ void UIChooserView::prepare()
     updateSearchWidgetGeometry();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserView::sltRetranslateUI);
 }
 
 void UIChooserView::prepareThis()

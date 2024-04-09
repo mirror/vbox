@@ -72,6 +72,7 @@
 #include "UINetworkManager.h"
 #include "UINotificationCenter.h"
 #include "UIQObjectStuff.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
@@ -116,7 +117,7 @@
 #include <VBox/version.h>
 
 /** QDialog extension used to ask for a public key for console connection needs. */
-class UIAcquirePublicKeyDialog : public QIWithRetranslateUI<QDialog>
+class UIAcquirePublicKeyDialog : public QDialog
 {
     Q_OBJECT;
 
@@ -141,10 +142,8 @@ private slots:
     /** Performs revalidation. */
     void sltRevalidate();
 
-protected:
-
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
+    void sltRetranslateUI();
 
 private:
 
@@ -173,7 +172,7 @@ private:
 };
 
 /** QDialog extension used to ask for a cloud machine clone name. */
-class UIAcquireCloudMachineCloneNameDialog : public QIWithRetranslateUI<QDialog>
+class UIAcquireCloudMachineCloneNameDialog : public QDialog
 {
     Q_OBJECT;
 
@@ -186,12 +185,10 @@ public:
     /** Returns value. */
     QString value() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
-private slots:
+    void sltRetranslateUI();
 
     /** Performs revalidation. */
     void sltRevalidate();
@@ -218,7 +215,7 @@ private:
 *********************************************************************************************************************************/
 
 UIAcquirePublicKeyDialog::UIAcquirePublicKeyDialog(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_pHelpViewer(0)
     , m_pTextEditor(0)
     , m_pButtonBox(0)
@@ -270,7 +267,7 @@ void UIAcquirePublicKeyDialog::sltRevalidate()
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pTextEditor->toPlainText().isEmpty());
 }
 
-void UIAcquirePublicKeyDialog::retranslateUi()
+void UIAcquirePublicKeyDialog::sltRetranslateUI()
 {
     setWindowTitle(tr("Public key"));
 
@@ -317,7 +314,9 @@ void UIAcquirePublicKeyDialog::prepare()
     /* Prepare editor contents: */
     prepareEditorContents();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIAcquirePublicKeyDialog::sltRetranslateUI);
 
     /* Resize to suitable size: */
     const int iMinimumHeightHint = minimumSizeHint().height();
@@ -480,7 +479,7 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
 *********************************************************************************************************************************/
 
 UIAcquireCloudMachineCloneNameDialog::UIAcquireCloudMachineCloneNameDialog(QWidget *pParent, const QString &strName)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_strName(strName)
     , m_pEditor(0)
     , m_pButtonBox(0)
@@ -499,7 +498,9 @@ void UIAcquireCloudMachineCloneNameDialog::prepare()
     /* Prepare widgets: */
     prepareWidgets();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIAcquireCloudMachineCloneNameDialog::sltRetranslateUI);
 
     /* Resize to suitable size: */
     const int iMinimumHeightHint = minimumSizeHint().height();
@@ -537,7 +538,7 @@ void UIAcquireCloudMachineCloneNameDialog::prepareWidgets()
     }
 }
 
-void UIAcquireCloudMachineCloneNameDialog::retranslateUi()
+void UIAcquireCloudMachineCloneNameDialog::sltRetranslateUI()
 {
     setWindowTitle(tr("Clone name"));
     m_pEditor->setPlaceholderText(tr("Enter clone name"));
@@ -616,12 +617,12 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore for non-active window except for FileOpen event which should be always processed: */
     if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
-        return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
+        return QMainWindowWithRestorableGeometry::eventFilter(pObject, pEvent);
 
     /* Ignore for other objects: */
     if (qobject_cast<QWidget*>(pObject) &&
         qobject_cast<QWidget*>(pObject)->window() != this)
-        return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
+        return QMainWindowWithRestorableGeometry::eventFilter(pObject, pEvent);
 
     /* Which event do we have? */
     switch (pEvent->type())
@@ -638,11 +639,11 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
+    return QMainWindowWithRestorableGeometry::eventFilter(pObject, pEvent);
 }
 #endif /* VBOX_WS_MAC */
 
-void UIVirtualBoxManager::retranslateUi()
+void UIVirtualBoxManager::sltRetranslateUI()
 {
     /* Set window title: */
     QString strTitle(VBOX_PRODUCT);
@@ -696,13 +697,13 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
+    return QMainWindowWithRestorableGeometry::event(pEvent);
 }
 
 void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QMainWindowWithRestorableGeometryAndRetranslateUi::showEvent(pEvent);
+    QMainWindowWithRestorableGeometry::showEvent(pEvent);
 
     /* Is polishing required? */
     if (!m_fPolished)
@@ -723,7 +724,7 @@ void UIVirtualBoxManager::polishEvent(QShowEvent *)
 void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
 {
     /* Call to base-class: */
-    QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(pEvent);
+    QMainWindowWithRestorableGeometry::closeEvent(pEvent);
 
     /* Quit application: */
     QApplication::quit();
@@ -2395,7 +2396,9 @@ void UIVirtualBoxManager::prepare()
     loadSettings();
 
     /* Translate UI: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVirtualBoxManager::sltRetranslateUI);
 
 #ifdef VBOX_WS_MAC
     /* Beta label? */

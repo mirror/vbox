@@ -116,12 +116,12 @@ public:
         virtual bool isItemCanBeSwitchedTo() const RT_OVERRIDE;
     /** @} */
 
-protected:
+private slots:
 
     /** @name Event handling.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
+        void sltRetranslateUI();
     /** @} */
 
 private:

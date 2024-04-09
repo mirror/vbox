@@ -36,7 +36,7 @@
 
 
 UIChooserNode::UIChooserNode(UIChooserNode *pParent /* = 0 */, bool fFavorite /* = false */)
-    : QIWithRetranslateUI3<QObject>(pParent)
+    : QObject(pParent)
     , m_pParent(pParent)
     , m_fFavorite(fFavorite)
     , m_pModel(0)

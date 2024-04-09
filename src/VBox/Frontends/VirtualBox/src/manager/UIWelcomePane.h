@@ -36,7 +36,7 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -44,7 +44,7 @@ class QLabel;
 class QIRichTextLabel;
 
 /** QWidget subclass holding Welcome information about VirtualBox. */
-class UIWelcomePane : public QIWithRetranslateUI<QWidget>
+class UIWelcomePane : public QWidget
 {
     Q_OBJECT;
 
@@ -58,9 +58,6 @@ protected:
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** Handles activated @a urlLink. */
@@ -68,6 +65,9 @@ private slots:
 
     /** Handles @a pButton click. */
     void sltHandleButtonClicked(QAbstractButton *pButton);
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

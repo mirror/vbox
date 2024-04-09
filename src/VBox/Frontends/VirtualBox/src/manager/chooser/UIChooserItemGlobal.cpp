@@ -38,6 +38,7 @@
 #include "UIChooserNodeGlobal.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxManager.h"
 
 
@@ -121,7 +122,7 @@ void UIChooserItemGlobal::setHeightHint(int iHint)
     model()->updateLayout();
 }
 
-void UIChooserItemGlobal::retranslateUi()
+void UIChooserItemGlobal::sltRetranslateUI()
 {
 }
 
@@ -378,7 +379,9 @@ void UIChooserItemGlobal::prepare()
     updatePixmaps();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIChooserItemGlobal::sltRetranslateUI);
 }
 
 void UIChooserItemGlobal::cleanup()
