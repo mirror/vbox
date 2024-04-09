@@ -42,6 +42,7 @@
 #include "UIFileSystemModel.h"
 #include "UIFileTableNavigationWidget.h"
 #include "UIPathOperations.h"
+#include "UITranslationEventListener.h"
 #include "UIVisoContentBrowser.h"
 
 /* iprt includes: */
@@ -241,7 +242,7 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
 *********************************************************************************************************************************/
 
 UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pTableView(0)
     , m_pModel(0)
     , m_pProxyModel(0)
@@ -262,7 +263,10 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
     prepareObjects();
     prepareToolBar();
     prepareConnections();
-    retranslateUi();
+    sltRetranslateUI();
+
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVisoContentBrowser::sltRetranslateUI);
 
     /* Assuming the root items only child is the one with the path '/', navigate into it. */
     /* Hack alert. for some reason without invalidating proxy models mapFromSource return invalid index. */
@@ -428,7 +432,7 @@ QStringList UIVisoContentBrowser::entryList()
     return entryList;
 }
 
-void UIVisoContentBrowser::retranslateUi()
+void UIVisoContentBrowser::sltRetranslateUI()
 {
     UIFileSystemItem *pRootItem = rootItem();
     if (pRootItem)

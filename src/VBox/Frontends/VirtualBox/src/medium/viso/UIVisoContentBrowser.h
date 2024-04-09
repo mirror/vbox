@@ -32,7 +32,6 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIActionPool.h"
 
 /* Qt includes: */
@@ -55,7 +54,7 @@ class UIFileTableNavigationWidget;
 class UIVisoContentTableView;
 
 /** A UIVisoBrowserBase extension to view content of a VISO as a file tree. */
-class UIVisoContentBrowser : public QIWithRetranslateUI<QWidget>
+class UIVisoContentBrowser : public QWidget
 {
     Q_OBJECT;
 
@@ -109,7 +108,6 @@ public slots:
 
 protected:
 
-    void retranslateUi() RT_OVERRIDE RT_FINAL;
     void tableViewItemDoubleClick(const QModelIndex &index);
     void setPathFromNavigationWidget(const QString &strPath);
     void setTableRootIndex(QModelIndex index = QModelIndex());
@@ -120,6 +118,7 @@ private slots:
     /** Adds the dragged-dropped items to VISO. */
     void sltDroppedItems(QStringList pathList);
     void sltShowContextMenu(const QPoint &point);
+    void sltRetranslateUI();
 
 private:
 
