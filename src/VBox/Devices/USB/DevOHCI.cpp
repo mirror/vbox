@@ -910,6 +910,7 @@ static void                 ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCa
 static DECLCALLBACK(void)   ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
 static DECLCALLBACK(bool)   ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
 
+static bool                 ohciR3IsTdInFlight(POHCICC pThisCC, uint32_t GCPhysTD);
 static int                  ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysTD);
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
 static int                  ohciR3InDoneQueueFind(POHCICC pThisCC, uint32_t GCPhysTD);
@@ -1941,6 +1942,13 @@ DECLINLINE(int) ohciR3InFlightFindFree(POHCICC pThisCC, const int iStart)
  */
 static void ohciR3InFlightAdd(POHCI pThis, POHCICC pThisCC, uint32_t GCPhysTD, PVUSBURB pUrb)
 {
+    if (ohciR3IsTdInFlight(pThisCC, GCPhysTD))
+    {
+        PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+        ohciR3RaiseUnrecoverableError(pDevIns, pThis, 10);
+        return;
+    }
+
     int i = ohciR3InFlightFindFree(pThisCC, (GCPhysTD >> 4) % RT_ELEMENTS(pThisCC->aInFlight));
     if (i >= 0)
     {
