@@ -308,12 +308,12 @@ DECLINLINE(RTGID) vboxdrvLinuxKernGid(void)
 
 
 #ifdef VBOX_WITH_HARDENING
-/** Get the effective UID within the current user namespace. */
-DECLINLINE(RTUID) vboxdrvLinuxEuidInNs(void)
+/** Get the effective UID of the current process. */
+DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
 {
 # if RTLNX_VER_MIN(2,6,29)
 #  if RTLNX_VER_MIN(3,5,0)
-    return from_kuid(current_user_ns(), current->cred->euid);
+    return __kuid_val(current->cred->euid);
 #  else
     return current->cred->euid;
 #  endif
@@ -492,9 +492,9 @@ static int vboxdrvLinuxCreateCommon(struct inode *pInode, struct file *pFilp, bo
      * Only root is allowed to access the unrestricted device, enforce it!
      */
     if (   fUnrestricted
-        && vboxdrvLinuxEuidInNs() != 0 /* root */ )
+        && vboxdrvLinuxEuid() != 0 /* root */ )
     {
-        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuidInNs()));
+        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid()));
         return -EPERM;
     }
 #endif /* VBOX_WITH_HARDENING */
