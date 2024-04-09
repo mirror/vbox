@@ -495,6 +495,8 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
                 break;
             RTMemTmpFree(pszPathFree);
             AssertReturn(cchActual >= cbPathBuf, VERR_INTERNAL_ERROR_3);
+            if (RT_FAILURE(rc) && iTry == 9)
+                return rc;
         }
         pszPath = pszPathFree;
     }
