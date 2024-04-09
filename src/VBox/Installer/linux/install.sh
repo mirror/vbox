@@ -289,11 +289,8 @@ if [ "$ACTION" = "install" ]; then
     #                 create symlinks for working around unsupported $ORIGIN/.. in VBoxC.so (setuid),
     #                 and finally make sure the directory is only writable by the user (paranoid).
     if [ -n "$HARDENED" ]; then
-        if [ -f $INSTALLATION_DIR/VirtualBoxVM ]; then
-            test -e $INSTALLATION_DIR/VirtualBoxVM   && chmod 4511 $INSTALLATION_DIR/VirtualBoxVM
-        else
-            test -e $INSTALLATION_DIR/VirtualBox     && chmod 4511 $INSTALLATION_DIR/VirtualBox
-        fi
+        # Note! Update vboxdrv.sh if the VirtualBoxVM entry changes (bugref:10642).
+        test -e $INSTALLATION_DIR/VirtualBoxVM   && chmod 4511 $INSTALLATION_DIR/VirtualBoxVM
         test -e $INSTALLATION_DIR/VBoxSDL        && chmod 4511 $INSTALLATION_DIR/VBoxSDL
         test -e $INSTALLATION_DIR/VBoxHeadless   && chmod 4511 $INSTALLATION_DIR/VBoxHeadless
         test -e $INSTALLATION_DIR/VBoxNetDHCP    && chmod 4511 $INSTALLATION_DIR/VBoxNetDHCP
