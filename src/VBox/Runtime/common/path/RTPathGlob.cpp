@@ -486,7 +486,7 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
 #endif
     if (rc == VERR_BUFFER_OVERFLOW)
     {
-        for (uint32_t iTry = 0; iTry < 10; iTry++)
+        for (uint32_t iTry = 0;; iTry++)
         {
             size_t cbPathBuf = RT_ALIGN_Z(cchActual + 1 + 64 * iTry, 64);
             pszPathFree = (char *)RTMemTmpAlloc(cbPathBuf);
@@ -495,7 +495,7 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
                 break;
             RTMemTmpFree(pszPathFree);
             AssertReturn(cchActual >= cbPathBuf, VERR_INTERNAL_ERROR_3);
-            if (RT_FAILURE(rc) && iTry == 9)
+            if (iTry >= 9)
                 return rc;
         }
         pszPath = pszPathFree;
