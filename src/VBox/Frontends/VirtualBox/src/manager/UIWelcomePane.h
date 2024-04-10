@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QIcon>
+#include <QMap>
 #include <QWidget>
 
 /* GUI includes: */
