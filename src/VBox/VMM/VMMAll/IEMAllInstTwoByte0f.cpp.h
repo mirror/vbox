@@ -333,6 +333,60 @@ FNIEMOP_DEF_1(iemOpCommonSse2Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pf
 
 
 /**
+ * A body preprocessor variant of iemOpCommonSse2Opt_FullFull_To_Full in order
+ * to support native emitters for certain instructions.
+ */
+#define SSE2_OPT_BODY_FullFull_To_Full(a_Ins, a_pImplExpr, a_fRegNativeArchs, a_fMemNativeArchs) \
+        PFNIEMAIMPLMEDIAOPTF2U128 const pfnU128 = (a_pImplExpr); \
+        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
+        if (IEM_IS_MODRM_REG_MODE(bRm)) \
+        { \
+            /* \
+             * XMM, XMM. \
+             */ \
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2); \
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
+            IEM_MC_PREPARE_SSE_USAGE(); \
+            IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                IEM_MC_NATIVE_EMIT_2(RT_CONCAT3(iemNativeEmit_,a_Ins,_rr_u128), IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            } IEM_MC_NATIVE_ELSE() { \
+                IEM_MC_ARG(PRTUINT128U,          pDst, 0); \
+                IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+                IEM_MC_ARG(PCRTUINT128U,         pSrc, 1); \
+                IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                IEM_MC_CALL_VOID_AIMPL_2(pfnU128, pDst, pSrc); \
+            } IEM_MC_NATIVE_ENDIF(); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            /* \
+             * XMM, [mem128]. \
+             */ \
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
+            IEM_MC_LOCAL(RTUINT128U,                uSrc); \
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2); \
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
+            IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_PREPARE_SSE_USAGE(); \
+            IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                IEM_MC_NATIVE_EMIT_2(RT_CONCAT3(iemNativeEmit_,a_Ins,_rv_u128), IEM_GET_MODRM_REG(pVCpu, bRm), uSrc); \
+            } IEM_MC_NATIVE_ELSE() { \
+                IEM_MC_ARG(PRTUINT128U,             pDst,       0); \
+                IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+                IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  pSrc, uSrc, 1); \
+                IEM_MC_CALL_VOID_AIMPL_2(pfnU128, pDst, pSrc); \
+            } IEM_MC_NATIVE_ENDIF(); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } void(0)
+
+
+/**
  * Common worker for MMX instructions on the forms:
  *      pxxxx mm1, mm2/mem32
  *
@@ -5343,7 +5397,7 @@ FNIEMOP_DEF(iemOp_orpd_Vpd_Wpd)
 FNIEMOP_DEF(iemOp_xorps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, XORPS, xorps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseOpt_FullFull_To_Full, iemAImpl_pxor_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pxor, iemAImpl_pxor_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5351,7 +5405,7 @@ FNIEMOP_DEF(iemOp_xorps_Vps_Wps)
 FNIEMOP_DEF(iemOp_xorpd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC2(RM, XORPD, xorpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pxor_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pxor, iemAImpl_pxor_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -13533,7 +13587,7 @@ FNIEMOP_DEF(iemOp_pxor_Pq_Qq)
 FNIEMOP_DEF(iemOp_pxor_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PXOR, pxor, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pxor_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pxor, iemAImpl_pxor_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
