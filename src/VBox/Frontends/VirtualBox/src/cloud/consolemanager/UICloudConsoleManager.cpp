@@ -45,6 +45,7 @@
 #include "UICloudConsoleDetailsWidget.h"
 #include "UICloudConsoleManager.h"
 #include "UIMessageCenter.h"
+#include "UITranslationEventListener.h"
 #include "QIToolBar.h"
 
 
@@ -121,7 +122,7 @@ public:
 };
 
 /** QDialog extension used to acquire newly created console application parameters. */
-class UIInputDialogCloudConsoleApplication : public QIWithRetranslateUI<QDialog>
+class UIInputDialogCloudConsoleApplication : public QDialog
 {
     Q_OBJECT;
 
@@ -137,10 +138,10 @@ public:
     /** Returns application argument. */
     QString argument() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
 
 private:
 
@@ -165,7 +166,7 @@ private:
 };
 
 /** QDialog extension used to acquire newly created console profile parameters. */
-class UIInputDialogCloudConsoleProfile : public QIWithRetranslateUI<QDialog>
+class UIInputDialogCloudConsoleProfile : public QDialog
 {
     Q_OBJECT;
 
@@ -179,10 +180,10 @@ public:
     /** Returns profile argument. */
     QString argument() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
 
 private:
 
@@ -252,7 +253,7 @@ void UIItemCloudConsoleProfile::updateFields()
 *********************************************************************************************************************************/
 
 UIInputDialogCloudConsoleApplication::UIInputDialogCloudConsoleApplication(QWidget *pParent)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_pLabelName(0)
     , m_pEditorName(0)
     , m_pLabelPath(0)
@@ -279,7 +280,7 @@ QString UIInputDialogCloudConsoleApplication::argument() const
     return m_pEditorArgument->text();
 }
 
-void UIInputDialogCloudConsoleApplication::retranslateUi()
+void UIInputDialogCloudConsoleApplication::sltRetranslateUI()
 {
     setWindowTitle(UICloudConsoleManager::tr("Add Application"));
     m_pLabelName->setText(UICloudConsoleManager::tr("Name:"));
@@ -357,7 +358,9 @@ void UIInputDialogCloudConsoleApplication::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIInputDialogCloudConsoleApplication::sltRetranslateUI);
 
     /* Resize to suitable size: */
     const int iMinimumHeightHint = minimumSizeHint().height();
@@ -370,7 +373,7 @@ void UIInputDialogCloudConsoleApplication::prepare()
 *********************************************************************************************************************************/
 
 UIInputDialogCloudConsoleProfile::UIInputDialogCloudConsoleProfile(QWidget *pParent)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_pLabelName(0)
     , m_pEditorName(0)
     , m_pLabelArgument(0)
@@ -390,7 +393,7 @@ QString UIInputDialogCloudConsoleProfile::argument() const
     return m_pEditorArgument->text();
 }
 
-void UIInputDialogCloudConsoleProfile::retranslateUi()
+void UIInputDialogCloudConsoleProfile::sltRetranslateUI()
 {
     setWindowTitle(UICloudConsoleManager::tr("Add Profile"));
     m_pLabelName->setText(UICloudConsoleManager::tr("Name:"));
@@ -455,7 +458,9 @@ void UIInputDialogCloudConsoleProfile::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIInputDialogCloudConsoleProfile::sltRetranslateUI);
 
     /* Resize to suitable size: */
     const int iMinimumHeightHint = minimumSizeHint().height();
@@ -469,7 +474,7 @@ void UIInputDialogCloudConsoleProfile::prepare()
 
 UICloudConsoleManagerWidget::UICloudConsoleManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                          bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -485,7 +490,7 @@ QMenu *UICloudConsoleManagerWidget::menu() const
     return m_pActionPool->action(UIActionIndexMN_M_CloudConsoleWindow)->menu();
 }
 
-void UICloudConsoleManagerWidget::retranslateUi()
+void UICloudConsoleManagerWidget::sltRetranslateUI()
 {
     /* Translate tree-widget: */
     m_pTreeWidget->setHeaderLabels(   QStringList()
@@ -780,7 +785,9 @@ void UICloudConsoleManagerWidget::prepare()
     loadSettings();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloudConsoleManagerWidget::sltRetranslateUI);
 
     /* Load cloud console stuff: */
     loadCloudConsoleStuff();
@@ -1154,7 +1161,7 @@ void UICloudConsoleManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pC
 *********************************************************************************************************************************/
 
 UICloudConsoleManager::UICloudConsoleManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
@@ -1173,7 +1180,7 @@ void UICloudConsoleManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
         emit sigDataChangeAccepted();
 }
 
-void UICloudConsoleManager::retranslateUi()
+void UICloudConsoleManager::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Cloud Console Manager"));
@@ -1246,7 +1253,9 @@ void UICloudConsoleManager::configureButtonBox()
 void UICloudConsoleManager::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloudConsoleManager::sltRetranslateUI);
 }
 
 UICloudConsoleManagerWidget *UICloudConsoleManager::widget()

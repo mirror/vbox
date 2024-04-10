@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -123,7 +122,7 @@ struct UIDataCloudConsoleProfile
 
 
 /** Cloud Console details widget. */
-class UICloudConsoleDetailsWidget : public QIWithRetranslateUI<QWidget>
+class UICloudConsoleDetailsWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -154,11 +153,6 @@ public:
     /** Clears all the console data. */
     void clearData();
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** @name Change handling stuff.
@@ -177,6 +171,9 @@ private slots:
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

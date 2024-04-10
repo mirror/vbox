@@ -36,10 +36,11 @@
 #include "UICloudNetworkingStuff.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UINotificationCenter.h"
+#include "UITranslationEventListener.h"
 
 
 UICloudMachineSettingsDialog::UICloudMachineSettingsDialog(QWidget *pParent, const CCloudMachine &comCloudMachine)
-    : QIWithRetranslateUI2<QWidget>(pParent, Qt::Window)
+    : QWidget(pParent, Qt::Window)
     , m_fPolished(false)
     , m_fClosable(true)
     , m_fClosed(false)
@@ -62,7 +63,7 @@ void UICloudMachineSettingsDialog::setCloudMachine(const CCloudMachine &comCloud
     load();
 }
 
-void UICloudMachineSettingsDialog::retranslateUi()
+void UICloudMachineSettingsDialog::sltRetranslateUI()
 {
     /* Translate title: */
     const QString strCaption = tr("Settings");
@@ -82,7 +83,7 @@ void UICloudMachineSettingsDialog::showEvent(QShowEvent *pEvent)
     }
 
     /* Call to base-class: */
-    QIWithRetranslateUI2<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 }
 
 void UICloudMachineSettingsDialog::polishEvent(QShowEvent*)
@@ -154,7 +155,9 @@ void UICloudMachineSettingsDialog::prepare()
     m_pNotificationCenter->setParent(this);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloudMachineSettingsDialog::sltRetranslateUI);
 }
 
 void UICloudMachineSettingsDialog::cleanup()
@@ -174,7 +177,7 @@ void UICloudMachineSettingsDialog::load()
         close();
 
     /* Retranslate title: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Update form: */
     if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))

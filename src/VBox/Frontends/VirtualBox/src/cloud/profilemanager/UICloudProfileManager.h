@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAbstractButton;
@@ -51,7 +50,7 @@ class CCloudProvider;
 
 
 /** QWidget extension providing GUI with the pane to control cloud profile related functionality. */
-class UICloudProfileManagerWidget : public QIWithRetranslateUI<QWidget>
+class UICloudProfileManagerWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -83,15 +82,13 @@ public:
       * @returns Whether changes were resolved (accepted or discarded) or still a problem otherwise. */
     bool makeSureChangesResolved();
 
-protected:
+public slots:
 
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
+        void sltRetranslateUI();
     /** @} */
-
-public slots:
 
     /** @name Details-widget stuff.
       * @{ */
@@ -237,7 +234,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog to control cloud profile related functionality. */
-class UICloudProfileManager : public QIWithRetranslateUI<QIManagerDialog>
+class UICloudProfileManager : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -256,18 +253,18 @@ private slots:
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
 
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
+
 private:
 
     /** Constructs Cloud Profile Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference. */
     UICloudProfileManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */

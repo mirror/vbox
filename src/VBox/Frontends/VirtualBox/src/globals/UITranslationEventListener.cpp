@@ -81,7 +81,6 @@ bool UITranslationEventListener::eventFilter(QObject *pObject, QEvent *pEvent)
            && pEvent->type() == QEvent::LanguageChange
            && pObject == qApp)
     {
-        //&& (pObject == qApp || pObject == this))
         emit sigRetranslateUI();
     }
     /* Call to base-class: */

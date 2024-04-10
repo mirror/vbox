@@ -36,7 +36,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UICloudMachineSettingsDialogPage.h"
 
 /* COM includes: */
@@ -48,7 +47,7 @@ class QIDialogButtonBox;
 class UINotificationCenter;
 
 /** Cloud machine settings window. */
-class UICloudMachineSettingsDialog : public QIWithRetranslateUI2<QWidget>
+class UICloudMachineSettingsDialog : public QWidget
 {
     Q_OBJECT;
 
@@ -72,8 +71,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles first show @a pEvent. */
@@ -89,6 +86,8 @@ private slots:
     void init() { load(); }
     /** Accepts the dialog. */
     void accept() { save(); }
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

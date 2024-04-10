@@ -46,6 +46,7 @@
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -182,7 +183,7 @@ QString UIItemCloudProfile::definition(const QString &strProviderShortName, cons
 
 UICloudProfileManagerWidget::UICloudProfileManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                          bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -198,7 +199,7 @@ QMenu *UICloudProfileManagerWidget::menu() const
     return m_pActionPool->action(UIActionIndexMN_M_CloudWindow)->menu();
 }
 
-void UICloudProfileManagerWidget::retranslateUi()
+void UICloudProfileManagerWidget::sltRetranslateUI()
 {
     /* Translate tree-widget: */
     m_pTreeWidget->setHeaderLabels(   QStringList()
@@ -567,7 +568,9 @@ void UICloudProfileManagerWidget::prepare()
     loadSettings();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloudProfileManagerWidget::sltRetranslateUI);
 
     /* Load cloud stuff: */
     loadCloudStuff();
@@ -930,7 +933,7 @@ void UICloudProfileManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pC
 *********************************************************************************************************************************/
 
 UICloudProfileManager::UICloudProfileManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
@@ -949,7 +952,7 @@ void UICloudProfileManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
         emit sigDataChangeAccepted();
 }
 
-void UICloudProfileManager::retranslateUi()
+void UICloudProfileManager::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Cloud Profile Manager"));
@@ -1026,7 +1029,9 @@ void UICloudProfileManager::configureButtonBox()
 void UICloudProfileManager::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UICloudProfileManager::sltRetranslateUI);
 }
 
 UICloudProfileManagerWidget *UICloudProfileManager::widget()
@@ -1040,7 +1045,7 @@ void UICloudProfileManager::closeEvent(QCloseEvent *pEvent)
     if (widget()->makeSureChangesResolved())
     {
         /* Call to base class: */
-        QIWithRetranslateUI<QIManagerDialog>::closeEvent(pEvent);
+        QIManagerDialog::closeEvent(pEvent);
     }
     else
     {
