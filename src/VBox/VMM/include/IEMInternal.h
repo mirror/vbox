@@ -3858,41 +3858,6 @@ FNIEMAIMPLF2EFL256 iemAImpl_vtestps_u256, iemAImpl_vtestps_u256_fallback;
 FNIEMAIMPLF2EFL128 iemAImpl_vtestpd_u128, iemAImpl_vtestpd_u128_fallback;
 FNIEMAIMPLF2EFL256 iemAImpl_vtestpd_u256, iemAImpl_vtestpd_u256_fallback;
 
-/**
- * Function table for media instruction taking two full sized media source
- * registers, and updating EFLAGS but no additional state (AVX).
- */
-typedef struct IEMOPMEDIAF2EFL
-{
-    PFNIEMAIMPLF2EFL128 pfnU128;
-    PFNIEMAIMPLF2EFL256 pfnU256;
-} IEMOPMEDIAF2EFL;
-/** Pointer to a media operation function table for 3 full sized ops (AVX). */
-typedef IEMOPMEDIAF2EFL const *PCIEMOPMEDIAF2EFL;
-
-/** @def IEMOPMEDIAF2EFL_INIT_VARS_EX
- * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
- * given functions as initializers.  For use in AVX functions where a pair of
- * functions are only used once and the function table need not be public. */
-#ifndef TST_IEM_CHECK_MC
-# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
-#  define IEMOPMEDIAF2EFL_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
-    static IEMOPMEDIAF2EFL const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
-    static IEMOPMEDIAF2EFL const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
-# else
-#  define IEMOPMEDIAF2EFL_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
-    static IEMOPMEDIAF2EFL const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
-# endif
-#else
-# define IEMOPMEDIAF2EFL_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
-#endif
-/** @def IEMOPMEDIAF2EFL_INIT_VARS
- * Generate AVX function tables for the @a a_InstrNm instruction.
- * @sa IEMOPMEDIAF2EFL_INIT_VARS_EX */
-#define IEMOPMEDIAF2EFL_INIT_VARS(a_InstrNm) \
-    IEMOPMEDIAF2EFL_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256), \
-                                 RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
-
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32U64,(uint32_t uMxCsrIn, int32_t *pi32Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */
 typedef FNIEMAIMPLSSEF2I32U64 *PFNIEMAIMPLSSEF2I32U64;
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64U64,(uint32_t uMxCsrIn, int64_t *pi64Dst, const uint64_t *pu64Src)); /* pu64Src is a double precision floating point. */

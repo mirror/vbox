@@ -5072,7 +5072,7 @@ ENDPROC             iemAImpl_vptest_u256
 ; @param    A1      Pointer to the second source operand.
 ; @param    A2      Pointer to the EFLAGS register.
 ;
-%macro IEMIMPL_VTESTP_SD 1
+%macro IEMIMPL_VTESTP_S_D 1
 BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_3_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -5100,8 +5100,8 @@ BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u256, 12
 ENDPROC             iemAImpl_ %+ %1 %+ _u256
 %endmacro
 
-IEMIMPL_VTESTP_SD vtestps
-IEMIMPL_VTESTP_SD vtestpd
+IEMIMPL_VTESTP_S_D vtestps
+IEMIMPL_VTESTP_S_D vtestpd
 
 
 ;;
