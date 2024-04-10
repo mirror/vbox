@@ -18076,36 +18076,39 @@ DECL_FORCE_INLINE(uint16_t) iemAImpl_pcmpxstrx_worker(uint32_t *pEFlags, PCRTUIN
     return u16Result;
 }
 
-DECL_FORCE_INLINE(void) iemAImpl_pcmpxstri_set_result_index(uint32_t *pu32Ecx, uint16_t u16Result, uint8_t cElems, uint8_t bImm)
+DECL_FORCE_INLINE(uint32_t) iemAImpl_pcmpxstri_set_result_index(uint16_t u16Result, uint8_t cElems, uint8_t bImm)
 {
+    uint32_t u32Ecx;
     if (bImm & RT_BIT(6))
     {
         /* Index for MSB set. */
         uint32_t idxMsb = ASMBitLastSetU16(u16Result);
         if (idxMsb)
-            *pu32Ecx = idxMsb - 1;
+            u32Ecx = idxMsb - 1;
         else
-            *pu32Ecx = cElems;
+            u32Ecx = cElems;
     }
     else
     {
         /* Index for LSB set. */
         uint32_t idxLsb = ASMBitFirstSetU16(u16Result);
         if (idxLsb)
-            *pu32Ecx = idxLsb - 1;
+            u32Ecx = idxLsb - 1;
         else
-            *pu32Ecx = cElems;
+            u32Ecx = cElems;
     }
+
+    return u32Ecx;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pEFlags, PCRTUINT128U pSrc1, PCRTUINT128U pSrc2, uint8_t bEvil))
 {
     uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
-    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc1, bEvil);
-    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc2, bEvil);
+    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(pSrc1, bEvil);
+    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(pSrc2, bEvil);
 
-    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
-    iemAImpl_pcmpxstri_set_result_index(pu32Ecx, u16Result, cElems, bEvil);
+    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, pSrc1, pSrc2, cLen1, cLen2, bEvil);
+    return iemAImpl_pcmpxstri_set_result_index(u16Result, cElems, bEvil);
 }
 
 
@@ -18119,7 +18122,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uin
     uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_explicit((int64_t)pSrc->u64Rdx, bEvil);
 
     uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
-    iemAImpl_pcmpxstri_set_result_index(pu32Ecx, u16Result, cElems, bEvil);
+    *pu32Ecx = iemAImpl_pcmpxstri_set_result_index(u16Result, cElems, bEvil);
 }
 
 

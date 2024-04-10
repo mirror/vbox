@@ -5956,9 +5956,10 @@ endstruc
 ;;
 ; The pcmpistri instruction.
 ;
-; @param    A0      Pointer to the ECX register to store the result to (output).
-; @param    A1      Pointer to the EFLAGS register.
-; @param    A2      Pointer to the structure containing the source operands (input).
+; @return   R0_32   The new ECX value.
+; @param    A0      Pointer to the EFLAGS register.
+; @param    A1      Pointer to the first operand (input).
+; @param    A1      Pointer to the second operand (input).
 ; @param    A3      The 8-bit immediate
 ;
 BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
@@ -5966,13 +5967,13 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
         IEMIMPL_SSE_PROLOGUE
 
         movzx   A3, A3_8                ; must clear top bits
-        movdqu  xmm0, [A2 + IEMPCMPISTRXSRC.uSrc1]
-        movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc2]
+        movdqu  xmm0, [A1]
+        movdqu  xmm1, [A2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
         IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
 
         IEM_SAVE_FLAGS_OLD A1, X86_EFL_CF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF, 0, X86_EFL_AF | X86_EFL_PF
-        mov    [T2], ecx
+        mov    R0_32, ecx
 
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS

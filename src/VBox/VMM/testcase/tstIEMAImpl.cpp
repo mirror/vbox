@@ -9481,15 +9481,11 @@ static RTEXITCODE SseComparePcmpistriGenerate(uint32_t cTests, const char * cons
             TestData.InVal1.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc1;
             TestData.InVal2.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc2;
 
-            IEMPCMPISTRXSRC TestVal;
-            TestVal.uSrc1 = TestData.InVal1.uXmm;
-            TestVal.uSrc2 = TestData.InVal2.uXmm;
-
             uint32_t const fEFlagsIn = RandEFlags();
             for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
             {
                 uint32_t fEFlagsOut = fEFlagsIn;
-                pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.u32EcxOut  = pfn(&fEFlagsOut, &TestData.InVal1.uXmm,  &TestData.InVal2.uXmm, (uint8_t)u16Imm);
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
@@ -9497,14 +9493,10 @@ static RTEXITCODE SseComparePcmpistriGenerate(uint32_t cTests, const char * cons
             }
 
             /* Repeat the test with the input value being the same. */
-            TestData.InVal2.uXmm = TestData.InVal1.uXmm;
-            TestVal.uSrc1 = TestData.InVal1.uXmm;
-            TestVal.uSrc2 = TestData.InVal2.uXmm;
-
             for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
             {
                 uint32_t fEFlagsOut = fEFlagsIn;
-                pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.u32EcxOut  = pfn(&fEFlagsOut, &TestData.InVal1.uXmm,  &TestData.InVal2.uXmm, (uint8_t)u16Imm);
                 TestData.fEFlagsIn  = fEFlagsIn;
                 TestData.fEFlagsOut = fEFlagsOut;
                 TestData.bImm       = (uint8_t)u16Imm;
@@ -9537,13 +9529,8 @@ static void SseComparePcmpistriTest(void)
         {
             for (uint32_t iTest = 0; iTest < cTests; iTest++)
             {
-                IEMPCMPISTRXSRC TestVal;
-                TestVal.uSrc1 = paTests[iTest].InVal1.uXmm;
-                TestVal.uSrc2 = paTests[iTest].InVal2.uXmm;
-
                 uint32_t fEFlags = paTests[iTest].fEFlagsIn;
-                uint32_t u32EcxOut = 0;
-                pfn(&u32EcxOut, &fEFlags, &TestVal, paTests[iTest].bImm);
+                uint32_t u32EcxOut = pfn(&fEFlags, &paTests[iTest].InVal1.uXmm, &paTests[iTest].InVal2.uXmm, paTests[iTest].bImm);
                 if (   fEFlags != paTests[iTest].fEFlagsOut
                     || u32EcxOut != paTests[iTest].u32EcxOut)
                     RTTestFailed(g_hTest, "#%04u%s: efl=%#08x in1=%s in2=%s bImm=%#x\n"
