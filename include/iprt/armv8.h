@@ -4400,6 +4400,29 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrEor(uint32_t iVecRegDst, uint32_t 
 }
 
 
+/**
+ * A64: Encodes AND (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The 1st source register.
+ * @param   iVecRegSrc2 The 2nd source register.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrAnd(uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                  bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0e201c00)
+         | ((uint32_t)f128Bit << 30)
+         | (iVecRegSrc2 << 16)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
+
 /** Armv8 UMOV/INS vector element size.    */
 typedef enum ARMV8INSTRUMOVINSSZ
 {
