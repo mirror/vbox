@@ -692,7 +692,7 @@ typedef struct OHCIOPREG
 #define OHCI_INTR_START_OF_FRAME            RT_BIT(2)
 /** RD  - Resume detect. */
 #define OHCI_INTR_RESUME_DETECT             RT_BIT(3)
-/** UE  - ",erable error. */
+/** UE  - Unrecoverable error. */
 #define OHCI_INTR_UNRECOVERABLE_ERROR       RT_BIT(4)
 /** FNO - Frame number overflow. */
 #define OHCI_INTR_FRAMENUMBER_OVERFLOW      RT_BIT(5)
