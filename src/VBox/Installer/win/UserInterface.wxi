@@ -1222,17 +1222,19 @@
              and performing a custom action. See @bugref{10616} -->
         <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="DoAction" Value="ca_CheckTargetDirPre" Order="1">1</Publish>
         <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_INVALID_TARGET_DLG" Value="1" Order="2"><![CDATA[VBox_Target_Dir_Is_Valid="0"]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="1" Order="3"><![CDATA[(&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0")]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="{}" Order="4"><![CDATA[(&VBoxPython<3)]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="1" Order="5"><![CDATA[&VBoxNetworkFlt=3]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="{}" Order="6"><![CDATA[&VBoxNetworkFlt<3]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_INVALID_TARGET_DLG" Value="{}" Order="3"><![CDATA[VBox_Target_Dir_Is_Valid="1"]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="1" Order="4"><![CDATA[(&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0")]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="{}" Order="5"><![CDATA[(&VBoxPython<3)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="1" Order="6"><![CDATA[&VBoxNetworkFlt=3]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="{}" Order="7"><![CDATA[&VBoxNetworkFlt<3]]></Publish>
+
         <!-- Show an error dialog if the chosen installation directory was found to be invalid. See @bugref{10616} -->
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxInvalidTargetDirDlg" Order="10">1</Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg" Order="11"><![CDATA[VBOX_SHOW_WARN_DISCONNECTIFACES_DLG]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnPythonDlg" Order="12"><![CDATA[VBOX_SHOW_WARN_PYTHONAPI_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxInvalidTargetDirDlg" Order="10"><![CDATA[VBOX_SHOW_INVALID_TARGET_DLG]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg" Order="20"><![CDATA[VBOX_SHOW_WARN_DISCONNECTIFACES_DLG and (NOT VBOX_SHOW_INVALID_TARGET_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnPythonDlg" Order="30"><![CDATA[VBOX_SHOW_WARN_PYTHONAPI_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_INVALID_TARGET_DLG)]]></Publish>
         <!-- Only allow going to the next stage if the chosen installation directory is valid. See @bugref{10616} -->
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg" Order="13"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG) AND (NOT VBox_Target_Dir_Is_Valid="0")]]></Publish>
-        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg" Order="14"><![CDATA[(NOT VBOX_SHOW_CUSTOMIZE2_DLG) AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg" Order="40"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG) AND (NOT VBOX_SHOW_INVALID_TARGET_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg" Order="50"><![CDATA[(NOT VBOX_SHOW_CUSTOMIZE2_DLG) AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
         <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
         <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[NOT VBOX_SHOW_SERIAL_CHECK_DLG AND VBOX_SHOW_LICENSE_DLG]]></Publish>
         <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxWelcomeDlg"><![CDATA[NOT VBOX_SHOW_SERIAL_CHECK_DLG AND NOT VBOX_SHOW_LICENSE_DLG]]></Publish>
