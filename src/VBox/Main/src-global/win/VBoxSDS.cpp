@@ -104,6 +104,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
@@ -960,10 +961,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     /*
-     * Default log location is %ProgramData%\VirtualBox\VBoxSDS.log, falling back
-     * on %_CWD%\VBoxSDS.log (where _CWD typicaly is 'C:\Windows\System32').
+     * Default log location (LOGDIR) is %APPDATA%\VirtualBox\VBoxSDS.log.
      *
-     * We change the current directory to %ProgramData%\VirtualBox\ if possible.
+     * When running VBoxSDS as a regular user, LOGDIR typically will be 'C:\Users\<User>\AppData\Roaming\VirtualBox\'.
+     * When running VBoxSDS as a service (via SCM), LOGDIR typically will be 'C:\Windows\System32\config\systemprofile\AppData\Roaming\VirtualBox\'.
+     *
+     * We change the current directory to LOGDIR if possible.
+     *
+     * See @bugref{10632}.
      *
      * We only create the log file when running VBoxSDS normally, but not
      * when registering/unregistering, at least for now.
@@ -973,14 +978,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         char szLogFile[RTPATH_MAX];
         if (!pszLogFile || !*pszLogFile)
         {
-            WCHAR wszAppData[MAX_PATH + 16];
-            if (SHGetSpecialFolderPathW(NULL, wszAppData, CSIDL_COMMON_APPDATA, TRUE /*fCreate*/))
+            WCHAR wszSpecialFolder[MAX_PATH + 16];
+            if (SHGetSpecialFolderPathW(NULL, wszSpecialFolder, CSIDL_APPDATA, TRUE /*fCreate*/))
             {
                 char *pszConv = szLogFile;
-                vrc = RTUtf16ToUtf8Ex(wszAppData, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
+                vrc = RTUtf16ToUtf8Ex(wszSpecialFolder, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
             }
-            else
-                vrc = RTEnvGetUtf8("ProgramData", szLogFile, sizeof(szLogFile) - sizeof("VBoxSDS.log"), NULL);
+            else if (SHGetSpecialFolderPathW(NULL, wszSpecialFolder, CSIDL_SYSTEM, TRUE /*fCreate*/))
+            {
+                char *pszConv = szLogFile;
+                vrc = RTUtf16ToUtf8Ex(wszSpecialFolder, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
+            }
+            else /* Note! No fallback to environment variables or such. See @bugref{10632}. */
+                vrc = VERR_PATH_NOT_FOUND;
             if (RT_SUCCESS(vrc))
             {
                 vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VirtualBox\\");
@@ -991,14 +1001,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         vrc = RTDirCreate(szLogFile, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET);
                     if (RT_SUCCESS(vrc))
                     {
-                        /* Change into it. */
-                        RTPathSetCurrent(szLogFile);
+                        /* Change into it.
+                         * If this fails, better don't continue, as there might be something fishy. */
+                        vrc = RTPathSetCurrent(szLogFile);
+                        if (RT_SUCCESS(vrc))
+                            vrc = RTStrCat(szLogFile, sizeof(szLogFile), "VBoxSDS.log");
                     }
                 }
             }
-            if (RT_FAILURE(vrc))     /* ignore any failure above */
-                szLogFile[0] = '\0';
-            vrc = RTStrCat(szLogFile, sizeof(szLogFile), "VBoxSDS.log");
             if (RT_FAILURE(vrc))
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct release log filename: %Rrc", vrc);
             pszLogFile = szLogFile;
