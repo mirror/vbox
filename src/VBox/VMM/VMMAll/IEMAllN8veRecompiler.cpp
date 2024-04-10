@@ -9232,12 +9232,14 @@ l_profile_again:
             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeFullyRecompiledTbs);
 
 #ifdef VBOX_WITH_STATISTICS
-        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
-        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
-        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
-                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbFinished));
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+        {
+            uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+            uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+            off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
+                                                    RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbFinished));
+            iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+            iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+        }
 #endif
 
         /*
