@@ -3682,7 +3682,7 @@ DECLHIDDEN(void) iemNativeRegFreeVar(PIEMRECOMPILERSTATE pReNative, uint8_t idxH
 
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-# ifdef LOG_ENABLED
+# if defined(LOG_ENABLED) || defined(IEMNATIVE_WITH_TB_DEBUG_INFO)
 /** Host CPU SIMD register names. */
 DECL_HIDDEN_CONST(const char * const) g_apszIemNativeHstSimdRegNames[] =
 {
@@ -6208,6 +6208,15 @@ static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
 
+#ifdef VBOX_WITH_STATISTICS
+        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
+                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnWithFlags));
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+#endif
+
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_FINISH_WITH_FLAGS);
 
         /* jump back to the return sequence. */
@@ -6226,6 +6235,15 @@ static uint32_t iemNativeEmitReturnBreak(PIEMRECOMPILERSTATE pReNative, uint32_t
     if (idxLabel != UINT32_MAX)
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
+
+#ifdef VBOX_WITH_STATISTICS
+        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
+                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnBreak));
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+#endif
 
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_BREAK);
 
@@ -9213,6 +9231,15 @@ l_profile_again:
         if (!cThreadedCalls)
             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeFullyRecompiledTbs);
 
+#ifdef VBOX_WITH_STATISTICS
+        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
+                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbFinished));
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+#endif
+
         /*
          * Emit the epilog code.
          */
@@ -9238,28 +9265,34 @@ l_profile_again:
         static struct
         {
             IEMNATIVELABELTYPE              enmLabel;
+            uint32_t                        offVCpuStats;
             PFNIEMNATIVESIMPLETAILLABELCALL pfnCallback;
         } const g_aSimpleTailLabels[] =
         {
-            {   kIemNativeLabelType_Invalid,                NULL },
-            {   kIemNativeLabelType_RaiseDe,                iemNativeHlpExecRaiseDe },
-            {   kIemNativeLabelType_RaiseUd,                iemNativeHlpExecRaiseUd },
-            {   kIemNativeLabelType_RaiseSseRelated,        iemNativeHlpExecRaiseSseRelated },
-            {   kIemNativeLabelType_RaiseAvxRelated,        iemNativeHlpExecRaiseAvxRelated },
-            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   iemNativeHlpExecRaiseSseAvxFpRelated },
-            {   kIemNativeLabelType_RaiseNm,                iemNativeHlpExecRaiseNm },
-            {   kIemNativeLabelType_RaiseGp0,               iemNativeHlpExecRaiseGp0 },
-            {   kIemNativeLabelType_RaiseMf,                iemNativeHlpExecRaiseMf },
-            {   kIemNativeLabelType_RaiseXf,                iemNativeHlpExecRaiseXf },
-            {   kIemNativeLabelType_ObsoleteTb,             iemNativeHlpObsoleteTb },
-            {   kIemNativeLabelType_NeedCsLimChecking,      iemNativeHlpNeedCsLimChecking },
-            {   kIemNativeLabelType_CheckBranchMiss,        iemNativeHlpCheckBranchMiss },
+            {   kIemNativeLabelType_Invalid,                0, NULL },
+            {   kIemNativeLabelType_RaiseDe,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseDe),               iemNativeHlpExecRaiseDe },
+            {   kIemNativeLabelType_RaiseUd,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseUd),               iemNativeHlpExecRaiseUd },
+            {   kIemNativeLabelType_RaiseSseRelated,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseSseRelated),       iemNativeHlpExecRaiseSseRelated },
+            {   kIemNativeLabelType_RaiseAvxRelated,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseAvxRelated),       iemNativeHlpExecRaiseAvxRelated },
+            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseSseAvxFpRelated),  iemNativeHlpExecRaiseSseAvxFpRelated },
+            {   kIemNativeLabelType_RaiseNm,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseNm),               iemNativeHlpExecRaiseNm },
+            {   kIemNativeLabelType_RaiseGp0,               RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseGp0),              iemNativeHlpExecRaiseGp0 },
+            {   kIemNativeLabelType_RaiseMf,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseMf),               iemNativeHlpExecRaiseMf },
+            {   kIemNativeLabelType_RaiseXf,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseXf),               iemNativeHlpExecRaiseXf },
+            {   kIemNativeLabelType_ObsoleteTb,             RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitObsoleteTb),            iemNativeHlpObsoleteTb },
+            {   kIemNativeLabelType_NeedCsLimChecking,      RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitNeedCsLimChecking),     iemNativeHlpNeedCsLimChecking },
+            {   kIemNativeLabelType_CheckBranchMiss,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitCheckBranchMiss),       iemNativeHlpCheckBranchMiss },
         };
         AssertCompile(RT_ELEMENTS(g_aSimpleTailLabels) == (unsigned)kIemNativeLabelType_LastSimple + 1U);
         AssertCompile(kIemNativeLabelType_Invalid == 0);
         uint64_t fTailLabels = pReNative->bmLabelTypes & (RT_BIT_64(kIemNativeLabelType_LastSimple + 1U) - 2U);
         if (fTailLabels)
         {
+#ifdef VBOX_WITH_STATISTICS
+            uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+            uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+#endif
+
             do
             {
                 IEMNATIVELABELTYPE const enmLabel = (IEMNATIVELABELTYPE)(ASMBitFirstSetU64(fTailLabels) - 1U);
@@ -9272,6 +9305,11 @@ l_profile_again:
                 {
                     iemNativeLabelDefine(pReNative, idxLabel, off);
 
+#ifdef VBOX_WITH_STATISTICS
+                    off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
+                                                            g_aSimpleTailLabels[enmLabel].offVCpuStats);
+#endif
+
                     /* int pfnCallback(PVMCPUCC pVCpu) */
                     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
                     off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)g_aSimpleTailLabels[enmLabel].pfnCallback);
@@ -9281,6 +9319,11 @@ l_profile_again:
                 }
 
             } while (fTailLabels);
+
+#ifdef VBOX_WITH_STATISTICS
+            iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+            iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+#endif
         }
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);

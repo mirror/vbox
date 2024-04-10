@@ -1987,7 +1987,38 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 #endif
 
-    uint64_t                au64Padding[2];
+    /** Native recompiler: The TB finished executing completely without jumping to a an exit label. */
+    STAMCOUNTER             StatNativeTbFinished;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreak label. */
+    STAMCOUNTER             StatNativeTbExitReturnBreak;
+    /** Native recompiler: The TB finished executing jumping to the ReturnWithFlags label. */
+    STAMCOUNTER             StatNativeTbExitReturnWithFlags;
+    /** Native recompiler: The TB finished executing jumping to the RaiseDe label. */
+    STAMCOUNTER             StatNativeTbExitRaiseDe;
+    /** Native recompiler: The TB finished executing jumping to the RaiseUd label. */
+    STAMCOUNTER             StatNativeTbExitRaiseUd;
+    /** Native recompiler: The TB finished executing jumping to the RaiseSseRelated label. */
+    STAMCOUNTER             StatNativeTbExitRaiseSseRelated;
+    /** Native recompiler: The TB finished executing jumping to the RaiseAvxRelated label. */
+    STAMCOUNTER             StatNativeTbExitRaiseAvxRelated;
+    /** Native recompiler: The TB finished executing jumping to the RaiseSseAvxFpRelated label. */
+    STAMCOUNTER             StatNativeTbExitRaiseSseAvxFpRelated;
+    /** Native recompiler: The TB finished executing jumping to the RaiseNm label. */
+    STAMCOUNTER             StatNativeTbExitRaiseNm;
+    /** Native recompiler: The TB finished executing jumping to the RaiseGp0 label. */
+    STAMCOUNTER             StatNativeTbExitRaiseGp0;
+    /** Native recompiler: The TB finished executing jumping to the RaiseMf label. */
+    STAMCOUNTER             StatNativeTbExitRaiseMf;
+    /** Native recompiler: The TB finished executing jumping to the RaiseXf label. */
+    STAMCOUNTER             StatNativeTbExitRaiseXf;
+    /** Native recompiler: The TB finished executing jumping to the ObsoleteTb label. */
+    STAMCOUNTER             StatNativeTbExitObsoleteTb;
+    /** Native recompiler: The TB finished executing jumping to the NeedCsLimChecking label. */
+    STAMCOUNTER             StatNativeTbExitNeedCsLimChecking;
+    /** Native recompiler: The TB finished executing jumping to the CheckBranchMiss label. */
+    STAMCOUNTER             StatNativeTbExitCheckBranchMiss;
+
+    uint64_t                au64Padding[3];
     /** @} */
 
     /** Data TLB.

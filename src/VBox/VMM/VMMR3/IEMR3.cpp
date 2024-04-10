@@ -601,6 +601,37 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                                "Delayed RIP updating percentage",
                                "/IEM/CPU%u/re/NativePcUpdateDelayed_StatusDelayedPct", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbFinished, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finishes execution completely", "/IEM/CPU%u/re/NativeTbFinished", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnBreak, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ReturnBreak label", "/IEM/CPU%u/re/NativeTbExitReturnBreak", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnWithFlags, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ReturnWithFlags label", "/IEM/CPU%u/re/NativeTbExitReturnWithFlags", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitObsoleteTb, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ObsoleteTb label", "/IEM/CPU%u/re/NativeTbExitObsoleteTb", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the NeedCsLimChecking label", "/IEM/CPU%u/re/NativeTbExitNeedCsLimChecking", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitCheckBranchMiss, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the CheckBranchMiss label", "/IEM/CPU%u/re/NativeTbExitCheckBranchMiss", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseDe, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #DE exception", "/IEM/CPU%u/re/NativeTbExitRaiseDe", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseUd, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #UD exception", "/IEM/CPU%u/re/NativeTbExitRaiseUd", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseSseRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a SSE related exception", "/IEM/CPU%u/re/NativeTbExitRaiseSseRelated", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseAvxRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a AVX related exception", "/IEM/CPU%u/re/NativeTbExitRaiseAvxRelated", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseSseAvxFpRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a SSE/AVX floating point related exception", "/IEM/CPU%u/re/NativeTbExitRaiseSseAvxFpRelated", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseNm, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #NM exception", "/IEM/CPU%u/re/NativeTbExitRaiseNm", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseGp0, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #GP(0) exception", "/IEM/CPU%u/re/NativeTbExitRaiseGp0", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseMf, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #MF exception", "/IEM/CPU%u/re/NativeTbExitRaiseMf", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseXf, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished raising a #XF exception", "/IEM/CPU%u/re/NativeTbExitRaiseXf", idCpu);
+
 #  endif /* VBOX_WITH_STATISTICS */
 # endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
 
