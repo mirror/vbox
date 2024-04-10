@@ -1267,11 +1267,13 @@ typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
     ((a_pReNative)->Core.bmGstSimdRegShadowDirtyHi128 |= RT_BIT_64(a_iSimdReg))
 
 /** Flag for indicating that IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() has emitted code in the current TB. */
-# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE RT_BIT_32(0)
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE        RT_BIT_32(0)
+    /** Flag for indicating that IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() has emitted code in the current TB. */
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_WAIT_DEVICE_NOT_AVAILABLE   RT_BIT_32(1)
 /** Flag for indicating that IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() has emitted code in the current TB. */
-# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE                  RT_BIT_32(1)
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE                         RT_BIT_32(2)
 /** Flag for indicating that IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() has emitted code in the current TB. */
-# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX                  RT_BIT_32(2)
+# define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX                         RT_BIT_32(3)
 #endif
 
 

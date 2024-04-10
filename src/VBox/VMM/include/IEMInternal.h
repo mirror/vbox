@@ -1970,6 +1970,8 @@ typedef struct IEMCPU
 
     /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks. */
     STAMCOUNTER             StatNativeMaybeDeviceNotAvailXcptCheckPotential;
+    /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE() checks. */
+    STAMCOUNTER             StatNativeMaybeWaitDeviceNotAvailXcptCheckPotential;
     /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks. */
     STAMCOUNTER             StatNativeMaybeSseXcptCheckPotential;
     /** Native recompiler: Number of potential IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks. */
@@ -1977,13 +1979,15 @@ typedef struct IEMCPU
 
     /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE() checks omitted. */
     STAMCOUNTER             StatNativeMaybeDeviceNotAvailXcptCheckOmitted;
+    /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE() checks omitted. */
+    STAMCOUNTER             StatNativeMaybeWaitDeviceNotAvailXcptCheckOmitted;
     /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() checks omitted. */
     STAMCOUNTER             StatNativeMaybeSseXcptCheckOmitted;
     /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks omitted. */
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 #endif
 
-    uint64_t                au64Padding[4];
+    uint64_t                au64Padding[2];
     /** @} */
 
     /** Data TLB.
