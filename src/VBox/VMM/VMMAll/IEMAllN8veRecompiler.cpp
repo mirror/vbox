@@ -6194,6 +6194,22 @@ iemNativeEmitThreadCallStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMT
 # endif
     return off;
 }
+
+
+/**
+ * Emits code to update the TB exit reason statistics.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitNativeTbExitStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t const offVCpu)
+{
+    uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+    off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2, offVCpu);
+    iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+    iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+
+    return off;
+}
 #endif /* VBOX_WITH_STATISTICS */
 
 
@@ -6209,12 +6225,7 @@ static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint
         iemNativeLabelDefine(pReNative, idxLabel, off);
 
 #ifdef VBOX_WITH_STATISTICS
-        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
-        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
-        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
-                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnWithFlags));
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+        off = iemNativeEmitNativeTbExitStats(pReNative, off, RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnWithFlags));
 #endif
 
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_FINISH_WITH_FLAGS);
@@ -6237,12 +6248,7 @@ static uint32_t iemNativeEmitReturnBreak(PIEMRECOMPILERSTATE pReNative, uint32_t
         iemNativeLabelDefine(pReNative, idxLabel, off);
 
 #ifdef VBOX_WITH_STATISTICS
-        uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
-        uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
-        off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
-                                                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnBreak));
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
-        iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+        off = iemNativeEmitNativeTbExitStats(pReNative, off, RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnBreak));
 #endif
 
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_BREAK);
@@ -9232,14 +9238,7 @@ l_profile_again:
             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeFullyRecompiledTbs);
 
 #ifdef VBOX_WITH_STATISTICS
-        {
-            uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
-            uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
-            off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
-                                                    RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbFinished));
-            iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
-            iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
-        }
+        off = iemNativeEmitNativeTbExitStats(pReNative, off, RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbFinished));
 #endif
 
         /*
@@ -9290,11 +9289,6 @@ l_profile_again:
         uint64_t fTailLabels = pReNative->bmLabelTypes & (RT_BIT_64(kIemNativeLabelType_LastSimple + 1U) - 2U);
         if (fTailLabels)
         {
-#ifdef VBOX_WITH_STATISTICS
-            uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
-            uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
-#endif
-
             do
             {
                 IEMNATIVELABELTYPE const enmLabel = (IEMNATIVELABELTYPE)(ASMBitFirstSetU64(fTailLabels) - 1U);
@@ -9308,8 +9302,7 @@ l_profile_again:
                     iemNativeLabelDefine(pReNative, idxLabel, off);
 
 #ifdef VBOX_WITH_STATISTICS
-                    off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2,
-                                                            g_aSimpleTailLabels[enmLabel].offVCpuStats);
+                    off = iemNativeEmitNativeTbExitStats(pReNative, off, g_aSimpleTailLabels[enmLabel].offVCpuStats);
 #endif
 
                     /* int pfnCallback(PVMCPUCC pVCpu) */
@@ -9321,11 +9314,6 @@ l_profile_again:
                 }
 
             } while (fTailLabels);
-
-#ifdef VBOX_WITH_STATISTICS
-            iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
-            iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
-#endif
         }
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
