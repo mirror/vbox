@@ -15076,6 +15076,86 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vptest_u256_fallback,(PCRTUINT256U puSrc1, PCRT
 }
 
 
+/* Worker for VEX.128 vtestp[s|d]. */
+static void iemAImpl_vtestp_sd_u128_worker(PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint64_t fSignMask, uint32_t *pfEFlags)
+{
+    uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
+    RTUINT128U uTemp;
+    uTemp.au64[0] = puSrc1->au64[0] & puSrc2->au64[0];
+    uTemp.au64[1] = puSrc1->au64[1] & puSrc2->au64[1];
+    if (((  uTemp.au64[0]
+          | uTemp.au64[1]) & fSignMask) == 0)
+        fEfl |= X86_EFL_ZF;
+    uTemp.au64[0] = ~puSrc1->au64[0] & puSrc2->au64[0];
+    uTemp.au64[1] = ~puSrc1->au64[1] & puSrc2->au64[1];
+    if (((  uTemp.au64[0]
+          | uTemp.au64[1]) & fSignMask) == 0)
+        fEfl |= X86_EFL_CF;
+    *pfEFlags = fEfl;
+}
+
+
+/* Worker for VEX.256 vtestp[s|d]. */
+static void iemAImpl_vtestp_sd_u256_worker(PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint64_t fSignMask, uint32_t *pfEFlags)
+{
+    uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
+    RTUINT256U uTemp;
+    uTemp.au64[0] = puSrc1->au64[0] & puSrc2->au64[0];
+    uTemp.au64[1] = puSrc1->au64[1] & puSrc2->au64[1];
+    uTemp.au64[2] = puSrc1->au64[2] & puSrc2->au64[2];
+    uTemp.au64[3] = puSrc1->au64[3] & puSrc2->au64[3];
+    if (((  uTemp.au64[0]
+          | uTemp.au64[1]
+          | uTemp.au64[2]
+          | uTemp.au64[3]) & fSignMask) == 0)
+        fEfl |= X86_EFL_ZF;
+    uTemp.au64[0] = ~puSrc1->au64[0] & puSrc2->au64[0];
+    uTemp.au64[1] = ~puSrc1->au64[1] & puSrc2->au64[1];
+    uTemp.au64[2] = ~puSrc1->au64[2] & puSrc2->au64[2];
+    uTemp.au64[3] = ~puSrc1->au64[3] & puSrc2->au64[3];
+    if (((  uTemp.au64[0]
+          | uTemp.au64[1]
+          | uTemp.au64[2]
+          | uTemp.au64[3]) & fSignMask) == 0)
+        fEfl |= X86_EFL_CF;
+    *pfEFlags = fEfl;
+}
+
+
+/*
+ * VTESTPS
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vtestps_u128_fallback,(PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint32_t *pfEFlags))
+{
+    uint64_t const fSignMask = RT_BIT_64(63) | RT_BIT_64(31);
+    return iemAImpl_vtestp_sd_u128_worker(puSrc1, puSrc2, fSignMask, pfEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vtestps_u256_fallback,(PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint32_t *pfEFlags))
+{
+    uint64_t const fSignMask = RT_BIT_64(63) | RT_BIT_64(31);
+    return iemAImpl_vtestp_sd_u256_worker(puSrc1, puSrc2, fSignMask, pfEFlags);
+}
+
+
+/*
+ * VTESTPD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vtestpd_u128_fallback,(PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint32_t *pfEFlags))
+{
+    uint64_t const fSignMask = RT_BIT_64(63);
+    return iemAImpl_vtestp_sd_u128_worker(puSrc1, puSrc2, fSignMask, pfEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vtestpd_u256_fallback,(PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint32_t *pfEFlags))
+{
+    uint64_t const fSignMask = RT_BIT_64(63);
+    return iemAImpl_vtestp_sd_u256_worker(puSrc1, puSrc2, fSignMask, pfEFlags);
+}
+
+
 /*
  * PMOVSXBW / VPMOVSXBW
  */

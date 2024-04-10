@@ -203,12 +203,141 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
 }
 
 
+/**
+ * Common worker for AVX instructions on the forms:
+ *     - vtestps/d    xmm1, xmm2/mem128
+ *     - vtestps/d    ymm1, ymm2/mem256
+ *
+ * Takes function table for function w/o implicit state parameter.
+ *
+ * Exceptions type 4. AVX cpuid check for both 128-bit and 256-bit operation.
+ */
+FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Wx, PCIEMOPMEDIAF2EFL, pImpl)
+{
+    Assert(pVCpu->iem.s.uVexLength <= 1);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 1);
+            IEM_MC_ARG(uint32_t *,              pEFlags,       2);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_FETCH_YREG_U256(uSrc1,   IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_FETCH_YREG_U256(uSrc2,   IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnU256, puSrc1, puSrc2, pEFlags);
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_ARG(PCRTUINT128U,            puSrc1,  0);
+            IEM_MC_ARG(PCRTUINT128U,            puSrc2,  1);
+            IEM_MC_ARG(uint32_t *,              pEFlags, 2);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_REF_XREG_U128_CONST(puSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_XREG_U128_CONST(puSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnU128, puSrc1, puSrc2, pEFlags);
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc1);
+            IEM_MC_LOCAL(RTUINT256U,            uSrc2);
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 1);
+            IEM_MC_ARG(uint32_t *,              pEFlags,       2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U256_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_FETCH_YREG_U256(uSrc1,      IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnU256, puSrc1, puSrc2, pEFlags);
+
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_LOCAL(RTUINT128U,            uSrc2);
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+            IEM_MC_ARG(PCRTUINT128U,            puSrc1,        0);
+            IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc2, uSrc2, 1);
+            IEM_MC_ARG(uint32_t *,              pEFlags,       2);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U128_NO_AC(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_REF_XREG_U128_CONST(puSrc1,  IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnU128, puSrc1, puSrc2, pEFlags);
+
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+    }
+}
+
+
 /*  Opcode VEX.0F38 0x0e - invalid. */
-/**  Opcode VEX.66.0F38 0x0e. */
-FNIEMOP_STUB(iemOp_vtestps_Vx_Wx);
+
+
+/**  Opcode VEX.66.0F38 0x0e.
+ * AVX,AVX */
+FNIEMOP_DEF(iemOp_vtestps_Vx_Wx)
+{
+    /** @todo We need to check VEX.W somewhere... it is documented to \#UD on all
+     *        CPU modes. */
+    IEMOP_MNEMONIC2(VEX_RM, VTESTPS, vtestps, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_W_ZERO);
+    IEMOPMEDIAF2EFL_INIT_VARS(vtestps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.0F38 0x0f - invalid. */
-/**  Opcode VEX.66.0F38 0x0f. */
-FNIEMOP_STUB(iemOp_vtestpd_Vx_Wx);
+
+
+/**  Opcode VEX.66.0F38 0x0f.
+ * AVX,AVX */
+FNIEMOP_DEF(iemOp_vtestpd_Vx_Wx)
+{
+    /** @todo We need to check VEX.W somewhere... it is documented to \#UD on all
+     *        CPU modes. */
+    IEMOP_MNEMONIC2(VEX_RM, VTESTPD, vtestpd, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_W_ZERO);
+    IEMOPMEDIAF2EFL_INIT_VARS(vtestpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
 
 
 /*  Opcode VEX.0F38 0x10 - invalid */
