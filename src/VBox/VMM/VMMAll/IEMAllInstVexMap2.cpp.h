@@ -212,7 +212,7 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
  *
  * Exceptions type 4. AVX cpuid check for both 128-bit and 256-bit operation.
  */
-FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Wx, PCIEMOPMEDIAF2EFL, pImpl)
+FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Wx_Efl_Opt, PCIEMOPMEDIAF2EFL, pImpl)
 {
     Assert(pVCpu->iem.s.uVexLength <= 1);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -321,7 +321,7 @@ FNIEMOP_DEF(iemOp_vtestps_Vx_Wx)
      *        CPU modes. */
     IEMOP_MNEMONIC2(VEX_RM, VTESTPS, vtestps, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_W_ZERO);
     IEMOPMEDIAF2EFL_INIT_VARS(vtestps);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx_Efl_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
 }
 
 
@@ -336,7 +336,7 @@ FNIEMOP_DEF(iemOp_vtestpd_Vx_Wx)
      *        CPU modes. */
     IEMOP_MNEMONIC2(VEX_RM, VTESTPD, vtestpd, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_W_ZERO);
     IEMOPMEDIAF2EFL_INIT_VARS(vtestpd);
-    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx_Efl_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
 }
 
 
