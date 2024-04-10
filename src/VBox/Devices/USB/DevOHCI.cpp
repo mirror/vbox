@@ -692,7 +692,7 @@ typedef struct OHCIOPREG
 #define OHCI_INTR_START_OF_FRAME            RT_BIT(2)
 /** RD  - Resume detect. */
 #define OHCI_INTR_RESUME_DETECT             RT_BIT(3)
-/** UE  - Unrecoverable error. */
+/** UE  - ",erable error. */
 #define OHCI_INTR_UNRECOVERABLE_ERROR       RT_BIT(4)
 /** FNO - Frame number overflow. */
 #define OHCI_INTR_FRAMENUMBER_OVERFLOW      RT_BIT(5)
@@ -2027,6 +2027,7 @@ static bool ohciR3IsTdInFlight(POHCICC pThisCC, uint32_t GCPhysTD)
     return ohciR3InFlightFind(pThisCC, GCPhysTD) >= 0;
 }
 
+#if 0
 /**
  * Returns a URB associated with an in-flight TD, if any.
  *
@@ -2044,6 +2045,7 @@ static PVUSBURB ohciR3TdInFlightUrb(POHCICC pThisCC, uint32_t GCPhysTD)
         return pThisCC->aInFlight[i].pUrb;
     return NULL;
 }
+#endif
 
 /**
  * Removes a in-flight TD.
@@ -3081,6 +3083,58 @@ static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBU
 
 
 /**
+ * Determine transfer direction from an endpoint descriptor.
+ * NB: This may fail if the direction is not valid. If it does fail,
+ * we do not raise an unrecoverable error but the caller may wish to.
+ */
+static bool ohciR3GetDirection(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, PCOHCIED pEd, VUSBDIRECTION *pEnmDir)
+{
+    RT_NOREF(pThisCC);
+    RT_NOREF(pThis);
+    VUSBDIRECTION   enmDir = VUSBDIRECTION_INVALID;
+
+    if (pEd->hwinfo & ED_HWINFO_ISO)
+    {
+        switch (pEd->hwinfo & ED_HWINFO_DIR)
+        {
+            case ED_HWINFO_OUT: enmDir = VUSBDIRECTION_OUT; break;
+            case ED_HWINFO_IN:  enmDir = VUSBDIRECTION_IN;  break;
+            default:
+                Log(("ohciR3GetDirection: Invalid direction!!!! Ed.hwinfo=%#x\n", pEd->hwinfo));
+                *pEnmDir = VUSBDIRECTION_INVALID;
+                return false;
+        }
+    }
+    else
+    {
+        switch (pEd->hwinfo & ED_HWINFO_DIR)
+        {
+            case ED_HWINFO_OUT: enmDir = VUSBDIRECTION_OUT; break;
+            case ED_HWINFO_IN:  enmDir = VUSBDIRECTION_IN;  break;
+            default:
+                /* We must read the TD to determine direction. */
+                uint32_t    TdAddr = pEd->HeadP & ED_PTR_MASK;
+                OHCITD      Td;
+                ohciR3ReadTd(pDevIns, TdAddr, &Td);
+                switch (Td.hwinfo & TD_HWINFO_DIR)
+                {
+                    case TD_HWINFO_OUT: enmDir = VUSBDIRECTION_OUT; break;
+                    case TD_HWINFO_IN:  enmDir = VUSBDIRECTION_IN; break;
+                    case 0:             enmDir = VUSBDIRECTION_SETUP; break;
+                    default:
+                        Log(("ohciR3GetDirection: Invalid direction!!!! Td.hwinfo=%#x Ed.hwinfo=%#x\n", Td.hwinfo, pEd->hwinfo));
+                        *pEnmDir = VUSBDIRECTION_INVALID;
+                        return false;
+                }
+        }
+   }
+
+    *pEnmDir = enmDir;
+    return true;
+}
+
+
+/**
  * Service a general transport descriptor.
  */
 static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VUSBXFERTYPE enmType,
@@ -3833,10 +3887,13 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
                 /* If the ED is in 'skip' state, no transactions on it are allowed and we must
                  * cancel outstanding URBs, if any.
                  */
-                uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
-                if (pUrb)
-                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
+                uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
+                uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
+                VUSBDIRECTION enmDir;
+                if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+                {
+                    pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
+                }
             }
         }
 
@@ -3889,9 +3946,14 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
             if (ohciR3IsTdInFlight(pThisCC, TdAddr))
             {
                 LogFlow(("ohciR3UndoBulkList: Ed=%#010RX32 Ed.TailP=%#010RX32 UNDO\n", EdAddr, Ed.TailP));
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
-                if (pUrb)
-                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
+               /* First we need to determine the transfer direction, which may fail(!). */
+               uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
+               uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
+               VUSBDIRECTION enmDir;
+               if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+               {
+                   pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
+               }
             }
         }
 
@@ -4053,11 +4115,15 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
                 Log3(("ohciR3ServicePeriodicList: Ed=%#010RX32 Ed.TailP=%#010RX32 SKIP\n", EdAddr, Ed.TailP));
                 /* If the ED is in 'skip' state, no transactions on it are allowed and we must
                  * cancel outstanding URBs, if any.
+                 * First we need to determine the transfer direction, which may fail(!).
                  */
-                uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
-                if (pUrb)
-                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
+                uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
+                uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
+                VUSBDIRECTION enmDir;
+                if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+                {
+                    pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
+                }
             }
         }
         /* Trivial loop detection. */
