@@ -78,10 +78,11 @@ UITranslationEventListener::~UITranslationEventListener()
 bool UITranslationEventListener::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (   !UITranslator::isTranslationInProgress()
-           && pEvent->type() == QEvent::LanguageChange)
+           && pEvent->type() == QEvent::LanguageChange
+           && pObject == qApp)
     {
         //&& (pObject == qApp || pObject == this))
-        //emit sigRetranslateUI();
+        emit sigRetranslateUI();
     }
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
