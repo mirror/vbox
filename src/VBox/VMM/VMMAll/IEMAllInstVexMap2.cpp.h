@@ -223,7 +223,7 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
         if (pVCpu->iem.s.uVexLength) \
         { \
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEMOP_HLP_DONE_VEX_DECODING_W0_AND_NO_VVVV_EX(fAvx); \
             IEM_MC_LOCAL(RTUINT256U,            uSrc1); \
             IEM_MC_LOCAL(RTUINT256U,            uSrc2); \
             IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 0); \
@@ -243,7 +243,7 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
         else \
         { \
             IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEMOP_HLP_DONE_VEX_DECODING_W0_AND_NO_VVVV_EX(fAvx); \
             IEM_MC_ARG(PCRTUINT128U,            puSrc1,  0); \
             IEM_MC_ARG(PCRTUINT128U,            puSrc2,  1); \
             IEM_MC_ARG(uint32_t *,              pEFlags, 2); \
@@ -274,7 +274,7 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
             IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc2, uSrc2, 1); \
             IEM_MC_ARG(uint32_t *,              pEFlags,       2); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEMOP_HLP_DONE_VEX_DECODING_W0_AND_NO_VVVV_EX(fAvx); \
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
             IEM_MC_PREPARE_AVX_USAGE(); \
             IEM_MC_FETCH_MEM_U256_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
@@ -295,7 +295,7 @@ FNIEMOP_DEF(iemOp_vpermilpd_Vx_Hx_Wx)
             IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc2, uSrc2, 1); \
             IEM_MC_ARG(uint32_t *,              pEFlags,       2); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx); \
+            IEMOP_HLP_DONE_VEX_DECODING_W0_AND_NO_VVVV_EX(fAvx); \
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
             IEM_MC_PREPARE_AVX_USAGE(); \
             IEM_MC_FETCH_MEM_U128_NO_AC(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
