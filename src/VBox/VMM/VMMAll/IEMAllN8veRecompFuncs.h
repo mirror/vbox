@@ -899,6 +899,64 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
 }
 
 
+#define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE() \
+    off = iemNativeEmitMaybeRaiseWaitDeviceNotAvailable(pReNative, off, pCallEntry->idxInstr)
+
+/**
+ * Emits code to check if a \#NM exception should be raised.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitMaybeRaiseWaitDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+{
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeWaitDeviceNotAvailXcptCheckPotential);
+
+    if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_WAIT_DEVICE_NOT_AVAILABLE))
+    {
+#endif
+        /*
+         * Make sure we don't have any outstanding guest register writes as we may
+         * raise an #NM and all guest register must be up to date in CPUMCTX.
+         */
+        /** @todo r=aeichner Can we postpone this to the RaiseNm path? */
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+        RT_NOREF(idxInstr);
+#endif
+
+        /* Allocate a temporary CR0 register. */
+        uint8_t const idxCr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_Calculation);
+
+        /*
+         * if (cr0 & (X86_CR0_MP | X86_CR0_TS) == (X86_CR0_MP | X86_CR0_TS))
+         *     return raisexcpt();
+         */
+        off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxCr0Reg, X86_CR0_MP | X86_CR0_TS);
+        /* Test and jump. */
+        off = iemNativeEmitTestIfGpr32EqualsImmAndJmpToNewLabel(pReNative, off, idxCr0Reg, X86_CR0_MP | X86_CR0_TS, kIemNativeLabelType_RaiseNm);
+
+        /* Free the CR0 register. */
+        iemNativeRegFreeTmp(pReNative, idxCr0Reg);
+
+#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+        pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_WAIT_DEVICE_NOT_AVAILABLE;
+    }
+    else
+        STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeMaybeWaitDeviceNotAvailXcptCheckOmitted);
+#endif
+
+    return off;
+}
+
+
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     off = iemNativeEmitMaybeRaiseFpuException(pReNative, off, pCallEntry->idxInstr)
 

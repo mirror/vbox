@@ -3193,7 +3193,7 @@ g_dMcStmtParsers = {
     'IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0':                 (McBlock.parseMcGeneric,           True,  True,  False, ),
     'IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT':             (McBlock.parseMcGeneric,           True,  True,  g_fNativeSimd),
     'IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  True,  True,  ),
-    'IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE':              (McBlock.parseMcGeneric,           True,  True,  False, ),
+    'IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE':              (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_ATOMIC':                        (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_RW':                            (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_MEM_COMMIT_AND_UNMAP_RO':                            (McBlock.parseMcGeneric,           True,  True,  True,  ),
