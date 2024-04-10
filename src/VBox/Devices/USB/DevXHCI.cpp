@@ -4563,6 +4563,8 @@ static unsigned xhciR3ConfigureDevice(PPDMDEVINS pDevIns, PXHCI pThis, uint64_t 
     XHCI_DEV_CTX    dc_out;
     unsigned        uDCI;
 
+    RT_ZERO(dc_inp);
+
     Assert(uSlotID);
     LogFlowFunc(("Slot ID %u, input control context @ %RGp\n", uSlotID, GCPhysInpCtx));
 
@@ -4644,15 +4646,6 @@ static unsigned xhciR3ConfigureDevice(PPDMDEVINS pDevIns, PXHCI pThis, uint64_t 
             /// @todo Check input slot context according to 6.2.2.2
             /// @todo Check input EP contexts according to 6.2.3.2
         }
-/** @todo r=bird: Looks like MSC is right that dc_inp can be used uninitalized.
- *
- * However, this function is so hard to read I'm leaving the exorcism of it to
- * the author and just zeroing it in the mean time.
- *
- */
-        else
-            RT_ZERO(dc_inp);
-
         /* Read the output Slot Context plus all Endpoint Contexts up to and
          * including the one with the highest 'add' or 'drop' bit set.
          */

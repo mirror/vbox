@@ -730,6 +730,7 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciCommonMcfgMmioRead(PPDMDEVINS pDevIns, 
                 break;
             default:
                 ASSERT_GUEST_MSG_FAILED(("cb=%u off=%RGp\n", cb, off)); /** @todo how the heck should this work? Split it, right? */
+                rcStrict = VINF_IOM_MMIO_UNUSED_00;
                 break;
         }
     }
