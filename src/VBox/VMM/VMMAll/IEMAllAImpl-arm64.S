@@ -836,14 +836,10 @@ BEGINPROC_HIDDEN \a_Name
          */
 .ifne \a_cBits < 32
         and     w2, w2, #(\a_cBits - 1)
-        neg     w3, w2
-        and     w3, w3, #(\a_cBits - 1)
         ldr\a_LdStSuff  w8, [x1]
+        orr     w8, w8, w8, LSL #(\a_cBits)  /* duplicate value above, so it is ready to be shifted in. */
         lsrv    w9, w8, w2
-        lslv    w10, w8, w3
-        orr     w9, w9, w10
         str\a_LdStSuff  w9, [x1]
-        and     w9, w9, #(RT_BIT_32(\a_cBits) - 1)
 .else
         ldr\a_LdStSuff  w8, [x1]
         rorv    w9, w8, w2
