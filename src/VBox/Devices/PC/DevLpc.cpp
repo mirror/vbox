@@ -117,17 +117,13 @@ static DECLCALLBACK(VBOXSTRICTRC) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
 static DECLCALLBACK(VBOXSTRICTRC) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PLPCSTATE        pThis  = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
-    RT_NOREF(pvUser, pv);
+    RT_NOREF(pvUser, pv, cb);
+    Assert(cb == 4); Assert(!(off & 3)); /* IOMMMIO_FLAGS_WRITE_DWORD_xxx should make sure of this */
 
-    if (cb == 4)
-    {
-        if (off == LPC_REG_GCS)
-            Log(("lpcMmioWrite: Ignorning write to GCS: %.*Rhxs\n", cb, pv));
-        else
-            Log(("lpcMmioWrite: Ignorning write to unknown register %#RGp: %.*Rhxs\n", off, cb, pv));
-    }
+    if (off == LPC_REG_GCS)
+        Log(("lpcMmioWrite: Ignorning write to GCS: %.*Rhxs\n", cb, pv));
     else
-        Log(("lpcMmioWrite: WARNING! Ignoring non-DWORD write to off=%#RGp: %.*Rhxs\n", off, cb, pv));
+        Log(("lpcMmioWrite: Ignorning write to unknown register %#RGp: %.*Rhxs\n", off, cb, pv));
 
     STAM_REL_COUNTER_INC(&pThis->StatMmioWrites);
     return VINF_SUCCESS;
@@ -357,7 +353,7 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /** @todo This should actually be done when RCBA is enabled, but was
      *        mentioned above we just want this working. */
     rc = PDMDevHlpMmioCreateAndMap(pDevIns, pThis->GCPhys32Rcba, 0x4000, lpcMmioWrite, lpcMmioRead,
-                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                    "LPC Memory", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
