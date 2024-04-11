@@ -4615,10 +4615,10 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUAddLV(uint32_t iVecRegDst, uint32
 /** Armv8 USHR/USRA/URSRA/SSHR/SRSA/SSHR vector element size.    */
 typedef enum ARMV8INSTRUSHIFTSZ
 {
-    kArmv8InstrShiftSz_U8  = 16,  /**< Byte. */
-    kArmv8InstrShiftSz_U16 = 32,  /**< Halfword. */
-    kArmv8InstrShiftSz_U32 = 64,  /**< 32-bit. */
-    kArmv8InstrShiftSz_U64 = 128  /**< 64-bit. */
+    kArmv8InstrShiftSz_U8  =  8,  /**< Byte. */
+    kArmv8InstrShiftSz_U16 = 16,  /**< Halfword. */
+    kArmv8InstrShiftSz_U32 = 32,  /**< 32-bit. */
+    kArmv8InstrShiftSz_U64 = 64   /**< 64-bit. */
 } ARMV8INSTRUSHIFTSZ;
 
 /**
@@ -4645,12 +4645,40 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrShrImm(uint32_t iVecRegDst, uint32
                || (enmSz == kArmv8InstrShiftSz_U32 && cShift <= 32)
                || (enmSz == kArmv8InstrShiftSz_U64 && cShift <= 64)));
 
-    return UINT32_C(0xf000400)
+    return UINT32_C(0x0f000400)
          | ((uint32_t)f128Bit << 30)
          | ((uint32_t)fUnsigned << 29)
-         | (((uint32_t)enmSz - cShift) << 16)
+         | ((((uint32_t)enmSz << 1) - cShift) << 16)
          | ((uint32_t)fRound << 13)
          | ((uint32_t)fAccum << 12)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
+
+
+/**
+ * A64: Encodes SHL (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   cShift      Number of bits to shift.
+ * @param   enmSz       Element size.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrShlImm(uint32_t iVecRegDst, uint32_t iVecRegSrc, uint8_t cShift, ARMV8INSTRUSHIFTSZ enmSz,
+                                                     bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+    Assert(   (enmSz == kArmv8InstrShiftSz_U8 &&  cShift < 8)
+           || (enmSz == kArmv8InstrShiftSz_U16 && cShift < 16)
+           || (enmSz == kArmv8InstrShiftSz_U32 && cShift < 32)
+           || (enmSz == kArmv8InstrShiftSz_U64 && cShift < 64));
+
+    return UINT32_C(0x0f005400)
+         | ((uint32_t)f128Bit << 30)
+         | (((uint32_t)enmSz | cShift) << 16)
          | (iVecRegSrc << 5)
          | iVecRegDst;
 }
