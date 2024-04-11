@@ -233,6 +233,9 @@ typedef struct RTLOGGERINTERNAL
     /** Opaque directory context.
      * This is kept open while we have an open log file. */
     void                   *pvDirCtx;
+# if ARCH_BITS == 32
+    void                   *pvPadding32;
+# endif
 
     /** Handle to log file (if open) - only used by the default output interface to avoid additional layers of indirection. */
     RTFILE                  hFile;
