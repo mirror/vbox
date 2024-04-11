@@ -2041,7 +2041,7 @@ typedef struct IEMCPU
 # ifdef VBOX_WITH_IEM_RECOMPILER
     /** Statistics per threaded function call.
      * Updated by both the threaded and native recompilers. */
-    uint32_t                acThreadedFuncStats[0x5100 /*20736*/];
+    uint32_t                acThreadedFuncStats[0x5120 /*20768*/];
 # endif
 #endif
 } IEMCPU;

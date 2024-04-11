@@ -2041,6 +2041,61 @@ iemNativeEmit_pand_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
+
+
+/**
+ * Common emitter for the shift right with immediate instructions.
+ */
+#ifdef RT_ARCH_AMD64
+# define IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(a_Instr, a_cShiftMax, a_ArmElemSz, a_bOpcX86) \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_ri_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const bImm) \
+    { \
+        if (bImm) \
+        { \
+            uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                                  kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+            PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5); \
+            pCodeBuf[off++] = X86_OP_PRF_SIZE_OP; \
+            if (idxSimdRegDst >= 8) \
+                pCodeBuf[off++] = X86_OP_REX_B; \
+            pCodeBuf[off++] = 0x0f; \
+            pCodeBuf[off++] = (a_bOpcX86); \
+            pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, idxSimdRegDst & 7); \
+            pCodeBuf[off++] = bImm; \
+            iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        } \
+        /* Immediate 0 is a nop. */ \
+        return off; \
+    }
+#elif defined(RT_ARCH_ARM64)
+# define IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(a_Instr, a_cShiftMax, a_ArmElemSz, a_bOpcX86) \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_ri_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const bImm) \
+    { \
+        if (bImm) \
+        { \
+            uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                                  kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+            PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
+            pCodeBuf[off++] = Armv8A64MkVecInstrShrImm(idxSimdRegDst, idxSimdRegDst, RT_MIN(bImm, (a_cShiftMax)), (a_ArmElemSz)); \
+            iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        } \
+        /* Immediate 0 is a nop. */ \
+        return off; \
+    }
+#else
+# error "Port me"
+#endif
+
+IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(psrlw, 16, kArmv8InstrShiftSz_U16, 0x71);
+IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(psrld, 32, kArmv8InstrShiftSz_U32, 0x72);
+IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(psrlq, 64, kArmv8InstrShiftSz_U64, 0x73);
+
 #endif
 
 #endif /* !VMM_INCLUDED_SRC_VMMAll_target_x86_IEMAllN8veEmit_x86_h */

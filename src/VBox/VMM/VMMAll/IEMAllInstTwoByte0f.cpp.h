@@ -6579,7 +6579,7 @@ FNIEMOPRM_DEF(iemOp_Grp12_psrlw_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp12_psrlw_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLW, psrlw, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    SSE2_SHIFT_BODY_Imm(psrlw, bRm, 0);
+    SSE2_SHIFT_BODY_Imm(psrlw, bRm, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -6656,7 +6656,7 @@ FNIEMOPRM_DEF(iemOp_Grp13_psrld_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp13_psrld_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLD, psrld, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    SSE2_SHIFT_BODY_Imm(psrld, bRm, 0);
+    SSE2_SHIFT_BODY_Imm(psrld, bRm, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -6731,7 +6731,7 @@ FNIEMOPRM_DEF(iemOp_Grp14_psrlq_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp14_psrlq_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLQ, psrlq, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    SSE2_SHIFT_BODY_Imm(psrlq, bRm, 0);
+    SSE2_SHIFT_BODY_Imm(psrlq, bRm, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 

@@ -4612,6 +4612,47 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUAddLV(uint32_t iVecRegDst, uint32
 }
 
 
+/** Armv8 USHR/USRA/URSRA/SSHR/SRSA/SSHR vector element size.    */
+typedef enum ARMV8INSTRUSHIFTSZ
+{
+    kArmv8InstrShiftSz_U8  = 16,  /**< Byte. */
+    kArmv8InstrShiftSz_U16 = 32,  /**< Halfword. */
+    kArmv8InstrShiftSz_U32 = 64,  /**< 32-bit. */
+    kArmv8InstrShiftSz_U64 = 128  /**< 64-bit. */
+} ARMV8INSTRUSHIFTSZ;
+
+/**
+ * A64: Encodes USHR/USRA/URSRA/SSHR/SRSA/SSHR (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   enmSz       Element size.
+ * @param   fUnsigned   Flag whether this a signed or unsigned shift,
+ * @param   fRound      Flag whether this is the rounding shift variant.
+ * @param   fAccum      Flag whether this is the accumulate shift variant.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrShrImm(uint32_t iVecRegDst, uint32_t iVecRegSrc, uint8_t cShift, ARMV8INSTRUSHIFTSZ enmSz,
+                                                     bool fUnsigned = true, bool fRound = false, bool fAccum = false, bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+    Assert(   cShift >= 1
+           && (   (enmSz == kArmv8InstrShiftSz_U8 &&  cShift <= 8)
+               || (enmSz == kArmv8InstrShiftSz_U16 && cShift <= 16)
+               || (enmSz == kArmv8InstrShiftSz_U32 && cShift <= 32)
+               || (enmSz == kArmv8InstrShiftSz_U64 && cShift <= 64)));
+
+    return UINT32_C(0xf000400)
+         | ((uint32_t)f128Bit << 30)
+         | ((uint32_t)fUnsigned << 29)
+         | (((uint32_t)enmSz - cShift) << 16)
+         | ((uint32_t)fRound << 13)
+         | ((uint32_t)fAccum << 12)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
