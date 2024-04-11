@@ -6489,6 +6489,7 @@ FNIEMOP_DEF_2(iemOpCommonMmx_Shift_Imm, uint8_t, bRm, PFNIEMAIMPLMEDIAPSHIFTU64,
 }
 
 
+#if 0 /*unused*/
 /**
  * Common worker for SSE2 instructions of the form:
  *      psrlw       xmm, imm8
@@ -6529,6 +6530,41 @@ FNIEMOP_DEF_2(iemOpCommonSse2_Shift_Imm, uint8_t, bRm, PFNIEMAIMPLMEDIAPSHIFTU12
         AssertFailedReturn(VINF_SUCCESS);
     }
 }
+#endif
+
+
+/**
+ * Preprocessor macro variant of iemOpCommonSse2_Shift_Imm
+ */
+#define SSE2_SHIFT_BODY_Imm(a_Ins, a_bRm, a_fRegNativeArchs) \
+        if (IEM_IS_MODRM_REG_MODE((a_bRm))) \
+        { \
+            /* \
+             * Register, immediate. \
+             */ \
+            IEM_MC_BEGIN(0, 0); \
+            uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2); \
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
+            IEM_MC_PREPARE_SSE_USAGE(); \
+            IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                IEM_MC_NATIVE_EMIT_2(RT_CONCAT3(iemNativeEmit_,a_Ins,_ri_u128), IEM_GET_MODRM_RM(pVCpu, (a_bRm)), bImm); \
+            } IEM_MC_NATIVE_ELSE() { \
+                IEM_MC_ARG(PRTUINT128U,         pDst, 0); \
+                IEM_MC_ARG_CONST(uint8_t,       bShiftArg, /*=*/ bImm, 1); \
+                IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_RM(pVCpu, (a_bRm))); \
+                IEM_MC_CALL_VOID_AIMPL_2(RT_CONCAT3(iemAImpl_,a_Ins,_imm_u128), pDst, bShiftArg); \
+            } IEM_MC_NATIVE_ENDIF(); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            /* \
+             * Register, memory. \
+             */ \
+            AssertFailedReturn(VINF_SUCCESS); \
+        } (void)0
 
 
 /** Opcode 0x0f 0x71 11/2 - psrlw Nq, Ib */
@@ -6543,7 +6579,7 @@ FNIEMOPRM_DEF(iemOp_Grp12_psrlw_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp12_psrlw_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLW, psrlw, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psrlw_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psrlw, bRm, 0);
 }
 
 
@@ -6559,7 +6595,7 @@ FNIEMOPRM_DEF(iemOp_Grp12_psraw_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp12_psraw_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRAW, psraw, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psraw_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psraw, bRm, 0);
 }
 
 
@@ -6575,7 +6611,7 @@ FNIEMOPRM_DEF(iemOp_Grp12_psllw_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp12_psllw_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSLLW, psllw, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psllw_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psllw, bRm, 0);
 }
 
 
@@ -6620,7 +6656,7 @@ FNIEMOPRM_DEF(iemOp_Grp13_psrld_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp13_psrld_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLD, psrld, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psrld_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psrld, bRm, 0);
 }
 
 
@@ -6636,7 +6672,7 @@ FNIEMOPRM_DEF(iemOp_Grp13_psrad_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp13_psrad_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRAD, psrad, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psrad_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psrad, bRm, 0);
 }
 
 
@@ -6651,7 +6687,7 @@ FNIEMOPRM_DEF(iemOp_Grp13_pslld_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp13_pslld_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSLLD, pslld, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_pslld_imm_u128);
+    SSE2_SHIFT_BODY_Imm(pslld, bRm, 0);
 }
 
 
@@ -6695,7 +6731,7 @@ FNIEMOPRM_DEF(iemOp_Grp14_psrlq_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp14_psrlq_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLQ, psrlq, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psrlq_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psrlq, bRm, 0);
 }
 
 
@@ -6703,7 +6739,7 @@ FNIEMOPRM_DEF(iemOp_Grp14_psrlq_Ux_Ib)
 FNIEMOPRM_DEF(iemOp_Grp14_psrldq_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSRLDQ, psrldq, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psrldq_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psrldq, bRm, 0);
 }
 
 
@@ -6719,7 +6755,7 @@ FNIEMOPRM_DEF(iemOp_Grp14_psllq_Nq_Ib)
 FNIEMOPRM_DEF(iemOp_Grp14_psllq_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSLLQ, psllq, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_psllq_imm_u128);
+    SSE2_SHIFT_BODY_Imm(psllq, bRm, 0);
 }
 
 
@@ -6727,7 +6763,7 @@ FNIEMOPRM_DEF(iemOp_Grp14_psllq_Ux_Ib)
 FNIEMOPRM_DEF(iemOp_Grp14_pslldq_Ux_Ib)
 {
 //    IEMOP_MNEMONIC2(RI, PSLLDQ, pslldq, Ux, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_2(iemOpCommonSse2_Shift_Imm, bRm, iemAImpl_pslldq_imm_u128);
+    SSE2_SHIFT_BODY_Imm(pslldq, bRm, 0);
 }
 
 /**
