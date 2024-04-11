@@ -53,7 +53,7 @@
 
 /**
  * Align code, pad with BRK. */
-#define ALIGNCODE(alignment)    .balignl alignment, 0xd42000cc
+#define ALIGNCODE(alignment)    .balignl alignment, 0xd4201980
 
 /**
  * Align data, pad with ZEROs. */

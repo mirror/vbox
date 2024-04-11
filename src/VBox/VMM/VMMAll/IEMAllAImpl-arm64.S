@@ -939,9 +939,13 @@ BEGINPROC_HIDDEN \a_Name
 
         /* Do we need to rotate anything at all? */
         and     w2, w2, #0x1f
+.ifne \a_cBits >= 32
         cbz     w2, 99f
+.else
+ .ifeq \a_fIntelFlags
+        cbz     w2, 99f                     /* AMD */
+ .endif
 
-.ifne \a_cBits < 32
         /*
          * 8 and 16 bit: w2 = w2 % (a_cBits + 1).
          *
@@ -968,8 +972,6 @@ BEGINPROC_HIDDEN \a_Name
          *      bfi     w9, w9, #3, #2
          *      subs    w8, w2, w9
          */
-        mov     w7, w2
-
  .ifne \a_cBits == 16
         subs    w3, w2, #17
         csel    w2, w3, w2, hs
@@ -985,30 +987,28 @@ BEGINPROC_HIDDEN \a_Name
 .endif
 
         /*
-         * Do the rotating: (w8 << w2) | (CF << (w2 - 1)) | (w2 > 1 ? (w8 >> (a_cBits - w2 + 1)) : 0)
+         * Do the rotating: x9 = RORV(w8[0:a_cBits-1] | (CF << 63) | (w8[1:a_cBits-1] << (64-a_cBits-1)) | (CF << a_cBits)), -w2)
          */
-        and     w3, w0, #X86_EFL_CF
-        subs    w4, w2, #1                  /* Also: prep for 'w2 > 1' (w2 can't be zero, btw) - think: cmp w2, #1 */
-        lslv    x3, x3, x4                  /* x3 = CF << (w2 - 1) */
-
-        mov     w4, #(\a_cBits + 1)
-        sub     w4, w4, w2                  /* w4 = a_cBits - w2 + 1 */
+        neg     w2, w2                      /* w3 = rorv count - this will be masked by 0x3f so it's the same as 64-w2. */
 
         ldr\a_LdStSuff  w8, [x1]
-        lslv    x9, x8, x2
-        lsrv    w10, w8, w4
-        csel    w10, wzr, w10, eq           /* if w2 == 1: w10 = 0; else: w10 = w8 >> (a_cBits - w2 + 1); */
-        orr     x9, x9, x3                  /* shifted CF */
-        orr     x9, x9, x10
+ .ifne \a_cBits < 32
+        orr     x8, x8, x8, LSL #(64 - \a_cBits - 1)
+  .ifeq \a_fIntelFlags
+        bfi     x8, x0, #(\a_cBits), #1     /* AMD: w8[a_cBits] = CF; Avoids conditional branch for CF calc to cover cShift==0. */
+  .endif
+ .else
+        lsr     w9, w8, #1
+        orr     x8, x8, x9, LSL #(64 - \a_cBits)
+ .endif
+        bfi     x8, x0, #63, #1             /* w8[63] = CF */
+        rorv    x9, x8, x2
         str\a_LdStSuff w9, [x1]
+
         /*
          * Calculate EFLAGS - only CF and OF.
          */
-.ifeq \a_fIntelFlags
-        cbz     w2, 88f                     /* AMD: CF doesn't change if the modded rotate count is zero (only OF does actually). */
-.endif
-        bfxil   x0, x9, #(\a_cBits), #1     /* CF = last bit rotated out  */
-88:
+        bfxil   x0, x9, #(\a_cBits), #1     /* CF = last bit rotated 'out' */
 
 .ifne \a_fIntelFlags
         /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
@@ -1047,7 +1047,7 @@ BEGINPROC_HIDDEN \a_Name
 
         /* Do we need to shift anything at all? */
         and     w2, w2, #0x3f
-        cbz     w2, 99f
+        cbz     w2, 99f /** @todo eliminate this for < 32 shift with intel flags */
 
         /*
          * Do the rotating: (w8 << w2) | (CF << (w2 - 1)) | (w2 > 1 ? (w8 >> (64 - w2 + 1)) : 0)
@@ -1093,3 +1093,153 @@ BEGINPROC_HIDDEN \a_Name
 RCL_64 iemAImpl_rcl_u64,       1
 RCL_64 iemAImpl_rcl_u64_intel, 1
 RCL_64 iemAImpl_rcl_u64_amd,   0
+
+
+/*
+ * Rotate Right thru Carry.
+ */
+
+/* uint32_t iemAImpl_rcr_u8( uint32_t fEFlagsIn, uint8_t *pu8Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rcr_u16(uint32_t fEFlagsIn, uint16_t *pu16Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rcr_u32(uint32_t fEFlagsIn, uint16_t *pu32Dst, uint8_t cShift); */
+.macro RCR_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to rotate anything at all? */
+        and     w2, w2, #0x1f
+.ifne \a_cBits >= 32
+        cbz     w2, 99f
+.else
+ .ifeq \a_fIntelFlags
+        cbz     w2, 99f                     /* AMD */
+ .endif
+
+        /*
+         * 8 and 16 bit: w2 = w2 % (a_cBits + 1). (See RCL for details.)
+         */
+ .ifne \a_cBits == 16
+        subs    w3, w2, #17
+        csel    w2, w3, w2, hs
+ .else
+        subs    w3, w2, #18
+        csel    w2, w3, w2, hs
+        subs    w3, w2, #9
+        csel    w2, w3, w2, hs
+ .endif
+ .ifne \a_fIntelFlags
+        cbz     w2, 99f                     /* Intel: Skip everything if the modded rotate count is zero. */
+ .endif
+.endif
+
+        /*
+         * Do the rotating: x9 = RORV(x8[0:a_cBits-1] | (CF << a_cBits) | ((x8 << (a_cBits + 2)) >> 1) | (CF << 63), x2)
+         */
+        add     w3, w2, #1                  /* w3 = w2 + 1 */
+
+        subs    w4, w2, #1
+        mov     w5, #(\a_cBits)
+        csel    w4, w5, w5, lo              /* w4 = w2 >= 1 ? w2 - 1 : a_cBits - for CF extraction */
+
+        ldr\a_LdStSuff  w8, [x1]
+        bfi     x8, x0, #(\a_cBits), #1     /* Put CF above the input. */
+        bfi     x8, x8, #(\a_cBits + 1), #(64 - \a_cBits - 1) /* Put repeat the register content above that again. */
+.ifne \a_cBits < 32
+ .ifeq \a_fIntelFlags
+        bfi     x8, x0, #63, #1             /* AMD 8- and 16-bit: Put CF at the very top so w2 == 0 works w/o branching. */
+ .endif
+.endif
+        rorv    x9, x8, x2
+        str\a_LdStSuff w9, [x1]
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        bfxil   x0, x9, #63, #1             /* CF = last bit rotated 'out'  */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEFlags |= (fInCarry ^ (uint32_t)(uDst >> (a_cBits - 1))) << X86_EFL_OF_BIT; */
+        eor     x11, x8, x8, LSR #1         /* We've got CF in bit #a_cBits in x8 */
+        lsr     w11, w11, #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEFlags |= X86_EFL_GET_OF_ ## a_cBits(uResult ^ (uResult << 1)); */
+        eor     w11, w9, w9, LSL #1
+        lsr     w11, w11, #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+RCR_8_16_32 iemAImpl_rcr_u8,         8, 1, b
+RCR_8_16_32 iemAImpl_rcr_u8_intel,   8, 1, b
+RCR_8_16_32 iemAImpl_rcr_u8_amd,     8, 0, b
+
+RCR_8_16_32 iemAImpl_rcr_u16,       16, 1, h
+RCR_8_16_32 iemAImpl_rcr_u16_intel, 16, 1, h
+RCR_8_16_32 iemAImpl_rcr_u16_amd,   16, 0, h
+
+RCR_8_16_32 iemAImpl_rcr_u32,       32, 1,
+RCR_8_16_32 iemAImpl_rcr_u32_intel, 32, 1,
+RCR_8_16_32 iemAImpl_rcr_u32_amd,   32, 0,
+
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
+/* uint32_t iemAImpl_rcr_u64(uint32_t fEFlagsIn, uint16_t *pu64Dst, uint8_t cShift); */
+.macro RCR_64, a_Name, a_fIntelFlags
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w2, w2, #0x3f
+        cbz     w2, 99f
+
+        /*
+         * Do the rotating: (w8 >> w2) | (CF << (64 - w2)) | (w2 > 1 ? (w8 << (64 - w2 + 1)) : 0)
+         */
+        and     w5, w0, #X86_EFL_CF         /* x5 = input CF - for intel OF calc */
+        neg     w4, w2
+        lslv    x3, x5, x4                  /* x3 = CF << (64 - w2) */
+
+        cmp     w2, #1                      /* prep for w2 > 1 */
+        add     w4, w4, #1                  /* w4 = -w2 + 1; which when & 0x3f =^= 64 - 2 + 1 */
+
+        ldr     x8, [x1]
+        lsrv    x9, x8, x2
+        lslv    x10, x8, x4
+        csel    x10, xzr, x10, eq           /* if w2 == 1: x10 = 0; else: x10 = x8 << (64 - w2 + 1); */
+        orr     x9, x9, x3                  /* shifted CF */
+        orr     x9, x9, x10
+        str     x9, [x1]
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        sub     x11, x2, #1
+        lsr     x11, x8, x11
+        bfi     w0, w11, #0, #1            /* CF = last bit rotated out. */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEFlags |= (fInCarry ^ (uint32_t)(uDst >> (a_cBits - 1))) << X86_EFL_OF_BIT; */
+        eor     x11, x5, x8, LSR #63
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEFlags |= X86_EFL_GET_OF_ ## a_cBits(uResult ^ (uResult << 1)); */
+        eor     x11, x9, x9, LSL #1
+        lsr     x11, x11, #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+RCR_64 iemAImpl_rcr_u64,       1
+RCR_64 iemAImpl_rcr_u64_intel, 1
+RCR_64 iemAImpl_rcr_u64_amd,   0
+
