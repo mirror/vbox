@@ -25,6 +25,9 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+/* Qt includes: */
+#include <QVariant>
+
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
 #include "UIErrorString.h"
