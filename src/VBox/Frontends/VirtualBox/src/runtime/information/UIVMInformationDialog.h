@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
-#include "QIWithRetranslateUI.h"
 
 /* COM includes: */
 #include "KMachineState.h"
@@ -48,12 +47,10 @@ class QIDialogButtonBox;
 
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
-typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
-
 
 /** QMainWindow subclass providing user
   * with the dialog unifying VM details and statistics. */
-class UIVMInformationDialog : public QMainWindowWithRestorableGeometryAndRetranslateUi
+class UIVMInformationDialog : public QMainWindowWithRestorableGeometry
 {
     Q_OBJECT;
 
@@ -71,13 +68,13 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Handles tab-widget page change. */
     void sltHandlePageChanged(int iIndex);
     void sltMachineStateChange(const QUuid &uMachineId, const KMachineState state);

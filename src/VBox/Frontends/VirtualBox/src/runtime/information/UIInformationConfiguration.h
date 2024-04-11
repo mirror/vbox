@@ -35,7 +35,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UITextTable.h"
 
 /* Forward declarations: */
@@ -44,7 +43,7 @@ class QTableWidgetItem;
 class QTextDocument;
 class QVBoxLayout;
 
-class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
+class UIInformationConfiguration : public QWidget
 {
     Q_OBJECT;
 
@@ -53,12 +52,9 @@ public:
     /** Constructs information-tab passing @a pParent to the base-class. */
     UIInformationConfiguration(QWidget *pParent);
 
-protected:
-
-    void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    void sltRetranslateUI();
     void sltMachineDataChanged();
     void sltHandleTableContextMenuRequest(const QPoint &position);
     void sltCopyTableToClipboard();

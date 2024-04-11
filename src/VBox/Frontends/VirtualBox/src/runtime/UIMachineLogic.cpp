@@ -71,6 +71,7 @@
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
 #include "UISoftKeyboard.h"
+#include "UITranslationEventListener.h"
 #include "UITakeSnapshotDialog.h"
 #include "UIVersion.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -222,7 +223,9 @@ void UIMachineLogic::prepare()
     loadSettings();
 
     /* Retranslate logic part: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIMachineLogic::sltRetranslateUI);
 }
 
 void UIMachineLogic::cleanup()
@@ -746,7 +749,7 @@ void UIMachineLogic::sltHandleHelpRequest()
 }
 
 UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
-    : QIWithRetranslateUI3<QObject>(pMachine)
+    : QObject(pMachine)
     , m_pMachine(pMachine)
     , m_pKeyboardHandler(0)
     , m_pMouseHandler(0)
@@ -805,7 +808,7 @@ void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
             uimachine(), &UIMachine::setMouseState);
 }
 
-void UIMachineLogic::retranslateUi()
+void UIMachineLogic::sltRetranslateUI()
 {
 #ifdef VBOX_WS_MAC
     if (m_pDockPreviewSelectMonitorGroup)
@@ -1501,7 +1504,7 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
         }
     }
     /* Call to base-class: */
-    return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+    return QObject::eventFilter(pWatched, pEvent);
 }
 
 void UIMachineLogic::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)

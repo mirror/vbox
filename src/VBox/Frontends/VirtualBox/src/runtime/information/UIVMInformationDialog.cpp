@@ -48,12 +48,13 @@
 #include "UIVMActivityMonitor.h"
 #include "UISession.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
 
 UIVMInformationDialog::UIVMInformationDialog()
-    : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
+    : QMainWindowWithRestorableGeometry(0)
     , m_pTabWidget(0)
     , m_fCloseEmitted(false)
     , m_iGeometrySaveTimerId(-1)
@@ -66,7 +67,7 @@ bool UIVMInformationDialog::shouldBeMaximized() const
     return gEDataManager->sessionInformationDialogShouldBeMaximized();
 }
 
-void UIVMInformationDialog::retranslateUi()
+void UIVMInformationDialog::sltRetranslateUI()
 {
     /* Setup dialog title: */
     setWindowTitle(tr("%1 - Session Information").arg(m_strMachineName));
@@ -127,7 +128,7 @@ bool UIVMInformationDialog::event(QEvent *pEvent)
         default:
             break;
     }
-    return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
+    return QMainWindowWithRestorableGeometry::event(pEvent);
 }
 
 void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
@@ -169,7 +170,9 @@ void UIVMInformationDialog::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIVMInformationDialog::sltRetranslateUI);
 
     /* Load settings: */
     loadDialogGeometry();

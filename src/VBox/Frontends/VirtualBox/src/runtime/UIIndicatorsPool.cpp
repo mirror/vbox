@@ -34,7 +34,6 @@
 
 /* GUI includes: */
 #include "QIStatusBarIndicator.h"
-#include "QIWithRetranslateUI.h"
 #include "UIAnimationFramework.h"
 #include "UICommon.h"
 #include "UIConverter.h"
@@ -43,10 +42,11 @@
 #include "UIIconPool.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachine.h"
+#include "UITranslationEventListener.h"
 
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
-class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
+class UISessionStateStatusBarIndicator : public QIStateStatusBarIndicator
 {
     Q_OBJECT;
 
@@ -66,10 +66,12 @@ public slots:
     /** Abstract update routine. */
     virtual void updateAppearance() = 0;
 
-protected:
+protected slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    void sltRetranslateUI();
+
+protected:
 
     /** Holds the indicator type. */
     const IndicatorType m_enmType;
@@ -149,9 +151,11 @@ UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType
 {
     /* Install UISessionStateStatusBarIndicator accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForUISessionStateStatusBarIndicator::pFactory);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UISessionStateStatusBarIndicator::sltRetranslateUI);
 }
 
-void UISessionStateStatusBarIndicator::retranslateUi()
+void UISessionStateStatusBarIndicator::sltRetranslateUI()
 {
     /* Translate description: */
     m_strDescription = tr("%1 status-bar indicator", "like 'hard-disk status-bar indicator'")
@@ -186,7 +190,7 @@ public:
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -238,7 +242,7 @@ public:
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -290,7 +294,7 @@ public:
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -351,7 +355,7 @@ public:
         connect(m_pMachine, &UIMachine::sigAudioAdapterChange,
                 this, &UIIndicatorAudio::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -407,7 +411,7 @@ public:
         connect(m_pMachine, &UIMachine::sigNetworkAdapterChange,
                 this, &UIIndicatorNetwork::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -459,7 +463,7 @@ public:
         connect(m_pMachine, &UIMachine::sigUSBDeviceStateChange,
                 this, &UIIndicatorUSB::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -508,7 +512,7 @@ public:
         connect(m_pMachine, &UIMachine::sigSharedFolderChange,
                 this, &UIIndicatorSharedFolders::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -556,7 +560,7 @@ public:
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorDisplay::updateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -625,7 +629,7 @@ public:
                                                              "rotationAngleStart", "rotationAngleFinal",
                                                              1000);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected:
@@ -763,7 +767,7 @@ public:
             sltHandleMachineStateChange();
         }
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected:
@@ -879,7 +883,7 @@ public:
         connect(m_pMachine, &UIMachine::sigMouseStateChange,
                 this, static_cast<void(UIIndicatorMouse::*)(int)>(&UIIndicatorMouse::setState)); // us to blame ..
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -958,7 +962,7 @@ public:
         connect(m_pMachine, &UIMachine::sigKeyboardStateChange,
                 this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState)); // us to blame ..
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 
 protected slots:
@@ -984,7 +988,7 @@ protected slots:
 };
 
 /** QITextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
-class UIIndicatorKeyboardExtension : public QIWithRetranslateUI<QITextStatusBarIndicator>
+class UIIndicatorKeyboardExtension : public QITextStatusBarIndicator
 {
     Q_OBJECT;
 
@@ -997,7 +1001,9 @@ public:
         connect(gEDataManager, &UIExtraDataManager::sigRuntimeUIHostKeyCombinationChange,
                 this, &UIIndicatorKeyboardExtension::sltUpdateAppearance);
         /* Translate finally: */
-        retranslateUi();
+        sltRetranslateUI();
+        connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+                this, &UIIndicatorKeyboardExtension::sltRetranslateUI);
     }
 
 public slots:
@@ -1008,10 +1014,10 @@ public slots:
         setText(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination()));
     }
 
-private:
+private slots:
 
     /** Retranslation routine. */
-    virtual void retranslateUi() RT_OVERRIDE
+    void sltRetranslateUI()
     {
         sltUpdateAppearance();
         setToolTip(QApplication::translate("UIMachineWindowNormal",

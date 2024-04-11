@@ -47,13 +47,14 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CMediumAttachment.h"
 #include "CStorageController.h"
 
 UIBootFailureDialog::UIBootFailureDialog(QWidget *pParent)
-    : QIWithRetranslateUI<QIMainDialog>(pParent)
+    : QIMainDialog(pParent)
     , m_pParent(pParent)
     , m_pCentralWidget(0)
     , m_pMainLayout(0)
@@ -86,7 +87,7 @@ QString UIBootFailureDialog::bootMediumPath() const
     return m_pBootImageSelector->path();
 }
 
-void UIBootFailureDialog::retranslateUi()
+void UIBootFailureDialog::sltRetranslateUI()
 {
     if (m_pCloseButton)
     {
@@ -209,7 +210,9 @@ void UIBootFailureDialog::prepareWidgets()
     }
 
     m_pMainLayout->addStretch();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIBootFailureDialog::sltRetranslateUI);
 }
 
 void UIBootFailureDialog::sltCancel()
@@ -226,7 +229,7 @@ void UIBootFailureDialog::showEvent(QShowEvent *pEvent)
 {
     if (m_pParent)
         gpDesktop->centerWidget(this, m_pParent, false);
-    QIWithRetranslateUI<QIMainDialog>::showEvent(pEvent);
+    QIMainDialog::showEvent(pEvent);
 
 }
 

@@ -35,7 +35,6 @@
 #include <QMainWindow>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -56,7 +55,7 @@ class CSession;
 
 
 /* Machine-window interface: */
-class UIMachineWindow : public QIWithRetranslateUI2<QMainWindow>
+class UIMachineWindow : public QMainWindow
 {
     Q_OBJECT;
 
@@ -132,9 +131,6 @@ protected:
 
     /* Constructor: */
     UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
-
-    /* Translate stuff: */
-    void retranslateUi() RT_OVERRIDE;
 
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
@@ -214,6 +210,12 @@ protected:
     QSpacerItem *m_pBottomSpacer;
     QSpacerItem *m_pLeftSpacer;
     QSpacerItem *m_pRightSpacer;
+
+private slots:
+
+    /* Translate stuff: */
+    void sltRetranslateUI();
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIMachineWindow_h */

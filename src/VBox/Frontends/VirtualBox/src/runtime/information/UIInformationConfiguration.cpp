@@ -44,10 +44,11 @@
 #include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
 #include "UIMachine.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pTableWidget(0)
     , m_pCopyWholeTableAction(0)
@@ -58,7 +59,9 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent)
     , m_iRowBottomMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin))
 {
     prepareObjects();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIInformationConfiguration::sltRetranslateUI);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIInformationConfiguration::sltMachineDataChanged);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
@@ -88,7 +91,7 @@ void UIInformationConfiguration::sltCopyTableToClipboard()
     pClipboard->setText(tableData(), QClipboard::Clipboard);
 }
 
-void UIInformationConfiguration::retranslateUi()
+void UIInformationConfiguration::sltRetranslateUI()
 {
     m_strGeneralTitle = QApplication::translate("UIVMInformationDialog", "General");
     m_strSystemTitle = QApplication::translate("UIVMInformationDialog", "System");

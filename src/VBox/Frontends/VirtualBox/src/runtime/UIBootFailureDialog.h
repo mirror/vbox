@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "QIMainDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIMedium.h"
 #include "UIMediumDefs.h"
 
@@ -47,7 +46,7 @@ class QIRichTextLabel;
 class UIFilePathSelector;
 
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
-class UIBootFailureDialog : public QIWithRetranslateUI<QIMainDialog>
+class UIBootFailureDialog : public QIMainDialog
 {
 
     Q_OBJECT;
@@ -76,18 +75,17 @@ private slots:
     void sltCancel();
     void sltReset();
     void sltFileSelectorPathChanged(const QString &strPath);
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
 
 private:
 
     QPixmap iconPixmap();
     /* Checks if selected iso exists and readable. Returns false if not. Returns true if nothing is selected. */
     bool checkISOImage() const;
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */

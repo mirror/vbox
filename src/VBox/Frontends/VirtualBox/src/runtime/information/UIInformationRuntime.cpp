@@ -42,6 +42,7 @@
 #include "UIInformationRuntime.h"
 #include "UIGuestOSType.h"
 #include "UIMachine.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CDisplay.h"
@@ -70,7 +71,7 @@ enum InfoRow
 *   UIRuntimeInfoWidget definition.                                                                                     *
 *********************************************************************************************************************************/
 /** A QTablWidget extention to show some runtime attributes */
-class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
+class UIRuntimeInfoWidget : public QTableWidget
 {
 
     Q_OBJECT;
@@ -85,12 +86,9 @@ public:
     void updateDnDMode(KDnDMode enmMode = KDnDMode_Max);
     QString tableData() const;
 
-protected:
-
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    void sltRetranslateUI();
     void sltTimeout();
 
 private:
@@ -148,7 +146,7 @@ private:
 *********************************************************************************************************************************/
 
 UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent)
-    : QIWithRetranslateUI<QTableWidget>(pParent)
+    : QTableWidget(pParent)
     , m_iMinimumWidth(0)
     , m_pTimer(0)
 {
@@ -184,11 +182,13 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent)
              << &m_strRemoteDesktopLabel;
 
 
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIRuntimeInfoWidget::sltRetranslateUI);
     computeMinimumWidth();
 }
 
-void UIRuntimeInfoWidget::retranslateUi()
+void UIRuntimeInfoWidget::sltRetranslateUI()
 {
     m_strTableTitle                    = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
     m_strScreenResolutionLabel         = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
@@ -521,7 +521,7 @@ void UIRuntimeInfoWidget::computeMinimumWidth()
 *********************************************************************************************************************************/
 
 UIInformationRuntime::UIInformationRuntime(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pRuntimeInfoWidget(0)
     , m_pCopyWholeTableAction(0)
@@ -533,10 +533,12 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent)
     connect(gpMachine, &UIMachine::sigDnDModeChange, this, &UIInformationRuntime::sltDnDModeChange);
 
     prepareObjects();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIInformationRuntime::sltRetranslateUI);
 }
 
-void UIInformationRuntime::retranslateUi()
+void UIInformationRuntime::sltRetranslateUI()
 {
     if (m_pCopyWholeTableAction)
         m_pCopyWholeTableAction->setText(QApplication::translate("UIVMInformationDialog", "Copy All"));

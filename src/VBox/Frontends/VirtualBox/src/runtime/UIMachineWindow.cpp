@@ -50,6 +50,7 @@
 #include "UIMachineView.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
+#include "UITranslationEventListener.h"
 #include "UIVMCloseDialog.h"
 
 /* COM includes: */
@@ -134,7 +135,9 @@ void UIMachineWindow::prepare()
     loadSettings();
 
     /* Retranslate window: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIMachineWindow::sltRetranslateUI);
 
     /* Show (must be done before updating the appearance): */
     showInNecessaryMode();
@@ -193,7 +196,7 @@ void UIMachineWindow::sltMachineStateChanged()
 }
 
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, pMachineLogic->windowFlags(uScreenId))
+    : QMainWindow(0, pMachineLogic->windowFlags(uScreenId))
     , m_pMachineLogic(pMachineLogic)
     , m_pMachineView(0)
     , m_uScreenId(uScreenId)
@@ -295,7 +298,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     }
 }
 
-void UIMachineWindow::retranslateUi()
+void UIMachineWindow::sltRetranslateUI()
 {
     /* Compose window-title prefix: */
     m_strWindowTitlePrefix = VBOX_PRODUCT;
@@ -312,7 +315,7 @@ void UIMachineWindow::retranslateUi()
 bool UIMachineWindow::event(QEvent *pEvent)
 {
     /* Call to base-class: */
-    const bool fResult = QIWithRetranslateUI2<QMainWindow>::event(pEvent);
+    const bool fResult = QMainWindow::event(pEvent);
 
     /* Handle particular events: */
     switch (pEvent->type())

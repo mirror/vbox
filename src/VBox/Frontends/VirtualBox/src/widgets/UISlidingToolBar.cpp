@@ -26,6 +26,8 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
+#include <QCloseEvent>
 #include <QHBoxLayout>
 
 /* GUI includes: */

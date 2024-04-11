@@ -32,7 +32,6 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 #include "UIAdvancedSettingsDialog.h"
 
@@ -59,7 +58,7 @@ class CVirtualBoxErrorInfo;
 #endif
 
 /* Machine logic interface: */
-class UIMachineLogic : public QIWithRetranslateUI3<QObject>
+class UIMachineLogic : public QObject
 {
     Q_OBJECT;
 
@@ -180,7 +179,6 @@ protected:
     void setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler);
     void setMouseHandler(UIMouseHandler *pMouseHandler);
     void addMachineWindow(UIMachineWindow *pMachineWindow);
-    void retranslateUi() RT_OVERRIDE;
 #ifdef VBOX_WS_MAC
     bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
     void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }
@@ -327,6 +325,9 @@ private slots:
 
     /** Handles request to commit data. */
     void sltHandleCommitData();
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
