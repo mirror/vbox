@@ -280,15 +280,67 @@ typedef const struct RTLOGOUTPUTIF *PCRTLOGOUTPUTIF;
 typedef struct RTLOGOUTPUTIF
 {
     /**
+     * Opens a log directory context to make log rotation changes within.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pszFilename     The filename to create a context for.
+     * @param   ppvDirCtx       Where to return the opaque directory context.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDirCtxOpen, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, void **ppvDirCtx));
+
+    /**
+     * Closes the log directory context.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pvDirCtx        The opaque directory context returned by
+     *                          pfnDirCtxOpen.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDirCtxClose, (PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx));
+
+    /**
+     * Deletes the given file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pvDirCtx        The opaque directory context returned by
+     *                          pfnDirCtxOpen.
+     * @param   pszFilename     The filename to delete.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDelete, (PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx, const char *pszFilename));
+
+    /**
+     * Renames the given file.
+     *
+     * @returns IPRT status code.
+     * @param   pIf             Pointer to this interface.
+     * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pvDirCtx        The opaque directory context returned by
+     *                          pfnDirCtxOpen.
+     * @param   pszFilenameOld  The old filename to rename.
+     * @param   pszFilenameNew  The new filename.
+     * @param   fFlags          Flags for the operation, combination of RTFILEMOVE_FLAGS_XXX.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRename, (PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx,
+                                          const char *pszFilenameOld, const char *pszFilenameNew, uint32_t fFlags));
+
+    /**
      * Opens a new log file with the given name.
      *
      * @returns IPRT status code.
      * @param   pIf             Pointer to this interface.
      * @param   pvUser          Opaque user data passed when setting the callbacks.
+     * @param   pvDirCtx        The opaque directory context returned by
+     *                          pfnDirCtxOpen.
      * @param   pszFilename     The filename to open.
      * @param   fFlags          Open flags, combination of RTFILE_O_XXX.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags));
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx,
+                                        const char *pszFilename, uint32_t fFlags));
 
     /**
      * Closes the currently open file.
@@ -298,29 +350,6 @@ typedef struct RTLOGOUTPUTIF
      * @param   pvUser          Opaque user data passed when setting the callbacks.
      */
     DECLR3CALLBACKMEMBER(int, pfnClose, (PCRTLOGOUTPUTIF pIf, void *pvUser));
-
-    /**
-     * Deletes the given file.
-     *
-     * @returns IPRT status code.
-     * @param   pIf             Pointer to this interface.
-     * @param   pvUser          Opaque user data passed when setting the callbacks.
-     * @param   pszFilename     The filename to delete.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnDelete, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename));
-
-    /**
-     * Renames the given file.
-     *
-     * @returns IPRT status code.
-     * @param   pIf             Pointer to this interface.
-     * @param   pvUser          Opaque user data passed when setting the callbacks.
-     * @param   pszFilenameOld  The old filename to rename.
-     * @param   pszFilenameNew  The new filename.
-     * @param   fFlags          Flags for the operation, combination of RTFILEMOVE_FLAGS_XXX.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnRename, (PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
-                                          const char *pszFilenameNew, uint32_t fFlags));
 
     /**
      * Queries the size of the log file.

@@ -8160,12 +8160,44 @@ void Console::i_safeVMPtrReleaser(PUVM *a_ppUVM)
     }
 }
 
-
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags)
+
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedDirCtxOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, void **ppvDirCtx)
 {
-    RT_NOREF(pIf);
+    RT_NOREF(pIf, pvUser, pszFilename, ppvDirCtx);
+    *ppvDirCtx = (void *)(intptr_t)22;
+    return VINF_SUCCESS;
+}
+
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedDirCtxClose(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx)
+{
+    RT_NOREF(pIf, pvUser, pvDirCtx);
+    Assert((intptr_t)pvDirCtx == 22);
+    return VINF_SUCCESS;
+}
+
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx, const char *pszFilename)
+{
+    RT_NOREF(pIf, pvDirCtx, pvUser);
+    return RTFileDelete(pszFilename);
+}
+
+
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedRename(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx,
+                              const char *pszFilenameOld, const char *pszFilenameNew, uint32_t fFlags)
+{
+    RT_NOREF(pIf, pvDirCtx, pvUser);
+    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
+}
+
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx, const char *pszFilename, uint32_t fFlags)
+{
+    RT_NOREF(pIf, pvDirCtx);
     Console *pConsole = static_cast<Console *>(pvUser);
     RTVFSFILE hVfsFile = NIL_RTVFSFILE;
 
@@ -8203,8 +8235,8 @@ DECLCALLBACK(int) Console::i_logEncryptedOpen(PCRTLOGOUTPUTIF pIf, void *pvUser,
 }
 
 
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedClose(PCRTLOGOUTPUTIF pIf, void *pvUser)
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedClose(PCRTLOGOUTPUTIF pIf, void *pvUser)
 {
     RT_NOREF(pIf);
     Console *pConsole = static_cast<Console *>(pvUser);
@@ -8215,25 +8247,8 @@ DECLCALLBACK(int) Console::i_logEncryptedClose(PCRTLOGOUTPUTIF pIf, void *pvUser
 }
 
 
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename)
-{
-    RT_NOREF(pIf, pvUser);
-    return RTFileDelete(pszFilename);
-}
-
-
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedRename(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
-                                                const char *pszFilenameNew, uint32_t fFlags)
-{
-    RT_NOREF(pIf, pvUser);
-    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
-}
-
-
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize)
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize)
 {
     RT_NOREF(pIf);
     Console *pConsole = static_cast<Console *>(pvUser);
@@ -8242,9 +8257,8 @@ DECLCALLBACK(int) Console::i_logEncryptedQuerySize(PCRTLOGOUTPUTIF pIf, void *pv
 }
 
 
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
-                                               size_t cbWrite, size_t *pcbWritten)
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     RT_NOREF(pIf);
     Console *pConsole = static_cast<Console *>(pvUser);
@@ -8253,16 +8267,30 @@ DECLCALLBACK(int) Console::i_logEncryptedWrite(PCRTLOGOUTPUTIF pIf, void *pvUser
 }
 
 
-/*static*/
-DECLCALLBACK(int) Console::i_logEncryptedFlush(PCRTLOGOUTPUTIF pIf, void *pvUser)
+/*static*/ DECLCALLBACK(int)
+Console::i_logEncryptedFlush(PCRTLOGOUTPUTIF pIf, void *pvUser)
 {
     RT_NOREF(pIf);
     Console *pConsole = static_cast<Console *>(pvUser);
 
     return RTVfsFileFlush(pConsole->m_hVfsFileLog);
 }
-#endif
 
+
+/*static*/ RTLOGOUTPUTIF const Console::s_ConsoleEncryptedLogOutputIf =
+{
+    Console::i_logEncryptedDirCtxOpen,
+    Console::i_logEncryptedDirCtxClose,
+    Console::i_logEncryptedDelete,
+    Console::i_logEncryptedRename,
+    Console::i_logEncryptedOpen,
+    Console::i_logEncryptedClose,
+    Console::i_logEncryptedQuerySize,
+    Console::i_logEncryptedWrite,
+    Console::i_logEncryptedFlush
+};
+
+#endif /* VBOX_WITH_FULL_VM_ENCRYPTION */
 
 /**
  * Initialize the release logging facility. In case something
@@ -8335,18 +8363,10 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
             && bstrLogKeyId.isNotEmpty()
             && bstrLogKeyStore.isNotEmpty())
         {
-            m_LogOutputIf.pfnOpen      = Console::i_logEncryptedOpen;
-            m_LogOutputIf.pfnClose     = Console::i_logEncryptedClose;
-            m_LogOutputIf.pfnDelete    = Console::i_logEncryptedDelete;
-            m_LogOutputIf.pfnRename    = Console::i_logEncryptedRename;
-            m_LogOutputIf.pfnQuerySize = Console::i_logEncryptedQuerySize;
-            m_LogOutputIf.pfnWrite     = Console::i_logEncryptedWrite;
-            m_LogOutputIf.pfnFlush     = Console::i_logEncryptedFlush;
-
             m_strLogKeyId    = Utf8Str(bstrLogKeyId);
             m_strLogKeyStore = Utf8Str(bstrLogKeyStore);
 
-            pLogOutputIf    = &m_LogOutputIf;
+            pLogOutputIf    = &s_ConsoleEncryptedLogOutputIf;
             pvLogOutputUser = this;
             m_fEncryptedLog = true;
         }

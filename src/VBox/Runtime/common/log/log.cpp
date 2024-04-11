@@ -48,6 +48,9 @@
 #include <iprt/thread.h>
 #include <iprt/mp.h>
 #ifdef IN_RING3
+# ifdef RT_OS_WINDOWS
+#  include <iprt/dir.h>
+# endif
 # include <iprt/env.h>
 # include <iprt/file.h>
 # include <iprt/lockvalidator.h>
@@ -226,7 +229,10 @@ typedef struct RTLOGGERINTERNAL
     /** Pointer to the output interface used. */
     PCRTLOGOUTPUTIF         pOutputIf;
     /** Opaque user data passed to the callbacks in the output interface. */
-    void                    *pvOutputIfUser;
+    void                   *pvOutputIfUser;
+    /** Opaque directory context.
+     * This is kept open while we have an open log file. */
+    void                   *pvDirCtx;
 
     /** Handle to log file (if open) - only used by the default output interface to avoid additional layers of indirection. */
     RTFILE                  hFile;
@@ -258,7 +264,7 @@ typedef struct RTLOGGERINTERNAL
 } RTLOGGERINTERNAL;
 
 /** The revision of the internal logger structure. */
-# define RTLOGGERINTERNAL_REV    UINT32_C(13)
+# define RTLOGGERINTERNAL_REV    UINT32_C(14)
 
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbRingBufUnflushed, sizeof(uint64_t));
 #ifdef IN_RING3
@@ -266,9 +272,10 @@ AssertCompileMemberAlignment(RTLOGGERINTERNAL, hFile, sizeof(void *));
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbHistoryFileMax, sizeof(uint64_t));
 #endif
 
-
 /** Pointer to internal logger bits. */
 typedef struct RTLOGGERINTERNAL *PRTLOGGERINTERNAL;
+
+
 /**
  * Arguments passed to the output function.
  */
@@ -759,15 +766,105 @@ RT_EXPORT_SYMBOL(RTLogCheckGroupFlags);
 *********************************************************************************************************************************/
 
 #ifdef IN_RING3
-static DECLCALLBACK(int) rtLogOutputIfDefOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, uint32_t fFlags)
+# ifdef RT_OS_WINDOWS
+#  define RTLOG_DIR_CTX_IS_PARENT_DIR
+# endif
+
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnDirCtxOpen}
+ */
+static DECLCALLBACK(int) rtLogOutputIfDefDirCtxOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename, void **ppvDirCtx)
 {
-    RT_NOREF(pIf);
+    RT_NOREF(pIf, pvUser);
+# ifdef RTLOG_DIR_CTX_IS_PARENT_DIR
+    /* Open the parent directory to make sure it is a real directory and not
+       object directory placed there by someone with evil intent. @bugref{10632} */
+    RTDIR hDir = NIL_RTDIR;
+    int rc = RTDirOpenFiltered(&hDir, pszFilename, RTDIRFILTER_WINNT, 0);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertCompile(sizeof(*ppvDirCtx) == sizeof(hDir));
+    *ppvDirCtx = hDir;
+# else
+    RT_NOREF(pIf, pvUser, pszFilename);
+    *ppvDirCtx = (void *)(intptr_t)42;
+# endif
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnDirCtxClose}
+ */
+static DECLCALLBACK(int) rtLogOutputIfDefDirCtxClose(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx)
+{
+    RT_NOREF(pIf, pvUser);
+# ifdef RTLOG_DIR_CTX_IS_PARENT_DIR
+    RTDIR hDir = (RTDIR)pvDirCtx;
+    int rc = RTDirClose(hDir);
+    AssertRC(rc);
+    return rc;
+# else
+    Assert((intptr_t)pvDirCtx == 42);
+    RT_NOREF(pvDirCtx);
+    return VINF_SUCCESS;
+# endif
+}
+
+
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnDelete}
+ */
+static DECLCALLBACK(int) rtLogOutputIfDefDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx, const char *pszFilename)
+{
+    RT_NOREF(pIf, pvUser, pvDirCtx);
+# ifdef RTLOG_DIR_CTX_IS_PARENT_DIR
+    /** @todo use RTDirRelPathUnlink when it adds any improvements. */
+# else
+    Assert((intptr_t)pvDirCtx == 42);
+# endif
+
+    return RTFileDelete(pszFilename);
+}
+
+
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnRename}
+ */
+static DECLCALLBACK(int) rtLogOutputIfDefRename(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx,
+                                                const char *pszFilenameOld, const char *pszFilenameNew, uint32_t fFlags)
+{
+    RT_NOREF(pIf, pvUser, pvDirCtx);
+# ifdef RTLOG_DIR_CTX_IS_PARENT_DIR
+    /** @todo use RTDirRelPathRename when it adds any improvements. */
+# else
+    Assert((intptr_t)pvDirCtx == 42);
+# endif
+    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
+}
+
+
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnOpen}
+ */
+static DECLCALLBACK(int) rtLogOutputIfDefOpen(PCRTLOGOUTPUTIF pIf, void *pvUser, void *pvDirCtx,
+                                              const char *pszFilename, uint32_t fFlags)
+{
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvUser;
+    RT_NOREF(pIf, pvDirCtx);
+# ifdef RTLOG_DIR_CTX_IS_PARENT_DIR
+    /** @todo use RTDirRelFileOpen */
+# else
+    Assert((intptr_t)pvDirCtx == 42);
+# endif
 
     return RTFileOpen(&pLoggerInt->hFile, pszFilename, fFlags);
 }
 
 
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnClose}
+ */
 static DECLCALLBACK(int) rtLogOutputIfDefClose(PCRTLOGOUTPUTIF pIf, void *pvUser)
 {
     RT_NOREF(pIf);
@@ -782,21 +879,9 @@ static DECLCALLBACK(int) rtLogOutputIfDefClose(PCRTLOGOUTPUTIF pIf, void *pvUser
 }
 
 
-static DECLCALLBACK(int) rtLogOutputIfDefDelete(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilename)
-{
-    RT_NOREF(pIf, pvUser);
-    return RTFileDelete(pszFilename);
-}
-
-
-static DECLCALLBACK(int) rtLogOutputIfDefRename(PCRTLOGOUTPUTIF pIf, void *pvUser, const char *pszFilenameOld,
-                                                const char *pszFilenameNew, uint32_t fFlags)
-{
-    RT_NOREF(pIf, pvUser);
-    return RTFileRename(pszFilenameOld, pszFilenameNew, fFlags);
-}
-
-
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnQuerySize}
+ */
 static DECLCALLBACK(int) rtLogOutputIfDefQuerySize(PCRTLOGOUTPUTIF pIf, void *pvUser, uint64_t *pcbSize)
 {
     RT_NOREF(pIf);
@@ -810,6 +895,9 @@ static DECLCALLBACK(int) rtLogOutputIfDefQuerySize(PCRTLOGOUTPUTIF pIf, void *pv
 }
 
 
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnWrite}
+ */
 static DECLCALLBACK(int) rtLogOutputIfDefWrite(PCRTLOGOUTPUTIF pIf, void *pvUser, const void *pvBuf,
                                                size_t cbWrite, size_t *pcbWritten)
 {
@@ -823,6 +911,9 @@ static DECLCALLBACK(int) rtLogOutputIfDefWrite(PCRTLOGOUTPUTIF pIf, void *pvUser
 }
 
 
+/**
+ * @callback_method_impl{RTLOGOUTPUTIF,pfnFlush}
+ */
 static DECLCALLBACK(int) rtLogOutputIfDefFlush(PCRTLOGOUTPUTIF pIf, void *pvUser)
 {
     RT_NOREF(pIf);
@@ -840,15 +931,18 @@ static DECLCALLBACK(int) rtLogOutputIfDefFlush(PCRTLOGOUTPUTIF pIf, void *pvUser
  */
 static const RTLOGOUTPUTIF g_LogOutputIfDef =
 {
-    rtLogOutputIfDefOpen,
-    rtLogOutputIfDefClose,
+    rtLogOutputIfDefDirCtxOpen,
+    rtLogOutputIfDefDirCtxClose,
     rtLogOutputIfDefDelete,
     rtLogOutputIfDefRename,
+    rtLogOutputIfDefOpen,
+    rtLogOutputIfDefClose,
     rtLogOutputIfDefQuerySize,
     rtLogOutputIfDefWrite,
     rtLogOutputIfDefFlush
 };
-#endif
+
+#endif /* IN_RING3 */
 
 
 /*********************************************************************************************************************************
@@ -1491,8 +1585,13 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                 RTErrInfoSet(pErrInfo, rc, N_("failed to create semaphore"));
             }
 # ifdef IN_RING3
-            pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
-# endif
+            if (pLoggerInt->fLogOpened)
+            {
+                pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
+                pLoggerInt->pOutputIf->pfnDirCtxClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx);
+                pLoggerInt->pvDirCtx = NULL;
+            }
+#endif
 # if defined(RT_ARCH_X86) && !defined(LOG_USE_C99) && 0 /* retired */
             if (pLoggerInt->Core.pfnLogger)
             {
@@ -1579,6 +1678,9 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
         pLoggerInt->fLogOpened = false;
+
+        pLoggerInt->pOutputIf->pfnDirCtxClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx);
+        pLoggerInt->pvDirCtx = NULL;
     }
 # endif
 
@@ -2696,7 +2798,7 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
         fOpen |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
     else
     {
-        pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+        pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                          pLoggerInt->szFilename);
         fOpen |= RTFILE_O_CREATE;
     }
@@ -2706,7 +2808,7 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
         fOpen = (fOpen & ~RTFILE_O_DENY_NONE) | RTFILE_O_DENY_NOT_DELETE;
 
     unsigned cBackoff = 0;
-    int rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+    int rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                             pLoggerInt->szFilename, fOpen);
     while (   (   rc == VERR_SHARING_VIOLATION
                || (rc == VERR_ALREADY_EXISTS && !(pLoggerInt->fFlags & RTLOGFLAGS_APPEND)))
@@ -2714,9 +2816,9 @@ static int rtlogFileOpen(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
     {
         RTThreadSleep(g_acMsLogBackoff[cBackoff++]);
         if (!(pLoggerInt->fFlags & RTLOGFLAGS_APPEND))
-            pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+            pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                              pLoggerInt->szFilename);
-        rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+        rc = pLoggerInt->pOutputIf->pfnOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                             pLoggerInt->szFilename, fOpen);
     }
     if (RT_SUCCESS(rc))
@@ -2798,6 +2900,17 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
 
         pLoggerInt->pOutputIf->pfnClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser);
     }
+    /*
+     * If the log file was closed and we're being called from rtR3LogOpenFileDestination
+     * we must open a log directory context before going on.
+     */
+    else if (!fFirst)
+    {
+        int rc = pLoggerInt->pOutputIf->pfnDirCtxOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                      pLoggerInt->szFilename, &pLoggerInt->pvDirCtx);
+        if (RT_FAILURE(rc))
+            return;
+    }
 
     if (cSavedHistory)
     {
@@ -2816,18 +2929,19 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
             RTStrPrintf(szNewName, sizeof(szNewName), "%s.%u", pLoggerInt->szFilename, i + 1);
 
             unsigned cBackoff = 0;
-            int rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+            int rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                                       szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
             while (   rc == VERR_SHARING_VIOLATION
                    && cBackoff < RT_ELEMENTS(g_acMsLogBackoff))
             {
                 RTThreadSleep(g_acMsLogBackoff[cBackoff++]);
-                rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                rc = pLoggerInt->pOutputIf->pfnRename(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
                                                       szOldName, szNewName, RTFILEMOVE_FLAGS_REPLACE);
             }
 
             if (rc == VERR_FILE_NOT_FOUND)
-                pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, szNewName);
+                pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
+                                                 szNewName);
         }
 
         /*
@@ -2837,7 +2951,8 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
         {
             char szExcessName[sizeof(pLoggerInt->szFilename) + 32];
             RTStrPrintf(szExcessName, sizeof(szExcessName), "%s.%u", pLoggerInt->szFilename, i);
-            int rc = pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, szExcessName);
+            int rc = pLoggerInt->pOutputIf->pfnDelete(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx,
+                                                      szExcessName);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -2863,7 +2978,19 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
         pLoggerInt->fDestFlags = fSavedDestFlags;
     }
 
-    /* Restore saved values. */
+    /*
+     * Close the context if we didn't get a log file, unless we're being
+     * called by rtR3LogOpenFileDestination.
+     */
+    if (!pLoggerInt->fLogOpened && !fFirst)
+    {
+        pLoggerInt->pOutputIf->pfnDirCtxClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx);
+        pLoggerInt->pvDirCtx = NULL;
+    }
+
+    /*
+     * Restore saved values.
+     */
     pLoggerInt->cHistory = cSavedHistory;
     pLoggerInt->fFlags   = fSavedFlags;
 }
@@ -2881,29 +3008,48 @@ static void rtlogRotate(PRTLOGGERINTERNAL pLoggerInt, uint32_t uTimeSlot, bool f
  */
 static int rtR3LogOpenFileDestination(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo)
 {
-    int rc;
-    if (pLoggerInt->fFlags & RTLOGFLAGS_APPEND)
+    /*
+     * Open a log directory context so the output backend can better secure
+     * the log file opening, renaming and deleting. (See @bugref{10632}.)
+     */
+    Assert(!pLoggerInt->fLogOpened);
+    int rc = pLoggerInt->pOutputIf->pfnDirCtxOpen(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser,
+                                                  pLoggerInt->szFilename, &pLoggerInt->pvDirCtx);
+    if (RT_SUCCESS(rc))
     {
-        rc = rtlogFileOpen(pLoggerInt, pErrInfo);
-
-        /* Rotate in case of appending to a too big log file,
-           otherwise this simply doesn't do anything. */
-        rtlogRotate(pLoggerInt, 0, true /* fFirst */, pErrInfo);
-    }
-    else
-    {
-        /* Force rotation if it is configured. */
-        pLoggerInt->cbHistoryFileWritten = UINT64_MAX;
-        rtlogRotate(pLoggerInt, 0, true /* fFirst */, pErrInfo);
-
-        /* If the file is not open then rotation is not set up. */
-        if (!pLoggerInt->fLogOpened)
+        if (pLoggerInt->fFlags & RTLOGFLAGS_APPEND)
         {
-            pLoggerInt->cbHistoryFileWritten = 0;
             rc = rtlogFileOpen(pLoggerInt, pErrInfo);
+
+            /* Rotate in case of appending to a too big log file,
+               otherwise this simply doesn't do anything. */
+            rtlogRotate(pLoggerInt, 0, true /* fFirst */, pErrInfo);
         }
         else
-            rc = VINF_SUCCESS;
+        {
+            /* Force rotation if it is configured. */
+            pLoggerInt->cbHistoryFileWritten = UINT64_MAX;
+            rtlogRotate(pLoggerInt, 0, true /* fFirst */, pErrInfo);
+
+            /* If the file is not open then rotation is not set up. */
+            if (!pLoggerInt->fLogOpened)
+            {
+                pLoggerInt->cbHistoryFileWritten = 0;
+                rc = rtlogFileOpen(pLoggerInt, pErrInfo);
+            }
+            else
+                rc = VINF_SUCCESS;
+        }
+
+        /*
+         * Close the directory context if we failed to get open a log file.
+         * This gives the user a chance to make changes so it may succeed later.
+         */
+        if (!pLoggerInt->fLogOpened)
+        {
+            pLoggerInt->pOutputIf->pfnDirCtxClose(pLoggerInt->pOutputIf, pLoggerInt->pvOutputIfUser, pLoggerInt->pvDirCtx);
+            pLoggerInt->pvDirCtx = NULL;
+        }
     }
     return rc;
 }
