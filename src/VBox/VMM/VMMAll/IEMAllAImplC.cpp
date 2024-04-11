@@ -3252,29 +3252,33 @@ IEM_DECL_IMPL_DEF(uint32_t, RT_CONCAT3(iemAImpl_rcl_u,a_cBitsWidth,a_Suffix),(ui
     return fEFlags; \
 }
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#ifndef RT_ARCH_ARM64
+
+# if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(64, uint64_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_RCL(64, uint64_t, _intel,     1)
 EMIT_RCL(64, uint64_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(32, uint32_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_RCL(32, uint32_t, _intel,     1)
 EMIT_RCL(32, uint32_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(16, uint16_t, RT_NOTHING, 1)
-#endif
+# endif
 EMIT_RCL(16, uint16_t, _intel,     1)
 EMIT_RCL(16, uint16_t, _amd,       0)
 
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+# if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(8,  uint8_t,  RT_NOTHING, 1)
-#endif
+# endif
 EMIT_RCL(8,  uint8_t,  _intel,     1)
 EMIT_RCL(8,  uint8_t,  _amd,       0)
+
+#endif /* !RT_ARCH_ARM64 */
 
 
 /*

@@ -924,3 +924,172 @@ ROR_64 iemAImpl_ror_u64,       1
 ROR_64 iemAImpl_ror_u64_intel, 1
 ROR_64 iemAImpl_ror_u64_amd,   0
 
+
+/*
+ * Rotate Left thru Carry.
+ */
+
+/* uint32_t iemAImpl_rcl_u8( uint32_t fEFlagsIn, uint8_t *pu8Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rcl_u16(uint32_t fEFlagsIn, uint16_t *pu16Dst, uint8_t cShift); */
+/* uint32_t iemAImpl_rcl_u32(uint32_t fEFlagsIn, uint16_t *pu32Dst, uint8_t cShift); */
+.macro RCL_8_16_32, a_Name, a_cBits, a_fIntelFlags, a_LdStSuff
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to rotate anything at all? */
+        and     w2, w2, #0x1f
+        cbz     w2, 99f
+
+.ifne \a_cBits < 32
+        /*
+         * 8 and 16 bit: w2 = w2 % (a_cBits + 1).
+         *
+         * Given that the w2 range is 0 thru 31, the 16-bit case can be reduced
+         * to:
+         *      w2 = w2 >= 17 ? w2 - 17 : w2
+         *
+         * In the 8-bit scenario we're modding with 9, so we need to do it in
+         * two steps:
+         *      w2 = w2 >= 18 ? w2 - 18 : w2
+         *      w2 = w2 >= 9  ? w2 - 9  : w2
+         *
+         * For comparison clang generates the following for 16-bit:
+         *      mov     w9, #0xf0f0f0f1
+         *      umull   x9, w2, w9
+         *      lsr     x9, x9, #36
+         *      bfi     w9, w9, #4, #1
+         *      sub     w2, w2, w9
+         *
+         * The 8-bit variant is differs only in the constants used:
+         *      mov     w9, #0x38e38e39
+         *      umull   x9, w2, w9
+         *      lsr     x9, x9, #33
+         *      bfi     w9, w9, #3, #2
+         *      subs    w8, w2, w9
+         */
+        mov     w7, w2
+
+ .ifne \a_cBits == 16
+        subs    w3, w2, #17
+        csel    w2, w3, w2, hs
+ .else
+        subs    w3, w2, #18
+        csel    w2, w3, w2, hs
+        subs    w3, w2, #9
+        csel    w2, w3, w2, hs
+ .endif
+ .ifne \a_fIntelFlags
+        cbz     w2, 99f                     /* Intel: Skip everything if the modded rotate count is zero. */
+ .endif
+.endif
+
+        /*
+         * Do the rotating: (w8 << w2) | (CF << (w2 - 1)) | (w2 > 1 ? (w8 >> (a_cBits - w2 + 1)) : 0)
+         */
+        and     w3, w0, #X86_EFL_CF
+        subs    w4, w2, #1                  /* Also: prep for 'w2 > 1' (w2 can't be zero, btw) - think: cmp w2, #1 */
+        lslv    x3, x3, x4                  /* x3 = CF << (w2 - 1) */
+
+        mov     w4, #(\a_cBits + 1)
+        sub     w4, w4, w2                  /* w4 = a_cBits - w2 + 1 */
+
+        ldr\a_LdStSuff  w8, [x1]
+        lslv    x9, x8, x2
+        lsrv    w10, w8, w4
+        csel    w10, wzr, w10, eq           /* if w2 == 1: w10 = 0; else: w10 = w8 >> (a_cBits - w2 + 1); */
+        orr     x9, x9, x3                  /* shifted CF */
+        orr     x9, x9, x10
+        str\a_LdStSuff w9, [x1]
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+.ifeq \a_fIntelFlags
+        cbz     w2, 88f                     /* AMD: CF doesn't change if the modded rotate count is zero (only OF does actually). */
+.endif
+        bfxil   x0, x9, #(\a_cBits), #1     /* CF = last bit rotated out  */
+88:
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     w11, w8, w8, LSL #1
+        lsr     w11, w11, #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+        eor     w11, w0, w9, LSR #(\a_cBits - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+RCL_8_16_32 iemAImpl_rcl_u8,         8, 1, b
+RCL_8_16_32 iemAImpl_rcl_u8_intel,   8, 1, b
+RCL_8_16_32 iemAImpl_rcl_u8_amd,     8, 0, b
+
+RCL_8_16_32 iemAImpl_rcl_u16,       16, 1, h
+RCL_8_16_32 iemAImpl_rcl_u16_intel, 16, 1, h
+RCL_8_16_32 iemAImpl_rcl_u16_amd,   16, 0, h
+
+RCL_8_16_32 iemAImpl_rcl_u32,       32, 1,
+RCL_8_16_32 iemAImpl_rcl_u32_intel, 32, 1,
+RCL_8_16_32 iemAImpl_rcl_u32_amd,   32, 0,
+
+/** @todo this is slightly slower than the C version (release) on an M2. Investigate why. */
+/* uint32_t iemAImpl_rcl_u64(uint32_t fEFlagsIn, uint16_t *pu64Dst, uint8_t cShift); */
+.macro RCL_64, a_Name, a_fIntelFlags
+ALIGNCODE(IEM_AIMPL_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN \a_Name
+        .cfi_startproc
+
+        /* Do we need to shift anything at all? */
+        and     w2, w2, #0x3f
+        cbz     w2, 99f
+
+        /*
+         * Do the rotating: (w8 << w2) | (CF << (w2 - 1)) | (w2 > 1 ? (w8 >> (64 - w2 + 1)) : 0)
+         */
+        and     w3, w0, #X86_EFL_CF
+        subs    w4, w2, #1                  /* Also: prep for 'w2 > 1' (w2 can't be zero, btw) - think: cmp w2, #1 */
+        lslv    x3, x3, x4                  /* x3 = CF << (w2 - 1) */
+
+        mov     w4, #(64 + 1)
+        sub     w4, w4, w2                  /* w4 = 64 - w2 + 1 */
+
+        ldr     x8, [x1]
+        lslv    x9, x8, x2
+        lsrv    x10, x8, x4
+        csel    x10, xzr, x10, eq           /* if w2 == 1: x10 = 0; else: x10 = x8 >> (64 - w2 + 1); */
+        orr     x9, x9, x3                  /* shifted CF */
+        orr     x9, x9, x10
+        str     x9, [x1]
+
+        /*
+         * Calculate EFLAGS - only CF and OF.
+         */
+        neg     x11, x2
+        lsr     x11, x8, x11
+        bfi     w0, w11, #0, #1            /* CF = last bit rotated out. */
+
+.ifne \a_fIntelFlags
+        /* Intel: OF = first rotate step: fEfl |= X86_EFL_GET_OF_ ## cOpBits(uDst ^ (uDst << 1)); */
+        eor     x11, x8, x8, LSL #1
+        lsr     x11, x11, #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.else
+        /* AMD: OF = last rotate step: fEfl |= ((uResult >> (cOpBits - 1)) ^ fCarry) << X86_EFL_OF_BIT;  */
+        eor     x11, x0, x9, LSR #(64 - 1)
+        bfi     w0, w11, #X86_EFL_OF_BIT, #1
+.endif
+
+99:
+        ret
+        .cfi_endproc
+.endm
+
+RCL_64 iemAImpl_rcl_u64,       1
+RCL_64 iemAImpl_rcl_u64_intel, 1
+RCL_64 iemAImpl_rcl_u64_amd,   0
