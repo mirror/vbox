@@ -36,7 +36,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* COM includes: */
 #include "CGuest.h"
@@ -57,7 +56,7 @@ protected:
 };
 
 /** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
-class UIGuestProcessControlDialog : public QIWithRetranslateUI<QIManagerDialog>
+class UIGuestProcessControlDialog : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -67,12 +66,6 @@ public:
     UIGuestProcessControlDialog(QWidget *pCenterWidget);
 
 protected:
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
      * @{ */
@@ -98,6 +91,11 @@ protected:
 private slots:
 
     void sltSetCloseButtonShortCut(QKeySequence shortcut);
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
 
 private:
 

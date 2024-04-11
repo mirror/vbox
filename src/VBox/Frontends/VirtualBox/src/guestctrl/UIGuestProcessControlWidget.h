@@ -39,7 +39,6 @@
 #include "CEventListener.h"
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "QIManagerDialog.h"
 #include "UIMainEventListener.h"
 
@@ -50,7 +49,7 @@ class UIGuestControlTreeWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
-class UIGuestProcessControlWidget : public QIWithRetranslateUI<QWidget>
+class UIGuestProcessControlWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -62,12 +61,9 @@ public:
     /** When true we delete the corresponding tree item as soon as the guest session/process is unregistered. */
     static const bool  s_fDeleteAfterUnregister;
 
-protected:
-
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    void sltRetranslateUI();
     void sltGuestSessionsUpdated();
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionUnregistered(CGuestSession guestSession);

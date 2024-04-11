@@ -39,7 +39,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIGuestControlDefs.h"
 
 
@@ -87,7 +86,7 @@ private:
 /** A QWidget extension. it includes a QWidget extension for initiating a guest session
  *  one host and one guest file table views, a log viewer
  *  and some other file manager related widgets. */
-class SHARED_LIBRARY_STUFF UIFileManager : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIFileManager : public QWidget
 {
     Q_OBJECT;
 
@@ -108,10 +107,6 @@ public:
 #endif
 
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
-
-protected:
-
-    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 

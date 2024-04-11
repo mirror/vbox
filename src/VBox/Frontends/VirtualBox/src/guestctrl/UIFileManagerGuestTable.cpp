@@ -69,7 +69,7 @@
 *********************************************************************************************************************************/
 /** A QWidget extension containing text entry fields for password and username and buttons to
   *  start/stop a guest session. */
-class UIGuestSessionWidget : public QIWithRetranslateUI<QWidget>
+class UIGuestSessionWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -91,12 +91,12 @@ public:
 
 protected:
 
-    void retranslateUi() RT_OVERRIDE;
     void keyPressEvent(QKeyEvent * pEvent) RT_OVERRIDE;
     void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
+    void sltRetranslateUI();
     void sltButtonClick();
     void sltHandleTextChanged(const QString &strText);
 
@@ -128,7 +128,7 @@ private:
 *********************************************************************************************************************************/
 
 UIGuestSessionWidget::UIGuestSessionWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmButtonMode(ButtonMode_Open)
     , m_pUserNameEdit(0)
     , m_pPasswordEdit(0)
@@ -186,7 +186,9 @@ void UIGuestSessionWidget::prepareWidgets()
 
     m_pMainLayout->insertStretch(-1, 1);
     switchSessionOpenMode();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIGuestSessionWidget::sltRetranslateUI);
 }
 
 void UIGuestSessionWidget::sltButtonClick()
@@ -203,7 +205,7 @@ void UIGuestSessionWidget::sltHandleTextChanged(const QString &strText)
     markForError(false);
 }
 
-void UIGuestSessionWidget::retranslateUi()
+void UIGuestSessionWidget::sltRetranslateUI()
 {
     if (m_pUserNameEdit)
     {
@@ -246,7 +248,7 @@ void UIGuestSessionWidget::keyPressEvent(QKeyEvent * pEvent)
 
 void UIGuestSessionWidget::showEvent(QShowEvent *pEvent)
 {
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
     if (m_pUserNameEdit)
         m_pUserNameEdit->setFocus();
 }
@@ -258,7 +260,7 @@ void UIGuestSessionWidget::switchSessionOpenMode()
     if (m_pPasswordEdit)
         m_pPasswordEdit->setEnabled(true);
     m_enmButtonMode = ButtonMode_Open;
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGuestSessionWidget::switchSessionCloseMode()
@@ -268,7 +270,7 @@ void UIGuestSessionWidget::switchSessionCloseMode()
     if (m_pPasswordEdit)
         m_pPasswordEdit->setEnabled(false);
     m_enmButtonMode = ButtonMode_Close;
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGuestSessionWidget::markForError(bool fMarkForError)
@@ -447,7 +449,6 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     setStateAndEnableWidgets();
 
     sltRetranslateUI();
-
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
             this, &UIFileManagerGuestTable::sltRetranslateUI);
 }

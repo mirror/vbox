@@ -38,6 +38,7 @@
 #include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UISession.h"
+#include "UITranslationEventListener.h"
 
 
 /*********************************************************************************************************************************
@@ -59,13 +60,13 @@ void UIGuestProcessControlDialogFactory::create(QIManagerDialog *&pDialog, QWidg
 *********************************************************************************************************************************/
 
 UIGuestProcessControlDialog::UIGuestProcessControlDialog(QWidget *pCenterWidget)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_comGuest(gpMachine->uisession()->guest())
     , m_strMachineName(gpMachine->machineName())
 {
 }
 
-void UIGuestProcessControlDialog::retranslateUi()
+void UIGuestProcessControlDialog::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
@@ -102,7 +103,9 @@ void UIGuestProcessControlDialog::configureCentralWidget()
 void UIGuestProcessControlDialog::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIGuestProcessControlDialog::sltRetranslateUI);
 }
 
 void UIGuestProcessControlDialog::loadSettings()

@@ -37,8 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
-
 
 
 /* Forward declarations: */
@@ -68,7 +66,7 @@ protected:
 };
 
 /** QIManagerDialog extension providing GUI with the dialog displaying file manager releated logs. */
-class UIFileManagerDialog : public QIWithRetranslateUI<QIManagerDialog>
+class UIFileManagerDialog : public QIManagerDialog
 {
     Q_OBJECT;
 
@@ -82,12 +80,6 @@ public:
     ~UIFileManagerDialog();
 
 protected:
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
      * @{ */
@@ -113,6 +105,11 @@ protected:
 private slots:
 
     void sltSetCloseButtonShortCut(QKeySequence shortcut);
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+    /** @} */
 
 private:
 

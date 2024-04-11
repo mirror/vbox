@@ -122,7 +122,7 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 
 UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                              const CMachine &comMachine, QWidget *pParent, bool fShowToolbar)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pFileTableSplitter(0)
@@ -140,7 +140,6 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     loadOptions();
     prepareObjects();
     prepareConnections();
-    retranslateUi();
     restorePanelVisibility();
     UIFileManagerOptions::create();
     uiCommon().setHelpKeyword(this, "guestadd-gc-file-manager");
@@ -168,10 +167,6 @@ QMenu *UIFileManager::menu() const
     if (!m_pActionPool)
         return 0;
     return m_pActionPool->action(UIActionIndex_M_FileManager)->menu();
-}
-
-void UIFileManager::retranslateUi()
-{
 }
 
 void UIFileManager::prepareObjects()

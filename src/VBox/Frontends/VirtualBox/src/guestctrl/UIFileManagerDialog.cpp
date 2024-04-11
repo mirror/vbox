@@ -38,6 +38,7 @@
 #include "UIFileManagerDialog.h"
 #include "UILoggingDefs.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -77,7 +78,7 @@ UIFileManagerDialog::UIFileManagerDialog(QWidget *pCenterWidget,
                                          UIActionPool *pActionPool,
                                          const QUuid &uMachineId,
                                          const QString &strMachineName)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QIManagerDialog(pCenterWidget)
     , m_pActionPool(pActionPool)
     , m_uMachineId(uMachineId)
     , m_strMachineName(strMachineName)
@@ -88,7 +89,7 @@ UIFileManagerDialog::~UIFileManagerDialog()
 {
 }
 
-void UIFileManagerDialog::retranslateUi()
+void UIFileManagerDialog::sltRetranslateUI()
 {
     if (!m_strMachineName.isEmpty())
         setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_strMachineName));
@@ -150,7 +151,9 @@ void UIFileManagerDialog::configureCentralWidget()
 void UIFileManagerDialog::finalize()
 {
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIFileManagerDialog::sltRetranslateUI);
     manageEscapeShortCut();
 }
 
