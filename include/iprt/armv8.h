@@ -4627,6 +4627,7 @@ typedef enum ARMV8INSTRUSHIFTSZ
  * @returns The encoded instruction.
  * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc  The vector source register.
+ * @param   cShift      Number of bits to shift.
  * @param   enmSz       Element size.
  * @param   fUnsigned   Flag whether this a signed or unsigned shift,
  * @param   fRound      Flag whether this is the rounding shift variant.
