@@ -12845,7 +12845,7 @@ FNIEMOP_DEF(iemOp_paddq_Pq_Qq)
 FNIEMOP_DEF(iemOp_paddq_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PADDQ, paddq, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_paddq_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(paddq, iemAImpl_paddq_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -13869,7 +13869,7 @@ FNIEMOP_DEF(iemOp_paddb_Pq_Qq)
 FNIEMOP_DEF(iemOp_paddb_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PADDB, paddb, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_paddb_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(paddb, iemAImpl_paddb_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -13888,7 +13888,7 @@ FNIEMOP_DEF(iemOp_paddw_Pq_Qq)
 FNIEMOP_DEF(iemOp_paddw_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PADDW, paddw, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_paddw_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(paddw, iemAImpl_paddw_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -13907,7 +13907,7 @@ FNIEMOP_DEF(iemOp_paddd_Pq_Qq)
 FNIEMOP_DEF(iemOp_paddd_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PADDD, paddd, Vx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_paddd_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(paddd, iemAImpl_paddd_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
