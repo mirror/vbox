@@ -63,45 +63,29 @@ endif
 VBox-libxml2_INCS           = include
 VBox-libxml2_SOURCES        = \
 	buf.c \
-	c14n.c \
-	catalog.c \
 	chvalid.c \
-	debugXML.c \
 	dict.c \
 	encoding.c \
 	entities.c \
 	error.c \
 	globals.c \
 	hash.c \
-	HTMLparser.c \
-	HTMLtree.c \
-	legacy.c \
 	list.c \
-	nanohttp.c \
 	parser.c \
 	parserInternals.c \
 	pattern.c \
 	relaxng.c \
 	SAX2.c \
-	SAX.c \
-	schematron.c \
 	threads.c \
 	tree.c \
 	uri.c \
 	valid.c \
-	xinclude.c \
-	xlink.c \
 	xmlIO.c \
 	xmlmemory.c \
 	xmlreader.c \
-	xmlregexp.c \
 	xmlsave.c \
-	xmlschemas.c \
-	xmlschemastypes.c \
 	xmlunicode.c \
 	xmlwriter.c \
-	xpath.c \
-	xpointer.c \
 	xmlstring.c
 
 # For linking:
