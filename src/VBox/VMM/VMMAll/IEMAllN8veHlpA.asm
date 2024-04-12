@@ -73,7 +73,6 @@ extern NAME(iemNativeHlpCheckTlbLookup)
 
 
 %ifdef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
-ALIGNCODE(64) ; Make sure the whole prolog is within a single cache line.
 
 ;;
 ; This is the common prologue of a TB, saving all volatile registers
@@ -87,6 +86,7 @@ ALIGNCODE(64) ; Make sure the whole prolog is within a single cache line.
 ;       Any changes here must also be reflected in the unwind code installed by
 ;       iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk()!
 ;
+ALIGNCODE(64) ; Make sure the whole prolog is within a single cache line.
 BEGINPROC   iemNativeTbEntry
         push    rbp
         SEH64_PUSH_xBP
@@ -149,6 +149,7 @@ ENDPROC     iemNativeTbEntry
 ;       without restoring them.  This is highly unlikely, unless we're doing
 ;       it ourselves, I think.
 ;
+ALIGNCODE(16)
 BEGINPROC   iemNativeTbLongJmp
 %ifdef ASM_CALL64_MSC
         mov     rbp, rcx
@@ -187,6 +188,7 @@ ENDPROC     iemNativeTbLongJmp
 ; This is wrapper function that saves and restores all volatile registers
 ; so the impact of inserting LogCpuState is minimal to the other TB code.
 ;
+ALIGNCODE(16)
 BEGINPROC   iemNativeHlpAsmSafeWrapLogCpuState
         push    xBP
         SEH64_PUSH_xBP
@@ -250,6 +252,7 @@ ENDPROC     iemNativeHlpAsmSafeWrapLogCpuState
 ; This is wrapper function that saves and restores all volatile registers
 ; so the impact of inserting CheckTlbLookup is minimal to the other TB code.
 ;
+ALIGNCODE(16)
 BEGINPROC   iemNativeHlpAsmSafeWrapCheckTlbLookup
         push    xBP
         SEH64_PUSH_xBP
