@@ -1203,6 +1203,8 @@
 #define VERR_HTTP_HOST_NOT_FOUND                (-896)
 /** Unexpected cURL error configure the proxy. */
 #define VERR_HTTP_CURL_PROXY_CONFIG             (-897)
+/** The server does not support the requested function. */
+#define VERR_HTTP_NOT_SUPPORTED                 (-898)
 /** Generic CURL error. */
 #define VERR_HTTP_CURL_ERROR                    (-899)
 /** @} */

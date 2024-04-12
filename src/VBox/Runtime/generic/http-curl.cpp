@@ -2834,6 +2834,11 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, CURLcode rcCurl, uint32_t 
                 if (!puHttpStatus)
                     rc = VERR_HTTP_NOT_FOUND;
                 break;
+            case 501:
+                /* Requested function not supported */
+                if (!puHttpStatus)
+                    rc = VERR_HTTP_NOT_SUPPORTED;
+                break;
         }
 
         if (pThis->pszRedirLocation)
