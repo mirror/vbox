@@ -1122,6 +1122,12 @@ static DECLCALLBACK(int) vusbRhAbortEpByPort(PVUSBIROOTHUBCONNECTOR pInterface, 
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort, "vusbRhAbortEpByPort");
 
+    /* We expect to be called from a device like xHCI which keeps good track
+     * of device <--> port correspondence. Being called for a nonexistent
+     * device is an error.
+     */
+    AssertPtrReturn(pDev, VERR_INVALID_PARAMETER);
+
     if (pDev->pHub != pRh)
         AssertFailedReturn(VERR_INVALID_PARAMETER);
 
@@ -1139,6 +1145,14 @@ static DECLCALLBACK(int) vusbRhAbortEpByAddr(PVUSBIROOTHUBCONNECTOR pInterface, 
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV pDev = vusbR3RhGetVUsbDevByAddrRetain(pRh, DstAddress, "vusbRhAbortEpByAddr");
+
+    /* We expect to be called from a device like OHCI which does not
+     * keep track of device <--> address correspondence and may try to
+     * cancel an address that does not correspond to a device. If there's
+     * no device, just do nothing.
+     */
+    if (!pDev)
+        return VINF_SUCCESS;
 
     if (pDev->pHub != pRh)
         AssertFailedReturn(VERR_INVALID_PARAMETER);
@@ -1234,7 +1248,8 @@ static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR 
 {
     PVUSBROOTHUB    pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     AssertReturn(pRh, 0);
-    PVUSBDEV        pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort, "vusbRhUpdateIsocFrameDelta"); AssertPtr(pDev);
+    PVUSBDEV        pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort, "vusbRhUpdateIsocFrameDelta");
+    AssertPtrReturn(pDev, 0);
     PVUSBPIPE       pPipe = &pDev->aPipes[EndPt];
     uint32_t        *puLastFrame;
     int32_t         uFrameDelta;
@@ -1271,7 +1286,7 @@ static DECLCALLBACK(int) vusbR3RhDevPowerOn(PVUSBIROOTHUBCONNECTOR pInterface, u
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevPowerOn");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, VERR_VUSB_DEVICE_NOT_ATTACHED);
 
     int rc = VUSBIDevPowerOn(&pDev->IDevice);
     vusbDevRelease(pDev, "vusbR3RhDevPowerOn");
@@ -1284,7 +1299,7 @@ static DECLCALLBACK(int) vusbR3RhDevPowerOff(PVUSBIROOTHUBCONNECTOR pInterface, 
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevPowerOff");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, VERR_VUSB_DEVICE_NOT_ATTACHED);
 
     int rc = VUSBIDevPowerOff(&pDev->IDevice);
     vusbDevRelease(pDev, "vusbR3RhDevPowerOff");
@@ -1297,7 +1312,7 @@ static DECLCALLBACK(VUSBDEVICESTATE) vusbR3RhDevGetState(PVUSBIROOTHUBCONNECTOR 
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevGetState");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, VUSB_DEVICE_STATE_DETACHED);
 
     VUSBDEVICESTATE enmState = VUSBIDevGetState(&pDev->IDevice);
     vusbDevRelease(pDev, "vusbR3RhDevGetState");
@@ -1310,7 +1325,7 @@ static DECLCALLBACK(bool) vusbR3RhDevIsSavedStateSupported(PVUSBIROOTHUBCONNECTO
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevIsSavedStateSupported");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, false);
 
     bool fSavedStateSupported = VUSBIDevIsSavedStateSupported(&pDev->IDevice);
     vusbDevRelease(pDev, "vusbR3RhDevIsSavedStateSupported");
@@ -1323,7 +1338,7 @@ static DECLCALLBACK(VUSBSPEED) vusbR3RhDevGetSpeed(PVUSBIROOTHUBCONNECTOR pInter
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort, "vusbR3RhDevGetSpeed");
-    AssertPtr(pDev);
+    AssertPtrReturn(pDev, VUSB_SPEED_UNKNOWN);
 
     VUSBSPEED enmSpeed = pDev->IDevice.pfnGetSpeed(&pDev->IDevice);
     vusbDevRelease(pDev, "vusbR3RhDevGetSpeed");
