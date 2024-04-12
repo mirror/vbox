@@ -1120,7 +1120,7 @@ else
 		--append $@.tmp $@.dump
 endif
 	$(QUIET)$(MV) -f $@.tmp $@
-	#$(QUIET)$(RM) -f $@.dump
+	$(QUIET)$(RM) -f $@.dump
 
 # 3. run it.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run: \
