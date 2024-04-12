@@ -31,10 +31,52 @@
 *********************************************************************************************************************************/
 #include <iprt/asmdefs-arm.h>
 
+#ifdef AssertCompile
+# undef AssertCompile
+#endif
+#define AssertCompile(a_Expr)
+#define INCLUDED_FROM_ARM64_ASSEMBLY
+#include "IEMN8veRecompiler.h"
+
+#define IEM_HLP_FUNCTION_ALIGNMENT 0x20
 
 BEGINCODE
 
 .extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
+
+#ifdef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
+/**
+ * This is the common prologue of a TB, saving all volatile registers
+ * and creating the stack frame for saving temporary values.
+ *
+ * @param    pVCpu    (x0)      The cross-context vCPU structure pointer.
+ * @param    pCpumCtx (x1)      The cross-context CPUM context structure pointer.
+ * @param    pTbStart (x2)      The TB instruction start pointer.
+ */
+ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN iemNativeTbEntry
+# ifdef RT_OS_DARWIN
+        pacibsp
+# endif
+        stp     x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE]! /* Allocate space for saving registers and place x19+x20 at the bottom. */
+        stp     x21, x22, [sp, #0x10]                            /* Save x21 thru x28 (SP remains unchanged). */
+        stp     x23, x24, [sp, #0x20]
+        stp     x25, x26, [sp, #0x30]
+        stp     x27, x28, [sp, #0x40]
+        stp     x29, x30, [sp, #0x50]                            /* Save the BP and LR (ret address) registers at the top of the frame. */
+        add     x29, sp, #(IEMNATIVE_FRAME_SAVE_REG_SIZE - 16)   /* Set BP to point to the old BP stack address */
+        sub     sp, sp, #IEMNATIVE_FRAME_VAR_SIZE                /* Allocate the variable area from SP. */
+        mov     IEMNATIVE_REG_FIXED_PVMCPU_ASM,   x0
+        mov     IEMNATIVE_REG_FIXED_PCPUMCTX_ASM, x1
+# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+        str     x29, [IEMNATIVE_REG_FIXED_PVMCPU_ASM, #0x7c8]    /* Save the frame pointer to pvTbFramePointerR3 */ /** @todo Get rid of this hardcoded assumption */
+# endif
+        /*
+         * Everything is done, jump to the start of the TB.
+         */
+        br      x2
+#endif
+
 
 /**
  * This does the epilogue of a TB, given the RBP for the frame and eax value to return.
@@ -52,6 +94,7 @@ BEGINCODE
  *       without restoring them.  This is highly unlikely, unless we're doing
  *       it ourselves, I think.
  */
+ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
 BEGINPROC_HIDDEN iemNativeTbLongJmp
         /*
          * This must exactly match what iemNativeEmitEpilog does.
@@ -80,6 +123,7 @@ BEGINPROC_HIDDEN iemNativeTbLongJmp
  * This is wrapper function that saves and restores all volatile registers
  * so the impact of inserting LogCpuState is minimal to the other TB code.
  */
+ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
 BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapLogCpuState
 #ifdef RT_OS_DARWIN
         pacibsp

@@ -2688,11 +2688,24 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
 # ifdef LOG_ENABLED
         iemThreadedLogCurInstr(pVCpu, "EXn", 0);
 # endif
-# ifdef RT_ARCH_AMD64
+
+# ifndef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
+#  ifdef RT_ARCH_AMD64
         VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu);
-# else
+#  else
         VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu, &pVCpu->cpum.GstCtx);
+#  endif
+# else
+#  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+        AssertCompileMemberOffset(VMCPUCC, iem.s.pvTbFramePointerR3, 0x7c8); /* This is assumed in iemNativeTbEntry */
+#  endif
+#  ifdef RT_ARCH_AMD64
+        VBOXSTRICTRC const rcStrict = iemNativeTbEntry(pVCpu, (uintptr_t)pTb->Native.paInstructions);
+#  else
+        VBOXSTRICTRC const rcStrict = iemNativeTbEntry(pVCpu, &pVCpu->cpum.GstCtx, (uintptr_t)pTb->Native.paInstructions);
+#  endif
 # endif
+
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
         pVCpu->iem.s.pvTbFramePointerR3 = NULL;
 # endif

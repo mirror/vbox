@@ -69,6 +69,12 @@
 # define IEMNATIVE_WITH_INSTRUCTION_COUNTING
 #endif
 
+/** @def IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
+ * Enables having only a single prologue for native TBs. */
+#if 1 || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
+#endif
+
 
 /** @name Stack Frame Layout
  *
@@ -198,7 +204,9 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 
 #elif defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
+# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     x28
 # define IEMNATIVE_REG_FIXED_PCPUMCTX       ARMV8_A64_REG_X27
+# define IEMNATIVE_REG_FIXED_PCPUMCTX_ASM   x27
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
 # if defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING) && 0 /* debug the updating with a shadow RIP. */
 #   define IEMNATIVE_REG_FIXED_TMP1         ARMV8_A64_REG_X16
@@ -415,6 +423,9 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 # error "Port me!"
 #endif
 
+
+/** @todo r=aeichner Can this be made prettier? */
+#ifndef INCLUDED_FROM_ARM64_ASSEMBLY
 
 /** Native code generator label types. */
 typedef enum
@@ -2478,6 +2489,16 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPcWriteback(PIEMRECOMPILERSTATE pReNati
 }
 #endif /* IEMNATIVE_WITH_DELAYED_PC_UPDATING  */
 
+
+#ifdef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
+# ifdef RT_ARCH_AMD64
+extern "C" IEM_DECL_NATIVE_HLP_DEF(VBOXSTRICTRC, iemNativeTbEntry, (PVMCPUCC pVCpu, uintptr_t pTbInsn));
+# elif defined(RT_ARCH_ARM64)
+extern "C" IEM_DECL_NATIVE_HLP_DEF(VBOXSTRICTRC, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUMCTX pCpumCtx, uintptr_t pTbInsn));
+# endif
+#endif
+
+#endif /* !INCLUDED_FROM_ARM64_ASSEMBLY */
 
 /** @} */
 

@@ -6401,6 +6401,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+#ifndef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
 /**
  * Emits a standard prolog.
  */
@@ -6514,6 +6515,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
+#endif
 
 
 /*********************************************************************************************************************************
@@ -9109,10 +9111,12 @@ l_profile_again:
     int             rc         = VINF_SUCCESS;
     IEMNATIVE_TRY_SETJMP(pReNative, rc)
     {
+#ifndef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
         /*
          * Emit prolog code (fixed).
          */
         off = iemNativeEmitProlog(pReNative, off);
+#endif
 
         /*
          * Convert the calls to native code.
