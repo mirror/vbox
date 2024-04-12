@@ -2050,21 +2050,21 @@ int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16
 }
 
 /**
- * Initializes a single file as a transfer root.
+ * Initializes a single path as a transfer root.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
- * @param   pszFile             File to use as transfer root.
+ * @param   pszPath             Path to use as transfer root. Can be a single file or a directory.
  *
- * @note    Convenience function, uses ShClTransferRootsSet() internally.
+ * @note    Convenience function, uses ShClTransferRootsInitFromStringList() internally.
  */
-int ShClTransferRootsInitFromFile(PSHCLTRANSFER pTransfer, const char *pszFile)
+int ShClTransferRootsInitFromPath(PSHCLTRANSFER pTransfer, const char *pszPath)
 {
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+
     char *pszRoots = NULL;
-
-    LogFlowFuncEnter();
-
-    int rc = RTStrAAppend(&pszRoots, pszFile);
+    int rc = RTStrAAppend(&pszRoots, pszPath);
     AssertRCReturn(rc, rc);
     rc = RTStrAAppend(&pszRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
     AssertRCReturn(rc, rc);
