@@ -1137,7 +1137,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
      */
     fFlags &= IEMTB_F_KEY_MASK;
     IEMTBCACHE const * const pTbCache = pVCpu->iem.s.pTbCacheR3;
-    uint32_t const           idxHash  = IEMTBCACHE_HASH_NO_KEY_MASK(pTbCache, fFlags, GCPhysPc);
+    uint32_t const           idxHash  = IEMTBCACHE_HASH(pTbCache, fFlags, GCPhysPc);
     PCIEMTB                  pTb      = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
     while (pTb)
     {

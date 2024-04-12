@@ -1907,10 +1907,9 @@ bool iemThreadedCompileEmitNop(PIEMTB pTb)
     pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
     pCall->enmFunction = kIemThreadedFunc_BltIn_Nop;
     pCall->idxInstr    = pTb->cInstructions - 1;
-    pCall->uUnused0    = 0;
-    pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
-    pCall->idxRange    = 0;
+    pCall->offOpcode   = 0;
+    pCall->uUnused0    = 0;
     pCall->auParams[0] = 0;
     pCall->auParams[1] = 0;
     pCall->auParams[2] = 0;
@@ -1933,10 +1932,9 @@ bool iemThreadedCompileEmitLogCpuState(PIEMTB pTb)
     pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
     pCall->enmFunction = kIemThreadedFunc_BltIn_LogCpuState;
     pCall->idxInstr    = pTb->cInstructions - 1;
-    pCall->uUnused0    = 0;
-    pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
-    pCall->idxRange    = 0;
+    pCall->offOpcode   = 0;
+    pCall->uUnused0    = 0;
     pCall->auParams[0] = RT_MAKE_U16(pCall->idxInstr, idxCall); /* currently not used, but whatever */
     pCall->auParams[1] = 0;
     pCall->auParams[2] = 0;
@@ -2025,9 +2023,9 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
 
     PIEMTHRDEDCALLENTRY const pCall     = &pTb->Thrd.paCalls[pTb->Thrd.cCalls];
     pCall->idxInstr    = pTb->cInstructions;
-    pCall->offOpcode   = offOpcode;
-    pCall->idxRange    = idxRange;
     pCall->cbOpcode    = cbInstr;
+    pCall->offOpcode   = offOpcode;
+    pCall->uUnused0    = 0;
     pCall->auParams[0] = (uint32_t)cbInstr
                        | (uint32_t)(pVCpu->iem.s.fExec << 8) /* liveness: Enough of fExec for IEM_F_MODE_X86_IS_FLAT. */
                        /* The upper dword is sometimes used for cbStartPage. */;
@@ -2092,7 +2090,6 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
                     Log8(("%04x:%08RX64: out of ranges after branch\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
                     return false;
                 }
-                pCall->idxRange    = idxRange;
                 pCall->auParams[1] = idxRange;
                 pCall->auParams[2] = 0;
 
@@ -2184,7 +2181,6 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             else
                 return false;
             idxRange += 1;
-            pCall->idxRange    = idxRange;
             pCall->auParams[1] = idxRange;
             pCall->auParams[2] = 0;
 
@@ -2247,7 +2243,6 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
         if (((pTb->aRanges[idxRange - 1].offPhysPage + pTb->aRanges[idxRange - 1].cbOpcodes) & GUEST_PAGE_OFFSET_MASK) == 0)
         {
             Assert(pVCpu->iem.s.offCurInstrStart == 0);
-            pCall->idxRange    = idxRange;
             pCall->auParams[1] = idxRange;
             pCall->auParams[2] = 0;
 
@@ -2389,10 +2384,9 @@ static bool iemThreadedCompileEmitCheckMode(PVMCPUCC pVCpu, PIEMTB pTb)
     pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
     pCall->enmFunction = kIemThreadedFunc_BltIn_CheckMode;
     pCall->idxInstr    = pTb->cInstructions - 1;
-    pCall->uUnused0    = 0;
-    pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
-    pCall->idxRange    = 0;
+    pCall->offOpcode   = 0;
+    pCall->uUnused0    = 0;
     pCall->auParams[0] = pVCpu->iem.s.fExec;
     pCall->auParams[1] = 0;
     pCall->auParams[2] = 0;
@@ -2428,10 +2422,9 @@ bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb)
         pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
         pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
         pCall->idxInstr    = pTb->cInstructions;
-        pCall->uUnused0    = 0;
         pCall->offOpcode   = 0;
         pCall->cbOpcode    = 0;
-        pCall->idxRange    = 0;
+        pCall->uUnused0    = 0;
         pCall->auParams[0] = 0;
         pCall->auParams[1] = 0;
         pCall->auParams[2] = 0;
@@ -2482,10 +2475,9 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
     PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++];
     pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
     pCall->idxInstr    = pTb->cInstructions;
-    pCall->uUnused0    = 0;
     pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
-    pCall->idxRange    = 0;
+    pCall->uUnused0    = 0;
     pCall->auParams[0] = 0;
     pCall->auParams[1] = 0;
     pCall->auParams[2] = 0;
