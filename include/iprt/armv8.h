@@ -4690,7 +4690,7 @@ typedef enum ARMV8INSTRVECARITHSZ
     kArmv8VecInstrArithSz_8   = 0, /**<   8-bit. */
     kArmv8VecInstrArithSz_16  = 1, /**<  16-bit. */
     kArmv8VecInstrArithSz_32  = 2, /**<  32-bit. */
-    kArmv8VecInstrArithSz_64  = 3, /**<  64-bit. */
+    kArmv8VecInstrArithSz_64  = 3  /**<  64-bit. */
 } ARMV8INSTRVECARITHSZ;
 
 /**
