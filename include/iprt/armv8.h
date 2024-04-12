@@ -4697,6 +4697,7 @@ typedef enum ARMV8INSTRVECARITHSZ
  * A64: Encodes ADD/SUB (vector, register).
  *
  * @returns The encoded instruction.
+ * @param   fSub        Flag whther this is an addition (false) or subtraction (true) instruction.
  * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc1 The first vector source register.
  * @param   iVecRegSrc2 The second vector source register.
