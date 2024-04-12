@@ -4682,6 +4682,42 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrShlImm(uint32_t iVecRegDst, uint32
          | (iVecRegSrc << 5)
          | iVecRegDst;
 }
+
+
+/** Armv8 vector arith ops element size.    */
+typedef enum ARMV8INSTRVECARITHSZ
+{
+    kArmv8VecInstrArithSz_8   = 0, /**<   8-bit. */
+    kArmv8VecInstrArithSz_16  = 1, /**<  16-bit. */
+    kArmv8VecInstrArithSz_32  = 2, /**<  32-bit. */
+    kArmv8VecInstrArithSz_64  = 3, /**<  64-bit. */
+} ARMV8INSTRVECARITHSZ;
+
+/**
+ * A64: Encodes ADD/SUB (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The first vector source register.
+ * @param   iVecRegSrc2 The second vector source register.
+ * @param   enmSz       Element size.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrAddSub(bool fSub, uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                     ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0e208400)
+         | ((uint32_t)f128Bit << 30)
+         | ((uint32_t)fSub    << 29)
+         | ((uint32_t)enmSz   << 22)
+         | (iVecRegSrc2 << 16)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
