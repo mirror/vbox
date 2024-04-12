@@ -226,7 +226,7 @@ static int shClTransferHttpURLCreateFromPath(const char *pszPath, char **ppszURL
  * @param   pSrv                HTTP server instance.
  * @param   idTransfer          Transfer ID to return HTTP server transfer for.
  */
-static PSHCLHTTPSERVERTRANSFER shClTransferHttpServerGetTransferById(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
+DECLINLINE(PSHCLHTTPSERVERTRANSFER) shClTransferHttpServerGetTransferById(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
 {
     PSHCLHTTPSERVERTRANSFER pSrvTx;
     RTListForEach(&pSrv->lstTransfers, pSrvTx, SHCLHTTPSERVERTRANSFER, Node) /** @todo Slow O(n) lookup, but does it for now. */
@@ -526,6 +526,7 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                                 LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
                                          pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
                         }
+                        /* Note: Directories are not supported here (yet) -- would require using WebDAV. */
                     }
 
                     break;
@@ -720,12 +721,12 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 }
 
 /**
- * Translates a Shared Clipboard HTTP server status to a string.
+ * Returns a Shared Clipboard HTTP server status as a string.
  *
- * @returns Status as a string.
- * @param   uMsg                Status to translate.
+ * @returns Status as a string, or "Unknown" if invalid / unknown.
+ * @param   enmStatus           HTTP server status to return as a string.
  */
-static const char *shClTransferHttpServerStatusToStr(SHCLHTTPSERVERSTATUS enmStatus)
+DECLINLINE(const char *) shClTransferHttpServerStatusToStr(SHCLHTTPSERVERSTATUS enmStatus)
 {
     switch (enmStatus)
     {
@@ -889,7 +890,7 @@ static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
  *
  * @returns VBox status code.
  * @param   pSrv                HTTP server instance to unregister transfer from.
- * @param   pTransfer           Server transfer to destroy
+ * @param   pSrvTx              HTTP server transfer to destroy.
  *                              The pointer will be invalid on success.
  *
  * @note    Caller needs to take the server critical section.
@@ -1248,7 +1249,7 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
  * Converts a HTTP transfer to a string list.
  *
  * @returns VBox status code.
- * @param   pHttpSrv            HTTP server that contains the transfer.
+ * @param   pSrv                HTTP server that contains the transfer.
  * @param   pTransfer           Transfer to convert data from.
  * @param   pszSep              Separator to use for the transfer entries.
  * @param   ppszData            Where to store the string list on success.
@@ -1301,7 +1302,7 @@ static int shClTransferHttpConvertToStringListEx(PSHCLHTTPSERVER pSrv, PSHCLTRAN
  * Converts a HTTP transfer to a string list.
  *
  * @returns VBox status code.
- * @param   pHttpSrv            HTTP server that contains the transfer.
+ * @param   pSrv                HTTP server that contains the transfer.
  * @param   pTransfer           Transfer to convert data from.
  * @param   ppszData            Where to store the string list on success.
  * @param   pcbData             Where to return the bytes of \a ppszData on success.
@@ -1341,7 +1342,7 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
 }
 
 /**
- * Waits for a status change.
+ * Waits for a server status change.
  *
  * @returns VBox status code.
  * @retval  VERR_STATE_CHANGED if the HTTP server was uninitialized.
@@ -1443,4 +1444,3 @@ int ShClTransferHttpServerMaybeStop(PSHCLHTTPCONTEXT pCtx)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
