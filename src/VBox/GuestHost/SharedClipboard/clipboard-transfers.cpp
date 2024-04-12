@@ -1927,7 +1927,7 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
                     {
                         /* Calculate the relative path within the root path. */
                         Assert(RTStrNLen(pszPathCur, RTPATH_MAX) >= cchPathRootAbs); /* Sanity. */
-                        const char *pszPathRelToRoot = pszPathCur + cchPathRootAbs;
+                        const char *pszPathRelToRoot = pszPathCur + cchPathRootAbs + 1 /* Skip slash */;
                         if (    pszPathRelToRoot
                             && *pszPathRelToRoot != '\0')
                         {
