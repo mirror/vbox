@@ -464,79 +464,87 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
     rc = RTUriParse(pszUrl, &Parsed);
     if (RT_SUCCESS(rc))
     {
-        char        *pszPath = RTUriParsedPath(pszUrl, &Parsed);
-        AssertPtrReturn(pszPath, VERR_NO_MEMORY); /* Should be okay, as we succeeded RTUriParse() above. */
-        size_t const cchPath = strlen(pszPath);
+        char        *pszParsedPath = RTUriParsedPath(pszUrl, &Parsed);
+        AssertPtrReturn(pszParsedPath, VERR_NO_MEMORY); /* Should be okay, as we succeeded RTUriParse() above. */
+        size_t const cchParsedPath = strlen(pszParsedPath);
 
         /* For now we only know the transfer -- now we need to figure out the entry we want to serve. */
         PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
         if (pSrvTx)
         {
-            size_t const cchBase = strlen(pSrvTx->szPathVirtual) + 1 /* Skip slash separating the base from the rest */;
-            AssertReturn(cchPath >= cchBase, VERR_INVALID_PARAMETER);
+            size_t const cchRoot = strlen(pSrvTx->szPathVirtual) + 1 /* Skip slash separating the base from the rest */;
+            AssertStmt(cchParsedPath >= cchRoot, rc = VERR_INVALID_PARAMETER);
+            const char  *pszRoot = pszParsedPath + cchRoot; /* Marks the actual root path. */
+            AssertStmt(RT_VALID_PTR(pszRoot), rc = VERR_INVALID_POINTER);
+            AssertStmt(*pszRoot != '\0',      rc = VERR_INVALID_PARAMETER);
 
-            SHCLOBJOPENCREATEPARMS openParms;
-            rc = ShClTransferObjOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
-                openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
-                                  | SHCL_OBJ_CF_ACCESS_DENYWRITE;
-
-                PSHCLTRANSFER pTx = pSrvTx->pTransfer;
-                AssertPtr(pTx);
-
-                rc = VERR_NOT_FOUND; /* Must find the matching root entry first. */
-
-                uint64_t const cRoots = ShClTransferRootsCount(pTx);
-                for (uint32_t i = 0; i < cRoots; i++)
+                SHCLOBJOPENCREATEPARMS openParms;                
+                rc = ShClTransferObjOpenParmsInit(&openParms);
+                if (RT_SUCCESS(rc))
                 {
-                    PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, i);
-                    AssertPtrBreakStmt(pEntry, rc = VERR_NOT_FOUND);
+                    openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
+                                      | SHCL_OBJ_CF_ACCESS_DENYWRITE;
 
-                    Log3Func(("pszPath=%s vs. pEntry=%s\n", pszPath, pEntry->pszName));
+                    PSHCLTRANSFER pTx = pSrvTx->pTransfer;
+                    AssertPtr(pTx);
 
-                    if (RTStrCmp(pEntry->pszName, pszPath + cchBase)) /* Case-sensitive! */
-                        continue;
+                    rc = VERR_NOT_FOUND; /* Must find the matching root entry first. */
 
-                    rc = RTStrCopy(openParms.pszPath, openParms.cbPath, pEntry->pszName);
-                    if (RT_SUCCESS(rc))
+                    Log3Func(("pszParsedPath=%s\n", pszParsedPath));
+
+                    uint64_t const cRoots = ShClTransferRootsCount(pTx);
+                    for (uint32_t i = 0; i < cRoots; i++)
                     {
-                        rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
+                        PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, i);
+                        AssertPtrBreakStmt(pEntry, rc = VERR_NOT_FOUND);
+
+                        Log3Func(("pszRoot=%s vs. pEntry=%s\n", pszRoot, pEntry->pszName));
+
+                        if (RTStrCmp(pszRoot, pEntry->pszName)) /* Case-sensitive! */
+                            continue;
+
+                        rc = RTStrCopy(openParms.pszPath, openParms.cbPath, pEntry->pszName);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
-
-                            if (   pEntry->fInfo & VBOX_SHCL_INFO_F_FSOBJINFO
-                                && pEntry->cbInfo == sizeof(SHCLFSOBJINFO))
+                            rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
+                            if (RT_SUCCESS(rc))
                             {
-                                PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
+                                rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
 
-                                LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=%#x (type %#x)\n",
-                                             pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
-
-                                LogRel2(("Shared Clipboard: HTTP object info: fMode=%#x, cbObject=%zu\n", pSrcObjInfo->Attr.fMode, pSrcObjInfo->cbObject));
-
-                                if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
+                                if (   pEntry->fInfo & VBOX_SHCL_INFO_F_FSOBJINFO
+                                    && pEntry->cbInfo == sizeof(SHCLFSOBJINFO))
                                 {
-                                    memcpy(pObjInfo, pSrcObjInfo, sizeof(SHCLFSOBJINFO));
-                                    rc = VINF_SUCCESS;
+                                    PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
+
+                                    LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=%#x (type %#x)\n",
+                                                 pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
+
+                                    LogRel2(("Shared Clipboard: HTTP object info: fMode=%#x, cbObject=%zu\n", pSrcObjInfo->Attr.fMode, pSrcObjInfo->cbObject));
+
+                                    if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
+                                    {
+                                        memcpy(pObjInfo, pSrcObjInfo, sizeof(SHCLFSOBJINFO));
+                                        rc = VINF_SUCCESS;
+                                    }
                                 }
+                                else
+                                    LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
+                                             pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
+                                /* Note: Directories / symlinks or other fancy stuff is not supported here (yet) -- would require using WebDAV. */                            
                             }
-                            else
-                                LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
-                                         pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
                         }
-                        /* Note: Directories are not supported here (yet) -- would require using WebDAV. */
+
+                        break;
                     }
 
-                    break;
+                    ShClTransferObjOpenParmsDestroy(&openParms);
                 }
-
-                ShClTransferObjOpenParmsDestroy(&openParms);
             }
 
-            RTStrFree(pszPath);
-            pszPath = NULL;
+            RTStrFree(pszParsedPath);
+            pszParsedPath = NULL;
         }
         else
             rc = VERR_NOT_FOUND;
