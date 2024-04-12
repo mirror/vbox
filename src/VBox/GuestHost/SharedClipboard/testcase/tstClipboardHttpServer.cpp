@@ -105,7 +105,7 @@ static void tstCreateTransferSingle(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx,
     PSHCLTRANSFER pTx;
     RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTx));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, pProvider));
-    RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromPath(pTx, pszPath));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsSetFromPath(pTx, pszPath));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxRegister(pTransferCtx, pTx, NULL));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(pSrv, pTx));

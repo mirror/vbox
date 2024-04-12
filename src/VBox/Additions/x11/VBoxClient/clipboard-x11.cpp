@@ -84,8 +84,8 @@ static DECLCALLBACK(int) vbclX11OnTransferInitializeCallback(PSHCLTRANSFERCALLBA
                                           &pvData, &cbData);
             if (RT_SUCCESS(rc))
             {
-                rc = ShClTransferRootsInitFromStringListEx(pTransfer, (const char *)pvData, cbData,
-                                                           "\n" /* X11-based Desktop environments separate entries with "\n" */);
+                rc = ShClTransferRootsSetFromStringListEx(pTransfer, (const char *)pvData, cbData,
+                                                          "\n" /* X11-based Desktop environments separate entries with "\n" */);
                 RTMemFree(pvData);
             }
             break;

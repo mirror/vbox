@@ -1241,7 +1241,7 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer)
         /* Sanity: Make sure that the transfer we're gonna report as INITIALIZED
          *         actually has some root entries set, as the other side can query for those at any time then. */
         if (pTransfer->State.enmDir == SHCLTRANSFERDIR_TO_REMOTE)
-            AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set\n"), rc = VERR_WRONG_ORDER);
+            AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set (yet)\n"), rc = VERR_WRONG_ORDER);
 
         if (RT_SUCCESS(rc))
             rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_INITIALIZED);
@@ -1820,7 +1820,7 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Initializes the root list entries for a given clipboard transfer, extended version.
+ * Set the root list entries for a given clipboard transfer, extended version.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
@@ -1831,7 +1831,7 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
  *
  * @note    Accepts local paths or URI string lists (absolute only).
  */
-int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots, const char *pszSep)
+int ShClTransferRootsSetFromStringListEx(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots, const char *pszSep)
 {
     AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
@@ -1991,7 +1991,7 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
 }
 
 /**
- * Initializes the root list entries for a given clipboard transfer.
+ * Sets the root list entries for a given clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
@@ -2001,13 +2001,13 @@ int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *p
  *
  * @note    Accepts local paths or URI string lists (absolute only).
  */
-int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+int ShClTransferRootsSetFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
-    return ShClTransferRootsInitFromStringListEx(pTransfer, pszRoots, cbRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
+    return ShClTransferRootsSetFromStringListEx(pTransfer, pszRoots, cbRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
 }
 
 /**
- * Initializes the root list entries for a given clipboard transfer, UTF-16 (Unicode) version.
+ * Sets the root list entries for a given clipboard transfer, UTF-16 (Unicode) version.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
@@ -2017,7 +2017,7 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
  *
  * @note    Accepts local paths or URI string lists (absolute only).
  */
-int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 pwszRoots, size_t cbRoots)
+int ShClTransferRootsSetFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 pwszRoots, size_t cbRoots)
 {
     AssertPtrReturn(pwszRoots, VERR_INVALID_POINTER);
     AssertReturn(cbRoots, VERR_INVALID_PARAMETER);
@@ -2038,7 +2038,7 @@ int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16
             size_t cbActual = 0;
             rc = ShClConvUtf16CRLFToUtf8LF(pwszRoots, cwcRoots, pszDst, chDst, &cbActual);
             if (RT_SUCCESS(rc))
-                rc = ShClTransferRootsInitFromStringList(pTransfer, pszDst, cbActual + 1 /* Include terminator */);
+                rc = ShClTransferRootsSetFromStringList(pTransfer, pszDst, cbActual + 1 /* Include terminator */);
 
             RTStrFree(pszDst);
         }
@@ -2050,7 +2050,7 @@ int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16
 }
 
 /**
- * Initializes a single path as a transfer root.
+ * Sets a single path as a transfer root.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
@@ -2058,7 +2058,7 @@ int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16
  *
  * @note    Convenience function, uses ShClTransferRootsInitFromStringList() internally.
  */
-int ShClTransferRootsInitFromPath(PSHCLTRANSFER pTransfer, const char *pszPath)
+int ShClTransferRootsSetFromPath(PSHCLTRANSFER pTransfer, const char *pszPath)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
@@ -2068,7 +2068,7 @@ int ShClTransferRootsInitFromPath(PSHCLTRANSFER pTransfer, const char *pszPath)
     AssertRCReturn(rc, rc);
     rc = RTStrAAppend(&pszRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
     AssertRCReturn(rc, rc);
-    rc =  ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1 /* Include terminator */);
+    rc =  ShClTransferRootsSetFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1 /* Include terminator */);
     RTStrFree(pszRoots);
     return rc;
 }

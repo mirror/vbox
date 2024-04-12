@@ -230,7 +230,7 @@ static void testTransferRootsSetSingle(RTTEST hTest,
     rc = testAddRootEntries(hTest, szTestTransferRootsSetDir, lstBase, lstToExtend, &pszRoots);
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
-    rc = ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    rc = ShClTransferRootsSetFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
     RTTESTI_CHECK_RC(rc, rcExpected);
 
     RTStrFree(pszRoots);
@@ -266,7 +266,7 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     rc = testAddRootEntries(hTest, szTestTransferObjOpenDir, lstRoots, lstToExtendEmpty, &pszRoots);
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
-    rc = ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    rc = ShClTransferRootsSetFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
     RTTESTI_CHECK_RC_OK(rc);
 
     rc = ShClTransferInit(pTransfer);

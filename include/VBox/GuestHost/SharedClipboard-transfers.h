@@ -1198,10 +1198,10 @@ PSHCLLISTENTRY ShClTransferListEntryDup(PSHCLLISTENTRY pListEntry);
 
 int ShClTransferSetProvider(PSHCLTRANSFER pTransfer, PSHCLTXPROVIDER pProvider);
 
-int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots, const char *pszSep);
-int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
-int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 pwszRoots, size_t cbRoots);
-int ShClTransferRootsInitFromPath(PSHCLTRANSFER pTransfer, const char *pszPath);
+int ShClTransferRootsSetFromStringListEx(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots, const char *pszSep);
+int ShClTransferRootsSetFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
+int ShClTransferRootsSetFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 pwszRoots, size_t cbRoots);
+int ShClTransferRootsSetFromPath(PSHCLTRANSFER pTransfer, const char *pszPath);
 uint64_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer);
 PCSHCLLISTENTRY ShClTransferRootsEntryGet(PSHCLTRANSFER pTransfer, uint64_t uIndex);
 int ShClTransferRootListRead(PSHCLTRANSFER pTransfer);

@@ -673,7 +673,7 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
                                       &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
-        rc = ShClTransferRootsInitFromStringList(pCtx->pTransfer, (const char *)pvData, cbData);
+        rc = ShClTransferRootsSetFromStringList(pCtx->pTransfer, (const char *)pvData, cbData);
         if (RT_SUCCESS(rc))
             LogRel2(("Shared Clipboard: Host reported %RU64 X11 root entries for transfer to guest\n",
                      ShClTransferRootsCount(pCtx->pTransfer)));

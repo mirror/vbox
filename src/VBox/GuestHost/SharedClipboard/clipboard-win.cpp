@@ -1316,7 +1316,7 @@ int ShClWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTra
 
                 if (RT_SUCCESS(rc))
                 {
-                    rc = ShClTransferRootsInitFromStringList(pTransfer, pszList, cbList);
+                    rc = ShClTransferRootsSetFromStringList(pTransfer, pszList, cbList);
                     RTStrFree(pszList);
                 }
             }
