@@ -87,12 +87,11 @@ public:
     /** Returns whether multiple connections allowed. */
     bool isMultipleConnectionsAllowed() const;
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
     /** Handles whether VRDE is @a fEnabled. */
     void sltHandleFeatureToggled(bool fEnabled);

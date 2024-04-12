@@ -76,7 +76,7 @@ void UIDragAndDropEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIDragAndDropEditor::retranslateUi()
+void UIDragAndDropEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("D&rag'n'Drop:"));
@@ -135,7 +135,7 @@ void UIDragAndDropEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIDragAndDropEditor::populateCombo()
@@ -164,6 +164,6 @@ void UIDragAndDropEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

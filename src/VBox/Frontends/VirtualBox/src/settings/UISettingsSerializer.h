@@ -41,7 +41,6 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QCloseEvent;
@@ -162,7 +161,7 @@ protected:
 
 /** QIDialog reimplementation used to
   * reflect the settings serialization operation. */
-class SHARED_LIBRARY_STUFF UISettingsSerializerProgress : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UISettingsSerializerProgress : public QIDialog
 {
     Q_OBJECT;
 
@@ -194,13 +193,13 @@ protected:
     /** Prepare routine. */
     void prepare();
 
-    /** Translate routine: */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Close event-handler called with the given window system @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
 private slots:
+
+    /** Translate routine: */
+    void sltRetranslateUI();
 
     /** Hides the modal dialog and sets the result code to <i>Rejected</i>. */
     virtual void reject() RT_OVERRIDE;

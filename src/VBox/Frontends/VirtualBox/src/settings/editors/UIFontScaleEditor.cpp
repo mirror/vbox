@@ -89,7 +89,7 @@ void UIFontScaleEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIFontScaleEditor::retranslateUi()
+void UIFontScaleEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("F&ont Scaling:"));
@@ -183,7 +183,7 @@ void UIFontScaleEditor::prepare()
     }
 
     prepareScaleFactorMinMax();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFontScaleEditor::prepareScaleFactorMinMax()
@@ -228,4 +228,3 @@ void UIFontScaleEditor::setSpinBoxValue(int iValue)
         m_pScaleSpinBox->blockSignals(false);
     }
 }
-

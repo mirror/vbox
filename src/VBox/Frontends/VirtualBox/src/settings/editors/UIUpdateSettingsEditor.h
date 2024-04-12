@@ -62,9 +62,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles filter change. */
     virtual void handleFilterChange() RT_OVERRIDE;
 
@@ -74,6 +71,8 @@ private slots:
     void sltHandleUpdateToggle(bool fEnabled);
     /** Handles update period change. */
     void sltHandleUpdatePeriodChange();
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

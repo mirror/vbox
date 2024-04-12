@@ -58,9 +58,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Loads the dialog data. */
     virtual bool load() RT_OVERRIDE;
     /** Saves the dialog data. */
@@ -70,6 +67,11 @@ protected:
     virtual QString titleExtension() const RT_OVERRIDE;
     /** Returns the dialog title. */
     virtual QString title() const RT_OVERRIDE;
+
+private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -109,9 +111,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Loads the dialog data. */
     virtual bool load() RT_OVERRIDE;
     /** Saves the dialog data. */
@@ -141,6 +140,8 @@ private slots:
     void sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmMachineState);
     /** Handles machine data change for machine with certain @a uMachineId. */
     void sltMachineDataChanged(const QUuid &uMachineId);
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

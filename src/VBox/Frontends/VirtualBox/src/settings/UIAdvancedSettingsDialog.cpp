@@ -67,6 +67,7 @@
 #include "UISettingsSerializer.h"
 #include "UISettingsWarningPane.h"
 #include "UIShortcutPool.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 #endif
@@ -725,7 +726,7 @@ void UIVerticalScrollArea::prepare()
 UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
                                                    const QString &strCategory,
                                                    const QString &strControl)
-    : QIWithRetranslateUI<QMainWindow>(pParent)
+    : QMainWindow(pParent)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
     , m_pSelector(0)
@@ -833,7 +834,7 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore other than wheel events in this handler: */
     if (pEvent->type() != QEvent::Wheel)
-        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+        return QMainWindow::eventFilter(pObject, pEvent);
 
     /* Do not touch wheel events for m_pScrollArea or it's children: */
     if (   pObject == m_pScrollArea
@@ -842,7 +843,7 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
         /* Moreover restart 'sticky scrolling timer' during which
          * all the scrolling will be redirected to m_pScrollViewport: */
         m_pScrollingTimer->start();
-        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+        return QMainWindow::eventFilter(pObject, pEvent);
     }
 
     /* Unconditionally and for good
@@ -872,10 +873,10 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+    return QMainWindow::eventFilter(pObject, pEvent);
 }
 
-void UIAdvancedSettingsDialog::retranslateUi()
+void UIAdvancedSettingsDialog::sltRetranslateUI()
 {
     /* Translate mode checkbox: */
     m_pCheckBoxMode->setText1(tr("Basic"));
@@ -908,7 +909,7 @@ void UIAdvancedSettingsDialog::showEvent(QShowEvent *pEvent)
     }
 
     /* Call to base-class: */
-    QIWithRetranslateUI<QMainWindow>::showEvent(pEvent);
+    QMainWindow::showEvent(pEvent);
 }
 
 void UIAdvancedSettingsDialog::polishEvent()
@@ -1338,7 +1339,9 @@ void UIAdvancedSettingsDialog::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIAdvancedSettingsDialog::sltRetranslateUI);
 }
 
 void UIAdvancedSettingsDialog::prepareSelector()

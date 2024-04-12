@@ -273,7 +273,7 @@ int UINameAndSystemEditor::firstColumnWidth() const
     return iWidth;
 }
 
-void UINameAndSystemEditor::retranslateUi()
+void UINameAndSystemEditor::sltRetranslateUI()
 {
     if (m_pLabelName)
         m_pLabelName->setText(tr("&Name:"));
@@ -404,7 +404,7 @@ void UINameAndSystemEditor::prepare()
 {
     prepareWidgets();
     prepareConnections();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UINameAndSystemEditor::prepareWidgets()

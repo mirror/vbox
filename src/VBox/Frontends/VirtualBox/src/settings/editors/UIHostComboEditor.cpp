@@ -42,6 +42,7 @@
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "VBoxUtils-darwin.h"
@@ -457,13 +458,13 @@ bool UIHostCombo::isValidKeyCombo(const QString &strKeyCombo)
 *********************************************************************************************************************************/
 
 UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
 {
     /* Prepare: */
     prepare();
 }
 
-void UIHostComboEditor::retranslateUi()
+void UIHostComboEditor::sltRetranslateUI()
 {
     /* Translate 'clear' tool-button: */
     m_pButtonClear->setToolTip(QApplication::translate("UIHotKeyEditor", "Unset shortcut"));
@@ -511,7 +512,9 @@ void UIHostComboEditor::prepare()
         pLayout->addWidget(m_pButtonClear);
     }
     /* Translate finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIHostComboEditor::sltRetranslateUI);
 }
 
 void UIHostComboEditor::setCombo(const UIHostComboWrapper &strCombo)

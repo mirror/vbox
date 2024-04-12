@@ -79,7 +79,7 @@ void UIAccelerationFeaturesEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIAccelerationFeaturesEditor::retranslateUi()
+void UIAccelerationFeaturesEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Hardware Virtualization:"));
@@ -119,5 +119,5 @@ void UIAccelerationFeaturesEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

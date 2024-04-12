@@ -76,7 +76,7 @@ void UIAudioControllerEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIAudioControllerEditor::retranslateUi()
+void UIAudioControllerEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Audio &Controller:"));
@@ -140,7 +140,7 @@ void UIAudioControllerEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIAudioControllerEditor::populateCombo()
@@ -172,6 +172,6 @@ void UIAudioControllerEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

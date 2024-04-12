@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QAction>
 #include <QAbstractItemModel>
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCommonStyle>
@@ -3235,7 +3236,7 @@ void UIStorageSettingsEditor::getValue(QList<UIDataStorageController> &controlle
     }
 }
 
-void UIStorageSettingsEditor::retranslateUi()
+void UIStorageSettingsEditor::sltRetranslateUI()
 {
     m_pLabelSeparatorLeftPane->setText(tr("&Devices"));
     m_pLabelSeparatorEmpty->setText(tr("Information"));
@@ -4457,7 +4458,7 @@ void UIStorageSettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIStorageSettingsEditor::prepareWidgets()

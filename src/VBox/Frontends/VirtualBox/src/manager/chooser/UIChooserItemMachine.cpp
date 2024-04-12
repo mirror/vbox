@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QGraphicsSceneDragDropEvent>
 #include <QGraphicsView>
 #include <QPainter>

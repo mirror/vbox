@@ -84,7 +84,7 @@ UIAdvancedSettingsDialogGlobal::UIAdvancedSettingsDialogGlobal(QWidget *pParent,
     prepare();
 }
 
-void UIAdvancedSettingsDialogGlobal::retranslateUi()
+void UIAdvancedSettingsDialogGlobal::sltRetranslateUI()
 {
     /* Selector itself: */
     m_pSelector->widget()->setWhatsThis(tr("Allows to navigate through Global Property categories"));
@@ -120,7 +120,7 @@ void UIAdvancedSettingsDialogGlobal::retranslateUi()
     m_pSelector->polish();
 
     /* Base-class UI translation: */
-    UIAdvancedSettingsDialog::retranslateUi();
+    UIAdvancedSettingsDialog::sltRetranslateUI();
 
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -282,7 +282,7 @@ void UIAdvancedSettingsDialogGlobal::prepare()
     setConfigurationAccessLevel(ConfigurationAccessLevel_Full);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIAdvancedSettingsDialogGlobal::isPageAvailable(int) const
@@ -327,7 +327,7 @@ void UIAdvancedSettingsDialogMachine::setNewMachineId(const QUuid &uMachineId,
     setConfigurationAccessLevel(::configurationAccessLevel(m_enmSessionState, m_enmMachineState));
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Choose page/tab: */
     choosePageAndTab(true /* keep previous by default */);
@@ -336,7 +336,7 @@ void UIAdvancedSettingsDialogMachine::setNewMachineId(const QUuid &uMachineId,
     load();
 }
 
-void UIAdvancedSettingsDialogMachine::retranslateUi()
+void UIAdvancedSettingsDialogMachine::sltRetranslateUI()
 {
     /* Selector itself: */
     m_pSelector->widget()->setWhatsThis(tr("Allows to navigate through VM Settings categories"));
@@ -387,7 +387,7 @@ void UIAdvancedSettingsDialogMachine::retranslateUi()
     m_pSelector->polish();
 
     /* Base-class UI translation: */
-    UIAdvancedSettingsDialog::retranslateUi();
+    UIAdvancedSettingsDialog::sltRetranslateUI();
 
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -786,7 +786,7 @@ void UIAdvancedSettingsDialogMachine::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIAdvancedSettingsDialogMachine::isPageAvailable(int iPageId) const

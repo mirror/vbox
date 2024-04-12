@@ -36,6 +36,7 @@
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
 #include "UIConverter.h"
+#include "UITranslationEventListener.h"
 #include "UIUSBFilterDetailsEditor.h"
 
 /* Other VBox includes: */
@@ -43,7 +44,7 @@
 
 
 UIUSBFilterDetailsEditor::UIUSBFilterDetailsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)
+    : QIDialog(pParent, Qt::Sheet)
     , m_pLabelName(0)
     , m_pEditorName(0)
     , m_pLabelVendorID(0)
@@ -171,7 +172,7 @@ UIRemoteMode UIUSBFilterDetailsEditor::remoteMode() const
     return m_pComboRemote ? m_pComboRemote->currentData().value<UIRemoteMode>() : UIRemoteMode_Any;
 }
 
-void UIUSBFilterDetailsEditor::retranslateUi()
+void UIUSBFilterDetailsEditor::sltRetranslateUI()
 {
     setWindowTitle(tr("USB Filter Details"));
 
@@ -254,7 +255,9 @@ void UIUSBFilterDetailsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIUSBFilterDetailsEditor::sltRetranslateUI);
 
     /* Adjust dialog size: */
     adjustSize();

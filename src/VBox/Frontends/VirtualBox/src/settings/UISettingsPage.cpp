@@ -26,8 +26,11 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QLabel>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPaintEvent>
 #include <QStyle>
 #include <QVariant>
 #include <QVBoxLayout>
@@ -185,7 +188,7 @@ void UISettingsPageFrame::setName(const QString &strName)
         m_pLabelName->setText(m_strName);
 }
 
-void UISettingsPageFrame::retranslateUi()
+void UISettingsPageFrame::sltRetranslateUI()
 {
     // No NLS tags for now; We are receiving our name through the getter.
 }

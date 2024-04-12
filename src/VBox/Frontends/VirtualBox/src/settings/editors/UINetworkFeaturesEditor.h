@@ -116,15 +116,13 @@ public slots:
     /** Generates MAC address. */
     void generateMac();
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
     /** Handles filter change. */
     virtual void handleFilterChange() RT_OVERRIDE;
-
-private slots:
 
     /** Handles request to open port forwarding dialog. */
     void sltOpenPortForwardingDlg();

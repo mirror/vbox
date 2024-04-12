@@ -80,7 +80,7 @@ void UIVirtualCPUEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIVirtualCPUEditor::retranslateUi()
+void UIVirtualCPUEditor::sltRetranslateUI()
 {
     if (m_pLabelVCPU)
         m_pLabelVCPU->setText(tr("&Processors:"));
@@ -220,5 +220,5 @@ void UIVirtualCPUEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

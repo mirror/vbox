@@ -197,7 +197,7 @@ QStringList UINetworkAttachmentEditor::hostOnlyNetworks()
 }
 #endif /* VBOX_WITH_VMNET */
 
-void UINetworkAttachmentEditor::retranslateUi()
+void UINetworkAttachmentEditor::sltRetranslateUI()
 {
     /* Translate type label: */
     if (m_pLabelType)
@@ -346,7 +346,7 @@ void UINetworkAttachmentEditor::prepare()
     populateTypeCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UINetworkAttachmentEditor::populateTypeCombo()

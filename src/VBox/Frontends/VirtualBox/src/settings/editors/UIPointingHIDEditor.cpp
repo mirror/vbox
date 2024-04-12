@@ -76,7 +76,7 @@ void UIPointingHIDEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIPointingHIDEditor::retranslateUi()
+void UIPointingHIDEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Pointing Device:"));
@@ -137,7 +137,7 @@ void UIPointingHIDEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIPointingHIDEditor::populateCombo()
@@ -166,6 +166,6 @@ void UIPointingHIDEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

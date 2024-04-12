@@ -182,7 +182,7 @@ void UIScaleFactorEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIScaleFactorEditor::retranslateUi()
+void UIScaleFactorEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Scale &Factor:"));
@@ -293,7 +293,7 @@ void UIScaleFactorEditor::prepare()
     }
 
     prepareScaleFactorMinMaxValues();
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIScaleFactorEditor::prepareScaleFactorMinMaxValues()

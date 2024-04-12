@@ -37,21 +37,25 @@
 
 /* GUI includes: */
 #include "UIEditor.h"
-
+#include "UITranslationEventListener.h"
 
 UIEditor::UIEditor(QTabWidget *pTabWidget)
     : m_fShowInBasicMode(false)
     , m_fInExpertMode(false)
     , m_pTabWidget(pTabWidget)
 {
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIEditor::sltRetranslateUI);
 }
 
 UIEditor::UIEditor(QWidget *pParent /* = 0 */, bool fShowInBasicMode /* = false */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_fShowInBasicMode(fShowInBasicMode)
     , m_fInExpertMode(true)
     , m_pTabWidget(0)
 {
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIEditor::sltRetranslateUI);
 }
 
 void UIEditor::addEditor(UIEditor *pEditor)

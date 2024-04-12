@@ -30,9 +30,12 @@
 #include <QAccessibleWidget>
 #include <QAction>
 #include <QActionGroup>
+#include <QApplication>
 #include <QItemDelegate>
+#include <QGuiApplication>
 #include <QLayout>
 #include <QPainter>
+#include <QPainterPath>
 #include <QSortFilterProxyModel>
 #include <QTabWidget>
 #include <QToolButton>

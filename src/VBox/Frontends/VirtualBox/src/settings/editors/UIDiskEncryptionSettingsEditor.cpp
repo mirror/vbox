@@ -99,7 +99,7 @@ QString UIDiskEncryptionSettingsEditor::password2() const
     return m_pEditorPassword2 ? m_pEditorPassword2->text() : m_strPassword2;
 }
 
-void UIDiskEncryptionSettingsEditor::retranslateUi()
+void UIDiskEncryptionSettingsEditor::sltRetranslateUI()
 {
     if (m_pCheckboxFeature)
     {
@@ -149,7 +149,7 @@ void UIDiskEncryptionSettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIDiskEncryptionSettingsEditor::prepareWidgets()

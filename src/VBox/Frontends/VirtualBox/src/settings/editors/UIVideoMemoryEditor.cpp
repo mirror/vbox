@@ -167,7 +167,7 @@ void UIVideoMemoryEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIVideoMemoryEditor::retranslateUi()
+void UIVideoMemoryEditor::sltRetranslateUI()
 {
     if (m_pLabelMemory)
         m_pLabelMemory->setText(tr("Video &Memory:"));
@@ -309,7 +309,7 @@ void UIVideoMemoryEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIVideoMemoryEditor::updateRequirements()

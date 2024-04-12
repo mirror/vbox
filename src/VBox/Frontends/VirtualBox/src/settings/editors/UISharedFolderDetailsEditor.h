@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -43,7 +42,7 @@ class QIDialogButtonBox;
 class UIFilePathSelector;
 
 /** QIDialog subclass used as a shared folders editor. */
-class SHARED_LIBRARY_STUFF UISharedFolderDetailsEditor : public QIWithRetranslateUI2<QIDialog>
+class SHARED_LIBRARY_STUFF UISharedFolderDetailsEditor : public QIDialog
 {
     Q_OBJECT;
 
@@ -95,13 +94,10 @@ public:
     /** Returns whether folder is permanent. */
     bool isPermanent() const;
 
-protected:
-
-    /** Handles translation event. */
-    void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Holds signal about folder path selected. */
     void sltSelectPath();
     /** Checks editor validness. */

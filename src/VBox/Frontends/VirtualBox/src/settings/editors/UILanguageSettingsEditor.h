@@ -56,15 +56,15 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles polish @a pEvent. */
     virtual void polishEvent(QShowEvent *pEvent);
 
 private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
     /** Handles @a pItem painting with passed @a pPainter. */
     void sltHandleItemPainting(QTreeWidgetItem *pItem, QPainter *pPainter);

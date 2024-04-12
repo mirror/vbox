@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QAccessibleWidget>
 #include <QCheckBox>
 #include <QDrag>
@@ -48,6 +49,7 @@
 #include "UIIconPool.h"
 #include "UIMachineWindow.h"
 #include "UIStatusBarEditor.h"
+#include "UITranslationEventListener.h"
 
 /* Forward declarations: */
 class QAccessibleInterface;
@@ -59,7 +61,7 @@ class QSize;
 
 
 /** QWidget subclass used as status-bar editor button. */
-class UIStatusBarEditorButton : public QIWithRetranslateUI<QWidget>
+class UIStatusBarEditorButton : public QWidget
 {
     Q_OBJECT;
 
@@ -95,9 +97,6 @@ protected:
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
@@ -111,6 +110,11 @@ protected:
     virtual void leaveEvent(QEvent *pEvent) RT_OVERRIDE RT_FINAL;
     /** Handles mouse-move @a pEvent. */
     virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE RT_FINAL;
+
+private slots:
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -253,10 +257,10 @@ bool UIStatusBarEditorButton::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+    return QWidget::event(pEvent);
 }
 
-void UIStatusBarEditorButton::retranslateUi()
+void UIStatusBarEditorButton::sltRetranslateUI()
 {
     /* Translate tool-tip: */
     setToolTip(UIStatusBarEditorWidget::tr("<nobr><b>Click</b> to toggle indicator presence.</nobr><br>"
@@ -386,7 +390,9 @@ void UIStatusBarEditorButton::prepare()
     updatePixmap();
 
     /* Translate finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIStatusBarEditorButton::sltRetranslateUI);
 }
 
 void UIStatusBarEditorButton::updatePixmap()
@@ -493,7 +499,7 @@ void UIStatusBarEditorWidget::setStatusBarConfiguration(const QList<IndicatorTyp
     }
 }
 
-void UIStatusBarEditorWidget::retranslateUi()
+void UIStatusBarEditorWidget::sltRetranslateUI()
 {
     /* Translate widget itself: */
     setToolTip(tr("Allows to modify VM status-bar contents."));
@@ -835,7 +841,7 @@ void UIStatusBarEditorWidget::prepare()
     m_fPrepared = true;
 
     /* Translate contents: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIStatusBarEditorWidget::prepareStatusButtons()

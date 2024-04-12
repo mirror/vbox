@@ -206,7 +206,7 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSF::retranslateUi()
+void UIMachineSettingsSF::sltRetranslateUI()
 {
 }
 
@@ -229,7 +229,7 @@ void UIMachineSettingsSF::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsSF::prepareWidgets()

@@ -206,7 +206,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIGlobalSettingsProxy::retranslateUi()
+void UIGlobalSettingsProxy::sltRetranslateUI()
 {
 }
 
@@ -220,7 +220,7 @@ void UIGlobalSettingsProxy::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGlobalSettingsProxy::prepareWidgets()

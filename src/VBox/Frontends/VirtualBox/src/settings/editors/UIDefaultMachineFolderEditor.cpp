@@ -73,7 +73,7 @@ void UIDefaultMachineFolderEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIDefaultMachineFolderEditor::retranslateUi()
+void UIDefaultMachineFolderEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Default &Machine Folder:"));
@@ -114,5 +114,5 @@ void UIDefaultMachineFolderEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

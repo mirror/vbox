@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QHeaderView>
 #include <QMenu>
 #include <QRegularExpression>
@@ -341,7 +342,7 @@ void UISharedFoldersEditor::setFoldersAvailable(UISharedFolderType enmType, bool
     updateRootItemsVisibility();
 }
 
-void UISharedFoldersEditor::retranslateUi()
+void UISharedFoldersEditor::sltRetranslateUI()
 {
     /* Translate tree-widget: */
     if (m_pTreeWidget)
@@ -627,7 +628,7 @@ void UISharedFoldersEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UISharedFoldersEditor::prepareWidgets()

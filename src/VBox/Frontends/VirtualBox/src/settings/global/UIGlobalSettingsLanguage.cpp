@@ -141,7 +141,7 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsLanguage::retranslateUi()
+void UIGlobalSettingsLanguage::sltRetranslateUI()
 {
 }
 
@@ -155,7 +155,7 @@ void UIGlobalSettingsLanguage::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGlobalSettingsLanguage::prepareWidgets()

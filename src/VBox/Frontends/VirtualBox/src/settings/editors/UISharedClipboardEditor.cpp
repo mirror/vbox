@@ -76,7 +76,7 @@ void UISharedClipboardEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UISharedClipboardEditor::retranslateUi()
+void UISharedClipboardEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Shared Clipboard:"));
@@ -135,7 +135,7 @@ void UISharedClipboardEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UISharedClipboardEditor::populateCombo()
@@ -164,6 +164,6 @@ void UISharedClipboardEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

@@ -72,7 +72,7 @@ void UIVRDEAuthLibraryEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIVRDEAuthLibraryEditor::retranslateUi()
+void UIVRDEAuthLibraryEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("V&RDP Authentication Library:"));
@@ -112,5 +112,5 @@ void UIVRDEAuthLibraryEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

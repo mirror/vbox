@@ -108,13 +108,11 @@ public:
     /** Returns enabled screens. */
     QVector<bool> screens() const;
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
     /** Handles feature toggling. */
     void sltHandleFeatureToggled();
     /** Handles mode change. */

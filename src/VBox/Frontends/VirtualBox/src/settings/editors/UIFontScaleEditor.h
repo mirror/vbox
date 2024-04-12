@@ -63,11 +63,6 @@ public:
     void setFontScaleFactor(int iFontScaleFactor);
     int fontScaleFactor() const;
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** @name Internal slots handling respective widget's value update.
@@ -76,6 +71,9 @@ private slots:
         void sltScaleSliderValueChanged(int iValue);
         void sltMonitorComboIndexChanged(int iIndex);
     /** @} */
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
 

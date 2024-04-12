@@ -85,7 +85,7 @@ void UIVisualStateEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIVisualStateEditor::retranslateUi()
+void UIVisualStateEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Visual &State:"));
@@ -144,7 +144,7 @@ void UIVisualStateEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIVisualStateEditor::populateCombo()
@@ -185,6 +185,6 @@ void UIVisualStateEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

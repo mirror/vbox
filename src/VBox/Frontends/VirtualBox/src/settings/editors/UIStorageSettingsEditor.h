@@ -222,9 +222,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
@@ -233,6 +230,8 @@ protected:
 
 private slots:
 
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
     /** Handles enumeration of medium with @a uMediumId. */
     void sltHandleMediumEnumerated(const QUuid &uMediumId);
     /** Handles removing of medium with @a uMediumId. */

@@ -188,7 +188,7 @@ void UIMachineSettingsSerial::getFromCache()
         getFromCache(iSlot, m_pCache->child(iSlot));
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Polish page finally: */
     polishPage();
@@ -245,7 +245,7 @@ bool UIMachineSettingsSerial::validate(QList<UIValidationMessage> &messages)
     return fValid;
 }
 
-void UIMachineSettingsSerial::retranslateUi()
+void UIMachineSettingsSerial::sltRetranslateUI()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -295,7 +295,7 @@ void UIMachineSettingsSerial::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsSerial::prepareWidgets()

@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
@@ -38,6 +39,7 @@
 #include "UIMessageCenter.h"
 #include "UISettingsPage.h"
 #include "UISettingsSerializer.h"
+#include "UITranslationEventListener.h"
 
 
 /*********************************************************************************************************************************
@@ -213,7 +215,7 @@ UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent,
                                                            UISettingsSerializer::SerializationDirection enmDirection,
                                                            const QVariant &data,
                                                            const UISettingsPageList &pages)
-    : QIWithRetranslateUI<QIDialog>(pParent)
+    : QIDialog(pParent)
     , m_enmDirection(enmDirection)
     , m_data(data)
     , m_pages(pages)
@@ -227,7 +229,9 @@ UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent,
     /* Prepare: */
     prepare();
     /* Translate: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UISettingsSerializerProgress::sltRetranslateUI);
 }
 
 int UISettingsSerializerProgress::exec()
@@ -236,7 +240,7 @@ int UISettingsSerializerProgress::exec()
     emit sigAskForProcessStart();
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIDialog>::exec();
+    return QIDialog::exec();
 }
 
 QVariant &UISettingsSerializerProgress::data()
@@ -350,7 +354,7 @@ void UISettingsSerializerProgress::prepare()
     }
 }
 
-void UISettingsSerializerProgress::retranslateUi()
+void UISettingsSerializerProgress::sltRetranslateUI()
 {
     /* Translate operation progress label: */
     AssertPtrReturnVoid(m_pLabelOperationProgress);

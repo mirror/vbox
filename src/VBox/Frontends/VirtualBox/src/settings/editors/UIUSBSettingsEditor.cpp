@@ -101,7 +101,7 @@ void UIUSBSettingsEditor::setUsbFiltersOptionAvailable(bool fAvailable)
         m_pEditorFilters->setEnabled(fAvailable);
 }
 
-void UIUSBSettingsEditor::retranslateUi()
+void UIUSBSettingsEditor::sltRetranslateUI()
 {
     if (m_pCheckboxFeature)
     {
@@ -126,7 +126,7 @@ void UIUSBSettingsEditor::prepare()
     updateFeatureAvailability();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIUSBSettingsEditor::prepareWidgets()

@@ -311,7 +311,7 @@ void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
     setTabOrder(pWidget, m_pEditorUsbSettings);
 }
 
-void UIMachineSettingsUSB::retranslateUi()
+void UIMachineSettingsUSB::sltRetranslateUI()
 {
 }
 
@@ -334,7 +334,7 @@ void UIMachineSettingsUSB::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsUSB::prepareWidgets()

@@ -457,7 +457,7 @@ void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLe
     UISettingsPageMachine::setConfigurationAccessLevel(enmLevel);
 }
 
-void UIMachineSettingsStorage::retranslateUi()
+void UIMachineSettingsStorage::sltRetranslateUI()
 {
 }
 
@@ -481,7 +481,7 @@ void UIMachineSettingsStorage::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsStorage::prepareWidgets()

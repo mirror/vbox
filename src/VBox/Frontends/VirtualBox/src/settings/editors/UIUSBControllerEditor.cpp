@@ -73,7 +73,7 @@ KUSBControllerType UIUSBControllerEditor::value() const
     return m_enmValue;
 }
 
-void UIUSBControllerEditor::retranslateUi()
+void UIUSBControllerEditor::sltRetranslateUI()
 {
     if (m_pRadioButtonUSB1)
     {
@@ -146,7 +146,7 @@ void UIUSBControllerEditor::prepare()
     updateButtonSet();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIUSBControllerEditor::updateButtonSet()

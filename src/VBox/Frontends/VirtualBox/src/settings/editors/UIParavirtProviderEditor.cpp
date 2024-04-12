@@ -76,7 +76,7 @@ void UIParavirtProviderEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIParavirtProviderEditor::retranslateUi()
+void UIParavirtProviderEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Paravirtualization Interface:"));
@@ -140,7 +140,7 @@ void UIParavirtProviderEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIParavirtProviderEditor::populateCombo()
@@ -172,6 +172,6 @@ void UIParavirtProviderEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

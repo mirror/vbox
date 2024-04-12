@@ -77,7 +77,7 @@ void UIGraphicsControllerEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIGraphicsControllerEditor::retranslateUi()
+void UIGraphicsControllerEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Graphics Controller:"));
@@ -148,7 +148,7 @@ void UIGraphicsControllerEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGraphicsControllerEditor::populateCombo()
@@ -180,6 +180,6 @@ void UIGraphicsControllerEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

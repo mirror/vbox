@@ -38,7 +38,6 @@
 #include <QSet>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -126,7 +125,7 @@ Q_DECLARE_METATYPE(UIHostComboWrapper);
 
 
 /** Host-combo editor widget. */
-class SHARED_LIBRARY_STUFF UIHostComboEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIHostComboEditor : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(UIHostComboWrapper combo READ combo WRITE setCombo USER true);
@@ -141,12 +140,10 @@ public:
     /** Constructs editor passing @a pParent to the base-class. */
     UIHostComboEditor(QWidget *pParent);
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
+    void sltRetranslateUI();
 
     /** Notifies listener about data should be committed. */
     void sltCommitData();

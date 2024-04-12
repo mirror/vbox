@@ -30,16 +30,16 @@
 #include <QPushButton>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "QIDialogButtonBox.h"
-
+#include "UITranslationEventListener.h"
 
 UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *pParent,
                                                                        const UIPortForwardingDataList &rules)
-    : QIWithRetranslateUI<QIDialog>(pParent)
+    : QIDialog(pParent)
     , m_pTable(0)
     , m_pButtonBox(0)
 {
@@ -72,7 +72,9 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     }
 
     /* Retranslate dialog: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMachineSettingsPortForwardingDlg::sltRetranslateUI);
 
     /* Limit the minimum size to 33% of screen size: */
     setMinimumSize(gpDesktop->screenGeometry(this).size() / 3);
@@ -92,7 +94,7 @@ void UIMachineSettingsPortForwardingDlg::accept()
     if (!fPassed)
         return;
     /* Call to base-class: */
-    QIWithRetranslateUI<QIDialog>::accept();
+    QIDialog::accept();
 }
 
 void UIMachineSettingsPortForwardingDlg::reject()
@@ -102,10 +104,10 @@ void UIMachineSettingsPortForwardingDlg::reject()
         && !msgCenter().confirmCancelingPortForwardingDialog(window()))
         return;
     /* Call to base-class: */
-    QIWithRetranslateUI<QIDialog>::reject();
+    QIDialog::reject();
 }
 
-void UIMachineSettingsPortForwardingDlg::retranslateUi()
+void UIMachineSettingsPortForwardingDlg::sltRetranslateUI()
 {
     /* Set window title: */
     setWindowTitle(tr("Port Forwarding Rules"));

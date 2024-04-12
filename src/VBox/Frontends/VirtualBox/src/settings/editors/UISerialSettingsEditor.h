@@ -114,12 +114,10 @@ public:
     /** Returns path. */
     QString path() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
     /** Handles port availability being toggled to @a fOn. */
     void sltHandlePortAvailabilityToggled(bool fOn);

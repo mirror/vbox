@@ -332,7 +332,7 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsInterface::retranslateUi()
+void UIMachineSettingsInterface::sltRetranslateUI()
 {
     updateMinimumLayoutHint();
 }
@@ -368,7 +368,7 @@ void UIMachineSettingsInterface::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsInterface::prepareWidgets()

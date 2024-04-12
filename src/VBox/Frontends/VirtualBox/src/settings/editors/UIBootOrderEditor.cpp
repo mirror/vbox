@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QEvent>
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -38,6 +39,7 @@
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "QIToolBar.h"
+#include "UITranslationEventListener.h"
 #include "QITreeWidget.h"
 
 /* COM includes: */
@@ -59,8 +61,10 @@ public:
     /** Returns the item type. */
     KDeviceType deviceType() const;
 
+public slots:
+
     /** Performs item translation. */
-    virtual void retranslateUi();
+    void sltRetranslateUI();
 
 private:
 
@@ -70,7 +74,7 @@ private:
 
 
 /** QITreeWidget subclass used as system settings boot-table. */
-class UIBootListWidget : public QIWithRetranslateUI<QITreeWidget>
+class UIBootListWidget : public QITreeWidget
 {
     Q_OBJECT;
 
@@ -103,9 +107,6 @@ protected:
     /** Return minimum size hint. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles drop @a pEvent. */
     virtual void dropEvent(QDropEvent *pEvent) RT_OVERRIDE;
 
@@ -113,6 +114,11 @@ protected:
       * based on the given @a cursorAction and keyboard @a fModifiers. */
     virtual QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction,
                                    Qt::KeyboardModifiers fModifiers) RT_OVERRIDE;
+
+private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI();
 
 private:
 
@@ -140,7 +146,9 @@ UIBootListWidgetItem::UIBootListWidgetItem(KDeviceType enmType)
         case KDeviceType_Network:  setIcon(0, UIIconPool::iconSet(":/nw_16px.png")); break;
         default: break; /* Shut up, MSC! */
     }
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIBootListWidgetItem::sltRetranslateUI);
 }
 
 KDeviceType UIBootListWidgetItem::deviceType() const
@@ -148,7 +156,7 @@ KDeviceType UIBootListWidgetItem::deviceType() const
     return m_enmType;
 }
 
-void UIBootListWidgetItem::retranslateUi()
+void UIBootListWidgetItem::sltRetranslateUI()
 {
     setText(0, gpConverter->toString(m_enmType));
 }
@@ -159,7 +167,7 @@ void UIBootListWidgetItem::retranslateUi()
 *********************************************************************************************************************************/
 
 UIBootListWidget::UIBootListWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QITreeWidget>(pParent)
+    : QITreeWidget(pParent)
 {
     prepare();
 }
@@ -248,10 +256,10 @@ QSize UIBootListWidget::minimumSizeHint() const
     return QSize(iColumnHint + iW, iRowHint * iItemCount + iH);
 }
 
-void UIBootListWidget::retranslateUi()
+void UIBootListWidget::sltRetranslateUI()
 {
     for (int i = 0; i < topLevelItemCount(); ++i)
-        static_cast<UIBootListWidgetItem*>(topLevelItem(i))->retranslateUi();
+        static_cast<UIBootListWidgetItem*>(topLevelItem(i))->sltRetranslateUI();
 }
 
 void UIBootListWidget::dropEvent(QDropEvent *pEvent)
@@ -318,6 +326,8 @@ void UIBootListWidget::prepare()
     setDropIndicatorShown(true);
     connect(this, &UIBootListWidget::currentItemChanged,
             this, &UIBootListWidget::sigRowChanged);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIBootListWidget::sltRetranslateUI);
 }
 
 QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int iRow)
@@ -526,7 +536,7 @@ bool UIBootOrderEditor::eventFilter(QObject *pObject, QEvent *pEvent)
     return UIEditor::eventFilter(pObject, pEvent);
 }
 
-void UIBootOrderEditor::retranslateUi()
+void UIBootOrderEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&Boot Order:"));
@@ -616,7 +626,7 @@ void UIBootOrderEditor::prepare()
     /* Update initial action availability: */
     updateActionAvailability();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIBootOrderEditor::updateActionAvailability()

@@ -180,7 +180,7 @@ bool UIGlobalSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIGlobalSettingsGeneral::retranslateUi()
+void UIGlobalSettingsGeneral::sltRetranslateUI()
 {
     updateMinimumLayoutHint();
 }
@@ -200,7 +200,7 @@ void UIGlobalSettingsGeneral::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGlobalSettingsGeneral::prepareWidgets()

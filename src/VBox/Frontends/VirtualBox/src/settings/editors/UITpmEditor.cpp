@@ -76,7 +76,7 @@ void UITpmEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UITpmEditor::retranslateUi()
+void UITpmEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("&TPM:"));
@@ -141,7 +141,7 @@ void UITpmEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UITpmEditor::populateCombo()
@@ -173,6 +173,6 @@ void UITpmEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

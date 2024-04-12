@@ -235,7 +235,7 @@ QString UILanguageSettingsEditor::value() const
     return pCurrentItem ? pCurrentItem->text(1) : m_strValue;
 }
 
-void UILanguageSettingsEditor::retranslateUi()
+void UILanguageSettingsEditor::sltRetranslateUI()
 {
     /* Translate tree-widget: */
     if (m_pTreeWidget)
@@ -359,7 +359,7 @@ void UILanguageSettingsEditor::prepare()
     connect(m_pTreeWidget, &QITreeWidget::currentItemChanged, this, &UILanguageSettingsEditor::sltHandleCurrentItemChange);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UILanguageSettingsEditor::reloadLanguageTree(const QString &strLanguageId)

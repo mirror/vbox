@@ -127,7 +127,7 @@ void UIMaximumGuestScreenSizeEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMaximumGuestScreenSizeEditor::retranslateUi()
+void UIMaximumGuestScreenSizeEditor::sltRetranslateUI()
 {
     if (m_pLabelPolicy)
         m_pLabelPolicy->setText(tr("Maximum Guest Screen &Size:"));
@@ -246,7 +246,7 @@ void UIMaximumGuestScreenSizeEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMaximumGuestScreenSizeEditor::populateCombo()
@@ -267,6 +267,6 @@ void UIMaximumGuestScreenSizeEditor::populateCombo()
             m_pComboPolicy->addItem(QString(), QVariant::fromValue(enmType));
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

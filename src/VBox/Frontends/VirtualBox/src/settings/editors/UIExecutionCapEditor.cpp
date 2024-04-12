@@ -78,7 +78,7 @@ void UIExecutionCapEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIExecutionCapEditor::retranslateUi()
+void UIExecutionCapEditor::sltRetranslateUI()
 {
     if (m_pLabelExecCap)
         m_pLabelExecCap->setText(tr("&Execution Cap:"));
@@ -217,5 +217,5 @@ void UIExecutionCapEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

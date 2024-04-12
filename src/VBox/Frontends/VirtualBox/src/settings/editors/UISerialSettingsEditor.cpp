@@ -38,6 +38,7 @@
 #include "UIConverter.h"
 #include "UIGlobalSession.h"
 #include "UISerialSettingsEditor.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -190,7 +191,7 @@ QString UISerialSettingsEditor::path() const
     return m_pEditorPath ? QDir::toNativeSeparators(m_pEditorPath->text()) : QString();
 }
 
-void UISerialSettingsEditor::retranslateUi()
+void UISerialSettingsEditor::sltRetranslateUI()
 {
     if (m_pCheckBoxPort)
     {
@@ -302,7 +303,7 @@ void UISerialSettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UISerialSettingsEditor::prepareWidgets()

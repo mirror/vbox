@@ -35,7 +35,6 @@
 #include <QMainWindow>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UISettingsDefs.h"
 
 /* Forward declarations: */
@@ -62,7 +61,7 @@ using namespace UISettingsDefs;
 /** QMainWindow subclass used as
   * base dialog class for both Global Preferences & Machine Settings
   * dialogs, which encapsulates most of their common functionality. */
-class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialog : public QIWithRetranslateUI<QMainWindow>
+class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialog : public QMainWindow
 {
     Q_OBJECT;
 
@@ -109,13 +108,16 @@ protected slots:
     /** Handle serializartion finished. */
     virtual void sltHandleSerializationFinished();
 
+protected slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI();
+
 protected:
 
     /** Preprocesses Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles first show event. */

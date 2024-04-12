@@ -298,7 +298,7 @@ void UIBaseMemoryEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIBaseMemoryEditor::retranslateUi()
+void UIBaseMemoryEditor::sltRetranslateUI()
 {
     if (m_pLabelMemory)
         m_pLabelMemory->setText(tr("Base &Memory:"));
@@ -427,7 +427,7 @@ void UIBaseMemoryEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIBaseMemoryEditor::revalidate()

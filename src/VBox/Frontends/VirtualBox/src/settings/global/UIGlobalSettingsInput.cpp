@@ -37,7 +37,6 @@
 #include "UIShortcutPool.h"
 #include "UITranslator.h"
 
-
 /** Global settings: Input page data structure. */
 struct UIDataSettingsGlobalInput
 {
@@ -203,7 +202,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIGlobalSettingsInput::retranslateUi()
+void UIGlobalSettingsInput::sltRetranslateUI()
 {
 }
 
@@ -217,7 +216,7 @@ void UIGlobalSettingsInput::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGlobalSettingsInput::prepareWidgets()

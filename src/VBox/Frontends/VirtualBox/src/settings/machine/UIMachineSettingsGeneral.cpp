@@ -458,7 +458,7 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
         setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
 }
 
-void UIMachineSettingsGeneral::retranslateUi()
+void UIMachineSettingsGeneral::sltRetranslateUI()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAdvanced), tr("A&dvanced"));
@@ -524,7 +524,7 @@ void UIMachineSettingsGeneral::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMachineSettingsGeneral::prepareWidgets()

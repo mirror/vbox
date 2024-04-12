@@ -109,7 +109,7 @@ QString UIProxyFeaturesEditor::proxyHost() const
     return m_pEditorHost ? m_pEditorHost->text() : m_strProxyHost;
 }
 
-void UIProxyFeaturesEditor::retranslateUi()
+void UIProxyFeaturesEditor::sltRetranslateUI()
 {
     /* Translate proxy mode editor: */
     if (m_pRadioButtonProxyAuto)
@@ -232,5 +232,5 @@ void UIProxyFeaturesEditor::prepare()
             this, &UIProxyFeaturesEditor::sigProxyHostChanged);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

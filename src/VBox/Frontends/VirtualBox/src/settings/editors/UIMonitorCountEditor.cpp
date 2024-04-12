@@ -81,7 +81,7 @@ void UIMonitorCountEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMonitorCountEditor::retranslateUi()
+void UIMonitorCountEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Mo&nitor Count:"));
@@ -203,5 +203,5 @@ void UIMonitorCountEditor::prepare()
                 this, &UIMonitorCountEditor::sltHandleSpinBoxChange);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

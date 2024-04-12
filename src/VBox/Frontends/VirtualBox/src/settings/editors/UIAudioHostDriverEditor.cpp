@@ -76,7 +76,7 @@ void UIAudioHostDriverEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIAudioHostDriverEditor::retranslateUi()
+void UIAudioHostDriverEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Host Audio &Driver:"));
@@ -135,7 +135,7 @@ void UIAudioHostDriverEditor::prepare()
     populateCombo();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIAudioHostDriverEditor::populateCombo()
@@ -164,6 +164,6 @@ void UIAudioHostDriverEditor::populateCombo()
             m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }

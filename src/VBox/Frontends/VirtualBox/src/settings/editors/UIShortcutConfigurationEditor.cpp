@@ -861,7 +861,7 @@ QString UIShortcutConfigurationEditor::tabNameRuntime() const
     return m_pTabWidget->tabText(TableIndex_Runtime);
 }
 
-void UIShortcutConfigurationEditor::retranslateUi()
+void UIShortcutConfigurationEditor::sltRetranslateUI()
 {
     m_pTabWidget->setTabText(TableIndex_Manager, tr("&VirtualBox Manager"));
     m_pTabWidget->setTabText(TableIndex_Runtime, tr("Virtual &Machine"));
@@ -878,7 +878,7 @@ void UIShortcutConfigurationEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIShortcutConfigurationEditor::prepareWidgets()

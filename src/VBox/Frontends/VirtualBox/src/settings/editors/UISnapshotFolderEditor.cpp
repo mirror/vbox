@@ -87,7 +87,7 @@ void UISnapshotFolderEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UISnapshotFolderEditor::retranslateUi()
+void UISnapshotFolderEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("S&napshot Folder:"));
@@ -124,5 +124,5 @@ void UISnapshotFolderEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

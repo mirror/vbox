@@ -189,7 +189,7 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsDisplay::retranslateUi()
+void UIGlobalSettingsDisplay::sltRetranslateUI()
 {
     updateMinimumLayoutHint();
 }
@@ -209,7 +209,7 @@ void UIGlobalSettingsDisplay::prepare()
     prepareWidgets();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIGlobalSettingsDisplay::prepareWidgets()

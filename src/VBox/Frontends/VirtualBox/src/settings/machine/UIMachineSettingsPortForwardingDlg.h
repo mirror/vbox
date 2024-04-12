@@ -32,7 +32,6 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 #include "UIPortForwardingTable.h"
 
@@ -40,7 +39,7 @@
 class QIDialogButtonBox;
 
 /* Machine settings / Network page / NAT attachment / Port forwarding dialog: */
-class SHARED_LIBRARY_STUFF UIMachineSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UIMachineSettingsPortForwardingDlg : public QIDialog
 {
     Q_OBJECT;
 
@@ -57,11 +56,10 @@ private slots:
     /* Handlers: Dialog stuff: */
     void accept() RT_OVERRIDE;
     void reject() RT_OVERRIDE;
+    /* Handler: Translation stuff: */
+    void sltRetranslateUI();
 
 private:
-
-    /* Handler: Translation stuff: */
-    virtual void retranslateUi() RT_OVERRIDE;
 
     /* Widgets: */
     UIPortForwardingTable *m_pTable;

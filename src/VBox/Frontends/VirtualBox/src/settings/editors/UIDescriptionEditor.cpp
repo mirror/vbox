@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
@@ -57,7 +58,7 @@ QString UIDescriptionEditor::value() const
     return m_pTextEdit ? m_pTextEdit->toPlainText() : m_strValue;
 }
 
-void UIDescriptionEditor::retranslateUi()
+void UIDescriptionEditor::sltRetranslateUI()
 {
     if (m_pTextEdit)
     {
@@ -108,5 +109,5 @@ void UIDescriptionEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

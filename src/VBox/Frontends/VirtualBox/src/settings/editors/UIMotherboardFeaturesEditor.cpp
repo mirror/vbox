@@ -147,7 +147,7 @@ void UIMotherboardFeaturesEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMotherboardFeaturesEditor::retranslateUi()
+void UIMotherboardFeaturesEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Extended Features:"));
@@ -294,5 +294,5 @@ void UIMotherboardFeaturesEditor::prepare()
     sltHandleEnableSecureBootToggling();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

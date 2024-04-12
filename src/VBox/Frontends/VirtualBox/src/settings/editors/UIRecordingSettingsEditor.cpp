@@ -290,7 +290,7 @@ QVector<bool> UIRecordingSettingsEditor::screens() const
     return m_pScrollerScreens ? m_pScrollerScreens->value() : m_screens;
 }
 
-void UIRecordingSettingsEditor::retranslateUi()
+void UIRecordingSettingsEditor::sltRetranslateUI()
 {
     m_pCheckboxFeature->setText(tr("&Enable Recording"));
     m_pCheckboxFeature->setToolTip(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
@@ -442,7 +442,7 @@ void UIRecordingSettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIRecordingSettingsEditor::prepareWidgets()
@@ -872,7 +872,7 @@ void UIRecordingSettingsEditor::populateComboMode()
             m_pComboMode->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
-        retranslateUi();
+        sltRetranslateUI();
     }
 }
 

@@ -43,7 +43,7 @@ UISharedFolderDetailsEditor::UISharedFolderDetailsEditor(EditorType enmType,
                                                          bool fUsePermanent,
                                                          const QStringList &usedNames,
                                                          QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI2<QIDialog>(pParent)
+    : QIDialog(pParent)
     , m_enmType(enmType)
     , m_fUsePermanent(fUsePermanent)
     , m_usedNames(usedNames)
@@ -127,7 +127,7 @@ bool UISharedFolderDetailsEditor::isPermanent() const
     return m_fUsePermanent ? m_pCheckBoxPermanent->isChecked() : true;
 }
 
-void UISharedFolderDetailsEditor::retranslateUi()
+void UISharedFolderDetailsEditor::sltRetranslateUI()
 {
     switch (m_enmType)
     {
@@ -232,7 +232,7 @@ void UISharedFolderDetailsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 
     /* Validate the initial field values: */
     sltValidate();

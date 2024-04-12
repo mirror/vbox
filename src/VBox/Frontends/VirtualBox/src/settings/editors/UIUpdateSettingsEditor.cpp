@@ -66,7 +66,7 @@ VBoxUpdateData UIUpdateSettingsEditor::value() const
     return VBoxUpdateData(isCheckEnabled(), updatePeriod(), updateChannel());
 }
 
-void UIUpdateSettingsEditor::retranslateUi()
+void UIUpdateSettingsEditor::sltRetranslateUI()
 {
     /* Translate check-box: */
     if (m_pCheckBox)
@@ -159,7 +159,7 @@ void UIUpdateSettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIUpdateSettingsEditor::prepareWidgets()

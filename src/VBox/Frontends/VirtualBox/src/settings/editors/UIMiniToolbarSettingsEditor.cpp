@@ -94,7 +94,7 @@ void UIMiniToolbarSettingsEditor::setMinimumLayoutIndent(int iIndent)
         m_pLayout->setColumnMinimumWidth(0, iIndent);
 }
 
-void UIMiniToolbarSettingsEditor::retranslateUi()
+void UIMiniToolbarSettingsEditor::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Mini ToolBar:"));
@@ -147,5 +147,5 @@ void UIMiniToolbarSettingsEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }

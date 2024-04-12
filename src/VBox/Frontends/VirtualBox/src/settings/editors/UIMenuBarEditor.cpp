@@ -665,7 +665,7 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuH
     }
 }
 
-void UIMenuBarEditorWidget::retranslateUi()
+void UIMenuBarEditorWidget::sltRetranslateUI()
 {
     /* Translate widget itself: */
     setToolTip(tr("Allows to modify VM menu-bar contents."));
@@ -1047,7 +1047,7 @@ void UIMenuBarEditorWidget::prepare()
     m_fPrepared = true;
 
     /* Translate contents: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIMenuBarEditorWidget::prepareMenus()

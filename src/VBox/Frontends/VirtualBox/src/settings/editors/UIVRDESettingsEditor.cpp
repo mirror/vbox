@@ -151,7 +151,7 @@ bool UIVRDESettingsEditor::isMultipleConnectionsAllowed() const
     return m_pCheckboxMultipleConnections ? m_pCheckboxMultipleConnections->isChecked() : m_fMultipleConnectionsAllowed;
 }
 
-void UIVRDESettingsEditor::retranslateUi()
+void UIVRDESettingsEditor::sltRetranslateUI()
 {
     if (m_pCheckboxFeature)
     {
@@ -211,7 +211,7 @@ void UIVRDESettingsEditor::prepare()
     prepareConnections();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIVRDESettingsEditor::prepareWidgets()

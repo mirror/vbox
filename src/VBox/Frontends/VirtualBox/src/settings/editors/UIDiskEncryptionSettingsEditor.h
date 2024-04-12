@@ -77,12 +77,10 @@ public:
     /** Returns password 2. */
     QString password2() const;
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
     /** Handles whether VRDE is @a fEnabled. */
     void sltHandleFeatureToggled(bool fEnabled);
