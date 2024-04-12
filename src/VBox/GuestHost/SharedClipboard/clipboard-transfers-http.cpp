@@ -480,7 +480,7 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
 
             if (RT_SUCCESS(rc))
             {
-                SHCLOBJOPENCREATEPARMS openParms;                
+                SHCLOBJOPENCREATEPARMS openParms;
                 rc = ShClTransferObjOpenParmsInit(&openParms);
                 if (RT_SUCCESS(rc))
                 {
@@ -532,7 +532,7 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                                 else
                                     LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
                                              pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
-                                /* Note: Directories / symlinks or other fancy stuff is not supported here (yet) -- would require using WebDAV. */                            
+                                /* Note: Directories / symlinks or other fancy stuff is not supported here (yet) -- would require using WebDAV. */
                             }
                         }
 
