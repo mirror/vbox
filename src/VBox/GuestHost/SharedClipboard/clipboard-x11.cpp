@@ -1987,9 +1987,9 @@ static void clipGrabX11Clipboard(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 /**
  * Worker function for ShClX11ReportFormatsToX11Async.
  *
- * @param  pvUserData           Pointer to a CLIPNEWVBOXFORMATS structure containing
+ * @param  pvUserData           Pointer to a PSHCLX11REQUEST structure containing
  *                              information about the VBox formats available and the
- *                              clipboard context data.  Must be freed by the worker.
+ *                              clipboard context data.  Must be free'd by the worker.
  *
  * @thread X11 event thread.
  */
@@ -2656,6 +2656,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     {
         int rc2 = ShClEventSignalEx(pReq->pEvent, rc, NULL /* Payload */);
         AssertRC(rc2);
+
+        RTMemFree(pReq);
     }
 
     LogRel2(("Shared Clipboard: Reading X11 clipboard data completed with %Rrc\n", rc));
