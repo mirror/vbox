@@ -28,7 +28,7 @@
 ;*********************************************************************************************************************************
 ;*  Header Files                                                                                                                 *
 ;*********************************************************************************************************************************
-%define RT_ASM_WITH_SEH64
+%define RT_ASM_WITH_SEH64_ALT ; yasm gets confused by alignment, so we cannot use RT_ASM_WITH_SEH64. sigh.
 %include "VBox/asmdefs.mac"
 
 ;; @todo r=aeichner The following is copied from IEMInternal.h
@@ -188,7 +188,7 @@ ENDPROC     iemNativeTbLongJmp
 ; This is wrapper function that saves and restores all volatile registers
 ; so the impact of inserting LogCpuState is minimal to the other TB code.
 ;
-ALIGNCODE(16)
+ALIGNCODE(64)
 BEGINPROC   iemNativeHlpAsmSafeWrapLogCpuState
         push    xBP
         SEH64_PUSH_xBP
