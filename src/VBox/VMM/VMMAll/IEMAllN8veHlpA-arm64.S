@@ -38,6 +38,9 @@
 #define INCLUDED_FROM_ARM64_ASSEMBLY
 #include "IEMN8veRecompiler.h"
 
+/** @todo r=aeichner This comes from IEMInternal.h */
+#define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+
 #define IEM_HLP_FUNCTION_ALIGNMENT 0x20
 
 BEGINCODE
