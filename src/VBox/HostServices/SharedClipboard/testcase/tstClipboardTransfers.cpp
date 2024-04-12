@@ -252,9 +252,6 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     rc = ShClTransferSetProvider(pTransfer, &Provider);
     RTTESTI_CHECK_RC_OK(rc);
 
-    rc = ShClTransferInit(pTransfer);
-    RTTESTI_CHECK_RC_OK(rc);
-
     char szTestTransferObjOpenDir[RTPATH_MAX];
     rc = testCreateTempDir(hTest, "testTransferObjOpen", szTestTransferObjOpenDir, sizeof(szTestTransferObjOpenDir));
     RTTESTI_CHECK_RC_OK_RETV(rc);
@@ -270,6 +267,9 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
     rc = ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    RTTESTI_CHECK_RC_OK(rc);
+
+    rc = ShClTransferInit(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     RTStrFree(pszRoots);
