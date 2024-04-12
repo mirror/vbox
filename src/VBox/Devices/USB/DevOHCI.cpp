@@ -3087,7 +3087,7 @@ static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBU
  * NB: This may fail if the direction is not valid. If it does fail,
  * we do not raise an unrecoverable error but the caller may wish to.
  */
-static bool ohciR3GetDirection(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, PCOHCIED pEd, VUSBDIRECTION *pEnmDir)
+static VUSBDIRECTION ohciR3GetDirection(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, PCOHCIED pEd)
 {
     RT_NOREF(pThisCC);
     RT_NOREF(pThis);
@@ -3101,8 +3101,6 @@ static bool ohciR3GetDirection(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC,
             case ED_HWINFO_IN:  enmDir = VUSBDIRECTION_IN;  break;
             default:
                 Log(("ohciR3GetDirection: Invalid direction!!!! Ed.hwinfo=%#x\n", pEd->hwinfo));
-                *pEnmDir = VUSBDIRECTION_INVALID;
-                return false;
         }
     }
     else
@@ -3123,14 +3121,11 @@ static bool ohciR3GetDirection(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC,
                     case 0:             enmDir = VUSBDIRECTION_SETUP; break;
                     default:
                         Log(("ohciR3GetDirection: Invalid direction!!!! Td.hwinfo=%#x Ed.hwinfo=%#x\n", Td.hwinfo, pEd->hwinfo));
-                        *pEnmDir = VUSBDIRECTION_INVALID;
-                        return false;
                 }
         }
    }
 
-    *pEnmDir = enmDir;
-    return true;
+    return enmDir;
 }
 
 
@@ -3889,8 +3884,8 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
                  */
                 uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
                 uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
-                VUSBDIRECTION enmDir;
-                if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+                VUSBDIRECTION enmDir = ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed);
+                if (enmDir != VUSBDIRECTION_INVALID)
                 {
                     pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
                 }
@@ -3949,8 +3944,8 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
                /* First we need to determine the transfer direction, which may fail(!). */
                uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
                uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
-               VUSBDIRECTION enmDir;
-               if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+               VUSBDIRECTION enmDir = ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed);
+               if (enmDir != VUSBDIRECTION_INVALID)
                {
                    pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
                }
@@ -4119,8 +4114,8 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
                  */
                 uint8_t uAddr  = Ed.hwinfo & ED_HWINFO_FUNCTION;
                 uint8_t uEndPt = (Ed.hwinfo & ED_HWINFO_ENDPOINT) >> ED_HWINFO_ENDPOINT_SHIFT;
-                VUSBDIRECTION enmDir;
-                if (ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed, &enmDir))
+                VUSBDIRECTION enmDir = ohciR3GetDirection(pDevIns, pThis, pThisCC, &Ed);
+                if (enmDir != VUSBDIRECTION_INVALID)
                 {
                     pThisCC->RootHub.pIRhConn->pfnAbortEpByAddr(pThisCC->RootHub.pIRhConn, uAddr, uEndPt, enmDir);
                 }
