@@ -2069,7 +2069,8 @@ iemNativeEmit_pand_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
         } \
         /* Immediate 0 is a nop. */ \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(a_Instr, a_cShiftMax, a_ArmElemSz, a_bOpcX86) \
     DECL_INLINE_THROW(uint32_t) \
@@ -2087,7 +2088,8 @@ iemNativeEmit_pand_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
         } \
         /* Immediate 0 is a nop. */ \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #else
 # error "Port me"
 #endif
@@ -2123,7 +2125,8 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(psrlq, 64, kArmv8InstrShiftSz_U64, 0x
         } \
         /* Immediate 0 is a nop. */ \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(a_Instr, a_cShiftMax, a_ArmElemSz, a_bOpcX86) \
     DECL_INLINE_THROW(uint32_t) \
@@ -2143,7 +2146,8 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_RIGHT_IMM_U128(psrlq, 64, kArmv8InstrShiftSz_U64, 0x
             IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
         } \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #else
 # error "Port me"
 #endif
@@ -2198,7 +2202,8 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
         iemNativeVarRegisterRelease(pReNative, idxVarSrc); \
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(a_Instr, a_fSub, a_ArmElemSz, a_bOpcX86) \
     DECL_INLINE_THROW(uint32_t) \
@@ -2229,7 +2234,8 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
         iemNativeVarRegisterRelease(pReNative, idxVarSrc); \
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
         return off; \
-    }
+    } \
+    typedef int ignore_semicolon
 #else
 # error "Port me"
 #endif
