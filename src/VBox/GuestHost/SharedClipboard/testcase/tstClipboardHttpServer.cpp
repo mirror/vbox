@@ -65,9 +65,11 @@ static bool         g_fManual       = false;
  *  All files reside in a common temporary directory. */
 static struct
 {
-    /** File name to serve via HTTP server. */
-    const char *pszFileName;
-    /** URL to use for downloading the file via RTHttp APIs. */
+    /** File mode. Used for RTFS_TYPE_XXX only. */
+    RTFMODE     fMode;
+    /** Local path to serve via HTTP server. */
+    const char *pszPath;
+    /** URL to use for downloading the file via RTHttp APIs. Has to be fully escaped. */
     const char *pszUrl;
     /** File allocation size.
      *  Specify UINT64_MAX for random size. */
@@ -76,25 +78,35 @@ static struct
     int         rc;
 } g_aTests[] =
 {
-    "file1.txt",                          "file1.txt",                  _64K,       VINF_SUCCESS,
+    /*
+     * Files.
+     */
+    RTFS_TYPE_FILE, "file1.txt",                          "file1.txt",                  _64K,       VINF_SUCCESS,
     /* Note: For RTHttpGetFile() the URL needs to be percent-encoded. */
-    "file2 with spaces.txt",              "file2%20with%20spaces.txt",  _64K,       VINF_SUCCESS,
-    "bigfile.bin",                        "bigfile.bin",                _512M,      VINF_SUCCESS,
-    "zerobytes",                          "zerobytes",                  0,          VINF_SUCCESS,
-    "file\\with\\slashes",                "file%5Cwith%5Cslashes",      42,         VINF_SUCCESS,
+    RTFS_TYPE_FILE, "file2 with spaces.txt",              "file2%20with%20spaces.txt",  _64K,       VINF_SUCCESS,
+    RTFS_TYPE_FILE, "bigfile.bin",                        "bigfile.bin",                _512M,      VINF_SUCCESS,
+    RTFS_TYPE_FILE, "zerobytes",                          "zerobytes",                  0,          VINF_SUCCESS,
+    RTFS_TYPE_FILE, "file\\with\\slashes",                "file%5Cwith%5Cslashes",      42,         VINF_SUCCESS,
     /* Korean encoding. */
-    "VirtualBox가 크게 성공했습니다!",         "VirtualBox%EA%B0%80%20%ED%81%AC%EA%B2%8C%20%EC%84%B1%EA%B3%B5%ED%96%88%EC%8A%B5%EB%8B%88%EB%8B%A4%21", 42, VINF_SUCCESS
+    RTFS_TYPE_FILE, "VirtualBox가 크게 성공했습니다!",         "VirtualBox%EA%B0%80%20%ED%81%AC%EA%B2%8C%20%EC%84%B1%EA%B3%B5%ED%96%88%EC%8A%B5%EB%8B%88%EB%8B%A4%21", 42, VINF_SUCCESS,
+    /*
+     * Other stuff (not supported).
+     */
+    RTFS_TYPE_DIRECTORY, "test-directory",                "test-directory",             0,          VERR_HTTP_NOT_SUPPORTED,
+    RTFS_TYPE_SYMLINK,   "test-symlink",                  "test-symlink",               0,          VERR_HTTP_NOT_SUPPORTED
 };
 
 
 static void tstCreateTransferSingle(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx, PSHCLHTTPSERVER pSrv,
-                                    const char *pszFile, PSHCLTXPROVIDER pProvider)
+                                    const char *pszPath, PSHCLTXPROVIDER pProvider)
 {
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "tstCreateTransferSingle: pszPath=%s\n", pszPath);
+
     PSHCLTRANSFER pTx;
     RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTx));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, pProvider));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromPath(pTx, pszPath));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
-    RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromFile(pTx, pszFile));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxRegister(pTransferCtx, pTx, NULL));
     RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(pSrv, pTx));
 }
@@ -361,43 +373,61 @@ int main(int argc, char *argv[])
 
     if (!g_fManual)
     {
-        char szFilePath[RTPATH_MAX];
+        char szPath[RTPATH_MAX];
         for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
         {
-            RTTEST_CHECK      (hTest, RTStrPrintf(szFilePath, sizeof(szFilePath),  szTempDir));
-            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szFilePath, sizeof(szFilePath), g_aTests[i].pszFileName));
+            RTTEST_CHECK      (hTest, RTStrPrintf(szPath, sizeof(szPath),  szTempDir));
+            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szPath, sizeof(szPath), g_aTests[i].pszPath));
 
             size_t cbSize =  g_aTests[i].cbSize == UINT64_MAX ? RTRandU32Ex(0, _256M) : g_aTests[i].cbSize;
 
-            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Random test file (%zu bytes): %s\n", cbSize, szFilePath);
-
-            RTFILE hFile;
-            rc = RTFileOpen(&hFile, szFilePath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
-            if (RT_SUCCESS(rc))
+            switch (g_aTests[i].fMode & RTFS_TYPE_MASK)
             {
-                uint8_t abBuf[_64K]; RTRandBytes(abBuf, sizeof(abBuf));
-
-                while (cbSize > 0)
+                case RTFS_TYPE_FILE:
                 {
-                    size_t cbToWrite = sizeof(abBuf);
-                    if (cbToWrite > cbSize)
-                        cbToWrite = cbSize;
-                    rc = RTFileWrite(hFile, abBuf, cbToWrite, NULL);
-                    if (RT_FAILURE(rc))
+                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Random test file (%zu bytes): %s\n", cbSize, szPath);
+
+                    RTFILE hFile;
+                    rc = RTFileOpen(&hFile, szPath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+                    if (RT_SUCCESS(rc))
                     {
-                        RTTestIFailed("RTFileWrite(%#x) -> %Rrc\n", cbToWrite, rc);
-                        break;
+                        uint8_t abBuf[_64K]; RTRandBytes(abBuf, sizeof(abBuf));
+
+                        while (cbSize > 0)
+                        {
+                            size_t cbToWrite = sizeof(abBuf);
+                            if (cbToWrite > cbSize)
+                                cbToWrite = cbSize;
+                            rc = RTFileWrite(hFile, abBuf, cbToWrite, NULL);
+                            if (RT_FAILURE(rc))
+                            {
+                                RTTestIFailed("RTFileWrite(%#x) -> %Rrc\n", cbToWrite, rc);
+                                break;
+                            }
+                            cbSize -= cbToWrite;
+                        }
+
+                        RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
                     }
-                    cbSize -= cbToWrite;
+                    else
+                        RTTestIFailed("RTFileOpen(%s) -> %Rrc\n", szPath, rc);
+                    break;
                 }
 
-                RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+                case RTFS_TYPE_DIRECTORY:
+                    RTTESTI_CHECK_RC_OK(RTDirCreate(szPath, 0755 /* fMode */, 0 /* fCreate */));
+                    break;
 
-                if (RT_SUCCESS(rc))
-                    tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, szFilePath, &Provider);
+                case RTFS_TYPE_SYMLINK:
+                    RTTESTI_CHECK_RC_OK(RTSymlinkCreate(szPath, szTempDir, RTSYMLINKTYPE_UNKNOWN, 0 /* fCreate */));
+                    break;
+
+                default:
+                    break;
             }
-            else
-                RTTestIFailed("RTFileOpen(%s) -> %Rrc\n", szFilePath, rc);
+
+            if (RT_SUCCESS(rc))
+                tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, szPath, &Provider);
         }
     }
 
@@ -427,27 +457,48 @@ int main(int argc, char *argv[])
                 {
                     PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
                     char *pszUrlBase  = ShClTransferHttpServerGetUrlA(&HttpSrv, ShClTransferGetID(pTx), UINT64_MAX);
-
                     RTTEST_CHECK(hTest, RTStrPrintf2(szURL, sizeof(szURL), "%s/%s", pszUrlBase, g_aTests[i].pszUrl));
-
                     RTStrFree(pszUrlBase);
 
-                    /* Download to destination file. */
-                    char szDstFile[RTPATH_MAX];
-                    RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
-                    RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
-                    RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
-                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szDstFile);
-                    RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szDstFile));
+                    switch (g_aTests[i].fMode & RTFS_TYPE_MASK)
+                    {
+                        case RTFS_TYPE_FILE:
+                        {
+                            /* Download to destination file. */
+                            char szDstFile[RTPATH_MAX];
+                            RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
+                            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
+                            RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
+                            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading file '%s' -> '%s'\n", szURL, szDstFile);
+                            RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szDstFile));
 
-                    /* Compare files. */
-                    char szSrcFile[RTPATH_MAX];
-                    RTTEST_CHECK      (hTest, RTStrPrintf(szSrcFile, sizeof(szSrcFile),  szTempDir));
-                    RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szSrcFile, sizeof(szSrcFile), g_aTests[i].pszFileName));
-                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Comparing files '%s' vs. '%s'\n", szSrcFile, szDstFile);
-                    RTTEST_CHECK_RC_OK(hTest, RTFileCompare(szSrcFile, szDstFile));
+                            /* Compare files. */
+                            char szSrcFile[RTPATH_MAX];
+                            RTTEST_CHECK      (hTest, RTStrPrintf(szSrcFile, sizeof(szSrcFile),  szTempDir));
+                            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szSrcFile, sizeof(szSrcFile), g_aTests[i].pszPath));
+                            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Comparing files '%s' vs. '%s'\n", szSrcFile, szDstFile);
+                            RTTEST_CHECK_RC_OK(hTest, RTFileCompare(szSrcFile, szDstFile));
 
-                    RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
+                            RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
+                            break;
+                        }
+
+                        case RTFS_TYPE_DIRECTORY:
+                            RT_FALL_THROUGH();
+                        case RTFS_TYPE_SYMLINK:
+                        {
+                            char szDstFile[RTPATH_MAX];
+                            RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
+                            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
+                            RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
+                            RTTEST_CHECK_RC   (hTest, RTHttpGetFile(hClient, szURL, szDstFile), g_aTests[i].rc);
+                            RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
                 }
 
                 RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
@@ -464,12 +515,35 @@ int main(int argc, char *argv[])
     /*
      * Cleanup
      */
-    char szFilePath[RTPATH_MAX];
+    char szPath[RTPATH_MAX];
     for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
     {
-        RTTEST_CHECK      (hTest, RTStrPrintf(szFilePath, sizeof(szFilePath), szTempDir));
-        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szFilePath, sizeof(szFilePath), g_aTests[i].pszFileName));
-        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szFilePath));
+        RTTEST_CHECK      (hTest, RTStrPrintf(szPath, sizeof(szPath), szTempDir));
+        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szPath, sizeof(szPath), g_aTests[i].pszPath));
+
+        switch (g_aTests[i].fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_FILE:
+            {
+                RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szPath));
+                break;
+            }
+
+            case RTFS_TYPE_DIRECTORY:
+            {
+                RTTEST_CHECK_RC_OK(hTest, RTDirRemove(szPath)); /* ASSUMES empty dir. */
+                break;
+            }
+
+            case RTFS_TYPE_SYMLINK:
+            {
+                RTTEST_CHECK_RC_OK(hTest, RTSymlinkDelete(szPath, 0 /* fDelete */));
+                break;
+            }
+
+            default:
+                break;
+        }
     }
     RTTEST_CHECK_RC_OK(hTest, RTDirRemove(szTempDir));
 
