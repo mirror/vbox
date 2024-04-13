@@ -993,7 +993,7 @@ iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off,
      *     return raisexcpt();
      */
     /* Test and jump. */
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxFpuFswReg, X86_FSW_ES, idxLabelRaiseMf);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxFpuFswReg, X86_FSW_ES_BIT, idxLabelRaiseMf);
 
     /* Free but don't flush the FSW register. */
     iemNativeRegFreeTmp(pReNative, idxFpuFswReg);
