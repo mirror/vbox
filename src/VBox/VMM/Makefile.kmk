@@ -276,6 +276,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
   if "$(KBUILD_TARGET_ARCH)" == "arm64" && defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER) # temp hack
    VBoxVMM_DEFS        += VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
    VBoxVMM_LIBS.darwin += /opt/local/lib/libcapstone.dylib
+   VBoxVMM_LIBS.linux  += capstone
   endif
   VMMAll/IEMAllN8veRecompiler.cpp_CXXFLAGS.win := -bigobj
   VMMAll/IEMAllN8veLiveness.cpp_CXXFLAGS.win   := -bigobj
@@ -502,6 +503,10 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/NEMR3Native-darwin-armv8.cpp
  VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
  VBoxVMMArm_LDFLAGS.darwin.arm64 = -framework Hypervisor
+
+ VBoxVMMArm_SOURCES.linux.arm64 += \
+ 	VMMR3/NEMR3Native-linux-armv8.cpp
+ VBoxVMMArm_DEFS.linux.arm64    += VBOX_WITH_NATIVE_NEM
 
  VBoxVMMArm_LIBS = \
  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
