@@ -479,7 +479,7 @@ static int nemR3LnxLogRegList(int fdVCpu)
 }
 
 
-DECL_FORCE_INLINE(int) nemR3LnxKvmSetQueryReg(PVMCPUCC pVCpu, bool fQuery, uint64_t idKvmReg, uint64_t *pu64)
+DECL_FORCE_INLINE(int) nemR3LnxKvmSetQueryReg(PVMCPUCC pVCpu, bool fQuery, uint64_t idKvmReg, const uint64_t *pu64)
 {
     struct kvm_one_reg Reg;
     Reg.id   = idKvmReg;
@@ -496,13 +496,13 @@ DECL_FORCE_INLINE(int) nemR3LnxKvmSetQueryReg(PVMCPUCC pVCpu, bool fQuery, uint6
     return RTErrConvertFromErrno(-rcLnx);
 }
 
-DECL_INLINE(int) nemR3LnxKvmQueryReg(PVMCPUCC pVCpu, uint64_t idKvmReg, uint64_t *pu64)
+DECLINLINE(int) nemR3LnxKvmQueryReg(PVMCPUCC pVCpu, uint64_t idKvmReg, uint64_t *pu64)
 {
     return nemR3LnxKvmSetQueryReg(pVCpu, true /*fQuery*/, idKvmReg, pu64);
 }
 
 
-DECL_FORCE_INLINE(int) nemR3LnxKvmSetReg(PVMCPUCC pVCpu, uint64_t idKvmReg, const uint64_t *pu64)
+DECLINLINE(int) nemR3LnxKvmSetReg(PVMCPUCC pVCpu, uint64_t idKvmReg, const uint64_t *pu64)
 {
     return nemR3LnxKvmSetQueryReg(pVCpu, false /*fQuery*/, idKvmReg, pu64);
 }
