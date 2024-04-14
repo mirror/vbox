@@ -235,6 +235,10 @@ typedef struct NEM
     uint32_t                    cbVCpuMmap;
     /** KVM_CAP_NR_MEMSLOTS. */
     uint32_t                    cMaxMemSlots;
+# ifdef RT_ARCH_ARM64
+    /** KVM_CAP_ARM_VM_IPA_SIZE. */
+    uint32_t                    cIpaBits;
+# endif
     /** KVM_CAP_X86_ROBUST_SINGLESTEP. */
     bool                        fRobustSingleStep;
 
