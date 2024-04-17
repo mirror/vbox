@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
+#include <QVariant>
 
 /* GUI includes: */
 #include "UIColorThemeEditor.h"
