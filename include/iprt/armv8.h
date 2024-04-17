@@ -4785,7 +4785,7 @@ typedef enum ARMV8VECINSTRCMPZEROOP
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpAgainstZero(ARMV8VECINSTRCMPOP enmOp, uint32_t iVecRegDst, uint32_t iVecRegSrc,
                                                              ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
 {
-    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32);
 
     return UINT32_C(0x0e200000)
          | ((uint32_t)f128Bit << 30)
