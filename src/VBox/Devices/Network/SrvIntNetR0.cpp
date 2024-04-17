@@ -2935,7 +2935,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSen
 
     union
     {
-        uint8_t     abBuf[sizeof(INTNETSG) + sizeof(INTNETSEG)];
+        uint8_t     abBuf[sizeof(INTNETSG) + 2 * sizeof(INTNETSEG)];
         INTNETSG    SG;
     } u;
 
