@@ -6398,6 +6398,9 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 #endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
+    /* HACK: For IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK. */
+    pReNative->Core.bmHstRegs &= ~RT_BIT_32(IEMNATIVE_CALL_RET_GREG);
+
     return iemNativeEmitRcFiddling(pReNative, off, idxReturn);
 }
 
