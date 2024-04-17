@@ -725,7 +725,7 @@ BEGINPROC_HIDDEN \a_Name
         neg     w3, w2                          /* the count is MODed by the data size, so this is safe. */
         ldr\a_LdStSuff  w8, [x1]
         orr     w8, w8, w8, LSL #(32 - \a_cBits) /* place a copy of the value at the top of the register, ready to be roated in */
-        rorv    w9, w8, w2
+        rorv    w9, w8, w3
         str\a_LdStSuff  w9, [x1]
 .else
         neg     w3, w2                          /* the count is MODed by the data size, so this is safe. */
