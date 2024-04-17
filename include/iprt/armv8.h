@@ -4721,6 +4721,80 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrAddSub(bool fSub, uint32_t iVecReg
          | iVecRegDst;
 }
 
+
+/** Armv8 vector compare operation. */
+typedef enum ARMV8VECINSTRCMPOP
+{
+                             /*   U           insn[15:10]     */
+    kArmv8VecInstrCmpOp_Gt =                 UINT32_C(0x3400), /**< Greater than     (>)  (signed) */
+    kArmv8VecInstrCmpOp_Ge =                 UINT32_C(0x3c00), /**< Greater or equal (>=) (signed) */
+    kArmv8VecInstrCmpOp_Hi = RT_BIT_32(29) | UINT32_C(0x3400), /**< Greater than     (>)  (unsigned) */
+    kArmv8VecInstrCmpOp_Hs = RT_BIT_32(29) | UINT32_C(0x3c00), /**< Greater or equal (>=) (unsigned) */
+    kArmv8VecInstrCmpOp_Eq = RT_BIT_32(29) | UINT32_C(0x8c00)  /**< Equal            (==) (unsigned) */
+} ARMV8VECINSTRCMPOP;
+
+/**
+ * A64: Encodes CMEQ/CMGE/CMGT/CMHI/CMHS (register variant) (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   enmOp       The operation to perform.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The first vector source register.
+ * @param   iVecRegSrc2 The second vector source register.
+ * @param   enmSz       Element size.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmp(ARMV8VECINSTRCMPOP enmOp, uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                  ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0e200000)
+         | ((uint32_t)f128Bit << 30)
+         | ((uint32_t)enmSz   << 22)
+         | (iVecRegSrc2 << 16)
+         | ((uint32_t)enmOp)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
+
+/** Armv8 vector compare against zero operation. */
+typedef enum ARMV8VECINSTRCMPZEROOP
+{
+                                  /*   U           insn[15:10]     */
+    kArmv8VecInstrCmpZeroOp_Gt =                 UINT32_C(0x8800), /**< Greater than zero        (>)  (signed) */
+    kArmv8VecInstrCmpZeroOp_Eq =                 UINT32_C(0x9800), /**< Equal to zero            (==) */
+    kArmv8VecInstrCmpZeroOp_Lt =                 UINT32_C(0xa800), /**< Lower than zero          (>=) (signed) */
+    kArmv8VecInstrCmpZeroOp_Ge = RT_BIT_32(29) | UINT32_C(0x8800), /**< Greater or equal to zero (>=) (signed) */
+    kArmv8VecInstrCmpZeroOp_Le = RT_BIT_32(29) | UINT32_C(0x9800), /**< Lower or equal to zero   (<=) (signed) */
+} ARMV8VECINSTRCMPZEROOP;
+
+/**
+ * A64: Encodes CMEQ/CMGE/CMGT/CMLE/CMLT (zero variant) (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   enmOp       The operation to perform.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The first vector source register.
+ * @param   enmSz       Element size.
+ * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
+ *                      or just the low 64-bit (false).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpAgainstZero(ARMV8VECINSTRCMPOP enmOp, uint32_t iVecRegDst, uint32_t iVecRegSrc,
+                                                             ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0e200000)
+         | ((uint32_t)f128Bit << 30)
+         | ((uint32_t)enmSz   << 22)
+         | ((uint32_t)enmOp)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
