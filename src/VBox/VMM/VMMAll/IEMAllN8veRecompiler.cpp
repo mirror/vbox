@@ -6318,7 +6318,8 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     /*
      * Successful return, so clear the return register (eax, w0).
      */
-    off = iemNativeEmitGprZero(pReNative,off, IEMNATIVE_CALL_RET_GREG);
+    pReNative->Core.bmHstRegs |= RT_BIT_32(IEMNATIVE_CALL_RET_GREG); /* HACK: For IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK. */
+    off = iemNativeEmitGprZero(pReNative, off, IEMNATIVE_CALL_RET_GREG);
 
     /*
      * Define label for common return point.
@@ -8254,6 +8255,7 @@ DECLHIDDEN(const char *) iemNativeDbgVCpuOffsetToName(uint32_t off)
         ENTRY(iem.s.GCPhysInstrBuf),
         ENTRY(iem.s.cbInstrBufTotal),
         ENTRY(iem.s.idxTbCurInstr),
+        ENTRY(iem.s.fSkippingEFlags),
 #ifdef VBOX_WITH_STATISTICS
         ENTRY(iem.s.StatNativeTlbHitsForFetch),
         ENTRY(iem.s.StatNativeTlbHitsForStore),
