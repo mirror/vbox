@@ -6807,7 +6807,7 @@ FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq)
 FNIEMOP_DEF(iemOp_pcmpeqb_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQB, pcmpeqb, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pcmpeqb_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pcmpeqb, iemAImpl_pcmpeqb_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -6827,7 +6827,7 @@ FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq)
 FNIEMOP_DEF(iemOp_pcmpeqw_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQW, pcmpeqw, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pcmpeqw_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pcmpeqw, iemAImpl_pcmpeqw_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -6847,7 +6847,7 @@ FNIEMOP_DEF(iemOp_pcmpeqd_Pq_Qq)
 FNIEMOP_DEF(iemOp_pcmpeqd_Vx_Wx)
 {
     IEMOP_MNEMONIC2(RM, PCMPEQD, pcmpeqd, Vx, Wx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Opt_FullFull_To_Full, iemAImpl_pcmpeqd_u128);
+    SSE2_OPT_BODY_FullFull_To_Full(pcmpeqd, iemAImpl_pcmpeqd_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
