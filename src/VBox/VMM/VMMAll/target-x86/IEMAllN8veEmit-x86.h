@@ -2245,10 +2245,10 @@ IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddw, false /*a_fSub*/, kArmv8VecInstrArithS
 IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddd, false /*a_fSub*/, kArmv8VecInstrArithSz_32, 0xfe);
 IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddq, false /*a_fSub*/, kArmv8VecInstrArithSz_64, 0xd4);
 
-//IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubb, true  /*a_fSub*/, kArmv8VecInstrArithSz_8,  0xf8);
-//IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubw, true  /*a_fSub*/, kArmv8VecInstrArithSz_16, 0xf9);
-//IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubd, true  /*a_fSub*/, kArmv8VecInstrArithSz_32, 0xfa);
-//IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubq, true  /*a_fSub*/, kArmv8VecInstrArithSz_64, 0xfb);
+IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubb, true  /*a_fSub*/, kArmv8VecInstrArithSz_8,  0xf8);
+IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubw, true  /*a_fSub*/, kArmv8VecInstrArithSz_16, 0xf9);
+IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubd, true  /*a_fSub*/, kArmv8VecInstrArithSz_32, 0xfa);
+IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubq, true  /*a_fSub*/, kArmv8VecInstrArithSz_64, 0xfb);
 
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 

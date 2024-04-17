@@ -57,7 +57,7 @@ struc VMCPU
     .enmState               resd 1
 
     alignb 64
-    .iem                    resb 114752
+    .iem                    resb 131136
 
     alignb 64
     .pVMR3                  RTR3PTR_RES 1
