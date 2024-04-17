@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QWidget>
+#include <QMap>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
