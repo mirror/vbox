@@ -67,7 +67,10 @@ iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t uInfo)
 #elif defined(RT_ARCH_ARM64)
     /* nop */
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = 0xd503201f;
+    if (uInfo == 0)
+        pu32CodeBuf[off++] = ARMV8_A64_INSTR_NOP;
+    else
+        pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(ARMV8_A64_REG_XZR, (uint16_t)uInfo);
 
     RT_NOREF(uInfo);
 #else

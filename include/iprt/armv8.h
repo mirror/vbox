@@ -2298,6 +2298,8 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
  *
  * @{ */
 
+/** A64: Official NOP instruction. */
+#define ARMV8_A64_INSTR_NOP         UINT32_C(0xd503201f)
 /** A64: Return instruction. */
 #define ARMV8_A64_INSTR_RET         UINT32_C(0xd65f03c0)
 /** A64: Return instruction with LR pointer authentication using SP and key A. */
