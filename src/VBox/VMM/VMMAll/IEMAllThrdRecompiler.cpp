@@ -629,14 +629,52 @@ static bool iemTbCacheRemove(PIEMTBCACHE pTbCache, PIEMTB pTb)
  * @thread  EMT(pVCpu)
  */
 static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
-                               RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
+                               RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP /** @todo r=bird: no longjumping here, right? iemNativeRecompile is noexcept. */
 {
-    uint32_t const fFlags  = ((pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags) & IEMTB_F_KEY_MASK;
+    uint32_t const fFlags     = ((pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags) & IEMTB_F_KEY_MASK;
+
+    /*
+     * First consult the lookup table entry.
+     */
+    PIEMTB * const ppTbLookup = pVCpu->iem.s.ppTbLookupEntryR3;
+    PIEMTB         pTb        = *ppTbLookup;
+    if (pTb)
+    {
+        if (pTb->GCPhysPc == GCPhysPc)
+        {
+            if (   (pTb->fFlags & (IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)) == (fFlags | IEMTB_F_TYPE_NATIVE)
+                || (pTb->fFlags & (IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)) == (fFlags | IEMTB_F_TYPE_THREADED) )
+            {
+                if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
+                {
+                    STAM_COUNTER_INC(&pTbCache->cLookupHitsViaTbLookupTable);
+                    pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
+                    pTb->cUsed++;
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != pVCpu->iem.s.uTbNativeRecompileAtUsedCount)
+                    {
+                        Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p)\n", fFlags, GCPhysPc, pTb, ppTbLookup));
+                        return pTb;
+                    }
+                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p) - recompiling\n", fFlags, GCPhysPc, pTb, ppTbLookup));
+                    return iemNativeRecompile(pVCpu, pTb);
+#else
+                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p)\n", fFlags, GCPhysPc, idxHash, pTb, ppTbLookup));
+                    return pTb;
+#endif
+                }
+            }
+        }
+    }
+
+    /*
+     * Then consult the hash table.
+     */
     uint32_t const idxHash = IEMTBCACHE_HASH_NO_KEY_MASK(pTbCache, fFlags, GCPhysPc);
-    PIEMTB         pTb     = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     int            cLeft   = IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]);
 #endif
+    pTb = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
     while (pTb)
     {
         if (pTb->GCPhysPc == GCPhysPc)
@@ -648,6 +686,7 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                     STAM_COUNTER_INC(&pTbCache->cLookupHits);
                     AssertMsg(cLeft > 0, ("%d\n", cLeft));
 
+                    *ppTbLookup = pTb;
                     pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
                     pTb->cUsed++;
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
@@ -864,6 +903,10 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
     Assert(idxInChunk < pTbAllocator->cTbsPerChunk);
     Assert((uintptr_t)(pTb - pTbAllocator->aChunks[idxChunk].paTbs) == idxInChunk);
     Assert(ASMBitTest(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk)));
+#ifdef VBOX_STRICT
+    for (PIEMTB pTbOther = pTbAllocator->pDelayedFreeHead; pTbOther; pTbOther = pTbOther->pNext)
+        Assert(pTbOther != pTb);
+#endif
 
     /*
      * Unlink the TB from the hash table.
@@ -890,13 +933,15 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
         default:
             AssertFailed();
     }
-    RTMemFree(pTb->pabOpcodes);
+
+    RTMemFree(IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, 0)); /* Frees both the TB lookup table and opcode bytes. */
 
     pTb->pNext              = NULL;
     pTb->fFlags             = 0;
     pTb->GCPhysPc           = UINT64_MAX;
     pTb->Gen.uPtr           = 0;
     pTb->Gen.uData          = 0;
+    pTb->cTbLookupEntries   = 0;
     pTb->cbOpcodes          = 0;
     pTb->pabOpcodes         = NULL;
 
@@ -929,8 +974,9 @@ DECLHIDDEN(void) iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
     AssertLogRelReturnVoid(idxInChunk < pTbAllocator->cTbsPerChunk);
 
     /*
-     * Call inner worker.
+     * Invalidate the TB lookup pointer and call the inner worker.
      */
+    pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
     iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, (uint32_t)idxInChunk);
 }
 
@@ -961,11 +1007,20 @@ static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
                                           (uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs))));
     Assert(   (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE
            || (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED);
+#ifdef VBOX_STRICT
+    for (PIEMTB pTbOther = pTbAllocator->pDelayedFreeHead; pTbOther; pTbOther = pTbOther->pNext)
+        Assert(pTbOther != pTb);
+#endif
 
     /*
      * Remove it from the cache and prepend it to the allocator's todo list.
+     *
+     * Note! It could still be in various lookup tables, so we trash the GCPhys
+     *       and CS attribs to ensure it won't be reused.
      */
     iemTbCacheRemove(pVCpu->iem.s.pTbCacheR3, pTb);
+    pTb->GCPhysPc  = NIL_RTGCPHYS;
+    pTb->x86.fAttr = UINT16_MAX;
 
     pTb->pNext = pTbAllocator->pDelayedFreeHead;
     pTbAllocator->pDelayedFreeHead = pTb;
@@ -980,6 +1035,8 @@ static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
  */
 void iemTbAllocatorProcessDelayedFrees(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator)
 {
+    /** @todo r-bird: these have already been removed from the cache,
+     *        iemTbAllocatorFree/Inner redoes that, which is a waste of time. */
     PIEMTB pTb = pTbAllocator->pDelayedFreeHead;
     pTbAllocator->pDelayedFreeHead = NULL;
     while (pTb)
@@ -1143,6 +1200,9 @@ static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbA
     }
     pTbAllocator->iPruneFrom = idxTbPruneFrom;
     STAM_PROFILE_STOP(&pTbAllocator->StatPrune, a);
+
+    /* Flush the TB lookup entry pointer. */
+    pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
 
     /*
      * Allocate a TB from the ones we've pruned.
@@ -1376,6 +1436,38 @@ static DECLCALLBACK(int) iemThreadedDisasReadBytesDummy(PDISSTATE pDis, uint8_t 
 }
 
 
+/**
+ * Worker for iemThreadedDisassembleTb.
+ */
+static void iemThreadedDumpLookupTable(PCIEMTB pTb, PCDBGFINFOHLP pHlp, unsigned idxFirst, unsigned cEntries,
+                                       const char *pszLeadText = "     TB Lookup:") RT_NOEXCEPT
+{
+    if (idxFirst + cEntries <= pTb->cTbLookupEntries)
+    {
+        PIEMTB * const papTbLookup = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, idxFirst);
+        pHlp->pfnPrintf(pHlp, "%s", pszLeadText);
+        for (uint8_t iLookup = 0; iLookup < cEntries; iLookup++)
+        {
+            PIEMTB pLookupTb = papTbLookup[iLookup];
+            if (pLookupTb)
+                pHlp->pfnPrintf(pHlp, "%c%p (%s)", iLookup ? ',' : ' ', pLookupTb,
+                                (pLookupTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED ? "threaded"
+                                : (pLookupTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE ? "native"
+                                : "invalid");
+            else
+                pHlp->pfnPrintf(pHlp, "%cNULL", iLookup ? ',' : ' ');
+        }
+        pHlp->pfnPrintf(pHlp, "\n");
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "    !!Bogus TB lookup info: idxFirst=%#x L %u > cTbLookupEntries=%#x!!\n",
+                        idxFirst, cEntries, pTb->cTbLookupEntries);
+        AssertMsgFailed(("idxFirst=%#x L %u > cTbLookupEntries=%#x\n", idxFirst, cEntries, pTb->cTbLookupEntries));
+    }
+}
+
+
 DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT
 {
     AssertReturnVoid((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED);
@@ -1386,9 +1478,9 @@ DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NO
      * Print TB info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u\n"
+                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u cTbLookupEntries=%u\n"
                     "pTb=%p: cUsed=%u msLastUsed=%u fFlags=%#010x %s\n",
-                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
+                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges, pTb->cTbLookupEntries,
                     pTb, pTb->cUsed, pTb->msLastUsed, pTb->fFlags, iemTbFlagsToString(pTb->fFlags, szDisBuf, sizeof(szDisBuf)));
 
     /*
@@ -1409,6 +1501,7 @@ DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NO
     uint32_t                    offOpcodes       = 0;
     uint32_t const              cbOpcodes        = pTb->cbOpcodes;
     RTGCPHYS                    GCPhysPc         = pTb->GCPhysPc;
+    bool                        fTbLookupSeen0   = false;
 
     for (uint32_t iCall = 0; iCall < cCalls; iCall++)
     {
@@ -1472,6 +1565,12 @@ DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NO
                         "    Call #%u to %s (%u args)\n",
                         iCall, g_apszIemThreadedFunctions[paCalls[iCall].enmFunction],
                         g_acIemThreadedFunctionUsedArgs[paCalls[iCall].enmFunction]);
+        if (paCalls[iCall].uTbLookup != 0)
+        {
+            uint8_t const idxFirst = IEM_TB_LOOKUP_TAB_GET_IDX(paCalls[iCall].uTbLookup);
+            fTbLookupSeen0 = idxFirst == 0;
+            iemThreadedDumpLookupTable(pTb, pHlp, idxFirst, IEM_TB_LOOKUP_TAB_GET_SIZE(paCalls[iCall].uTbLookup));
+        }
 
         /*
          * Snoop fExec.
@@ -1485,6 +1584,9 @@ DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NO
                 break;
         }
     }
+
+    if (!fTbLookupSeen0)
+        iemThreadedDumpLookupTable(pTb, pHlp, 0, 1, "  Fallback TB Lookup:");
 }
 
 
@@ -1527,6 +1629,7 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
                 pTb->x86.fAttr              = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
                 pTb->fFlags                 = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
                 pTb->cInstructions          = 0;
+                pTb->cTbLookupEntries       = 1; /* Entry zero is for anything w/o a specific entry. */
 
                 /* Init the first opcode range. */
                 pTb->cRanges                = 1;
@@ -1566,6 +1669,7 @@ static void iemThreadedTbReuse(PVMCPUCC pVCpu, PIEMTB pTb, RTGCPHYS GCPhysPc, ui
     pTb->Thrd.cCalls            = 0;
     pTb->cbOpcodes              = 0;
     pTb->cInstructions          = 0;
+    pTb->cTbLookupEntries       = 1; /* Entry zero is for anything w/o a specific entry. */
 
     /* Init the first opcode range. */
     pTb->cRanges                = 1;
@@ -1606,11 +1710,16 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
         pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemDup(pTbSrc->Thrd.paCalls, sizeof(IEMTHRDEDCALLENTRY) * cCalls);
         if (pTb->Thrd.paCalls)
         {
-            unsigned const cbOpcodes = pTbSrc->cbOpcodes;
+            size_t const cbTbLookup = pTbSrc->cTbLookupEntries * sizeof(PIEMTB);
+            Assert(cbTbLookup > 0);
+            size_t const cbOpcodes  = pTbSrc->cbOpcodes;
             Assert(cbOpcodes > 0);
-            pTb->pabOpcodes = (uint8_t *)RTMemDup(pTbSrc->pabOpcodes, cbOpcodes);
-            if (pTb->pabOpcodes)
+            size_t const cbBoth     = cbTbLookup + RT_ALIGN_Z(cbOpcodes, sizeof(PIEMTB));
+            uint8_t * const pbBoth  = (uint8_t *)RTMemAlloc(cbBoth);
+            if (pbBoth)
             {
+                RT_BZERO(pbBoth, cbTbLookup);
+                pTb->pabOpcodes         = (uint8_t *)memcpy(&pbBoth[cbTbLookup], pTbSrc->pabOpcodes, cbOpcodes);
                 pTb->Thrd.cAllocated    = cCalls;
                 pTb->pNext              = NULL;
                 pTb->cUsed              = 0;
@@ -1641,7 +1750,8 @@ static void iemThreadedTbAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
 {
     iemTbCacheAdd(pVCpu, pTbCache, pTb);
 
-    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbInstr,         pTb->cInstructions);
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbLookupEntries, pTb->cTbLookupEntries);
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
     if (LogIs12Enabled())
     {
@@ -1909,6 +2019,7 @@ bool iemThreadedCompileEmitNop(PIEMTB pTb)
     pCall->idxInstr    = pTb->cInstructions - 1;
     pCall->cbOpcode    = 0;
     pCall->offOpcode   = 0;
+    pCall->uTbLookup   = 0;
     pCall->uUnused0    = 0;
     pCall->auParams[0] = 0;
     pCall->auParams[1] = 0;
@@ -1934,6 +2045,7 @@ bool iemThreadedCompileEmitLogCpuState(PIEMTB pTb)
     pCall->idxInstr    = pTb->cInstructions - 1;
     pCall->cbOpcode    = 0;
     pCall->offOpcode   = 0;
+    pCall->uTbLookup   = 0;
     pCall->uUnused0    = 0;
     pCall->auParams[0] = RT_MAKE_U16(pCall->idxInstr, idxCall); /* currently not used, but whatever */
     pCall->auParams[1] = 0;
@@ -2025,6 +2137,7 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
     pCall->idxInstr    = pTb->cInstructions;
     pCall->cbOpcode    = cbInstr;
     pCall->offOpcode   = offOpcode;
+    pCall->uTbLookup   = 0;
     pCall->uUnused0    = 0;
     pCall->auParams[0] = (uint32_t)cbInstr
                        | (uint32_t)(pVCpu->iem.s.fExec << 8) /* liveness: Enough of fExec for IEM_F_MODE_X86_IS_FLAT. */
@@ -2386,6 +2499,7 @@ static bool iemThreadedCompileEmitCheckMode(PVMCPUCC pVCpu, PIEMTB pTb)
     pCall->idxInstr    = pTb->cInstructions - 1;
     pCall->cbOpcode    = 0;
     pCall->offOpcode   = 0;
+    pCall->uTbLookup   = 0;
     pCall->uUnused0    = 0;
     pCall->auParams[0] = pVCpu->iem.s.fExec;
     pCall->auParams[1] = 0;
@@ -2424,6 +2538,7 @@ bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb)
         pCall->idxInstr    = pTb->cInstructions;
         pCall->offOpcode   = 0;
         pCall->cbOpcode    = 0;
+        pCall->uTbLookup   = 0;
         pCall->uUnused0    = 0;
         pCall->auParams[0] = 0;
         pCall->auParams[1] = 0;
@@ -2477,6 +2592,7 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
     pCall->idxInstr    = pTb->cInstructions;
     pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
+    pCall->uTbLookup   = 0;
     pCall->uUnused0    = 0;
     pCall->auParams[0] = 0;
     pCall->auParams[1] = 0;
@@ -2609,15 +2725,35 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 
         /* Still space in the TB? */
         if (   pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated
-            && pTb->cbOpcodes + 16 <= pVCpu->iem.s.cbOpcodesAllocated)
+            && pTb->cbOpcodes + 16 <= pVCpu->iem.s.cbOpcodesAllocated
+            && pTb->cTbLookupEntries < 127)
             iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/, 0);
         else
         {
-            Log8(("%04x:%08RX64: End TB - %u instr, %u calls, %u opcode bytes - full\n",
-                  uCsLog, uRipLog, pTb->cInstructions, pTb->Thrd.cCalls, pTb->cbOpcodes));
+            Log8(("%04x:%08RX64: End TB - %u instr, %u calls, %u opcode bytes, %u TB lookup entries - full\n",
+                  uCsLog, uRipLog, pTb->cInstructions, pTb->Thrd.cCalls, pTb->cbOpcodes, pTb->cTbLookupEntries));
             break;
         }
         iemThreadedCompileReInitOpcodeFetching(pVCpu);
+    }
+
+    /*
+     * Reserve lookup space for the final call entry if necessary.
+     */
+    PIEMTHRDEDCALLENTRY pFinalCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls - 1];
+    if (pTb->Thrd.cCalls > 1)
+    {
+        if (pFinalCall->uTbLookup == 0)
+        {
+            pFinalCall->uTbLookup = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, 0);
+            pTb->cTbLookupEntries += 1;
+        }
+    }
+    else if (pFinalCall->uTbLookup != 0)
+    {
+        Assert(pTb->cTbLookupEntries > 1);
+        pFinalCall->uTbLookup -= 1;
+        pTb->cTbLookupEntries -= 1;
     }
 
     /*
@@ -2642,6 +2778,14 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 /*********************************************************************************************************************************
 *   Recompiled Execution Core                                                                                                    *
 *********************************************************************************************************************************/
+
+/** Helper for iemTbExec. */
+DECL_FORCE_INLINE(PIEMTB *) iemTbGetTbLookupEntryWithRip(PCIEMTB pTb, uint8_t uTbLookup, uint64_t uRip)
+{
+    uint8_t const idx = IEM_TB_LOOKUP_TAB_GET_IDX_WITH_RIP(uTbLookup, uRip);
+    Assert(idx < pTb->cTbLookupEntries);
+    return IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, idx);
+}
 
 
 /**
@@ -2677,6 +2821,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
      * Set the current TB so CIMPL functions may get at it.
      */
     pVCpu->iem.s.pCurTbR3 = pTb;
+    pVCpu->iem.s.ppTbLookupEntryR3 = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, 0);
 
     /*
      * Execute the block.
@@ -2774,14 +2919,26 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
                 pVCpu->iem.s.cInstructions += pCallEntry->idxInstr; /* This may be one short, but better than zero. */
                 pVCpu->iem.s.pCurTbR3       = NULL;
                 STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
+                pVCpu->iem.s.ppTbLookupEntryR3 = iemTbGetTbLookupEntryWithRip(pTb, pCallEntry->uTbLookup, pVCpu->cpum.GstCtx.rip);
 
                 /* VINF_IEM_REEXEC_BREAK should be treated as VINF_SUCCESS as it's
                    only to break out of TB execution early. */
                 if (rcStrict == VINF_IEM_REEXEC_BREAK)
+                {
+#ifdef VBOX_WITH_STATISTICS
+                    if (pCallEntry->uTbLookup)
+                        STAM_COUNTER_INC(&pVCpu->iem.s.StatTbThreadedExecBreaksWithLookup);
+                    else
+                        STAM_COUNTER_INC(&pVCpu->iem.s.StatTbThreadedExecBreaksWithoutLookup);
+#endif
                     return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
+                }
                 return iemExecStatusCodeFiddling(pVCpu, rcStrict);
             }
         }
+
+        /* Update the lookup entry. */
+        pVCpu->iem.s.ppTbLookupEntryR3 = iemTbGetTbLookupEntryWithRip(pTb, pCallEntry[-1].uTbLookup, pVCpu->cpum.GstCtx.rip);
     }
 
     pVCpu->iem.s.cInstructions += pTb->cInstructions;
@@ -2909,6 +3066,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
     { }
     else
         pVCpu->iem.s.msRecompilerPollNow = (uint32_t)(TMVirtualGetNoCheck(pVM) / RT_NS_1MS);
+    pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
 
     /*
      * Run-loop.

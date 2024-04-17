@@ -232,6 +232,7 @@
         pCall->idxInstr    = idxInstrMc2; \
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = 0; \
         pCall->uUnused0    = 0; \
         pCall->auParams[0] = 0; \
         pCall->auParams[1] = 0; \
@@ -247,6 +248,7 @@
         pCall->idxInstr    = idxInstrMc2; \
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = 0; \
         pCall->uUnused0    = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = 0; \
@@ -263,6 +265,7 @@
         pCall->idxInstr    = idxInstrMc2; \
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = 0; \
         pCall->uUnused0    = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
@@ -280,11 +283,84 @@
         pCall->idxInstr    = idxInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->cbOpcode    = cbInstrMc2; \
+        pCall->uTbLookup   = 0; \
         pCall->uUnused0    = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
     } while (0)
+
+#define IEM_MC2_EMIT_CALL_WITH_TB_LOOKUP_0(a_fLargeTbLookup, a_enmFunction) do { \
+        IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
+        \
+        LogFlow(("Call #%u: " #a_enmFunction "\n", pTb->Thrd.cCalls)); \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->idxInstr    = idxInstrMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
+        pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
+        pCall->uUnused0    = 0; \
+        pCall->auParams[0] = 0; \
+        pCall->auParams[1] = 0; \
+        pCall->auParams[2] = 0; \
+    } while (0)
+#define IEM_MC2_EMIT_CALL_WITH_TB_LOOKUP_1(a_fLargeTbLookup, a_enmFunction, a_uArg0) do { \
+        IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
+        uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
+        \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0)); \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->idxInstr    = idxInstrMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
+        pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
+        pCall->uUnused0    = 0; \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = 0; \
+        pCall->auParams[2] = 0; \
+    } while (0)
+#define IEM_MC2_EMIT_CALL_WITH_TB_LOOKUP_2(a_fLargeTbLookup, a_enmFunction, a_uArg0, a_uArg1) do { \
+        IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
+        uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
+        uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
+        \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64 a1=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0, (uint64_t)a_uArg1)); \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->idxInstr    = idxInstrMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
+        pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
+        pCall->uUnused0    = 0; \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = a_uArg1; \
+        pCall->auParams[2] = 0; \
+    } while (0)
+#define IEM_MC2_EMIT_CALL_WITH_TB_LOOKUP_3(a_fLargeTbLookup, a_enmFunction, a_uArg0, a_uArg1, a_uArg2) do { \
+        IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
+        uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
+        uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
+        uint64_t         const uArg2Check       = (a_uArg2);     RT_NOREF(uArg2Check); \
+        \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64 a1=%RX64 a2=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0, (uint64_t)a_uArg1, (uint64_t)a_uArg2)); \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->idxInstr    = idxInstrMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
+        pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
+        pCall->uUnused0    = 0; \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = a_uArg1; \
+        pCall->auParams[2] = a_uArg2; \
+    } while (0)
+
 #define IEM_MC2_END_EMIT_CALLS(a_fCImplFlags) \
         Assert(pTb->cInstructions <= pTb->Thrd.cCalls); \
         if (pTb->cInstructions < 255) \

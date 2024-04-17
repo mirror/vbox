@@ -927,8 +927,23 @@ typedef struct IEMTHRDEDCALLENTRY
     /** Offset into IEMTB::pabOpcodes. */
     uint16_t    offOpcode;
 
+    /** TB lookup table index (7 bits) and large size (1 bits).
+     *
+     * The default size is 1 entry, but for indirect calls and returns we set the
+     * top bit and allocate 4 (IEM_TB_LOOKUP_TAB_LARGE_SIZE) entries.  The large
+     * tables uses RIP for selecting the entry to use, as it is assumed a hash table
+     * lookup isn't that slow compared to sequentially trying out 4 TBs.
+     *
+     * By default lookup table entry 0 for a TB is reserved as a fallback for
+     * calltable entries w/o explicit entreis, so this member will be non-zero if
+     * there is a lookup entry associated with this call.
+     *
+     * @sa IEM_TB_LOOKUP_TAB_GET_SIZE, IEM_TB_LOOKUP_TAB_GET_IDX
+     */
+    uint8_t     uTbLookup;
+
     /** Unused atm. */
-    uint16_t    uUnused0;
+    uint8_t     uUnused0;
 
     /** Generic parameters. */
     uint64_t    auParams[3];
@@ -938,6 +953,20 @@ AssertCompileSize(IEMTHRDEDCALLENTRY, sizeof(uint64_t) * 4);
 typedef struct IEMTHRDEDCALLENTRY *PIEMTHRDEDCALLENTRY;
 /** Pointer to a const threaded call entry. */
 typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
+
+/** The number of TB lookup table entries for a large allocation
+ *  (IEMTHRDEDCALLENTRY::uTbLookup bit 7 set). */
+#define IEM_TB_LOOKUP_TAB_LARGE_SIZE                    4
+/** Get the lookup table size from IEMTHRDEDCALLENTRY::uTbLookup. */
+#define IEM_TB_LOOKUP_TAB_GET_SIZE(a_uTbLookup)         (!((a_uTbLookup) & 0x80) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE)
+/** Get the first lookup table index from IEMTHRDEDCALLENTRY::uTbLookup. */
+#define IEM_TB_LOOKUP_TAB_GET_IDX(a_uTbLookup)          ((a_uTbLookup) & 0x7f)
+/** Get the lookup table index from IEMTHRDEDCALLENTRY::uTbLookup and RIP. */
+#define IEM_TB_LOOKUP_TAB_GET_IDX_WITH_RIP(a_uTbLookup, a_Rip) \
+    (!((a_uTbLookup) & 0x80) ? (a_uTbLookup) & 0x7f : ((a_uTbLookup) & 0x7f) + ((a_Rip) & (IEM_TB_LOOKUP_TAB_LARGE_SIZE - 1)) )
+
+/** Make a IEMTHRDEDCALLENTRY::uTbLookup value. */
+#define IEM_TB_LOOKUP_TAB_MAKE(a_idxTable, a_fLarge)    ((a_idxTable) | ((a_fLarge) ? 0x80 : 0))
 
 /**
  * Native IEM TB 'function' typedef.
@@ -1217,12 +1246,17 @@ typedef struct IEMTB
 
     /** The allocation chunk this TB belongs to. */
     uint8_t             idxAllocChunk;
-    uint8_t             bUnused;
+    /** The number of entries in the lookup table.
+     * Because we're out of space, the TB lookup table is located before the
+     * opcodes pointed to by pabOpcodes. */
+    uint8_t             cTbLookupEntries;
 
     /** Number of bytes of opcodes stored in pabOpcodes.
      * @todo this field isn't really needed, aRanges keeps the actual info. */
     uint16_t            cbOpcodes;
-    /** Pointer to the opcode bytes this block was recompiled from. */
+    /** Pointer to the opcode bytes this block was recompiled from.
+     * This also points to the TB lookup table, which starts cTbLookupEntries
+     * entries before the opcodes (we don't have room atm for another point). */
     uint8_t            *pabOpcodes;
 
     /** Debug info if enabled.
@@ -1283,6 +1317,11 @@ AssertCompileSize(IEMTB, 168);
 typedef IEMTB *PIEMTB;
 /** Pointer to a const translation block. */
 typedef IEMTB const *PCIEMTB;
+
+/** Gets address of the given TB lookup table entry. */
+#define IEMTB_GET_TB_LOOKUP_TAB_ENTRY(a_pTb, a_idx) \
+    ((PIEMTB *)&(a_pTb)->pabOpcodes[-(int)((a_pTb)->cTbLookupEntries - (a_idx)) * sizeof(PIEMTB)])
+
 
 /**
  * A chunk of memory in the TB allocator.
@@ -1407,9 +1446,11 @@ typedef struct IEMTBCACHE
 
     /** Statistics: Number of TB lookup misses. */
     STAMCOUNTER     cLookupMisses;
-    /** Statistics: Number of TB lookup hits (debug only). */
+    /** Statistics: Number of TB lookup hits via hash table (debug only). */
     STAMCOUNTER     cLookupHits;
-    STAMCOUNTER     auPadding2[3];
+    /** Statistics: Number of TB lookup hits via TB associated lookup table (debug only). */
+    STAMCOUNTER     cLookupHitsViaTbLookupTable;
+    STAMCOUNTER     auPadding2[2];
     /** Statistics: Collision list length pruning. */
     STAMPROFILE     StatPrune;
     /** @} */
@@ -1791,6 +1832,10 @@ typedef struct IEMCPU
     R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
     /** Pointer to the ring-3 TB cache for this EMT. */
     R3PTRTYPE(PIEMTBCACHE)  pTbCacheR3;
+    /** Pointer to the ring-3 TB lookup entry.
+     * This either points to pTbLookupEntryDummyR3 or an actually lookuptable
+     * entry, thus it can always safely be used w/o NULL checking. */
+    R3PTRTYPE(PIEMTB *)     ppTbLookupEntryR3;
     /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
      * The TBs are based on physical addresses, so this is needed to correleated
      * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
@@ -1846,6 +1891,8 @@ typedef struct IEMCPU
     R3PTRTYPE(struct IEMEXECMEMALLOCATOR *) pExecMemAllocatorR3;
     /** Pointer to the native recompiler state for ring-3. */
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
+    /** Dummy entry for ppTbLookupEntryR3. */
+    R3PTRTYPE(PIEMTB)       pTbLookupEntryDummyR3;
 
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
@@ -1853,6 +1900,10 @@ typedef struct IEMCPU
     STAMCOUNTER             StatCheckIrqBreaks;
     /** Statistics: Times BltIn_CheckMode breaks out of the TB. */
     STAMCOUNTER             StatCheckModeBreaks;
+    /** Threaded TB statistics: Times execution break on call with lookup entries. */
+    STAMCOUNTER             StatTbThreadedExecBreaksWithLookup;
+    /** Threaded TB statistics: Times execution break on call without lookup entries. */
+    STAMCOUNTER             StatTbThreadedExecBreaksWithoutLookup;
     /** Statistics: Times a post jump target check missed and had to find new TB. */
     STAMCOUNTER             StatCheckBranchMisses;
     /** Statistics: Times a jump or page crossing required a TB with CS.LIM checking. */
@@ -1861,8 +1912,10 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeExecMemInstrBufAllocFailed;
     /** Native TB statistics: Number of fully recompiled TBs. */
     STAMCOUNTER             StatNativeFullyRecompiledTbs;
-    /** Threaded TB statistics: Number of instructions per TB. */
-    STAMPROFILE             StatTbThreadedInstr;
+    /** TB statistics: Number of instructions per TB. */
+    STAMPROFILE             StatTbInstr;
+    /** TB statistics: Number of TB lookup table entries per TB. */
+    STAMPROFILE             StatTbLookupEntries;
     /** Threaded TB statistics: Number of calls per TB. */
     STAMPROFILE             StatTbThreadedCalls;
     /** Native TB statistics: Native code size per TB. */
@@ -1952,7 +2005,7 @@ typedef struct IEMCPU
     /** Native recompiler: Number of PC updates which could be delayed. */
     STAMCOUNTER             StatNativePcUpdateDelayed;
 
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+//#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /** Native recompiler: Number of calls to iemNativeSimdRegAllocFindFree. */
     STAMCOUNTER             StatNativeSimdRegFindFree;
     /** Native recompiler: Number of times iemNativeSimdRegAllocFindFree needed
@@ -1985,7 +2038,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeSseXcptCheckOmitted;
     /** Native recompiler: Number of IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() checks omitted. */
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
-#endif
+//#endif
 
     /** Native recompiler: The TB finished executing completely without jumping to a an exit label. */
     STAMCOUNTER             StatNativeTbFinished;

@@ -384,6 +384,12 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Executed threaded translation block",          "/IEM/CPU%u/re/cTbExecThreaded", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                         "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedExecBreaksWithLookup, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Times threaded TB execution was interrupted/broken off on a call with lookup entries", "/IEM/CPU%u/re/cTbExecBreaksWithLookup", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedExecBreaksWithoutLookup, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Times threaded TB execution was interrupted/broken off on a call without lookup entries", "/IEM/CPU%u/re/cTbExecBreaksWithoutLookup", idCpu);
+# endif
 
         PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
@@ -417,6 +423,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, (void *)&pTbCache->cLookupHits,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                         "Translation block lookup hits",                "/IEM/CPU%u/re/cTbLookupHits", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbCache->cLookupHitsViaTbLookupTable, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block lookup hits via TB lookup table associated with the previous TB", "/IEM/CPU%u/re/cTbLookupHitsViaTbLookupTable", idCpu);
         STAMR3RegisterF(pVM, (void *)&pTbCache->cLookupMisses,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                         "Translation block lookup misses",              "/IEM/CPU%u/re/cTbLookupMisses", idCpu);
         STAMR3RegisterF(pVM, (void *)&pTbCache->cCollisions,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
@@ -428,8 +436,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedCalls, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS_PER_TB,
                         "Calls per threaded translation block",         "/IEM/CPU%u/re/ThrdCallsPerTb", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedInstr, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbInstr,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
                         "Instruction per threaded translation block",   "/IEM/CPU%u/re/ThrdInstrPerTb", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbLookupEntries, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
+                        "TB lookup table entries per threaded translation block", "/IEM/CPU%u/re/ThrdLookupEntriesPerTb", idCpu);
 
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckIrqBreaks,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckIrqBreaks", idCpu);

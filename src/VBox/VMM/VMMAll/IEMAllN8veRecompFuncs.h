@@ -347,19 +347,27 @@ iemNativeEmitFinishInstructionFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t
 /** The VINF_SUCCESS dummy. */
 template<int const a_rcNormal>
 DECL_FORCE_INLINE(uint32_t)
-iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
+iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
     AssertCompile(a_rcNormal == VINF_SUCCESS || a_rcNormal == VINF_IEM_REEXEC_BREAK);
     if (a_rcNormal != VINF_SUCCESS)
     {
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, pCallEntry->idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
 #else
-        RT_NOREF_PV(idxInstr);
+        RT_NOREF_PV(pCallEntry);
 #endif
 
         /* As this code returns from the TB any pending register writes must be flushed. */
         off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+        /* Update IEMCPU::ppTbLookupEntryR3 to get the best lookup effect. */
+        uint8_t const  idxTbLookupFirst = IEM_TB_LOOKUP_TAB_GET_IDX(pCallEntry->uTbLookup);
+        Assert(idxTbLookupFirst < pReNative->pTbOrg->cTbLookupEntries);
+        PIEMTB * const ppTbLookupFirst  = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pReNative->pTbOrg, idxTbLookupFirst);
+        Assert(IEM_TB_LOOKUP_TAB_GET_SIZE(pCallEntry->uTbLookup) == 1); /* large stuff later/never */
+        off = iemNativeEmitStoreImmToVCpuU64(pReNative, off, (uintptr_t)ppTbLookupFirst,
+                                             RT_UOFFSETOF(VMCPU, iem.s.ppTbLookupEntryR3));
 
         return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreak);
     }
@@ -369,12 +377,12 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegAddToRip64AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
@@ -416,12 +424,12 @@ iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegAddToEip32AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
@@ -463,12 +471,12 @@ iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_cbInstr, a_rcNormal) \
     off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegAddToIp16AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
@@ -517,35 +525,35 @@ iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
                                                             (a_enmEffOpSize), pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
                                                             (a_enmEffOpSize), pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
                                                             IEMMODE_16BIT, pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
         off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
                                                                 IEMMODE_16BIT, pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
                                                             IEMMODE_64BIT, pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
                                                             IEMMODE_64BIT, pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegRip64RelativeJumpS8AndFinishNoFlags,
  *  iemRegRip64RelativeJumpS16AndFinishNoFlags and
@@ -594,35 +602,35 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
                                                             (a_enmEffOpSize), pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
                                                             (a_enmEffOpSize), pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
                                                             IEMMODE_16BIT, pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
                                                             IEMMODE_16BIT, pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
                                                             IEMMODE_32BIT, pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
             off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
                                                                     IEMMODE_32BIT, pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegEip32RelativeJumpS8AndFinishNoFlags,
  *  iemRegEip32RelativeJumpS16AndFinishNoFlags and
@@ -667,30 +675,30 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16(a_i8, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i8, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16(a_i32, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
     off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr); \
     off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off); \
-    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry->idxInstr)
+    off = iemNativeEmitFinishInstructionWithStatus<a_rcNormal>(pReNative, off, pCallEntry)
 
 /** Same as iemRegIp16RelativeJumpS8AndFinishNoFlags. */
 DECL_INLINE_THROW(uint32_t)

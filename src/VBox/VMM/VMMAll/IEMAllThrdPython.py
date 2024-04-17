@@ -1473,7 +1473,7 @@ class ThreadedFunctionVariation(object):
 
         return True;
 
-    def emitThreadedCallStmts(self, cchIndent, sCallVarNm = None):
+    def emitThreadedCallStmtsForVariant(self, cchIndent, fTbLookupTable = False, sCallVarNm = None):
         """
         Produces generic C++ statments that emits a call to the thread function
         variation and any subsequent checks that may be necessary after that.
@@ -1481,6 +1481,9 @@ class ThreadedFunctionVariation(object):
         The sCallVarNm is the name of the variable with the threaded function
         to call.  This is for the case where all the variations have the same
         parameters and only the threaded function number differs.
+
+        The fTbLookupTable parameter can either be False, True or whatever else
+        (like 2) - in the latte case this means a large lookup table.
         """
         aoStmts = [
             iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS',
@@ -1505,7 +1508,12 @@ class ThreadedFunctionVariation(object):
             assert asFrags;
             asCallArgs.append(' | '.join(asFrags));
 
-        aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,), asCallArgs, cchIndent = cchIndent));
+        if fTbLookupTable is False:
+            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,),
+                                         asCallArgs, cchIndent = cchIndent));
+        else:
+            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_WITH_TB_LOOKUP_%s' % (len(asCallArgs) - 1,),
+                                         ['0' if fTbLookupTable is True else '1',] + asCallArgs, cchIndent = cchIndent));
 
         # 2023-11-28: This has to be done AFTER the CIMPL call, so we have to
         #             emit this mode check from the compilation loop.  On the
@@ -2203,7 +2211,7 @@ class ThreadedFunction(object):
         ThreadedFunctionVariation.ksVariation_16f_Addr32: True,
     };
 
-    def emitThreadedCallStmts(self, sBranch = None): # pylint: disable=too-many-statements
+    def emitThreadedCallStmts(self, sBranch = None, fTbLookupTable = False): # pylint: disable=too-many-statements
         """
         Worker for morphInputCode that returns a list of statements that emits
         the call to the threaded functions for the block.
@@ -2211,11 +2219,14 @@ class ThreadedFunction(object):
         The sBranch parameter is used with conditional branches where we'll emit
         different threaded calls depending on whether we're in the jump-taken or
         no-jump code path.
+
+        The fTbLookupTable parameter can either be False, True or whatever else
+        (like 2) - in the latte case this means a large lookup table.
         """
         # Special case for only default variation:
         if len(self.aoVariations) == 1  and  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default:
             assert not sBranch;
-            return self.aoVariations[0].emitThreadedCallStmts(0);
+            return self.aoVariations[0].emitThreadedCallStmtsForVariant(0, fTbLookupTable);
 
         #
         # Case statement sub-class.
@@ -2227,7 +2238,7 @@ class ThreadedFunction(object):
                 self.sCond  = sCond;
                 self.sVarNm = sVarNm;
                 self.oVar   = dByVari[sVarNm] if sVarNm else None;
-                self.aoBody = self.oVar.emitThreadedCallStmts(8) if sVarNm else None;
+                self.aoBody = self.oVar.emitThreadedCallStmtsForVariant(8, fTbLookupTable) if sVarNm else None;
 
             def toCode(self):
                 aoStmts = [ iai.McCppGeneric('case %s:' % (self.sCond), cchIndent = 4), ];
@@ -2446,7 +2457,8 @@ class ThreadedFunction(object):
                 iai.McCppGeneric('IEM_NOT_REACHED_DEFAULT_CASE_RET();', cchIndent = 4),
                 iai.McCppGeneric('}'),
             ]);
-            aoStmts.extend(dByVari[aoCases[iFirstCaseWithBody].sVarNm].emitThreadedCallStmts(0, 'enmFunction'));
+            aoStmts.extend(dByVari[aoCases[iFirstCaseWithBody].sVarNm].emitThreadedCallStmtsForVariant(0, fTbLookupTable,
+                                                                                                       'enmFunction'));
 
         else:
             #
@@ -2498,12 +2510,12 @@ class ThreadedFunction(object):
                         if not fIsConditional:
                             aoDecoderStmts.extend(self.emitThreadedCallStmts());
                         elif oStmt.sName == 'IEM_MC_ADVANCE_RIP_AND_FINISH':
-                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp'));
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp', True));
                         else:
                             assert oStmt.sName in { 'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
                                                     'IEM_MC_REL_JMP_S16_AND_FINISH': True,
                                                     'IEM_MC_REL_JMP_S32_AND_FINISH': True, };
-                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp'));
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp', True));
                         aoDecoderStmts.append(oNewStmt);
                         fCallEmitted = True;
 
@@ -2515,13 +2527,13 @@ class ThreadedFunction(object):
                         aoDecoderStmts.pop();
                         if sBranchAnnotation == g_ksFinishAnnotation_Advance:
                             assert iai.McStmt.findStmtByNames(aoStmts[iStmt:], {'IEM_MC_ADVANCE_RIP_AND_FINISH':1,})
-                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp'));
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('NoJmp', True));
                         elif sBranchAnnotation == g_ksFinishAnnotation_RelJmp:
                             assert iai.McStmt.findStmtByNames(aoStmts[iStmt:],
                                                               { 'IEM_MC_REL_JMP_S8_AND_FINISH':  1,
                                                                 'IEM_MC_REL_JMP_S16_AND_FINISH': 1,
                                                                 'IEM_MC_REL_JMP_S32_AND_FINISH': 1, });
-                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp'));
+                            aoDecoderStmts.extend(self.emitThreadedCallStmts('Jmp', True));
                         else:
                             self.raiseProblem('Modifying state before emitting calls! %s' % (oStmt.sName,));
                         aoDecoderStmts.append(oNewStmt);
