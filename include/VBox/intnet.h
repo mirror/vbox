@@ -348,7 +348,7 @@ typedef struct INTNETSG
     uint16_t volatile   fFlags;
 #if ARCH_BITS == 64
     /** Alignment padding. */
-    uint16_t            uPadding;
+    uint32_t            uPadding;
 #endif
     /** The number of segments allocated. */
     uint16_t            cSegsAlloc;
