@@ -32,6 +32,7 @@
 #endif
 
 /* Qt includes: */
+#include <QMap>
 #include <QUuid>
 #include <QWidget>
 
