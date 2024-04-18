@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QMainWindow>
+#include <QVariant>
 
 /* GUI includes: */
 #include "UISettingsDefs.h"
@@ -43,7 +44,6 @@ class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
 class QTimer;
-class QVariant;
 class QIDialogButtonBox;
 class UIFilterEditor;
 class UIModeCheckBox;
