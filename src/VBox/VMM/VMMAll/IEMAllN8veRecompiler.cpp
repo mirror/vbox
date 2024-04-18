@@ -134,6 +134,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu,
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseDe);
     iemRaiseDivideErrorJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -146,6 +147,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseUd);
     iemRaiseUndefinedOpcodeJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -160,6 +162,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseUd,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseRelated,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseSseRelated);
     if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM)
         || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR))
         iemRaiseUndefinedOpcodeJmp(pVCpu);
@@ -178,6 +181,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseRelated,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseAvxRelated);
     if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE)
         || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
         iemRaiseUndefinedOpcodeJmp(pVCpu);
@@ -196,6 +200,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseAvxFpRelated,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseSseAvxFpRelated);
     if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)
         iemRaiseSimdFpExceptionJmp(pVCpu);
     else
@@ -211,6 +216,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseAvxFpRelated,(PVMCPUCC pVCp
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseNm);
     iemRaiseDeviceNotAvailableJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -223,6 +229,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseNm,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseGp0);
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -235,6 +242,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseMf);
     iemRaiseMathFaultJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -247,6 +255,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseMf,(PVMCPUCC pVCpu))
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseXf,(PVMCPUCC pVCpu))
 {
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitRaiseXf);
     iemRaiseSimdFpExceptionJmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -265,6 +274,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu))
        the executable memory till we've returned our way back to iemTbExec as
        that return path codes via the native code generated for the TB. */
     Log7(("TB obsolete: %p at %04x:%08RX64\n", pVCpu->iem.s.pCurTbR3, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitObsoleteTb);
     iemThreadedTbObsolete(pVCpu, pVCpu->iem.s.pCurTbR3, false /*fSafeToFree*/);
     return VINF_IEM_REEXEC_BREAK;
 }
@@ -6172,6 +6182,7 @@ iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRD
 }
 
 #ifdef VBOX_WITH_STATISTICS
+
 /**
  * Emits code to update the thread call statistics.
  */
@@ -6210,8 +6221,8 @@ iemNativeEmitNativeTbExitStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
     return off;
 }
-#endif /* VBOX_WITH_STATISTICS */
 
+#endif /* VBOX_WITH_STATISTICS */
 
 /**
  * Emits the code at the ReturnWithFlags label (returns
@@ -9275,24 +9286,24 @@ l_profile_again:
         static struct
         {
             IEMNATIVELABELTYPE              enmLabel;
-            uint32_t                        offVCpuStats;
             PFNIEMNATIVESIMPLETAILLABELCALL pfnCallback;
         } const g_aSimpleTailLabels[] =
         {
-            {   kIemNativeLabelType_Invalid,                0, NULL },
-            {   kIemNativeLabelType_RaiseDe,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseDe),               iemNativeHlpExecRaiseDe },
-            {   kIemNativeLabelType_RaiseUd,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseUd),               iemNativeHlpExecRaiseUd },
-            {   kIemNativeLabelType_RaiseSseRelated,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseSseRelated),       iemNativeHlpExecRaiseSseRelated },
-            {   kIemNativeLabelType_RaiseAvxRelated,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseAvxRelated),       iemNativeHlpExecRaiseAvxRelated },
-            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseSseAvxFpRelated),  iemNativeHlpExecRaiseSseAvxFpRelated },
-            {   kIemNativeLabelType_RaiseNm,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseNm),               iemNativeHlpExecRaiseNm },
-            {   kIemNativeLabelType_RaiseGp0,               RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseGp0),              iemNativeHlpExecRaiseGp0 },
-            {   kIemNativeLabelType_RaiseMf,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseMf),               iemNativeHlpExecRaiseMf },
-            {   kIemNativeLabelType_RaiseXf,                RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitRaiseXf),               iemNativeHlpExecRaiseXf },
-            {   kIemNativeLabelType_ObsoleteTb,             RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitObsoleteTb),            iemNativeHlpObsoleteTb },
-            {   kIemNativeLabelType_NeedCsLimChecking,      RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitNeedCsLimChecking),     iemNativeHlpNeedCsLimChecking },
-            {   kIemNativeLabelType_CheckBranchMiss,        RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitCheckBranchMiss),       iemNativeHlpCheckBranchMiss },
+            {   kIemNativeLabelType_Invalid,                NULL },
+            {   kIemNativeLabelType_RaiseDe,                iemNativeHlpExecRaiseDe },
+            {   kIemNativeLabelType_RaiseUd,                iemNativeHlpExecRaiseUd },
+            {   kIemNativeLabelType_RaiseSseRelated,        iemNativeHlpExecRaiseSseRelated },
+            {   kIemNativeLabelType_RaiseAvxRelated,        iemNativeHlpExecRaiseAvxRelated },
+            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   iemNativeHlpExecRaiseSseAvxFpRelated },
+            {   kIemNativeLabelType_RaiseNm,                iemNativeHlpExecRaiseNm },
+            {   kIemNativeLabelType_RaiseGp0,               iemNativeHlpExecRaiseGp0 },
+            {   kIemNativeLabelType_RaiseMf,                iemNativeHlpExecRaiseMf },
+            {   kIemNativeLabelType_RaiseXf,                iemNativeHlpExecRaiseXf },
+            {   kIemNativeLabelType_ObsoleteTb,             iemNativeHlpObsoleteTb },
+            {   kIemNativeLabelType_NeedCsLimChecking,      iemNativeHlpNeedCsLimChecking },
+            {   kIemNativeLabelType_CheckBranchMiss,        iemNativeHlpCheckBranchMiss },
         };
+
         AssertCompile(RT_ELEMENTS(g_aSimpleTailLabels) == (unsigned)kIemNativeLabelType_LastSimple + 1U);
         AssertCompile(kIemNativeLabelType_Invalid == 0);
         uint64_t fTailLabels = pReNative->bmLabelTypes & (RT_BIT_64(kIemNativeLabelType_LastSimple + 1U) - 2U);
@@ -9309,10 +9320,6 @@ l_profile_again:
                 if (idxLabel != UINT32_MAX)
                 {
                     iemNativeLabelDefine(pReNative, idxLabel, off);
-
-#ifdef VBOX_WITH_STATISTICS
-                    off = iemNativeEmitNativeTbExitStats(pReNative, off, g_aSimpleTailLabels[enmLabel].offVCpuStats);
-#endif
 
                     /* int pfnCallback(PVMCPUCC pVCpu) */
                     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);

@@ -2046,6 +2046,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTbExitReturnBreak;
     /** Native recompiler: The TB finished executing jumping to the ReturnWithFlags label. */
     STAMCOUNTER             StatNativeTbExitReturnWithFlags;
+
     /** Native recompiler: The TB finished executing jumping to the RaiseDe label. */
     STAMCOUNTER             StatNativeTbExitRaiseDe;
     /** Native recompiler: The TB finished executing jumping to the RaiseUd label. */
@@ -2066,12 +2067,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTbExitRaiseXf;
     /** Native recompiler: The TB finished executing jumping to the ObsoleteTb label. */
     STAMCOUNTER             StatNativeTbExitObsoleteTb;
-    /** Native recompiler: The TB finished executing jumping to the NeedCsLimChecking label. */
-    STAMCOUNTER             StatNativeTbExitNeedCsLimChecking;
-    /** Native recompiler: The TB finished executing jumping to the CheckBranchMiss label. */
-    STAMCOUNTER             StatNativeTbExitCheckBranchMiss;
 
-    uint64_t                au64Padding[3];
+    uint64_t                au64Padding[5];
     /** @} */
 
     /** Data TLB.
