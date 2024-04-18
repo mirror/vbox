@@ -1121,18 +1121,18 @@ iemNativeEmitIncU32CounterInVCpuEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8
     if (offVCpu < (unsigned)(_4K * cbData))
     {
         /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmp1,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmp1,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
         pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxTmp1, idxTmp1, 1);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmp1,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmp1,
                                                    IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
     }
     else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData))
     {
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_Ld_Word, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
         pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxTmp1, idxTmp1, 1);
-        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
+        pCodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Word, idxTmp1, IEMNATIVE_REG_FIXED_PCPUMCTX,
                                                    (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
     }
     else
