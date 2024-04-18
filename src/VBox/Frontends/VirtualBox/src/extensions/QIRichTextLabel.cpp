@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -103,7 +104,7 @@ QIRichTextLabel *UIAccessibilityInterfaceForQIRichTextLabel::label() const
 *********************************************************************************************************************************/
 
 QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pTextBrowser()
     , m_pActionCopy(0)
     , m_fCopyAvailable(false)
@@ -163,7 +164,9 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &QIRichTextLabel::sltRetranslateUI);
 }
 
 QString QIRichTextLabel::text() const
@@ -285,7 +288,7 @@ void QIRichTextLabel::copy()
     }
 }
 
-void QIRichTextLabel::retranslateUi()
+void QIRichTextLabel::sltRetranslateUI()
 {
     if (m_pActionCopy)
         m_pActionCopy->setText(tr("&Copy"));

@@ -29,6 +29,7 @@
 #include <QAbstractTableModel>
 #include <QHeaderView>
 #include <QItemEditorFactory>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -39,12 +40,12 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIStyledItemDelegate.h"
-#include "QIWithRetranslateUI.h"
 #include "UICommon.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -334,7 +335,7 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
         }
         case Qt::ToolTipRole:
         {
-            /* We are generating tool-tip here and not in retranslateUi() because of the tricky plural form handling,
+            /* We are generating tool-tip here and not in sltRetranslateUI() because of the tricky plural form handling,
              * but be quiet, it's safe enough because the tool-tip being re-acquired every time on mouse-hovering. */
             const QList<QUuid> encryptedMedia = m_encryptedMedia.values(m_encryptionPasswords.keys().at(index.row()));
             return UIAddDiskEncryptionPasswordDialog::tr("<nobr>Used by the following %n hard disk(s):</nobr><br>%1",
@@ -489,7 +490,7 @@ void UIEncryptionDataTable::cleanup()
 UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent,
                                                                      const QString &strMachineName,
                                                                      const EncryptedMediumMap &encryptedMedia)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QDialog(pParent)
     , m_strMachineName(strMachineName)
     , m_encryptedMedia(encryptedMedia)
     , m_pLabelDescription(0)
@@ -499,7 +500,10 @@ UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pP
     /* Prepare: */
     prepare();
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIAddDiskEncryptionPasswordDialog::sltRetranslateUI);
+
 }
 
 EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() const
@@ -508,7 +512,7 @@ EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() c
     return m_pTableEncryptionData->encryptionPasswords();
 }
 
-void UIAddDiskEncryptionPasswordDialog::retranslateUi()
+void UIAddDiskEncryptionPasswordDialog::sltRetranslateUI()
 {
     /* Translate the dialog title: */
     setWindowTitle(tr("%1 - Disk Encryption").arg(m_strMachineName));
@@ -542,7 +546,7 @@ void UIAddDiskEncryptionPasswordDialog::accept()
         }
     }
     /* Call to base-class: */
-    QIWithRetranslateUI<QDialog>::accept();
+    QDialog::accept();
 }
 
 void UIAddDiskEncryptionPasswordDialog::prepare()

@@ -38,7 +38,7 @@
 #include "UIIconPool.h"
 #include "UIShortcutPool.h"
 #include "UISpecialControls.h"
-
+#include "UITranslationEventListener.h"
 
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
@@ -54,6 +54,8 @@ UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
     m_pButton = new UICocoaButton(this, UICocoaButton::CancelButton);
     connect(m_pButton, SIGNAL(clicked()), this, SIGNAL(clicked()));
     setFixedSize(m_pButton->size());
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIMiniCancelButton::sltRetranslateUI);
 }
 
 void UIMiniCancelButton::resizeEvent(QResizeEvent *)
@@ -84,7 +86,7 @@ UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
 *********************************************************************************************************************************/
 
 UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QIToolButton>(pParent)
+    : QIToolButton(pParent)
 {
     setAutoRaise(true);
     setFocusPolicy(Qt::TabFocus);
@@ -104,7 +106,7 @@ static const int PushButtonRightOffset = 12;
 static const int PushButtonBottomOffset = 4;
 
 UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QPushButton>(pParent)
+    : QPushButton(pParent)
 {
 # ifdef VBOX_WS_MAC
     m_pButtonPressed = false;
@@ -119,7 +121,9 @@ UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
 # endif /* VBOX_WS_MAC */
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIHelpButton::sltRetranslateUI);
 }
 
 void UIHelpButton::initFrom(QPushButton *pOther)
@@ -133,10 +137,10 @@ void UIHelpButton::initFrom(QPushButton *pOther)
     setDefault(pOther->isDefault());
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
-void UIHelpButton::retranslateUi()
+void UIHelpButton::sltRetranslateUI()
 {
     QPushButton::setText(tr("&Help"));
     if (QPushButton::shortcut().isEmpty())
@@ -197,4 +201,3 @@ void UIHelpButton::leaveEvent(QEvent *pEvent)
 
 
 #endif /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
-

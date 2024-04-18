@@ -39,6 +39,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPicture>
 #include <QPushButton>
 #include <QSplitter>

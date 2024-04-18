@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
@@ -1795,7 +1796,7 @@ int UIApplianceEditorWidget::m_minGuestCPUCount = -1;
 int UIApplianceEditorWidget::m_maxGuestCPUCount = -1;
 
 UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pModel(0)
 {
     /* Make sure all static content is properly initialized */
@@ -1877,7 +1878,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     }
 
     /* Translate finally: */
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIApplianceEditorWidget::clear()
@@ -1919,7 +1920,7 @@ void UIApplianceEditorWidget::restoreDefaults()
         m_pModel->restoreDefaults();
 }
 
-void UIApplianceEditorWidget::retranslateUi()
+void UIApplianceEditorWidget::sltRetranslateUI()
 {
     /* Translate information pane tree-view: */
     m_pTreeViewSettings->setWhatsThis(tr("Detailed list of all components of all virtual machines of the current appliance"));

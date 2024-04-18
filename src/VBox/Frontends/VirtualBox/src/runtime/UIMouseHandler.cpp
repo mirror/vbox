@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QtMath>
 #include <QMouseEvent>
 #include <QTimer>

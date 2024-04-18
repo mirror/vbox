@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -42,10 +43,10 @@
 #include "UIHelpBrowserDialog.h"
 #include "UIShortcutPool.h"
 #include "UITakeSnapshotDialog.h"
-
+#include "UITranslationEventListener.h"
 
 UITakeSnapshotDialog::UITakeSnapshotDialog(QWidget *pParent, ulong cImmutableMedia)
-    : QIWithRetranslateUI<QIDialog>(pParent)
+    : QIDialog(pParent)
     , m_cImmutableMedia(cImmutableMedia)
     , m_pLabelIcon(0)
     , m_pLabelName(0), m_pEditorName(0)
@@ -94,10 +95,10 @@ bool UITakeSnapshotDialog::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIDialog>::event(pEvent);
+    return QIDialog::event(pEvent);
 }
 
-void UITakeSnapshotDialog::retranslateUi()
+void UITakeSnapshotDialog::sltRetranslateUI()
 {
     setWindowTitle(tr("Take Snapshot of Virtual Machine"));
     m_pLabelName->setText(tr("Snapshot &Name"));
@@ -149,7 +150,9 @@ void UITakeSnapshotDialog::prepare()
     prepareContents();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UITakeSnapshotDialog::sltRetranslateUI);
 
     /* Invent minimum size: */
     QSize minimumSize;

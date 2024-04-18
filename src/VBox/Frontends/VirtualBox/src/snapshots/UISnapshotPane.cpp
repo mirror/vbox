@@ -57,6 +57,7 @@
 #include "UISnapshotPane.h"
 #include "UITakeSnapshotDialog.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -587,7 +588,7 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
 *********************************************************************************************************************************/
 
 UISnapshotPane::UISnapshotPane(UIActionPool *pActionPool, bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pLockReadWrite(0)
@@ -655,7 +656,7 @@ QUuid UISnapshotPane::currentSnapshotId()
     return comSnapshot.isNotNull() ? comSnapshot.GetId() : QUuid();
 }
 
-void UISnapshotPane::retranslateUi()
+void UISnapshotPane::sltRetranslateUI()
 {
     /* Translate snapshot tree: */
     m_pSnapshotTree->setWhatsThis(tr("Contains the snapshot tree of the current virtual machine"));
@@ -673,7 +674,7 @@ void UISnapshotPane::retranslateUi()
 void UISnapshotPane::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+    QWidget::resizeEvent(pEvent);
 
     /* Adjust snapshot tree: */
     adjustTreeWidget();
@@ -682,7 +683,7 @@ void UISnapshotPane::resizeEvent(QResizeEvent *pEvent)
 void UISnapshotPane::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 
     /* Adjust snapshot tree: */
     adjustTreeWidget();
@@ -1329,7 +1330,9 @@ void UISnapshotPane::prepare()
     uiCommon().setHelpKeyword(this, "snapshots");
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UISnapshotPane::sltRetranslateUI);
 }
 
 void UISnapshotPane::prepareConnections()

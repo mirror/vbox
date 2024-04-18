@@ -29,12 +29,14 @@
 #include <QAbstractButton>
 #include <QAbstractScrollArea>
 #include <QAbstractSpinBox>
+#include <QApplication>
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QPainter>
+#include <QPainterPath>
 #include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QPushButton>

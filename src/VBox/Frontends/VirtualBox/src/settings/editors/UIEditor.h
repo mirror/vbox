@@ -34,6 +34,7 @@
 /* Qt includes: */
 #include <QWidget>
 #include <QMap>
+#include <QVariant>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"

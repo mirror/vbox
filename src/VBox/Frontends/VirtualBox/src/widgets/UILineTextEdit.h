@@ -33,7 +33,6 @@
 
 /* VBox includes */
 #include "QIDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Qt includes */
 #include <QPushButton>
@@ -45,7 +44,7 @@ class QDialogButtonBox;
 ////////////////////////////////////////////////////////////////////////////////
 // UITextEditor
 
-class UITextEditor: public QIWithRetranslateUI<QIDialog>
+class UITextEditor: public QIDialog
 {
     Q_OBJECT;
 
@@ -55,10 +54,9 @@ public:
     void setText(const QString& strText);
     QString text() const;
 
-protected:
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
+
+    void sltRetranslateUI();
     void open() RT_OVERRIDE;
 
 private:
@@ -71,7 +69,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 // UILineTextEdit
 
-class UILineTextEdit: public QIWithRetranslateUI<QPushButton>
+class UILineTextEdit: public QPushButton
 {
     Q_OBJECT;
 
@@ -86,10 +84,9 @@ public:
     void setText(const QString& strText) { m_strText = strText; }
     QString text() const { return m_strText; }
 
-protected:
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
+
+    void sltRetranslateUI();
     void edit();
 
 private:
@@ -98,4 +95,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UILineTextEdit_h */
-

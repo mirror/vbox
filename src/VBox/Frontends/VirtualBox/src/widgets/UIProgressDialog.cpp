@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCloseEvent>
 #include <QEventLoop>
 #include <QProgressBar>
@@ -44,6 +45,7 @@
 #include "UIProgressEventHandler.h"
 #include "UISpecialControls.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -61,7 +63,7 @@ UIProgressDialog::UIProgressDialog(CProgress &comProgress,
                                    QPixmap *pImage /* = 0 */,
                                    int cMinDuration /* = 2000 */,
                                    QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
+    : QIDialog(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
     , m_comProgress(comProgress)
     , m_strTitle(strTitle)
     , m_pImage(pImage)
@@ -89,7 +91,7 @@ UIProgressDialog::~UIProgressDialog()
     cleanup();
 }
 
-void UIProgressDialog::retranslateUi()
+void UIProgressDialog::sltRetranslateUI()
 {
     m_pButtonCancel->setText(tr("&Cancel"));
     m_pButtonCancel->setToolTip(tr("Cancel the current operation"));
@@ -375,7 +377,9 @@ void UIProgressDialog::prepareWidgets()
     }
 
     /* Translate finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIProgressDialog::sltRetranslateUI);
 
     /* The progress dialog will be shown automatically after
      * the duration is over if progress is not finished yet. */

@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
@@ -57,7 +56,7 @@ class UIBookmarksListContainer;
 class UIHelpBrowserTabManager;
 class UIZoomMenuAction;
 
-class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QWidget
 {
     Q_OBJECT;
 
@@ -121,6 +120,7 @@ private slots:
     void sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
     void sltLinkHighlighted(const QUrl &url);
     void sltMouseOverImage(const QString &strImageName);
+    void sltRetranslateUI();
 
 private:
 
@@ -147,9 +147,6 @@ private:
 
     /** @name Event handling stuff.
      * @{ */
-    /** Handles translation event. */
-       virtual void retranslateUi() RT_OVERRIDE;
-
        /** Handles Qt show @a pEvent. */
        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
        /** Handles Qt key-press @a pEvent. */

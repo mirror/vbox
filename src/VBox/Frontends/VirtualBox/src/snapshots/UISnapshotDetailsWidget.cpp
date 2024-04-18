@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QDateTime>
 #include <QDir>
@@ -56,6 +57,7 @@
 #include "UISnapshotDetailsWidget.h"
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #include "VBoxUtils.h"
 
 /* COM includes: */
@@ -173,7 +175,7 @@ private:
 
 
 /** QWiget extension providing GUI with snapshot screenshot viewer widget. */
-class UIScreenshotViewer : public QIWithRetranslateUI2<QWidget>
+class UIScreenshotViewer : public QWidget
 {
     Q_OBJECT;
 
@@ -190,9 +192,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles polish @a pEvent. */
@@ -205,6 +204,11 @@ protected:
     virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles key press @a pEvent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+
+private slots:
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -468,7 +472,7 @@ UIScreenshotViewer::UIScreenshotViewer(const QPixmap &pixmapScreenshot,
                                        const QString &strSnapshotName,
                                        const QString &strMachineName,
                                        QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI2<QWidget>(pParent, Qt::Tool)
+    : QWidget(pParent, Qt::Tool)
     , m_fPolished(false)
     , m_pixmapScreenshot(pixmapScreenshot)
     , m_strSnapshotName(strSnapshotName)
@@ -481,7 +485,7 @@ UIScreenshotViewer::UIScreenshotViewer(const QPixmap &pixmapScreenshot,
     prepare();
 }
 
-void UIScreenshotViewer::retranslateUi()
+void UIScreenshotViewer::sltRetranslateUI()
 {
     /* Translate window title: */
     setWindowTitle(tr("Screenshot of %1 (%2)").arg(m_strSnapshotName).arg(m_strMachineName));
@@ -490,7 +494,7 @@ void UIScreenshotViewer::retranslateUi()
 void UIScreenshotViewer::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI2<QWidget>::showEvent(pEvent);
+    QWidget::showEvent(pEvent);
 
     /* Make sure we should polish dialog: */
     if (m_fPolished)
@@ -512,7 +516,7 @@ void UIScreenshotViewer::polishEvent(QShowEvent * /* pEvent */)
 void UIScreenshotViewer::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI2<QWidget>::resizeEvent(pEvent);
+    QWidget::resizeEvent(pEvent);
 
     /* Adjust the picture: */
     adjustPicture();
@@ -529,7 +533,7 @@ void UIScreenshotViewer::mousePressEvent(QMouseEvent *pEvent)
     adjustPicture();
 
     /* Call to base-class: */
-    QIWithRetranslateUI2<QWidget>::mousePressEvent(pEvent);
+    QWidget::mousePressEvent(pEvent);
 }
 
 void UIScreenshotViewer::keyPressEvent(QKeyEvent *pEvent)
@@ -539,7 +543,7 @@ void UIScreenshotViewer::keyPressEvent(QKeyEvent *pEvent)
         close();
 
     /* Call to base-class: */
-    QIWithRetranslateUI2<QWidget>::keyPressEvent(pEvent);
+    QWidget::keyPressEvent(pEvent);
 }
 
 void UIScreenshotViewer::prepare()
@@ -579,7 +583,9 @@ void UIScreenshotViewer::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIScreenshotViewer::sltRetranslateUI);
 
     /* Adjust window size: */
     adjustWindowSize();
@@ -643,7 +649,7 @@ void UIScreenshotViewer::adjustPicture()
 *********************************************************************************************************************************/
 
 UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
     , m_pLabelName(0), m_pEditorName(0), m_pErrorPaneName(0)
@@ -704,7 +710,7 @@ void UISnapshotDetailsWidget::clearData()
     loadSnapshotData();
 }
 
-void UISnapshotDetailsWidget::retranslateUi()
+void UISnapshotDetailsWidget::sltRetranslateUI()
 {
     /* Translate labels: */
     m_pTabWidget->setTabText(0, tr("&Attributes"));
@@ -1193,7 +1199,9 @@ void UISnapshotDetailsWidget::loadSnapshotData()
     }
 
     /* Retranslate: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UISnapshotDetailsWidget::sltRetranslateUI);
 
     /* Update button states finally: */
     updateButtonStates();

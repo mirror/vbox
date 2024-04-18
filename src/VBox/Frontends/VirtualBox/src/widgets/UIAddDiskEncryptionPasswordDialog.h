@@ -37,7 +37,6 @@
 #include <QMultiMap>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -52,7 +51,7 @@ typedef QMap<QString, bool> EncryptionPasswordStatusMap;
 
 /** QDialog subclass used to
   * allow the user to enter disk encryption passwords for particular password IDs. */
-class SHARED_LIBRARY_STUFF UIAddDiskEncryptionPasswordDialog : public QIWithRetranslateUI<QDialog>
+class SHARED_LIBRARY_STUFF UIAddDiskEncryptionPasswordDialog : public QDialog
 {
     Q_OBJECT;
 
@@ -67,12 +66,10 @@ public:
       * acquired from the UIEncryptionDataTable instance. */
     EncryptionPasswordMap encryptionPasswords() const;
 
-protected:
+private slots:
 
     /** Translation routine. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
+    void sltRetranslateUI();
 
     /** Handles editor's Enter/Return key triggering. */
     void sltEditorEnterKeyTriggered() { accept(); }

@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAbstractButton>
+#include <QApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QLocale>

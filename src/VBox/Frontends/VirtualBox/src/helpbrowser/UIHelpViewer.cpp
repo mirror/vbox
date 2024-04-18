@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QClipboard>
 #include <QtGlobal>
 #include <QtHelp/QHelpEngine>
@@ -103,7 +104,7 @@ private:
 /*********************************************************************************************************************************
 *   UIFindInPageWidget definition.                                                                                        *
 *********************************************************************************************************************************/
-class UIFindInPageWidget : public QIWithRetranslateUI<QWidget>
+class UIFindInPageWidget : public QWidget
 {
 
     Q_OBJECT;
@@ -130,7 +131,6 @@ protected:
 private:
 
     void prepare();
-    virtual void retranslateUi() RT_OVERRIDE;
     UISearchLineEdit  *m_pSearchLineEdit;
     QIToolButton      *m_pNextButton;
     QIToolButton      *m_pPreviousButton;
@@ -254,7 +254,7 @@ void UIContextMenuNavigationAction::prepare()
 *   UIFindInPageWidget implementation.                                                                                           *
 *********************************************************************************************************************************/
 UIFindInPageWidget::UIFindInPageWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pSearchLineEdit(0)
     , m_pNextButton(0)
     , m_pPreviousButton(0)
@@ -310,7 +310,7 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
             m_pDragMoveLabel->setCursor(Qt::CrossCursor);
         }
     }
-    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
 void UIFindInPageWidget::keyPressEvent(QKeyEvent *pEvent)
@@ -330,7 +330,7 @@ void UIFindInPageWidget::keyPressEvent(QKeyEvent *pEvent)
             return;
             break;
         default:
-            QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
+            QWidget::keyPressEvent(pEvent);
             break;
     }
 }
@@ -387,17 +387,12 @@ void UIFindInPageWidget::prepare()
     connect(m_pCloseButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigClose);
 }
 
-void UIFindInPageWidget::retranslateUi()
-{
-}
-
-
 /*********************************************************************************************************************************
 *   UIHelpViewer implementation.                                                                                          *
 *********************************************************************************************************************************/
 
 UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QTextBrowser>(pParent)
+    : QTextBrowser(pParent)
     , m_pHelpEngine(pHelpEngine)
     , m_pFindInPageWidget(new UIFindInPageWidget(this))
     , m_fFindWidgetDragged(false)
@@ -438,7 +433,6 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
         m_pOverlayBlurEffect->setEnabled(false);
         m_pOverlayBlurEffect->setBlurRadius(8);
     }
-    retranslateUi();
 }
 
 QVariant UIHelpViewer::loadResource(int type, const QUrl &name)
@@ -522,7 +516,7 @@ void UIHelpViewer::sltCloseFindInPageWidget()
 
 void UIHelpViewer::setFont(const QFont &font)
 {
-    QIWithRetranslateUI<QTextBrowser>::setFont(font);
+    QTextBrowser::setFont(font);
     /* Make sure the font size of the find in widget stays constant: */
     if (m_pFindInPageWidget)
     {
@@ -640,7 +634,7 @@ void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
         if (!isRectInside(m_pFindInPageWidget->geometry(), m_iMarginForFindWidget))
             moveFindWidgetIn(m_iMarginForFindWidget);
     }
-    QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
+    QTextBrowser::resizeEvent(pEvent);
 }
 
 void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
@@ -693,30 +687,30 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
             return;
         }
     }
-    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
+    QTextBrowser::mousePressEvent(pEvent);
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
 {
-    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
+    QTextBrowser::mousePressEvent(pEvent);
 }
 
 void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
 {
     /*if (m_fOverlayMode)
         return;*/
-    QIWithRetranslateUI<QTextBrowser>::mouseMoveEvent(pEvent);
+    QTextBrowser::mouseMoveEvent(pEvent);
 }
 
 void UIHelpViewer::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {
     clearOverlay();
-    QIWithRetranslateUI<QTextBrowser>::mouseDoubleClickEvent(pEvent);
+    QTextBrowser::mouseDoubleClickEvent(pEvent);
 }
 
 void UIHelpViewer::paintEvent(QPaintEvent *pEvent)
 {
-    QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
+    QTextBrowser::paintEvent(pEvent);
     QPainter painter(viewport());
     foreach(const DocumentImage &image, m_imageMap)
     {
@@ -741,7 +735,7 @@ bool UIHelpViewer::eventFilter(QObject *pObject, QEvent *pEvent)
             pEvent->type() == QEvent::MouseButtonDblClick)
             clearOverlay();
     }
-    return QIWithRetranslateUI<QTextBrowser>::eventFilter(pObject, pEvent);
+    return QTextBrowser::eventFilter(pObject, pEvent);
 }
 
 void UIHelpViewer::keyPressEvent(QKeyEvent *pEvent)
@@ -765,11 +759,7 @@ void UIHelpViewer::keyPressEvent(QKeyEvent *pEvent)
                 break;
         }
     }
-    QIWithRetranslateUI<QTextBrowser>::keyPressEvent(pEvent);
-}
-
-void UIHelpViewer::retranslateUi()
-{
+    QTextBrowser::keyPressEvent(pEvent);
 }
 
 void UIHelpViewer::moveFindWidgetIn(int iMargin)

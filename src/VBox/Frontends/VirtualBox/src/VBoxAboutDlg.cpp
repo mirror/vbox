@@ -36,6 +36,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "UITranslationEventListener.h"
 #include "UIVersion.h"
 #include "VBoxAboutDlg.h"
 #ifdef VBOX_WS_MAC
@@ -53,13 +54,13 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     // First of all, non of other native apps (Safari, App Store, iTunes) centers About dialog according the app itself, they do
     // it according to screen instead, we should do it as well.  Besides that since About dialog is not modal, it will be in
     // conflict with modal dialogs if there will be a parent passed, because the dialog will not have own event-loop in that case.
-    : QIWithRetranslateUI2<QDialog>(0)
+    : QDialog(0)
     , m_pPseudoParent(pParent)
 #else
     // On other hosts we will keep the current behavior for now.
     // First of all it's quite difficult to find native (Metro UI) Windows app which have About dialog at all.  But non-native
     // cross-platform apps (Qt Creator, VLC) centers About dialog according the app exactly.
-    : QIWithRetranslateUI2<QDialog>(pParent)
+    : QDialog(pParent)
     , m_pPseudoParent(0)
 #endif
     , m_fPolished(false)
@@ -96,7 +97,7 @@ void VBoxAboutDlg::paintEvent(QPaintEvent *)
     painter.drawPixmap(0, 0, m_pixmap);
 }
 
-void VBoxAboutDlg::retranslateUi()
+void VBoxAboutDlg::sltRetranslateUI()
 {
     setWindowTitle(tr("VirtualBox - About"));
 
@@ -158,7 +159,9 @@ void VBoxAboutDlg::prepare()
     prepareMainLayout();
 
     /* Translate: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &VBoxAboutDlg::sltRetranslateUI);
 }
 
 void VBoxAboutDlg::prepareMainLayout()

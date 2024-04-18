@@ -26,9 +26,11 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QPainterPath>
 #include <QScrollArea>
 #include <QVBoxLayout>
 #ifndef VBOX_WS_MAC
@@ -36,13 +38,12 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIFilmContainer.h"
-
+#include "UITranslationEventListener.h"
 
 /** QWidget subclass providing GUI with UIFilmContainer item prototype.
   * @todo Rename to something more suitable like UIScreenThumbnail. */
-class UIFilm : public QIWithRetranslateUI<QWidget>
+class UIFilm : public QWidget
 {
     Q_OBJECT;
 
@@ -58,14 +59,16 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
     /** Returns minimum size-hint. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
+
+private slots:
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -93,7 +96,7 @@ private:
 *********************************************************************************************************************************/
 
 UIFilm::UIFilm(int iScreenIndex, bool fEnabled, QWidget *pParent /* = 0*/)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_iScreenIndex(iScreenIndex)
     , m_fWasEnabled(fEnabled)
     , m_pCheckBox(0)
@@ -108,7 +111,7 @@ bool UIFilm::checked() const
     return m_pCheckBox->isChecked();
 }
 
-void UIFilm::retranslateUi()
+void UIFilm::sltRetranslateUI()
 {
     /* Translate check-box: */
     m_pCheckBox->setText(QApplication::translate("UIMachineSettingsDisplay", "Screen %1").arg(m_iScreenIndex + 1));
@@ -171,7 +174,9 @@ void UIFilm::prepare()
     prepareCheckBox();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIFilm::sltRetranslateUI);
 }
 
 void UIFilm::prepareLayout()

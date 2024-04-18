@@ -38,7 +38,6 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 # include "UICocoaSpecialControls.h"
@@ -115,7 +114,7 @@ private:
 #else /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class SHARED_LIBRARY_STUFF UIMiniCancelButton : public QIWithRetranslateUI<QIToolButton>
+class SHARED_LIBRARY_STUFF UIMiniCancelButton : public QIToolButton
 {
     Q_OBJECT;
 
@@ -124,15 +123,15 @@ public:
     /** Constructs mini cancel-button passing @a pParent to the base-class. */
     UIMiniCancelButton(QWidget *pParent = 0);
 
-protected:
+private slots:
 
     /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE {};
+    void sltRetranslateUI() {};
 };
 
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class SHARED_LIBRARY_STUFF UIHelpButton : public QIWithRetranslateUI<QPushButton>
+class SHARED_LIBRARY_STUFF UIHelpButton : public QPushButton
 {
     Q_OBJECT;
 
@@ -153,9 +152,6 @@ public:
     void initFrom(QPushButton *pOther);
 
 protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
 
 # ifdef VBOX_WS_MAC
     /** Handles button hit as certain @a position. */
@@ -190,10 +186,14 @@ private:
     /** Holds the button rect. */
     QRect m_BRect;
 # endif /* VBOX_WS_MAC */
+
+private slots:
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 };
 
 #endif /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UISpecialControls_h */
-

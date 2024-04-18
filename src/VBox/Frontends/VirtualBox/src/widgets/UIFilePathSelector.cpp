@@ -47,6 +47,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIFilePathSelector.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -67,7 +68,7 @@ static int differFrom(const QString &str1, const QString &str2)
 }
 
 UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QIComboBox>(pParent)
+    : QIComboBox(pParent)
     , m_enmMode(Mode_Folder)
     , m_strInitialPath(QDir::current().absolutePath())
     , m_fResetEnabled(true)
@@ -118,14 +119,16 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     setEditable(true);
 
     /* Applying language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIFilePathSelector::sltRetranslateUI);
 }
 
 void UIFilePathSelector::setMode(Mode enmMode)
 {
     m_enmMode = enmMode;
 
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIFilePathSelector::setEditable(bool fEditable)
@@ -181,7 +184,7 @@ void UIFilePathSelector::setResetEnabled(bool fEnabled)
     }
 
     sltRecentMediaListUpdated(m_enmRecentMediaListType);
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 bool UIFilePathSelector::isValid() const
@@ -258,12 +261,12 @@ bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIComboBox>::eventFilter(pObject, pEvent);
+    return QIComboBox::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::resizeEvent(QResizeEvent *pEvent)
 {
-    QIWithRetranslateUI<QIComboBox>::resizeEvent(pEvent);
+    QIComboBox::resizeEvent(pEvent);
     refreshText();
 }
 
@@ -278,7 +281,7 @@ void UIFilePathSelector::focusInEvent(QFocusEvent *pEvent)
         else
             refreshText();
     }
-    QIWithRetranslateUI<QIComboBox>::focusInEvent(pEvent);
+    QIComboBox::focusInEvent(pEvent);
 }
 
 void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
@@ -288,10 +291,10 @@ void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
         m_fEditableMode = false;
         refreshText();
     }
-    QIWithRetranslateUI<QIComboBox>::focusOutEvent(pEvent);
+    QIComboBox::focusOutEvent(pEvent);
 }
 
-void UIFilePathSelector::retranslateUi()
+void UIFilePathSelector::sltRetranslateUI()
 {
     /* Retranslate copy action: */
     m_pCopyAction->setText(tr("&Copy"));

@@ -32,10 +32,11 @@
 #endif
 
 /* Qt includes: */
+#include <QKeySequence>
+#include <QObject>
 #include <QMap>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIDefs.h"
 #include "UILibraryDefs.h"
 
@@ -123,7 +124,7 @@ private:
 
 
 /** QObject extension used as shortcut pool singleton. */
-class SHARED_LIBRARY_STUFF UIShortcutPool : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIShortcutPool : public QObject
 {
     Q_OBJECT;
 
@@ -158,13 +159,10 @@ public:
     /** Returns standard QKeySequence for passed QKeySequence::StandardKey. */
     static QKeySequence standardSequence(QKeySequence::StandardKey enmKey);
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Reloads Selector UI shortcuts. */
     void sltReloadSelectorShortcuts();
     /** Reloads Runtime UI shortcuts. */
@@ -219,4 +217,3 @@ private:
 
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIShortcutPool_h */
-

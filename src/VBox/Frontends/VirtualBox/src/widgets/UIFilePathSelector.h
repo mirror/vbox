@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 
@@ -51,7 +50,7 @@ class QIToolButton;
 
 /** QIComboBox subclass providing GUI with the
   * possibility to choose/reflect file/folder path. */
-class SHARED_LIBRARY_STUFF UIFilePathSelector : public QIWithRetranslateUI<QIComboBox>
+class SHARED_LIBRARY_STUFF UIFilePathSelector : public QIComboBox
 {
     Q_OBJECT;
 
@@ -157,9 +156,6 @@ protected:
     /** Handles focus-out @a pEvent. */
     void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
-
 private slots:
 
     /** Handles combo-box @a iIndex activation. */
@@ -175,6 +171,9 @@ private slots:
     void refreshText();
 
     void sltRecentMediaListUpdated(UIMediumDeviceType enmMediumType);
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

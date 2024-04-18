@@ -35,7 +35,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
@@ -102,7 +101,7 @@ protected:
 
 
 /** QWidget extension providing GUI with snapshot details-widget. */
-class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>
+class UISnapshotDetailsWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -127,8 +126,6 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
     /** Handles buttons translation. */
     void retranslateButtons();
 
@@ -146,6 +143,8 @@ private slots:
     void sltHandleChangeAccepted();
     /** Handles snapshot details change rejecting. */
     void sltHandleChangeRejected();
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -256,4 +255,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_snapshots_UISnapshotDetailsWidget_h */
-

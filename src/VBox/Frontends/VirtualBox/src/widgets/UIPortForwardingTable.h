@@ -36,7 +36,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* COM includes: */
@@ -204,7 +203,7 @@ struct UIPortForwardingDataUnique
 
 
 /** QWidget subclass representig Port Forwarding table. */
-class SHARED_LIBRARY_STUFF UIPortForwardingTable : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIPortForwardingTable : public QWidget
 {
     Q_OBJECT;
 
@@ -247,11 +246,10 @@ protected:
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Adds the rule. */
     void sltAddRule();
     /** Copies the rule. */

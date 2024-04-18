@@ -62,7 +62,7 @@
 #include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
-
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -87,7 +87,7 @@ const QPair<int, int> zoomPercentageMinMax = QPair<int, int>(20, 300);
 /*********************************************************************************************************************************
 *   UIZoomMenuAction definition.                                                                                                 *
 *********************************************************************************************************************************/
-class UIZoomMenuAction : public QIWithRetranslateUI<QWidgetAction>
+class UIZoomMenuAction : public QWidgetAction
 {
 
     Q_OBJECT;
@@ -101,13 +101,10 @@ public:
     UIZoomMenuAction(QWidget *pParent = 0);
     void setZoomPercentage(int iZoomPercentage);
 
-protected:
-
-    void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     void sltZoomOperation();
+    void sltRetranslateUI();
 
 private:
 
@@ -147,7 +144,7 @@ protected:
 /*********************************************************************************************************************************
 *   UIBookmarksListContainer definition.                                                                                         *
 *********************************************************************************************************************************/
-class UIBookmarksListContainer : public QIWithRetranslateUI<QWidget>
+class UIBookmarksListContainer : public QWidget
 {
 
     Q_OBJECT;
@@ -170,12 +167,6 @@ public:
     void sltDeleteSelectedBookmark();
     void sltDeleteAllBookmarks();
 
-protected:
-
-    void retranslateUi() RT_OVERRIDE;
-
-private slots:
-
 private:
 
     void prepare();
@@ -189,7 +180,7 @@ private:
 *   UIHelpBrowserTab definition.                                                                                        *
 *********************************************************************************************************************************/
 
-class UIHelpBrowserTab : public QIWithRetranslateUI<QWidget>
+class UIHelpBrowserTab : public QWidget
 {
     Q_OBJECT;
 
@@ -239,13 +230,13 @@ private slots:
     void sltAddressBarIndexChanged(int index);
     void sltAnchorClicked(const QUrl &link);
     void sltFindInPageWidgetVisibilityChanged(bool  fVisible);
+    void sltRetranslateUI();
 
 private:
 
     void prepare(const QUrl &initialUrl);
     void prepareWidgets(const QUrl &initialUrl);
     void prepareToolBarAndAddressBar();
-    virtual void retranslateUi() RT_OVERRIDE;
     void setActionTextAndToolTip(QAction *pAction, const QString &strText, const QString &strToolTip);
 
     QAction     *m_pHomeAction;
@@ -362,7 +353,7 @@ private:
 *   UIZoomMenuAction implementation.                                                                                *
 *********************************************************************************************************************************/
 UIZoomMenuAction::UIZoomMenuAction(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QWidgetAction>(pParent)
+    : QWidgetAction(pParent)
     , m_pMinusButton(0)
     , m_pResetButton(0)
     , m_pPlusButton(0)
@@ -370,7 +361,9 @@ UIZoomMenuAction::UIZoomMenuAction(QWidget *pParent /* = 0 */)
     , m_pLabel(0)
 {
     prepare();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIZoomMenuAction::sltRetranslateUI);
 }
 
 void UIZoomMenuAction::setZoomPercentage(int iZoomPercentage)
@@ -379,7 +372,7 @@ void UIZoomMenuAction::setZoomPercentage(int iZoomPercentage)
         m_pValueLabel->setText(QString("%1%2").arg(QString::number(iZoomPercentage)).arg("%"));
 }
 
-void UIZoomMenuAction::retranslateUi()
+void UIZoomMenuAction::sltRetranslateUI()
 {
     if (m_pLabel)
         m_pLabel->setText(UIHelpBrowserWidget::tr("Zoom"));
@@ -471,7 +464,7 @@ void UIBookmarksListWidget::mousePressEvent(QMouseEvent *pEvent)
 *********************************************************************************************************************************/
 
 UIBookmarksListContainer::UIBookmarksListContainer(QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pListWidget(0)
 {
@@ -525,10 +518,6 @@ void UIBookmarksListContainer::sltDeleteAllBookmarks()
         m_pListWidget->clear();
 }
 
-void UIBookmarksListContainer::retranslateUi()
-{
-}
-
 void UIBookmarksListContainer::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
@@ -563,7 +552,7 @@ int UIBookmarksListContainer::itemIndex(const QUrl &url)
 
 UIHelpBrowserTab::UIHelpBrowserTab(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
                                    const QUrl &initialUrl, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pHomeAction(0)
     , m_pForwardAction(0)
     , m_pBackwardAction(0)
@@ -673,7 +662,9 @@ void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
     AssertReturnVoid(m_pMainLayout);
     prepareToolBarAndAddressBar();
     prepareWidgets(initialUrl);
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIHelpBrowserTab::sltRetranslateUI);
 }
 
 void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
@@ -780,7 +771,7 @@ void UIHelpBrowserTab::setActionTextAndToolTip(QAction *pAction, const QString &
     pAction->setToolTip(strToolTip);
 }
 
-void UIHelpBrowserTab::retranslateUi()
+void UIHelpBrowserTab::sltRetranslateUI()
 {
     setActionTextAndToolTip(m_pHomeAction, UIHelpBrowserWidget::tr("Home"), UIHelpBrowserWidget::tr("Return to Start Page"));
     setActionTextAndToolTip(m_pBackwardAction, UIHelpBrowserWidget::tr("Backward"), UIHelpBrowserWidget::tr("Go Back to Previous Page"));
@@ -1342,7 +1333,7 @@ void UIHelpBrowserTabManager::clearAndDeleteTabs()
 *********************************************************************************************************************************/
 
 UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_fIsPolished(false)
     , m_pMainLayout(0)
@@ -1441,7 +1432,9 @@ void UIHelpBrowserWidget::prepare()
     prepareConnections();
     prepareSearchWidgets();
     loadBookmarks();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIHelpBrowserWidget::sltRetranslateUI);
 }
 
 void UIHelpBrowserWidget::prepareActions()
@@ -1806,7 +1799,7 @@ void UIHelpBrowserWidget::cleanup()
     saveBookmarks();
 }
 
-void UIHelpBrowserWidget::retranslateUi()
+void UIHelpBrowserWidget::sltRetranslateUI()
 {
     if (m_pTabWidget)
     {

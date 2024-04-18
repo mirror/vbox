@@ -39,6 +39,7 @@
 #include <QMouseEvent>
 #include <QStyleOption>
 #include <QPainter>
+#include <QPainterPath>
 #include <QStyle>
 #include <QToolButton>
 #include <QWindow>
@@ -47,9 +48,9 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIIconPool.h"
 #include "UITabBar.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -71,7 +72,7 @@ class QToolButton;
 
 
 /** Our own skinnable implementation of tabs for tab-bar. */
-class UITabBarItem : public QIWithRetranslateUI<QWidget>
+class UITabBarItem : public QWidget
 {
     Q_OBJECT;
 
@@ -111,9 +112,6 @@ protected:
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
@@ -132,6 +130,9 @@ private slots:
 
     /** Handles close button click. */
     void sltCloseClicked() { emit sigCloseClicked(this); }
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -240,10 +241,10 @@ bool UITabBarItem::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::event(pEvent);
+    return QWidget::event(pEvent);
 }
 
-void UITabBarItem::retranslateUi()
+void UITabBarItem::sltRetranslateUI()
 {
     /* Translate label: */
     m_pLabelName->setText(m_pAction->text().remove('&'));
@@ -711,7 +712,9 @@ void UITabBarItem::prepare()
     updatePixmap();
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UITabBarItem::sltRetranslateUI);
 }
 
 void UITabBarItem::updatePixmap()
@@ -1076,4 +1079,3 @@ void UITabBar::updateChildrenStyles()
 }
 
 #include "UITabBar.moc"
-

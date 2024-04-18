@@ -32,7 +32,7 @@
 #endif
 
 /* Qt includes: */
-#include <QWidget>
+#include <QDialog>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"

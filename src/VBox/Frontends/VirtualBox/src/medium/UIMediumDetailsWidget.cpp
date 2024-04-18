@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>

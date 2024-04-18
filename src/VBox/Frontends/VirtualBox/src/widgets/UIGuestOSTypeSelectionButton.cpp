@@ -26,6 +26,7 @@
  */
 
 /* Qt includes */
+#include <QApplication>
 #include <QMenu>
 #include <QSignalMapper>
 #include <QStyle>
@@ -35,10 +36,10 @@
 #include "UIGuestOSType.h"
 #include "UIGuestOSTypeSelectionButton.h"
 #include "UIIconPool.h"
-
+#include "UITranslationEventListener.h"
 
 UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)
-    : QIWithRetranslateUI<QPushButton>(pParent)
+    : QPushButton(pParent)
 {
     /* Determine icon metric: */
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
@@ -61,7 +62,9 @@ UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)
         setMenu(m_pMainMenu);
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIGuestOSTypeSelectionButton::sltRetranslateUI);
 }
 
 bool UIGuestOSTypeSelectionButton::isMenuShown() const
@@ -83,7 +86,7 @@ void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
     setText(gpGlobalSession->guestOSTypeManager().getDescription(m_strOSTypeId));
 }
 
-void UIGuestOSTypeSelectionButton::retranslateUi()
+void UIGuestOSTypeSelectionButton::sltRetranslateUI()
 {
     populateMenu();
 }

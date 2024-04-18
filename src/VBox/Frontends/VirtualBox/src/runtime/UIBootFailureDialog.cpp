@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QAction>
 #include <QCheckBox>
 #include <QHeaderView>

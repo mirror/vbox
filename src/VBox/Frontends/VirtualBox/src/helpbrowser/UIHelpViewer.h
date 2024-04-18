@@ -35,7 +35,7 @@
 #include <QTextBrowser>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QHelpEngine;
@@ -48,7 +48,7 @@ class UIFindInPageWidget;
   * parameters. There is also a small hack to render clicked image 1:1 (and the rest of the document blurred)
   * for a zoom-in-image functionality. This extension can also scale the images while scaling the document. In contrast,
   * QTextBrowser scales only fonts. */
-class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
+class UIHelpViewer : public QTextBrowser
 {
 
     Q_OBJECT;
@@ -129,7 +129,6 @@ private:
         QString m_strName;
     };
 
-    virtual void retranslateUi() RT_OVERRIDE;
     bool isRectInside(const QRect &rect, int iMargin) const;
     void moveFindWidgetIn(int iMargin);
     void findAllMatches(const QString &searchString);

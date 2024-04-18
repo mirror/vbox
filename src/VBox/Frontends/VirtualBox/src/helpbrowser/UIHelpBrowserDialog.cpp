@@ -42,6 +42,7 @@
 #include "UIHelpBrowserDialog.h"
 #include "UIHelpBrowserWidget.h"
 #include "UINotificationObjects.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -57,7 +58,7 @@ QPointer<UIHelpBrowserDialog> UIHelpBrowserDialog::m_pInstance;
 *********************************************************************************************************************************/
 
 UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath)
-    : QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >(pParent)
+    : QIWithRestorableGeometry<QMainWindow>(pParent)
     , m_strHelpFilePath(strHelpFilePath)
     , m_pWidget(0)
     , m_pCenterWidget(pCenterWidget)
@@ -76,7 +77,9 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
 
     prepareCentralWidget();
     loadSettings();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIHelpBrowserDialog::sltRetranslateUI);
 }
 
 void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
@@ -85,7 +88,7 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
         m_pWidget->showHelpForKeyword(strKeyword);
 }
 
-void UIHelpBrowserDialog::retranslateUi()
+void UIHelpBrowserDialog::sltRetranslateUI()
 {
     setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
 }
@@ -116,9 +119,8 @@ bool UIHelpBrowserDialog::event(QEvent *pEvent)
         default:
             break;
     }
-    return QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >::event(pEvent);
+    return QIWithRestorableGeometry<QMainWindow>::event(pEvent);
 }
-
 
 void UIHelpBrowserDialog::prepareCentralWidget()
 {

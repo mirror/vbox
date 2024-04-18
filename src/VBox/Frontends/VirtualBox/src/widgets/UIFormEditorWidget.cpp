@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QComboBox>
 #include <QEvent>
 #include <QHeaderView>
@@ -43,11 +44,11 @@
 #include "QIDialogButtonBox.h"
 #include "QIStyledItemDelegate.h"
 #include "QITableView.h"
-#include "QIWithRetranslateUI.h"
 #include "UIFormEditorWidget.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
+#include "UITranslationEventListener.h"
 
 /* COM includes: */
 #include "CBooleanFormValue.h"
@@ -265,7 +266,7 @@ Q_DECLARE_METATYPE(RangedInteger64Data);
 /** QWidget extension used as dummy TextData editor.
   * It's not actually an editor, but Edit... button instead which opens
   * real editor passing stored model index received from TextData value. */
-class TextEditor : public QIWithRetranslateUI<QWidget>
+class TextEditor : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(TextData text READ text WRITE setText USER true);
@@ -275,13 +276,10 @@ public:
     /** Constructs TextData editor passing @a pParent to the base-class. */
     TextEditor(QWidget *pParent = 0);
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Handles button click. */
     void sltHandleButtonClick();
 
@@ -636,13 +634,13 @@ protected:
 *********************************************************************************************************************************/
 
 TextEditor::TextEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_pButton(0)
 {
     prepare();
 }
 
-void TextEditor::retranslateUi()
+void TextEditor::sltRetranslateUI()
 {
     m_pButton->setText(UIFormEditorWidget::tr("Edit..."));
 }
@@ -695,7 +693,9 @@ void TextEditor::prepare()
     }
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &TextEditor::sltRetranslateUI);
 }
 
 void TextEditor::setText(const TextData &text)

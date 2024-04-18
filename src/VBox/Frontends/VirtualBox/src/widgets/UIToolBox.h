@@ -36,7 +36,7 @@
 #include <QMap>
 
 /* Local includes: */
-#include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QVBoxLayout;
@@ -45,7 +45,7 @@ class UIToolBoxPage;
 
 /** A Qframe extension with similar API and functionality like QToolBox. I needed some for
   * flexibility (like a second icon at the right hand side of the title etc.). */
-class  SHARED_LIBRARY_STUFF UIToolBox : public QIWithRetranslateUI<QFrame>
+class  SHARED_LIBRARY_STUFF UIToolBox : public QFrame
 {
 
     Q_OBJECT;
@@ -62,10 +62,6 @@ public:
     void setPageTitleIcon(int iIndex, const QIcon &icon, const QString &strIconToolTip = QString());
     void setCurrentPage(int iIndex);
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
-
-protected:
-
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 

@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QCheckBox>
 #include <QLabel>
 #include <QPainter>
@@ -38,6 +39,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIToolBox.h"
+#include "UITranslationEventListener.h"
 
 
 /*********************************************************************************************************************************
@@ -75,7 +77,7 @@ private:
 *   UIToolBoxPage definition.                                                                                                    *
 *********************************************************************************************************************************/
 
-class UIToolBoxPage : public QIWithRetranslateUI<QWidget>
+class UIToolBoxPage : public QWidget
 {
 
     Q_OBJECT;
@@ -100,11 +102,11 @@ public:
 protected:
 
     virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
-    virtual void retranslateUi() RT_OVERRIDE RT_FINAL;
 
 private slots:
 
     void sltHandleEnableToggle(int iState);
+    void sltRetranslateUI();
 
 private:
 
@@ -173,7 +175,7 @@ QSize UIToolPageButton::sizeHint() const
 *********************************************************************************************************************************/
 
 UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_fExpanded(false)
     , m_pLayout(0)
     , m_pTitleContainerWidget(0)
@@ -194,7 +196,7 @@ void UIToolBoxPage::setTitle(const QString &strTitle)
     if (!m_pTitleLabel)
         return;
     m_pTitleLabel->setText(strTitle);
-    retranslateUi();
+    sltRetranslateUI();
 }
 
 void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
@@ -236,7 +238,9 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
     m_pLayout->addWidget(m_pTitleContainerWidget);
 
     setExpandCollapseIcon();
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+        this, &UIToolBoxPage::sltRetranslateUI);
 }
 
 void UIToolBoxPage::setWidget(QWidget *pWidget)
@@ -353,7 +357,7 @@ void UIToolBoxPage::setExpandCollapseIcon()
     }
 }
 
-void UIToolBoxPage::retranslateUi()
+void UIToolBoxPage::sltRetranslateUI()
 {
     if (m_pTitleButton)
         m_pTitleButton->setToolTip(UIToolBox::tr("Expands the page \"%1\"").arg(m_strTitle.remove('&')));
@@ -365,7 +369,7 @@ void UIToolBoxPage::retranslateUi()
 *********************************************************************************************************************************/
 
 UIToolBox::UIToolBox(QWidget *pParent /*  = 0 */)
-    : QIWithRetranslateUI<QFrame>(pParent)
+    : QFrame(pParent)
     , m_iCurrentPageIndex(-1)
     , m_iPageCount(0)
 {
@@ -456,16 +460,10 @@ void UIToolBox::setCurrentPage(int iIndex)
     iterator.value()->setExpanded(true);
 }
 
-void UIToolBox::retranslateUi()
-{
-}
-
 void UIToolBox::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
     m_pMainLayout->addStretch();
-
-    retranslateUi();
 }
 
 void UIToolBox::sltHandleShowPageWidget()

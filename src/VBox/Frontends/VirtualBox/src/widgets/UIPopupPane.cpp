@@ -26,16 +26,19 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QPainter>
+#include <QPainterPath>
 #include <QTextEdit>
 
 /* GUI includes: */
+#include "QIMessageBox.h"
+#include "UIAnimationFramework.h"
 #include "UIPopupPane.h"
 #include "UIPopupPaneMessage.h"
 #include "UIPopupPaneDetails.h"
 #include "UIPopupPaneButtonPane.h"
-#include "UIAnimationFramework.h"
-#include "QIMessageBox.h"
+#include "UITranslationEventListener.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -44,7 +47,7 @@
 UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,
                          const QMap<int, QString> &buttonDescriptions)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
     , m_fPolished(false)
     , m_iLayoutMargin(10), m_iLayoutSpacing(5)
     , m_strMessage(strMessage), m_strDetails(strDetails)
@@ -294,7 +297,9 @@ void UIPopupPane::prepareContent()
     m_pDetailsPane->setFocusProxy(m_pButtonPane);
 
     /* Translate UI finally: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIPopupPane::sltRetranslateUI);
 }
 
 void UIPopupPane::prepareAnimation()
@@ -310,7 +315,7 @@ void UIPopupPane::prepareAnimation()
                                           SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()), m_fHovered);
 }
 
-void UIPopupPane::retranslateUi()
+void UIPopupPane::sltRetranslateUI()
 {
     /* Translate tool-tips: */
     retranslateToolTips();
@@ -338,7 +343,7 @@ bool UIPopupPane::eventFilter(QObject *pObject, QEvent *pEvent)
         && pObject != m_pMessagePane
         && pObject != m_pButtonPane
         && pObject != m_pDetailsPane)
-        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+        return QWidget::eventFilter(pObject, pEvent);
 
     /* Depending on event-type: */
     switch (pEvent->type())
@@ -409,7 +414,7 @@ bool UIPopupPane::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
 void UIPopupPane::showEvent(QShowEvent *pEvent)

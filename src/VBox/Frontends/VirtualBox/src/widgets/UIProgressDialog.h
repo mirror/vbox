@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -50,7 +49,7 @@ class CProgress;
   *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other way for too long).
   * @note The CProgress instance is passed as a non-const reference to the constructor (to memorize COM errors if they happen),
   *       and therefore must not be destroyed before the created UIProgressDialog instance is destroyed. */
-class SHARED_LIBRARY_STUFF UIProgressDialog : public QIWithRetranslateUI2<QIDialog>
+class SHARED_LIBRARY_STUFF UIProgressDialog : public QIDialog
 {
     Q_OBJECT;
 
@@ -86,9 +85,6 @@ public slots:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Rejects dialog. */
     virtual void reject() RT_OVERRIDE;
 
@@ -109,6 +105,9 @@ private slots:
 
     /** Handles request to cancel operation. */
     void sltCancelOperation();
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 
@@ -178,4 +177,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIProgressDialog_h */
-

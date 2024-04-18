@@ -35,7 +35,6 @@
 #include <QTextBrowser>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -43,7 +42,7 @@ class QAction;
 
 /** QLabel analog to reflect rich-text,
  ** based on private QTextBrowser functionality. */
-class SHARED_LIBRARY_STUFF QIRichTextLabel : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF QIRichTextLabel : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QString text READ text WRITE setText);
@@ -94,17 +93,14 @@ public slots:
     /** Copies text-browser text into clipboard. */
     void copy();
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
     /** Handles the fact of text-browser text copy available.
       * @param  fYes  Brings whether some text is selected and can
       *               be copied directly by QTextBrowser::copy() call. */
     void sltHandleCopyAvailable(bool fYes) { m_fCopyAvailable = fYes; }
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

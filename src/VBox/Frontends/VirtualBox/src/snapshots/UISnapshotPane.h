@@ -33,9 +33,10 @@
 
 /* Qt includes: */
 #include <QUuid>
+#include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -68,7 +69,7 @@ enum SnapshotAgeFormat
 
 
 /** QWidget extension providing GUI with the pane to control snapshot related functionality. */
-class UISnapshotPane : public QIWithRetranslateUI<QWidget>
+class UISnapshotPane : public QWidget
 {
     Q_OBJECT;
 
@@ -100,9 +101,6 @@ protected:
 
     /** @name Qt event handlers.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() RT_OVERRIDE;
-
         /** Handles resize @a pEvent. */
         virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
@@ -164,6 +162,12 @@ private slots:
         void sltHandleItemDoubleClick(QTreeWidgetItem *pItem);
         /** Handles tree-widget's scroll-bar visibility change. */
         void sltHandleScrollBarVisibilityChange();
+    /** @} */
+
+    /** @name Qt event handlers.
+      * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
     /** @} */
 
 private:
@@ -272,4 +276,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_snapshots_UISnapshotPane_h */
-

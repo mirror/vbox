@@ -38,7 +38,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
@@ -294,7 +293,7 @@ protected:
 
 
 /** QWidget subclass used as the Appliance Editor widget. */
-class UIApplianceEditorWidget : public QIWithRetranslateUI<QWidget>
+class UIApplianceEditorWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -331,9 +330,6 @@ public slots:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
     /** Holds the currently set appliance reference. */
     CAppliance  m_comAppliance;
 
@@ -356,6 +352,11 @@ protected:
     QLabel    *m_pLabelWarning;
     /** Holds the warning browser instance. */
     QTextEdit *m_pTextEditWarning;
+
+private slots:
+
+    /** Handles translation event. */
+    void sltRetranslateUI();
 
 private:
 

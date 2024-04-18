@@ -36,7 +36,6 @@
 #include <QWidget>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -47,7 +46,7 @@ class QWidget;
 class QILineEdit;
 
 /** Medium size editor widget. */
-class SHARED_LIBRARY_STUFF UIMediumSizeEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIMediumSizeEditor : public QWidget
 {
     Q_OBJECT;
 
@@ -66,13 +65,10 @@ public:
     /** Sets the initial medium size as the widget is created. */
     void setMediumSize(qulonglong uSize);
 
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
     /** Handles size slider change. */
     void sltSizeSliderChanged(int iValue);
     /** Handles size editor text edit finished signal. */

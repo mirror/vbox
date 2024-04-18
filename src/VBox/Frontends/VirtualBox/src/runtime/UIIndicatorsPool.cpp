@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QPainter>

@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QCloseEvent>
 #include <QPushButton>
 #include <QVBoxLayout>
 

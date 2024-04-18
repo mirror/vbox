@@ -31,9 +31,6 @@
 # pragma once
 #endif
 
-/* VBox includes */
-#include "QIWithRetranslateUI.h"
-
 /* Qt includes */
 #include <QComboBox>
 
@@ -47,7 +44,7 @@ class QAction;
 class QToolButton;
 
 
-class UIEmptyFilePathSelector: public QIWithRetranslateUI<QWidget>
+class UIEmptyFilePathSelector: public QWidget
 {
     Q_OBJECT;
 
@@ -106,10 +103,9 @@ signals:
 public slots:
     void setPath (const QString& aPath);
 
-protected:
-    virtual void retranslateUi() RT_OVERRIDE;
-
 private slots:
+
+    void sltRetranslateUI();
     void choose();
     void textChanged (const QString& aPath);
 
@@ -131,4 +127,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIEmptyFilePathSelector_h */
-
