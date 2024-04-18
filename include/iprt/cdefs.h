@@ -101,6 +101,7 @@
 # define RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
 # define RT_COMPILER_SUPPORTS_VA_ARGS
 # define RT_COMPILER_SUPPORTS_LAMBDA
+# define RT_IN_ASSEMBLER
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -233,6 +234,13 @@
 # define RT_ARCH_VAL                    RT_ARCH_VAL_SPARC64
 #else
 # error "RT_ARCH_VAL: port me"
+#endif
+
+/** @def RT_IN_ASSEMBLER
+ * Define when the source is being preprocessed for the assembler rather than
+ * the C, C++, Objective-C, or Objective-C++ compilers. */
+#ifdef __ASSEMBLER__
+# define RT_IN_ASSEMBLER
 #endif
 
 /** @def RT_CPLUSPLUS_PREREQ
