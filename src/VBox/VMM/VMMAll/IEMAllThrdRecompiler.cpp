@@ -2151,6 +2151,11 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
     /*
      * Case 1: We've branched (RIP changed).
      *
+     * Loop check:  If the new PC (GCPhysPC) is within a opcode range of this
+     *              TB, end the TB here as it is most likely a loop and if it
+     *              made sense to unroll it, the guest code compiler should've
+     *              done it already.
+     *
      * Sub-case 1a: Same page, no TLB load (fTbCrossedPage is false).
      *         Req: 1 extra range, no extra phys.
      *
@@ -2209,24 +2214,44 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
                 /* Check that we've got a free page slot. */
                 AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
                 RTGCPHYS const GCPhysNew = pVCpu->iem.s.GCPhysInstrBuf & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+                uint8_t        idxPhysPage;
                 if ((pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysNew)
-                    pTb->aRanges[idxRange].idxPhysPage = 0;
-                else if (   pTb->aGCPhysPages[0] == NIL_RTGCPHYS
-                         || pTb->aGCPhysPages[0] == GCPhysNew)
+                    pTb->aRanges[idxRange].idxPhysPage = idxPhysPage = 0;
+                else if (pTb->aGCPhysPages[0] == NIL_RTGCPHYS)
                 {
                     pTb->aGCPhysPages[0] = GCPhysNew;
                     pTb->aRanges[idxRange].idxPhysPage = 1;
+                    idxPhysPage = UINT8_MAX;
                 }
-                else if (   pTb->aGCPhysPages[1] == NIL_RTGCPHYS
-                         || pTb->aGCPhysPages[1] == GCPhysNew)
+                else if (pTb->aGCPhysPages[0] == GCPhysNew)
+                    pTb->aRanges[idxRange].idxPhysPage = idxPhysPage = 1;
+                else if (pTb->aGCPhysPages[1] == NIL_RTGCPHYS)
                 {
                     pTb->aGCPhysPages[1] = GCPhysNew;
                     pTb->aRanges[idxRange].idxPhysPage = 2;
+                    idxPhysPage = UINT8_MAX;
                 }
+                else if (pTb->aGCPhysPages[1] == GCPhysNew)
+                    pTb->aRanges[idxRange].idxPhysPage = idxPhysPage = 2;
                 else
                 {
                     Log8(("%04x:%08RX64: out of aGCPhysPages entires after branch\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
                     return false;
+                }
+
+                /* Loop check: We weave the loop check in here to optimize the lookup. */
+                if (idxPhysPage != UINT8_MAX)
+                {
+                    uint32_t const offPhysPc = pVCpu->iem.s.offCurInstrStart;
+                    for (uint8_t idxLoopRange = 0; idxLoopRange < idxRange; idxLoopRange++)
+                        if (   pTb->aRanges[idxLoopRange].idxPhysPage == idxPhysPage
+                            &&   offPhysPc - (uint32_t)pTb->aRanges[idxLoopRange].offPhysPage
+                               < (uint32_t)pTb->aRanges[idxLoopRange].cbOpcodes)
+                        {
+                            Log8(("%04x:%08RX64: loop detected after branch\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+                            STAM_COUNTER_INC(&pVCpu->iem.s.StatTbLoopInTbDetected);
+                            return false;
+                        }
                 }
 
                 /* Finish setting up the new range. */
