@@ -40,8 +40,12 @@
 #endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
-# include <iprt/types.h>
-# include <iprt/assert.h>
+# include <iprt/cdefs.h>
+# ifndef RT_IN_ASSEMBLER
+#  include <iprt/types.h>
+#  include <iprt/assert.h>
+# endif
+# include <iprt/assertcompile.h>
 #else
 # pragma D depends_on library vbox-types.d
 #endif
@@ -525,6 +529,7 @@
 /** @} */
 
 
+#ifndef RT_IN_ASSEMBLER
 /**
  * SPSR_EL2 (according to chapter C5.2.19)
  */
@@ -545,6 +550,7 @@ typedef union ARMV8SPSREL2
 typedef ARMV8SPSREL2 *PARMV8SPSREL2;
 /** Pointer to const SPSR_EL2. */
 typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
+#endif /* !RT_IN_ASSEMBLER */
 
 
 /** @name SPSR_EL2 (When exception is taken from AArch64 state)
