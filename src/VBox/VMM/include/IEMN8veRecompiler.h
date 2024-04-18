@@ -37,6 +37,8 @@
  * @{
  */
 
+#include <iprt/assertcompile.h> /* for RT_IN_ASSEMBLER mode */
+
 /** @def IEMNATIVE_WITH_TB_DEBUG_INFO
  * Enables generating internal debug info for better TB disassembly dumping. */
 #if defined(DEBUG) || defined(DOXYGEN_RUNNING)
@@ -204,9 +206,9 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 
 #elif defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
-# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     x28
+# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     RT_CONCAT(x,IEMNATIVE_REG_FIXED_PVMCPU)
 # define IEMNATIVE_REG_FIXED_PCPUMCTX       ARMV8_A64_REG_X27
-# define IEMNATIVE_REG_FIXED_PCPUMCTX_ASM   x27
+# define IEMNATIVE_REG_FIXED_PCPUMCTX_ASM   RT_CONCAT(x,IEMNATIVE_REG_FIXED_PCPUMCTX)
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
 # if defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING) && 0 /* debug the updating with a shadow RIP. */
 #   define IEMNATIVE_REG_FIXED_TMP1         ARMV8_A64_REG_X16
@@ -424,8 +426,8 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #endif
 
 
-/** @todo r=aeichner Can this be made prettier? */
-#ifndef INCLUDED_FROM_ARM64_ASSEMBLY
+#ifndef RT_IN_ASSEMBLER /* the rest of the file */
+
 
 /** Native code generator label types. */
 typedef enum
@@ -2500,7 +2502,7 @@ extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUM
 # endif
 #endif
 
-#endif /* !INCLUDED_FROM_ARM64_ASSEMBLY */
+#endif /* !RT_IN_ASSEMBLER */
 
 /** @} */
 

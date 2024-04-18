@@ -30,24 +30,27 @@
 *       Header Files                                                                                                             *
 *********************************************************************************************************************************/
 #include <iprt/asmdefs-arm.h>
+#include <iprt/armv8.h>
 
-#ifdef AssertCompile
-# undef AssertCompile
-#endif
-#define AssertCompile(a_Expr)
-#define INCLUDED_FROM_ARM64_ASSEMBLY
+#include "IEMInternal.h"
 #include "IEMN8veRecompiler.h"
+#include "IEMAssemblyOffsets.h"
 
-/** @todo r=aeichner This comes from IEMInternal.h */
-#define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
 
+/*********************************************************************************************************************************
+*       Defined Constants And Macros                                                                                             *
+*********************************************************************************************************************************/
 #define IEM_HLP_FUNCTION_ALIGNMENT 0x20
+
+
+/*********************************************************************************************************************************
+*       External Functions                                                                                                       *
+*********************************************************************************************************************************/
+.extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
+
 
 BEGINCODE
 
-.extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
-
-#ifdef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
 /**
  * This is the common prologue of a TB, saving all volatile registers
  * and creating the stack frame for saving temporary values.
@@ -58,27 +61,38 @@ BEGINCODE
  */
 ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
 BEGINPROC_HIDDEN iemNativeTbEntry
-# ifdef RT_OS_DARWIN
+#ifdef RT_OS_DARWIN
         pacibsp
-# endif
-        stp     x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE]! /* Allocate space for saving registers and place x19+x20 at the bottom. */
-        stp     x21, x22, [sp, #0x10]                            /* Save x21 thru x28 (SP remains unchanged). */
+#endif
+        /*
+         * We set up a stack frame exactly like on x86, only we have to push the
+         * return address our selves here.  We save all non-volatile registers.
+         */
+        /* Allocate space for saving registers and place x19+x20 at the bottom. */
+        stp     x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE]!
+        /* Save x21 thru x28 (SP remains unchanged). */
+        stp     x21, x22, [sp, #0x10]
         stp     x23, x24, [sp, #0x20]
         stp     x25, x26, [sp, #0x30]
         stp     x27, x28, [sp, #0x40]
-        stp     x29, x30, [sp, #0x50]                            /* Save the BP and LR (ret address) registers at the top of the frame. */
-        add     x29, sp, #(IEMNATIVE_FRAME_SAVE_REG_SIZE - 16)   /* Set BP to point to the old BP stack address */
-        sub     sp, sp, #IEMNATIVE_FRAME_VAR_SIZE                /* Allocate the variable area from SP. */
+        /* Save the BP (x29) and LR (x30) (ret address) registers at the top of the frame. */
+        stp     x29, x30, [sp, #0x50]
+        /* Set BP to point to the old BP stack address */
+        add     x29, sp, #(IEMNATIVE_FRAME_SAVE_REG_SIZE - 16)
+        /* Allocate the variable area from SP. */
+        sub     sp, sp, #IEMNATIVE_FRAME_VAR_SIZE
+        /* Load the fixed register values from parameters. */
         mov     IEMNATIVE_REG_FIXED_PVMCPU_ASM,   x0
         mov     IEMNATIVE_REG_FIXED_PCPUMCTX_ASM, x1
-# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
-        str     x29, [IEMNATIVE_REG_FIXED_PVMCPU_ASM, #0x7c8]    /* Save the frame pointer to pvTbFramePointerR3 */ /** @todo Get rid of this hardcoded assumption */
-# endif
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+        /* Save the frame pointer to pvTbFramePointerR3 */
+        str     x29, [IEMNATIVE_REG_FIXED_PVMCPU_ASM, #(VMCPU_OFF_iem + IEMCPU_OFF_pvTbFramePointerR3)]
+#endif
+
         /*
          * Everything is done, jump to the start of the TB.
          */
         br      x2
-#endif
 
 
 /**
