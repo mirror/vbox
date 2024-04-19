@@ -725,7 +725,49 @@ FNIEMOP_DEF(iemOp_vpextrd_q_Ey_Vdq_Ib)
 
 
 /** Opcode VEX.66.0F3A 0x17. */
-FNIEMOP_STUB(iemOp_vextractps_Ed_Vdq_Ib);
+FNIEMOP_DEF(iemOp_vextractps_Ed_Vdq_Ib)
+{
+    //IEMOP_MNEMONIC3(VEX_MRI_REG, VEXTRACTPS, vextractps, Ed, Vdq, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_VEX_L_ZERO);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * greg32, XMM, imm8.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(uint32_t,      uSrc);
+
+        IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 3 /*a_iDword*/);
+        IEM_MC_STORE_GREG_U32(      IEM_GET_MODRM_RM(pVCpu, bRm), uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * [mem32], XMM, imm8.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(uint32_t,      uSrc);
+        IEM_MC_LOCAL(RTGCPTR,       GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 3 /*a_iDword*/);
+        IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
 
 
 /** Opcode VEX.66.0F3A 0x18 (vex only). */
@@ -888,7 +930,57 @@ FNIEMOP_DEF(iemOp_vpinsrb_Vdq_Hdq_RyMb_Ib)
 
 
 /** Opcode VEX.66.0F3A 0x21, */
-FNIEMOP_STUB(iemOp_vinsertps_Vdq_Hdq_UdqMd_Ib);
+FNIEMOP_DEF(iemOp_vinsertps_Vdq_Hdq_UdqMd_Ib)
+{
+    //IEMOP_MNEMONIC4(VEX_RVMR_REG, VINSERTPS, vinsertps, Vdq, Hdq, UdqMd, Ib, DISOPTYPE_X86_AVX, IEMOPHINT_VEX_L_ZERO);  /// @todo
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * XMM, XMM, XMM, imm8.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(RTUINT128U,      uSrc1);
+        IEM_MC_LOCAL(uint32_t,        uSrc2);
+
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U128(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_FETCH_XREG_U32(uSrc2,  IEM_GET_MODRM_RM(pVCpu, bRm),  (bImm >> 6) & 3);
+        IEM_MC_STORE_XREG_U128(       IEM_GET_MODRM_REG(pVCpu, bRm), uSrc1);
+        IEM_MC_STORE_XREG_U32(        IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc2);
+        IEM_MC_CLEAR_XREG_U32_MASK(   IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * XMM, XMM, [mem32], imm8.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(RTGCPTR,         GCPtrEffSrc);
+        IEM_MC_LOCAL(RTUINT128U,      uSrc1);
+        IEM_MC_LOCAL(uint32_t,        uSrc2);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U128(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_FETCH_MEM_U32(uSrc2,   pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_U128(       IEM_GET_MODRM_REG(pVCpu, bRm), uSrc1);
+        IEM_MC_STORE_XREG_U32(        IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc2);
+        IEM_MC_CLEAR_XREG_U32_MASK(   IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
 
 
 /** Opcode VEX.66.0F3A 0x22. */
