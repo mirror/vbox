@@ -54,7 +54,7 @@
 
 /** @def IEMNATIVE_WITH_EFLAGS_SKIPPING
  * Enables skipping EFLAGS calculations/updating based on liveness info.  */
-#if (defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) && 1) || defined(DOXYGEN_RUNNING)
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_WITH_EFLAGS_SKIPPING
 #endif
 
@@ -62,7 +62,11 @@
 /** @def IEMNATIVE_STRICT_EFLAGS_SKIPPING
  * Enables strict consistency checks around EFLAGS skipping.
  * @note Only defined when IEMNATIVE_WITH_EFLAGS_SKIPPING is also defined. */
-#if (defined(VBOX_STRICT) && defined(IEMNATIVE_WITH_EFLAGS_SKIPPING)) || defined(DOXYGEN_RUNNING)
+#ifdef IEMNATIVE_WITH_EFLAGS_SKIPPING
+# ifdef VBOX_STRICT
+#  define IEMNATIVE_STRICT_EFLAGS_SKIPPING
+# endif
+#elif defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_STRICT_EFLAGS_SKIPPING
 #endif
 
@@ -185,22 +189,27 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 /** @def IEMNATIVE_SIMD_REG_FIXED_TMP0
  * Dedicated temporary SIMD register. */
 #endif
-#if defined(RT_ARCH_AMD64) && !defined(DOXYGEN_RUNNING)
+#ifdef RT_ARCH_AMD64
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
+# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     xBX
 # define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
-# define IEMNATIVE_REG_FIXED_MASK          (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
-                                            | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
-                                            | RT_BIT_32(X86_GREG_xSP) \
-                                            | RT_BIT_32(X86_GREG_xBP) )
+# define IEMNATIVE_REG_FIXED_MASK           (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
+                                             | RT_BIT_32(X86_GREG_xSP) \
+                                             | RT_BIT_32(X86_GREG_xBP) )
 
 # ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-#  define IEMNATIVE_SIMD_REG_FIXED_TMP0    5 /* xmm5/ymm5 */
-#  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS) || !defined(_MSC_VER)
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
+#  define IEMNATIVE_SIMD_REG_FIXED_TMP0     5 /* xmm5/ymm5 */
+#  ifndef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   ifndef _MSC_VER /* On Windows xmm6 through xmm15 are marked as callee saved. */
+#    define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   endif
+#  endif
+#  ifdef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
 #  else
-/** On Windows xmm6 through xmm15 are marked as callee saved. */
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xffc0) \
-                                            | RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (  UINT32_C(0xffc0) \
+                                             | RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
 #  endif
 # endif
 
@@ -228,9 +237,9 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | IEMNATIVE_REG_FIXED_MASK_ADD)
 
 # ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-# define IEMNATIVE_SIMD_REG_FIXED_TMP0     ARMV8_A64_REG_Q30
+# define IEMNATIVE_SIMD_REG_FIXED_TMP0      ARMV8_A64_REG_Q30
 #  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS)
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   RT_BIT_32(ARMV8_A64_REG_Q30)
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    RT_BIT_32(ARMV8_A64_REG_Q30)
 #  else
 /*
  * ARM64 has 32 128-bit registers only, in order to support emulating 256-bit registers we pair
@@ -241,24 +250,24 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
  * Also ARM64 declares the low 64-bit of v8-v15 as callee saved, so we don't touch them in order to avoid
  * having to save and restore them in the prologue/epilogue.
  */
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK   (  UINT32_C(0xff00) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q31) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q30) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q29) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q27) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q25) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q23) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q21) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q19) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q17) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q15) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q13) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q11) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q9) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q7) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q5) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q3) \
-                                            | RT_BIT_32(ARMV8_A64_REG_Q1))
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (  UINT32_C(0xff00) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q31) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q30) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q29) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q27) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q25) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q23) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q21) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q19) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q17) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q15) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q13) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q11) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q9) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q7) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q5) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q3) \
+                                             | RT_BIT_32(ARMV8_A64_REG_Q1))
 #  endif
 # endif
 
@@ -308,7 +317,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #   define IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK (UINT32_C(0x3f))
 #  endif
 
-# else
+# else  /* !RT_OS_WINDOWS */
 #  define IEMNATIVE_CALL_ARG_GREG_COUNT     6
 #  define IEMNATIVE_CALL_ARG0_GREG          X86_GREG_xDI
 #  define IEMNATIVE_CALL_ARG1_GREG          X86_GREG_xSI
@@ -335,7 +344,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 /* xmm0 - xmm15 are marked as volatile. */
 #   define IEMNATIVE_CALL_VOLATILE_SIMD_REG_MASK (UINT32_C(0xffff))
 #  endif
-# endif
+# endif /* !RT_OS_WINDOWS */
 
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_CALL_RET_GREG            ARMV8_A64_REG_X0
@@ -383,10 +392,12 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #endif
 
 /** This is the maximum argument count we'll ever be needing. */
-#if defined(RT_OS_WINDOWS) && defined(VBOXSTRICTRC_STRICT_ENABLED)
-# define IEMNATIVE_CALL_MAX_ARG_COUNT       8
-#else
-# define IEMNATIVE_CALL_MAX_ARG_COUNT       7
+#define IEMNATIVE_CALL_MAX_ARG_COUNT        7
+#ifdef RT_OS_WINDOWS
+# ifdef VBOXSTRICTRC_STRICT_ENABLED
+#  undef IEMNATIVE_CALL_MAX_ARG_COUNT
+#  define IEMNATIVE_CALL_MAX_ARG_COUNT      8
+# endif
 #endif
 /** @} */
 
@@ -426,7 +437,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #endif
 
 
-#ifndef RT_IN_ASSEMBLER /* the rest of the file */
+#ifndef RT_IN_ASSEMBLER /* ASM-NOINC-START - the rest of the file */
 
 
 /** Native code generator label types. */
@@ -2502,7 +2513,7 @@ extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUM
 # endif
 #endif
 
-#endif /* !RT_IN_ASSEMBLER */
+#endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */
 
 /** @} */
 

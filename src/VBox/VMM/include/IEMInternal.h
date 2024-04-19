@@ -52,6 +52,12 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/* Make doxygen happy w/o overcomplicating the #if checks. */
+#ifdef DOXYGEN_RUNNING
+# define IEM_WITH_THROW_CATCH
+# define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+#endif
+
 /** For expanding symbol in slickedit and other products tagging and
  *  crossreferencing IEM symbols. */
 #ifndef IEM_STATIC
@@ -82,10 +88,9 @@ RT_C_DECLS_BEGIN
  * the MMIO and CPUID tests ran noticeably faster. Variation is greater than on
  * Linux, but it should be quite a bit faster for normal code.
  */
-#if (defined(__cplusplus) && defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER))) \
- || defined(DOXYGEN_RUNNING)
+#if defined(__cplusplus) && defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER)) /* ASM-NOINC-START */
 # define IEM_WITH_THROW_CATCH
-#endif
+#endif /*ASM-NOINC-END*/
 
 /** @def IEMNATIVE_WITH_DELAYED_PC_UPDATING
  * Enables the delayed PC updating optimization (see @bugref{10373}).
@@ -116,9 +121,12 @@ RT_C_DECLS_BEGIN
  * effect of a longjmp/throw.  Since MSC marks XMM6 thru XMM15 as
  * non-volatile (and does something even more crazy for ARM), this probably
  * won't work reliably on Windows. */
-#if defined(DOXYGEN_RUNNING) || (!defined(RT_OS_WINDOWS) && (defined(RT_ARCH_ARM64) /*|| defined(_RT_ARCH_AMD64)*/))
-# define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+#ifdef RT_ARCH_ARM64
+# ifndef RT_OS_WINDOWS
+#  define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+# endif
 #endif
+/* ASM-NOINC-START */
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
 # if !defined(IN_RING3) \
   || !defined(VBOX_WITH_IEM_RECOMPILER) \
@@ -188,31 +196,40 @@ RT_C_DECLS_BEGIN
 #else
 # define IEM_NOEXCEPT_MAY_LONGJMP   RT_NOEXCEPT
 #endif
+/* ASM-NOINC-END */
 
 #define IEM_IMPLEMENTS_TASKSWITCH
 
 /** @def IEM_WITH_3DNOW
  * Includes the 3DNow decoding.  */
-#if (!defined(IEM_WITH_3DNOW) && !defined(IEM_WITHOUT_3DNOW)) || defined(DOXYGEN_RUNNING)   /* For doxygen, set in Config.kmk. */
-# define IEM_WITH_3DNOW
+#if !defined(IEM_WITH_3DNOW) || defined(DOXYGEN_RUNNING)   /* For doxygen, set in Config.kmk. */
+# ifndef IEM_WITHOUT_3DNOW
+#  define IEM_WITH_3DNOW
+# endif
 #endif
 
 /** @def IEM_WITH_THREE_0F_38
  * Includes the three byte opcode map for instrs starting with 0x0f 0x38. */
-#if (!defined(IEM_WITH_THREE_0F_38) && !defined(IEM_WITHOUT_THREE_0F_38)) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
-# define IEM_WITH_THREE_0F_38
+#if !defined(IEM_WITH_THREE_0F_38) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
+# ifdef IEM_WITHOUT_THREE_0F_38
+#  define IEM_WITH_THREE_0F_38
+# endif
 #endif
 
 /** @def IEM_WITH_THREE_0F_3A
  * Includes the three byte opcode map for instrs starting with 0x0f 0x38. */
-#if (!defined(IEM_WITH_THREE_0F_3A) && !defined(IEM_WITHOUT_THREE_0F_3A)) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
-# define IEM_WITH_THREE_0F_3A
+#if !defined(IEM_WITH_THREE_0F_3A) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
+# ifndef IEM_WITHOUT_THREE_0F_3A
+#  define IEM_WITH_THREE_0F_3A
+# endif
 #endif
 
 /** @def IEM_WITH_VEX
  * Includes the VEX decoding. */
-#if (!defined(IEM_WITH_VEX) && !defined(IEM_WITHOUT_VEX)) || defined(DOXYGEN_RUNNING)       /* For doxygen, set in Config.kmk. */
-# define IEM_WITH_VEX
+#if !defined(IEM_WITH_VEX) || defined(DOXYGEN_RUNNING)       /* For doxygen, set in Config.kmk. */
+# ifndef IEM_WITHOUT_VEX
+#  define IEM_WITH_VEX
+# endif
 #endif
 
 /** @def IEM_CFG_TARGET_CPU
@@ -233,15 +250,15 @@ RT_C_DECLS_BEGIN
 
 /** @def IEM_USE_UNALIGNED_DATA_ACCESS
  * Use unaligned accesses instead of elaborate byte assembly. */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING)  /*ASM-NOINC*/
 # define IEM_USE_UNALIGNED_DATA_ACCESS
-#endif
+#endif                                                                          /*ASM-NOINC*/
 
 //#define IEM_LOG_MEMORY_WRITES
 
 
 
-#ifndef RT_IN_ASSEMBLER /* the rest of the file */
+#ifndef RT_IN_ASSEMBLER /* ASM-NOINC-START - the rest of the file */
 
 # if !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
 /** Instruction statistics.   */
@@ -6197,12 +6214,14 @@ DECLHIDDEN(void)    iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, siz
 void                iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_NOEXCEPT;
 DECLASM(DECL_NO_RETURN(void)) iemNativeTbLongJmp(void *pvFramePointer, int rc) RT_NOEXCEPT;
 
-#endif /* !RT_IN_ASSEMBLER */
+#endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */
 
 
 /** @} */
 
 RT_C_DECLS_END
+
+/* ASM-INC: %include "IEMInternalStruct.mac" */
 
 #endif /* !VMM_INCLUDED_SRC_include_IEMInternal_h */
 

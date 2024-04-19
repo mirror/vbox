@@ -744,15 +744,15 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  #
  if1of ($(KBUILD_TARGET_ARCH), arm64)
   VBoxVMM_CLEAN += \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h.ts \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h.ts \
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h
   $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h.ts)
   $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h.ts \
   +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h: \
   		$(VBoxVMM_0_OUTDIR)/VMMAll/IEMAllN8veRecompiler.o \
   		$(PATH_SUB_CURRENT)/dwarfdump-to-offsets.sed
 	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,IEMAllN8veRecompiler.o)
-	$(QUIET)$(RM) -f -- "$@" "$@.tmp" "$(basename $@)"
+	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(QUIET)$(REDIRECT) -0 /dev/null -o "$@.tmp" -- \
@@ -763,6 +763,41 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 
   # Set up the dependencies.
   $(VBoxVMM_0_OUTDIR)/VMMAll/IEMAllN8veHlpA-arm64.o: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMAssemblyOffsets.h
+ endif
+
+ #
+ # Generate member offsets for selected structures for use from ARM64 assembly.
+ #
+ if1of ($(KBUILD_TARGET_ARCH), amd64)
+  VBoxVMM_CLEAN += \
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac.ts \
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac \
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac.ts \
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac
+
+  VBoxVMM_INTERMEDIATES.amd64 += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac
+  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac.ts)
+  $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac.ts \
+  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInternal.mac: \
+  		$(PATH_SUB_CURRENT)/include/IEMInternal.h \
+  		$(PATH_ROOT)/include/VBox/various.sed
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,$<)
+	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(QUIET)$(SED) -f "$(filter %.sed,$^)" --output "$@" "$<"
+	$(QUIET)$(CP) -v -f --changed -- "$@" "$(basename $@)"
+
+  VBoxVMM_INTERMEDIATES.amd64 += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac
+  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac.ts)
+  $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac.ts \
+  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMN8veRecompiler.mac: \
+  		$(PATH_SUB_CURRENT)/include/IEMN8veRecompiler.h \
+  		$(PATH_ROOT)/include/VBox/various.sed
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,$<)
+	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(QUIET)$(SED) -f "$(filter %.sed,$^)" --output "$@" "$<"
+	$(QUIET)$(CP) -v -f --changed -- "$@" "$(basename $@)"
  endif
 
 endif # VBOX_WITH_IEM_RECOMPILER

@@ -31,49 +31,19 @@
 %define RT_ASM_WITH_SEH64_ALT ; yasm gets confused by alignment, so we cannot use RT_ASM_WITH_SEH64. sigh.
 %include "VBox/asmdefs.mac"
 
-;; @todo r=aeichner The following is copied from IEMInternal.h
-;%define VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP - not enabled right now on amd64
-
-;; @todo r=aeichner The following defines are copied from IEMN8veRecompiler.h
-
-; /** @def IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
-;  * Enables having only a single prologue for native TBs. */
-%define IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
-
-; /** An stack alignment adjustment (between non-volatile register pushes and
-;  *  the stack variable area, so the latter better aligned). */
-%define IEMNATIVE_FRAME_ALIGN_SIZE              8
-
-; /** The size of the area for stack variables and spills and stuff.
-; * @note This limit is duplicated in the python script(s).  We add 0x40 for
-; *       alignment padding. */
-%define IEMNATIVE_FRAME_VAR_SIZE                (0xc0 + 0x40)
-
-; This needs to correspond to IEMNATIVE_REG_FIXED_PVMCPU in IEMN8veRecompiler.h
-%define IEMNATIVE_REG_FIXED_PVMCPU_ASM          xBX
-
-; /** Number of stack arguments slots for calls made from the frame. */
-%ifdef RT_OS_WINDOWS
-%define IEMNATIVE_FRAME_STACK_ARG_COUNT         4
-%else
-%define IEMNATIVE_FRAME_STACK_ARG_COUNT         2
-%endif
-; /** Number of any shadow arguments (spill area) for calls we make. */
-%ifdef RT_OS_WINDOWS
-%define IEMNATIVE_FRAME_SHADOW_ARG_COUNT        4
-%else
-%define IEMNATIVE_FRAME_SHADOW_ARG_COUNT        0
-%endif
+%include "IEMInternal.mac"
+%include "IEMN8veRecompiler.mac"
 
 
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
 BEGINCODE
-
 extern NAME(iemThreadedFunc_BltIn_LogCpuStateWorker)
 extern NAME(iemNativeHlpCheckTlbLookup)
 
 
-%ifdef IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
-
+BEGINCODE
 ;;
 ; This is the common prologue of a TB, saving all volatile registers
 ; and creating the stack frame for saving temporary values.
@@ -112,7 +82,7 @@ BEGINPROC   iemNativeTbEntry
         push    r15
         SEH64_PUSH_GREG r15
 %ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
- %error "Port me - need to store RBP in IEMCPU::pvTbFramePointerR3"
+ %error "Port me - need to store RBP in IEMCPU::pvTbFramePointerR3; Create ASM version of IEMCPU in IEMInternalStruct.mac"
 %endif
 %define MY_STACK_ALLOC (  IEMNATIVE_FRAME_ALIGN_SIZE \
                         + IEMNATIVE_FRAME_VAR_SIZE \
@@ -130,7 +100,6 @@ SEH64_END_PROLOGUE
         jmp     rsi
 %endif
 ENDPROC     iemNativeTbEntry
-%endif
 
 
 ;;

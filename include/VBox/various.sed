@@ -2,11 +2,12 @@
 ## @file
 # Converts some C header elements into nasm/yasm syntax.
 #
-# This is used by 'incs' in /Maintenance.kmk (/Makefile.kmk).
+# This is used by 'incs' in /Maintenance.kmk (/Makefile.kmk) as well as the VMM
+# for IEM headers.
 #
 
 #
-# Copyright (C) 2006-2023 Oracle and/or its affiliates.
+# Copyright (C) 2006-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -47,9 +48,10 @@ b end
 }
 :next
 
-# Check for markers (typically in comments).
-/ASM-INC/basm-inc
-/ASM-NOINC/basm-noinc
+# Check for block markers (typically in comments).
+/ASM-NOINC-START/,/ASM-NOINC-END/ {
+    d
+}
 
 # Newline escapes.
 :check-newline-escape
@@ -58,9 +60,26 @@ N
 b check-newline-escape
 :no-more-newline-escapes
 
-# Strip comments and trailing space.
-s/[[:space:]][[:space:]]*\/\*.*$//g
-s/[[:space:]][[:space:]]*\/\/.*$//g
+# Check for line markers (typically in comments).
+/ASM-INC/basm-inc
+/ASM-NOINC/basm-noinc
+
+# Save the original line in the hold space for error reporting.
+h
+
+# Strip comments.
+/\/\*/!b strip_cpp_style_comment
+:load_another_c_style_comment_line
+/\*\//b strip_c_style_comment
+N
+b load_another_c_style_comment_line
+:strip_c_style_comment
+s/\/\*.*\*\// /g
+
+:strip_cpp_style_comment
+s,//.*$, ,g
+
+# Strip trailing spaces
 s/[[:space:]][[:space:]]*$//g
 
 # Try identify the statement.
@@ -118,31 +137,119 @@ b end
 s/#\([[:space:]]*\)ifdef/\1%ifdef/
 b end
 
+
 :ifndef
 s/#\([[:space:]]*\)ifndef/\1%ifndef/
 b end
 
+
 :if
 s/#\([[:space:]]*\)if/\1%if/
+
+# Replace 'defined(DOXYGEN_RUNNING)' with '0' to simplify subsequent matching to '[0]' when we mean 'defined[(]DOXYGEN_RUNNING[)]'.
+s/defined[(]DOXYGEN_RUNNING[)]/0/
+
+# Simplify stuff that was turned into '0' in the previous step (or in the input file).
+s/||[[:space:]]*0[[:space:]]*$//g
+s/||[[:space:]]*0\([[:space:]|&]\)/\1/g
+s/\([[:space:]|&]\)0[[:space:]]*||/\1/g
+s/[[:space:]][[:space:]]*$//
+
+# Convert #if [!]defined(xxxx) into %if[n]def xxxx
+s/%if[[:space:]][[:space:]]*defined[(]\([^)][^)]*\)[)]$/%ifdef \1/
+s/%if[[:space:]][[:space:]]*[!][[:space:]]*defined[(]\([^)][^)]*\)[)]$/%ifndef \1/
+
+# Convert '#if ... && 0' and '#if 0 && ...' to %if 0
+s/%if[[:space:]].*&&[[:space:]]*00*$/%if 0/
+s/%if[[:space:]][[:space:]]*00*[[:space:]]*&&$/%if 0/
+
+# Convert '#if ... || 1' and '#if 1 || ...' to '%if 1'
+s/%if[[:space:]].*||[[:space:]]*1[0-9]*$/%if 1/
+s/%if[[:space:]][[:space:]]*1[0-9]*[[:space:]]*||$/%if 1/
+
+/defined/b defined_error
 b end
+
 
 :elif
 s/#\([[:space:]]*\)elif/\1%elif/
+
+# Replace 'defined(DOXYGEN_RUNNING)' with '0' to simplify subsequent matching to '[0]' when we mean 'defined[(]DOXYGEN_RUNNING[)]'.
+s/defined[(]DOXYGEN_RUNNING[)]/0/
+
+# Simplify stuff that was turned into '0' in the previous step (or in the input file).
+s/||[[:space:]]*0[[:space:]]*$//g
+s/||[[:space:]]*0\([[:space:]|&]\)/\1/g
+s/\([[:space:]|&]\)0[[:space:]]*||/\1/g
+s/[[:space:]][[:space:]]*$//
+
+# Convert #if [!]defined(xxxx) into %if[n]def xxxx
+s/%elif[[:space:]][[:space:]]*defined[(]\([^)][^)]*\)[)]$/%elifdef \1/
+s/%elif[[:space:]][[:space:]]*[!][[:space:]]*defined[(]\([^)][^)]*\)[)]$/%elifndef \1/
+
+# Convert '#elif ... && 0' and '#elif 0 && ...' to '%elif 0'
+s/%elif[[:space:]].*&&[[:space:]]*00*$/%elif 0/
+s/%elif[[:space:]][[:space:]]*00*[[:space:]]*&&$/%elif 0/
+
+# Convert '#elif ... || 1' and '#elif 1 || ...' to '%elif 1'
+s/%elif[[:space:]].*||[[:space:]]*1[0-9]*$/%elif 1/
+s/%elif[[:space:]][[:space:]]*1[0-9]*[[:space:]]*||$/%elif 1/
+
+/defined/b defined_error
 b end
+
 
 :else
 s/#\([[:space:]]*\)else.*$/\1%else/
 b end
 
+
 :endif
 s/#\([[:space:]]*\)endif.*$/\1%endif/
 b end
 
+
+:defined_error
+x
+s/^/error: yasm & nasm does not grok 'defined': /
+p
+x
+s/^/info: state: /
+q1
+
+
 #
-# Assembly statement... may need adjusting when used.
+# Assembly statement inside a C-style comment.
 #
 :asm-inc
+/\/\*[[:space:]]*ASM-INC:.*\*\//b asm-inc-c-style-oneliner
+/\/\/[[:space:]]*ASM-INC:/b asm-inc-cpp-style-oneliner
+/\/\*[[:space:]]*ASM-INC/b asm-inc-c-style-block
+s/^/error: unknown ASM-INC form: /
+q1
+
+# /* ASM-INC: %include "whatever.mac" */
+:asm-inc-c-style-oneliner
+s/[[:space:]]*\/\*[[:space:]][[:space:]]*ASM-INC:[[:space:]]*\(.*\)[[:space:]]*\*\//\1/
 b end
+
+# // ASM-INC: %include "whatever.mac"
+:asm-inc-cpp-style-oneliner
+s/[[:space:]]*\/\/[[:space:]][[:space:]]*ASM-INC:[[:space:]]*\(.*\)[[:space:]]*$/\1/
+b end
+
+# /* ASM-INC
+# %include "whatever.mac"
+# */
+:asm-inc-c-style-block
+s/.*$//
+:asm-inc-c-style-block-next
+h
+N
+/\*\//!b asm-inc-c-style-block-next
+x
+b end
+
 
 :end
 
