@@ -147,14 +147,13 @@ DECLHIDDEN(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 p
 #  define SUPHNTVI_F_REQUIRE_BUILD_CERT             RT_BIT(0)
 /** Require kernel code signing level. */
 #  define SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING    RT_BIT(1)
-#  ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
 /** Require the image to force the memory mapper to do signature checking. */
-#   define SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT  RT_BIT(2)
-#  endif
+#  define SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT  RT_BIT(2)
 /** Whether to allow image verification by catalog file. */
 #  define SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION    RT_BIT(3)
-/** The file owner must be TrustedInstaller on Vista+. */
-#  define SUPHNTVI_F_TRUSTED_INSTALLER_OWNER        RT_BIT(4)
+/** The file owner must be TrustedInstaller, Builtin\\Administrators
+ *  (S-1-5-32-544) or local system (S-1-5-21) on Vista+. */
+#  define SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER RT_BIT(4)
 /** Ignore the image architecture (otherwise it must match the verification
  * code).  Used with resource images and such. */
 #  define SUPHNTVI_F_IGNORE_ARCHITECTURE            RT_BIT(30)

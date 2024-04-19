@@ -807,7 +807,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
         pwsz = pwszName + cwcOther + 1;
 
         /* Must be owned by trusted installer. (This test is superfuous, thus no relaxation here.) */
-        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
             && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
 
@@ -868,7 +868,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
             return rc;
 
         /* Must be owned by trusted installer. */
-        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
             && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
         return VINF_LDRVI_NOT_SIGNED;
@@ -885,7 +885,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
         cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR); /* ASSUMES System32 is called System32. */
         pwsz = pwszName + cwcOther + 1;
 
-        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
             && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
 
@@ -933,7 +933,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 # endif
        )
     {
-        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+        if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
             && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
         return VINF_LDRVI_NOT_SIGNED;
@@ -943,7 +943,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
     /*
      * Anything that's owned by the trusted installer.
      */
-    if (   (fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+    if (   (fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
         || supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
         return VINF_LDRVI_NOT_SIGNED;
 
@@ -1227,12 +1227,10 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
     if (RT_SUCCESS(rc))
     {
 #ifdef IN_RING3 /* Hack alert! (see above) */
-# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
         if (   (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
             && (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT)
             && uTimestamp < g_uBuildTimestampHack)
             uTimestamp = g_uBuildTimestampHack;
-# endif
 #endif
         RTTimeSpecSetSeconds(&aTimes[0].TimeSpec, uTimestamp);
         aTimes[0].pszDesc = "link";
@@ -1381,7 +1379,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      */
     /** @todo Since we're now allowing Builtin\\Administrators after all, perhaps we
      *        could drop these system32 + winsxs hacks?? */
-    if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
+    if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))
     {
         if (supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
@@ -1430,7 +1428,6 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
     if (RT_FAILURE(rc))
         RTErrInfoAddF(pErrInfo, rc, ": %ls", pwszName);
 
-#ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
     /*
      * Check for the signature checking enforcement, if requested to do so.
      */
@@ -1445,7 +1442,6 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
             rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED,
                                "The image '%ls' was not linked with /IntegrityCheck.", pwszName);
     }
-#endif
 
 #ifdef IN_RING3
     /*

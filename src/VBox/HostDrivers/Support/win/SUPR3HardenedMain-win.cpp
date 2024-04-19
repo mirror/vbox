@@ -1477,38 +1477,46 @@ supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfA
 #ifndef VBOX_PERMIT_EVEN_MORE
     /*
      * Check the path.  We don't allow DLLs to be loaded from just anywhere:
-     *      1. System32      - normal code or cat signing, owner TrustedInstaller.
-     *      2. WinSxS        - normal code or cat signing, owner TrustedInstaller.
-     *      3. VirtualBox    - build cert code signing, and owner TrustedInstaller unless integrity check is enabled.
-     *      4. AppPatchDir   - normal code or cat signing, owner TrustedInstaller.
-     *      5. Program Files - normal code or cat signing, owner TrustedInstaller.
-     *      6. Common Files  - normal code or cat signing, owner TrustedInstaller.
+     *      1. System32      - normal code or cat signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *      2. WinSxS        - normal code or cat signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *      3. VirtualBox    - build with:
+     *         - regular code signing cert: build cert code signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *         - kernel code signing cert:  kernel code signing and integrity checks.
+     *      4. AppPatchDir   - normal code or cat signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *      5. Program Files - normal code or cat signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *      6. Common Files  - normal code or cat signing, owner TrustedInstaller/Administrators/LocalSystem.
      *      7. x86 variations of 4 & 5 - ditto.
+     *
+     * Note! VBOX_WITHOUT_KERNEL_CODE_SIGNING_CERT means the /IntegrityCheck does
+     *       work as it doesn't seems like MS has come up with a generally accessible
+     *       alternative to the expired kernel code signing scheme for using this
+     *       securty enhancement.
      */
     uint32_t fFlags = 0;
     if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_System32NtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
-# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
-        fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+# ifdef VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT
+        /** @todo r=bird: See SUPHNTVI_F_REQUIRE_BUILD_CERT comment below (in the
+         *        code that's actually used). */
+        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
 # else
-        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
 # endif
-    }
 # ifdef VBOX_PERMIT_MORE
     else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesNtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesNtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
 #  ifdef RT_ARCH_AMD64
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesX86NtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesX86NtPath.UniStr, true /*fCheckSlash*/))
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
 #  endif
 # endif
 # ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
@@ -1536,20 +1544,27 @@ supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfA
 #else  /* VBOX_PERMIT_EVEN_MORE */
     /*
      * Require trusted installer + some kind of signature on everything, except
-     * for the VBox bits where we require a specific certificate and maybe special
-     * integrity checks.
+     * for the VBox bits where we have extra requirements depending on the signing
+     * certificate used:
+     *         - regular code signing cert: build cert code signing, owner TrustedInstaller/Administrators/LocalSystem.
+     *         - kernel code signing cert:  kernel code signing and integrity checks.
      */
     uint32_t fFlags = 0;
     if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
-    {
-# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
-        fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+# ifdef VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT
+        /** @todo r=bird: Since extension packs are installed under
+         * g_SupLibHardenedAppBinNtPath and I'm pretty sure that everything loaded into
+         * a VBox VM process goes thru this validation step at DLL load time, this means
+         * only we can now sign extension packs.
+         *
+         * I suspect we have to relax the signing restrictions on the ExtensionPacks
+         * subdirectory to keep 3rd party extensions working.  */
+        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
 # else
-        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
 # endif
-    }
     else
-        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OR_SIMILAR_OWNER;
 #endif /* VBOX_PERMIT_EVEN_MORE */
 
     /*

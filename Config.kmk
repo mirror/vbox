@@ -1180,7 +1180,9 @@ ifndef VBOX_WITH_HARDENING
   VBOX_WITH_ORIGIN = 1
  endif
 endif
-VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK = 1
+# Building windows without a kernel code signing certificate (as good as
+# impossible to get these days, so enabled by default).
+VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT = 1
 # Enable the system wide support service/daemon.
 # Very sketchy work in progress.
 #VBOX_WITH_SUPSVC = 1
@@ -4862,7 +4864,7 @@ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
 	$(CP) -- "$(quote-sh-dq $<)" "$@"
 	$(CHMOD) a+rw -- "$@"
 	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release \
-		$(if-expr !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK),/IntegrityCheck,) \
+		$(if-expr !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT),/IntegrityCheck,) \
 		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		"$@"
 	$(call VBOX_SIGN_IMAGE_FN,$@)
@@ -4885,7 +4887,7 @@ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
 	$(CP) -- "$<" "$@"
 	$(CHMOD) a+rw -- "$@"
 	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release \
-		$(if-expr !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK),/IntegrityCheck,) \
+		$(if-expr !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT),/IntegrityCheck,) \
 		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		"$@"
 	$(call VBOX_SIGN_IMAGE_FN,$@)
@@ -5389,7 +5391,7 @@ ifdef VBOX_WITH_RAW_MODE
   	-Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
   	-Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
   	-Stub:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
-  if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+  if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
    TEMPLATE_VBoxRc_LDFLAGS          += -IntegrityCheck
   endif
   TEMPLATE_VBoxRc_LIBS              += \
@@ -5550,7 +5552,7 @@ ifeq ($(VBOX_LDR_FMT),pe)
  ifdef VBOX_WITH_DTRACE_R0
   TEMPLATE_VBoxR0_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+ if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
   TEMPLATE_VBoxR0_LDFLAGS          += -IntegrityCheck
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
@@ -5753,7 +5755,7 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_DTRACE_R0DRV
   TEMPLATE_VBoxR0Drv_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+ if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
   TEMPLATE_VBoxR0Drv_LDFLAGS          += -IntegrityCheck
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
@@ -6336,7 +6338,7 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_DTRACE_R3
   TEMPLATE_VBoxR3Exe_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
   TEMPLATE_VBoxR3Exe_LDFLAGS          += -IntegrityCheck
  endif
  TEMPLATE_VBoxR3Exe_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
@@ -6983,7 +6985,7 @@ TEMPLATE_VBoxR3HardenedTstDll = VBox Ring-3 Hardened Testcase Dll (currently win
 TEMPLATE_VBoxR3HardenedTstDll_EXTENDS = VBoxR3TstDll
 TEMPLATE_VBoxR3HardenedTstDll_INST = $(INST_TESTCASE)
 TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS.win  = $(TEMPLATE_VBoxR3TstDll_LDFLAGS.win) \
-	$(if-expr !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK),-IntegrityCheck,)
+	$(if-expr !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT),-IntegrityCheck,)
 ifn1of ($(KBUILD_TARGET), win os2)
  TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS       = $(filter-out '$(VBOX_GCC_RPATH_OPT)%,$(TEMPLATE_VBoxR3TstDll_LDFLAGS))
  TEMPLATE_VBoxR3HardenedTstDll_LDFLAGS.linux = $(filter-out $(VBOX_GCC_ORIGIN_OPT),$(TEMPLATE_VBoxR3TstDll_LDFLAGS.linux))
@@ -7292,7 +7294,7 @@ ifeq ($(KBUILD_TARGET),win)
  	/DISALLOWLIB:libvcruntimed.lib \
  	/DISALLOWLIB:libucrt.lib \
  	/DISALLOWLIB:libucrtd.lib
- if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
   TEMPLATE_VBoxMainExe_LDFLAGS          += -IntegrityCheck
  endif
  ifdef VBOX_WITH_DTRACE_R3_MAIN
@@ -7994,7 +7996,7 @@ ifdef VBOX_WITH_QTGUI
   	$(VBOX_VCC_LD_GUARD_CF)  $(VBOX_VCC_SANITIZER_LDFLAGS) \
   	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
   	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
-  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK)
+  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
    TEMPLATE_VBoxQtGuiExe_LDFLAGS += -IntegrityCheck
   endif
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
