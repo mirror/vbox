@@ -322,22 +322,6 @@ typedef IEMINSTRSTATS *PIEMINSTRSTATS;
 
 
 /**
- * Extended operand mode that includes a representation of 8-bit.
- *
- * This is used for packing down modes when invoking some C instruction
- * implementations.
- */
-typedef enum IEMMODEX
-{
-    IEMMODEX_16BIT = IEMMODE_16BIT,
-    IEMMODEX_32BIT = IEMMODE_32BIT,
-    IEMMODEX_64BIT = IEMMODE_64BIT,
-    IEMMODEX_8BIT
-} IEMMODEX;
-AssertCompileSize(IEMMODEX, 4);
-
-
-/**
  * Branch types.
  */
 typedef enum IEMBRANCH
