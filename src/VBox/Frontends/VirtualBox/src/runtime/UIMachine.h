@@ -58,6 +58,7 @@
 #include "KVMExecutionEngine.h"
 
 /* Forward declarations: */
+class QMenu;
 class QWidget;
 class UIActionPool;
 class UIFrameBuffer;
