@@ -53,6 +53,7 @@ class QComboBox;
 class QHBoxLayout;
 class QLabel;
 class QLineEdit;
+class QMenu;
 class QSpinBox;
 class QStackedWidget;
 class QVBoxLayout;
