@@ -826,8 +826,8 @@ FNIEMOP_DEF(iemOp_insertps_Vdq_UdqMd_Ib)
 
         IEM_MC_LOCAL(uint32_t, uSrc);
         IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), (bImm >> 6) & 3);
-        IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
         IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc);
+        IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -848,8 +848,8 @@ FNIEMOP_DEF(iemOp_insertps_Vdq_UdqMd_Ib)
 
         IEM_MC_LOCAL(uint32_t,  uSrc);
         IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
         IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc);
+        IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
