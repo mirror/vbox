@@ -4774,7 +4774,7 @@ typedef enum ARMV8VECINSTRCMPZEROOP
     kArmv8VecInstrCmpZeroOp_Eq =                 UINT32_C(0x9800), /**< Equal to zero            (==) */
     kArmv8VecInstrCmpZeroOp_Lt =                 UINT32_C(0xa800), /**< Lower than zero          (>=) (signed) */
     kArmv8VecInstrCmpZeroOp_Ge = RT_BIT_32(29) | UINT32_C(0x8800), /**< Greater or equal to zero (>=) (signed) */
-    kArmv8VecInstrCmpZeroOp_Le = RT_BIT_32(29) | UINT32_C(0x9800), /**< Lower or equal to zero   (<=) (signed) */
+    kArmv8VecInstrCmpZeroOp_Le = RT_BIT_32(29) | UINT32_C(0x9800)  /**< Lower or equal to zero   (<=) (signed) */
 } ARMV8VECINSTRCMPZEROOP;
 
 /**
