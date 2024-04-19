@@ -8391,7 +8391,7 @@ iemNativeEmitSimdLoadGprFromVecRegU64(PIEMRECOMPILERSTATE pReNative, uint32_t of
     Assert(iQWord <= 3);
 
 #ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSimdLoadGprFromVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 7), off, iGprDst, iVecRegSrc, iQWord);
+    off = iemNativeEmitSimdLoadGprFromVecRegU64Ex(iemNativeInstrBufEnsure(pReNative, off, 13), off, iGprDst, iVecRegSrc, iQWord);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecRegSrc & 0x1));
@@ -8904,7 +8904,7 @@ iemNativeEmitSimdZeroVecRegElemU32Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uin
         pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
     pCodeBuf[off++] = 0x33;
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_REG_FIXED_TMP0 & 7, IEMNATIVE_REG_FIXED_TMP0 & 7);
-    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(&pCodeBuf[off], off, iVecReg, IEMNATIVE_REG_FIXED_TMP0, iDWord);
+    off = iemNativeEmitSimdStoreGprToVecRegU32Ex(pCodeBuf, off, iVecReg, IEMNATIVE_REG_FIXED_TMP0, iDWord);
 #elif defined(RT_ARCH_ARM64)
     /* ASSUMES that there are two adjacent 128-bit registers available for the 256-bit value. */
     Assert(!(iVecReg & 0x1));
