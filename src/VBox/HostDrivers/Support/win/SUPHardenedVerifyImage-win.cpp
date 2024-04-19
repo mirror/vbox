@@ -1227,10 +1227,12 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
     if (RT_SUCCESS(rc))
     {
 #ifdef IN_RING3 /* Hack alert! (see above) */
+# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
         if (   (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
             && (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT)
             && uTimestamp < g_uBuildTimestampHack)
             uTimestamp = g_uBuildTimestampHack;
+# endif
 #endif
         RTTimeSpecSetSeconds(&aTimes[0].TimeSpec, uTimestamp);
         aTimes[0].pszDesc = "link";
@@ -1428,6 +1430,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
     if (RT_FAILURE(rc))
         RTErrInfoAddF(pErrInfo, rc, ": %ls", pwszName);
 
+#ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
     /*
      * Check for the signature checking enforcement, if requested to do so.
      */
@@ -1442,6 +1445,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
             rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED,
                                "The image '%ls' was not linked with /IntegrityCheck.", pwszName);
     }
+#endif
 
 #ifdef IN_RING3
     /*

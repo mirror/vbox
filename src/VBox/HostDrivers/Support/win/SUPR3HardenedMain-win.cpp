@@ -1479,7 +1479,7 @@ supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfA
      * Check the path.  We don't allow DLLs to be loaded from just anywhere:
      *      1. System32      - normal code or cat signing, owner TrustedInstaller.
      *      2. WinSxS        - normal code or cat signing, owner TrustedInstaller.
-     *      3. VirtualBox    - kernel code signing and integrity checks.
+     *      3. VirtualBox    - build cert code signing, and owner TrustedInstaller unless integrity check is enabled.
      *      4. AppPatchDir   - normal code or cat signing, owner TrustedInstaller.
      *      5. Program Files - normal code or cat signing, owner TrustedInstaller.
      *      6. Common Files  - normal code or cat signing, owner TrustedInstaller.
@@ -1491,7 +1491,12 @@ supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfA
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
+# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
         fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+# else
+        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+# endif
+    }
 # ifdef VBOX_PERMIT_MORE
     else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
@@ -1531,12 +1536,18 @@ supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfA
 #else  /* VBOX_PERMIT_EVEN_MORE */
     /*
      * Require trusted installer + some kind of signature on everything, except
-     * for the VBox bits where we require kernel code signing and special
+     * for the VBox bits where we require a specific certificate and maybe special
      * integrity checks.
      */
     uint32_t fFlags = 0;
     if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_SupLibHardenedAppBinNtPath.UniStr, true /*fCheckSlash*/))
+    {
+# ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
         fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+# else
+        fFlags |= SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+# endif
+    }
     else
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
 #endif /* VBOX_PERMIT_EVEN_MORE */

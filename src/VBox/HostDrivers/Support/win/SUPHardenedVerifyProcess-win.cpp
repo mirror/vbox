@@ -2394,10 +2394,12 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis)
                                    "NtQueryInformationProcess/ProcessImageInformation failed: %#x hProcess=%#x",
                                    rcNt, pThis->hProcess);
     }
+#ifndef VBOX_WITHOUT_HARDENING_INTEGRITY_CHECK
     if ( !(ImageInfo.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_EXE_MISSING_FORCE_INTEGRITY,
                                    "EXE DllCharacteristics=%#x, expected IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY to be set.",
                                    ImageInfo.DllCharacteristics);
+#endif
     if (!(ImageInfo.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_EXE_MISSING_DYNAMIC_BASE,
                                    "EXE DllCharacteristics=%#x, expected IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE to be set.",
