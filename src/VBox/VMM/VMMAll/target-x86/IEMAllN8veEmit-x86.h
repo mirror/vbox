@@ -2338,6 +2338,79 @@ IEMNATIVE_NATIVE_EMIT_PCMP_U128(pcmpeqb, kArmv8VecInstrCmpOp_Eq, kArmv8VecInstrA
 IEMNATIVE_NATIVE_EMIT_PCMP_U128(pcmpeqw, kArmv8VecInstrCmpOp_Eq, kArmv8VecInstrArithSz_16, 0x75);
 IEMNATIVE_NATIVE_EMIT_PCMP_U128(pcmpeqd, kArmv8VecInstrCmpOp_Eq, kArmv8VecInstrArithSz_32, 0x76);
 
+
+/**
+ * Emitter for pmovmskb
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmit_pmovmskb_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                               uint8_t const idxGstRegDst, uint8_t const idxSimdGstRegSrc)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst), kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+
+    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (idxRegDst >= 8 || idxSimdRegSrc >= 8)
+        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
+                          | (idxRegDst     >= 8 ? X86_OP_REX_R : 0);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = 0xd7;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxSimdRegSrc & 7);
+
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+    iemNativeRegFreeTmp(pReNative, idxRegDst);
+#elif defined(RT_ARCH_ARM64)
+    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst), kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_Calculation);
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+
+    /*
+     * See https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/porting-x86-vector-bitmask-optimizations-to-arm-neon
+     * for different approaches as NEON doesn't has an instruction equivalent for pmovmskb, so we have to emulate that.
+     *
+     * As there is no way around emulating the exact semantics of pmovmskb we will use the same algorithm as the sse2neon implementation because
+     * there we can get away with loading any constants and the base algorithm is only 4 NEON instructions (+ 3 for extracting the result to a general register).
+     *
+     * The following illustrates the algorithm:
+     *
+     *     Byte vector Element ->   15       14       13       12       11       10        9        8        7        6       5        4         3        2        1        0
+     *     Instruction
+     *          |
+     *          V
+     *                           Axxxxxxx Bxxxxxxx Cxxxxxxx Dxxxxxxx Exxxxxxx Fxxxxxxx Gxxxxxxx Hxxxxxxx Ixxxxxxx Jxxxxxxx Kxxxxxxx Lxxxxxxx Mxxxxxxx Nxxxxxxx Oxxxxxxx Pxxxxxxx
+     *     USHR v.16B, v.16B, #7 0000000A 0000000B 0000000C 0000000D 0000000E 0000000F 0000000G 0000000H 0000000I 0000000J 0000000K 0000000L 0000000M 0000000N 0000000O 0000000P
+     *     USRA v.8H,  v.8H,  #7 00000000 000000AB 00000000 000000CD 00000000 000000EF 00000000 000000GH 00000000 000000IJ 00000000 000000KL 00000000 000000MN 00000000 000000OP
+     *     USRA v.4S,  v.4S, #14 00000000 00000000 00000000 0000ABCD 00000000 00000000 00000000 0000EFGH 00000000 00000000 00000000 0000IJKL 00000000 00000000 00000000 0000MNOP
+     *     USRA v.2D,  v.2D, #28 00000000 00000000 00000000 00000000 00000000 00000000 00000000 ABCDEFGH 00000000 00000000 00000000 00000000 00000000 00000000 00000000 IJKLMNOP
+     *
+     * The extraction process
+     *     UMOV wTMP,  v.16B[8]             00000000 00000000 00000000 00000000 00000000 00000000 00000000 ABCDEFGH
+     *     UMOV wRES,  v.16B[0]             00000000 00000000 00000000 00000000 00000000 00000000 00000000 IJKLMNOP
+     *     ORR  xRES, xRES, xTMP, LSL #8    00000000 00000000 00000000 00000000 00000000 00000000 ABCDEFGH IJKLMNOP
+     */
+    pCodeBuf[off++] = Armv8A64MkVecInstrShrImm(idxSimdRegSrc, idxSimdRegSrc,  7, kArmv8InstrShiftSz_U8);
+    pCodeBuf[off++] = Armv8A64MkVecInstrShrImm(idxSimdRegSrc, idxSimdRegSrc,  7, kArmv8InstrShiftSz_U16, true /*fUnsigned*/, false /*fRound*/, true /*fAccum*/);
+    pCodeBuf[off++] = Armv8A64MkVecInstrShrImm(idxSimdRegSrc, idxSimdRegSrc, 14, kArmv8InstrShiftSz_U32, true /*fUnsigned*/, false /*fRound*/, true /*fAccum*/);
+    pCodeBuf[off++] = Armv8A64MkVecInstrShrImm(idxSimdRegSrc, idxSimdRegSrc, 28, kArmv8InstrShiftSz_U64, true /*fUnsigned*/, false /*fRound*/, true /*fAccum*/);
+    pCodeBuf[off++] = Armv8A64MkVecInstrUmov(idxRegTmp, idxSimdRegSrc, 8, kArmv8InstrUmovInsSz_U8, false /*fDst64Bit*/);
+    pCodeBuf[off++] = Armv8A64MkVecInstrUmov(idxRegDst, idxSimdRegSrc, 0, kArmv8InstrUmovInsSz_U8, false /*fDst64Bit*/);
+    pCodeBuf[off++] = Armv8A64MkInstrOrr(idxRegDst, idxRegDst, idxRegTmp, true /*f64Bit*/, 8 /*offShift6*/);
+
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    iemNativeRegFreeTmp(pReNative, idxRegDst);
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 #endif /* !VMM_INCLUDED_SRC_VMMAll_target_x86_IEMAllN8veEmit_x86_h */

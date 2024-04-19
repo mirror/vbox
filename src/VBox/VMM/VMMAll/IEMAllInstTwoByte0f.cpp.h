@@ -13066,13 +13066,17 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Ux)
         IEMOP_MNEMONIC2(RM_REG, PMOVMSKB, pmovmskb, Gd, Ux, DISOPTYPE_X86_SSE | DISOPTYPE_HARMLESS, 0);
         IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
-        IEM_MC_ARG(uint64_t *,              puDst, 0);
-        IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG(pVCpu, bRm));
-        IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_pmovmskb_u128, puDst, puSrc);
+        IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
+            IEM_MC_NATIVE_EMIT_2(iemNativeEmit_pmovmskb_rr_u128, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
+        } IEM_MC_NATIVE_ELSE() {
+            IEM_MC_ARG(uint64_t *,              puDst, 0);
+            IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
+            IEM_MC_REF_GREG_U64(puDst,          IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_REF_XREG_U128_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_pmovmskb_u128, puDst, puSrc);
+        } IEM_MC_NATIVE_ENDIF();
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
