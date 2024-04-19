@@ -1,0 +1,59 @@
+# $Id$
+## @file
+# Sub-Makefile for the Validation Kit Guest Control utilities.
+#
+
+#
+# Copyright (C) 2024 Oracle and/or its affiliates.
+#
+# This file is part of VirtualBox base platform packages, as
+# available from https://www.virtualbox.org.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, in version 3 of the
+# License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses>.
+#
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL), a copy of it is provided in the "COPYING.CDDL" file included
+# in the VirtualBox distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
+# SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# Make sure the ValKit config file is included when the additions build
+# is including just this makefile.
+#
+ifndef VBOX_VALIDATIONKIT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/src/VBox/ValidationKit/Config.kmk
+endif
+
+if defined(VBOX_ONLY_VALIDATIONKIT) || !defined(VBOX_ONLY_BUILD)
+ # Currently only used on Windows guests.
+ PROGRAMS.win += VBoxGuestControlHelper
+endif
+
+# We only ship this as part of the Validation Kit .ISO so far.
+VBoxGuestControlHelper_TEMPLATE = VBoxValidationKitR3
+VBoxGuestControlHelper_DEFS     = VBOX_WITH_GUEST_CONTROL
+VBoxGuestControlHelper_SOURCES  = \
+	VBoxGuestControlHelper.cpp
+
+include $(FILE_KBUILD_SUB_FOOTER)
