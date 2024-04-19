@@ -211,7 +211,7 @@ RT_C_DECLS_BEGIN
 /** @def IEM_WITH_THREE_0F_38
  * Includes the three byte opcode map for instrs starting with 0x0f 0x38. */
 #if !defined(IEM_WITH_THREE_0F_38) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
-# ifdef IEM_WITHOUT_THREE_0F_38
+# ifndef IEM_WITHOUT_THREE_0F_38
 #  define IEM_WITH_THREE_0F_38
 # endif
 #endif

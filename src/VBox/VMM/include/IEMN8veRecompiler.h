@@ -189,31 +189,7 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 /** @def IEMNATIVE_SIMD_REG_FIXED_TMP0
  * Dedicated temporary SIMD register. */
 #endif
-#ifdef RT_ARCH_AMD64
-# define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
-# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     xBX
-# define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
-# define IEMNATIVE_REG_FIXED_MASK           (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
-                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
-                                             | RT_BIT_32(X86_GREG_xSP) \
-                                             | RT_BIT_32(X86_GREG_xBP) )
-
-# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-#  define IEMNATIVE_SIMD_REG_FIXED_TMP0     5 /* xmm5/ymm5 */
-#  ifndef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
-#   ifndef _MSC_VER /* On Windows xmm6 through xmm15 are marked as callee saved. */
-#    define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
-#   endif
-#  endif
-#  ifdef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
-#  else
-#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (  UINT32_C(0xffc0) \
-                                             | RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
-#  endif
-# endif
-
-#elif defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+#if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING) /* arm64 goes first because of doxygen */
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
 # define IEMNATIVE_REG_FIXED_PVMCPU_ASM     RT_CONCAT(x,IEMNATIVE_REG_FIXED_PVMCPU)
 # define IEMNATIVE_REG_FIXED_PCPUMCTX       ARMV8_A64_REG_X27
@@ -241,14 +217,17 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #  if defined(IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS)
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK    RT_BIT_32(ARMV8_A64_REG_Q30)
 #  else
-/*
- * ARM64 has 32 128-bit registers only, in order to support emulating 256-bit registers we pair
- * two real registers statically to one virtual for now, leaving us with only 16 256-bit registers.
- * We always pair v0 with v1, v2 with v3, etc. so we mark the higher register as fixed
- * and the register allocator assumes that it will be always free when the lower is picked.
+/** @note
+ * ARM64 has 32 registers, but they are only 128-bit wide.  So, in order to
+ * support emulating 256-bit registers we pair two real registers statically to
+ * one virtual for now, leaving us with only 16 256-bit registers. We always
+ * pair v0 with v1, v2 with v3, etc. so we mark the higher register as fixed and
+ * the register allocator assumes that it will be always free when the lower is
+ * picked.
  *
- * Also ARM64 declares the low 64-bit of v8-v15 as callee saved, so we don't touch them in order to avoid
- * having to save and restore them in the prologue/epilogue.
+ * Also ARM64 declares the low 64-bit of v8-v15 as callee saved, so we don't
+ * touch them in order to avoid having to save and restore them in the
+ * prologue/epilogue.
  */
 #   define IEMNATIVE_SIMD_REG_FIXED_MASK    (  UINT32_C(0xff00) \
                                              | RT_BIT_32(ARMV8_A64_REG_Q31) \
@@ -268,6 +247,31 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
                                              | RT_BIT_32(ARMV8_A64_REG_Q5) \
                                              | RT_BIT_32(ARMV8_A64_REG_Q3) \
                                              | RT_BIT_32(ARMV8_A64_REG_Q1))
+#  endif
+# endif
+
+#elif defined(RT_ARCH_AMD64)
+# define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
+# define IEMNATIVE_REG_FIXED_PVMCPU_ASM     xBX
+# define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
+# define IEMNATIVE_REG_FIXED_MASK           (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
+                                             | RT_BIT_32(X86_GREG_xSP) \
+                                             | RT_BIT_32(X86_GREG_xBP) )
+
+# ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+#  define IEMNATIVE_SIMD_REG_FIXED_TMP0     5 /* xmm5/ymm5 */
+#  ifndef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   ifndef _MSC_VER
+#    define IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   endif
+#  endif
+#  ifdef IEMNATIVE_WITH_SIMD_REG_ACCESS_ALL_REGISTERS
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
+#  else
+/** @note On Windows/AMD64 xmm6 through xmm15 are marked as callee saved. */
+#   define IEMNATIVE_SIMD_REG_FIXED_MASK    (  UINT32_C(0xffc0) \
+                                             | RT_BIT_32(IEMNATIVE_SIMD_REG_FIXED_TMP0))
 #  endif
 # endif
 
