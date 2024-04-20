@@ -100,6 +100,10 @@ typedef struct GIC
 {
     /** The ring-3 device instance. */
     PPDMDEVINSR3                pDevInsR3;
+#ifdef RT_OS_LINUX
+    /** Flag whether the in-kernel KVM GIC is used. */
+    bool                        fKvmGic;
+#endif
 } GIC;
 /** Pointer to GIC VM instance data. */
 typedef GIC *PGIC;

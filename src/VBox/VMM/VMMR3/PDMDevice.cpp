@@ -684,6 +684,14 @@ static int pdmR3DevLoadModules(PVM pVM)
      */
     int rc = pdmR3DevReg_Register(&RegCB.Core, &g_DeviceGIC);
     AssertRCReturn(rc, rc);
+
+# ifdef RT_OS_LINUX
+    /*
+     * Register the internal VMM GIC device, KVM variant.
+     */
+    rc = pdmR3DevReg_Register(&RegCB.Core, &g_DeviceGICKvm);
+    AssertRCReturn(rc, rc);
+# endif
 #else
     /*
      * Register the internal VMM APIC device.

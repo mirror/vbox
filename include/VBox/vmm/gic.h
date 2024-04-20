@@ -51,6 +51,9 @@ RT_C_DECLS_BEGIN
 
 #ifdef VBOX_INCLUDED_vmm_pdmdev_h
 extern const PDMDEVREG g_DeviceGIC;
+# ifdef RT_OS_LINUX
+extern const PDMDEVREG g_DeviceGICKvm;
+# endif
 #endif
 
 /* These functions are VMM internal. */
@@ -66,6 +69,12 @@ VMM_INT_DECL(int)           GICSgiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAss
  */
 VMMR3_INT_DECL(int)         GICR3RegisterDevice(struct PDMDEVREGCB *pCallbacks);
 VMMR3_INT_DECL(void)        GICR3InitIpi(PVMCPU pVCpu);
+
+# ifdef RT_OS_LINUX
+/* Access to the in-kernel KVM GICv3. */
+VMMR3_INT_DECL(int)         GICR3KvmSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted);
+VMMR3_INT_DECL(int)         GICR3KvmPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted);
+# endif
 /** @} */
 #endif /* IN_RING3 */
 

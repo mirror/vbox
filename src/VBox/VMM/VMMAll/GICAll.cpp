@@ -1210,7 +1210,19 @@ VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
 
     AssertReturn(uIntId < GIC_SPI_MAX, VERR_INVALID_PARAMETER);
 
-    PGIC       pGic    = VM_TO_GIC(pVM);
+    PGIC pGic = VM_TO_GIC(pVM);
+
+    /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
+     *                   the GIC can register. */
+#ifdef RT_OS_LINUX
+# ifdef IN_RING3
+    if (pGic->fKvmGic)
+        return GICR3KvmSpiSet(pVM, uIntId, fAsserted);
+# else
+#  error "Impossible to call the KVM in-kernel GIC from this context!"
+# endif
+#endif
+
     PPDMDEVINS pDevIns = pGic->CTX_SUFF(pDevIns);
     PGICDEV    pThis   = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
 
@@ -1244,6 +1256,18 @@ VMM_INT_DECL(int) GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
 
+    /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
+     *                   the GIC can register. */
+#ifdef RT_OS_LINUX
+# ifdef IN_RING3
+    PGIC pGic = VM_TO_GIC(pVCpu->pVMR3);
+    if (pGic->fKvmGic)
+        return GICR3KvmPpiSet(pVCpu, uIntId, fAsserted);
+# else
+#  error "Impossible to call the KVM in-kernel GIC from this context!"
+# endif
+#endif
+
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
@@ -1269,6 +1293,18 @@ VMM_INT_DECL(int) GICSgiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
                  pVCpu, pVCpu->idCpu, uIntId, fAsserted));
 
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+
+    /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
+     *                   the GIC can register. */
+#ifdef RT_OS_LINUX
+# ifdef IN_RING3
+    PGIC pGic = VM_TO_GIC(pVCpu->pVMR3);
+    /* These should be handled in the kernel and never be set from here. */
+    AssertReturn(!pGic->fKvmGic, VERR_NEM_IPE_6);
+# else
+#  error "Impossible to call the KVM in-kernel GIC from this context!"
+# endif
+#endif
 
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
