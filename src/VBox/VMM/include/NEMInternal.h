@@ -238,9 +238,10 @@ typedef struct NEM
 # ifdef RT_ARCH_ARM64
     /** KVM_CAP_ARM_VM_IPA_SIZE. */
     uint32_t                    cIpaBits;
-# endif
+# else
     /** KVM_CAP_X86_ROBUST_SINGLESTEP. */
     bool                        fRobustSingleStep;
+# endif
 
     /** Hint where there might be a free slot. */
     uint16_t                    idPrevSlot;
@@ -412,8 +413,17 @@ typedef struct NEMCPU
     int32_t                     fdVCpu;
     /** Pointer to the KVM_RUN data exchange region. */
     R3PTRTYPE(struct kvm_run *) pRun;
+# if defined(VBOX_VMM_TARGET_ARMV8)
+    /** The IRQ device levels from device_irq_level. */
+    uint64_t                    fIrqDeviceLvls;
+    /** Status of the IRQ line when last seen. */
+    bool                        fIrqLastSeen;
+    /** Status of the FIQ line when last seen. */
+    bool                        fFiqLastSeen;
+# else
     /** The MSR_IA32_APICBASE value known to KVM. */
     uint64_t                    uKvmApicBase;
+#endif
 
     /** @name Statistics
      * @{ */

@@ -34,7 +34,7 @@
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
-#include <VBox/vmm/apic.h>
+#include <VBox/vmm/gic.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/trpm.h>
 #include "NEMInternal.h"
@@ -206,7 +206,7 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
 #ifdef __KVM_HAVE_DEBUGREGS
         CAP_ENTRY__L(KVM_CAP_DEBUGREGS),                     /* 50 */
 #endif
-        CAP_ENTRY__S(KVM_CAP_X86_ROBUST_SINGLESTEP, fRobustSingleStep),
+        CAP_ENTRY__L(KVM_CAP_X86_ROBUST_SINGLESTEP),
         CAP_ENTRY__L(KVM_CAP_PPC_OSI),
         CAP_ENTRY__L(KVM_CAP_PPC_UNSET_IRQ),
         CAP_ENTRY__L(KVM_CAP_ENABLE_CAP),
@@ -240,9 +240,9 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__L(KVM_CAP_PPC_HTAB_FD),
         CAP_ENTRY__L(KVM_CAP_S390_CSS_SUPPORT),
         CAP_ENTRY__L(KVM_CAP_PPC_EPR),
-        CAP_ENTRY__L(KVM_CAP_ARM_PSCI),
-        CAP_ENTRY__L(KVM_CAP_ARM_SET_DEVICE_ADDR),
-        CAP_ENTRY__L(KVM_CAP_DEVICE_CTRL),
+        CAP_ENTRY_ML(KVM_CAP_ARM_PSCI),
+        CAP_ENTRY_ML(KVM_CAP_ARM_SET_DEVICE_ADDR),
+        CAP_ENTRY_ML(KVM_CAP_DEVICE_CTRL),
         CAP_ENTRY__L(KVM_CAP_IRQ_MPIC),                      /* 90 */
         CAP_ENTRY__L(KVM_CAP_PPC_RTAS),
         CAP_ENTRY__L(KVM_CAP_IRQ_XICS),
@@ -255,7 +255,7 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__L(KVM_CAP_S390_IRQCHIP),
         CAP_ENTRY__L(KVM_CAP_IOEVENTFD_NO_LENGTH),           /* 100 */
         CAP_ENTRY__L(KVM_CAP_VM_ATTRIBUTES),
-        CAP_ENTRY__L(KVM_CAP_ARM_PSCI_0_2),
+        CAP_ENTRY_ML(KVM_CAP_ARM_PSCI_0_2),
         CAP_ENTRY__L(KVM_CAP_PPC_FIXUP_HCALL),
         CAP_ENTRY__L(KVM_CAP_PPC_ENABLE_HCALL),
         CAP_ENTRY__L(KVM_CAP_CHECK_EXTENSION_VM),
@@ -297,7 +297,7 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__L(KVM_CAP_S390_AIS),
         CAP_ENTRY__L(KVM_CAP_SPAPR_TCE_VFIO),
         CAP_ENTRY__L(KVM_CAP_X86_DISABLE_EXITS),
-        CAP_ENTRY__L(KVM_CAP_ARM_USER_IRQ),
+        CAP_ENTRY_ML(KVM_CAP_ARM_USER_IRQ),
         CAP_ENTRY__L(KVM_CAP_S390_CMMA_MIGRATION),
         CAP_ENTRY__L(KVM_CAP_PPC_FWNMI),
         CAP_ENTRY__L(KVM_CAP_PPC_SMT_POSSIBLE),
@@ -1221,7 +1221,7 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     uint64_t const fExtrn = ~pCtx->fExtrn & CPUMCTX_EXTRN_ALL;
     Assert((~fExtrn & CPUMCTX_EXTRN_ALL) != CPUMCTX_EXTRN_ALL);
 
-    RT_NOREF(pVM, pVCpu, pCtx, pRun);
+    RT_NOREF(pVM, pVCpu, pCtx, pRun, fExtrn);
     /** @todo */
 
     /*
@@ -1319,49 +1319,51 @@ DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu,
 }
 
 
+DECL_FORCE_INLINE(int) nemR3LnxKvmUpdateIntrState(PVM pVM, PVMCPU pVCpu, bool fIrq, bool fAsserted)
+{
+    struct kvm_irq_level IrqLvl;
+
+    LogFlowFunc(("pVM=%p pVCpu=%p fIrq=%RTbool fAsserted=%RTbool\n",
+                 pVM, pVCpu, fIrq, fAsserted));
+
+    IrqLvl.irq   =   ((uint32_t)KVM_ARM_IRQ_TYPE_CPU << 24)        /* Directly drives CPU interrupt lines. */
+                   | (pVCpu->idCpu & 0xff) << 16
+                   | (fIrq ? 0 : 1);
+    IrqLvl.level = fAsserted ? 1 : 0;
+    int rcLnx = ioctl(pVM->nem.s.fdVm, KVM_IRQ_LINE, &IrqLvl);
+    AssertReturn(rcLnx == 0, VERR_NEM_IPE_9);
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Deals with pending interrupt FFs prior to executing guest code.
  */
-static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_run *pRun)
+static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu)
 {
-    RT_NOREF_PV(pVM);
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} fIrq=%RTbool fFiq=%RTbool\n",
+                 pVCpu, pVCpu->idCpu,
+                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ),
+                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ)));
 
-    /*
-     * Do not doing anything if TRPM has something pending already as we can
-     * only inject one event per KVM_RUN call.  This can only happend if we
-     * can directly from the loop in EM, so the inhibit bits must be internal.
-     */
-    if (!TRPMHasTrap(pVCpu))
-    { /* semi likely */ }
-    else
+    bool fIrq = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ);
+    bool fFiq = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ);
+
+    /* Update the pending interrupt state. */
+    if (fIrq != pVCpu->nem.s.fIrqLastSeen)
     {
-        Log8(("nemHCLnxHandleInterruptFF: TRPM has an pending event already\n"));
-        return VINF_SUCCESS;
+        int rc = nemR3LnxKvmUpdateIntrState(pVM, pVCpu, true /*fIrq*/, fIrq);
+        AssertRCReturn(rc, VERR_NEM_IPE_9);
+        pVCpu->nem.s.fIrqLastSeen = fIrq;
     }
 
-    RT_NOREF(pRun);
-
-    /*
-     * In KVM the CPUMCTX_EXTRN_INHIBIT_INT and CPUMCTX_EXTRN_INHIBIT_NMI states
-     * are tied together with interrupt and NMI delivery, so we must get and
-     * synchronize these all in one go and set both CPUMCTX_EXTRN_INHIBIT_XXX flags.
-     * If we don't we may lose the interrupt/NMI we marked pending here when the
-     * state is exported again before execution.
-     */
-    struct kvm_vcpu_events KvmEvents = {0};
-    int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_VCPU_EVENTS, &KvmEvents);
-    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
-
-    /* KVM will own the INT + NMI inhibit state soon: */
-    pVCpu->cpum.GstCtx.fExtrn = (pVCpu->cpum.GstCtx.fExtrn & ~CPUMCTX_EXTRN_KEEPER_MASK)
-                              | CPUMCTX_EXTRN_KEEPER_NEM;
-
-    /*
-     * Now, update the state.
-     */
-    /** @todo skip when possible...   */
-    rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_VCPU_EVENTS, &KvmEvents);
-    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
+    if (fFiq != pVCpu->nem.s.fIrqLastSeen)
+    {
+        int rc = nemR3LnxKvmUpdateIntrState(pVM, pVCpu, false /*fIrq*/, fFiq);
+        AssertRCReturn(rc, VERR_NEM_IPE_9);
+        pVCpu->nem.s.fFiqLastSeen = fFiq;
+    }
 
     return VINF_SUCCESS;
 }
@@ -1450,6 +1452,8 @@ static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm
                      ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
                      : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
                      pRun->s.regs.regs.pc, ASMReadTSC());
+#else
+    RT_NOREF(pVCpu);
 #endif
 
     /*
@@ -1477,7 +1481,26 @@ static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm
 static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun, bool *pfStatefulExit)
 {
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitTotal);
-    RT_NOREF(pfStatefulExit);
+
+    if (pVCpu->nem.s.fIrqDeviceLvls != pRun->s.regs.device_irq_level)
+    {
+        uint64_t fChanged = pVCpu->nem.s.fIrqDeviceLvls ^ pRun->s.regs.device_irq_level;
+
+        if (fChanged & KVM_ARM_DEV_EL1_VTIMER)
+        {
+            TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
+            GICPpiSet(pVCpu, pVM->nem.s.u32GicPpiVTimer, RT_BOOL(pRun->s.regs.device_irq_level & KVM_ARM_DEV_EL1_VTIMER));
+        }
+
+        if (fChanged & KVM_ARM_DEV_EL1_PTIMER)
+        {
+            //TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
+            GICPpiSet(pVCpu, pVM->nem.s.u32GicPpiVTimer, RT_BOOL(pRun->s.regs.device_irq_level & KVM_ARM_DEV_EL1_PTIMER));
+        }
+
+        pVCpu->nem.s.fIrqDeviceLvls = pRun->s.regs.device_irq_level;
+    }
+
     switch (pRun->exit_reason)
     {
         case KVM_EXIT_EXCEPTION:
@@ -1510,21 +1533,11 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
         case KVM_EXIT_SYSTEM_EVENT:
             AssertFailed();
             break;
-        case KVM_EXIT_IOAPIC_EOI:
-            AssertFailed();
-            break;
-        case KVM_EXIT_HYPERV:
-            AssertFailed();
-            break;
 
         case KVM_EXIT_DIRTY_RING_FULL:
             AssertFailed();
             break;
         case KVM_EXIT_AP_RESET_HOLD:
-            AssertFailed();
-            break;
-        case KVM_EXIT_X86_BUS_LOCK:
-            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitBusLock);
             AssertFailed();
             break;
 
@@ -1612,22 +1625,16 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     for (unsigned iLoop = 0;; iLoop++)
     {
         /*
-         * Pending interrupts or such?  Need to check and deal with this prior
-         * to the state syncing.
+         * Sync the interrupt state. 
          */
-        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ
-                                     | VMCPU_FF_INTERRUPT_NMI))
+        rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu);
+        if (rcStrict == VINF_SUCCESS)
+        { /* likely */ }
+        else
         {
-            /* Try inject interrupt. */
-            rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu, pRun);
-            if (rcStrict == VINF_SUCCESS)
-            { /* likely */ }
-            else
-            {
-                LogFlow(("NEM/%u: breaking: nemHCLnxHandleInterruptFF -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
-                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
-                break;
-            }
+            LogFlow(("NEM/%u: breaking: nemHCLnxHandleInterruptFF -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+            break;
         }
 
         /*
