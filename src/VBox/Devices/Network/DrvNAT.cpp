@@ -1761,9 +1761,15 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             rc = RTReqQueueCreate(&pThis->hHostResQueue);
             AssertRCReturn(rc, rc);
 
+#if defined(RT_OS_LINUX) && defined(RT_ARCH_ARM64)
+            /* 64KiB stacks are not supported at least linux.arm64 (thread creation fails). */
+            size_t const cbStack = _128K;
+#else
+            size_t const cbStack = _64K
+#endif
             rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pHostResThread,
                                        pThis, drvNATHostResThread, drvNATHostResWakeup,
-                                       64 * _1K, RTTHREADTYPE_IO, "HOSTRES");
+                                       cbStack, RTTHREADTYPE_IO, "HOSTRES");
             AssertRCReturn(rc, rc);
 
             rc = RTCritSectInit(&pThis->DevAccessLock);
