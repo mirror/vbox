@@ -1765,7 +1765,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             /* 64KiB stacks are not supported at least linux.arm64 (thread creation fails). */
             size_t const cbStack = _128K;
 #else
-            size_t const cbStack = _64K
+            size_t const cbStack = _64K;
 #endif
             rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pHostResThread,
                                        pThis, drvNATHostResThread, drvNATHostResWakeup,
