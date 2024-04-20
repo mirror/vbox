@@ -1625,7 +1625,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     for (unsigned iLoop = 0;; iLoop++)
     {
         /*
-         * Sync the interrupt state. 
+         * Sync the interrupt state.
          */
         rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu);
         if (rcStrict == VINF_SUCCESS)
