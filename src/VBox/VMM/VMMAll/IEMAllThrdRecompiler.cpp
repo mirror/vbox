@@ -659,7 +659,7 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                     Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p) - recompiling\n", fFlags, GCPhysPc, pTb, ppTbLookup));
                     return iemNativeRecompile(pVCpu, pTb);
 #else
-                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p)\n", fFlags, GCPhysPc, idxHash, pTb, ppTbLookup));
+                    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp: %p (@ %p)\n", fFlags, GCPhysPc, pTb, ppTbLookup));
                     return pTb;
 #endif
                 }
