@@ -649,6 +649,8 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
         PRTREQ pReq;
         int rc = RTReqQueueCall(g_hRTThreadPosixPriorityProxyQueue, &pReq, RT_INDEFINITE_WAIT,
                                 (PFNRT)rtThreadNativeInternalCreate, 2, pThread, pNativeThread);
+        if (RT_SUCCESS(rc))
+            rc = RTReqGetStatus(pReq);
         RTReqRelease(pReq);
         return rc;
     }
