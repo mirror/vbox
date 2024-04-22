@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QMenu>
 #include <QTimer>
 #include <QWindowStateChangeEvent>
