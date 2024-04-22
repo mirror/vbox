@@ -298,6 +298,8 @@
 
 /** @name System register IDs.
  * @{ */
+/** MDCCINT_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_MDCCINT_EL1            ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, 2, 0)
 /** OSLAR_EL1 register - WO. */
 #define ARMV8_AARCH64_SYSREG_OSLAR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 0, 4)
 /** OSLSR_EL1 register - RO. */
@@ -455,6 +457,21 @@
 /** ERRSELR_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_ERRSELR_EL1            ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 5, 3, 1)
 
+/** FAR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_FAR_EL1                ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0,  6, 0, 0)
+
+/** PAR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_PAR_EL1                ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0,  7, 4, 0)
+
+/** MAIR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_MAIR_EL1               ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 10, 2, 0)
+
+/** AMAIR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_AMAIR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 10, 3, 0)
+
+/** VBAR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_VBAR_EL1               ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 0, 0)
+
 /** ICC_IAR0_EL1 register - RO. */
 #define ARMV8_AARCH64_SYSREG_ICC_IAR0_EL1           ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 8, 0)
 /** ICC_EOIR0_EL1 register - WO. */
@@ -511,6 +528,17 @@
 /** ICC_IGRPEN1_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_ICC_IGRPEN1_EL1        ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 12, 7)
 
+/** CONTEXTIDR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_CONTEXTIDR_EL1         ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 13,  0, 1)
+/** TPIDR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_TPIDR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 13,  0, 4)
+
+/** CNTKCTL_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_CNTKCTL_EL1            ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 14,  1, 0)
+
+/** CSSELR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_CSSELR_EL1             ARMV8_AARCH64_SYSREG_ID_CREATE(3, 2,  0,  0, 0)
+
 /** NZCV - Status Flags - ??. */
 #define ARMV8_AARCH64_SYSREG_NZCV                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 0)
 /** DAIF - Interrupt Mask Bits - ??. */
@@ -523,6 +551,11 @@
 #define ARMV8_AARCH64_SYSREG_SSBS                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 6)
 /** TCO - Tag Check Override - ??. */
 #define ARMV8_AARCH64_SYSREG_TCO                    ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 7)
+
+/** TPIDR_EL0 register - RW. */
+#define ARMV8_AARCH64_SYSREG_TPIDR_EL0              ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 13,  0, 2)
+/** TPIDRRO_EL0 register - RO. */
+#define ARMV8_AARCH64_SYSREG_TPIDRRO_EL0            ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 13,  0, 3)
 
 /** CNTV_CTL_EL0 register - RW. */
 #define ARMV8_AARCH64_SYSREG_CNTV_CTL_EL0           ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 14,  3, 1)
