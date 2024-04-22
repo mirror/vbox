@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QMenu>
 #include <QTimer>
+#include <QWindowStateChangeEvent>
 #ifdef VBOX_WS_WIN
 # include <QWindow>
 #endif

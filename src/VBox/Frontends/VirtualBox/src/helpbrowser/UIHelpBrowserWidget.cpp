@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QClipboard>
 #include <QComboBox>
 #include <QtGlobal>

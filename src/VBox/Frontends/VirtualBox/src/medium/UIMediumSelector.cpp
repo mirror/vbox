@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAction>
+#include <QApplication>
 #include <QHeaderView>
 #include <QMenuBar>
 #include <QVBoxLayout>

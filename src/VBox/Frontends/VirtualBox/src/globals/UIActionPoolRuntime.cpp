@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QActionGroup>
+#include <QApplication>
 
 /* GUI includes: */
 #include "UICommon.h"

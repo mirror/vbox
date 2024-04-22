@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #ifdef VBOX_WS_WIN
 # include <QBitmap>
 #endif

@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAbstractTableModel>
+#include <QApplication>
 #include <QCheckBox>
 #include <QHeaderView>
 #include <QItemDelegate>

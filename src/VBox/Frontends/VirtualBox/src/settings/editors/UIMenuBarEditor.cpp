@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMenuBar>

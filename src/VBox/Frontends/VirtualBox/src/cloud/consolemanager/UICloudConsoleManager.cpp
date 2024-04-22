@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QDialog>
 #include <QGridLayout>
 #include <QHeaderView>

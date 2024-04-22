@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QFontDatabase>
 #include <QMetaEnum>
 #include <QMutex>

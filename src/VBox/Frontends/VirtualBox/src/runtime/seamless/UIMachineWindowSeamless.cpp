@@ -29,6 +29,7 @@
 #include <QMenu>
 #include <QSpacerItem>
 #include <QTimer>
+#include <QWindowStateChangeEvent>
 
 /* GUI includes: */
 #include "UIActionPoolRuntime.h"

@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QStackedLayout>
 #ifndef VBOX_WS_MAC
 # include <QStyle>

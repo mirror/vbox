@@ -27,6 +27,8 @@
 
 
 /* Qt includes: */
+#include <QApplication>
+#include <QDragMoveEvent>
 #include <QDir>
 #include <QItemDelegate>
 #include <QFileInfo>

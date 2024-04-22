@@ -29,6 +29,7 @@
 #include <QImage>
 #include <QRegion>
 #include <QPainter>
+#include <QPaintEvent>
 #include <QTransform>
 
 /* GUI includes: */

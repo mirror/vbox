@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QActionGroup>
+#include <QApplication>
 #include <QHelpEvent>
 #include <QToolTip>
 
@@ -39,6 +40,7 @@
 #include "UIMessageCenter.h"
 #include "UIShortcutPool.h"
 #include "UITranslator.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIExtraDataManager.h"
 # include "UINetworkRequestManager.h"
@@ -3610,7 +3612,9 @@ void UIActionPool::preparePool()
 #endif
 
     /* Apply language settings: */
-    retranslateUi();
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIActionPool::sltRetranslateUI);
 }
 
 void UIActionPool::prepareConnections()
@@ -3712,7 +3716,7 @@ bool UIActionPool::event(QEvent *pEvent)
     return QObject::event(pEvent);
 }
 
-void UIActionPool::retranslateUi()
+void UIActionPool::sltRetranslateUI()
 {
     /* Translate all the actions: */
     foreach (const int iActionPoolKey, m_pool.keys())

@@ -41,6 +41,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QKeyEvent>
 #include <QTimer>
 

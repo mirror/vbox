@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QActionGroup>
+#include <QApplication>
 #include <QClipboard>
 #include <QFile>
 #include <QFontDatabase>

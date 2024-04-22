@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QActionGroup>
+#include <QApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>

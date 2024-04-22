@@ -26,12 +26,15 @@
  */
 
 /* Qt includes: */
+#include <QAbstractNativeEventFilter>
+#include <QApplication>
 #include <QBitmap>
+#include <QCoreApplication>
 #include <QMainWindow>
 #include <QPainter>
 #include <QScrollBar>
 #include <QTimer>
-#include <QAbstractNativeEventFilter>
+#include <QWindowStateChangeEvent>
 
 /* GUI includes: */
 #include "UICommon.h"

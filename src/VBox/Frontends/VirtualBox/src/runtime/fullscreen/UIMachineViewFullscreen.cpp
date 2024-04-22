@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QResizeEvent>
 #include <QMainWindow>
 #include <QTimer>
 #ifdef VBOX_WS_MAC

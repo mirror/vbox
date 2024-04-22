@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QHBoxLayout>
