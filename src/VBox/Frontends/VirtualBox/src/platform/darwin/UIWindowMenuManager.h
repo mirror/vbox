@@ -35,16 +35,13 @@
 #include <QHash>
 #include <QObject>
 
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Forward declarations: */
 class QMenu;
 class UIMenuHelper;
 
 /** Singleton QObject extension
   * used as Mac OS X 'Window' menu Manager. */
-class SHARED_LIBRARY_STUFF UIWindowMenuManager : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIWindowMenuManager : public QObject
 {
     Q_OBJECT;
 
@@ -67,9 +64,6 @@ public:
     /** Removes @a pWindow from all 'Window' menus. */
     void removeWindow(QWidget *pWindow);
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
 protected:
 
     /** Constructs 'Window' menu Manager. */
@@ -79,6 +73,11 @@ protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+
+private slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI();
 
 private:
 
