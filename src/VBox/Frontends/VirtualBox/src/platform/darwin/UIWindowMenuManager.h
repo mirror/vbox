@@ -35,6 +35,9 @@
 #include <QHash>
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QMenu;
 class UIMenuHelper;
