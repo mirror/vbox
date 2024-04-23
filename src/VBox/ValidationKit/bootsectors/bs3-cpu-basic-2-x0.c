@@ -3740,6 +3740,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
     BS3REGCTX           Ctx;
     BS3REGCTX           CtxExpected;
     unsigned            iTest;
+    unsigned const      cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler ? g_cBs3ThresholdNativeRecompiler : 1;
+    unsigned            iRecompRun;
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -3850,25 +3852,31 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
                 CtxExpected.rsp.u -= s_aTests[iTest].fOpSizePfx ? 4 : 2;
             //Bs3TestPrintf("cs:rip=%04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u);
 
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (s_aTests[iTest].iWrap == 0 || !s_aTests[iTest].fOpSizePfx)
-                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
-            else
-                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (s_aTests[iTest].iWrap == 0 || !s_aTests[iTest].fOpSizePfx)
+                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+                else
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+            }
             g_usBs3TestStep++;
 
             /* Again single stepping: */
             //Bs3TestPrintf("stepping...\n");
-            Bs3RegSetDr6(0);
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (s_aTests[iTest].iWrap == 0 || !s_aTests[iTest].fOpSizePfx)
-                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
-            else
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
             {
-                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
-                bs3CpuBasic2_CheckDr6InitVal();
+                Bs3RegSetDr6(0);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (s_aTests[iTest].iWrap == 0 || !s_aTests[iTest].fOpSizePfx)
+                    bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+                else
+                {
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                    bs3CpuBasic2_CheckDr6InitVal();
+                }
             }
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
@@ -3890,8 +3898,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
                 {
                     CtxExpected.rip.u = Ctx.rip.u = BS3_FP_OFF(s_aTests[iTest].pfnTest);
                     //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v1\n", Ctx.cs, Ctx.rip.u);
-                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                    for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                    {
+                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                    }
                     g_usBs3TestStep++;
                 }
 
@@ -3910,8 +3921,11 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
                     if (s_aTests[iTest].fCall && (s_aTests[iTest].iWrap == 0 || !s_aTests[iTest].fOpSizePfx))
                         CtxExpected.rsp.u -= s_aTests[iTest].fOpSizePfx ? 4 : 2;
                     //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
-                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                    for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                    {
+                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                    }
                     g_usBs3TestStep++;
                 }
         }
@@ -4063,18 +4077,23 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_jmp_call)(uint8_t bMode)
 
                 if (BS3_MODE_IS_16BIT_SYS(bMode))
                     g_uBs3TrapEipHint = s_aTests[iTest].fOpSizePfx ? 0 : Ctx.rip.u32;
-                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-
-                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+                for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                {
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+                }
                 g_usBs3TestStep++;
 
                 /* Again single stepping: */
                 //Bs3TestPrintf("stepping...\n");
-                Bs3RegSetDr6(0);
                 Ctx.rflags.u16        |= X86_EFL_TF;
                 CtxExpected.rflags.u16 = Ctx.rflags.u16;
-                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+                for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                {
+                    Bs3RegSetDr6(0);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+                }
                 Ctx.rflags.u16        &= ~X86_EFL_TF;
                 CtxExpected.rflags.u16 = Ctx.rflags.u16;
                 g_usBs3TestStep++;
@@ -4676,6 +4695,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
     BS3REGCTX               CtxExpected;
     unsigned                iTest;
     BS3PTRUNION             StkPtr;
+    unsigned const          cMaxRecompRuns = g_cBs3ThresholdNativeRecompiler ? g_cBs3ThresholdNativeRecompiler : 1;
+    unsigned                iRecompRun;
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -4733,19 +4754,25 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
                 CtxExpected.rsp.u = Ctx.rsp.u + s_aTests[iTest].cbImm + 4;
             //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
             //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            }
             g_usBs3TestStep++;
 
             /* Again single stepping: */
             //Bs3TestPrintf("stepping...\n");
-            Bs3RegSetDr6(X86_DR6_INIT_VAL);
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                Bs3RegSetDr6(X86_DR6_INIT_VAL);
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 4 : 2);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            }
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
@@ -4811,19 +4838,25 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             g_uBs3TrapEipHint = CtxExpected.rip.u32;
             //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
             //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            }
             g_usBs3TestStep++;
 
             /* Again single stepping: */
             //Bs3TestPrintf("stepping...\n");
-            Bs3RegSetDr6(X86_DR6_INIT_VAL);
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                Bs3RegSetDr6(X86_DR6_INIT_VAL);
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx ? 2 : 4);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            }
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
@@ -4900,19 +4933,25 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             g_uBs3TrapEipHint = CtxExpected.rip.u32;
             //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 -> %04RX16:%04RX64\n", Ctx.cs, Ctx.rip.u, CtxExpected.cs, CtxExpected.rip.u);
             //Bs3TestPrintf("ss:rsp=%04RX16:%04RX64\n", Ctx.ss, Ctx.rsp.u);
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxExpected);
+            }
             g_usBs3TestStep++;
 
             /* Again single stepping: */
             //Bs3TestPrintf("stepping...\n");
-            Bs3RegSetDr6(X86_DR6_INIT_VAL);
             Ctx.rflags.u16        |= X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
-            bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+            {
+                Bs3RegSetDr6(X86_DR6_INIT_VAL);
+                bs3CpuBasic2_retn_PrepStack(StkPtr, &CtxExpected, s_aTests[iTest].fOpSizePfx && !fFix64OpSize ? 2 : 8);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                bs3CpuBasic2_CompareDbCtx(&TrapCtx, &CtxExpected, X86_DR6_BS);
+            }
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
