@@ -382,13 +382,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Executed native translation block",            "/IEM/CPU%u/re/cTbExecNative", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExecThreaded,     STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Executed threaded translation block",          "/IEM/CPU%u/re/cTbExecThreaded", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                        "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedExecBreaks, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Times threaded TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecThreadedBreaks", idCpu);
 # ifdef VBOX_WITH_STATISTICS
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedExecBreaksWithLookup, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                        "Times threaded TB execution was interrupted/broken off on a call with lookup entries", "/IEM/CPU%u/re/cTbExecBreaksWithLookup", idCpu);
+                        "Times threaded TB execution was interrupted/broken off on a call with lookup entries", "/IEM/CPU%u/re/cTbExecThreadedBreaksWithLookup", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedExecBreaksWithoutLookup, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                        "Times threaded TB execution was interrupted/broken off on a call without lookup entries", "/IEM/CPU%u/re/cTbExecBreaksWithoutLookup", idCpu);
+                        "Times threaded TB execution was interrupted/broken off on a call without lookup entries", "/IEM/CPU%u/re/cTbExecThreadedBreaksWithoutLookup", idCpu);
 # endif
 
         PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
@@ -616,36 +616,74 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                                "/IEM/CPU%u/re/NativePcUpdateDelayed_StatusDelayedPct", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbFinished, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finishes execution completely", "/IEM/CPU%u/re/NativeTbFinished", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnBreak, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished through the ReturnBreak label", "/IEM/CPU%u/re/NativeTbExitReturnBreak", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnWithFlags, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished through the ReturnWithFlags label", "/IEM/CPU%u/re/NativeTbExitReturnWithFlags", idCpu);
+                        "Number of times the TB finishes execution completely",
+                        "/IEM/CPU%u/re/NativeTbFinished", idCpu);
 #  endif /* VBOX_WITH_STATISTICS */
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnBreak, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ReturnBreak label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnBreakFF, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ReturnBreak label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreakFF", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnWithFlags, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished through the ReturnWithFlags label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnWithFlags", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitReturnOtherStatus, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished with some other status value",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnOtherStatus", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitLongJump, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of times the TB finished via long jump / throw",
+                        "/IEM/CPU%u/re/NativeTbExit/LongJumps", idCpu);
+        /* These end up returning VINF_IEM_REEXEC_BREAK and are thus already counted under NativeTbExit/ReturnBreak: */
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitObsoleteTb, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished through the ObsoleteTb label", "/IEM/CPU%u/re/NativeTbExitObsoleteTb", idCpu);
+                        "Number of times the TB finished through the ObsoleteTb label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/ObsoleteTb", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished through the NeedCsLimChecking label", "/IEM/CPU%u/re/NativeTbExitNeedCsLimChecking", idCpu);
+                        "Number of times the TB finished through the NeedCsLimChecking label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/NeedCsLimChecking", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatCheckBranchMisses, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished through the CheckBranchMiss label", "/IEM/CPU%u/re/NativeTbExitCheckBranchMiss", idCpu);
+                        "Number of times the TB finished through the CheckBranchMiss label",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/CheckBranchMiss", idCpu);
+        /* Raising stuff will either increment NativeTbExit/LongJumps or NativeTbExit/ReturnOtherStatus
+           depending on whether VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP is defined: */
+#  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
+#   define RAISE_PREFIX "/IEM/CPU%u/re/NativeTbExit/ReturnOtherStatus/"
+#  else
+#   define RAISE_PREFIX "/IEM/CPU%u/re/NativeTbExit/LongJumps/"
+#  endif
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseDe, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #DE exception", "/IEM/CPU%u/re/NativeTbExitRaiseDe", idCpu);
+                        "Number of times the TB finished raising a #DE exception",
+                        RAISE_PREFIX "RaiseDe", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseUd, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #UD exception", "/IEM/CPU%u/re/NativeTbExitRaiseUd", idCpu);
+                        "Number of times the TB finished raising a #UD exception",
+                        RAISE_PREFIX "RaiseUd", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseSseRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a SSE related exception", "/IEM/CPU%u/re/NativeTbExitRaiseSseRelated", idCpu);
+                        "Number of times the TB finished raising a SSE related exception",
+                        RAISE_PREFIX "RaiseSseRelated", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseAvxRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a AVX related exception", "/IEM/CPU%u/re/NativeTbExitRaiseAvxRelated", idCpu);
+                        "Number of times the TB finished raising a AVX related exception",
+                        RAISE_PREFIX "RaiseAvxRelated", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseSseAvxFpRelated, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a SSE/AVX floating point related exception", "/IEM/CPU%u/re/NativeTbExitRaiseSseAvxFpRelated", idCpu);
+                        "Number of times the TB finished raising a SSE/AVX floating point related exception",
+                        RAISE_PREFIX "RaiseSseAvxFpRelated", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseNm, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #NM exception", "/IEM/CPU%u/re/NativeTbExitRaiseNm", idCpu);
+                        "Number of times the TB finished raising a #NM exception",
+                        RAISE_PREFIX "RaiseNm", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseGp0, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #GP(0) exception", "/IEM/CPU%u/re/NativeTbExitRaiseGp0", idCpu);
+                        "Number of times the TB finished raising a #GP(0) exception",
+                        RAISE_PREFIX "RaiseGp0", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseMf, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #MF exception", "/IEM/CPU%u/re/NativeTbExitRaiseMf", idCpu);
+                        "Number of times the TB finished raising a #MF exception",
+                        RAISE_PREFIX "RaiseMf", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseXf, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Number of times the TB finished raising a #XF exception", "/IEM/CPU%u/re/NativeTbExitRaiseXf", idCpu);
+                        "Number of times the TB finished raising a #XF exception",
+                        RAISE_PREFIX "RaiseXf", idCpu);
+
+        RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/re/NativeTbExit/*", idCpu); /* only immediate children, no sub folders */
+        STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat,
+                          "Number of times native TB execution finished before the end (not counting thrown memory++ exceptions)",
+                          "/IEM/CPU%u/re/NativeTbExit", idCpu);
+
 
 # endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
 

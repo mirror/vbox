@@ -2506,9 +2506,11 @@
 
 /** Recompiled execution: Break out of current TB execution. */
 #define VINF_IEM_REEXEC_BREAK                       (5310)
+/** Recompiled execution: Breaking out because of FFs or/and IRQs. */
+#define VINF_IEM_REEXEC_BREAK_FF                    (5311)
 /** Recompiled execution: Debug related (hidden) EFLAGS are set and needs
  *  handling. */
-#define VINF_IEM_REEXEC_FINISH_WITH_FLAGS           (5311)
+#define VINF_IEM_REEXEC_FINISH_WITH_FLAGS           (5312)
 
 /** Recompilation: End translation block. */
 #define VINF_IEM_RECOMPILE_END_TB                   (5319)

@@ -1826,7 +1826,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 17);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 18);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -1844,6 +1844,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[14]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[15]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[16]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[17]        = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -6225,8 +6226,7 @@ iemNativeEmitNativeTbExitStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #endif /* VBOX_WITH_STATISTICS */
 
 /**
- * Emits the code at the ReturnWithFlags label (returns
- * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
+ * Emits the code at the ReturnWithFlags label (returns VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
 static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
 {
@@ -6234,13 +6234,26 @@ static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint
     if (idxLabel != UINT32_MAX)
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
-
-#ifdef VBOX_WITH_STATISTICS
-        off = iemNativeEmitNativeTbExitStats(pReNative, off, RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnWithFlags));
-#endif
-
+        /* set the return status  */
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_FINISH_WITH_FLAGS);
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
 
+
+/**
+ * Emits the code at the ReturnBreakFF label (returns VINF_IEM_REEXEC_BREAK_FF).
+ */
+static uint32_t iemNativeEmitReturnBreakFF(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_ReturnBreakFF);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+        /* set the return status */
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_BREAK_FF);
         /* jump back to the return sequence. */
         off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
     }
@@ -6257,13 +6270,8 @@ static uint32_t iemNativeEmitReturnBreak(PIEMRECOMPILERSTATE pReNative, uint32_t
     if (idxLabel != UINT32_MAX)
     {
         iemNativeLabelDefine(pReNative, idxLabel, off);
-
-#ifdef VBOX_WITH_STATISTICS
-        off = iemNativeEmitNativeTbExitStats(pReNative, off, RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTbExitReturnBreak));
-#endif
-
+        /* set the return status */
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_BREAK);
-
         /* jump back to the return sequence. */
         off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
     }
@@ -8644,6 +8652,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                             {
                                 case kIemNativeLabelType_Return:                pszName = "Return"; break;
                                 case kIemNativeLabelType_ReturnBreak:           pszName = "ReturnBreak"; break;
+                                case kIemNativeLabelType_ReturnBreakFF:         pszName = "ReturnBreakFF"; break;
                                 case kIemNativeLabelType_ReturnWithFlags:       pszName = "ReturnWithFlags"; break;
                                 case kIemNativeLabelType_NonZeroRetOrPassUp:    pszName = "NonZeroRetOrPassUp"; break;
                                 case kIemNativeLabelType_RaiseDe:               pszName = "RaiseDe"; break;
@@ -9272,6 +9281,8 @@ l_profile_again:
          */
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
             off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreakFF))
+            off = iemNativeEmitReturnBreakFF(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnWithFlags))
             off = iemNativeEmitReturnWithFlags(pReNative, off, idxReturnLabel);
 

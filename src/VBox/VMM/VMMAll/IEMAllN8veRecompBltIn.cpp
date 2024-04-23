@@ -214,7 +214,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     uint32_t const idxLabelVmCheck = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckIrq,
                                                           UINT32_MAX, pReNative->uCheckIrqSeqNo++);
 
-    uint32_t const idxLabelReturnBreak = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreak);
+    uint32_t const idxLabelReturnBreakFF = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreakFF);
 
     /* Again, we need to load the extended EFLAGS before we actually need them
        in case we jump.  We couldn't use iemNativeRegAllocTmpForGuestReg if we
@@ -249,20 +249,20 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
                                    ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC), true /*fSetFlags*/);
     /* Return VINF_IEM_REEXEC_BREAK if other FFs are set. */
-    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreak);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreakFF);
 
     /* So, it's only interrupt releated FFs and we need to see if IRQs are being
        suppressed by the CPU or not. */
     off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxEflReg, X86_EFL_IF_BIT, idxLabelVmCheck);
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxEflReg, CPUMCTX_INHIBIT_SHADOW,
-                                                              idxLabelReturnBreak);
+                                                              idxLabelReturnBreakFF);
 
     /* We've got shadow flags set, so we must check that the PC they are valid
        for matches our current PC value. */
     /** @todo AMD64 can do this more efficiently w/o loading uRipInhibitInt into
      *        a register. */
     off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.uRipInhibitInt));
-    off = iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(pReNative, off, idxTmpReg, idxPcReg, idxLabelReturnBreak);
+    off = iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(pReNative, off, idxTmpReg, idxPcReg, idxLabelReturnBreakFF);
 
     /*
      * Now check the force flags of the VM.
@@ -272,7 +272,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, CTX_SUFF(pVM))); /* idxTmpReg = pVM */
     off = iemNativeEmitLoadGprByGprU32(pReNative, off, idxTmpReg, idxTmpReg, RT_UOFFSETOF(VMCC, fGlobalForcedActions));
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, VM_FF_ALL_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreak);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreakFF);
 
     /** @todo STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks); */
 

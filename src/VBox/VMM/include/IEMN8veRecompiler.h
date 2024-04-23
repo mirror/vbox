@@ -471,6 +471,7 @@ typedef enum
     /* Manually defined labels. */
     kIemNativeLabelType_Return,
     kIemNativeLabelType_ReturnBreak,
+    kIemNativeLabelType_ReturnBreakFF,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
     /** The last fixup for branches that can span almost the whole TB length. */

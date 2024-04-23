@@ -1901,8 +1901,8 @@ typedef struct IEMCPU
     /** Dummy entry for ppTbLookupEntryR3. */
     R3PTRTYPE(PIEMTB)       pTbLookupEntryDummyR3;
 
-    /** Statistics: Times TB execution was broken off before reaching the end. */
-    STAMCOUNTER             StatTbExecBreaks;
+    /** Threaded TB statistics: Times TB execution was broken off before reaching the end. */
+    STAMCOUNTER             StatTbThreadedExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
     STAMCOUNTER             StatCheckIrqBreaks;
     /** Statistics: Times BltIn_CheckMode breaks out of the TB. */
@@ -2053,8 +2053,14 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTbFinished;
     /** Native recompiler: The TB finished executing jumping to the ReturnBreak label. */
     STAMCOUNTER             StatNativeTbExitReturnBreak;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreakFF label. */
+    STAMCOUNTER             StatNativeTbExitReturnBreakFF;
     /** Native recompiler: The TB finished executing jumping to the ReturnWithFlags label. */
     STAMCOUNTER             StatNativeTbExitReturnWithFlags;
+    /** Native recompiler: The TB finished executing with other non-zero status. */
+    STAMCOUNTER             StatNativeTbExitReturnOtherStatus;
+    /** Native recompiler: The TB finished executing via throw / long jump. */
+    STAMCOUNTER             StatNativeTbExitLongJump;
 
     /** Native recompiler: The TB finished executing jumping to the RaiseDe label. */
     STAMCOUNTER             StatNativeTbExitRaiseDe;
@@ -2077,7 +2083,7 @@ typedef struct IEMCPU
     /** Native recompiler: The TB finished executing jumping to the ObsoleteTb label. */
     STAMCOUNTER             StatNativeTbExitObsoleteTb;
 
-    uint64_t                au64Padding[4];
+    uint64_t                au64Padding[1];
     /** @} */
 
     /** Data TLB.

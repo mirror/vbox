@@ -2872,18 +2872,32 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
         {
             /* pVCpu->iem.s.cInstructions is incremented by iemNativeHlpExecStatusCodeFiddling. */
             pVCpu->iem.s.pCurTbR3 = NULL;
-            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
 
             /* VINF_IEM_REEXEC_BREAK should be treated as VINF_SUCCESS as it's
                only to break out of TB execution early. */
             if (rcStrict == VINF_IEM_REEXEC_BREAK)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitReturnBreak);
                 return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
+            }
+
+            /* VINF_IEM_REEXEC_BREAK_FF should be treated as VINF_SUCCESS as it's
+               only to break out of TB execution early due to pending FFs. */
+            if (rcStrict == VINF_IEM_REEXEC_BREAK_FF)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitReturnBreakFF);
+                return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
+            }
 
             /* VINF_IEM_REEXEC_WITH_FLAGS needs to receive special treatment
                and converted to VINF_SUCCESS or whatever is appropriate. */
             if (rcStrict == VINF_IEM_REEXEC_FINISH_WITH_FLAGS)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitReturnWithFlags);
                 return iemExecStatusCodeFiddling(pVCpu, iemFinishInstructionWithFlagsSet(pVCpu, VINF_SUCCESS));
+            }
 
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitReturnOtherStatus);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
     }
@@ -2926,7 +2940,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
             {
                 pVCpu->iem.s.cInstructions += pCallEntry->idxInstr; /* This may be one short, but better than zero. */
                 pVCpu->iem.s.pCurTbR3       = NULL;
-                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbThreadedExecBreaks);
                 pVCpu->iem.s.ppTbLookupEntryR3 = iemTbGetTbLookupEntryWithRip(pTb, pCallEntry->uTbLookup, pVCpu->cpum.GstCtx.rip);
 
                 /* VINF_IEM_REEXEC_BREAK should be treated as VINF_SUCCESS as it's
@@ -3085,7 +3099,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
     PIEMTBCACHE const pTbCache = pVCpu->iem.s.pTbCacheR3;
     for (;;)
     {
-        PIEMTB       pTb = NULL;
         VBOXSTRICTRC rcStrict;
         IEM_TRY_SETJMP(pVCpu, rcStrict)
         {
@@ -3097,7 +3110,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                 if (RT_LIKELY(pVCpu->iem.s.pbInstrBuf != NULL))
                 {
                     uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
-                    pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
+                    PIEMTB const   pTb         = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
                     if (pTb)
                         rcStrict = iemTbExec(pVCpu, pTb);
                     else
@@ -3132,7 +3145,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                     {
                         if (RT_LIKELY(   (iIterations & cPollRate) != 0
                                       || !TMTimerPollBoolWith32BitMilliTS(pVM, pVCpu, &pVCpu->iem.s.msRecompilerPollNow)))
-                            pTb = NULL; /* Clear it before looping so iemTbCacheLookup can safely do native recompilation. */
+                        { /* likely */ }
                         else
                             return VINF_SUCCESS;
                     }
@@ -3152,11 +3165,15 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
 
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+            PIEMTB const pTb = pVCpu->iem.s.pCurTbR3;
             if (pTb && (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE)
             {
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitLongJump);
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
                 Assert(pVCpu->iem.s.idxTbCurInstr < pTb->cInstructions);
                 pVCpu->iem.s.cInstructions += pVCpu->iem.s.idxTbCurInstr;
+# endif
             }
 #endif
 
