@@ -4651,14 +4651,19 @@ PROTO_ALL(bs3CpuBasic2_retn_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i24__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i24_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i760__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i5193__ud2);
+PROTO_ALL(bs3CpuBasic2_retn_i5193_opsize__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0__ud2);
 PROTO_ALL(bs3CpuBasic2_retn_i0_opsize__ud2);
 FNBS3FAR  bs3CpuBasic2_retn_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i5193_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_opsize_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_rexw_opsize__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i5193_opsize_rexw__ud2_c64;
+FNBS3FAR  bs3CpuBasic2_retn_i5193_rexw_opsize__ud2_c64;
 PROTO_ALL(bs3CpuBasic2_retn_opsize_end);
 #undef PROTO_ALL
 
@@ -4730,13 +4735,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
         }
         const s_aTests[] =
         {
-            { false,  0, bs3CpuBasic2_retn__ud2_c16, },
-            {  true,  0, bs3CpuBasic2_retn_opsize__ud2_c16, },
-            { false, 24, bs3CpuBasic2_retn_i24__ud2_c16, },
-            {  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c16, },
-            { false,  0, bs3CpuBasic2_retn_i0__ud2_c16, },
-            {  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c16, },
-            { false,760, bs3CpuBasic2_retn_i760__ud2_c16, },
+            { false,    0, bs3CpuBasic2_retn__ud2_c16, },
+            {  true,    0, bs3CpuBasic2_retn_opsize__ud2_c16, },
+            { false,   24, bs3CpuBasic2_retn_i24__ud2_c16, },
+            {  true,   24, bs3CpuBasic2_retn_i24_opsize__ud2_c16, },
+            { false,    0, bs3CpuBasic2_retn_i0__ud2_c16, },
+            {  true,    0, bs3CpuBasic2_retn_i0_opsize__ud2_c16, },
+            { false,  760, bs3CpuBasic2_retn_i760__ud2_c16, },
+            { false, 5193, bs3CpuBasic2_retn_i5193__ud2_c16, },
+            { true,  5193, bs3CpuBasic2_retn_i5193_opsize__ud2_c16, },
         };
 
         for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
@@ -4792,13 +4799,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
         }
         const s_aTests[] =
         {
-            { 32, false,  0, bs3CpuBasic2_retn__ud2_c32, },
-            { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c32, },
-            { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c32, },
-            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c32, },
-            { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c32, },
-            { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c32, },
-            { 32, false,760, bs3CpuBasic2_retn_i760__ud2_c32, },
+            { 32, false,    0, bs3CpuBasic2_retn__ud2_c32, },
+            { 32,  true,    0, bs3CpuBasic2_retn_opsize__ud2_c32, },
+            { 32, false,   24, bs3CpuBasic2_retn_i24__ud2_c32, },
+            { 32,  true,   24, bs3CpuBasic2_retn_i24_opsize__ud2_c32, },
+            { 32, false,    0, bs3CpuBasic2_retn_i0__ud2_c32, },
+            { 32,  true,    0, bs3CpuBasic2_retn_i0_opsize__ud2_c32, },
+            { 32, false,  760, bs3CpuBasic2_retn_i760__ud2_c32, },
+            { 32, false, 5193, bs3CpuBasic2_retn_i5193__ud2_c32, },
+            { 32, true,  5193, bs3CpuBasic2_retn_i5193_opsize__ud2_c32, },
         };
 
         /* Prepare a copy of the UD2 instructions in low memory for opsize prefixed tests. */
@@ -4876,19 +4885,24 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
         }
         const s_aTests[] =
         {
-            { 32, false,  0, bs3CpuBasic2_retn__ud2_c64, },
-            { 32, false,  0, bs3CpuBasic2_retn_rexw__ud2_c64, },
-            { 32,  true,  0, bs3CpuBasic2_retn_opsize__ud2_c64, },
-            { 32, false,  0, bs3CpuBasic2_retn_opsize_rexw__ud2_c64, },
-            { 32,  true,  0, bs3CpuBasic2_retn_rexw_opsize__ud2_c64, },
-            { 32, false, 24, bs3CpuBasic2_retn_i24__ud2_c64, },
-            { 32, false, 24, bs3CpuBasic2_retn_i24_rexw__ud2_c64, },
-            { 32,  true, 24, bs3CpuBasic2_retn_i24_opsize__ud2_c64, },
-            { 32, false, 24, bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64, },
-            { 32,  true, 24, bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64, },
-            { 32, false,  0, bs3CpuBasic2_retn_i0__ud2_c64, },
-            { 32,  true,  0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
-            { 32, false,760, bs3CpuBasic2_retn_i760__ud2_c64, },
+            { 32, false,    0, bs3CpuBasic2_retn__ud2_c64, },
+            { 32, false,    0, bs3CpuBasic2_retn_rexw__ud2_c64, },
+            { 32,  true,    0, bs3CpuBasic2_retn_opsize__ud2_c64, },
+            { 32, false,    0, bs3CpuBasic2_retn_opsize_rexw__ud2_c64, },
+            { 32,  true,    0, bs3CpuBasic2_retn_rexw_opsize__ud2_c64, },
+            { 32, false,   24, bs3CpuBasic2_retn_i24__ud2_c64, },
+            { 32, false,   24, bs3CpuBasic2_retn_i24_rexw__ud2_c64, },
+            { 32,  true,   24, bs3CpuBasic2_retn_i24_opsize__ud2_c64, },
+            { 32, false,   24, bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64, },
+            { 32,  true,   24, bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64, },
+            { 32, false,    0, bs3CpuBasic2_retn_i0__ud2_c64, },
+            { 32,  true,    0, bs3CpuBasic2_retn_i0_opsize__ud2_c64, },
+            { 32, false,  760, bs3CpuBasic2_retn_i760__ud2_c64, },
+            { 32, false, 5193, bs3CpuBasic2_retn_i5193__ud2_c64, },
+            { 32, false, 5193, bs3CpuBasic2_retn_i5193_rexw__ud2_c64, },
+            { 32,  true, 5193, bs3CpuBasic2_retn_i5193_opsize__ud2_c64, },
+            { 32, false, 5193, bs3CpuBasic2_retn_i5193_opsize_rexw__ud2_c64, },
+            { 32,  true, 5193, bs3CpuBasic2_retn_i5193_rexw_opsize__ud2_c64, },
         };
         BS3CPUVENDOR const enmCpuVendor = Bs3GetCpuVendor();
         bool const         fFix64OpSize = enmCpuVendor == BS3CPUVENDOR_INTEL; /** @todo what does VIA do? */
