@@ -294,6 +294,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
     {
 #if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) /* quick fix for stupid structure duplication non-sense */
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        char szPat[128];
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Instructions interpreted",                     "/IEM/CPU%u/cInstructions", idCpu);
@@ -351,7 +352,6 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeTlbHitsForMapped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB native mapped data hits",         "/IEM/CPU%u/DataTlb-Hits-Native-Mapped", idCpu);
 #  endif
-        char szPat[128];
         RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/DataTlb-Hits-*", idCpu);
         STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat,
                           "Data TLB hits total",                    "/IEM/CPU%u/DataTlb-Hits", idCpu);
