@@ -183,6 +183,66 @@ iemNativeEmitGprZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
 
 
 /**
+ * Variant of iemNativeEmitLoadGpr32Imm where the caller ensures sufficent
+ * buffer space.
+ *
+ * Max buffer consumption:
+ *      - AMD64: 6 instruction bytes.
+ *      - ARM64: 2 instruction words (8 bytes).
+ *
+ * @note The top 32 bits will be cleared.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitLoadGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint32_t uImm32)
+{
+#ifdef RT_ARCH_AMD64
+    if (uImm32 == 0)
+    {
+        /* xor gpr, gpr */
+        if (iGpr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+        pCodeBuf[off++] = 0x33;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
+    }
+    else
+    {
+        /* mov gpr, imm32 */
+        if (iGpr >= 8)
+            pCodeBuf[off++] = X86_OP_REX_B;
+        pCodeBuf[off++] = 0xb8 + (iGpr & 7);
+        pCodeBuf[off++] = RT_BYTE1(uImm32);
+        pCodeBuf[off++] = RT_BYTE2(uImm32);
+        pCodeBuf[off++] = RT_BYTE3(uImm32);
+        pCodeBuf[off++] = RT_BYTE4(uImm32);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    if ((uImm32 >> 16) == 0)
+        /* movz gpr, imm16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32,                    0, false /*f64Bit*/);
+    else if ((uImm32 & UINT32_C(0xffff)) == 0)
+        /* movz gpr, imm16, lsl #16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
+    else if ((uImm32 & UINT32_C(0xffff)) == UINT32_C(0xffff))
+        /* movn gpr, imm16, lsl #16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32 >> 16,             1, false /*f64Bit*/);
+    else if ((uImm32 >> 16) == UINT32_C(0xffff))
+        /* movn gpr, imm16 */
+        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32,                   0, false /*f64Bit*/);
+    else
+    {
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 & UINT32_C(0xffff), 0, false /*f64Bit*/);
+        pCodeBuf[off++] = Armv8A64MkInstrMovK(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
+    }
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
  * Variant of iemNativeEmitLoadGprImm64 where the caller ensures sufficent
  * buffer space.
  *
@@ -246,6 +306,12 @@ iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, 
     }
 
 #elif defined(RT_ARCH_ARM64)
+    /*
+     * Quick simplification: Do 32-bit load if top half is zero.
+     */
+    if (uImm64 <= UINT32_MAX)
+        return iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, iGpr, (uint32_t)uImm64);
+
     /*
      * We need to start this sequence with a 'mov grp, imm16, lsl #x' and
      * supply remaining bits using 'movk grp, imm16, lsl #x'.
@@ -338,10 +404,6 @@ iemNativeEmitLoadGprImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, 
         }
     }
 
-    /** @todo load into 'w' register instead of 'x' when imm64 <= UINT32_MAX?
-     *        clang 12.x does that, only to use the 'x' version for the
-     *        addressing in the following ldr). */
-
 #else
 # error "port me"
 #endif
@@ -363,65 +425,6 @@ iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 # error "port me"
 #endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    return off;
-}
-
-
-/**
- * Variant of iemNativeEmitLoadGpr32Imm where the caller ensures sufficent
- * buffer space.
- *
- * Max buffer consumption:
- *      - AMD64: 6 instruction bytes.
- *      - ARM64: 2 instruction words (8 bytes).
- *
- * @note The top 32 bits will be cleared.
- */
-DECLINLINE(uint32_t) iemNativeEmitLoadGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGpr, uint32_t uImm32)
-{
-#ifdef RT_ARCH_AMD64
-    if (uImm32 == 0)
-    {
-        /* xor gpr, gpr */
-        if (iGpr >= 8)
-            pCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
-        pCodeBuf[off++] = 0x33;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
-    }
-    else
-    {
-        /* mov gpr, imm32 */
-        if (iGpr >= 8)
-            pCodeBuf[off++] = X86_OP_REX_B;
-        pCodeBuf[off++] = 0xb8 + (iGpr & 7);
-        pCodeBuf[off++] = RT_BYTE1(uImm32);
-        pCodeBuf[off++] = RT_BYTE2(uImm32);
-        pCodeBuf[off++] = RT_BYTE3(uImm32);
-        pCodeBuf[off++] = RT_BYTE4(uImm32);
-    }
-
-#elif defined(RT_ARCH_ARM64)
-    if ((uImm32 >> 16) == 0)
-        /* movz gpr, imm16 */
-        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32,                    0, false /*f64Bit*/);
-    else if ((uImm32 & UINT32_C(0xffff)) == 0)
-        /* movz gpr, imm16, lsl #16 */
-        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
-    else if ((uImm32 & UINT32_C(0xffff)) == UINT32_C(0xffff))
-        /* movn gpr, imm16, lsl #16 */
-        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32 >> 16,             1, false /*f64Bit*/);
-    else if ((uImm32 >> 16) == UINT32_C(0xffff))
-        /* movn gpr, imm16 */
-        pCodeBuf[off++] = Armv8A64MkInstrMovN(iGpr, ~uImm32,                   0, false /*f64Bit*/);
-    else
-    {
-        pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGpr, uImm32 & UINT32_C(0xffff), 0, false /*f64Bit*/);
-        pCodeBuf[off++] = Armv8A64MkInstrMovK(iGpr, uImm32 >> 16,              1, false /*f64Bit*/);
-    }
-
-#else
-# error "port me"
-#endif
     return off;
 }
 
