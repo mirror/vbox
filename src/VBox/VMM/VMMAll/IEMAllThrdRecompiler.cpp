@@ -1897,7 +1897,7 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.cActiveMappings        = 0;
         pVCpu->iem.s.rcPassUp               = VINF_SUCCESS;
         pVCpu->iem.s.fEndTb                 = false;
-        pVCpu->iem.s.fTbCheckOpcodes        = false;
+        pVCpu->iem.s.fTbCheckOpcodes        = true; /* (check opcodes for before executing the first instruction) */
         pVCpu->iem.s.fTbBranched            = IEMBRANCHED_F_NO;
         pVCpu->iem.s.fTbCrossedPage         = false;
         pVCpu->iem.s.cInstrTillIrqCheck     = !(fExtraFlags & IEMTB_F_INHIBIT_SHADOW) ? 32 : 0;
@@ -2823,25 +2823,6 @@ DECL_FORCE_INLINE(PIEMTB *) iemTbGetTbLookupEntryWithRip(PCIEMTB pTb, uint8_t uT
  */
 static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJMP
 {
-    /*
-     * Check the opcodes in the first page before starting execution.
-     */
-/** @todo this test should take IEMTB_F_CS_LIM_CHECKS into account or something.
- * The 'near jmp+call' test in bs3-cpu-basic-2 triggers the 2nd assertion here by
- * altering the CS limit such that only one or the two instruction bytes are valid.
- * Since it's a CS_LIMT problem, the pbInstrBuf is good for the full length, and
- * the test succeeds if skipped, but we assert in debug builds. */
-    Assert(!(pVCpu->iem.s.GCPhysInstrBuf & (RTGCPHYS)GUEST_PAGE_OFFSET_MASK));
-    Assert(pTb->aRanges[0].cbOpcodes <= pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
-    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pTb->aRanges[0].offPhysPage], pTb->aRanges[0].cbOpcodes) == 0)
-    { /* likely */ }
-    else
-    {
-        Log7(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
-        iemThreadedTbObsolete(pVCpu, pTb, true /*fSafeToFree*/);
-        return VINF_SUCCESS;
-    }
-
     /*
      * Set the current TB so CIMPL functions may get at it.
      */
