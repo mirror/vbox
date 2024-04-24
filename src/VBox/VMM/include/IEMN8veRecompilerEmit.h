@@ -4216,7 +4216,7 @@ iemNativeEmitAddGprImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr
     else
     {
         /* Use temporary register for the immediate. */
-        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (uint64_t)uAbsAddend);
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uAbsAddend);
 
         /* add gprdst, gprdst, tmpreg */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
@@ -4307,7 +4307,7 @@ iemNativeEmitAddGpr32Imm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     else
     {
         /* Use temporary register for the immediate. */
-        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (uint32_t)iAddend);
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uAbsAddend);
 
         /* add gprdst, gprdst, tmpreg */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
