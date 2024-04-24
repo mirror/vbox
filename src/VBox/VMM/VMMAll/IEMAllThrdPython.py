@@ -1242,7 +1242,7 @@ class ThreadedFunctionVariation(object):
             # Several statements have implicit parameters and some have different parameters.
             if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
                                'IEM_MC_REL_JMP_S32_AND_FINISH',
-                               'IEM_MC_REL_CALL_S16_AND_FINISH', 'IEM_MC_REL_CALL_S32_AND_FINISH', 
+                               'IEM_MC_REL_CALL_S16_AND_FINISH', 'IEM_MC_REL_CALL_S32_AND_FINISH',
                                'IEM_MC_REL_CALL_S64_AND_FINISH',
                                'IEM_MC_IND_CALL_U16_AND_FINISH', 'IEM_MC_IND_CALL_U32_AND_FINISH', 
                                'IEM_MC_IND_CALL_U64_AND_FINISH',
