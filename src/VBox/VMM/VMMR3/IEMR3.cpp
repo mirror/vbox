@@ -294,7 +294,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
     {
 #if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) /* quick fix for stupid structure duplication non-sense */
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-        char szPat[128];
+        char   szPat[128];
+        RT_NOREF_PV(szPat); /* lazy bird */
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Instructions interpreted",                     "/IEM/CPU%u/cInstructions", idCpu);
