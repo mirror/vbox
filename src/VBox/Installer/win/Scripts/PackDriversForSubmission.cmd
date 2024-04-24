@@ -251,34 +251,34 @@ echo .Set RptFileName=%_MY_OPT_OUTPUT%.rpt>>                                    
 if %_MY_OPT_WITH_MAIN% == 0 goto skip_main_package
 echo .Set DestinationDir=VBoxSup>>                                                      "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxSup.inf VBoxSup.inf>>                                         "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxSup.sys VBoxSup.sys>>                                         "%_MY_OPT_DDF_FILE%"
+echo .\VBoxSup.sys VBoxSup.sys>>                                                        "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxSup.pdb VBoxSup.pdb>>          "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VBoxNetAdp6>>                                                  "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxNetAdp6.inf VBoxNetAdp6.inf>>                                 "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxNetAdp6.sys VBoxNetAdp6.sys>>                                 "%_MY_OPT_DDF_FILE%"
+echo .\VBoxNetAdp6.sys VBoxNetAdp6.sys>>                                                "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxNetAdp6.pdb VBoxNetAdp6.pdb>>  "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VBoxNetLwf>>                                                   "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxNetLwf.inf VBoxNetLwf.inf>>                                   "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxNetLwf.sys VBoxNetLwf.sys>>                                   "%_MY_OPT_DDF_FILE%"
+echo .\VBoxNetLwf.sys VBoxNetLwf.sys>>                                                  "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxNetLwf.pdb VBoxNetLwf.pdb>>    "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VBoxUSB>>                                                      "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxUSB.inf VBoxUSB.inf>>                                         "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxUSB.sys VBoxUSB.sys>>                                         "%_MY_OPT_DDF_FILE%"
+echo .\VBoxUSB.sys VBoxUSB.sys>>                                                        "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxUSB.pdb VBoxUSB.pdb>>          "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VBoxUSBMon>>                                                   "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxUSBMon.inf VBoxUSBMon.inf>>                                   "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxUSBMon.sys VBoxUSBMon.sys>>                                   "%_MY_OPT_DDF_FILE%"
+echo .\VBoxUSBMon.sys VBoxUSBMon.sys>>                                                  "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxUSBMon.pdb VBoxUSBMon.pdb>>    "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VMMR0>>                                                        "%_MY_OPT_DDF_FILE%"
 echo .\VMMR0.inf VMMR0.inf>>                                                            "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VMMR0.r0 VMMR0.r0>>                                               "%_MY_OPT_DDF_FILE%"
+echo .\VMMR0.r0 VMMR0.r0>>                                                              "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VMMR0.pdb VMMR0.pdb>>              "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VBoxDDR0.r0 VBoxDDR0.r0>>                                         "%_MY_OPT_DDF_FILE%"
+echo .\VBoxDDR0.r0 VBoxDDR0.r0>>                                         "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxDDR0.pdb VBoxDDR0.pdb>>        "%_MY_OPT_DDF_FILE%"
 :skip_main_package
 
