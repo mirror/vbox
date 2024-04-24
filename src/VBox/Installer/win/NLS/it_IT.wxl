@@ -67,7 +67,7 @@
     <String Id="Only64Bit">Questa applicazione può essere eseguita solo su sistemi Windows a 64 bit. Installa la versione a 32 bit di [ProductName]!</String>
     <String Id="SunFound">Una vecchia installazione di Sun VirtualBox è stata trovata su questa macchina. Disinstalla prima questo pacchetto e poi installa [ProductName]!</String>
     <String Id="InnotekFound">Una vecchia installazione di innotek VirtualBox è stata trovata su questa macchina. Disinstalla prima questo pacchetto e poi installa [ProductName]!</String>
-    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName]. Refer to the [ProductName] manual for more information.</String>
     <!---->
     <String Id="CancelDlg_Question">Sei sicuro di voler annullare l'installazione di [ProductName]?</String>
     <!---->
@@ -80,7 +80,7 @@
     <String Id="LicenseAgreementDlg_Decline">&amp;Non accetto i termini dell'accordo di licenza</String>
     <!---->
     <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
-    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements. Refer to the [ProductName] manual for more information.</String>
     <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
     <!---->
     <String Id="CheckSerialDlg_Header">Numero di serie</String>

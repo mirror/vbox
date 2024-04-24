@@ -222,7 +222,7 @@
                 <Text>!(loc.InvalidTargetDirDlg_Desc1)</Text>
             </Control>
 
-            <Control Id="Description2" Type="Text" X="135" Y="95" Width="220" Height="130" Transparent="yes" NoPrefix="yes">
+            <Control Id="Description2" Type="Text" X="135" Y="105" Width="220" Height="130" Transparent="yes" NoPrefix="yes">
                 <Text>!(loc.InvalidTargetDirDlg_Desc2)</Text>
             </Control>
 

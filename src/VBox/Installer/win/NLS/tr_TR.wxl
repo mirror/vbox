@@ -74,7 +74,7 @@
     <String Id="Only64Bit">Bu uygulama yalnızca 64-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 32-bit sürümünü yükleyin!</String>
     <String Id="SunFound">Bu makinede eski bir Sun VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
     <String Id="InnotekFound">Bu makinede eski bir innotek VirtualBox kurulumu bulundu. Lütfen önce bu paketi kaldırın ve sonra [ProductName] yükleyin!</String>
-    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName]. Refer to the [ProductName] manual for more information.</String>
 
     <!---->
 
@@ -95,7 +95,7 @@
     <!---->
 
     <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
-    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements. Refer to the [ProductName] manual for more information.</String>
     <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->

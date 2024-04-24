@@ -74,7 +74,7 @@
     <String Id="Only64Bit">此應用程式只能執行在 64 位元的 Windows 系統。 請安裝 [ProductName] 的 32 位元版本！</String>
     <String Id="SunFound">在此電腦發現舊的 Sun VirtualBox 安裝。 請先解除安裝此套件然後安裝 [ProductName]！</String>
     <String Id="InnotekFound">在此電腦發現舊的 innotek VirtualBox 安裝。 請先解除安裝此套件然後安裝 [ProductName]！</String>
-    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName].</String>
+    <String Id="InvalidTargetDir">Invalid installation directory specified! Please use another installation directory to install [ProductName]. Refer to the [ProductName] manual for more information.</String>
 
     <!---->
 
@@ -95,7 +95,7 @@
     <!---->
 
     <String Id="InvalidTargetDirDlg_Header">Invalid installation directory</String>
-    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements.</String>
+    <String Id="InvalidTargetDirDlg_Desc1">The chosen installation directory is invalid, as it does not meet the security requirements. Refer to the [ProductName] manual for more information.</String>
     <String Id="InvalidTargetDirDlg_Desc2">Please choose another directory for installing [ProductName].</String>
 
     <!---->
