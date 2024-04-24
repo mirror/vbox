@@ -1244,7 +1244,7 @@ class ThreadedFunctionVariation(object):
                                'IEM_MC_REL_JMP_S32_AND_FINISH',
                                'IEM_MC_REL_CALL_S16_AND_FINISH', 'IEM_MC_REL_CALL_S32_AND_FINISH',
                                'IEM_MC_REL_CALL_S64_AND_FINISH',
-                               'IEM_MC_IND_CALL_U16_AND_FINISH', 'IEM_MC_IND_CALL_U32_AND_FINISH', 
+                               'IEM_MC_IND_CALL_U16_AND_FINISH', 'IEM_MC_IND_CALL_U32_AND_FINISH',
                                'IEM_MC_IND_CALL_U64_AND_FINISH',
                                'IEM_MC_RETN_AND_FINISH',
                                'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1', 'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3',
@@ -2023,17 +2023,17 @@ class ThreadedFunction(object):
                 assert not fSeenConditional;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
-                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
+                self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
             elif oStmt.sName.startswith('IEM_MC_REL_CALL'):
                 assert not fSeenConditional;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
-                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
+                self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
             elif oStmt.sName.startswith('IEM_MC_RETN'):
                 assert not fSeenConditional;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
-                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
+                self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
 
             # Check for CIMPL and AIMPL calls.
             if oStmt.sName.startswith('IEM_MC_CALL_'):

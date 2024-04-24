@@ -3610,7 +3610,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint
 /** Common body for iemRegRipNearReturnAndFinishClearingRF()
  * and iemRegRipNearReturnAndFinishNoFlags(). */
 template<bool a_fWithFlags>
-DECL_FORCE_INLINE(VBOXSTRICTRC) 
+DECL_FORCE_INLINE(VBOXSTRICTRC)
 iemRegRipNearReturnCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t cbPop, IEMMODE enmEffOpSize) RT_NOEXCEPT
 {
     /* Fetch the new RIP from the stack. */
