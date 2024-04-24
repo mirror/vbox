@@ -223,8 +223,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     connect(this, &UIChart::customContextMenuRequested,
             this, &UIChart::sltCreateContextMenu);
 
-    setDataSeriesColor(0, QColor(200, 0, 0, 255));
-    setDataSeriesColor(1, QColor(0, 0, 200, 255));
+    setDataSeriesColor(0, QApplication::palette().color(QPalette::LinkVisited));
+    setDataSeriesColor(1, QApplication::palette().color(QPalette::Link));
 
     m_iMarginLeft = 3 * QFontMetricsF(m_axisFont).averageCharWidth();
     m_iMarginRight = m_iRightMarginCharWidth * QFontMetricsF(m_axisFont).averageCharWidth();
@@ -540,7 +540,9 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                     points << QPointF(fX, height() - + m_iMarginBottom);
             }
             painter.setPen(Qt::NoPen);
-            painter.setBrush(m_dataSeriesColor[k]);
+            QColor fillColor(m_dataSeriesColor[k]);
+            fillColor.setAlpha(0.7 * fillColor.alpha());
+            painter.setBrush(fillColor);
             painter.drawPolygon(points, Qt::WindingFill);
         }
         else
@@ -2280,11 +2282,11 @@ void UIVMActivityMonitorCloud::prepareWidgets()
         ++iRow;
     }
 
-    if (m_charts.contains(Metric_Type_Network_Out) && m_charts[Metric_Type_Network_Out])
-        m_charts[Metric_Type_Network_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
+    // if (m_charts.contains(Metric_Type_Network_Out) && m_charts[Metric_Type_Network_Out])
+    //     m_charts[Metric_Type_Network_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
 
-    if (m_charts.contains(Metric_Type_Disk_Out) && m_charts[Metric_Type_Disk_Out])
-        m_charts[Metric_Type_Disk_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
+    // if (m_charts.contains(Metric_Type_Disk_Out) && m_charts[Metric_Type_Disk_Out])
+    //     m_charts[Metric_Type_Disk_Out]->setDataSeriesColor(0, QColor(0, 0, 200, 255));
 
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
