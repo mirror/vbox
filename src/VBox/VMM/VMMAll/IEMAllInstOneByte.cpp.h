@@ -9193,20 +9193,10 @@ FNIEMOP_DEF(iemOp_retn_Iw)
     IEMOP_MNEMONIC(retn_Iw, "retn Iw");
     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
+    IEM_MC_BEGIN(0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_16, u16Imm);
-        case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_32, u16Imm);
-        case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_iw_64, u16Imm);
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    IEM_MC_RETN_AND_FINISH(u16Imm);
+    IEM_MC_END();
 }
 
 
@@ -9217,20 +9207,10 @@ FNIEMOP_DEF(iemOp_retn)
 {
     IEMOP_MNEMONIC(retn, "retn");
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
+    IEM_MC_BEGIN(0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_16);
-        case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_32);
-        case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK,
-                                        RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_retn_64);
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    IEM_MC_RETN_AND_FINISH(0);
+    IEM_MC_END();
 }
 
 
@@ -14062,23 +14042,32 @@ FNIEMOP_DEF(iemOp_call_Jv)
     {
         case IEMMODE_16BIT:
         {
-            uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
-                                        iemCImpl_call_rel_16, (int16_t)u16Imm);
+            IEM_MC_BEGIN(0, 0);
+            int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_REL_CALL_S16_AND_FINISH(i16Imm);
+            IEM_MC_END();
+            break;
         }
 
         case IEMMODE_32BIT:
         {
-            uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
-                                        iemCImpl_call_rel_32, (int32_t)u32Imm);
+            IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
+            int32_t i32Imm; IEM_OPCODE_GET_NEXT_S32(&i32Imm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_REL_CALL_S32_AND_FINISH(i32Imm);
+            IEM_MC_END();
+            break;
         }
 
         case IEMMODE_64BIT:
         {
-            uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
-                                        iemCImpl_call_rel_64, u64Imm);
+            IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
+            int64_t i64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64((uint64_t *)&i64Imm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_REL_CALL_S64_AND_FINISH(i64Imm);
+            IEM_MC_END();
+            break;
         }
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -15163,27 +15152,27 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint16_t, u16Target, 0);
+                IEM_MC_LOCAL(uint16_t, u16Target);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_16, u16Target);
+                IEM_MC_IND_CALL_U16_AND_FINISH(u16Target);
                 IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint32_t, u32Target, 0);
+                IEM_MC_LOCAL(uint32_t, u32Target);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_32, u32Target);
+                IEM_MC_IND_CALL_U32_AND_FINISH(u32Target);
                 IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(IEM_MC_F_64BIT, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint64_t, u64Target, 0);
+                IEM_MC_LOCAL(uint64_t, u64Target);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_64, u64Target);
+                IEM_MC_IND_CALL_U64_AND_FINISH(u64Target);
                 IEM_MC_END();
                 break;
 
@@ -15192,39 +15181,39 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
     }
     else
     {
-        /* The new RIP is taken from a register. */
+        /* The new RIP is taken from memory. */
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 0);
-                IEM_MC_ARG(uint16_t,  u16Target, 0);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_LOCAL(uint16_t,  u16Target);
                 IEM_MC_FETCH_MEM_U16(u16Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_16, u16Target);
+                IEM_MC_IND_CALL_U16_AND_FINISH(u16Target);
                 IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
-                IEM_MC_ARG(uint32_t,  u32Target, 0);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_LOCAL(uint32_t,  u32Target);
                 IEM_MC_FETCH_MEM_U32(u32Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_32, u32Target);
+                IEM_MC_IND_CALL_U32_AND_FINISH(u32Target);
                 IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(IEM_MC_F_64BIT, 0);
-                IEM_MC_ARG(uint64_t,  u64Target, 0);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_LOCAL(uint64_t,  u64Target);
                 IEM_MC_FETCH_MEM_U64(u64Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_call_64, u64Target);
+                IEM_MC_IND_CALL_U64_AND_FINISH(u64Target);
                 IEM_MC_END();
                 break;
 

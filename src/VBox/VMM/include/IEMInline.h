@@ -2982,6 +2982,443 @@ DECLINLINE(VBOXSTRICTRC) iemRegRipJumpU64AndFinishClearingRF(PVMCPUCC pVCpu, uin
 }
 
 
+/**
+ * Implements a 16-bit relative call, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 16-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRipRelativeCallS16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int16_t offDisp) RT_NOEXCEPT
+{
+    uint16_t const uOldIp = pVCpu->cpum.GstCtx.ip + cbInstr;
+    uint16_t const uNewIp = uOldIp + offDisp;
+    if (   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+        || IEM_IS_64BIT_CODE(pVCpu) /* no CS limit checks in 64-bit mode */)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldIp);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewIp;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements a 16-bit relative call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 16-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRipRelativeCallS16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int16_t offDisp) RT_NOEXCEPT
+{
+    uint16_t const uOldIp = pVCpu->cpum.GstCtx.ip + cbInstr;
+    uint16_t const uNewIp = uOldIp + offDisp;
+    if (   uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit
+        || IEM_IS_64BIT_CODE(pVCpu) /* no CS limit checks in 64-bit mode */)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldIp);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewIp;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements a 32-bit relative call, no checking or clearing of flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 32-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32RelativeCallS32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offDisp) RT_NOEXCEPT
+{
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX); Assert(!IEM_IS_64BIT_CODE(pVCpu));
+
+    uint32_t const uOldRip = pVCpu->cpum.GstCtx.eip + cbInstr;
+    uint32_t const uNewRip = uOldRip + offDisp;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements a 32-bit relative call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 32-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32RelativeCallS32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int32_t offDisp) RT_NOEXCEPT
+{
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX); Assert(!IEM_IS_64BIT_CODE(pVCpu));
+
+    uint32_t const uOldRip = pVCpu->cpum.GstCtx.eip + cbInstr;
+    uint32_t const uNewRip = uOldRip + offDisp;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements a 64-bit relative call, no checking or clearing of flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 64-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRip64RelativeCallS64AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int64_t offDisp) RT_NOEXCEPT
+{
+    uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    uint64_t const uNewRip = uOldRip + (int64_t)offDisp;
+    if (IEM_IS_CANONICAL(uNewRip))
+    { /* likely */ }
+    else
+        return iemRaiseNotCanonical(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements a 64-bit relative call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   offDisp             The 64-bit displacement.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRip64RelativeCallS64AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, int64_t offDisp) RT_NOEXCEPT
+{
+    uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    uint64_t const uNewRip = uOldRip + (int64_t)offDisp;
+    if (IEM_IS_CANONICAL(uNewRip))
+    { /* likely */ }
+    else
+        return iemRaiseNotCanonical(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 16-bit indirect call, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegIp16IndirectCallU16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uNewRip) RT_NOEXCEPT
+{
+    uint16_t const uOldRip = pVCpu->cpum.GstCtx.ip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 16-bit indirect call, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32IndirectCallU16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uNewRip) RT_NOEXCEPT
+{
+    uint16_t const uOldRip = pVCpu->cpum.GstCtx.ip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 16-bit indirect call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegIp16IndirectCallU16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uNewRip) RT_NOEXCEPT
+{
+    uint16_t const uOldRip = pVCpu->cpum.GstCtx.ip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 16-bit indirect call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32IndirectCallU16AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t uNewRip) RT_NOEXCEPT
+{
+    uint16_t const uOldRip = pVCpu->cpum.GstCtx.ip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 32-bit indirect call, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32IndirectCallU32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t uNewRip) RT_NOEXCEPT
+{
+    uint32_t const uOldRip = pVCpu->cpum.GstCtx.eip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 32-bit indirect call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegEip32IndirectCallU32AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, uint32_t uNewRip) RT_NOEXCEPT
+{
+    uint32_t const uOldRip = pVCpu->cpum.GstCtx.eip + cbInstr;
+    if (uNewRip <= pVCpu->cpum.GstCtx.cs.u32Limit)
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 64-bit indirect call, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRip64IndirectCallU64AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t uNewRip) RT_NOEXCEPT
+{
+    uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    if (IEM_IS_CANONICAL(uNewRip))
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements an 64-bit indirect call.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The instruction length.
+ * @param   uNewRip             The new RIP value.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRip64IndirectCallU64AndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, uint64_t uNewRip) RT_NOEXCEPT
+{
+    uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    if (IEM_IS_CANONICAL(uNewRip))
+    { /* likely */ }
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pVCpu, uOldRip);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    pVCpu->cpum.GstCtx.rip = uNewRip;
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+}
+
+
 
 /**
  * Adds to the stack pointer.
@@ -3167,6 +3604,115 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint
         pTmpRsp->Words.w0   += cbItem;
     }
     return GCPtrTop;
+}
+
+
+/** Common body for iemRegRipNearReturnAndFinishClearingRF()
+ * and iemRegRipNearReturnAndFinishNoFlags(). */
+template<bool a_fWithFlags>
+DECL_FORCE_INLINE(VBOXSTRICTRC) 
+iemRegRipNearReturnCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t cbPop, IEMMODE enmEffOpSize) RT_NOEXCEPT
+{
+    /* Fetch the new RIP from the stack. */
+    VBOXSTRICTRC    rcStrict;
+    RTUINT64U       NewRip;
+    RTUINT64U       NewRsp;
+    NewRsp.u = pVCpu->cpum.GstCtx.rsp;
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            NewRip.u = 0;
+            rcStrict = iemMemStackPopU16Ex(pVCpu, &NewRip.Words.w0, &NewRsp);
+            break;
+        case IEMMODE_32BIT:
+            NewRip.u = 0;
+            rcStrict = iemMemStackPopU32Ex(pVCpu, &NewRip.DWords.dw0, &NewRsp);
+            break;
+        case IEMMODE_64BIT:
+            rcStrict = iemMemStackPopU64Ex(pVCpu, &NewRip.u, &NewRsp);
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Check the new ew RIP before loading it. */
+    /** @todo Should test this as the intel+amd pseudo code doesn't mention half
+     *        of it.  The canonical test is performed here and for call. */
+    if (enmEffOpSize != IEMMODE_64BIT)
+    {
+        if (RT_LIKELY(NewRip.DWords.dw0 <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        { /* likely */ }
+        else
+        {
+            Log(("retn newrip=%llx - out of bounds (%x) -> #GP\n", NewRip.u, pVCpu->cpum.GstCtx.cs.u32Limit));
+            return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
+        }
+    }
+    else
+    {
+        if (RT_LIKELY(IEM_IS_CANONICAL(NewRip.u)))
+        { /* likely */ }
+        else
+        {
+            Log(("retn newrip=%llx - not canonical -> #GP\n", NewRip.u));
+            return iemRaiseNotCanonical(pVCpu);
+        }
+    }
+
+    /* Apply cbPop */
+    if (cbPop)
+        iemRegAddToRspEx(pVCpu, &NewRsp, cbPop);
+
+    /* Commit it. */
+    pVCpu->cpum.GstCtx.rip = NewRip.u;
+    pVCpu->cpum.GstCtx.rsp = NewRsp.u;
+
+    /* Flush the prefetch buffer. */
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    RT_NOREF(cbInstr);
+
+
+    if (a_fWithFlags)
+        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+    return iemRegFinishNoFlags(pVCpu, VINF_SUCCESS);
+}
+
+
+/**
+ * Implements retn and retn imm16.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   enmEffOpSize    The effective operand size.  This is constant.
+ * @param   cbPop           The amount of arguments to pop from the stack
+ *                          (bytes).  This can be constant (zero).
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRipNearReturnAndFinishClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t cbPop, IEMMODE enmEffOpSize) RT_NOEXCEPT
+{
+    return iemRegRipNearReturnCommon<true /*a_fWithFlags*/>(pVCpu, cbInstr, cbPop, enmEffOpSize);
+}
+
+
+/**
+ * Implements retn and retn imm16, no checking or clearing of
+ * flags.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   enmEffOpSize    The effective operand size.  This is constant.
+ * @param   cbPop           The amount of arguments to pop from the stack
+ *                          (bytes).  This can be constant (zero).
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC)
+iemRegRipNearReturnAndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, uint16_t cbPop, IEMMODE enmEffOpSize) RT_NOEXCEPT
+{
+    return iemRegRipNearReturnCommon<false /*a_fWithFlags*/>(pVCpu, cbInstr, cbPop, enmEffOpSize);
 }
 
 /** @}  */

@@ -133,6 +133,8 @@ g_kdIemFieldToType = {
 g_ksFinishAnnotation_Advance            = 'Advance';
 g_ksFinishAnnotation_RelJmp             = 'RelJmp';
 g_ksFinishAnnotation_SetJmp             = 'SetJmp';
+g_ksFinishAnnotation_RelCall            = 'RelCall';
+g_ksFinishAnnotation_IndCall            = 'IndCall';
 g_ksFinishAnnotation_DeferToCImpl       = 'DeferToCImpl';
 ## @}
 
@@ -1030,11 +1032,14 @@ class ThreadedFunctionVariation(object):
                 elif (   oNewStmt.sName
                       in ('IEM_MC_ADVANCE_RIP_AND_FINISH',
                           'IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH',
-                          'IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH', 'IEM_MC_SET_RIP_U64_AND_FINISH', )):
+                          'IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH', 'IEM_MC_SET_RIP_U64_AND_FINISH',
+                          'IEM_MC_REL_CALL_S16_AND_FINISH', 'IEM_MC_REL_CALL_S32_AND_FINISH', 'IEM_MC_REL_CALL_S64_AND_FINISH',
+                          'IEM_MC_IND_CALL_U16_AND_FINISH', 'IEM_MC_IND_CALL_U32_AND_FINISH', 'IEM_MC_IND_CALL_U64_AND_FINISH',
+                          'IEM_MC_RETN_AND_FINISH',)):
                     if oNewStmt.sName not in ('IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH',
                                               'IEM_MC_SET_RIP_U64_AND_FINISH', ):
                         oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
-                    if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', )
+                    if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_RETN_AND_FINISH', )
                         and self.sVariation not in self.kdVariationsOnlyPre386):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
@@ -1236,13 +1241,19 @@ class ThreadedFunctionVariation(object):
 
             # Several statements have implicit parameters and some have different parameters.
             if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
-                               'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
-                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5',
+                               'IEM_MC_REL_JMP_S32_AND_FINISH',
+                               'IEM_MC_REL_CALL_S16_AND_FINISH', 'IEM_MC_REL_CALL_S32_AND_FINISH', 
+                               'IEM_MC_REL_CALL_S64_AND_FINISH',
+                               'IEM_MC_IND_CALL_U16_AND_FINISH', 'IEM_MC_IND_CALL_U32_AND_FINISH', 
+                               'IEM_MC_IND_CALL_U64_AND_FINISH',
+                               'IEM_MC_RETN_AND_FINISH',
+                               'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1', 'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3',
+                               'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5',
                                'IEM_MC_DEFER_TO_CIMPL_0_RET', 'IEM_MC_DEFER_TO_CIMPL_1_RET', 'IEM_MC_DEFER_TO_CIMPL_2_RET',
                                'IEM_MC_DEFER_TO_CIMPL_3_RET', 'IEM_MC_DEFER_TO_CIMPL_4_RET', 'IEM_MC_DEFER_TO_CIMPL_5_RET', ):
                 self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
 
-            if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',)
+            if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_RETN_AND_FINISH', )
                 and self.sVariation not in self.kdVariationsOnlyPre386):
                 self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
@@ -1963,6 +1974,29 @@ class ThreadedFunction(object):
                 #    raise Exception('Variables/arguments defined in conditional branches!');
         return True;
 
+    kdReturnStmtAnnotations = {
+        'IEM_MC_ADVANCE_RIP_AND_FINISH':    g_ksFinishAnnotation_Advance,
+        'IEM_MC_REL_JMP_S8_AND_FINISH':     g_ksFinishAnnotation_RelJmp,
+        'IEM_MC_REL_JMP_S16_AND_FINISH':    g_ksFinishAnnotation_RelJmp,
+        'IEM_MC_REL_JMP_S32_AND_FINISH':    g_ksFinishAnnotation_RelJmp,
+        'IEM_MC_SET_RIP_U16_AND_FINISH':    g_ksFinishAnnotation_SetJmp,
+        'IEM_MC_SET_RIP_U32_AND_FINISH':    g_ksFinishAnnotation_SetJmp,
+        'IEM_MC_SET_RIP_U64_AND_FINISH':    g_ksFinishAnnotation_SetJmp,
+        'IEM_MC_REL_CALL_S16_AND_FINISH':   g_ksFinishAnnotation_RelCall,
+        'IEM_MC_REL_CALL_S32_AND_FINISH':   g_ksFinishAnnotation_RelCall,
+        'IEM_MC_REL_CALL_S64_AND_FINISH':   g_ksFinishAnnotation_RelCall,
+        'IEM_MC_IND_CALL_U16_AND_FINISH':   g_ksFinishAnnotation_IndCall,
+        'IEM_MC_IND_CALL_U32_AND_FINISH':   g_ksFinishAnnotation_IndCall,
+        'IEM_MC_IND_CALL_U64_AND_FINISH':   g_ksFinishAnnotation_IndCall,
+        'IEM_MC_DEFER_TO_CIMPL_0_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_1_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_2_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_3_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_4_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_5_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_6_RET':      g_ksFinishAnnotation_DeferToCImpl,
+        'IEM_MC_DEFER_TO_CIMPL_7_RET':      g_ksFinishAnnotation_DeferToCImpl,
+    };
     def analyzeCodeOperation(self, aoStmts: List[iai.McStmt], dEflStmts, fSeenConditional = False) -> bool:
         """
         Analyzes the code looking clues as to additional side-effects.
@@ -1977,7 +2011,7 @@ class ThreadedFunction(object):
         """
         sAnnotation = None;
         for oStmt in aoStmts:
-            # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
+            # Set IEM_IMPL_C_F_BRANCH_XXXX flags if we see any branching MCs.
             if oStmt.sName.startswith('IEM_MC_SET_RIP'):
                 assert not fSeenConditional;
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
@@ -1985,6 +2019,21 @@ class ThreadedFunction(object):
                 self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
                 if fSeenConditional:
                     self.dsCImplFlags['IEM_CIMPL_F_BRANCH_CONDITIONAL'] = True;
+            elif oStmt.sName.startswith('IEM_MC_IND_CALL'):
+                assert not fSeenConditional;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
+                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
+            elif oStmt.sName.startswith('IEM_MC_REL_CALL'):
+                assert not fSeenConditional;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
+                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
+            elif oStmt.sName.startswith('IEM_MC_RETN'):
+                assert not fSeenConditional;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_STACK']    = True;
+                #self.dsCImplFlags['IEM_CIMPL_F_END_TB']          = True;
 
             # Check for CIMPL and AIMPL calls.
             if oStmt.sName.startswith('IEM_MC_CALL_'):
@@ -2003,20 +2052,9 @@ class ThreadedFunction(object):
                     raise Exception('Unknown IEM_MC_CALL_* statement: %s' % (oStmt.sName,));
 
             # Check for return statements.
-            if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH',):
+            if oStmt.sName in self.kdReturnStmtAnnotations:
                 assert sAnnotation is None;
-                sAnnotation = g_ksFinishAnnotation_Advance;
-            elif oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
-                                 'IEM_MC_REL_JMP_S32_AND_FINISH',):
-                assert sAnnotation is None;
-                sAnnotation = g_ksFinishAnnotation_RelJmp;
-            elif oStmt.sName in ('IEM_MC_SET_RIP_U16_AND_FINISH', 'IEM_MC_SET_RIP_U32_AND_FINISH',
-                                 'IEM_MC_SET_RIP_U64_AND_FINISH',):
-                assert sAnnotation is None;
-                sAnnotation = g_ksFinishAnnotation_SetJmp;
-            elif oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
-                assert sAnnotation is None;
-                sAnnotation = g_ksFinishAnnotation_DeferToCImpl;
+                sAnnotation = self.kdReturnStmtAnnotations[oStmt.sName];
 
             # Collect MCs working on EFLAGS.  Caller will check this.
             if oStmt.sName in ('IEM_MC_FETCH_EFLAGS', 'IEM_MC_FETCH_EFLAGS_U8', 'IEM_MC_COMMIT_EFLAGS',
@@ -2168,13 +2206,20 @@ class ThreadedFunction(object):
                 assert set(asVariations).issubset(ThreadedFunctionVariation.kdVariationsWithConditional);
 
         if not iai.McStmt.findStmtByNames(aoStmts,
-                                          { 'IEM_MC_ADVANCE_RIP_AND_FINISH': True,
-                                            'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
-                                            'IEM_MC_REL_JMP_S16_AND_FINISH': True,
-                                            'IEM_MC_REL_JMP_S32_AND_FINISH': True,
-                                            'IEM_MC_SET_RIP_U16_AND_FINISH': True,
-                                            'IEM_MC_SET_RIP_U32_AND_FINISH': True,
-                                            'IEM_MC_SET_RIP_U64_AND_FINISH': True,
+                                          { 'IEM_MC_ADVANCE_RIP_AND_FINISH':  True,
+                                            'IEM_MC_REL_JMP_S8_AND_FINISH':   True,
+                                            'IEM_MC_REL_JMP_S16_AND_FINISH':  True,
+                                            'IEM_MC_REL_JMP_S32_AND_FINISH':  True,
+                                            'IEM_MC_SET_RIP_U16_AND_FINISH':  True,
+                                            'IEM_MC_SET_RIP_U32_AND_FINISH':  True,
+                                            'IEM_MC_SET_RIP_U64_AND_FINISH':  True,
+                                            'IEM_MC_REL_CALL_S16_AND_FINISH': True,
+                                            'IEM_MC_REL_CALL_S32_AND_FINISH': True,
+                                            'IEM_MC_REL_CALL_S64_AND_FINISH': True,
+                                            'IEM_MC_IND_CALL_U16_AND_FINISH': True,
+                                            'IEM_MC_IND_CALL_U32_AND_FINISH': True,
+                                            'IEM_MC_IND_CALL_U64_AND_FINISH': True,
+                                            'IEM_MC_RETN_AND_FINISH':         True,
                                            }):
             asVariations = [sVariation for sVariation in asVariations
                             if sVariation not in ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing];

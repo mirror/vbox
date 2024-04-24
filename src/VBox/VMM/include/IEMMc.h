@@ -81,6 +81,33 @@
 #define IEM_MC_SET_RIP_U64_AND_FINISH(a_u64NewIP) \
     return iemRegRipJumpU64AndFinishClearingRF((pVCpu), (a_u64NewIP), IEM_GET_INSTR_LEN(pVCpu))
 
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns.
+ * @note only usable in 16-bit op size mode.  */
+#define IEM_MC_REL_CALL_S16_AND_FINISH(a_i16) \
+    return iemRegRipRelativeCallS16AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i16))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH(a_i32) \
+    return iemRegEip32RelativeCallS32AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i32))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH(a_i64) \
+    return iemRegRip64RelativeCallS64AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i64))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH(a_u16NewIP) \
+    return iemRegIp16IndirectCallU16AndFinishClearingRF((pVCpu), IEM_GET_INSTR_LEN(pVCpu), (a_u16NewIP))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH(a_u32NewIP) \
+    return iemRegEip32IndirectCallU32AndFinishClearingRF((pVCpu), IEM_GET_INSTR_LEN(pVCpu), (a_u32NewIP))
+/** Sets RIP (may trigger \#GP), finishes the instruction and returns. */
+#define IEM_MC_IND_CALL_U64_AND_FINISH(a_u64NewIP) \
+    return iemRegRip64IndirectCallU64AndFinishClearingRF((pVCpu), IEM_GET_INSTR_LEN(pVCpu), (a_u64NewIP))
+
+
+/** Fetches the near return address from the stack, sets RIP and RSP (may trigger
+ * \#GP or \#SS), finishes the instruction and returns. */
+#define IEM_MC_RETN_AND_FINISH(a_u16Pop) \
+    return iemRegRipNearReturnAndFinishClearingRF((pVCpu), IEM_GET_INSTR_LEN(pVCpu), (a_u16Pop), pVCpu->iem.s.enmEffOpSize)
+
+
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \

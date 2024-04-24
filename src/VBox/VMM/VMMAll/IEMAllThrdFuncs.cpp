@@ -289,6 +289,199 @@
 #undef IEM_MC_SET_RIP_U64_AND_FINISH
 
 
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit code on a pre-386 CPU. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit and 32-bit code on 386 and later CPUs. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
+
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit code on a pre-386 CPU and we need to check and
+ *  clear flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit and 32-bit code on 386 and later CPUs and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code and we need to check and clear flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i16, a_cbInstr) \
+    return iemRegRipRelativeCallS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+#undef  IEM_MC_REL_CALL_S16_AND_FINISH
+
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter - dummy for pre-386 variations not eliminated by the
+ *  python script. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC16(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
+    return iemRegEip32RelativeCallS32AndFinishNoFlags(pVCpu, a_cbInstr, (a_i32))
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code on 386+. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_CALL_S32_AND_FINISH with instruction length as
+ *  an extra parameter - dummy for pre-386 variations not eliminated by the
+ *  python script. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_CALL_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i32, a_cbInstr) \
+    return iemRegEip32RelativeCallS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
+
+/** Variant of IEM_MC_REL_CALL_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code on 386+ and we need
+ *  to check and clear flags - dummy for variations not eliminated by the python script. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+
+#undef  IEM_MC_REL_CALL_S32_AND_FINISH
+
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 32-bit code. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC32(a_i64, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i64, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64(a_i64, a_cbInstr) \
+    return iemRegRip64RelativeCallS64AndFinishNoFlags(pVCpu, a_cbInstr, (a_i64))
+
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need
+ *  to check and clear flags - dummy for variations not eliminated by the python script. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i64, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i64, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i64, a_cbInstr) \
+    return iemRegRip64RelativeCallS64AndFinishClearingRF(pVCpu, a_cbInstr, (a_i64))
+
+#undef  IEM_MC_REL_CALL_S64_AND_FINISH
+
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for pre-386 targets. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16(a_u16NewIP, a_cbInstr) \
+    return iemRegIp16IndirectCallU16AndFinishNoFlags((pVCpu), a_cbInstr, (a_u16NewIP))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for 386+ targets. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32(a_u16NewIP, a_cbInstr) \
+    return iemRegEip32IndirectCallU16AndFinishNoFlags((pVCpu), a_cbInstr, (a_u16NewIP))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC64(a_u16NewIP, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_u16NewIP, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16NewIP, a_cbInstr) \
+    return iemRegIp16IndirectCallU16AndFinishClearingRF((pVCpu), a_cbInstr, (a_u16NewIP))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16NewIP, a_cbInstr) \
+    return iemRegEip32IndirectCallU16AndFinishClearingRF((pVCpu), a_cbInstr, (a_u16NewIP))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for use in 64-bit code that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u16NewIP, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_u16NewIP, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+#undef IEM_MC_IND_CALL_U16_AND_FINISH
+
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for 386+ targets. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP, a_cbInstr) \
+    return iemRegEip32IndirectCallU32AndFinishNoFlags((pVCpu), a_cbInstr, (a_u32NewEIP))
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC64(a_u32NewEIP, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_u32NewEIP, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u32NewEIP, a_cbInstr) \
+    return iemRegEip32IndirectCallU32AndFinishClearingRF((pVCpu), a_cbInstr, (a_u32NewEIP))
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u32NewEIP, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_u32NewEIP, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+#undef IEM_MC_IND_CALL_U32_AND_FINISH
+
+
+/** Variant of IEM_MC_IND_CALL_U64_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64(a_u32NewRIP, a_cbInstr) \
+    return iemRegRip64IndirectCallU64AndFinishNoFlags((pVCpu), a_cbInstr, (a_u32NewRIP))
+
+/** Variant of IEM_MC_IND_CALL_U64_AND_FINISH for use in 64-bit code that checks
+ *  and clears flags. */
+#define IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u32NewRIP, a_cbInstr) \
+    return iemRegRip64IndirectCallU64AndFinishClearingRF((pVCpu), a_cbInstr, (a_u32NewRIP))
+
+#undef IEM_MC_IND_CALL_U64_AND_FINISH
+
+
+/** Variant of IEM_MC_RETN_AND_FINISH for pre-386 targets. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC16(a_u16Pop, a_cbInstr) \
+    return iemRegRipNearReturnAndFinishNoFlags((pVCpu), a_cbInstr, (a_u16Pop), IEMMODE_16BIT)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for 386+ targets. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC32(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipNearReturnAndFinishNoFlags((pVCpu), a_cbInstr, (a_u16Pop), (a_enmEffOpSize))
+
+/** Variant of IEM_MC_RETN_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC64(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipNearReturnAndFinishNoFlags((pVCpu), a_cbInstr, (a_u16Pop), (a_enmEffOpSize))
+
+/** Variant of IEM_MC_RETN_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16Pop, a_cbInstr) \
+    return iemRegRipNearReturnAndFinishClearingRF((pVCpu), a_cbInstr, (a_u16Pop), IEMMODE_16BIT)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipNearReturnAndFinishClearingRF((pVCpu), a_cbInstr, (a_u16Pop), (a_enmEffOpSize))
+
+/** Variant of IEM_MC_RETN_AND_FINISH for use in 64-bit code that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipNearReturnAndFinishClearingRF((pVCpu), a_cbInstr, (a_u16Pop), (a_enmEffOpSize))
+
+#undef IEM_MC_RETN_AND_FINISH
+
+
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit. */
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr16(pVCpu, a_bRm, a_u16Disp)
