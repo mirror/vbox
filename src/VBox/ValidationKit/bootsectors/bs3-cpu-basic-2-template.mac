@@ -1699,6 +1699,8 @@ TMPL_BEGIN_TEXT
 ;*  Near RET                                                                                                                     *
 ;*********************************************************************************************************************************
 
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_begin), , 1
+
 ;;
 ; Macro for emitting various retn Iw variants
 ;
@@ -1844,6 +1846,8 @@ BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_opsize_end), , 1
         int3
 TMPL_BEGIN_TEXT
 
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuBasic2_retn_end), , 1
+        int3
 
 ;*********************************************************************************************************************************
 ;*  FAR RET                                                                                                                      *

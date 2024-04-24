@@ -4664,6 +4664,8 @@ FNBS3FAR  bs3CpuBasic2_retn_i24_opsize_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i24_rexw_opsize__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i5193_opsize_rexw__ud2_c64;
 FNBS3FAR  bs3CpuBasic2_retn_i5193_rexw_opsize__ud2_c64;
+PROTO_ALL(bs3CpuBasic2_retn_begin);
+PROTO_ALL(bs3CpuBasic2_retn_end);
 PROTO_ALL(bs3CpuBasic2_retn_opsize_end);
 #undef PROTO_ALL
 
@@ -4684,6 +4686,25 @@ static void bs3CpuBasic2_retn_PrepStack(BS3PTRUNION StkPtr, PCBS3REGCTX pCtxExpe
         StkPtr.pu32[0] = pCtxExpected->rip.u32;
     else
         StkPtr.pu64[0] = pCtxExpected->rip.u64;
+}
+
+
+static void bs3CpuBasic2_retn_PrepStackInvalid(BS3PTRUNION StkPtr, PCBS3REGCTX pCtxExpected, uint8_t cbAddr)
+{
+    StkPtr.pu32[3]  = UINT32_MAX;
+    StkPtr.pu32[2]  = UINT32_MAX;
+    StkPtr.pu32[1]  = UINT32_MAX;
+    StkPtr.pu32[0]  = UINT32_MAX;
+    StkPtr.pu32[-1] = UINT32_MAX;
+    StkPtr.pu32[-2] = UINT32_MAX;
+    StkPtr.pu32[-3] = UINT32_MAX;
+    StkPtr.pu32[-4] = UINT32_MAX;
+    if (cbAddr == 2)
+        StkPtr.pu16[0] = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_end_c16);
+    else if (cbAddr == 4)
+        StkPtr.pu32[0] = BS3_FP_OFF(bs3CpuBasic2_retn_end_c32) - BS3_FP_OFF(bs3CpuBasic2_retn_begin_c32);
+    else
+        StkPtr.pu64[0] = UINT64_C(0x0000800000000000);
 }
 
 
@@ -4783,6 +4804,32 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
+
+            /*
+             * Test exceeding the selector limit by using a spare selector and
+             * set the limit just below the return target.
+             */
+            if (!BS3_MODE_IS_RM_OR_V86(bMode))
+            {
+                Bs3SelSetup16BitCode(&Bs3GdteSpare03, BS3_ADDR_BS3TEXT16, 0);
+
+                Ctx.cs         = BS3_SEL_SPARE_03;
+                CtxExpected.cs = Ctx.cs;
+
+                Bs3GdteSpare03.Gen.u16LimitLow = BS3_FP_OFF(bs3CpuBasic2_retn_opsize_end_c16) - 1;
+
+                Ctx.rip.u = BS3_FP_OFF(s_aTests[iTest].pfnTest);
+                CtxExpected.rip.u = Ctx.rip.u;
+                CtxExpected.rsp.u = Ctx.rsp.u;
+                //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
+                for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                {
+                    bs3CpuBasic2_retn_PrepStackInvalid(StkPtr, &CtxExpected, 2);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                }
+                g_usBs3TestStep++;
+            }
         }
     }
     /*
@@ -4869,6 +4916,38 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
             g_usBs3TestStep++;
+
+            if (   !BS3_MODE_IS_16BIT_SYS_NO_RM(bMode)
+                && !s_aTests[iTest].fOpSizePfx)
+            {
+                /*
+                 * Test exceeding the selector limit by using a spare selector and
+                 * set the limit just below the return target.
+                 */
+                uint16_t CsOrig = Ctx.cs;
+                uint32_t const uFlatCode = Bs3SelLnkPtrToFlat(bs3CpuBasic2_retn_begin_c32);
+                //Bs3TestPrintf("uFlatCode=%04RX32\n", uFlatCode);
+
+                Bs3SelSetup32BitCode(&Bs3GdteSpare03, uFlatCode,
+                                     BS3_FP_OFF(bs3CpuBasic2_retn_end_c32) - BS3_FP_OFF(bs3CpuBasic2_retn_begin_c32) - 1,
+                                     0);
+
+                Ctx.cs         = BS3_SEL_SPARE_03;
+                CtxExpected.cs = Ctx.cs;
+                Ctx.rip.u = BS3_FP_OFF(s_aTests[iTest].pfnTest) - BS3_FP_OFF(bs3CpuBasic2_retn_begin_c32);
+                CtxExpected.rip.u = Ctx.rip.u;
+                CtxExpected.rsp.u = Ctx.rsp.u;
+                //Bs3TestPrintf("cs:rip=%04RX16:%04RX64 v2\n", Ctx.cs, Ctx.rip.u);
+                for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                {
+                    bs3CpuBasic2_retn_PrepStackInvalid(StkPtr, &CtxExpected, 4);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0);
+                }
+
+                Ctx.cs = CsOrig;
+                g_usBs3TestStep++;
+            }
         }
     }
     /*
@@ -4968,6 +5047,21 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_near_ret)(uint8_t bMode)
             }
             Ctx.rflags.u16        &= ~X86_EFL_TF;
             CtxExpected.rflags.u16 = Ctx.rflags.u16;
+            g_usBs3TestStep++;
+
+            /* Non-canonical return address (should \#GP(0)). */
+            if (!s_aTests[iTest].fOpSizePfx || fFix64OpSize)
+            {
+                CtxExpected.rip.u = Ctx.rip.u;
+                CtxExpected.cs    = Ctx.cs;
+                CtxExpected.rsp.u = Ctx.rsp.u;
+                for (iRecompRun = 0; iRecompRun < cMaxRecompRuns; iRecompRun++)
+                {
+                    bs3CpuBasic2_retn_PrepStackInvalid(StkPtr, &CtxExpected, 8);
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &CtxExpected, 0 /*uErrCd*/);
+                }
+            }
             g_usBs3TestStep++;
         }
     }
