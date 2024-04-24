@@ -279,9 +279,8 @@ echo .\VMMR0.inf VMMR0.inf>>                                                    
 echo %_MY_OPT_BINDIR%\VMMR0.r0 VMMR0.r0>>                                               "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VMMR0.pdb VMMR0.pdb>>              "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxDDR0.r0 VBoxDDR0.r0>>                                         "%_MY_OPT_DDF_FILE%"
-:skip_main_package
-
 if "%_MY_OPT_WITH_PDB%" == "1" echo %_MY_OPT_PDBDIR%\VBoxDDR0.pdb VBoxDDR0.pdb>>        "%_MY_OPT_DDF_FILE%"
+:skip_main_package
 
 if "%_MY_OPT_WITH_EXTPACK%" == "0" goto no_extpack_ddf
 echo .Set DestinationDir=VBoxExtPackPuel>>                                              "%_MY_OPT_DDF_FILE%"
