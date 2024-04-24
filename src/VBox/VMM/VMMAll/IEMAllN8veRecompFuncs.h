@@ -846,6 +846,1001 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 
 
 /*********************************************************************************************************************************
+*   Emitters for changing PC/RIP/EIP/IP with a relative call jump (IEM_MC_IND_CALL_UXX_AND_FINISH) (requires stack emmiters).    *
+*********************************************************************************************************************************/
+
+/** @todo These helpers belong to the stack push API naturally but we already need them up here (we could of course move
+ *        this below the stack emitters but then this is not close to the rest of the PC/RIP handling...). */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStackPushUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use16BitSp: */
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSubGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+    off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+#else
+    /* sub regeff, regrsp, #cbMem */
+    pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
+    /* and regeff, regeff, #0xffff */
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
+    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 0, 16, false /*f64Bit*/);
+#endif
+    return off;
+}
+
+
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitStackPushUse32Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
+{
+    /* Use32BitSp: */
+    off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
+    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    return off;
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitStackPushRip(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxRegPc,
+                          uint32_t cBitsVarAndFlat, uintptr_t pfnFunction, uint8_t idxInstr)
+{
+    /*
+     * Assert sanity.
+     */
+#ifdef VBOX_STRICT
+    if (RT_BYTE2(cBitsVarAndFlat) != 0)
+    {
+        Assert(   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+               || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT);
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatStoreU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 32, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatStoreU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatStoreU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 64, 0, 0) ? (uintptr_t)iemNativeHlpStackFlatStoreU64
+                   : UINT64_C(0xc000b000a0009000) ));
+    }
+    else
+        Assert(   pfnFunction
+               == (  cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(16, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackStoreU16
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(32, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackStoreU32
+                   : cBitsVarAndFlat == RT_MAKE_U32_FROM_U8(64, 0, 0, 0) ? (uintptr_t)iemNativeHlpStackStoreU64
+                   : UINT64_C(0xc000b000a0009000) ));
+#endif
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that the fExec flags we've got make sense.
+     */
+    off = iemNativeEmitExecFlagsCheck(pReNative, off, pReNative->fExec);
+#endif
+
+    /*
+     * To keep things simple we have to commit any pending writes first as we
+     * may end up making calls.
+     */
+    /** @todo we could postpone this till we make the call and reload the
+     * registers after returning from the call. Not sure if that's sensible or
+     * not, though. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /*
+     * First we calculate the new RSP and the effective stack pointer value.
+     * For 64-bit mode and flat 32-bit these two are the same.
+     * (Code structure is very similar to that of PUSH)
+     */
+    uint8_t const cbMem       = RT_BYTE1(cBitsVarAndFlat) / 8;
+    bool const    fIsSegReg   = RT_BYTE3(cBitsVarAndFlat) != 0;
+    bool const    fIsIntelSeg = fIsSegReg && IEM_IS_GUEST_CPU_INTEL(pReNative->pVCpu);
+    uint8_t const cbMemAccess = !fIsIntelSeg || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_16BIT
+                              ? cbMem : sizeof(uint16_t);
+    uint8_t const cBitsFlat   = RT_BYTE2(cBitsVarAndFlat);      RT_NOREF(cBitsFlat);
+    uint8_t const idxRegRsp   = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
+                                                                kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    uint8_t const idxRegEffSp = cBitsFlat != 0 ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t      offFixupJumpToUseOtherBitSp = UINT32_MAX;
+    if (cBitsFlat != 0)
+    {
+        Assert(idxRegEffSp == idxRegRsp);
+        Assert(cBitsFlat == 32 || cBitsFlat == 64);
+        Assert(IEM_F_MODE_X86_IS_FLAT(pReNative->fExec));
+        if (cBitsFlat == 64)
+            off = iemNativeEmitSubGprImm(pReNative, off, idxRegRsp, cbMem);
+        else
+            off = iemNativeEmitSubGpr32Imm(pReNative, off, idxRegRsp, cbMem);
+    }
+    else /** @todo We can skip the test if we're targeting pre-386 CPUs. */
+    {
+        Assert(idxRegEffSp != idxRegRsp);
+        uint8_t const idxRegSsAttr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(X86_SREG_SS),
+                                                                     kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+#endif
+        off = iemNativeEmitTestAnyBitsInGpr32Ex(pCodeBuf, off, idxRegSsAttr, X86DESCATTR_D);
+        iemNativeRegFreeTmp(pReNative, idxRegSsAttr);
+        offFixupJumpToUseOtherBitSp = off;
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
+            off = iemNativeEmitStackPushUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        else
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_ne); /* jump if not zero */
+            off = iemNativeEmitStackPushUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+    /* SpUpdateEnd: */
+    uint32_t const offLabelSpUpdateEnd = off;
+
+    /*
+     * Okay, now prepare for TLB lookup and jump to code (or the TlbMiss if
+     * we're skipping lookup).
+     */
+    uint8_t const  iSegReg           = cBitsFlat != 0 ? UINT8_MAX : X86_SREG_SS;
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, idxRegEffSp, &off, iSegReg, cbMemAccess);
+    uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbLookup = !TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+    uint8_t const  idxRegMemResult   = !TlbState.fSkip ? iemNativeRegAllocTmp(pReNative, &off) : UINT8_MAX;
+
+
+    if (!TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
+    else
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbMiss); /** @todo short jump */
+
+    /*
+     * Use16BitSp:
+     */
+    if (cBitsFlat == 0)
+    {
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+#endif
+        iemNativeFixupFixedJump(pReNative, offFixupJumpToUseOtherBitSp, off);
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+            off = iemNativeEmitStackPushUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        else
+            off = iemNativeEmitStackPushUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem);
+        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, offLabelSpUpdateEnd);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+
+    /*
+     * TlbMiss:
+     *
+     * Call helper to do the pushing.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* Save variables in volatile registers. */
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave()
+                                     | (idxRegMemResult < RT_ELEMENTS(pReNative->Core.aHstRegs) ? RT_BIT_32(idxRegMemResult) : 0)
+                                     | (idxRegEffSp != idxRegRsp ? RT_BIT_32(idxRegEffSp) : 0)
+                                     | (RT_BIT_32(idxRegPc));
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
+    if (   idxRegPc == IEMNATIVE_CALL_ARG1_GREG
+        && idxRegEffSp == IEMNATIVE_CALL_ARG2_GREG)
+    {
+        /* Swap them using ARG0 as temp register: */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_CALL_ARG1_GREG);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, IEMNATIVE_CALL_ARG2_GREG);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, IEMNATIVE_CALL_ARG0_GREG);
+    }
+    else if (idxRegEffSp != IEMNATIVE_CALL_ARG2_GREG)
+    {
+        /* IEMNATIVE_CALL_ARG2_GREG = idxRegPc (first!) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, idxRegPc);
+
+        /* IEMNATIVE_CALL_ARG1_GREG = idxRegEffSp */
+        if (idxRegEffSp != IEMNATIVE_CALL_ARG1_GREG)
+            off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegEffSp);
+    }
+    else
+    {
+        /* IEMNATIVE_CALL_ARG1_GREG = idxRegEffSp (first!) */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegEffSp);
+
+        /* IEMNATIVE_CALL_ARG2_GREG = idxRegPc */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, idxRegPc);
+    }
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
+
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows());
+
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+    if (!TlbState.fSkip)
+    {
+        /* end of TlbMiss - Jump to the done label. */
+        uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbDone);
+
+        /*
+         * TlbLookup:
+         */
+        off = iemNativeEmitTlbLookup<true>(pReNative, off, &TlbState, iSegReg, cbMemAccess, cbMemAccess - 1,
+                                           IEM_ACCESS_TYPE_WRITE, idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
+
+        /*
+         * Emit code to do the actual storing / fetching.
+         */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
+# ifdef VBOX_WITH_STATISTICS
+        off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
+                                                  RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
+# endif
+        switch (cbMemAccess)
+        {
+            case 2:
+                off = iemNativeEmitStoreGpr16ByGprEx(pCodeBuf, off, idxRegPc, idxRegMemResult);
+                break;
+            case 4:
+                if (!fIsIntelSeg)
+                    off = iemNativeEmitStoreGpr32ByGprEx(pCodeBuf, off, idxRegPc, idxRegMemResult);
+                else
+                {
+                    /* intel real mode segment push. 10890XE adds the 2nd of half EFLAGS to a
+                       PUSH FS in real mode, so we have to try emulate that here.
+                       We borrow the now unused idxReg1 from the TLB lookup code here. */
+                    uint8_t idxRegEfl = iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(pReNative, &off,
+                                                                                        kIemNativeGstReg_EFlags);
+                    if (idxRegEfl != UINT8_MAX)
+                    {
+#ifdef ARCH_AMD64
+                        off = iemNativeEmitLoadGprFromGpr32(pReNative, off, TlbState.idxReg1, idxRegEfl);
+                        off = iemNativeEmitAndGpr32ByImm(pReNative, off, TlbState.idxReg1,
+                                                         UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+#else
+                        off = iemNativeEmitGpr32EqGprAndImmEx(iemNativeInstrBufEnsure(pReNative, off, 3),
+                                                              off, TlbState.idxReg1, idxRegEfl,
+                                                              UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+#endif
+                        iemNativeRegFreeTmp(pReNative, idxRegEfl);
+                    }
+                    else
+                    {
+                        off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, TlbState.idxReg1,
+                                                              RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.eflags));
+                        off = iemNativeEmitAndGpr32ByImm(pReNative, off, TlbState.idxReg1,
+                                                         UINT32_C(0xffff0000) & ~X86_EFL_RAZ_MASK);
+                    }
+                    /* ASSUMES the upper half of idxRegPc is ZERO. */
+                    off = iemNativeEmitOrGpr32ByGpr(pReNative, off, TlbState.idxReg1, idxRegPc);
+                    off = iemNativeEmitStoreGpr32ByGprEx(pCodeBuf, off, TlbState.idxReg1, idxRegMemResult);
+                }
+                break;
+            case 8:
+                off = iemNativeEmitStoreGpr64ByGprEx(pCodeBuf, off, idxRegPc, idxRegMemResult);
+                break;
+            default:
+                AssertFailed();
+        }
+
+        iemNativeRegFreeTmp(pReNative, idxRegMemResult);
+        TlbState.freeRegsAndReleaseVars(pReNative);
+
+        /*
+         * TlbDone:
+         *
+         * Commit the new RSP value.
+         */
+        iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+    }
+#endif /* IEMNATIVE_WITH_TLB_LOOKUP */
+
+#if !defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK)
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.rsp));
+#endif
+    iemNativeRegFreeTmp(pReNative, idxRegRsp);
+    if (idxRegEffSp != idxRegRsp)
+        iemNativeRegFreeTmp(pReNative, idxRegEffSp);
+
+    return off;
+}
+
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for pre-386 targets. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16(a_u16NewIP, a_cbInstr) \
+    off = iemNativeEmitRipIndirectCallNoFlags(pReNative, off, a_cbInstr, (a_u16NewIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint16_t))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16NewIP, a_cbInstr) \
+    IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16(a_u16NewIP, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for 386+ targets. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32(a_u16NewIP, a_cbInstr) \
+    off = iemNativeEmitRipIndirectCallNoFlags(pReNative, off, a_cbInstr, (a_u16NewIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint16_t))
+
+/** Variant of IEM_MC_IND_CALL_U16_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16NewIP, a_cbInstr) \
+    IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32(a_u16NewIP, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_IND_CALL_U16_AND_FINISH
+
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for 386+ targets. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP, a_cbInstr) \
+    off = iemNativeEmitRipIndirectCallNoFlags(pReNative, off, a_cbInstr, (a_u32NewEIP), false /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint32_t))
+
+/** Variant of IEM_MC_IND_CALL_U32_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u32NewEIP, a_cbInstr) \
+    IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32(a_u32NewEIP, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_IND_CALL_U32_AND_FINISH
+
+
+/** Variant of IEM_MC_IND_CALL_U64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code. */
+#define IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64(a_u64NewIP, a_cbInstr) \
+    off = iemNativeEmitRipIndirectCallNoFlags(pReNative, off, a_cbInstr, (a_u64NewIP), true /*f64Bit*/, pCallEntry->idxInstr, sizeof(uint64_t))
+
+
+/** Variant of IEM_MC_IND_CALL_U64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code and we need to check and clear
+ *  flags. */
+#define IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u64NewIP, a_cbInstr) \
+    IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64(a_u64NewIP, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_IND_CALL_U64_AND_FINISH
+
+/** Same as iemRegIp16RelativeCallS16AndFinishNoFlags,
+ *  iemRegEip32RelativeCallS32AndFinishNoFlags and iemRegRip64RelativeCallS64AndFinishNoFlags. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRipIndirectCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxVarPc, bool f64Bit,
+                                    uint8_t idxInstr, uint8_t cbVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarPc);
+    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarPc, cbVar);
+
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
+
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
+#endif
+
+    /* Get a register with the new PC loaded from idxVarPc.
+       Note! This ASSUMES that the high bits of the GPR is zeroed. */
+    uint8_t const idxNewPcReg = iemNativeVarRegisterAcquire(pReNative, idxVarPc, &off);
+
+    /* Check limit (may #GP(0) + exit TB). */
+    if (!f64Bit)
+/** @todo we can skip this test in FLAT 32-bit mode. */
+        off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxNewPcReg, idxInstr);
+    /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
+    else if (cbVar > sizeof(uint32_t))
+        off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxNewPcReg, idxInstr);
+
+#if 1
+    /* Allocate a temporary PC register, we don't want it shadowed. */
+    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                             kIemNativeGstRegUse_Calculation, true /*fNoVolatileRegs*/);
+#else
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate,
+                                                             true /*fNoVolatileRegs*/);
+#endif
+
+    /* Perform the addition and push the variable to the guest stack. */
+    /** @todo Flat variants for PC32 variants. */
+    switch (cbVar)
+    {
+        case sizeof(uint16_t):
+            off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcReg, cbInstr);
+            /* Truncate the result to 16-bit IP. */
+            off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
+            off = iemNativeEmitStackPushRip(pReNative, off, idxPcReg, RT_MAKE_U32_FROM_U8(16,  0, 0, 0),
+                                            (uintptr_t)iemNativeHlpStackStoreU16, idxInstr);
+            break;
+        case sizeof(uint32_t):
+            off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcReg, cbInstr);
+            /** @todo In FLAT mode we can use the flat variant. */
+            off = iemNativeEmitStackPushRip(pReNative, off, idxPcReg, RT_MAKE_U32_FROM_U8(32,  0, 0, 0),
+                                            (uintptr_t)iemNativeHlpStackStoreU32, idxInstr);
+            break;
+        case sizeof(uint64_t):
+            off = iemNativeEmitAddGprImm8(pReNative, off, idxPcReg, cbInstr);
+            off = iemNativeEmitStackPushRip(pReNative, off, idxPcReg, RT_MAKE_U32_FROM_U8(64,  64, 0, 0),
+                                            (uintptr_t)iemNativeHlpStackFlatStoreU64, idxInstr);
+            break;
+        default:
+            AssertFailed();
+    }
+
+    /* RSP got changed, so do this again. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /* Store the result. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxNewPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+#if 1
+    /* Need to transfer the shadow information to the new RIP register. */
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxNewPcReg, kIemNativeGstReg_Pc, off);
+#else
+    /* Sync the new PC. */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxPcReg, idxNewPcReg);
+#endif
+    iemNativeVarRegisterRelease(pReNative, idxVarPc);
+    iemNativeRegFreeTmp(pReNative, idxPcReg);
+    /** @todo implictly free the variable? */
+
+    return off;
+}
+
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit code on a pre-386 CPU. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
+    off = iemNativeEmitRipRelativeCallS16NoFlags(pReNative, off, a_cbInstr, (a_i16), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit code on a pre-386 CPU and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i16, a_cbInstr) \
+    IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
+    off = iemNativeEmitRipRelativeCallS16NoFlags(pReNative, off, a_cbInstr, (a_i16), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i16, a_cbInstr) \
+    IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
+    off = iemNativeEmitRipRelativeCallS16NoFlags(pReNative, off, a_cbInstr, (a_i16), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_REL_CALL_S16_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i16, a_cbInstr) \
+    IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_REL_CALL_S16_AND_FINISH
+
+/** Same as iemRegIp16RelativeCallS16AndFinishNoFlags,
+ *  iemRegEip32RelativeCallS32AndFinishNoFlags and iemRegRip64RelativeCallS64AndFinishNoFlags. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRipRelativeCallS16NoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, int16_t offDisp,
+                                       uint8_t idxInstr)
+{
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
+
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
+#endif
+
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcRegOld = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                kIemNativeGstRegUse_Calculation, true /*fNoVolatileRegs*/);
+    uint8_t const idxPcRegNew = iemNativeRegAllocTmp(pReNative, &off, false /*fPreferVolatile*/);
+
+    /* Calculate the new RIP. */
+    off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcRegOld, cbInstr);
+    /* Truncate the result to 16-bit IP. */
+    off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcRegOld);
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxPcRegNew, idxPcRegOld);
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcRegNew, offDisp);
+
+    /* Truncate the result to 16-bit IP. */
+    off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcRegNew);
+
+    /* Check limit (may #GP(0) + exit TB). */
+    off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcRegNew, idxInstr);
+
+    /* Perform the addition and push the variable to the guest stack. */
+    off = iemNativeEmitStackPushRip(pReNative, off, idxPcRegOld, RT_MAKE_U32_FROM_U8(16,  0, 0, 0),
+                                    (uintptr_t)iemNativeHlpStackStoreU16, idxInstr);
+
+    /* RSP got changed, so flush again. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /* Store the result. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /* Need to transfer the shadow information to the new RIP register. */
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
+    iemNativeRegFreeTmp(pReNative, idxPcRegOld);
+    iemNativeRegFreeTmp(pReNative, idxPcRegNew);
+
+    return off;
+}
+
+
+/** Variant of IEM_MC_REL_CALL_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
+    off = iemNativeEmitEip32RelativeCallNoFlags(pReNative, off, a_cbInstr, (a_i32), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_REL_CALL_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i32, a_cbInstr) \
+    IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_REL_CALL_S32_AND_FINISH
+
+/** Same as iemRegIp16RelativeCallS16AndFinishNoFlags,
+ *  iemRegEip32RelativeCallS32AndFinishNoFlags and iemRegRip64RelativeCallS64AndFinishNoFlags. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitEip32RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, int32_t offDisp,
+                                      uint8_t idxInstr)
+{
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
+
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
+#endif
+
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcRegOld = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
+    uint8_t const idxPcRegNew = iemNativeRegAllocTmp(pReNative, &off, false /*fPreferVolatile*/);
+
+    /* Update the EIP to get the return address. */
+    off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcRegOld, cbInstr);
+
+    /* Load address, add the displacement and check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxPcRegNew, idxPcRegOld);
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcRegNew, offDisp);
+    /** @todo we can skip this test in FLAT 32-bit mode. */
+    off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcRegNew, idxInstr);
+
+    /* Perform Perform the return address to the guest stack. */
+    /** @todo Can avoid the stack limit checks in FLAT 32-bit mode. */
+    off = iemNativeEmitStackPushRip(pReNative, off, idxPcRegOld, RT_MAKE_U32_FROM_U8(32,  0, 0, 0),
+                                    (uintptr_t)iemNativeHlpStackStoreU32, idxInstr);
+
+    /* RSP got changed, so do this again. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /* Store the result. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /* Need to transfer the shadow information to the new RIP register. */
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
+    iemNativeRegFreeTmp(pReNative, idxPcRegNew);
+    iemNativeRegFreeTmp(pReNative, idxPcRegOld);
+
+    return off;
+}
+
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64(a_i64, a_cbInstr) \
+    off = iemNativeEmitRip64RelativeCallNoFlags(pReNative, off, a_cbInstr, (a_i64), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_REL_CALL_S64_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code and we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i64, a_cbInstr) \
+    IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64(a_i64, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+#undef  IEM_MC_REL_CALL_S64_AND_FINISH
+
+/** Same as iemRegIp16RelativeCallS16AndFinishNoFlags,
+ *  iemRegEip32RelativeCallS32AndFinishNoFlags and iemRegRip64RelativeCallS64AndFinishNoFlags. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRip64RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, int64_t offDisp,
+                                      uint8_t idxInstr)
+{
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    Assert(pReNative->Core.offPc == 0);
+
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
+#endif
+
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcRegOld = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                kIemNativeGstRegUse_ReadOnly, true /*fNoVolatileRegs*/);
+    uint8_t const idxPcRegNew = iemNativeRegAllocTmp(pReNative, &off, false /*fPreferVolatile*/);
+
+    /* Update the RIP to get the return address. */
+    off = iemNativeEmitAddGprImm8(pReNative, off, idxPcRegOld, cbInstr);
+
+    /* Load address, add the displacement and check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxPcRegNew, idxPcRegOld);
+    off = iemNativeEmitAddGprImm(pReNative, off, idxPcRegNew, offDisp);
+    off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcRegNew, idxInstr);
+
+    /* Perform Perform the return address to the guest stack. */
+    off = iemNativeEmitStackPushRip(pReNative, off, idxPcRegOld, RT_MAKE_U32_FROM_U8(64,  64, 0, 0),
+                                    (uintptr_t)iemNativeHlpStackFlatStoreU64, idxInstr);
+
+    /* RSP got changed, so do this again. */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /* Store the result. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /* Need to transfer the shadow information to the new RIP register. */
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
+    iemNativeRegFreeTmp(pReNative, idxPcRegNew);
+    iemNativeRegFreeTmp(pReNative, idxPcRegOld);
+
+    return off;
+}
+
+
+/*********************************************************************************************************************************
+*   Emitters for changing PC/RIP/EIP/IP with a RETN (Iw) instruction (IEM_MC_RETN_AND_FINISH) (requires stack emmiters).    *
+*********************************************************************************************************************************/
+
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStackPopForRetnUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem,
+                                    uint16_t cbPopAdd, uint8_t idxRegTmp)
+{
+    /* Use16BitSp: */
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
+    off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbPopAdd); /* ASSUMES this does NOT modify bits [63:16]! */
+    RT_NOREF(idxRegTmp);
+#elif defined(RT_ARCH_ARM64)
+    /* ubfiz regeff, regrsp, #0, #16 - copies bits 15:0 from RSP to EffSp bits 15:0, zeroing bits 63:16. */
+    pCodeBuf[off++] = Armv8A64MkInstrUbfiz(idxRegEffSp, idxRegRsp, 0, 16, false /*f64Bit*/);
+    /* add tmp, regrsp, #cbMem */
+    uint16_t const cbCombined = cbMem + cbPopAdd;
+    pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegTmp, idxRegRsp, cbCombined & (RT_BIT_32(12) - 1U), false /*f64Bit*/);
+    if (cbCombined >= RT_BIT_32(12))
+        pCodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegTmp, idxRegTmp, cbCombined >> 12,
+                                                   false /*f64Bit*/, false /*fSetFlags*/,  true /*fShift12*/);
+    /* and tmp, tmp, #0xffff */
+    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
+    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegTmp, idxRegTmp, 15, 0, false /*f64Bit*/);
+    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from tmp to RSP bits 15:0, keeping the other RSP bits as is. */
+    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegTmp, 0, 16, false /*f64Bit*/);
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitStackPopForRetnUse32Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem,
+                                    uint16_t cbPopAdd)
+{
+    /* Use32BitSp: */
+    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
+    off = iemNativeEmitAddGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem + cbPopAdd);
+    return off;
+}
+
+
+/** Variant of IEM_MC_RETN_AND_FINISH for pre-386 targets. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC16(a_u16Pop, a_cbInstr) \
+    off = iemNativeEmitRetn(pReNative, off, (a_cbInstr), (a_u16Pop), false /*f64Bit*/, IEMMODE_16BIT, pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for 386+ targets. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC32(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    off = iemNativeEmitRetn(pReNative, off, (a_cbInstr), (a_u16Pop), false /*f64Bit*/, (a_enmEffOpSize), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for use in 64-bit code. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC64(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    off = iemNativeEmitRetn(pReNative, off, (a_cbInstr), (a_u16Pop), true /*f64Bit*/, (a_enmEffOpSize), pCallEntry->idxInstr)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for pre-386 targets that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_u16Pop, a_cbInstr) \
+    IEM_MC_RETN_AND_FINISH_THREADED_PC16(a_u16Pop, a_cbInstr); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for 386+ targets that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    IEM_MC_RETN_AND_FINISH_THREADED_PC32(a_u16Pop, a_cbInstr, a_enmEffOpSize); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** Variant of IEM_MC_RETN_AND_FINISH for use in 64-bit code that checks and
+ *  clears flags. */
+#define IEM_MC_RETN_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_u16Pop, a_cbInstr, a_enmEffOpSize) \
+    IEM_MC_RETN_AND_FINISH_THREADED_PC64(a_u16Pop, a_cbInstr, a_enmEffOpSize); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
+/** IEM_MC[|_FLAT32|_FLAT64]_RETN_AND_FINISH */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRetn(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint16_t cbPop, bool f64Bit,
+                  IEMMODE enmEffOpSize, uint8_t idxInstr)
+{
+    RT_NOREF(cbInstr);
+
+#ifdef VBOX_STRICT
+    /*
+     * Check that the fExec flags we've got make sense.
+     */
+    off = iemNativeEmitExecFlagsCheck(pReNative, off, pReNative->fExec);
+#endif
+
+    /*
+     * To keep things simple we have to commit any pending writes first as we
+     * may end up making calls.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+    /*
+     * Determine the effective stack pointer, for non-FLAT modes we also update RSP.
+     * For FLAT modes we'll do this in TlbDone as we'll be using the incoming RSP
+     * directly as the effective stack pointer.
+     * (Code structure is very similar to that of PUSH)
+     *
+     * Note! As a simplification, we treat opsize overridden returns (o16 ret)
+     *       in FLAT 32-bit mode as if we weren't in FLAT mode since these
+     *       aren't commonly used (or useful) and thus not in need of optimizing.
+     *
+     * Note! For non flat modes the guest RSP is not allocated for update but rather for calculation
+     *       as the shadowed register would remain modified even if the return address throws a \#GP(0)
+     *       due to being outside the CS limit causing a wrong stack pointer value in the guest (see
+     *       the near return testcase in bs3-cpu-basic-2). If no exception is thrown the shadowing is transfered
+     *       to the new register returned by iemNativeRegAllocTmpForGuestReg() at the end.
+     */
+    uint8_t   const cbMem           =   enmEffOpSize == IEMMODE_64BIT
+                                      ? sizeof(uint64_t)
+                                      : enmEffOpSize == IEMMODE_32BIT
+                                      ? sizeof(uint32_t)
+                                      : sizeof(uint16_t);
+    bool      const fFlat           = IEM_F_MODE_X86_IS_FLAT(pReNative->fExec) && enmEffOpSize != IEMMODE_16BIT; /* see note */
+    uintptr_t const pfnFunction     = fFlat
+                                      ?   enmEffOpSize == IEMMODE_64BIT
+                                        ? (uintptr_t)iemNativeHlpStackFlatFetchU64
+                                        : (uintptr_t)iemNativeHlpStackFlatFetchU32
+                                      :   enmEffOpSize == IEMMODE_32BIT
+                                        ? (uintptr_t)iemNativeHlpStackFetchU32
+                                        : (uintptr_t)iemNativeHlpStackFetchU16;
+    uint8_t   const idxRegRsp       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xSP),
+                                                                      fFlat ? kIemNativeGstRegUse_ForUpdate : kIemNativeGstRegUse_Calculation,
+                                                                      true /*fNoVolatileRegs*/);
+    uint8_t   const idxRegEffSp     = fFlat ? idxRegRsp : iemNativeRegAllocTmp(pReNative, &off);
+    /** @todo can do a better job picking the register here. For cbMem >= 4 this
+     *        will be the resulting register value. */
+    uint8_t   const idxRegMemResult = iemNativeRegAllocTmp(pReNative, &off); /* pointer then value; arm64 SP += 2/4 helper too.  */
+
+    uint32_t        offFixupJumpToUseOtherBitSp = UINT32_MAX;
+    if (fFlat)
+        Assert(idxRegEffSp == idxRegRsp);
+    else /** @todo We can skip the test if we're targeting pre-386 CPUs. */
+    {
+        Assert(idxRegEffSp != idxRegRsp);
+        uint8_t const idxRegSsAttr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_SEG_ATTRIB(X86_SREG_SS),
+                                                                     kIemNativeGstRegUse_ReadOnly);
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 12);
+#endif
+        off = iemNativeEmitTestAnyBitsInGpr32Ex(pCodeBuf, off, idxRegSsAttr, X86DESCATTR_D);
+        iemNativeRegFreeTmp(pReNative, idxRegSsAttr);
+        offFixupJumpToUseOtherBitSp = off;
+        if (enmEffOpSize == IEMMODE_32BIT)
+        {
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_e); /* jump if zero */
+            off = iemNativeEmitStackPopForRetnUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, cbPop);
+        }
+        else
+        {
+            Assert(enmEffOpSize == IEMMODE_16BIT);
+            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off /*8-bit suffices*/, kIemNativeInstrCond_ne); /* jump if not zero */
+            off = iemNativeEmitStackPopForRetnUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, cbPop,
+                                                      idxRegMemResult);
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+    /* SpUpdateEnd: */
+    uint32_t const offLabelSpUpdateEnd = off;
+
+    /*
+     * Okay, now prepare for TLB lookup and jump to code (or the TlbMiss if
+     * we're skipping lookup).
+     */
+    uint8_t const  iSegReg           = fFlat ? UINT8_MAX : X86_SREG_SS;
+    IEMNATIVEEMITTLBSTATE const TlbState(pReNative, idxRegEffSp, &off, iSegReg, cbMem);
+    uint16_t const uTlbSeqNo         = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbLookup = !TlbState.fSkip
+                                     ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
+                                     : UINT32_MAX;
+
+    if (!TlbState.fSkip)
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbLookup); /** @todo short jump */
+    else
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbMiss); /** @todo short jump */
+
+    /*
+     * Use16BitSp:
+     */
+    if (!fFlat)
+    {
+#ifdef RT_ARCH_AMD64
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+#else
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 12);
+#endif
+        iemNativeFixupFixedJump(pReNative, offFixupJumpToUseOtherBitSp, off);
+        if ((pReNative->fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT)
+            off = iemNativeEmitStackPopForRetnUse16Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, cbPop,
+                                                      idxRegMemResult);
+        else
+            off = iemNativeEmitStackPopForRetnUse32Sp(pCodeBuf, off, idxRegRsp, idxRegEffSp, cbMem, cbPop);
+        off = iemNativeEmitJmpToFixedEx(pCodeBuf, off, offLabelSpUpdateEnd);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    }
+
+    /*
+     * TlbMiss:
+     *
+     * Call helper to do the pushing.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint32_t const fHstRegsNotToSave = TlbState.getRegsNotToSave()
+                                     | (idxRegMemResult < RT_ELEMENTS(pReNative->Core.aHstRegs) ? RT_BIT_32(idxRegMemResult) : 0)
+                                     | (idxRegEffSp != idxRegRsp ? RT_BIT_32(idxRegEffSp) : 0);
+    off = iemNativeVarSaveVolatileRegsPreHlpCall(pReNative, off, fHstRegsNotToSave);
+
+
+    /* IEMNATIVE_CALL_ARG1_GREG = EffSp/RSP */
+    if (idxRegEffSp != IEMNATIVE_CALL_ARG1_GREG)
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegEffSp);
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
+    off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
+
+    /* Move the return register content to idxRegMemResult. */
+    if (idxRegMemResult != IEMNATIVE_CALL_RET_GREG)
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegMemResult, IEMNATIVE_CALL_RET_GREG);
+
+    /* Restore variables and guest shadow registers to volatile registers. */
+    off = iemNativeVarRestoreVolatileRegsPostHlpCall(pReNative, off, fHstRegsNotToSave);
+    off = iemNativeRegRestoreGuestShadowsInVolatileRegs(pReNative, off, TlbState.getActiveRegsWithShadows());
+
+#ifdef IEMNATIVE_WITH_TLB_LOOKUP
+    if (!TlbState.fSkip)
+    {
+        /* end of TlbMiss - Jump to the done label. */
+        uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelTlbDone);
+
+        /*
+         * TlbLookup:
+         */
+        off = iemNativeEmitTlbLookup<true>(pReNative, off, &TlbState, iSegReg, cbMem, cbMem - 1, IEM_ACCESS_TYPE_READ,
+                                           idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
+
+        /*
+         * Emit code to load the value (from idxRegMemResult into idxRegMemResult).
+         */
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+# ifdef VBOX_WITH_STATISTICS
+        off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
+                                                  RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
+# endif
+        switch (cbMem)
+        {
+            case 2:
+                off = iemNativeEmitLoadGprByGprU16Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            case 4:
+                off = iemNativeEmitLoadGprByGprU32Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            case 8:
+                off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, idxRegMemResult, idxRegMemResult);
+                break;
+            default:
+                AssertFailed();
+        }
+
+        TlbState.freeRegsAndReleaseVars(pReNative);
+
+        /*
+         * TlbDone:
+         *
+         * Set the new RSP value (FLAT accesses needs to calculate it first) and
+         * commit the popped register value.
+         */
+        iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
+    }
+#endif /* IEMNATIVE_WITH_TLB_LOOKUP */
+
+    /* Check limit before committing RIP and RSP (may #GP(0) + exit TB). */
+    if (!f64Bit)
+/** @todo we can skip this test in FLAT 32-bit mode. */
+        off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxRegMemResult, idxInstr);
+    /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
+    else if (enmEffOpSize == IEMMODE_64BIT)
+        off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxRegMemResult, idxInstr);
+
+    /* Complete RSP calculation for FLAT mode. */
+    if (idxRegEffSp == idxRegRsp)
+    {
+        if (enmEffOpSize == IEMMODE_64BIT)
+            off = iemNativeEmitAddGprImm(pReNative, off, idxRegRsp, sizeof(uint64_t) + cbPop);
+        else
+        {
+            Assert(enmEffOpSize == IEMMODE_32BIT);
+            off = iemNativeEmitAddGpr32Imm(pReNative, off, idxRegRsp, sizeof(uint32_t) + cbPop);
+        }
+    }
+
+    /* Commit the result and clear any current guest shadows for RIP. */
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rsp));
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegMemResult, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegMemResult,  kIemNativeGstReg_Pc, off);
+
+    /* Need to transfer the shadowing information to the host register containing the updated value now. */
+    if (!fFlat)
+        iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegRsp, IEMNATIVEGSTREG_GPR(X86_GREG_xSP), off);
+
+    iemNativeRegFreeTmp(pReNative, idxRegRsp);
+    if (idxRegEffSp != idxRegRsp)
+        iemNativeRegFreeTmp(pReNative, idxRegEffSp);
+    iemNativeRegFreeTmp(pReNative, idxRegMemResult);
+    return off;
+}
+
+
+/*********************************************************************************************************************************
 *   Emitters for raising exceptions (IEM_MC_MAYBE_RAISE_XXX)                                                                     *
 *********************************************************************************************************************************/
 
@@ -6282,36 +7277,6 @@ iemNativeEmitMemStoreConstDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 #define IEM_MC_FLAT64_PUSH_U64(a_u64Value) \
     off = iemNativeEmitStackPush(pReNative, off, a_u64Value, RT_MAKE_U32_FROM_U8(64, 64, 0, 0), \
                                  (uintptr_t)iemNativeHlpStackFlatStoreU64, pCallEntry->idxInstr)
-
-
-DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitStackPushUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
-{
-    /* Use16BitSp: */
-#ifdef RT_ARCH_AMD64
-    off = iemNativeEmitSubGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
-    off = iemNativeEmitLoadGprFromGpr16Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
-#else
-    /* sub regeff, regrsp, #cbMem */
-    pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxRegEffSp, idxRegRsp, cbMem, false /*f64Bit*/);
-    /* and regeff, regeff, #0xffff */
-    Assert(Armv8A64ConvertImmRImmS2Mask32(15, 0) == 0xffff);
-    pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegEffSp, idxRegEffSp, 15, 0,  false /*f64Bit*/);
-    /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
-    pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegEffSp, 0, 16, false /*f64Bit*/);
-#endif
-    return off;
-}
-
-
-DECL_FORCE_INLINE(uint32_t)
-iemNativeEmitStackPushUse32Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t idxRegRsp, uint8_t idxRegEffSp, uint8_t cbMem)
-{
-    /* Use32BitSp: */
-    off = iemNativeEmitSubGpr32ImmEx(pCodeBuf, off, idxRegRsp, cbMem);
-    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, idxRegEffSp, idxRegRsp);
-    return off;
-}
 
 
 /** IEM_MC[|_FLAT32|_FLAT64]_PUSH_U16/32/32_SREG/64 */

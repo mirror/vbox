@@ -80,21 +80,21 @@ g_dMcStmtThreaded = {
     'IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS':            (None, True,  True,  True,  ),
     'IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS':            (None, True,  True,  True,  ),
 
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16':                      (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32':                      (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32':                      (None, True,  True,  False, ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16':                      (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32':                      (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64':                      (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32':                      (None, True,  True,  True,  ),
     'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ), # @todo These should never be called - can't encode this
     'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC32':                      (None, True,  True,  False, ), # @todo These should never be called - can't encode this
-    'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ),
+    'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64':                      (None, True,  True,  True,  ),
 
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ),
-    'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  False, ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  True,  ),
+    'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  True,  ),
     'IEM_MC_REL_CALL_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ), # @todo These should never be called - can't encode this
     'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  False, ), # @todo These should never be called - can't encode this
-    'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ),
+    'IEM_MC_REL_CALL_S64_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  True,  ),
 
     'IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC16':                       (None, True,  True,  True,  ),
     'IEM_MC_SET_RIP_U16_AND_FINISH_THREADED_PC32':                       (None, True,  True,  True,  ),
@@ -114,29 +114,29 @@ g_dMcStmtThreaded = {
     'IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC32_WITH_FLAGS':            (None, True,  True,  True,  ),
     'IEM_MC_SET_RIP_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS':            (None, True,  True,  True,  ),
 
-    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16':                      (None, True,  True,  False, ),
-    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32':                      (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16':                      (None, True,  True,  True,  ),
+    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32':                      (None, True,  True,  True,  ),
     'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ), # @todo These should never be called - can be called on AMD but not on Intel, 'call ax' in 64-bit code is valid and should push a 16-bit IP IIRC. 
-    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC16':                      (None, True,  True,  False, ),
-    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32':                      (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC16':                      (None, True,  True,  True,  ),
+    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32':                      (None, True,  True,  True,  ),
     'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ), # @todo These should never be called - can't encode this.
-    'IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64':                      (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64':                      (None, True,  True,  True,  ),
 
-    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  False, ),
-    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  True,  ),
+    'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  True,  ),
     'IEM_MC_IND_CALL_U16_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ), # @todo These should never be called - this is valid, see above.
-    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  False, ),
-    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC16_WITH_FLAGS':           (None, True,  True,  True,  ),
+    'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC32_WITH_FLAGS':           (None, True,  True,  True,  ),
     'IEM_MC_IND_CALL_U32_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ), # @todo These should never be called - can't encode this.
-    'IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  False, ),
+    'IEM_MC_IND_CALL_U64_AND_FINISH_THREADED_PC64_WITH_FLAGS':           (None, True,  True,  True,  ),
 
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC16':                              (None, True,  True,  False, ),
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC32':                              (None, True,  True,  False, ),
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC64':                              (None, True,  True,  False, ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC16':                              (None, True,  True,  True,  ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC32':                              (None, True,  True,  True,  ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC64':                              (None, True,  True,  True,  ),
 
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC16_WITH_FLAGS':                   (None, True,  True,  False, ),
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC32_WITH_FLAGS':                   (None, True,  True,  False, ),
-    'IEM_MC_RETN_AND_FINISH_THREADED_PC64_WITH_FLAGS':                   (None, True,  True,  False, ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC16_WITH_FLAGS':                   (None, True,  True,  True,  ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC32_WITH_FLAGS':                   (None, True,  True,  True,  ),
+    'IEM_MC_RETN_AND_FINISH_THREADED_PC64_WITH_FLAGS':                   (None, True,  True,  True,  ),
 
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16':                               (None, False, False, True,  ),
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32':                               (None, False, False, True,  ),
