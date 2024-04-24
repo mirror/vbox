@@ -144,6 +144,9 @@ private:
     /** @} */
     int maxDataSize() const;
     QString toolTipText() const;
+    bool isUnderMouse() const;
+    void updateIndexUnderCursor(const QPoint &point);
+    void updateToolTip();
 
     UIMetric *m_pMetric;
     QSize m_size;
@@ -377,28 +380,8 @@ bool UIChart::event(QEvent *pEvent)
         m_iDataIndexUnderCursor = -1;
     }
     else if (pEvent->type() == QEvent::ToolTip)
-    {
-        QHelpEvent *pToolTipEvent = static_cast<QHelpEvent *>(pEvent);
-        if (m_pMouseOverLabel)
-        {
-            if (m_iDataIndexUnderCursor < 0)
-                m_pMouseOverLabel->setVisible(false);
-            else
-            {
-                QString strToolTip = toolTipText();
-                if (!strToolTip.isEmpty())
-                {
-                    m_pMouseOverLabel->setText(strToolTip);
-                    m_pMouseOverLabel->move(QPoint(pToolTipEvent->pos().x(), pToolTipEvent->pos().y() - m_pMouseOverLabel->height()));
-                    m_pMouseOverLabel->setVisible(true);
-                }
-                else
-                    m_pMouseOverLabel->setVisible(false);
-            }
-        }
+        updateToolTip();
 
-
-    }
     return QWidget::event(pEvent);
 }
 
@@ -410,25 +393,61 @@ void UIChart::resizeEvent(QResizeEvent *pEvent)
     QWidget::resizeEvent(pEvent);
 }
 
-void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
+void UIChart::updateIndexUnderCursor(const QPoint &point)
 {
-    const int iX = width() - pEvent->position().x() - m_iMarginRight;
-    QPoint eventPosition(pEvent->position().x(), pEvent->position().y());
+    if (!isUnderMouse())
+    {
+        m_iDataIndexUnderCursor = -1;
+        return;
+    }
+    const int iX = width() - point.x() - m_iMarginRight;
+
     int iDataSize = maxDataSize();
     m_iDataIndexUnderCursor = -1;
 
-    if (iDataSize > 0 && m_lineChartRect.contains(eventPosition))
+    if (iDataSize > 0 && m_lineChartRect.contains(point))
     {
         m_iDataIndexUnderCursor = m_iMaximumQueueSize  - (int)((iX) / m_fPixelPerDataPoint) - 1;
         m_iDataIndexUnderCursor = m_iDataIndexUnderCursor - (m_iMaximumQueueSize - iDataSize);
     }
+}
 
+void UIChart::updateToolTip()
+{
+    updateIndexUnderCursor(mapFromGlobal(QCursor::pos()));
+    if (m_pMouseOverLabel)
+    {
+        if (m_iDataIndexUnderCursor < 0)
+            m_pMouseOverLabel->setVisible(false);
+        else
+        {
+            QString strToolTip = toolTipText();
+            QPoint pos = mapFromGlobal(QCursor::pos());
+
+            if (!strToolTip.isEmpty())
+            {
+                m_pMouseOverLabel->setText(strToolTip);
+                m_pMouseOverLabel->move(QPoint(pos.x(), pos.y() - m_pMouseOverLabel->height()));
+                m_pMouseOverLabel->setVisible(true);
+            }
+            else
+                m_pMouseOverLabel->setVisible(false);
+        }
+    }
+}
+void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
+{
+    QPoint eventPosition(pEvent->position().x(), pEvent->position().y());
+    updateIndexUnderCursor(eventPosition);
     update();
     QWidget::mouseMoveEvent(pEvent);
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
 {
+    if (isUnderMouse())
+        updateToolTip();
+
     Q_UNUSED(pEvent);
     if (!m_pMetric || m_iMaximumQueueSize <= 1)
         return;
@@ -728,6 +747,11 @@ QString UIChart::toolTipText() const
             .arg(m_dataSeriesColor[1].name(QColor::HexRgb)).arg(strData1);
     }
     return strToolTip;
+}
+
+bool UIChart::isUnderMouse() const
+{
+    return rect().contains(mapFromGlobal(QCursor::pos()));
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
