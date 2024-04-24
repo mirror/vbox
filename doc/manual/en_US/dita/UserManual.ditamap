@@ -175,6 +175,7 @@
       <chapter href="topics/installation.dita">
          <topicref href="topics/installation_windows.dita">
             <topicref href="topics/install-win-prereq.dita"/>
+            <topicref href="topics/install-win-installdir-req.dita"/>
             <topicref href="topics/install-win-performing.dita"/>
             <topicref href="topics/install-win-uninstall.dita"/>
             <topicref href="topics/install-win-unattended.dita"/>
