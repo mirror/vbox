@@ -508,6 +508,9 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     float fH = iMaximum == 0 ? 0 : m_lineChartRect.height() / (float)iMaximum;
     const float fPenWidth = 1.5f;
     const float fPointSize = 3.5f;
+    QPixmap areaPixmap(width(), height());
+    if (m_fUseAreaChart && m_fIsAreaChartAllowed)
+        areaPixmap.fill(QColor(0, 0, 0, 0));
     for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
         if (m_fUseGradientLineColor)
@@ -522,6 +525,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(m_dataSeriesColor[k], fPenWidth));
         if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
+            QPainter pixmapPainter(&areaPixmap);
             QVector<QPointF> points;
             for (int i = 0; i < data->size(); ++i)
             {
@@ -539,11 +543,10 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 if (i == data->size() - 1)
                     points << QPointF(fX, height() - + m_iMarginBottom);
             }
-            painter.setPen(Qt::NoPen);
+            pixmapPainter.setPen(Qt::NoPen);
             QColor fillColor(m_dataSeriesColor[k]);
-            fillColor.setAlpha(0.7 * fillColor.alpha());
-            painter.setBrush(fillColor);
-            painter.drawPolygon(points, Qt::WindingFill);
+            pixmapPainter.setBrush(fillColor);
+            pixmapPainter.drawPolygon(points, Qt::WindingFill);
         }
         else
         {
@@ -571,6 +574,12 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
                 painter.drawPoint(fX, height() - (fHeight + m_iMarginBottom));
             }
+        }
+        if (m_fUseAreaChart && m_fIsAreaChartAllowed)
+        {
+            painter.setOpacity(0.6);
+            painter.drawPixmap(rect(), areaPixmap);
+            painter.setOpacity(1.0);
         }
 
         /* Draw a horizontal and vertical line on data point under the mouse cursor
