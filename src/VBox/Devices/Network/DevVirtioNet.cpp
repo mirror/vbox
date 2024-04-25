@@ -904,7 +904,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         pHlp->pfnPrintf(pHlp, "    cVirtqPairs .,............. %d\n",   pThis->cVirtqPairs);
         pHlp->pfnPrintf(pHlp, "    cVirtqs .,................. %d\n",   pThis->cVirtqs);
         pHlp->pfnPrintf(pHlp, "    cWorkers .................. %d\n",   pThis->cWorkers);
-        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %d\n",   pThisCC->Virtio.szMmioName);
+        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %s\n",   pThisCC->Virtio.szMmioName);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
@@ -923,7 +923,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         pHlp->pfnPrintf(pHlp, "    Suppress multicast: ....... %s\n",      pThis->fNoMulticast   ? "true" : "false");
         pHlp->pfnPrintf(pHlp, "    Promiscuous: .............. %s\n",      pThis->fPromiscuous   ? "true" : "false");
         pHlp->pfnPrintf(pHlp, "\n");
-        pHlp->pfnPrintf(pHlp, "    Default Rx MAC filter: .... %RTmac\n", pThis->rxFilterMacDefault);
+        pHlp->pfnPrintf(pHlp, "    Default Rx MAC filter: .... %RTmac\n", &pThis->rxFilterMacDefault);
         pHlp->pfnPrintf(pHlp, "\n");
 
         pHlp->pfnPrintf(pHlp, "    Unicast filter MACs:\n");
@@ -3635,7 +3635,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
      * Register the debugger info callback (ignore errors).
      */
     char szTmp[128];
-    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "virtio-net", "Display virtio-net info (help, net, features, state, pointers, queues, all)", virtioNetR3Info);
+    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "virtionet", "Display virtionet info (help, net, features, state, pointers, queues, all)", virtioNetR3Info);
     if (RT_FAILURE(rc))
         LogRel(("Failed to register DBGF info for device %s\n", szTmp));
     return rc;

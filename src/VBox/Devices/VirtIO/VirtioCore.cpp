@@ -618,6 +618,20 @@ DECLHIDDEN(bool) virtioCoreR3VirtqIsEnabled(PVIRTIOCORE pVirtio, uint16_t uVirtq
     return (bool)pVirtq->uEnable && pVirtq->GCPhysVirtqDesc;
 }
 
+DECLINLINE(void) virtioCoreR3DescInfo(PCDBGFINFOHLP pHlp, PVIRTQ_DESC_T pDesc, uint16_t iDesc, const char *cszTail)
+{
+    if (pDesc->fFlags & VIRTQ_DESC_F_NEXT)
+        pHlp->pfnPrintf(pHlp, "          [%4d]%c%c %5d bytes @ %p  [%4d] %s\n",
+                        iDesc, pDesc->fFlags & VIRTQ_DESC_F_INDIRECT ? 'I' : ' ',
+                        pDesc->fFlags & VIRTQ_DESC_F_WRITE ? 'W' : 'R',
+                        pDesc->cb, pDesc->GCPhysBuf, pDesc->uDescIdxNext, cszTail);
+    else
+        pHlp->pfnPrintf(pHlp, "          [%4d]%c%c %5d bytes @ %p         %s\n",
+                        iDesc, pDesc->fFlags & VIRTQ_DESC_F_INDIRECT ? 'I' : ' ',
+                        pDesc->fFlags & VIRTQ_DESC_F_WRITE ? 'W' : 'R',
+                        pDesc->cb, pDesc->GCPhysBuf, cszTail);
+}
+
 /** API Fuunction: See header file */
 DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int uVirtq)
 {
@@ -634,8 +648,22 @@ DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     uint16_t uUsedIdx        = virtioReadUsedRingIdx(pDevIns, pVirtio, pVirtq);
     uint16_t uUsedIdxShadow  = pVirtq->uUsedIdxShadow;
 
+    uint16_t uAvailEventIdx = 0;
+    uint16_t uUsedEventIdx = 0;
+    bool     fNotify = !!(pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX);
+    if (fNotify)
+    {
+        uUsedEventIdx = virtioReadAvailUsedEvent(pDevIns, pVirtio, pVirtq);
+        /* There is no helper for reading AvailEvent since the device is not supposed to read it. */
+        virtioCoreGCPhysRead(pVirtio, pDevIns,
+                            pVirtq->GCPhysVirtqUsed
+                            + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtq->uQueueSize]),
+                            &uAvailEventIdx, sizeof(uAvailEventIdx));
+    }
+
     VIRTQBUF_T VirtqBuf;
     PVIRTQBUF pVirtqBuf = &VirtqBuf;
+    RT_ZERO(VirtqBuf);  /* Make sure pSgPhysSend and pSgPhysReturn are initialized. */
     bool fEmpty = IS_VIRTQ_EMPTY(pDevIns, pVirtio, pVirtq);
 
     LogFunc(("%s, empty = %s\n", pVirtq->szName, fEmpty ? "true" : "false"));
@@ -658,19 +686,19 @@ DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         pHlp->pfnPrintf(pHlp, "       MSIX vector: ....... %4.4x\n", pVirtq->uMsixVector);
     pHlp->pfnPrintf(pHlp, "\n");
     pHlp->pfnPrintf(pHlp, "       avail ring (%d entries):\n", uAvailIdx - uAvailIdxShadow);
-    pHlp->pfnPrintf(pHlp, "          index: ................ %d\n", uAvailIdx);
-    pHlp->pfnPrintf(pHlp, "          shadow: ............... %d\n", uAvailIdxShadow);
+    pHlp->pfnPrintf(pHlp, "          index: ................ %d (%d)\n", pVirtq->uQueueSize ? uAvailIdx % pVirtq->uQueueSize : uAvailIdx, uAvailIdx);
+    pHlp->pfnPrintf(pHlp, "          shadow: ............... %d (%d)\n", pVirtq->uQueueSize ? uAvailIdxShadow % pVirtq->uQueueSize : uAvailIdxShadow, uAvailIdxShadow);
     pHlp->pfnPrintf(pHlp, "          flags: ................ %s\n", fAvailNoInterrupt ? "NO_INTERRUPT" : "");
     pHlp->pfnPrintf(pHlp, "\n");
-    pHlp->pfnPrintf(pHlp, "       used ring (%d entries):\n",  uUsedIdx - uUsedIdxShadow);
-    pHlp->pfnPrintf(pHlp, "          index: ................ %d\n", uUsedIdx);
-    pHlp->pfnPrintf(pHlp, "          shadow: ............... %d\n", uUsedIdxShadow);
+    pHlp->pfnPrintf(pHlp, "       used ring (%d entries):\n",  uUsedIdxShadow - uUsedIdx);
+    pHlp->pfnPrintf(pHlp, "          index: ................ %d (%d)\n", pVirtq->uQueueSize ? uUsedIdx % pVirtq->uQueueSize : uUsedIdx, uUsedIdx);
+    pHlp->pfnPrintf(pHlp, "          shadow: ............... %d (%d)\n", pVirtq->uQueueSize ? uUsedIdxShadow % pVirtq->uQueueSize : uUsedIdxShadow, uUsedIdxShadow);
     pHlp->pfnPrintf(pHlp, "          flags: ................ %s\n", fUsedNoNotify ? "NO_NOTIFY" : "");
     pHlp->pfnPrintf(pHlp, "\n");
     if (!fEmpty)
     {
         pHlp->pfnPrintf(pHlp, "       desc chain:\n");
-        pHlp->pfnPrintf(pHlp, "          head idx: ............. %d\n", uUsedIdx);
+        pHlp->pfnPrintf(pHlp, "          head idx: ............. %d (%d)\n", pVirtq->uQueueSize ? uUsedIdx % pVirtq->uQueueSize : uUsedIdx, uUsedIdx);
         pHlp->pfnPrintf(pHlp, "          segs: ................. %d\n", cSendSegs + cReturnSegs);
         pHlp->pfnPrintf(pHlp, "          refCnt ................ %d\n", pVirtqBuf->cRefs);
         pHlp->pfnPrintf(pHlp, "\n");
@@ -682,7 +710,7 @@ DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
             pHlp->pfnPrintf(pHlp, "             unsent ............. %d\n", pVirtqBuf->pSgPhysSend->cbSegLeft);
         }
         pHlp->pfnPrintf(pHlp, "\n");
-        pHlp->pfnPrintf(pHlp,     "      guest-to-host (%d bytes)\n",       pVirtqBuf->cbPhysReturn);
+        pHlp->pfnPrintf(pHlp,     "          guest-to-host (%d bytes):\n",  pVirtqBuf->cbPhysReturn);
         pHlp->pfnPrintf(pHlp,     "             segs: .............. %d\n", cReturnSegs);
         if (cReturnSegs)
         {
@@ -690,8 +718,71 @@ DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
             pHlp->pfnPrintf(pHlp, "             unsent ............. %d\n", pVirtqBuf->pSgPhysReturn->cbSegLeft);
         }
     } else
-        pHlp->pfnPrintf(pHlp,     "      No desc chains available\n");
+        pHlp->pfnPrintf(pHlp,     "       no desc chains available\n");
     pHlp->pfnPrintf(pHlp, "\n");
+
+    /* Avoid handling zero-sized queues, there is nothing to show anyway. */
+    if (pVirtq->uQueueSize == 0)
+        return;
+
+    pHlp->pfnPrintf(pHlp, "       desc table:\n");
+    /*
+     * Each line in the descriptor table output consists of two parts: a fixed part and a variable "tail".
+     * The fixed part shows the descriptor index, its writability, size, physical address, and optionally
+     * which descriptor is next the chain. The tail shows which elements of avail/used rings point to
+     * this descriptor.
+     */
+    VIRTQ_DESC_T descTable[VIRTQ_SIZE];
+    char aszTails[VIRTQ_SIZE][32];
+    virtioCoreGCPhysRead(pVirtio, pDevIns, pVirtq->GCPhysVirtqDesc,
+                        &descTable, sizeof(VIRTQ_DESC_T) * pVirtq->uQueueSize);
+    RT_BZERO(aszTails, sizeof(aszTails));   /* No tails by default */
+
+    /* Fill avail tail fields. */
+
+    /* The first available descriptor gets outer reverse angle brackets. */
+    char chOuterLeft = '>', chOuterRight = '<';
+    char chLeft = '[', chRight = ']';
+    /* Use 'not-equal' instead of 'less' because of uint16_t wrapping! */
+    for (uint16_t i = uAvailIdxShadow; i != uAvailIdx; i++)
+    {
+        /* The last descriptor gets inner curly braces, inner square brackets for the rest. */
+        if (i + 1 == uAvailIdx) { chLeft = '{'; chRight = '}'; }
+        uint16_t uDescIdx = virtioReadAvailDescIdx(pDevIns, pVirtio, pVirtq, i);
+        /* Print an exclamation sign instead of outer right bracket if this descriptor triggers notification. */
+        RTStrPrintf(aszTails[uDescIdx], sizeof(aszTails[0]), "%c%c%4d%c%c ",
+                    chOuterLeft, chLeft, i % pVirtq->uQueueSize, chRight,
+                    fNotify ? ((i % pVirtq->uQueueSize) == (uAvailEventIdx % pVirtq->uQueueSize) ? '!' : chOuterRight) : chOuterRight);
+        chOuterLeft = chOuterRight = ' ';
+    }
+
+    /* Fill used tail fields, see comments in the similar loop above. */
+
+    chOuterLeft = '>'; chOuterRight = '<';
+    chLeft = '['; chRight = ']';
+    for (uint16_t i = uUsedIdx; i != uUsedIdxShadow; i++)
+    {
+        VIRTQ_USED_ELEM_T elem;
+        virtioCoreGCPhysRead(pVirtio, pDevIns,
+                             pVirtq->GCPhysVirtqUsed
+                             + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[i % pVirtq->uQueueSize]),
+                             &elem, sizeof(elem));
+        if (i + 1 == uUsedIdxShadow) { chLeft = '{'; chRight = '}'; }
+        char *szTail = aszTails[elem.uDescIdx % pVirtq->uQueueSize];
+        /* Add empty avail field if none is present, 9 spaces + terminating zero. */
+        if (*szTail == '\0')
+            RTStrCopy(szTail, 10, "          ");
+        RTStrPrintf(szTail + 9, sizeof(aszTails[0]) - 9, " %c%c%4d%c%c %d bytes",
+                    chOuterLeft, chLeft, i % pVirtq->uQueueSize, chRight,
+                    fNotify ? ((i % pVirtq->uQueueSize) == (uUsedEventIdx % pVirtq->uQueueSize) ? '!' : chOuterRight) : chOuterRight,
+                    elem.cbElem);
+        chOuterLeft = chOuterRight = ' ';
+    }
+
+    pHlp->pfnPrintf(pHlp, "          index w/r size         phys addr        next    @avail   @used\n");
+    pHlp->pfnPrintf(pHlp, "          ------ - -----------   ---------------- ------- -------- ------------------\n");
+    for (uint16_t i = 0; i < pVirtq->uQueueSize; i++)
+        virtioCoreR3DescInfo(pHlp, &descTable[i], i, aszTails[i]);
 }
 
 
@@ -856,8 +947,8 @@ DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
             static volatile uint32_t s_cThreshold = 1;
             if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
             {
-                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop (cSegsIn=%u cSegsOut=%u uQueueSize=%u).\n",
-                               cSegsIn, cSegsOut, pVirtq->uQueueSize));
+                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop (cSegsIn=%u cSegsOut=%u uQueueSize=%u uDescIdx=%u queue=%s).\n",
+                               cSegsIn, cSegsOut, pVirtq->uQueueSize, uDescIdx, pVirtq->szName));
                 if (ASMAtomicReadU32(&s_cMessages) != 1)
                     LogRelMax(64, ("(the above error has occured %u times so far)\n", ASMAtomicReadU32(&s_cMessages)));
                 ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
