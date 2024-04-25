@@ -1200,12 +1200,12 @@ else
 	$(QUIET)$(RM) -f -- $(wildcard $(subst r$(VBOX_SVN_REV),r*, \
 		$@ \
 		$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd ) )
-	$(REDIRECT) -C $(@D) -- \
+	$(REDIRECT) -C "$(@D)" -- \
 		$(VBoxStubBld_1_TARGET) -out $@ \
 			-target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) \
 			-stub $(PATH_STAGE_BIN)/VBoxStub.exe
 	$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $@
-	$(call VBOX_SIGN_FILE_FN,$@)
+	$(call VBOX_SIGN_FILE_FN,$@,,,,,,timed)
  # Create repack script for this step.
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(@F).cmd" \
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
@@ -1222,43 +1222,34 @@ else
  ifdef VBOX_WIN_ATTESTATION_SIGNING
 	echo "Repacking HERE"
 	cd $(VBOX_WIN_INST_REPACK_DIR)
-	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab
-	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.ddf
-	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd
-	$(CP) $(PATH_STAGE_BIN)/VBoxSup.sys $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxSup.sys
-	$(CP) $(PATH_STAGE_BIN)/VBoxNetAdp6.sys $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxNetAdp6.sys
-	$(CP) $(PATH_STAGE_BIN)/VBoxNetLwf.sys $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxNetLwf.sys
-	$(CP) $(PATH_STAGE_BIN)/VBoxUSB.sys $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxUSB.sys
-	$(CP) $(PATH_STAGE_BIN)/VBoxUSBMon.sys $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxUSBMon.sys
-	$(CP) $(PATH_STAGE_BIN)/VMMR0.r0 $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VMMR0.r0
-	$(CP) $(PATH_STAGE_BIN)/VBoxDDR0.r0 $(VBOX_WIN_INST_REPACK_DIR)
-	$(VBOX_SIGNTOOL) remove /s /q $(VBOX_WIN_INST_REPACK_DIR)/VBoxDDR0.r0
+	$(RM) -f -- \
+		"$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab" \
+		"$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.ddf" \
+		"$(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd"
+	$(foreach file, VBoxSup.sys VBoxNetAdp6.sys VBoxNetLwf.sys VBoxUSB.sys VBoxUSBMon.sys VMMR0.r0 VBoxDDR0.r0 \
+       	,$(NLTAB)$(CP) -- "$(PATH_STAGE_BIN)/$(file)" "$(VBOX_WIN_INST_REPACK_DIR)/" \
+		 $(NLTAB)$(VBOX_SIGNTOOL) remove /s /q "$(VBOX_WIN_INST_REPACK_DIR)/$(file)" )
 	cd $(VBOX_WIN_INST_REPACK_DIR) && ls -la
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd" \
-	"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
-	"call PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) \
+		"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
+		"call PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) \
 		-x -n --no-extpack -o $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab"
 
-	cd $(VBOX_WIN_INST_REPACK_DIR) && $(EXEC_X86_WIN32) cmd.exe /c PackDriversForSubmission_internal.cmd
-	cd $(VBOX_WIN_INST_REPACK_DIR) && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox Base drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab"
+	$(TIME_EXT) $(REDIRECT_EXT) -C "$(VBOX_WIN_INST_REPACK_DIR)" -- $(EXEC_X86_WIN32) cmd.exe /c PackDriversForSubmission_internal.cmd
+	$(TIME_EXT) $(REDIRECT_EXT) -C "$(VBOX_WIN_INST_REPACK_DIR)" -- $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox Base drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab"
 
-	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/Single-3-Repack_internal.cmd
+	$(RM) -f -- "$(VBOX_WIN_INST_REPACK_DIR)/Single-3-Repack_internal.cmd"
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/Single-3-Repack_internal.cmd" \
-	"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
-	"SET KBUILD_DEVTOOLS=$(KBUILD_DEVTOOLS)" \
-	"call Single-3-Repack.cmd --no-extpack --signed "$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.Signed.zip"
-	cd $(VBOX_WIN_INST_REPACK_DIR) && $(EXEC_X86_WIN32) cmd.exe /c Single-3-Repack_internal.cmd
+		"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
+		"SET KBUILD_DEVTOOLS=$(KBUILD_DEVTOOLS)" \
+		"call Single-3-Repack.cmd --no-extpack --signed "$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.Signed.zip"
+	$(TIME_EXT) $(REDIRECT_EXT) -C "$(VBOX_WIN_INST_REPACK_DIR)" -- $(EXEC_X86_WIN32) cmd.exe /c Single-3-Repack_internal.cmd
 
-	$(RM) -f $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
-	$(RM) -f $(PATH_STAGE_BIN)/$(PACKAGE_NAME_LANG).msi
-	$(CP) $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_MULTIARCH_FINAL) $(PATH_STAGE_BIN)/
-	$(CP) $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG).msi        $(PATH_STAGE_BIN)/
+	$(RM) -f -- \
+		"$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)" \
+		"$(PATH_STAGE_BIN)/$(PACKAGE_NAME_LANG).msi"
+	$(CP) -- "$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_MULTIARCH_FINAL)" "$(PATH_STAGE_BIN)/"
+	$(CP) -- "$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG).msi"        "$(PATH_STAGE_BIN)/"
  endif
 endif
 
