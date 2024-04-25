@@ -62,6 +62,8 @@
 /**
  * PsLoadedModuleList entry for 32-bit NT aka LDR_DATA_TABLE_ENTRY.
  * Tested with XP.
+ *
+ * See comments in NTMTE64.
  */
 typedef struct NTMTE32
 {
@@ -84,7 +86,7 @@ typedef struct NTMTE32
         uint32_t    Buffer;
     }               FullDllName,
                     BaseDllName;
-    uint32_t        Flags;
+    uint32_t        Flags;                              /**< NTMTE_F_XXX  */
     uint16_t        LoadCount;
     uint16_t        TlsIndex;
     /* ... there is more ... */
@@ -93,6 +95,10 @@ typedef NTMTE32 *PNTMTE32;
 
 /**
  * PsLoadedModuleList entry for 64-bit NT aka LDR_DATA_TABLE_ENTRY.
+ *
+ * Starting with XP it it's specialized for the kernel as KLDR_DATA_TABLE_ENTRY
+ * with compatible layout up to a point, the non-K version is used in user land.
+ * The Flags values probably differs a bit by now.
  */
 typedef struct NTMTE64
 {
@@ -115,12 +121,14 @@ typedef struct NTMTE64
         uint64_t    Buffer;                            /**< 0x50,0x60 */
     }               FullDllName,                       /**< 0x48 */
                     BaseDllName;                       /**< 0x58 */
-    uint32_t        Flags;                             /**< 0x68 */
+    uint32_t        Flags;                             /**< 0x68 NTMTE_F_XXX */
     uint16_t        LoadCount;                         /**< 0x6c */
     uint16_t        TlsIndex;                          /**< 0x6e */
     /* ... there is more ... */
 } NTMTE64;
 typedef NTMTE64 *PNTMTE64;
+
+#define NTMTE_F_FORCE_INTEGRITY                     0x20 /* copy of IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY */
 
 /** MTE union. */
 typedef union NTMTE
