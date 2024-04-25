@@ -1226,9 +1226,6 @@ else
 		"$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab" \
 		"$(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.ddf" \
 		"$(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd"
-	$(foreach file, VBoxSup.sys VBoxNetAdp6.sys VBoxNetLwf.sys VBoxUSB.sys VBoxUSBMon.sys VMMR0.r0 VBoxDDR0.r0 \
-       	,$(NLTAB)$(CP) -- "$(PATH_STAGE_BIN)/$(file)" "$(VBOX_WIN_INST_REPACK_DIR)/" \
-		 $(NLTAB)$(VBOX_SIGNTOOL) remove /s /q "$(VBOX_WIN_INST_REPACK_DIR)/$(file)" )
 	cd $(VBOX_WIN_INST_REPACK_DIR) && ls -la
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd" \
 		"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
