@@ -2269,7 +2269,7 @@ static int rtFtpServerCmdArgsParse(const char *pszCmdParms, uint8_t *pcArgs, cha
     int rc = RTGetOptArgvFromString(ppapszArgs, &cArgs, pszCmdParms, RTGETOPTARGV_CNV_QUOTE_MS_CRT, " " /* Separators */);
     if (RT_SUCCESS(rc))
     {
-        if ((unsigned int)cArgs <= UINT8_MAX)
+        if ((unsigned int)cArgs <= (unsigned int)UINT8_MAX)
         {
             *pcArgs = (uint8_t)cArgs;
         }
