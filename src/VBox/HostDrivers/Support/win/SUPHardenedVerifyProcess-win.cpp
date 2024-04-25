@@ -2394,7 +2394,7 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis)
                                    "NtQueryInformationProcess/ProcessImageInformation failed: %#x hProcess=%#x",
                                    rcNt, pThis->hProcess);
     }
-#ifdef VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT /* A kernel code signing cert is only via way to use /IntegrityCheck. */
+#ifndef VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT /* A kernel code signing cert is only via way to use /IntegrityCheck. */
     if ( !(ImageInfo.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_EXE_MISSING_FORCE_INTEGRITY,
                                    "EXE DllCharacteristics=%#x, expected IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY to be set.",
