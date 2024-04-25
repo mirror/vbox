@@ -5552,7 +5552,7 @@ ifeq ($(VBOX_LDR_FMT),pe)
  ifdef VBOX_WITH_DTRACE_R0
   TEMPLATE_VBoxR0_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
+ ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBoxR0_LDFLAGS          += -IntegrityCheck
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
@@ -5755,7 +5755,7 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_DTRACE_R0DRV
   TEMPLATE_VBoxR0Drv_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
- if defined(VBOX_SIGNING_MODE) && !defined(VBOX_WITHOUT_WINDOWS_KERNEL_CODE_SIGNING_CERT)
+ ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBoxR0Drv_LDFLAGS          += -IntegrityCheck
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
