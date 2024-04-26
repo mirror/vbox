@@ -43,7 +43,7 @@ UIVMActivityMonitorPaneContainer::UIVMActivityMonitorPaneContainer(QWidget *pPar
     , m_pColorChangeButton0(0)
     , m_pColorChangeButton1(0)
     , m_pColorChangeReset0(0)
-    , m_pColorChangeReset1;
+    , m_pColorChangeReset1(0)
 {
     prepare();
 }
