@@ -603,9 +603,6 @@ DECLINLINE(uint8_t) bs3CpuInstr3MemOpSize(uint8_t cbOperand, uint8_t enmRm)
 #define BS3_SKIPIT_AVG_SKIP 26
 #undef  BS3_SKIPIT_DO_SKIP
 #undef  BS3_SKIPIT_DO_ARGS
-#define BS3_SKIPIT_DO_SKIP
-#undef  BS3_SKIPIT_AVG_SKIP
-#define BS3_SKIPIT_AVG_SKIP 91
 
 #ifndef BS3_SKIPIT_DO_SKIP
 # define BS3_SKIPIT(bRing, iCfg, iTest, iVal, iVariant) (false)
