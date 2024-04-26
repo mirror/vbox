@@ -2692,7 +2692,8 @@ typedef struct BS3REGCTX
     uint8_t     bMode;                  /**< 0xa0:  BS3_MODE_XXX. */
     uint8_t     bCpl;                   /**< 0xa1: 0-3, 0 is used for real mode. */
     uint8_t     fbFlags;                /**< 0xa2: BS3REG_CTX_F_XXX  */
-    uint8_t     abPadding[5];           /**< 0xa3  */
+    uint8_t     abPadding[3];           /**< 0xa3  */
+    uint16_t    cr2Range;               /**< 0xa6  */
     BS3REG      cr0;                    /**< 0xa8  */
     BS3REG      cr2;                    /**< 0xb0  */
     BS3REG      cr3;                    /**< 0xb8  */

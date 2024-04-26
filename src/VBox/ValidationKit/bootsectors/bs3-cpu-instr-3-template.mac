@@ -66,6 +66,9 @@ TMPL_BEGIN_TEXT
         align   8, db 0cch
         db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
+   %ifdef EMIT_FS_PREFIX
+        fs
+   %endif
   %endmacro
  %endif ; !BS3CPUINSTR3_PROC_BEGIN_CMN_DEFINED
 
@@ -3197,6 +3200,24 @@ EMIT_INSTR_PLUS_ICEBP_YMM_123  vpmaddwd
 EMIT_INSTR_PLUS_ICEBP_XMM_89   pmaddwd
 EMIT_INSTR_PLUS_ICEBP_XMM_890  vpmaddwd
 EMIT_INSTR_PLUS_ICEBP_YMM_890  vpmaddwd
+
+;
+; MASKMOVQ
+;
+%define EMIT_FS_PREFIX
+EMIT_INSTR_PLUS_ICEBP           maskmovq,    MM0,   MM1
+%undef EMIT_FS_PREFIX
+
+;
+; [V]MASKMOVDQU
+;
+%define EMIT_FS_PREFIX
+EMIT_INSTR_PLUS_ICEBP           maskmovdqu,  XMM0,  XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       maskmovdqu,  XMM8,  XMM9
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovdqu, XMM0,  XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovdqu, XMM8,  XMM9
+%undef EMIT_FS_PREFIX
 
 %endif ; BS3_INSTANTIATING_CMN
 

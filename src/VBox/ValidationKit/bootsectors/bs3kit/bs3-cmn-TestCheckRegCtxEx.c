@@ -95,7 +95,12 @@ BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExp
         CHECK_MEMBER("msw", "%08RX16",  pActualCtx->cr0.u16,  pExpectedCtx->cr0.u16);
     if (!(fbFlags & BS3REG_CTX_F_NO_CR2_CR3))
     {
-        CHECK_MEMBER("cr2", "%08RX64",  pActualCtx->cr2.u,    pExpectedCtx->cr2.u);
+        /* cr2Range is always zero except if changed by the test worker */
+        if ((pActualCtx->cr2.u < pExpectedCtx->cr2.u ||
+             pActualCtx->cr2.u > pExpectedCtx->cr2.u + pExpectedCtx->cr2Range))
+        {
+            CHECK_MEMBER("cr2", "%08RX64",  pActualCtx->cr2.u,    pExpectedCtx->cr2.u);
+        }
         CHECK_MEMBER("cr3", "%08RX64",  pActualCtx->cr3.u,    pExpectedCtx->cr3.u);
     }
     if (!(fbFlags & BS3REG_CTX_F_NO_CR4))
