@@ -499,5 +499,8 @@
         <file alias="keep_object_16px.png">images/keep_object_16px.png</file>
         <file alias="keyboard_16px.png">images/keyboard_16px.png</file>
         <file alias="keyboard_24px.png">images/keyboard_24px.png</file>
+        <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
+        <file alias="keyboard_settings_16px.png">images/keyboard_settings_16px.png</file>
+        <file alias="keyboard_settings_disabled_16px.png">images/keyboard_settings_disabled_16px.png</file>
     </qresource>
 </RCC>

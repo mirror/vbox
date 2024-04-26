@@ -1,8 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
-        <file alias="keyboard_settings_16px.png">images/keyboard_settings_16px.png</file>
-        <file alias="keyboard_settings_disabled_16px.png">images/keyboard_settings_disabled_16px.png</file>
         <file alias="launch_vm_16px.png">images/launch_vm_16px.png</file>
         <file alias="list_movedown_16px.png">images/list_movedown_16px.png</file>
         <file alias="list_movedown_disabled_16px.png">images/list_movedown_disabled_16px.png</file>
@@ -162,6 +159,12 @@
         <file alias="performance_monitor_export_32px.png">images/performance_monitor_export_32px.png</file>
         <file alias="performance_monitor_export_disabled_16px.png">images/performance_monitor_export_disabled_16px.png</file>
         <file alias="performance_monitor_export_disabled_32px.png">images/performance_monitor_export_disabled_32px.png</file>
+        <file alias="performance_monitor_preferences_16px.png">images/performance_monitor_preferences_16px.png</file>
+        <file alias="performance_monitor_preferences_24px.png">images/performance_monitor_preferences_24px.png</file>
+        <file alias="performance_monitor_preferences_32px.png">images/performance_monitor_preferences_32px.png</file>
+        <file alias="performance_monitor_preferences_disabled_16px.png">images/performance_monitor_preferences_disabled_16px.png</file>
+        <file alias="performance_monitor_preferences_disabled_24px.png">images/performance_monitor_preferences_disabled_24px.png</file>
+        <file alias="performance_monitor_preferences_disabled_32px.png">images/performance_monitor_preferences_disabled_32px.png</file>
         <file alias="pin_16px.png">images/pin_16px.png</file>
         <file alias="preview_empty_16to10_242x167px.png">images/preview_empty_16to10_242x167px.png</file>
         <file alias="preview_empty_16to9_242x155px.png">images/preview_empty_16to9_242x155px.png</file>

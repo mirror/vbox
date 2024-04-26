@@ -486,5 +486,8 @@
         <file alias="ide_16px_x2.png">images/x2/ide_16px_x2.png</file>
         <file alias="ide_add_16px_x2.png">images/x2/ide_add_16px_x2.png</file>
         <file alias="ide_add_disabled_16px_x2.png">images/x2/ide_add_disabled_16px_x2.png</file>
+        <file alias="ide_collapse_16px_x2.png">images/x2/ide_collapse_16px_x2.png</file>
+        <file alias="ide_expand_16px_x2.png">images/x2/ide_expand_16px_x2.png</file>
+        <file alias="import_16px_x2.png">images/x2/import_16px_x2.png</file>
     </qresource>
 </RCC>

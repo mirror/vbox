@@ -3283,8 +3283,8 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/log_viewer_options_32px.png",          ":/log_viewer_options_16px.png",
-                                        ":/log_viewer_options_disabled_32px.png", ":/log_viewer_options_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/performance_monitor_preferences_32px.png",          ":/performance_monitor_preferences_16px.png",
+                                        ":/performance_monitor_preferences_disabled_32px.png", ":/performance_monitor_preferences_disabled_16px.png"));
     }
 
 protected:

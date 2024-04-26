@@ -1,8 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="ide_collapse_16px_x4.png">images/x4/ide_collapse_16px_x4.png</file>
-        <file alias="ide_expand_16px_x4.png">images/x4/ide_expand_16px_x4.png</file>
-        <file alias="import_16px_x4.png">images/x4/import_16px_x4.png</file>
         <file alias="import_32px_x4.png">images/x4/import_32px_x4.png</file>
         <file alias="import_disabled_16px_x4.png">images/x4/import_disabled_16px_x4.png</file>
         <file alias="import_disabled_32px_x4.png">images/x4/import_disabled_32px_x4.png</file>
@@ -173,6 +170,12 @@
         <file alias="performance_monitor_export_32px_x4.png">images/x4/performance_monitor_export_32px_x4.png</file>
         <file alias="performance_monitor_export_disabled_16px_x4.png">images/x4/performance_monitor_export_disabled_16px_x4.png</file>
         <file alias="performance_monitor_export_disabled_32px_x4.png">images/x4/performance_monitor_export_disabled_32px_x4.png</file>
+        <file alias="performance_monitor_preferences_16px_x4.png">images/x4/performance_monitor_preferences_16px_x4.png</file>
+        <file alias="performance_monitor_preferences_24px_x4.png">images/x4/performance_monitor_preferences_24px_x4.png</file>
+        <file alias="performance_monitor_preferences_32px_x4.png">images/x4/performance_monitor_preferences_32px_x4.png</file>
+        <file alias="performance_monitor_preferences_disabled_16px_x4.png">images/x4/performance_monitor_preferences_disabled_16px_x4.png</file>
+        <file alias="performance_monitor_preferences_disabled_24px_x4.png">images/x4/performance_monitor_preferences_disabled_24px_x4.png</file>
+        <file alias="performance_monitor_preferences_disabled_32px_x4.png">images/x4/performance_monitor_preferences_disabled_32px_x4.png</file>
         <file alias="pin_16px_x4.png">images/x4/pin_16px_x4.png</file>
         <file alias="preview_empty_16to10_242x167px_x4.png">images/x4/preview_empty_16to10_242x167px_x4.png</file>
         <file alias="preview_empty_16to9_242x155px_x4.png">images/x4/preview_empty_16to9_242x155px_x4.png</file>
