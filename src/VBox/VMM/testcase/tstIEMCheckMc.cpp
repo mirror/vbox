@@ -355,6 +355,8 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define iemAImpl_packuswb_u128          NULL
 #define iemAImpl_packusdw_u128          NULL
 
+#define iemAImpl_maskmovq_u64           NULL
+#define iemAImpl_maskmovdqu_u128        NULL
 
 #define iemAImpl_pand_u64               NULL
 #define iemAImpl_pandn_u64              NULL

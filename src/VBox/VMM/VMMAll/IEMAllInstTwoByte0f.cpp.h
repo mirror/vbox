@@ -13779,9 +13779,82 @@ FNIEMOP_DEF(iemOp_psadbw_Vx_Wx)
 /*  Opcode 0xf2 0x0f 0xf6 - invalid */
 
 /** Opcode      0x0f 0xf7 - maskmovq Pq, Nq */
-FNIEMOP_STUB(iemOp_maskmovq_Pq_Nq);
+FNIEMOP_DEF(iemOp_maskmovq_Pq_Nq)
+{
+//  IEMOP_MNEMONIC2(RM, MASKMOVQ, maskmovq, Pq, Nq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_MMX, IEMOPHINT_IGNORES_OP_SIZES); /** @todo */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * MMX, MMX, (implicit) [ ER]DI
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
+        IEM_MC_LOCAL(        uint64_t,         u64EffAddr);
+        IEM_MC_LOCAL(        uint64_t,         u64Mem);
+        IEM_MC_ARG_LOCAL_REF(uint64_t *,       pu64Mem, u64Mem, 0);
+        IEM_MC_ARG(          uint64_t const *, puSrc,           1);
+        IEM_MC_ARG(          uint64_t const *, puMsk,           2);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_FPU_TO_MMX_MODE();
+
+        IEM_MC_FETCH_GREG_U64(u64EffAddr, X86_GREG_xDI);
+        IEM_MC_FETCH_MEM_U64(u64Mem, pVCpu->iem.s.iEffSeg, u64EffAddr);
+        IEM_MC_REF_MREG_U64_CONST(puSrc,  IEM_GET_MODRM_REG_8(bRm));
+        IEM_MC_REF_MREG_U64_CONST(puMsk,  IEM_GET_MODRM_RM_8(bRm));
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_maskmovq_u64, pu64Mem, puSrc, puMsk);
+        IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, u64EffAddr, u64Mem);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* The memory, register encoding is invalid. */
+        IEMOP_RAISE_INVALID_OPCODE_RET();
+    }
+}
+
+
 /** Opcode 0x66 0x0f 0xf7 - maskmovdqu Vdq, Udq */
-FNIEMOP_STUB(iemOp_maskmovdqu_Vdq_Udq);
+FNIEMOP_DEF(iemOp_maskmovdqu_Vdq_Udq)
+{
+//  IEMOP_MNEMONIC2(RM, MASKMOVDQU, maskmovdqu, Vdq, Udq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * XMM, XMM, (implicit) [ ER]DI
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
+        IEM_MC_LOCAL(        uint64_t,         u64EffAddr);
+        IEM_MC_LOCAL(        RTUINT128U,       u128Mem);
+        IEM_MC_ARG_LOCAL_REF(PRTUINT128U,      pu128Mem, u128Mem, 0);
+        IEM_MC_ARG(          PCRTUINT128U,     puSrc,             1);
+        IEM_MC_ARG(          PCRTUINT128U,     puMsk,             2);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_FETCH_GREG_U64(u64EffAddr, X86_GREG_xDI);
+        IEM_MC_FETCH_MEM_U128(u128Mem, pVCpu->iem.s.iEffSeg, u64EffAddr);
+        IEM_MC_REF_XREG_U128_CONST(puSrc, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puMsk, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_maskmovdqu_u128, pu128Mem, puSrc, puMsk);
+        IEM_MC_STORE_MEM_U128(pVCpu->iem.s.iEffSeg, u64EffAddr, u128Mem);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* The memory, register encoding is invalid. */
+        IEMOP_RAISE_INVALID_OPCODE_RET();
+    }
+}
+
+
 /*  Opcode 0xf2 0x0f 0xf7 - invalid */
 
 

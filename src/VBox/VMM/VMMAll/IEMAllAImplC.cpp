@@ -13244,6 +13244,34 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpunpcklqdq_u256_fallback,(PRTUINT256U puDst, P
 
 
 /*
+ * MASKMOVQ - Store Selected Bytes of Quadword
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_maskmovq_u64,(uint64_t *puMem, uint64_t const *puSrc, uint64_t const *puMsk))
+{
+    ASMCompilerBarrier();
+    for (uint32_t i = 0; i < RT_ELEMENTS(((PCRTUINT64U)puMsk)->au8); i++)
+    {
+        if (((PCRTUINT64U)puMsk)->au8[i] & RT_BIT(7))
+            ((PRTUINT64U)puMem)->au8[i] = ((PCRTUINT64U)puSrc)->au8[i];
+    }
+}
+
+
+/*
+ * MASKMOVDQU - Store Selected Bytes of Double Quadword
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_maskmovdqu_u128,(PRTUINT128U puMem, PCRTUINT128U puSrc, PCRTUINT128U puMsk))
+{
+    ASMCompilerBarrier();
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMsk->au8); i++)
+    {
+        if (puMsk->au8[i] & RT_BIT(7))
+            puMem->au8[i] = puSrc->au8[i];
+    }
+}
+
+
+/*
  * PACKSSWB - signed words -> signed bytes
  */
 
