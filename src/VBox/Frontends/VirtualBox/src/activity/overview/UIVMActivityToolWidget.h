@@ -32,20 +32,23 @@
 #endif
 
 /* Qt includes: */
-#include <QTabWidget>
+#include <QWidget>
 #include <QUuid>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 
 /* Forward declarations: */
-class UIActionPool;
-class QIToolBar;
-class UIVirtualMachineItem;
 class CMachine;
+class QIToolBar;
+class QTabWidget;
+class UIActionPool;
+class UIVirtualMachineItem;
+class UIVMActivityMonitorPaneContainer;
+
 
 /** QTabWidget extension host machine activity widget(s) in the Manager UI. */
-class UIVMActivityToolWidget : public QTabWidget
+class UIVMActivityToolWidget : public QWidget
 {
     Q_OBJECT;
 
@@ -72,6 +75,7 @@ private slots:
 
     void sltExportToFile();
     void sltCurrentTabChanged(int iIndex);
+    void sltTogglePreferencesPane(bool fChecked);
 
 private:
 
@@ -104,6 +108,8 @@ private:
     bool    m_fIsCurrentTool;
     QVector<QUuid> m_machineIds;
     QAction *m_pExportToFileAction;
+    UIVMActivityMonitorPaneContainer *m_pPaneContainer;
+    QTabWidget *m_pTabWidget;
 };
 
 

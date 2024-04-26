@@ -105,6 +105,7 @@ enum UIActionIndex
     UIActionIndex_M_Activity,
     UIActionIndex_M_Activity_S_Export,
     UIActionIndex_M_Activity_S_ToVMActivityOverview,
+    UIActionIndex_M_Activity_T_Preferences,
 
     /* File Manager actions: */
     UIActionIndex_M_FileManager,

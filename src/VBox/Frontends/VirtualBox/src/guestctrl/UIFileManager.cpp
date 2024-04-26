@@ -229,8 +229,6 @@ void UIFileManager::prepareObjects()
     for (int i = 0; i < m_pFileTableSplitter->count(); ++i)
         m_pFileTableSplitter->setCollapsible(i, false);
 
-    /** Vertical splitter has 3 widgets. Log panel as bottom most one, operations panel on top of it,
-     * and pTopWidget which contains everthing else: */
     m_pVerticalSplitter = new QSplitter;
     if (m_pVerticalSplitter)
     {

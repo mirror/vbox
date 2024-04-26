@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QColorDialog>
 #include <QDateTime>
 #include <QLabel>
 #include <QMenu>
@@ -128,6 +129,7 @@ private slots:
     void sltResetMetric();
     void sltSetShowPieChart(bool fShowPieChart);
     void sltSetUseAreaChart(bool fUseAreaChart);
+    void sltSelectDataSeriesColor();
     void sltRetranslateUI();
 
 private:
@@ -181,6 +183,8 @@ private:
     QString m_strResetActionLabel;
     QString m_strPieChartToggleActionLabel;
     QString m_strAreaChartToggleActionLabel;
+    QString m_strSelectChartColor0;
+    QString m_strSelectChartColor1;
     bool    m_fDrawCurenValueIndicators;
     /** The width of the right margin in characters. */
     int m_iRightMarginCharWidth;
@@ -368,6 +372,8 @@ void UIChart::sltRetranslateUI()
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
     m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
     m_strAreaChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Draw Area Chart");
+    m_strSelectChartColor0 = QApplication::translate("UIVMInformationDialog", "Change 1st Dataseries' Color");
+    m_strSelectChartColor1 = QApplication::translate("UIVMInformationDialog", "Change 2nd Dataseries' Color");
     update();
 }
 
@@ -577,11 +583,10 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         }
         if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
-            painter.setOpacity(0.6);
-            painter.drawPixmap(rect(), areaPixmap);
+            painter.setOpacity(0.5);
+            painter.drawImage(rect(), areaPixmap.toImage());
             painter.setOpacity(1.0);
         }
-
         /* Draw a horizontal and vertical line on data point under the mouse cursor
          * and draw the value on the left hand side of the chart: */
         if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
@@ -843,6 +848,13 @@ void UIChart::sltCreateContextMenu(const QPoint &point)
         pAreaChartToggle->setChecked(m_fUseAreaChart);
         connect(pAreaChartToggle, &QAction::toggled, this, &UIChart::sltSetUseAreaChart);
     }
+    QAction *pSelectColor0 = menu.addAction(m_strSelectChartColor0);
+    pSelectColor0->setData(0);
+    connect(pSelectColor0, &QAction::triggered, this, &UIChart::sltSelectDataSeriesColor);
+
+    QAction *pSelectColor1 = menu.addAction(m_strSelectChartColor1);
+    pSelectColor1->setData(1);
+    connect(pSelectColor1, &QAction::triggered, this, &UIChart::sltSelectDataSeriesColor);
 
     menu.exec(mapToGlobal(point));
 }
@@ -861,6 +873,25 @@ void UIChart::sltSetShowPieChart(bool fShowPieChart)
 void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
 {
     setUseAreaChart(fUseAreaChart);
+}
+
+void UIChart::sltSelectDataSeriesColor()
+{
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    if (!pSenderAction)
+        return;
+    int iIndex = pSenderAction->data().toInt();
+    if (iIndex < 0 || iIndex >= DATA_SERIES_SIZE)
+        return;
+
+    QColorDialog colorDialog(m_dataSeriesColor[iIndex], this);
+    if (colorDialog.exec() == QDialog::Rejected)
+        return;
+    QColor newColor = colorDialog.selectedColor();
+    if (m_dataSeriesColor[iIndex] == newColor)
+        return;
+    m_dataSeriesColor[iIndex] = newColor;
+    update();
 }
 
 
@@ -1826,6 +1857,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     resetDiskIOReadInfoLabel();
     resetRAMInfoLabel();
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI, this, &UIVMActivityMonitorCloud::sltRetranslateUI);
+
     /* Start the timer: */
     start();
 }

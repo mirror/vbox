@@ -76,9 +76,7 @@ private:
 
     EmbedTo  m_enmEmbedTo;
     bool     m_fDetachAllowed;
-
     QTabWidget *m_pTabWidget;
-
     QIDialogButtonBox *m_pButtonBox;
 };
 

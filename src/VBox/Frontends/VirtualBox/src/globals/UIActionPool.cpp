@@ -3271,6 +3271,47 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Toggle Pane Preferences' action class. */
+class UIActionMenuActivityPreferences : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuActivityPreferences(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(UIIconPool::iconSetFull(":/log_viewer_options_32px.png",          ":/log_viewer_options_16px.png",
+                                        ":/log_viewer_options_disabled_32px.png", ":/log_viewer_options_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("ToggleActivityMonitorPreferences");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
+    {
+        return QKeySequence("");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Preferences"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Activity Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with activity monitor preferences"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Preferences Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
@@ -3518,6 +3559,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Activity] = new UIActionMenuSelectorActivity(this);
     m_pool[UIActionIndex_M_Activity_S_Export] = new UIActionMenuSelectorActivityPerformExport(this);
     m_pool[UIActionIndex_M_Activity_S_ToVMActivityOverview] = new UIActionMenuSelectorActivityToVMActivityOverview(this);
+    m_pool[UIActionIndex_M_Activity_T_Preferences] = new UIActionMenuActivityPreferences(this);
 
     /* Create 'File Manager' actions: */
     m_pool[UIActionIndex_M_FileManager] = new UIActionMenuFileManager(this);
@@ -3993,6 +4035,8 @@ void UIActionPool::updateMenuVMActivityMonitor()
     /* 'Export' and 'Switch to VM Activity Overview" actions: */
     pMenu->addAction(action(UIActionIndex_M_Activity_S_Export));
     pMenu->addAction(action(UIActionIndex_M_Activity_S_ToVMActivityOverview));
+    /* 'Preferences' action: */
+    pMenu->addAction(action(UIActionIndex_M_Activity_T_Preferences));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Activity);

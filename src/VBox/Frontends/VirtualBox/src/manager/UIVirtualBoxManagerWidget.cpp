@@ -1031,6 +1031,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
             {
                 m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Activity_S_Export));
                 m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Activity_S_ToVMActivityOverview));
+                m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Activity_T_Preferences));
                 m_pToolBar->addSeparator();
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));

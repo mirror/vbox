@@ -159,11 +159,11 @@ public:
 
 public slots:
 
-        void sltExportMetricsToFile();
+    void sltExportMetricsToFile();
 
 protected slots:
 
-        virtual void sltRetranslateUI();
+    virtual void sltRetranslateUI();
 
 protected:
 
@@ -234,7 +234,6 @@ private:
 
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
-
     EmbedTo m_enmEmbedding;
 };
 
