@@ -63,8 +63,7 @@ private:
     QPushButton *m_pColorChangeButton0;
     QPushButton *m_pColorChangeButton1;
 
-    QPushButton *m_pColorChangeReset0;
-    QPushButton *m_pColorChangeReset1;
+
 };
 
 

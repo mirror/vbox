@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
 
@@ -42,8 +43,6 @@ UIVMActivityMonitorPaneContainer::UIVMActivityMonitorPaneContainer(QWidget *pPar
     , m_pColorLabel1(0)
     , m_pColorChangeButton0(0)
     , m_pColorChangeButton1(0)
-    , m_pColorChangeReset0(0)
-    , m_pColorChangeReset1(0)
 {
     prepare();
 }
@@ -53,7 +52,24 @@ void UIVMActivityMonitorPaneContainer::prepare()
     sltRetranslateUI();
 
     QWidget *pContainerWidget = new QWidget(this);
+    QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
     insertTab(0, pContainerWidget, m_strTabText);
+
+    QHBoxLayout *pColorLayout0 = new QHBoxLayout(this);
+    m_pColorLabel0 = new QLabel(this);
+    m_pColorChangeButton0 = new QPushButton(this);
+    pColorLayout0->addWidget(m_pColorLabel0);
+    pColorLayout0->addWidget(m_pColorChangeButton0);
+
+    QHBoxLayout *pColorLayout1 = new QHBoxLayout(this);
+    m_pColorLabel1 = new QLabel(this);
+    m_pColorChangeButton1 = new QPushButton(this);
+    pColorLayout1->addWidget(m_pColorLabel1);
+    pColorLayout1->addWidget(m_pColorChangeButton1);
+
+    pContainerLayout->addLayout(pColorLayout0);
+    pContainerLayout->addLayout(pColorLayout1);
+
 
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
             this, &UIVMActivityMonitorPaneContainer::sltRetranslateUI);
@@ -62,4 +78,9 @@ void UIVMActivityMonitorPaneContainer::prepare()
 void UIVMActivityMonitorPaneContainer::sltRetranslateUI()
 {
     m_strTabText = QApplication::translate("UIVMActivityMonitorPaneContainer", "Preferences");
+
+    if (m_pColorLabel0)
+        m_pColorLabel0->setText(QApplication::translate("UIVMActivityMonitorPaneContainer", "Data Series 1 Color"));
+    if (m_pColorLabel1)
+        m_pColorLabel1->setText(QApplication::translate("UIVMActivityMonitorPaneContainer", "Data Series 1 Color"));
 }
