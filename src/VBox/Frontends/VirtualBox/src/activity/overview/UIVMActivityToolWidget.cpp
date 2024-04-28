@@ -34,6 +34,7 @@
 /* GUI includes: */
 #include "QIToolBar.h"
 #include "UIActionPoolManager.h"
+#include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityToolWidget.h"
@@ -62,12 +63,37 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pPaneContainer(0)
     , m_pTabWidget(0)
 {
-    m_dataSeriesColor[0] = QApplication::palette().color(QPalette::LinkVisited);
-    m_dataSeriesColor[1] = QApplication::palette().color(QPalette::Link);
+    loadSettings();
     prepare();
     prepareActions();
     prepareToolBar();
     sltCurrentTabChanged(0);
+}
+
+void UIVMActivityToolWidget::loadSettings()
+{
+    QStringList colorList = gEDataManager->VMActivityMonitorDataSeriesColors();
+    if (colorList.size() == 2)
+    {
+        for (int i = 0; i < 2; ++i)
+        {
+            QColor color(colorList[i]);
+            if (color.isValid())
+                m_dataSeriesColor[i] = color;
+        }
+    }
+    if (!m_dataSeriesColor[0].isValid())
+        m_dataSeriesColor[0] = QApplication::palette().color(QPalette::LinkVisited);
+    if (!m_dataSeriesColor[1].isValid())
+        m_dataSeriesColor[1] = QApplication::palette().color(QPalette::Link);
+}
+
+void UIVMActivityToolWidget::saveSettings()
+{
+    QStringList colorList;
+    colorList << m_dataSeriesColor[0].name(QColor::HexArgb);
+    colorList << m_dataSeriesColor[1].name(QColor::HexArgb);
+    gEDataManager->setVMActivityMonitorDataSeriesColors(colorList);
 }
 
 QMenu *UIVMActivityToolWidget::menu() const
@@ -181,10 +207,6 @@ void UIVMActivityToolWidget::prepareToolBar()
     }
 }
 
-void UIVMActivityToolWidget::loadSettings()
-{
-}
-
 void UIVMActivityToolWidget::removeTabs(const QVector<QUuid> &machineIdsToRemove)
 {
     AssertReturnVoid(m_pTabWidget);
@@ -274,6 +296,7 @@ void UIVMActivityToolWidget::sltDataSeriesColorChanged(int iIndex, const QColor 
         if (iIndex >= 0 && iIndex < 2)
             m_dataSeriesColor[iIndex] = color;
     }
+    saveSettings();
 }
 
 void UIVMActivityToolWidget::setExportActionEnabled(bool fEnabled)

@@ -867,12 +867,14 @@ public:
         QStringList helpBrowserBookmarks();
     /** @} */
 
-    /** @name Manager UI: VM Activity Overview
+    /** @name Manager UI: VM Activity Monitor and Overview
       * @{ */
         void setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList);
         QStringList VMActivityOverviewHiddenColumnList();
         bool VMActivityOverviewShowAllMachines();
         void setVMActivityOverviewShowAllMachines(bool fShow);
+        void setVMActivityMonitorDataSeriesColors(const QStringList &colorList);
+        QStringList VMActivityMonitorDataSeriesColors();
     /** @} */
 
     /** @name Medium Selector

@@ -471,10 +471,11 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowser_ZoomPercentage;
     /** @} */
 
-    /** @name Manager UI: VM Activity Overview Related stuff
+    /** @name Manager UI: VM Activity Monitor and Overview Related stuff
       * @{ */
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityOverview_HiddenColumns;
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityOverview_ShowAllMachines;
+        SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityMonitor_DataSeriesColors;
     /** @} */
 
     /** @name Medium Selector stuff

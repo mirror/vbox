@@ -81,6 +81,8 @@ private slots:
 
 private:
 
+    void loadSettings();
+    void saveSettings();
     void setMachines(const QList<UIVirtualMachineItem*> &machines);
     /** @name Prepare/cleanup cascade.
       * @{ */
@@ -88,7 +90,6 @@ private:
         void prepareToolBar();
         void prepareActions();
         void updateColumnsMenu();
-        void loadSettings();
     /** @} */
 
     /** Remove tabs conaining machine monitors with ids @machineIdsToRemove. */

@@ -4806,6 +4806,16 @@ void UIExtraDataManager::setVMActivityOverviewShowAllMachines(bool fShow)
     setExtraDataString(GUI_VMActivityOverview_ShowAllMachines, toFeatureAllowed(fShow));
 }
 
+void UIExtraDataManager::setVMActivityMonitorDataSeriesColors(const QStringList &colorList)
+{
+    setExtraDataStringList(GUI_VMActivityMonitor_DataSeriesColors, colorList);
+}
+
+QStringList UIExtraDataManager::VMActivityMonitorDataSeriesColors()
+{
+    return extraDataStringList(GUI_VMActivityMonitor_DataSeriesColors);
+}
+
 QRect UIExtraDataManager::mediumSelectorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
     return dialogGeometry(GUI_MediumSelector_DialogGeometry, pWidget, pParentWidget, defaultGeometry);
