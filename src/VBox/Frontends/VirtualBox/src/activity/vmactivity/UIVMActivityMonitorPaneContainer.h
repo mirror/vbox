@@ -35,6 +35,7 @@
 #include "UILibraryDefs.h"
 #include "UIPaneContainer.h"
 
+class QColor;
 class QLabel;
 class QPushButton;
 
@@ -43,26 +44,36 @@ class SHARED_LIBRARY_STUFF UIVMActivityMonitorPaneContainer : public UIPaneConta
 
     Q_OBJECT;
 
+signals:
+
+    void sigColorChanged(int iIndex, const QColor &color);
+
 public:
 
     UIVMActivityMonitorPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack);
+    void setDataSeriesColor(int iIndex, const QColor &color);
 
 private slots:
 
     void sltRetranslateUI();
+    void sltColorChangeButtonPressed();
 
 private:
+    enum Tab
+    {
+        Tab_Preferences = 0
+    };
 
     void prepare();
+    void colorPushButtons(QPushButton *pButton, const QColor &color);
     QString m_strTabText;
 
 
-    QLabel *m_pColorLabel0;
-    QLabel *m_pColorLabel1;
+    QLabel *m_pColorLabel[2];
+    QPushButton *m_pColorChangeButton[2];
 
-    QPushButton *m_pColorChangeButton0;
-    QPushButton *m_pColorChangeButton1;
 
+    QColor m_color[2];
 
 };
 

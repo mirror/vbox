@@ -129,7 +129,6 @@ private slots:
     void sltResetMetric();
     void sltSetShowPieChart(bool fShowPieChart);
     void sltSetUseAreaChart(bool fUseAreaChart);
-    void sltSelectDataSeriesColor();
     void sltRetranslateUI();
 
 private:
@@ -226,9 +225,6 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     setMouseTracking(true);
     connect(this, &UIChart::customContextMenuRequested,
             this, &UIChart::sltCreateContextMenu);
-
-    setDataSeriesColor(0, QApplication::palette().color(QPalette::LinkVisited));
-    setDataSeriesColor(1, QApplication::palette().color(QPalette::Link));
 
     m_iMarginLeft = 3 * QFontMetricsF(m_axisFont).averageCharWidth();
     m_iMarginRight = m_iRightMarginCharWidth * QFontMetricsF(m_axisFont).averageCharWidth();
@@ -848,14 +844,6 @@ void UIChart::sltCreateContextMenu(const QPoint &point)
         pAreaChartToggle->setChecked(m_fUseAreaChart);
         connect(pAreaChartToggle, &QAction::toggled, this, &UIChart::sltSetUseAreaChart);
     }
-    QAction *pSelectColor0 = menu.addAction(m_strSelectChartColor0);
-    pSelectColor0->setData(0);
-    connect(pSelectColor0, &QAction::triggered, this, &UIChart::sltSelectDataSeriesColor);
-
-    QAction *pSelectColor1 = menu.addAction(m_strSelectChartColor1);
-    pSelectColor1->setData(1);
-    connect(pSelectColor1, &QAction::triggered, this, &UIChart::sltSelectDataSeriesColor);
-
     menu.exec(mapToGlobal(point));
 }
 
@@ -873,25 +861,6 @@ void UIChart::sltSetShowPieChart(bool fShowPieChart)
 void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
 {
     setUseAreaChart(fUseAreaChart);
-}
-
-void UIChart::sltSelectDataSeriesColor()
-{
-    QAction *pSenderAction = qobject_cast<QAction*>(sender());
-    if (!pSenderAction)
-        return;
-    int iIndex = pSenderAction->data().toInt();
-    if (iIndex < 0 || iIndex >= DATA_SERIES_SIZE)
-        return;
-
-    QColorDialog colorDialog(m_dataSeriesColor[iIndex], this);
-    if (colorDialog.exec() == QDialog::Rejected)
-        return;
-    QColor newColor = colorDialog.selectedColor();
-    if (m_dataSeriesColor[iIndex] == newColor)
-        return;
-    m_dataSeriesColor[iIndex] = newColor;
-    update();
 }
 
 
@@ -1263,6 +1232,17 @@ void UIVMActivityMonitor::setInfoLabelWidth()
                 pInfoLabel->setFixedWidth(iWidth);
         }
     }
+}
+
+void UIVMActivityMonitor::setDataSeriesColor(int iIndex, const QColor &color)
+{
+    if (iIndex < 0 || iIndex >= DATA_SERIES_SIZE)
+        return;
+    m_dataSeriesColor[iIndex] = color;
+
+    foreach (UIChart *pChart, m_charts)
+        if (pChart)
+            pChart->setDataSeriesColor(iIndex, color);
 }
 
 /*********************************************************************************************************************************
