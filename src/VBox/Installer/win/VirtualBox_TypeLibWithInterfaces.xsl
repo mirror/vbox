@@ -87,7 +87,7 @@
   Libraries.
 -->
 <xsl:template match="library">
-  <Include>
+  <Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <TypeLib>
       <xsl:attribute name="Id"><xsl:value-of select="@uuid"/></xsl:attribute>
       <xsl:attribute name="Advertise">yes</xsl:attribute>
@@ -105,7 +105,7 @@
 Applications.
 -->
 <xsl:template match="application" name="application_template">
-    <AppId>
+    <AppId xmlns="http://wixtoolset.org/schemas/v4/wxs">
         <xsl:attribute name="Id">
             <xsl:value-of select="@uuid"/>
         </xsl:attribute>
@@ -139,7 +139,7 @@ Applications.
   Classes.
 -->
 <xsl:template match="library//module/class">
-  <Class>
+  <Class xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <xsl:attribute name="Id"><xsl:value-of select="@uuid"/></xsl:attribute>
     <xsl:attribute name="Description"><xsl:value-of select="@name"/> Class</xsl:attribute>
     <xsl:attribute name="Server">
@@ -207,7 +207,7 @@ Applications.
                     | library/application/if[@target='midl']/interface
                     | library/if[@target='midl']/application/interface
                     ">
-  <Interface>
+  <Interface xmlns="http://wixtoolset.org/schemas/v4/wxs">
 <!-- Interface Id="{00C8F974-92C5-44A1-8F3F-702469FDD04B}" Name="IDHCPServer" ProxyStubClassId32="{0BB3B78C-1807-4249-5BA5-EA42D66AF0BF}" NumMethods="33" -->
     <xsl:attribute name="Id">
       <xsl:text>{</xsl:text>

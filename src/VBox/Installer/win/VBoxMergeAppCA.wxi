@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,22 +23,17 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
-    <CustomAction Id="ca_IsMSCRTInstalled" BinaryKey="VBoxInstallHelper"
-                  DllEntry="IsMSCRTInstalled" Execute="immediate" Return="ignore" Impersonate="no" />
+    <CustomAction Id="ca_IsMSCRTInstalled" DllEntry="IsMSCRTInstalled" Execute="immediate" Return="ignore" Impersonate="no" BinaryRef="VBoxInstallHelper" />
 <?endif?>
 
-    <CustomAction Id="ca_IsWindows10" BinaryKey="VBoxInstallHelper"
-                  DllEntry="IsWindows10" Execute="immediate" Return="ignore" Impersonate="no" />
+    <CustomAction Id="ca_IsWindows10" DllEntry="IsWindows10" Execute="immediate" Return="ignore" Impersonate="no" BinaryRef="VBoxInstallHelper" />
 
     <!-- Makes sure we check if the chosen target directory is valid before allowing to install. See @bugref{10616} -->
-    <CustomAction Id="ca_CheckTargetDirPre" BinaryKey="VBoxInstallHelper"
-                  DllEntry="CheckTargetDir" Execute="immediate" Return="ignore" Impersonate="no" />
+    <CustomAction Id="ca_CheckTargetDirPre" DllEntry="CheckTargetDir" Execute="immediate" Return="ignore" Impersonate="no" BinaryRef="VBoxInstallHelper" />
     <!-- Makes sure that the target directory we installed into still is valid. Rollback if it isn't. See @bugref{10616} -->
-    <CustomAction Id="ca_CheckTargetDirPost" BinaryKey="VBoxInstallHelper"
-                  DllEntry="CheckTargetDir" Execute="immediate" Return="check" Impersonate="no" />
+    <CustomAction Id="ca_CheckTargetDirPost" DllEntry="CheckTargetDir" Execute="immediate" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
 </Include>
 

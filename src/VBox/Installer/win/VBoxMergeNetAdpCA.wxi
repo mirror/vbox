@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,16 +23,15 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-    <CustomAction Id="ca_CreateHostOnlyInterface" BinaryKey="VBoxInstallHelper" DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
-    <CustomAction Id="ca_RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_StopHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
-    <CustomAction Id="ca_UpdateHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UninstallNetAdp" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetAdp" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UninstallNetAdpArgs" Property="ca_UninstallNetAdp" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_CreateHostOnlyInterface" DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate" />
+    <CustomAction Id="ca_RemoveHostOnlyInterfaces" DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_StopHostOnlyInterfaces" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate" />
+    <CustomAction Id="ca_UpdateHostOnlyInterfaces" DllEntry="UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UninstallNetAdp" DllEntry="UninstallNetAdp" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UninstallNetAdpArgs" Property="ca_UninstallNetAdp" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate" />
 
 </Include>

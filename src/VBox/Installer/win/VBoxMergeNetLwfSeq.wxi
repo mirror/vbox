@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,66 +23,33 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-    <Custom Action="ca_RollbackInstallNetLwfArgs" Before="ca_RollbackInstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?else ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_RollbackInstallNetLwf" Before="ca_InstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?else ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_InstallNetLwfArgs" Before="ca_InstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?else ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_InstallNetLwf" Before="InstallFinalize" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?else ?>
-            <![CDATA[(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_RollbackUninstallNetLwfArgs" Before="ca_RollbackUninstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
-        <?else ?>
-            <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_RollbackUninstallNetLwf" Before="ca_UninstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
-        <?else ?>
-            <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_UninstallNetLwfArgs" Before="ca_UninstallNetLwf" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[((UPGRADINGPRODUCTCODE) OR (REMOVE="ALL"))]]>
-        <?else ?>
-            <![CDATA[((UPGRADINGPRODUCTCODE) OR (REMOVE="ALL"))]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_UninstallNetLwf" After="InstallInitialize" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[((UPGRADINGPRODUCTCODE) OR (REMOVE="ALL"))]]>
-        <?else ?>
-            <![CDATA[((UPGRADINGPRODUCTCODE) OR (REMOVE="ALL"))]]>
-        <?endif ?>
-    </Custom>
+
+    <Custom Action="ca_RollbackInstallNetLwfArgs" Before="ca_RollbackInstallNetLwf"
+            Condition="(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)" />
+
+    <Custom Action="ca_RollbackInstallNetLwf" Before="ca_InstallNetLwf"
+            Condition="(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)" />
+
+    <Custom Action="ca_InstallNetLwfArgs" Before="ca_InstallNetLwf"
+            Condition="(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)" />
+
+    <Custom Action="ca_InstallNetLwf" Before="InstallFinalize"
+            Condition="(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)" />
+
+    <Custom Action="ca_RollbackUninstallNetLwfArgs" Before="ca_RollbackUninstallNetLwf"
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')"  />
+
+    <Custom Action="ca_RollbackUninstallNetLwf" Before="ca_UninstallNetLwf"
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+
+    <Custom Action="ca_UninstallNetLwfArgs" Before="ca_UninstallNetLwf"
+            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE='ALL'))" />
+
+    <Custom Action="ca_UninstallNetLwf" After="InstallInitialize"
+            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE='ALL'))" />
 
 <?endif?> <!-- VBOX_WITH_NETFLT -->
 

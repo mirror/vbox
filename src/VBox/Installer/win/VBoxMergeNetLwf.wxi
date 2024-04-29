@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,43 +23,26 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
 
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-    <Component Id="cp_NetLwfDriverCat_PreW10" Guid="cede9469-b1bc-4194-348f-8799485a6283" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetLwf_PreW10.cat" Name="VBoxNetLwf.cat" Source="$(env.PATH_OUT)\bin\VBoxNetLwf-PreW10.cat" />
-    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
-    <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
-    <?endif ?>
+    <Component Id="cp_NetLwfDriverCat_PreW10" Guid="cede9469-b1bc-4194-348f-8799485a6283" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;) AND (NOT VBOX_IS_WINDOWS_10)">
+        <!-- Note: ShortName is required to avoid naming collisions the the MSI file table. -->
+        <File Id="file_VBoxNetLwf_PreW10.cat" ShortName="NetLwf1.cat" Name="VBoxNetLwf.cat" Source="$(env.PATH_OUT)\bin\VBoxNetLwf-PreW10.cat" />
     </Component>
-    <Component Id="cp_NetLwfDriverCat_W10" Guid="0932500d-4d45-4d79-8693-3192528d7cae" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetLwf_W10.cat" Name="VBoxNetLwf.cat" Source="$(env.PATH_OUT)\bin\VBoxNetLwf.cat" />
-    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
-    <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
-    <?endif ?>
+    <Component Id="cp_NetLwfDriverCat_W10" Guid="0932500d-4d45-4d79-8693-3192528d7cae" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;) AND (VBOX_IS_WINDOWS_10)">
+        <!-- Note: ShortName is required to avoid naming collisions the the MSI file table. -->
+        <File Id="file_VBoxNetLwf_W10.cat" ShortName="NetLwf2.cat" Name="VBoxNetLwf.cat" Source="$(env.PATH_OUT)\bin\VBoxNetLwf.cat" />
     </Component>
-<?endif ?>
+<?endif?>
 
-    <Component Id="cp_NetLwfDriver" Guid="831b909d-f09a-4281-b6b0-99393fa4769d" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetLwf.sys" Name="VBoxNetLwf.sys"   KeyPath="yes"
-              Source="$(env.PATH_OUT)\bin\VBoxNetLwf.sys" Checksum="yes"/>
-        <File Id="file_VBoxNetLwf.inf" Name="VBoxNetLwf.inf"
-              Source="$(env.PATH_OUT)\bin\VBoxNetLwf.inf" />
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6")]]></Condition>
-<?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6")]]></Condition>
-<?endif ?>
-
+    <Component Id="cp_NetLwfDriver" Guid="831b909d-f09a-4281-b6b0-99393fa4769d" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;)">
+        <File Id="file_VBoxNetLwf.sys" Name="VBoxNetLwf.sys" KeyPath="yes" Source="$(env.PATH_OUT)\bin\VBoxNetLwf.sys" Checksum="yes" />
+        <File Id="file_VBoxNetLwf.inf" Name="VBoxNetLwf.inf" Source="$(env.PATH_OUT)\bin\VBoxNetLwf.inf" />
     </Component>
 
-<?endif ?> <!-- VBOX_WITH_NETFLT -->
+<?endif?> <!-- VBOX_WITH_NETFLT -->
 
 </Include>

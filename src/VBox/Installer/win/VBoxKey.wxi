@@ -1,4 +1,4 @@
-<Include>
+﻿<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <RegistryValue Root="HKLM" Key="$(var.Property_RegKey)" Name="Version" Value="%VER%" Type="string" />
     <RegistryValue Root="HKLM" Key="$(var.Property_RegKey)" Name="VersionExt" Value="%VER_EXT%" Type="string" />
     <RegistryValue Root="HKLM" Key="$(var.Property_RegKey)" Name="InstallDir" Value="[msm_VBoxApplicationFolder]" Type="string" />

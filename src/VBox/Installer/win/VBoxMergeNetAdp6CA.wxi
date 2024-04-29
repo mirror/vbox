@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,19 +23,18 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-    <CustomAction Id="ca_CreateHostOnlyInterfaceNDIS6" BinaryKey="VBoxInstallHelper"  DllEntry="Ndis6CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_CreateHostOnlyInterfaceNDIS6Args" Property="ca_CreateHostOnlyInterfaceNDIS6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate"/>
+    <CustomAction Id="ca_CreateHostOnlyInterfaceNDIS6" DllEntry="Ndis6CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_CreateHostOnlyInterfaceNDIS6Args" Property="ca_CreateHostOnlyInterfaceNDIS6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate" />
 
-    <CustomAction Id="ca_RemoveHostOnlyInterfacesNDIS6" BinaryKey="VBoxInstallHelper"  DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_StopHostOnlyInterfacesNDIS6" BinaryKey="VBoxInstallHelper"  DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
+    <CustomAction Id="ca_RemoveHostOnlyInterfacesNDIS6" DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_StopHostOnlyInterfacesNDIS6" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
 
-    <CustomAction Id="ca_UpdateHostOnlyInterfacesNDIS6" BinaryKey="VBoxInstallHelper"  DllEntry="Ndis6UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UpdateHostOnlyInterfacesNDIS6Args" Property="ca_UpdateHostOnlyInterfacesNDIS6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate"/>
+    <CustomAction Id="ca_UpdateHostOnlyInterfacesNDIS6" DllEntry="Ndis6UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UpdateHostOnlyInterfacesNDIS6Args" Property="ca_UpdateHostOnlyInterfacesNDIS6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate" />
 
-    <CustomAction Id="ca_UninstallNetAdp6" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetAdp" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UninstallNetAdp6Args" Property="ca_UninstallNetAdp6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate"/>
+    <CustomAction Id="ca_UninstallNetAdp6" DllEntry="UninstallNetAdp" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UninstallNetAdp6Args" Property="ca_UninstallNetAdp6" Value="[msm_VBoxNetworkAdp6Folder]" Execute="immediate" />
 
 </Include>

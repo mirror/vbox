@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,29 +23,24 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <!-- Define our own public properties here in order to get those also recognized in case
      case we're building the installer as MSM modules -->
 
   <!-- Whether or not a desktop shortcut should be created. -->
-  <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes"/>
-  <SetProperty Id="VBOX_INSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both"
-               Value="{}"><![CDATA[VBOX_INSTALLDESKTOPSHORTCUT="0"]]></SetProperty>
+  <Property Id="VBOX_INSTALLDESKTOPSHORTCUT" Value="1" Secure="yes" />
+  <SetProperty Id="VBOX_INSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both" Value="{}" Condition="VBOX_INSTALLDESKTOPSHORTCUT=&quot;0&quot;" />
 
   <!-- Whether or not start menu entries should be created. -->
-  <Property Id="VBOX_INSTALLSTARTMENUENTRIES" Value="1" Secure="yes"/>
-  <SetProperty Id="VBOX_INSTALLSTARTMENUENTRIES" After="AppSearch" Sequence="both"
-               Value="{}"><![CDATA[VBOX_INSTALLSTARTMENUENTRIES="0"]]></SetProperty>
+  <Property Id="VBOX_INSTALLSTARTMENUENTRIES" Value="1" Secure="yes" />
+  <SetProperty Id="VBOX_INSTALLSTARTMENUENTRIES" After="AppSearch" Sequence="both" Value="{}" Condition="VBOX_INSTALLSTARTMENUENTRIES=&quot;0&quot;" />
 
   <!-- Whether or not a desktop shortcut for the Quick Launch Bar should be created -->
-  <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" Secure="yes"/>
-  <SetProperty Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" After="AppSearch" Sequence="both"
-               Value="{}"><![CDATA[VBOX_INSTALLQUICKLAUNCHSHORTCUT="0"]]></SetProperty>
+  <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" Secure="yes" />
+  <SetProperty Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" After="AppSearch" Sequence="both" Value="{}" Condition="VBOX_INSTALLQUICKLAUNCHSHORTCUT=&quot;0&quot;" />
 
   <!-- Whether or not VirtualBox should be started automatically right after successful installation -->
-  <Property Id="VBOX_START" Value="1" Secure="yes"/>
-  <SetProperty Id="VBOX_START" After="AppSearch" Sequence="both"
-               Value="{}"><![CDATA[VBOX_START="0"]]></SetProperty>
+  <Property Id="VBOX_START" Value="1" Secure="yes" />
+  <SetProperty Id="VBOX_START" After="AppSearch" Sequence="both" Value="{}" Condition="VBOX_START=&quot;0&quot;" />
 </Include>

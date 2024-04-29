@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,45 +23,29 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
     <?include Defines.wxi ?>
 
-    <Module Id="msm_VBoxNetworkFlt"
-            Language="!(loc.LANG)"
-            Version="$(var.Property_Version)">
-
-        <Package Id="687c000b-c74b-4336-a449-dd8b3c6a060e"
-                 Keywords="Installer, Setup"
-                 Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetFlt installation package"
-                 Comments="$(env.VBOX_PRODUCT) NetFlt installation package"
-                 Manufacturer="$(env.VBOX_VENDOR)"
-                 InstallerVersion="200"
-                 AdminImage="yes"
-                 InstallPrivileges="elevated"
-                 Platform="$(var.Property_Platform)"
-                 SummaryCodepage="1252"/>
+    <Module Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="687c000b-c74b-4336-a449-dd8b3c6a060e" InstallerVersion="200">
+    
+        <SummaryInformation Keywords="Installer, Setup" 
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetFlt installation package" 
+                            Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
         <?include PublicProperties.wxi ?>
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
         <Property Id="localMSMNetworkType" Value="Empty" />
-        <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed"/>
-        <Substitution Table="CustomAction" Row="setNetworkTypeFLT" Column="Target" Value="[=passedNetworkType]"/>
+        <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed" />
+        <Substitution Table="CustomAction" Row="setNetworkTypeFLT" Column="Target" Value="[=passedNetworkType]" />
         <CustomAction Id="setNetworkTypeFLT" Property="localMSMNetworkType" Value="[localMSMNetworkType]" Execute="immediate" />
         <CustomAction Id="correctNetworkTypeFLT" Property="localMSMNetworkType" Value="NDIS5" Execute="immediate" />
-<?endif ?>
+<?endif?>
 
         <!-- Here comes the file/directory list -->
-        <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
-
-                <?include VBoxMergeNetFlt.wxi ?>
-
-            </Directory> <!-- msm_VBoxNetworkFltFolder -->
-        </Directory> <!-- TARGETDIR -->
+         <!-- TARGETDIR -->
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
@@ -70,13 +53,17 @@
 
         <InstallExecuteSequence>
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <Custom Action="setNetworkTypeFLT" After="CostInitialize"/>
-            <Custom Action="correctNetworkTypeFLT" After="setNetworkTypeFLT">
-                <![CDATA[(VersionNT < 600)]]>
-            </Custom>
-<?endif ?>
+            <Custom Action="setNetworkTypeFLT" After="CostInitialize" />
+            <Custom Action="correctNetworkTypeFLT" After="setNetworkTypeFLT" Condition="(VersionNT &lt; 600)" />
+<?endif?>
             <?include VBoxMergeNetFltSeq.wxi ?>
         </InstallExecuteSequence>
 
-    </Module>
+    
+            <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
+
+                <?include VBoxMergeNetFlt.wxi ?>
+
+            </Directory> <!-- msm_VBoxNetworkFltFolder -->
+        </Module>
 </Wix>

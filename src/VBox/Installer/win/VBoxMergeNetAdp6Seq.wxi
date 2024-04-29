@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,52 +23,42 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+
     <!-- Create host-only interfaces on first-time install -->
-    <Custom Action="ca_CreateHostOnlyInterfaceNDIS6Args" Before="ca_CreateHostOnlyInterfaceNDIS6" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)]]>
-        <?else ?>
-            <![CDATA[(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)]]>
-        <?endif ?>
-    </Custom>
-    <Custom Action="ca_CreateHostOnlyInterfaceNDIS6" Before="InstallFinalize" >
-        <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)]]>
-        <?else ?>
-            <![CDATA[(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)]]>
-        <?endif ?>
-    </Custom>
+    <Custom Action="ca_CreateHostOnlyInterfaceNDIS6Args" Before="ca_CreateHostOnlyInterfaceNDIS6"
+            Condition="(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)" />
+
+    <Custom Action="ca_CreateHostOnlyInterfaceNDIS6" Before="InstallFinalize"
+            Condition="(NOT Installed) AND (VersionNT >= 600) AND ($cp_NetAdp6Driver=3)" />
+
     <!-- Remove the host-only interfaces on uninstall only. Includes
          VBoxNetAdp6 driver uninstall.
          @todo r=klaus Clean up this inconsistency by changing what the
          install helper DLL does. It's very surprising behavior and needs
          digging through a lot of code to understand the where and why. -->
-    <Custom Action="ca_RemoveHostOnlyInterfacesNDIS6" After="InstallInitialize" >
-        <![CDATA[NOT (UPGRADINGPRODUCTCODE) AND (Installed) AND (REMOVE="ALL")]]>
-    </Custom>
+    <Custom Action="ca_RemoveHostOnlyInterfacesNDIS6" After="InstallInitialize"
+            Condition="NOT (UPGRADINGPRODUCTCODE) AND (Installed) AND (REMOVE='ALL')" />
+
     <!-- Stop the host-only interfaces on update only. Driver still has to be
          uninstalled, and the creation of interfaces in the new installer will
          do the actual upgrading, preserving the interfaces. -->
-    <Custom Action="ca_StopHostOnlyInterfacesNDIS6" After="InstallInitialize" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
-    </Custom>
+    <Custom Action="ca_StopHostOnlyInterfacesNDIS6" After="InstallInitialize"
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
 
     <!-- Uninstall the driver only on package upgrade, as for uninstall it is
          included in ca_RemoveHostOnlyInterfaces.
          @todo r=klaus Clean up this inconsistency by changing what the
          install helper DLL does. It's very surprising behavior and needs
          digging through a lot of code to understand the where and why. -->
-    <Custom Action="ca_UninstallNetAdp6Args" Before="ca_UninstallNetAdp6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
-    </Custom>
-    <Custom Action="ca_UninstallNetAdp6" After="ca_StopHostOnlyInterfacesNDIS6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
-    </Custom>
+    <Custom Action="ca_UninstallNetAdp6Args" Before="ca_UninstallNetAdp6"
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
 
-<?endif ?>
+    <Custom Action="ca_UninstallNetAdp6" After="ca_StopHostOnlyInterfacesNDIS6"
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
+
+<?endif?>
 
 </Include>

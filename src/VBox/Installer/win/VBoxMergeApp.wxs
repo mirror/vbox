@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,8 +23,7 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
     <?include Defines.wxi ?>
 
@@ -44,46 +42,38 @@
     <!-- Old product ID: <Product Id="B59FE77B-738F-4f1c-AB48-3104895AF676"
          Old upgrade code of innotek: UpgradeCode="F5FFAEBF-97AE-4038-8F91-4DE719456127" -->
 
-    <Module Id="msm_VBoxApp"
-            Language="!(loc.LANG)"
-            Version="$(var.Property_Version)">
-
-        <Package Id="d255feb6-597d-4f49-a170-e34f289fa0d3"
-                 Keywords="Installer, Setup"
-                 Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) installation package"
-                 Comments="$(env.VBOX_PRODUCT) installation package"
-                 Manufacturer="$(env.VBOX_VENDOR)"
-                 InstallerVersion="200"
-                 AdminImage="yes"
-                 InstallPrivileges="elevated"
-                 Platform="$(var.Property_Platform)"
-                 SummaryCodepage="1252"/>
+    <Module Id="msm_VBoxApp" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="d255feb6-597d-4f49-a170-e34f289fa0d3" 
+            InstallerVersion="200">
+            
+        <SummaryInformation Keywords="Installer, Setup" 
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) installation package" 
+                            Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
         <?include PublicProperties.wxi ?>
 
         <Property Id="local_VBOX_REGISTERFILEEXTENSIONS" Value="Empty" />
-        <Configuration Name="argRegisterExtensions" Format="Text" DefaultValue="Not passed"/>
-        <Substitution Table="CustomAction" Row="registerExtensions" Column="Target" Value="[=argRegisterExtensions]"/>
+        <Configuration Name="argRegisterExtensions" Format="Text" DefaultValue="Not passed" />
+        <Substitution Table="CustomAction" Row="registerExtensions" Column="Target" Value="[=argRegisterExtensions]" />
         <CustomAction Id="registerExtensions" Property="local_VBOX_REGISTERFILEEXTENSIONS" Value="[local_VBOX_REGISTERFILEEXTENSIONS]" Execute="immediate" />
 
         <!-- Here comes the file/directory list -->
-        <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
-
-                <?include VBoxMergeApp.wxi ?>
-
-            </Directory> <!-- msm_VBoxApplicationFolder directory -->
-        </Directory> <!-- TARGETDIR -->
+         <!-- TARGETDIR -->
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
         <?include VBoxMergeAppCA.wxi ?>
 
         <InstallExecuteSequence>
-            <Custom Action="registerExtensions" After="AppSearch"/>
+            <Custom Action="registerExtensions" After="AppSearch" />
             <?include VBoxMergeAppSeq.wxi ?>
         </InstallExecuteSequence>
 
-    </Module>
+    
+            <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
+
+                <?include VBoxMergeApp.wxi ?>
+
+            </Directory> <!-- msm_VBoxApplicationFolder directory -->
+        </Module>
 </Wix>

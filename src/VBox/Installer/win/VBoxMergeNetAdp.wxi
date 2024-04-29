@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,25 +23,14 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-    <Component Id="cp_NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetAdp.sys" Name="VBoxNetAdp.sys" KeyPath="yes"
-              Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys" Checksum="yes"/>
-        <File Id="file_VBoxNetAdp.inf" Name="VBoxNetAdp.inf"
-              Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
+    <Component Id="cp_NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS5&quot;)">
+        <File Id="file_VBoxNetAdp.sys" Name="VBoxNetAdp.sys" KeyPath="yes" Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys" Checksum="yes" />
+        <File Id="file_VBoxNetAdp.inf" Name="VBoxNetAdp.inf" Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-        <File Id="file_VBoxNetAdp.cat" Name="VBoxNetAdp.cat"
-              Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
-<?endif ?>
-
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS5")]]></Condition>
-<?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS5")]]></Condition>
-<?endif ?>
-
+        <File Id="file_VBoxNetAdp.cat" Name="VBoxNetAdp.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
+<?endif?>
     </Component>
 
 </Include>

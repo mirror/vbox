@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,40 +23,22 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-    <Component Id="cp_NetAdp6DriverCat_PreW10" Guid="40aab6d8-a9ca-41bd-3c5e-bd768d44faa7" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetAdp6_PreW10.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6-PreW10.cat" />
-    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
-    <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
-    <?endif ?>
+    <Component Id="cp_NetAdp6DriverCat_PreW10" Guid="40aab6d8-a9ca-41bd-3c5e-bd768d44faa7" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;) AND (NOT VBOX_IS_WINDOWS_10)">
+        <!-- Note: ShortName is required to avoid naming collisions the the MSI file table. -->
+        <File Id="file_VBoxNetAdp6_PreW10.cat" ShortName="NetAdp61.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6-PreW10.cat" />
     </Component>
-    <Component Id="cp_NetAdp6DriverCat_W10" Guid="37431619-c0ac-4f6a-029e-6a8ac4cd58ad" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetAdp6_W10.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.cat" />
-    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
-    <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
-    <?endif ?>
+    <Component Id="cp_NetAdp6DriverCat_W10" Guid="37431619-c0ac-4f6a-029e-6a8ac4cd58ad" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;) AND (VBOX_IS_WINDOWS_10)">
+        <!-- Note: ShortName is required to avoid naming collisions the the MSI file table. -->
+        <File Id="file_VBoxNetAdp6_W10.cat" ShortName="NetAdp62.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.cat" />
     </Component>
-<?endif ?>
+<?endif?>
 
-    <Component Id="cp_NetAdp6Driver" Guid="945d9537-e60d-4bbf-9422-239739e31092" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxNetAdp6.sys" Name="VBoxNetAdp6.sys" KeyPath="yes"
-              Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.sys" Checksum="yes"/>
-        <File Id="file_VBoxNetAdp6.inf" Name="VBoxNetAdp6.inf"
-              Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.inf" />
-
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6")]]></Condition>
-<?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6")]]></Condition>
-<?endif ?>
-
+    <Component Id="cp_NetAdp6Driver" Guid="945d9537-e60d-4bbf-9422-239739e31092" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS6&quot;)">
+        <File Id="file_VBoxNetAdp6.sys" Name="VBoxNetAdp6.sys" KeyPath="yes" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.sys" Checksum="yes" />
+        <File Id="file_VBoxNetAdp6.inf" Name="VBoxNetAdp6.inf" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.inf" />
     </Component>
 
 </Include>

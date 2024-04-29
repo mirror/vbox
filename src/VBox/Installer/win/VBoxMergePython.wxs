@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,37 +23,21 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
     <?include Defines.wxi ?>
 
-    <Module Id="msm_VBoxPython"
-            Language="!(loc.LANG)"
-            Version="$(var.Property_Version)">
-
-        <Package Id="0f4de366-a8f3-4842-a165-fb19251cde88"
-                 Keywords="Installer"
-                 Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) Python bindings installation package"
-                 Comments="$(env.VBOX_PRODUCT) Python bindings installation package"
-                 Manufacturer="$(env.VBOX_VENDOR)"
-                 InstallerVersion="200"
-                 AdminImage="yes"
-                 InstallPrivileges="elevated"
-                 Platform="$(var.Property_Platform)"
-                 SummaryCodepage="1252"/>
+    <Module Id="msm_VBoxPython" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="0f4de366-a8f3-4842-a165-fb19251cde88" InstallerVersion="200">
+    
+        <SummaryInformation Keywords="Installer" 
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) Python bindings installation package" 
+                            Manufacturer="$(env.VBOX_VENDOR)"/>
 
         <?include CommonProperties.wxi ?>
         <?include PublicProperties.wxi ?>
 
         <!-- Here comes the file/directory list -->
-        <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="msm_VBoxPythonFolder" FileSource=".">
-
-                <?include VBoxMergePython.wxi ?>
-
-            </Directory> <!-- msm_VBoxPythonFolder -->
-        </Directory> <!-- TARGETDIR -->
+         <!-- TARGETDIR -->
 
         <!-- Custom actions -->
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
@@ -64,5 +47,10 @@
             <?include VBoxMergePythonSeq.wxi ?>
         </InstallExecuteSequence>
 
-    </Module>
+            <Directory Id="msm_VBoxPythonFolder" FileSource=".">
+
+                <?include VBoxMergePython.wxi ?>
+
+            </Directory> <!-- msm_VBoxPythonFolder -->
+        </Module>
 </Wix>

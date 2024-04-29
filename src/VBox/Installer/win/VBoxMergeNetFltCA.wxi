@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,21 +23,20 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-    <CustomAction Id="ca_InstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_InstallNetFltArgs" Property="ca_InstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_InstallNetFlt" DllEntry="InstallNetFlt" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_InstallNetFltArgs" Property="ca_InstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate" />
 
-    <CustomAction Id="ca_RollbackInstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="rollback" Impersonate="no"/>
-    <CustomAction Id="ca_RollbackInstallNetFltArgs" Property="ca_RollbackInstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_RollbackInstallNetFlt" DllEntry="UninstallNetFlt" Execute="rollback" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_RollbackInstallNetFltArgs" Property="ca_RollbackInstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate" />
 
-    <CustomAction Id="ca_UninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_UninstallNetFltArgs" Property="ca_UninstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_UninstallNetFlt" DllEntry="UninstallNetFlt" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_UninstallNetFltArgs" Property="ca_UninstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate" />
 
-    <CustomAction Id="ca_RollbackUninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no"/>
-    <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate"/>
-<?endif ?>
+    <CustomAction Id="ca_RollbackUninstallNetFlt" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[msm_VBoxNetworkFltFolder]" Execute="immediate" />
+<?endif?>
 
 </Include>

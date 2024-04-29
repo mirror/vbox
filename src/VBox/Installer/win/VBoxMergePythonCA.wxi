@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -24,12 +23,11 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-    <CustomAction Id="ca_IsPythonInstalled" BinaryKey="VBoxInstallHelper" DllEntry="IsPythonInstalled" Execute="immediate" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_ArePythonAPIDepsInstalled" BinaryKey="VBoxInstallHelper" DllEntry="ArePythonAPIDepsInstalled" Execute="immediate" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Return="check" Impersonate="no"/>
-    <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[msm_VBoxPythonFolder]" Execute="immediate"/>
+    <CustomAction Id="ca_IsPythonInstalled" DllEntry="IsPythonInstalled" Execute="immediate" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_ArePythonAPIDepsInstalled" DllEntry="ArePythonAPIDepsInstalled" Execute="immediate" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_InstallPythonAPI" DllEntry="InstallPythonAPI" Execute="deferred" Return="check" Impersonate="no" BinaryRef="VBoxInstallHelper" />
+    <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[msm_VBoxPythonFolder]" Execute="immediate" />
 
 </Include>

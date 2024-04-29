@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     VirtualBox Windows Installation Script (WiX)
 -->
 <!--
@@ -23,8 +23,7 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
-         xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
     <CreateFolder>
         <!-- Allow read and execute rights for regualr users, only SYSTEM and Administrator have write rights. -->
