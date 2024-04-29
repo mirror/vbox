@@ -298,10 +298,21 @@ DECLINLINE(int) sf_file_mode_to_linux(uint32_t fVBoxMode, int fFixedMode, int fC
  */
 static void vbsf_update_inode_timestamps(struct inode *pInode, PSHFLFSOBJINFO pObjInfo)
 {
-#if RTLNX_VER_MIN(6,6,0)
-    struct timespec64 ts;
-    vbsf_time_to_linux(&ts, &pObjInfo->ChangeTime);
-    inode_set_ctime_to_ts(pInode, ts);
+#if RTLNX_VER_MIN(6,7,0)
+    struct timespec64 tsAccessTime, tsChangeTime, ModificationTime;
+
+    vbsf_time_to_linux(&tsAccessTime,       &pObjInfo->AccessTime);
+    vbsf_time_to_linux(&tsChangeTime,       &pObjInfo->ChangeTime);
+    vbsf_time_to_linux(&ModificationTime,   &pObjInfo->ModificationTime);
+
+    inode_set_atime_to_ts(pInode, tsAccessTime);
+    inode_set_ctime_to_ts(pInode, tsChangeTime);
+    inode_set_mtime_to_ts(pInode, ModificationTime);
+
+# elif RTLNX_VER_MIN(6,6,0)
+    vbsf_time_to_linux(&pInode->i_atime, &pObjInfo->AccessTime);
+    vbsf_time_to_linux(&pInode->__i_ctime, &pObjInfo->ChangeTime);
+    vbsf_time_to_linux(&pInode->i_mtime, &pObjInfo->ModificationTime);
 #else
     vbsf_time_to_linux(&pInode->i_atime, &pObjInfo->AccessTime);
     vbsf_time_to_linux(&pInode->i_ctime, &pObjInfo->ChangeTime);
