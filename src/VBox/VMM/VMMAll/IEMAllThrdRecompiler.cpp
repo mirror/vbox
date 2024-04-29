@@ -3034,7 +3034,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
     /*
      * Determine the inhibit bits.
      */
-    if (!(pVCpu->cpum.GstCtx.rflags.uBoth & (IEMTB_F_INHIBIT_SHADOW | IEMTB_F_INHIBIT_NMI)))
+    if (!(pVCpu->cpum.GstCtx.rflags.uBoth & (CPUMCTX_INHIBIT_SHADOW | CPUMCTX_INHIBIT_NMI)))
     { /* typical */ }
     else
     {
@@ -3048,7 +3048,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
      * Return IEMTB_F_CS_LIM_CHECKS if the current PC is invalid or if it is
      * likely to go invalid before the end of the translation block.
      */
-    if (IEM_IS_64BIT_CODE(pVCpu))
+    if (IEM_F_MODE_X86_IS_FLAT(pVCpu->iem.s.fExec))
         return fRet;
 
     int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
