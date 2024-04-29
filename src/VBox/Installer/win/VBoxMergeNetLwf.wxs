@@ -28,9 +28,9 @@
     <?include Defines.wxi ?>
 
     <Module Id="msm_VBoxNetworkLwf" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="5aca0331-4936-4c1b-820a-8359965d49a4" InstallerVersion="200">
-    
-        <SummaryInformation Keywords="Installer, Setup" 
-                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetLwf installation package" 
+
+        <SummaryInformation Keywords="Installer, Setup"
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetLwf installation package"
                             Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
@@ -59,7 +59,7 @@
             <?include VBoxMergeNetLwfSeq.wxi ?>
         </InstallExecuteSequence>
 
-    
+
             <Directory Id="msm_VBoxNetworkLwfFolder" FileSource=".">
 
                 <?include VBoxMergeNetLwf.wxi ?>

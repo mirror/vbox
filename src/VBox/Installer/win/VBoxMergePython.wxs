@@ -28,9 +28,9 @@
     <?include Defines.wxi ?>
 
     <Module Id="msm_VBoxPython" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="0f4de366-a8f3-4842-a165-fb19251cde88" InstallerVersion="200">
-    
-        <SummaryInformation Keywords="Installer" 
-                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) Python bindings installation package" 
+
+        <SummaryInformation Keywords="Installer"
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) Python bindings installation package"
                             Manufacturer="$(env.VBOX_VENDOR)"/>
 
         <?include CommonProperties.wxi ?>

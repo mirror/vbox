@@ -28,7 +28,7 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
 
     <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt"
-            Condition="$cp_NetFltDriver=3 AND (NOT Installed)" />        
+            Condition="$cp_NetFltDriver=3 AND (NOT Installed)" />
 
     <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt"
             Condition="$cp_NetFltDriver=3 AND (NOT Installed)" />
@@ -39,7 +39,7 @@
     <Custom Action="ca_InstallNetFlt" Before="InstallFinalize"
             Condition="$cp_NetFltDriver=3 AND (NOT Installed)" />
 
-    <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" 
+    <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt"
             Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
 
     <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt"
@@ -48,7 +48,7 @@
     <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt"
             Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
 
-    <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" 
+    <Custom Action="ca_UninstallNetFlt" After="InstallInitialize"
             Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
 
 <?endif?> <!-- VBOX_WITH_NETFLT -->

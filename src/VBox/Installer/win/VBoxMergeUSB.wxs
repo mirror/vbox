@@ -28,9 +28,9 @@
     <?include Defines.wxi ?>
 
     <Module Id="msm_VBoxUSB" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="b8f1b6f4-2e92-40a6-b819-782e523b20ab" InstallerVersion="200">
-    
-        <SummaryInformation Keywords="Installer, Setup" 
-                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) USB drivers installation package" 
+
+        <SummaryInformation Keywords="Installer, Setup"
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) USB drivers installation package"
                             Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
@@ -39,7 +39,7 @@
         <!-- Here comes the file/directory list -->
          <!-- TARGETDIR -->
 
-    
+
             <Directory Id="msm_VBoxUSBFolder" FileSource=".">
 
                 <?include VBoxMergeUSB.wxi ?>

@@ -245,7 +245,7 @@
             <Control Id="Tree" Type="SelectionTree" X="25" Y="85" Width="175" Height="95" Property="VBOX_TARGET_DIR" Sunken="yes" TabSkip="no" Text="Tree of selections" />
             <Control Id="Browse" Type="PushButton" X="304" Y="200" Width="56" Height="17" Text="!(loc.ButtonText_Browse)" HideCondition="Installed">
                 <Publish Event="SelectionBrowse" Value="VBoxBrowseDlg" />
-                
+
             </Control>
             <Control Id="DiskCost" Type="PushButton" X="111" Y="243" Width="56" Height="17">
                 <Text Value="!(loc.CustomizeDlg_DiskUsage)" />
@@ -265,11 +265,11 @@
                 <Text Value="!(loc.CustomizeDlg_SelItemPath)" />
                 <Subscribe Event="SelectionPath" Attribute="Text" />
                 <Subscribe Event="SelectionPathOn" Attribute="Visible" />
-                
+
             </Control>
             <Control Id="LocationLabel" Type="Text" X="25" Y="200" Width="50" Height="10" Text="!(loc.CustomizeDlg_Location)" HideCondition="Installed">
                 <Subscribe Event="SelectionPathOn" Attribute="Visible" />
-                
+
             </Control>
 
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
@@ -313,13 +313,13 @@
             <!-- Description text -->
             <Control Id="DescriptionNDIS5" Type="Text" X="200" Y="105" Width="150" Height="60" Transparent="yes" NoPrefix="yes" HideCondition="NETWORKTYPE = &quot;NDIS6&quot;" ShowCondition="NETWORKTYPE = &quot;NDIS5&quot;">
               <Text Value="!(loc.SelectionNetworkTypeDlg_DescriptionNDIS5)" />
-              
-              
+
+
             </Control>
             <Control Id="DescriptionNDIS6" Type="Text" X="200" Y="105" Width="150" Height="60" Transparent="yes" NoPrefix="yes" HideCondition="NETWORKTYPE = &quot;NDIS5&quot;" ShowCondition="NETWORKTYPE = &quot;NDIS6&quot;">
               <Text Value="!(loc.SelectionNetworkTypeDlg_DescriptionNDIS6)" />
-              
-              
+
+
             </Control>
 
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)" />
@@ -577,7 +577,7 @@
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
             <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17" Property="VBOX_START" CheckBoxValue="1" Default="no" HideCondition="(InstallMode=&quot;Repair&quot;) OR (InstallMode=&quot;Remove&quot;) OR&#xA;                      (InstallMode=&quot;Change&quot;)">
                 <Text Value="!(loc.ExitDlg_StartVBox)" />
-                
+
             </Control>
 <?endif?>
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />

@@ -28,9 +28,9 @@
     <?include Defines.wxi ?>
 
     <Module Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="687c000b-c74b-4336-a449-dd8b3c6a060e" InstallerVersion="200">
-    
-        <SummaryInformation Keywords="Installer, Setup" 
-                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetFlt installation package" 
+
+        <SummaryInformation Keywords="Installer, Setup"
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetFlt installation package"
                             Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
@@ -59,7 +59,7 @@
             <?include VBoxMergeNetFltSeq.wxi ?>
         </InstallExecuteSequence>
 
-    
+
             <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
 
                 <?include VBoxMergeNetFlt.wxi ?>

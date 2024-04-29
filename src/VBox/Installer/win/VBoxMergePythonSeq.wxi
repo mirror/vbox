@@ -31,7 +31,7 @@
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
     <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" />
 <?else?>
-    <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" 
+    <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI"
             Condition="VBoxPython=3" />
 <?endif?>
 

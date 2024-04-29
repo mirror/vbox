@@ -28,9 +28,9 @@
     <?include Defines.wxi ?>
 
     <Module Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" Version="$(var.Property_Version)" Guid="248b9371-ab62-48ee-8f23-270fb319bb46" InstallerVersion="200">
-    
-        <SummaryInformation Keywords="Installer, Setup" 
-                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetAdp installation package" 
+
+        <SummaryInformation Keywords="Installer, Setup"
+                            Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) NetAdp installation package"
                             Manufacturer="$(env.VBOX_VENDOR)" />
 
         <?include CommonProperties.wxi ?>
@@ -59,7 +59,7 @@
             <?include VBoxMergeNetAdpSeq.wxi ?>
         </InstallExecuteSequence>
 
-    
+
             <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
 
                 <?include VBoxMergeNetAdp.wxi ?>

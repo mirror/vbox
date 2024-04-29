@@ -107,9 +107,9 @@
                 VirtualBox.idl (module name),
                 VBoxSDS.cpp and VBoxProxyStub.cpp
             -->
-        <ServiceInstall Id="VBoxSDSInstall" Account="LocalSystem" Type="ownProcess" 
-                        Name="VBoxSDS" DisplayName="VirtualBox system service" 
-                        Description="Used as a COM server for VirtualBox API." 
+        <ServiceInstall Id="VBoxSDSInstall" Account="LocalSystem" Type="ownProcess"
+                        Name="VBoxSDS" DisplayName="VirtualBox system service"
+                        Description="Used as a COM server for VirtualBox API."
                         Start="demand" Interactive="no" ErrorControl="normal" Vital="yes">
             <ServiceDependency Id="RPCSS" />
         </ServiceInstall>
@@ -146,7 +146,7 @@
     <!---->
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-    <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40" Bitness="$(var.Property_Bitness)" KeyPath="yes" 
+    <Component Id="cp_RegisterExtensions" Guid="FEB8943E-5D60-4E2D-846F-458207019D40" Bitness="$(var.Property_Bitness)" KeyPath="yes"
                Condition="(local_VBOX_REGISTERFILEEXTENSIONS=&quot;1&quot;)">
         <!-- Register file extensions. Note: Extension IDs *must not* be changed! These specify the actual
              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
